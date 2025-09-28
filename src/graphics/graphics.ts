@@ -149,7 +149,7 @@ class Graphics {
 	static OES_texture_float_linear: any;
 	static #mediaRecorder?: MediaRecorder;
 	static dragging = false;
-	static #allowTransfertBitmap = true;// TODO: find a way to do that better
+	static #allowTransfertBitmap = true;// TODO: find a better way to do that
 	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
 	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
 	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
@@ -430,18 +430,18 @@ class Graphics {
 		if (this.#offscreenCanvas) {
 			const parentElement = canvas.canvas.parentElement;
 			if (canvas.autoResize && parentElement) {
-				const width = parentElement.clientWidth;
-				const height = parentElement.clientHeight;
+				const width = context.width ?? parentElement.clientWidth;
+				const height = context.height ?? parentElement.clientHeight;
 				this.#offscreenCanvas.width = width;
 				this.#offscreenCanvas.height = height;
 
 				canvas.canvas.width = width * this.#pixelRatio;
 				canvas.canvas.height = height * this.#pixelRatio;
 			} else {
-				this.#offscreenCanvas.width = canvas.canvas.width;
-				this.#offscreenCanvas.height = canvas.canvas.height;
+				this.#offscreenCanvas.width = context.width ?? canvas.canvas.width;
+				this.#offscreenCanvas.height = context.height ?? canvas.canvas.height;
 			}
-			this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
+			this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
 		}
 
 		this.renderBackground();//TODOv3 put in rendering pipeline
@@ -712,9 +712,9 @@ class Graphics {
 		return this.#pixelRatio;
 	}
 
-	static setSize(width: number, height: number): [number, number] {
-		width = Math.max(width, 1);
-		height = Math.max(height, 1);
+	static setSize(width: number | undefined, height: number | undefined): [number, number] {
+		width = width ?? this.#width;
+		height = height ?? this.#height;
 		const previousWidth = this.#width;
 		const previousHeight = this.#height;
 		if (isNumeric(width)) {
@@ -903,7 +903,7 @@ class Graphics {
 		}
 	}
 
-	static savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number) {
+	static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number) {
 		const previousWidth = this.#width;
 		const previousHeight = this.#height;
 		const previousAutoResize = this.autoResize;
@@ -916,6 +916,22 @@ class Graphics {
 			this.autoResize = previousAutoResize;
 			this.setSize(previousWidth, previousHeight);
 		}
+	}
+
+	static async exportCanvas(canvas: HTMLCanvasElement, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean> {
+		const canvasDefinition = this.#canvases.get(canvas);
+		if (!canvasDefinition) {
+			return false;
+		}
+
+		try {
+			this.#allowTransfertBitmap = false;
+			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height });
+			this._savePicture(filename, type, quality);
+			this.#allowTransfertBitmap = true;
+		} catch { }
+
+		return true;
 	}
 
 	static async savePictureAsFile(filename: string, type?: string, quality?: number) {
