@@ -451,7 +451,7 @@ class Graphics {
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
 				composer.setSize(canvas.canvas.width, canvas.canvas.height);
-				composer.render(delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height });
+				composer.render(delta,  context);
 				break;
 			}
 

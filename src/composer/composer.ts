@@ -1,6 +1,6 @@
 import { vec2 } from 'gl-matrix';
 import { Graphics } from '../graphics/graphics2';
-import { InternalRenderContext } from '../interfaces/rendercontext';
+import { RenderContext } from '../interfaces/rendercontext';
 import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
 
@@ -32,7 +32,7 @@ export class Composer {
 		})();
 	}
 
-	render(delta: number, context: InternalRenderContext) {
+	render(delta: number, context: RenderContext) {
 		let pass: Pass;
 		let swapBuffer;
 
@@ -67,7 +67,7 @@ export class Composer {
 
 	savePicture(filename: string, width: number, height: number) {
 		this.setSize(width, height);
-		this.render(0, { renderContext: { DisableToolRendering: true, }, width: width, height: height });
+		this.render(0, { DisableToolRendering: true, });
 		Graphics._savePicture(filename);
 	}
 
