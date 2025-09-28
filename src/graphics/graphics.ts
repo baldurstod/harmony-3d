@@ -451,7 +451,7 @@ class Graphics {
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
 				composer.setSize(canvas.canvas.width, canvas.canvas.height);
-				composer.render(delta,  context);
+				composer.render(delta, context);
 				break;
 			}
 
@@ -930,7 +930,12 @@ class Graphics {
 		const callback = function (blob: Blob | null) {
 			promiseResolve(blob);
 		};
-		this.#canvas?.toBlob(callback, type, quality);
+		if (this.#canvas) {
+			this.#canvas.toBlob(callback, type, quality);
+		} else {
+			const blob = await this.#offscreenCanvas?.convertToBlob({ type: type, quality: quality });
+			promiseResolve!(blob ?? null);
+		}
 		return promise;
 	}
 
