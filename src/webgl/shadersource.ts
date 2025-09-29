@@ -1,6 +1,6 @@
-import { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER } from './constants';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
+import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from './constants';
 
 export enum ShaderType {
 	Vertex = GL_VERTEX_SHADER,
@@ -18,6 +18,13 @@ function getHeader(type: ShaderType): string {
 
 const PRAGMA_REGEX = /#pragma (\w+)/;
 
+export interface Annotation {
+	type: string,
+	column: number,
+	row: number,
+	text: string,
+};
+
 export class WebGLShaderSource {
 	static isWebGL2: boolean;
 	#includes = new Set<string>();
@@ -25,20 +32,20 @@ export class WebGLShaderSource {
 	#source = '';
 	#extensions = '';
 	#sizeOfSourceRow: number[] = [];
-	#sourceRowToInclude = new Map<number, any>();
+	#sourceRowToInclude = new Map<number, [string, number]>();
 	#compileSource = '';
 	#isErroneous = false;
 	#error = '';
 	#lineDelta = 0;
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
-			throw 'error : type must be defined in WebGLShaderSource';
+			throw new Error('error : type must be defined in WebGLShaderSource');
 		}
 		this.#type = type;
 		this.setSource(source);
 	}
 
-	setSource(source: string) {
+	setSource(source: string): void {
 		this.#source = source;
 		this.#extensions = '';
 		this.#sizeOfSourceRow = [];
@@ -83,14 +90,13 @@ export class WebGLShaderSource {
 		this.#isErroneous = false;
 		this.#error = '';
 		this.#lineDelta = 0;
-		return this;
 	}
 
-	isErroneous() {
+	isErroneous(): boolean {
 		return this.#isErroneous;
 	}
 
-	getSource() {
+	getSource(): string {
 		return this.#source;
 	}
 
@@ -137,8 +143,8 @@ export class WebGLShaderSource {
 		return outArray;
 	}
 
-	getCompileSource(includeCode = '') {
-		function getDefineValue(defineName: string, includeCode = '') :string{
+	getCompileSource(includeCode = ''): string {
+		function getDefineValue(defineName: string, includeCode = ''): string {
 			const sourceLineArray = includeCode.split('\n');
 			const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
 			for (const line of sourceLineArray) {
@@ -151,7 +157,8 @@ export class WebGLShaderSource {
 			}
 			return defineName;
 		}
-		function unrollLoops(source: string, includeCode = '') {
+
+		function unrollLoops(source: string, includeCode = ''): string {
 			let nextUnroll = Infinity;
 			let unrollSubstring;
 			const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
@@ -219,7 +226,7 @@ export class WebGLShaderSource {
 		return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
 	}
 
-	getCompileSourceLineNumber(includeCode: string) {
+	getCompileSourceLineNumber(includeCode: string): string {
 		const source = this.getCompileSource(includeCode);
 		const sourceLineArray = source.split('\n');
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
@@ -228,7 +235,7 @@ export class WebGLShaderSource {
 		return sourceLineArray.join('\n');
 	}
 
-	setCompileError(error: string, includeCode = '') {
+	setCompileError(error: string, includeCode = ''): void {
 		let lineDelta = ((includeCode).match(/\n/g) || []).length;
 		lineDelta += 1;//#version line
 
@@ -237,11 +244,11 @@ export class WebGLShaderSource {
 		this.#lineDelta = lineDelta;
 	}
 
-	getCompileError(convertRows = true) {
-		const errorArray: any[] = [];
+	getCompileError(convertRows = true): Annotation[] {
+		const errorArray: Annotation[] = [];
 		const splitRegex = /(ERROR|WARNING) *: *(\d*):(\d*): */;
 
-		function consumeLine(arr: string[]) {
+		function consumeLine(arr: string[]): string | null {
 			let line;
 			while ((line = arr.shift()) !== undefined) {
 				if (line === '') {
@@ -264,14 +271,14 @@ export class WebGLShaderSource {
 					row = this.compileRowToSourceRow(row);
 				}
 				row = Math.max(row, 0);
-				errorArray.push({ type: errorType.toLowerCase(), column: errorCol, row: row, text: errorText });
+				errorArray.push({ type: errorType.toLowerCase(), column: Number(errorCol), row: row, text: errorText });
 			}
 		}
 		return errorArray;
 	}
 
-	getIncludeAnnotations() {
-		const annotations: any[] = [];
+	getIncludeAnnotations(): Annotation[] {
+		const annotations: Annotation[] = [];
 
 		const sourceLineArray = this.#source.split('\n');
 		sourceLineArray.unshift(getHeader(this.#type) ?? '');
@@ -289,7 +296,7 @@ export class WebGLShaderSource {
 		return annotations;
 	}
 
-	compileRowToSourceRow(row: number) {
+	compileRowToSourceRow(row: number): number {
 		let totalSoFar = 0;
 		for (let i = 0; i < this.#sizeOfSourceRow.length; i++) {
 			totalSoFar += this.#sizeOfSourceRow[i]!;
@@ -298,27 +305,26 @@ export class WebGLShaderSource {
 			}
 		}
 		return 0;
-
 	}
 
 	isValid(): boolean {
 		return (this.#source != '') && !this.#isErroneous;
 	}
 
-	reset() {
+	reset(): void {
 		this.#isErroneous = false;
 		this.setSource(this.#source);
 	}
 
-	containsInclude(includeName: string) {
+	containsInclude(includeName: string): boolean {
 		return this.#includes.has(includeName);
 	}
 
-	getType() {
+	getType(): ShaderType {
 		return this.#type;
 	}
 
-	getSourceRowToInclude() {
+	getSourceRowToInclude(): Map<number, [string, number]> {
 		return new Map(this.#sourceRowToInclude);
 	}
 }
