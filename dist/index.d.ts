@@ -1,3 +1,4 @@
+import { Annotation as Annotation_2 } from '../webgl/shadersource';
 import { BinaryReader } from 'harmony-binary-reader';
 import { HarmonyMenuItems } from 'harmony-ui';
 import { JSONObject } from 'harmony-types';
@@ -6,6 +7,7 @@ import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { MyEventTarget } from 'harmony-utils';
 import { quat } from 'gl-matrix';
+import { ReadonlyVec4 } from 'gl-matrix';
 import { Shape } from './shape';
 import { Source1ModelInstance as Source1ModelInstance_2 } from '../export';
 import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
@@ -49,7 +51,7 @@ declare interface AddCanvasOptions {
     /** Auto resize the canvas to fit its parent. Default to false. */
     autoResize?: boolean;
     /** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
-    scene?: Scene;
+    scene?: Scene | CanvasScene;
     /** Add several scenes to the canvas. */
     scenes?: CanvasScene[];
 }
@@ -177,6 +179,13 @@ declare enum AnimationFrameDataType {
 
 declare type AnimationFrameDataTypes = vec3 | quat | number | boolean;
 
+declare interface Annotation {
+    type: string;
+    column: number;
+    row: number;
+    text: string;
+}
+
 declare type AnyTexture = Texture | CubeTexture;
 
 export declare class ApplySticker extends Node_2 {
@@ -219,7 +228,7 @@ export declare class AudioMixer {
 }
 
 export declare class BackGround {
-    render(renderer: Renderer, camera: Camera): void;
+    render(renderer: Renderer, camera: Camera, context: InternalRenderContext): void;
     dispose(): void;
     is(s: string): boolean;
 }
@@ -895,9 +904,19 @@ export declare enum CameraProjection {
     Mixed = 2
 }
 
+/**
+ * Definition of a single scene rendered into a Canvas.
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
 declare type CanvasScene = {
-    scene: Scene;
-    viewport: Viewport;
+    /** Rendered scene. Ignored if composer exist and is enabled */
+    scene?: Scene;
+    /** Camera. If none provided, scene activeCamera will be used. */
+    camera?: Camera;
+    /** Viewport. If none provided, The whole canvas will be used. */
+    viewport?: Viewport;
+    /** Render a composer instead of a scene. */
+    composer?: Composer;
 };
 
 export declare type CDmxAttribute = {
@@ -1430,7 +1449,7 @@ declare class Channel {
 
              declare type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
 
-             declare type ContextObserverTarget = Camera | FirstPersonControl | OrbitControl | RenderTargetViewer;
+             declare type ContextObserverTarget = OrbitControl;
 
              export declare class ContinuousEmitter extends Emitter {
                  #private;
@@ -1544,7 +1563,7 @@ declare class Channel {
              export declare class CubeBackground extends BackGround {
                  #private;
                  constructor(params?: any);
-                 render(renderer: Renderer, camera: Camera): void;
+                 render(renderer: Renderer, camera: Camera, context: InternalRenderContext): void;
                  setTexture(texture: Texture): void;
                  dispose(): void;
                  is(s: string): boolean;
@@ -2503,7 +2522,7 @@ declare class Channel {
                           #private;
                           constructor();
                           applyMaterial(program: Program, material: Material): void;
-                          render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
+                          render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
                           set scissorTest(scissorTest: boolean);
                       }
 
@@ -3117,6 +3136,8 @@ declare class Channel {
                       export declare interface GraphicMouseEventData {
                           x: number;
                           y: number;
+                          width: number;
+                          height: number;
                           entity: Entity | null;
                           mouseEvent: MouseEvent;
                       }
@@ -3143,7 +3164,7 @@ declare class Channel {
                           static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
-                          static pickEntity(x: number, y: number): Entity | null;
+                          static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
@@ -3174,19 +3195,19 @@ declare class Channel {
                           static getExtension(name: string): any;
                           static set pixelRatio(pixelRatio: number);
                           static get pixelRatio(): number;
-                          static setSize(width: number, height: number): [number, number];
+                          static setSize(width: number | undefined, height: number | undefined): [number, number];
                           static getSize(ret?: vec2): vec2;
-                          static setViewport(viewport: vec4): void;
+                          static setViewport(viewport: ReadonlyVec4): void;
                           /**
                            * @deprecated Please use `setViewport` instead.
                            */
-                          static set viewport(viewport: vec4);
+                          static set viewport(viewport: ReadonlyVec4);
                           static getViewport(out: vec4): vec4;
                           /**
                            * @deprecated Please use `getViewport` instead.
                            */
-                          static get viewport(): vec4;
-                          static set scissor(scissor: vec4);
+                          static get viewport(): ReadonlyVec4;
+                          static set scissor(scissor: ReadonlyVec4);
                           static set scissorTest(scissorTest: boolean);
                           static checkCanvasSize(): void;
                           static play(): void;
@@ -3197,8 +3218,9 @@ declare class Channel {
                           static createRenderbuffer(): WebGLRenderbuffer;
                           static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
                           static pushRenderTarget(renderTarget: RenderTarget | null): void;
-                          static popRenderTarget(): RenderTarget | null;
-                          static savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number): void;
+                          static popRenderTarget(): void;
+                          static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): void;
+                          static exportCanvas(canvas: HTMLCanvasElement, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean>;
                           static savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
                           static toBlob(type?: string, quality?: number): Promise<Blob | null>;
                           static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
@@ -3211,8 +3233,6 @@ declare class Channel {
                           static getGLError(context: string): void;
                           static useLogDepth(use: boolean): void;
                           static getTime(): number;
-                          static getWidth(): number;
-                          static getHeight(): number;
                           static getCanvas(): HTMLCanvasElement | undefined;
                           static getForwardRenderer(): ForwardRenderer | undefined;
                       }
@@ -3235,9 +3255,9 @@ declare class Channel {
                           static readonly isGraphicsEvents: true;
                           static tick(delta: number, time: number, speed: number): void;
                           static resize(width: number, height: number): void;
-                          static mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+                          static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+                          static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+                          static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
                           static keyDown(keyboardEvent: KeyboardEvent): void;
                           static keyUp(keyboardEvent: KeyboardEvent): void;
@@ -3567,6 +3587,12 @@ declare class Channel {
                       }
 
                       declare type integer = number;
+
+                      declare interface InternalRenderContext {
+                          renderContext: RenderContext;
+                          width: number;
+                          height: number;
+                      }
 
                       export declare class InterpolateRadius extends Operator {
                           #private;
@@ -4104,10 +4130,6 @@ declare class Channel {
                           camera?: Camera;
                           size: number;
                           constructor(params?: any);
-                          resize(camera?: Camera): void;
-                          startTranslate(x: number, y: number): void;
-                          startRotate(x: number, y: number): void;
-                          startScale(x: number, y: number): void;
                           setCamera(camera: Camera): void;
                           /**
                            * @deprecated Please use `setMode` instead.
@@ -6512,11 +6534,10 @@ declare class Channel {
                           constructor();
                           getProgram(mesh: Mesh, material: Material): Program;
                           applyMaterial(program: Program, material: Material): void;
-                          setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4): void;
-                          renderObject(context: RenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights?: boolean, lightPos?: vec3): void;
-                          _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-                          _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3): void;
-                          render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
+                          renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights?: boolean, lightPos?: vec3): void;
+                          _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
+                          _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void;
+                          render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
                           clear(color: boolean, depth: boolean, stencil: boolean): void;
                           /**
                            * Invalidate all shader (force recompile)
@@ -7296,12 +7317,12 @@ declare class Channel {
                           static addSource(type: ShaderType, name: string, source: string): void;
                           static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
                           static setCustomSource(type: ShaderType, name: string, source: string): void;
-                          static getCustomSourceAnnotations(name: string): any[] | null;
+                          static getCustomSourceAnnotations(name: string): Annotation_2[] | null;
                           static getIncludeAnnotations(includeName: string): {
-                              type: any;
-                              column: any;
+                              type: string;
+                              column: number;
                               row: number;
-                              text: any;
+                              text: string;
                           }[] | undefined;
                           static get shaderList(): MapIterator<string>;
                           static resetShadersSource(): void;
@@ -7342,9 +7363,7 @@ declare class Channel {
                       }
 
                       export declare class ShadowMap {
-                          #private;
-                          constructor();
-                          render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext): void;
+                          render(renderer: Renderer, renderList: RenderList, camera: Camera, context: InternalRenderContext): void;
                       }
 
                       declare class Shape_2 extends Path {
@@ -9215,7 +9234,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#267@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -10798,7 +10817,7 @@ declare class Channel {
 
                       declare class Uniform {
                           #private;
-                          setValue: (context: WebGLAnyRenderingContext, value: any) => void;
+                          setValue: UniformSetter;
                           constructor(activeInfo: WebGLActiveInfo, uniformLocation: WebGLUniformLocation);
                           setTextureUnit(textureUnit: number): void;
                           isTextureSampler(): boolean;
@@ -10808,6 +10827,8 @@ declare class Channel {
                       export declare class UniformNoiseProxy extends Proxy_2 {
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
                       }
+
+                      declare type UniformSetter = ((glContext: Readonly<WebGLAnyRenderingContext>, value: GLint) => void) | ((glContext: WebGLAnyRenderingContext, value: Int32List) => void) | ((glContext: WebGLAnyRenderingContext, value: Float32List) => void) | ((glContext: WebGLAnyRenderingContext, value: Float32List[]) => void) | ((glContext: WebGLAnyRenderingContext, value: Texture) => void) | ((glContext: WebGLAnyRenderingContext, value: Texture[]) => void) | ((glContext: WebGLAnyRenderingContext, value: CubeTexture) => void);
 
                       declare type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 
@@ -11032,8 +11053,8 @@ declare class Channel {
                           static depthMask(flag: boolean): void;
                           static stencilMask(stencilMask: GLuint): void;
                           static lineWidth(width: GLfloat): void;
-                          static viewport(viewport: vec4): void;
-                          static scissor(scissor: vec4): void;
+                          static viewport(viewport: ReadonlyVec4): void;
+                          static scissor(scissor: ReadonlyVec4): void;
                           static enable(cap: GLenum): void;
                           static disable(cap: GLenum): void;
                           static isEnabled(cap: GLenum): boolean;
@@ -11054,21 +11075,21 @@ declare class Channel {
                           #private;
                           static isWebGL2: boolean;
                           constructor(type: ShaderType, source: string);
-                          setSource(source: string): this;
+                          setSource(source: string): void;
                           isErroneous(): boolean;
                           getSource(): string;
                           getInclude(includeName: string, compileRow?: number, recursion?: Set<string>, allIncludes?: Set<string>): string[] | undefined | null;
                           getCompileSource(includeCode?: string): string;
                           getCompileSourceLineNumber(includeCode: string): string;
                           setCompileError(error: string, includeCode?: string): void;
-                          getCompileError(convertRows?: boolean): any[];
-                          getIncludeAnnotations(): any[];
+                          getCompileError(convertRows?: boolean): Annotation[];
+                          getIncludeAnnotations(): Annotation[];
                           compileRowToSourceRow(row: number): number;
                           isValid(): boolean;
                           reset(): void;
                           containsInclude(includeName: string): boolean;
                           getType(): ShaderType;
-                          getSourceRowToInclude(): Map<number, any>;
+                          getSourceRowToInclude(): Map<number, [string, number]>;
                       }
 
                       export declare class WebGLStats {
@@ -11141,12 +11162,12 @@ declare class Channel {
                       }
 
                       export declare const Zstd: {
-                          "__#237@#webAssembly"?: any;
-                          "__#237@#HEAPU8"?: Uint8Array;
+                          "__#236@#webAssembly"?: any;
+                          "__#236@#HEAPU8"?: Uint8Array;
                           decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer> | null>;
                           decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
                           getWebAssembly(): Promise<any>;
-                          "__#237@#initHeap"(): void;
+                          "__#236@#initHeap"(): void;
                       };
 
                       export { }

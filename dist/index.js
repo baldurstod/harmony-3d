@@ -487,7 +487,7 @@ class AudioMixer {
 }
 
 class BackGround {
-    render(renderer, camera) {
+    render(renderer, camera, context) {
     }
     dispose() {
     }
@@ -527,61 +527,57 @@ class ColorBackground extends BackGround {
     }
 }
 
-const entities$1 = new Map();
-function registerEntity(ent) {
-    if (entities$1.has(ent.getEntityName().toLowerCase())) {
-        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
-    }
-    entities$1.set(ent.getEntityName().toLowerCase(), ent);
-}
-function getEntity(name) {
-    return entities$1.get(name.toLowerCase());
-}
+var RenderFace;
+(function (RenderFace) {
+    RenderFace[RenderFace["Both"] = 0] = "Both";
+    RenderFace[RenderFace["Front"] = 1] = "Front";
+    RenderFace[RenderFace["Back"] = 2] = "Back";
+    RenderFace[RenderFace["None"] = 3] = "None";
+})(RenderFace || (RenderFace = {}));
+var BlendingMode;
+(function (BlendingMode) {
+    BlendingMode[BlendingMode["None"] = 0] = "None";
+    BlendingMode[BlendingMode["Normal"] = 1] = "Normal";
+    BlendingMode[BlendingMode["Additive"] = 2] = "Additive";
+    BlendingMode[BlendingMode["Substractive"] = 3] = "Substractive";
+    BlendingMode[BlendingMode["Multiply"] = 4] = "Multiply";
+})(BlendingMode || (BlendingMode = {}));
 
-class JSONLoader {
-    static async fromJSON(rootEntity) {
-        let loadedResolve = () => { }; // Note: typescript falsely complains about loadedResolve not being assigned without this.
-        const loadedPromise = new Promise(resolve => {
-            loadedResolve = resolve;
-        });
-        const entities = new Map();
-        const root = await this.loadEntity(rootEntity, entities, loadedPromise);
-        loadedResolve(true);
-        return root;
-    }
-    static async loadEntity(jsonEntity, entities, loadedPromise) {
-        if (jsonEntity) {
-            const constructor = getEntity(jsonEntity['constructor']);
-            if (constructor) {
-                const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
-                if (!entity) {
-                    return null;
-                }
-                entity.fromJSON(jsonEntity);
-                entities.set(entity.id, entity);
-                if (jsonEntity.children) {
-                    for (const child of jsonEntity.children) {
-                        const childEntity = await this.loadEntity(child, entities, loadedPromise);
-                        if (childEntity && entity['addChild']) {
-                            entity['addChild'](childEntity);
-                        }
-                    }
-                }
-                return entity;
-            }
-            else {
-                console.error('Unknown constructor', jsonEntity.constructor);
-            }
-        }
-        return null;
-    }
-    static registerEntity(ent) {
-        registerEntity(ent);
-    }
-}
+const ShaderEventTarget = new EventTarget();
+
+const Shaders = {};
 
 const __DISABLE_WEBGL2__ = false;
 const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
+
+const Includes = {};
+
+const includeSources = new Map();
+const customIncludeSources = new Map();
+function addIncludeSource(name, source = '') {
+    includeSources.set(name, source);
+    ShaderEventTarget.dispatchEvent(new CustomEvent('includeadded'));
+}
+function getIncludeSource(name) {
+    if (!includeSources.has(name)) {
+        addIncludeSource(name, Includes[name]);
+        if (!customIncludeSources.has(name) && Includes[name] === undefined) {
+            console.error('unknown include ' + name);
+        }
+    }
+    return customIncludeSources.get(name) ?? includeSources.get(name);
+}
+function setCustomIncludeSource(name, source) {
+    if (source == '') {
+        customIncludeSources.delete(name);
+    }
+    else {
+        customIncludeSources.set(name, source);
+    }
+}
+function getIncludeList() {
+    return includeSources.keys();
+}
 
 //See https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
 const GL_NONE = 0;
@@ -889,6 +885,401 @@ const GL_DEPTH_STENCIL = 0x84F9;
 const GL_DEPTH24_STENCIL8 = 0x88F0;
 const GL_DEPTH32F_STENCIL8 = 0x8CAD;
 
+var ShaderType;
+(function (ShaderType) {
+    ShaderType[ShaderType["Vertex"] = 35633] = "Vertex";
+    ShaderType[ShaderType["Fragment"] = 35632] = "Fragment";
+})(ShaderType || (ShaderType = {}));
+function getHeader(type) {
+    switch (type) {
+        case ShaderType.Vertex:
+            return '#include header_vertex';
+        case ShaderType.Fragment:
+            return '#include header_fragment';
+    }
+}
+const PRAGMA_REGEX = /#pragma (\w+)/;
+class WebGLShaderSource {
+    static isWebGL2;
+    #includes = new Set();
+    #type;
+    #source = '';
+    #extensions = '';
+    #sizeOfSourceRow = [];
+    #sourceRowToInclude = new Map();
+    #compileSource = '';
+    #isErroneous = false;
+    #error = '';
+    #lineDelta = 0;
+    constructor(type, source) {
+        this.#type = type;
+        this.setSource(source);
+    }
+    setSource(source) {
+        this.#source = source;
+        this.#extensions = '';
+        this.#sizeOfSourceRow = [];
+        this.#sourceRowToInclude.clear();
+        this.#includes.clear();
+        const allIncludes = new Set();
+        const sourceLineArray = source.split('\n');
+        sourceLineArray.unshift(getHeader(this.#type) ?? '');
+        let compileRow = 1;
+        //TODOv3: use regexp to do a better job
+        const outArray = [];
+        for (let i = 0; i < sourceLineArray.length; ++i) {
+            const line = sourceLineArray[i];
+            let actualSize = 1;
+            if (line.startsWith('#extension')) {
+                this.#extensions += line + '\n';
+                sourceLineArray.splice(i, 1);
+                actualSize = 0;
+            }
+            else if (line.trim().startsWith('#include')) {
+                //this.extensions += line + '\n';
+                const includeName = line.replace('#include', '').trim();
+                const include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
+                if (include) {
+                    this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
+                    outArray.push(...include);
+                    compileRow += include.length;
+                    actualSize = include.length;
+                }
+                else {
+                    if (include === undefined) {
+                        console.error(`Include not found : ${line}`);
+                    }
+                }
+            }
+            else {
+                outArray.push(line);
+                ++compileRow;
+            }
+            this.#sizeOfSourceRow[i] = actualSize;
+        }
+        this.#compileSource = outArray.join('\n');
+        this.#isErroneous = false;
+        this.#error = '';
+        this.#lineDelta = 0;
+    }
+    isErroneous() {
+        return this.#isErroneous;
+    }
+    getSource() {
+        return this.#source;
+    }
+    getInclude(includeName, compileRow = 0, recursion = new Set(), allIncludes = new Set()) {
+        this.#includes.add(includeName);
+        if (recursion.has(includeName)) {
+            console.error('Include recursion in ' + includeName);
+            return undefined;
+        }
+        recursion.add(includeName);
+        const include = getIncludeSource(includeName);
+        if (include == undefined) {
+            return undefined;
+        }
+        const includeLineArray = include.trim().split('\n');
+        includeLineArray.unshift(''); //Add an empty line to insure nested include won't occupy the same line #
+        const outArray = [];
+        for (let i = 0, l = includeLineArray.length; i < l; ++i) {
+            const line = includeLineArray[i];
+            if (line.trim().startsWith('#include')) {
+                const includeName = line.replace('#include', '').trim();
+                const include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
+                if (include) {
+                    this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
+                    outArray.push(...include);
+                    compileRow += include.length;
+                }
+                continue;
+            }
+            if (line.trim().startsWith('#pragma')) {
+                const result = PRAGMA_REGEX.exec(line);
+                if (result && result[1] == 'once') {
+                    if (allIncludes.has(includeName)) {
+                        return null;
+                    }
+                    continue;
+                }
+            }
+            outArray.push(line);
+            ++compileRow;
+        }
+        allIncludes.add(includeName);
+        return outArray;
+    }
+    getCompileSource(includeCode = '') {
+        function getDefineValue(defineName, includeCode = '') {
+            const sourceLineArray = includeCode.split('\n');
+            const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
+            for (const line of sourceLineArray) {
+                const regexResult = definePattern.exec(line);
+                if (regexResult && defineName) {
+                    if (regexResult[1] == defineName) {
+                        return regexResult[2];
+                    }
+                }
+            }
+            return defineName;
+        }
+        function unrollLoops(source, includeCode = '') {
+            let nextUnroll = Infinity;
+            let unrollSubstring;
+            const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
+            while ((nextUnroll = source.lastIndexOf('#pragma unroll', nextUnroll - 1)) != -1) {
+                forPattern.lastIndex = 0;
+                unrollSubstring = source.substring(nextUnroll);
+                const regexResult = forPattern.exec(unrollSubstring);
+                if (regexResult && regexResult.length == 6) {
+                    const loopVariable = regexResult[1];
+                    if ((loopVariable == regexResult[3]) && (loopVariable == regexResult[5])) { //Check the variable name is the same everywhere
+                        let startIndex = forPattern.lastIndex;
+                        let curlyCount = 1; //we already ate one
+                        const startLoopName = regexResult[2];
+                        const endLoopName = regexResult[4];
+                        let loopSnippet = '';
+                        curlyLoop: while (startIndex != -1) {
+                            let car = unrollSubstring.charAt(startIndex++);
+                            switch (car) {
+                                case '/':
+                                    car = unrollSubstring.charAt(startIndex++);
+                                    switch (car) {
+                                        case '*':
+                                            startIndex = unrollSubstring.indexOf('*/', startIndex);
+                                            if (startIndex != -1) {
+                                                startIndex += 2;
+                                            }
+                                            break;
+                                        case '/':
+                                            startIndex = unrollSubstring.indexOf('\n', startIndex);
+                                            break;
+                                    }
+                                    break;
+                                case '{':
+                                    ++curlyCount;
+                                    break;
+                                case '}':
+                                    --curlyCount;
+                                    if (curlyCount == 0) {
+                                        loopSnippet = source.substring(nextUnroll + forPattern.lastIndex, nextUnroll + startIndex - 1);
+                                        break curlyLoop;
+                                    }
+                                    break;
+                            }
+                        }
+                        if (loopSnippet) {
+                            const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
+                            const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
+                            const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
+                            const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
+                            let unrolled = '';
+                            for (let i = startLoopIndex; i < endLoopIndex; i++) {
+                                unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
+                            }
+                            source = source.substring(0, nextUnroll - 1) + unrolled + source.substring(nextUnroll + startIndex);
+                        }
+                    }
+                }
+            }
+            return source;
+        }
+        return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
+    }
+    getCompileSourceLineNumber(includeCode) {
+        const source = this.getCompileSource(includeCode);
+        const sourceLineArray = source.split('\n');
+        for (let i = sourceLineArray.length - 1; i >= 0; i--) {
+            sourceLineArray[i] = (i + 1).toString().padStart(4) + ' ' + sourceLineArray[i];
+        }
+        return sourceLineArray.join('\n');
+    }
+    setCompileError(error, includeCode = '') {
+        let lineDelta = ((includeCode).match(/\n/g) || []).length;
+        lineDelta += 1; //#version line
+        this.#isErroneous = true;
+        this.#error = error;
+        this.#lineDelta = lineDelta;
+    }
+    getCompileError(convertRows = true) {
+        const errorArray = [];
+        const splitRegex = /(ERROR|WARNING) *: *(\d*):(\d*): */;
+        function consumeLine(arr) {
+            let line;
+            while ((line = arr.shift()) !== undefined) {
+                if (line === '') {
+                    continue;
+                }
+                return line;
+            }
+            return null;
+        }
+        const arr = this.#error.replace('\n', '').split(splitRegex);
+        while (arr.length) {
+            const errorType = consumeLine(arr);
+            const errorCol = consumeLine(arr);
+            const errorRow = Number(consumeLine(arr));
+            const errorText = consumeLine(arr);
+            if (errorType && errorCol && errorRow && errorText) {
+                let row = Math.max(errorRow - this.#lineDelta, 0);
+                if (convertRows) {
+                    row = this.compileRowToSourceRow(row);
+                }
+                row = Math.max(row, 0);
+                errorArray.push({ type: errorType.toLowerCase(), column: Number(errorCol), row: row, text: errorText });
+            }
+        }
+        return errorArray;
+    }
+    getIncludeAnnotations() {
+        const annotations = [];
+        const sourceLineArray = this.#source.split('\n');
+        sourceLineArray.unshift(getHeader(this.#type) ?? '');
+        for (let i = sourceLineArray.length - 1; i >= 0; i--) {
+            const line = sourceLineArray[i];
+            if (line.trim().startsWith('#include')) {
+                const include = this.getInclude(line.replace('#include', '').trim());
+                if (include) {
+                    include.shift(); //Remove the first empty line
+                    annotations.push({ type: 'info', column: 0, row: Math.max(i - 1, 0), text: include.join('\n') });
+                }
+            }
+        }
+        return annotations;
+    }
+    compileRowToSourceRow(row) {
+        let totalSoFar = 0;
+        for (let i = 0; i < this.#sizeOfSourceRow.length; i++) {
+            totalSoFar += this.#sizeOfSourceRow[i];
+            if (totalSoFar >= row) {
+                return i - 1;
+            }
+        }
+        return 0;
+    }
+    isValid() {
+        return (this.#source != '') && !this.#isErroneous;
+    }
+    reset() {
+        this.#isErroneous = false;
+        this.setSource(this.#source);
+    }
+    containsInclude(includeName) {
+        return this.#includes.has(includeName);
+    }
+    getType() {
+        return this.#type;
+    }
+    getSourceRowToInclude() {
+        return new Map(this.#sourceRowToInclude);
+    }
+}
+
+class ShaderManager {
+    static #displayCompileError = false;
+    static #shaderList = new Map();
+    static #customShaderList = new Map();
+    static addSource(type, name, source) {
+        this.#shaderList.set(name, new WebGLShaderSource(type, source));
+        ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
+    }
+    static getShaderSource(type, name, invalidCustomShaders = false) {
+        if (this.#shaderList.get(name) === undefined) {
+            const source = Shaders[name];
+            if (source) {
+                this.addSource(type, name, source);
+            }
+            else {
+                console.error('Shader not found : ', name);
+            }
+        }
+        const customSource = this.#customShaderList.get(name);
+        const source = this.#shaderList.get(name);
+        return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
+    }
+    static setCustomSource(type, name, source) {
+        if (source == '') {
+            this.#customShaderList.delete(name);
+        }
+        else {
+            const customSource = this.#customShaderList.get(name) ?? new WebGLShaderSource(type, '');
+            customSource.setSource(source);
+            this.#customShaderList.set(name, customSource);
+        }
+    }
+    static getCustomSourceAnnotations(name) {
+        const customSource = this.#customShaderList.get(name);
+        if (customSource) {
+            return customSource.getCompileError().concat(customSource.getIncludeAnnotations());
+        }
+        return null;
+    }
+    static getIncludeAnnotations(includeName) {
+        let annotations;
+        for (const [shaderName, shaderSource] of this.#shaderList) {
+            annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
+            if (annotations.length) {
+                return annotations;
+            }
+        }
+        for (const [shaderName, shaderSource] of this.#customShaderList) {
+            annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
+            if (annotations.length) {
+                return annotations;
+            }
+        }
+    }
+    static #getIncludeAnnotations(includeName, shaderName, shaderSource) {
+        const errorArray = [];
+        if (shaderSource.isErroneous()) {
+            if (shaderSource.containsInclude(includeName)) {
+                const errors = shaderSource.getCompileError(false);
+                for (const error of errors) {
+                    const sourceRowToInclude = shaderSource.getSourceRowToInclude();
+                    for (const [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
+                        //let [includeName2, includeLength] = shaderSource.sourceRowToInclude[startLine];
+                        if (startLine <= error.row && (startLine + includeLength) > error.row && includeName == includeName2) {
+                            errorArray.push({ type: error.type, column: error.column, row: error.row - startLine, text: error.text });
+                        }
+                    }
+                }
+            }
+        }
+        return errorArray;
+    }
+    static get shaderList() {
+        return this.#shaderList.keys();
+    }
+    static resetShadersSource() {
+        for (const source of this.#shaderList.values()) {
+            source.reset();
+        }
+        for (const source of this.#customShaderList.values()) {
+            source.reset();
+        }
+    }
+    static set displayCompileError(displayCompileError) {
+        this.#displayCompileError = displayCompileError;
+    }
+    static get displayCompileError() {
+        return this.#displayCompileError;
+    }
+    static setCompileError(shaderName, shaderInfoLog) {
+        return;
+    }
+}
+
+const entities$1 = new Map();
+function registerEntity(ent) {
+    if (entities$1.has(ent.getEntityName().toLowerCase())) {
+        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
+    }
+    entities$1.set(ent.getEntityName().toLowerCase(), ent);
+}
+function getEntity(name) {
+    return entities$1.get(name.toLowerCase());
+}
+
 var BlendingFactor;
 (function (BlendingFactor) {
     BlendingFactor[BlendingFactor["Zero"] = 0] = "Zero";
@@ -915,22 +1306,6 @@ var BlendingEquation;
     BlendingEquation[BlendingEquation["Min"] = 32775] = "Min";
     BlendingEquation[BlendingEquation["Max"] = 32776] = "Max";
 })(BlendingEquation || (BlendingEquation = {}));
-
-var RenderFace;
-(function (RenderFace) {
-    RenderFace[RenderFace["Both"] = 0] = "Both";
-    RenderFace[RenderFace["Front"] = 1] = "Front";
-    RenderFace[RenderFace["Back"] = 2] = "Back";
-    RenderFace[RenderFace["None"] = 3] = "None";
-})(RenderFace || (RenderFace = {}));
-var BlendingMode;
-(function (BlendingMode) {
-    BlendingMode[BlendingMode["None"] = 0] = "None";
-    BlendingMode[BlendingMode["Normal"] = 1] = "Normal";
-    BlendingMode[BlendingMode["Additive"] = 2] = "Additive";
-    BlendingMode[BlendingMode["Substractive"] = 3] = "Substractive";
-    BlendingMode[BlendingMode["Multiply"] = 4] = "Multiply";
-})(BlendingMode || (BlendingMode = {}));
 
 function isTypedArray(arr) {
     return ArrayBuffer.isView(arr) && !(arr instanceof DataView);
@@ -1411,6 +1786,81 @@ class Material {
     }
 }
 registerEntity(Material);
+
+let id$1 = 0;
+class ShaderMaterial extends Material {
+    #shaderSource = '';
+    constructor(params = {}) {
+        super(params);
+        this.shaderSource = params.shaderSource;
+        const name = `shadermaterial_${++id$1}`;
+        if (params.vertex) {
+            ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.vertex);
+            this.shaderSource = name;
+        }
+        if (params.fragment) {
+            ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.fragment);
+        }
+        if (params.uniforms) {
+            for (const name in params.uniforms) {
+                this.uniforms[name] = params.uniforms[name];
+            }
+        }
+        if (params.defines) {
+            for (const name in params.defines) {
+                this.setDefine(name, params.defines[name]);
+            }
+        }
+    }
+    getShaderSource() {
+        return this.#shaderSource;
+    }
+    set shaderSource(shaderSource) {
+        this.#shaderSource = shaderSource;
+    }
+}
+
+class JSONLoader {
+    static async fromJSON(rootEntity) {
+        let loadedResolve = () => { }; // Note: typescript falsely complains about loadedResolve not being assigned without this.
+        const loadedPromise = new Promise(resolve => {
+            loadedResolve = resolve;
+        });
+        const entities = new Map();
+        const root = await this.loadEntity(rootEntity, entities, loadedPromise);
+        loadedResolve(true);
+        return root;
+    }
+    static async loadEntity(jsonEntity, entities, loadedPromise) {
+        if (jsonEntity) {
+            const constructor = getEntity(jsonEntity['constructor']);
+            if (constructor) {
+                const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
+                if (!entity) {
+                    return null;
+                }
+                entity.fromJSON(jsonEntity);
+                entities.set(entity.id, entity);
+                if (jsonEntity.children) {
+                    for (const child of jsonEntity.children) {
+                        const childEntity = await this.loadEntity(child, entities, loadedPromise);
+                        if (childEntity && entity['addChild']) {
+                            entity['addChild'](childEntity);
+                        }
+                    }
+                }
+                return entity;
+            }
+            else {
+                console.error('Unknown constructor', jsonEntity.constructor);
+            }
+        }
+        return null;
+    }
+    static registerEntity(ent) {
+        registerEntity(ent);
+    }
+}
 
 class MeshBasicMaterial extends Material {
     map = null;
@@ -4643,456 +5093,64 @@ class Box extends Mesh {
 }
 registerEntity(Box);
 
-const ShaderEventTarget = new EventTarget();
-
-const Shaders = {};
-
-const Includes = {};
-
-const includeSources = new Map();
-const customIncludeSources = new Map();
-function addIncludeSource(name, source = '') {
-    includeSources.set(name, source);
-    ShaderEventTarget.dispatchEvent(new CustomEvent('includeadded'));
-}
-function getIncludeSource(name) {
-    if (!includeSources.has(name)) {
-        addIncludeSource(name, Includes[name]);
-        if (!customIncludeSources.has(name) && Includes[name] === undefined) {
-            console.error('unknown include ' + name);
+class Scene extends Entity {
+    #layers = new Map();
+    #world;
+    background;
+    layers = new Set();
+    environment;
+    activeCamera;
+    constructor(parameters = {}) {
+        super(parameters);
+        this.activeCamera = parameters.camera;
+        this.background = parameters.background;
+        this.environment = parameters.environment;
+        this.#layers[Symbol.iterator] = function* () {
+            yield* [...this.entries()].sort((a, b) => {
+                return a[1] < b[1] ? -1 : 1;
+            });
+        };
+    }
+    addLayer(layer /*TODO: create a layer type*/, index) {
+        this.#layers.set(layer, index);
+        this.#updateLayers();
+        return layer;
+    }
+    removeLayer(layer /*TODO: create a layer type*/) {
+        this.#layers.delete(layer);
+        this.#updateLayers();
+    }
+    #updateLayers() {
+        this.layers.clear();
+        for (const [layer, index] of this.#layers) {
+            this.layers.add(layer);
         }
     }
-    return customIncludeSources.get(name) ?? includeSources.get(name);
-}
-function setCustomIncludeSource(name, source) {
-    if (source == '') {
-        customIncludeSources.delete(name);
+    setWorld(world) {
+        this.#world = world;
     }
-    else {
-        customIncludeSources.set(name, source);
+    getWorld() {
+        return this.#world;
     }
-}
-function getIncludeList() {
-    return includeSources.keys();
-}
-
-var ShaderType;
-(function (ShaderType) {
-    ShaderType[ShaderType["Vertex"] = 35633] = "Vertex";
-    ShaderType[ShaderType["Fragment"] = 35632] = "Fragment";
-})(ShaderType || (ShaderType = {}));
-function getHeader(type) {
-    switch (type) {
-        case ShaderType.Vertex:
-            return '#include header_vertex';
-        case ShaderType.Fragment:
-            return '#include header_fragment';
+    toString() {
+        return 'Scene ' + super.toString();
     }
-}
-const PRAGMA_REGEX = /#pragma (\w+)/;
-class WebGLShaderSource {
-    static isWebGL2;
-    #includes = new Set();
-    #type;
-    #source = '';
-    #extensions = '';
-    #sizeOfSourceRow = [];
-    #sourceRowToInclude = new Map();
-    #compileSource = '';
-    #isErroneous = false;
-    #error = '';
-    #lineDelta = 0;
-    constructor(type, source) {
-        this.#type = type;
-        this.setSource(source);
+    static async constructFromJSON(json) {
+        return new Scene({ name: json.name });
     }
-    setSource(source) {
-        this.#source = source;
-        this.#extensions = '';
-        this.#sizeOfSourceRow = [];
-        this.#sourceRowToInclude.clear();
-        this.#includes.clear();
-        const allIncludes = new Set();
-        const sourceLineArray = source.split('\n');
-        sourceLineArray.unshift(getHeader(this.#type) ?? '');
-        let compileRow = 1;
-        //TODOv3: use regexp to do a better job
-        const outArray = [];
-        for (let i = 0; i < sourceLineArray.length; ++i) {
-            const line = sourceLineArray[i];
-            let actualSize = 1;
-            if (line.startsWith('#extension')) {
-                this.#extensions += line + '\n';
-                sourceLineArray.splice(i, 1);
-                actualSize = 0;
-            }
-            else if (line.trim().startsWith('#include')) {
-                //this.extensions += line + '\n';
-                const includeName = line.replace('#include', '').trim();
-                const include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
-                if (include) {
-                    this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
-                    outArray.push(...include);
-                    compileRow += include.length;
-                    actualSize = include.length;
-                }
-                else {
-                    if (include === undefined) {
-                        console.error(`Include not found : ${line}`);
-                    }
-                }
-            }
-            else {
-                outArray.push(line);
-                ++compileRow;
-            }
-            this.#sizeOfSourceRow[i] = actualSize;
-        }
-        this.#compileSource = outArray.join('\n');
-        this.#isErroneous = false;
-        this.#error = '';
-        this.#lineDelta = 0;
-        return this;
+    static getEntityName() {
+        return 'Scene';
     }
-    isErroneous() {
-        return this.#isErroneous;
-    }
-    getSource() {
-        return this.#source;
-    }
-    getInclude(includeName, compileRow = 0, recursion = new Set(), allIncludes = new Set()) {
-        this.#includes.add(includeName);
-        if (recursion.has(includeName)) {
-            console.error('Include recursion in ' + includeName);
-            return undefined;
-        }
-        recursion.add(includeName);
-        const include = getIncludeSource(includeName);
-        if (include == undefined) {
-            return undefined;
-        }
-        const includeLineArray = include.trim().split('\n');
-        includeLineArray.unshift(''); //Add an empty line to insure nested include won't occupy the same line #
-        const outArray = [];
-        for (let i = 0, l = includeLineArray.length; i < l; ++i) {
-            const line = includeLineArray[i];
-            if (line.trim().startsWith('#include')) {
-                const includeName = line.replace('#include', '').trim();
-                const include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
-                if (include) {
-                    this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
-                    outArray.push(...include);
-                    compileRow += include.length;
-                }
-                continue;
-            }
-            if (line.trim().startsWith('#pragma')) {
-                const result = PRAGMA_REGEX.exec(line);
-                if (result && result[1] == 'once') {
-                    if (allIncludes.has(includeName)) {
-                        return null;
-                    }
-                    continue;
-                }
-            }
-            outArray.push(line);
-            ++compileRow;
-        }
-        allIncludes.add(includeName);
-        return outArray;
-    }
-    getCompileSource(includeCode = '') {
-        function getDefineValue(defineName, includeCode = '') {
-            const sourceLineArray = includeCode.split('\n');
-            const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
-            for (const line of sourceLineArray) {
-                const regexResult = definePattern.exec(line);
-                if (regexResult && defineName) {
-                    if (regexResult[1] == defineName) {
-                        return regexResult[2];
-                    }
-                }
-            }
-            return defineName;
-        }
-        function unrollLoops(source, includeCode = '') {
-            let nextUnroll = Infinity;
-            let unrollSubstring;
-            const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
-            while ((nextUnroll = source.lastIndexOf('#pragma unroll', nextUnroll - 1)) != -1) {
-                forPattern.lastIndex = 0;
-                unrollSubstring = source.substring(nextUnroll);
-                const regexResult = forPattern.exec(unrollSubstring);
-                if (regexResult && regexResult.length == 6) {
-                    const loopVariable = regexResult[1];
-                    if ((loopVariable == regexResult[3]) && (loopVariable == regexResult[5])) { //Check the variable name is the same everywhere
-                        let startIndex = forPattern.lastIndex;
-                        let curlyCount = 1; //we already ate one
-                        const startLoopName = regexResult[2];
-                        const endLoopName = regexResult[4];
-                        let loopSnippet = '';
-                        curlyLoop: while (startIndex != -1) {
-                            let car = unrollSubstring.charAt(startIndex++);
-                            switch (car) {
-                                case '/':
-                                    car = unrollSubstring.charAt(startIndex++);
-                                    switch (car) {
-                                        case '*':
-                                            startIndex = unrollSubstring.indexOf('*/', startIndex);
-                                            if (startIndex != -1) {
-                                                startIndex += 2;
-                                            }
-                                            break;
-                                        case '/':
-                                            startIndex = unrollSubstring.indexOf('\n', startIndex);
-                                            break;
-                                    }
-                                    break;
-                                case '{':
-                                    ++curlyCount;
-                                    break;
-                                case '}':
-                                    --curlyCount;
-                                    if (curlyCount == 0) {
-                                        loopSnippet = source.substring(nextUnroll + forPattern.lastIndex, nextUnroll + startIndex - 1);
-                                        break curlyLoop;
-                                    }
-                                    break;
-                            }
-                        }
-                        if (loopSnippet) {
-                            const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
-                            const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
-                            const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
-                            const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
-                            let unrolled = '';
-                            for (let i = startLoopIndex; i < endLoopIndex; i++) {
-                                unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
-                            }
-                            source = source.substring(0, nextUnroll - 1) + unrolled + source.substring(nextUnroll + startIndex);
-                        }
-                    }
-                }
-            }
-            return source;
-        }
-        return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
-    }
-    getCompileSourceLineNumber(includeCode) {
-        const source = this.getCompileSource(includeCode);
-        const sourceLineArray = source.split('\n');
-        for (let i = sourceLineArray.length - 1; i >= 0; i--) {
-            sourceLineArray[i] = (i + 1).toString().padStart(4) + ' ' + sourceLineArray[i];
-        }
-        return sourceLineArray.join('\n');
-    }
-    setCompileError(error, includeCode = '') {
-        let lineDelta = ((includeCode).match(/\n/g) || []).length;
-        lineDelta += 1; //#version line
-        this.#isErroneous = true;
-        this.#error = error;
-        this.#lineDelta = lineDelta;
-    }
-    getCompileError(convertRows = true) {
-        const errorArray = [];
-        const splitRegex = /(ERROR|WARNING) *: *(\d*):(\d*): */;
-        function consumeLine(arr) {
-            let line;
-            while ((line = arr.shift()) !== undefined) {
-                if (line === '') {
-                    continue;
-                }
-                return line;
-            }
-            return null;
-        }
-        const arr = this.#error.replace('\n', '').split(splitRegex);
-        while (arr.length) {
-            const errorType = consumeLine(arr);
-            const errorCol = consumeLine(arr);
-            const errorRow = Number(consumeLine(arr));
-            const errorText = consumeLine(arr);
-            if (errorType && errorCol && errorRow && errorText) {
-                let row = Math.max(errorRow - this.#lineDelta, 0);
-                if (convertRows) {
-                    row = this.compileRowToSourceRow(row);
-                }
-                row = Math.max(row, 0);
-                errorArray.push({ type: errorType.toLowerCase(), column: errorCol, row: row, text: errorText });
-            }
-        }
-        return errorArray;
-    }
-    getIncludeAnnotations() {
-        const annotations = [];
-        const sourceLineArray = this.#source.split('\n');
-        sourceLineArray.unshift(getHeader(this.#type) ?? '');
-        for (let i = sourceLineArray.length - 1; i >= 0; i--) {
-            const line = sourceLineArray[i];
-            if (line.trim().startsWith('#include')) {
-                const include = this.getInclude(line.replace('#include', '').trim());
-                if (include) {
-                    include.shift(); //Remove the first empty line
-                    annotations.push({ type: 'info', column: 0, row: Math.max(i - 1, 0), text: include.join('\n') });
-                }
-            }
-        }
-        return annotations;
-    }
-    compileRowToSourceRow(row) {
-        let totalSoFar = 0;
-        for (let i = 0; i < this.#sizeOfSourceRow.length; i++) {
-            totalSoFar += this.#sizeOfSourceRow[i];
-            if (totalSoFar >= row) {
-                return i - 1;
-            }
-        }
-        return 0;
-    }
-    isValid() {
-        return (this.#source != '') && !this.#isErroneous;
-    }
-    reset() {
-        this.#isErroneous = false;
-        this.setSource(this.#source);
-    }
-    containsInclude(includeName) {
-        return this.#includes.has(includeName);
-    }
-    getType() {
-        return this.#type;
-    }
-    getSourceRowToInclude() {
-        return new Map(this.#sourceRowToInclude);
-    }
-}
-
-class ShaderManager {
-    static #displayCompileError = false;
-    static #shaderList = new Map();
-    static #customShaderList = new Map();
-    static addSource(type, name, source) {
-        this.#shaderList.set(name, new WebGLShaderSource(type, source));
-        ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
-    }
-    static getShaderSource(type, name, invalidCustomShaders = false) {
-        if (this.#shaderList.get(name) === undefined) {
-            const source = Shaders[name];
-            if (source) {
-                this.addSource(type, name, source);
-            }
-            else {
-                console.error('Shader not found : ', name);
-            }
-        }
-        const customSource = this.#customShaderList.get(name);
-        const source = this.#shaderList.get(name);
-        return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
-    }
-    static setCustomSource(type, name, source) {
-        if (source == '') {
-            this.#customShaderList.delete(name);
+    is(s) {
+        if (s == 'Scene') {
+            return true;
         }
         else {
-            const customSource = this.#customShaderList.get(name) ?? new WebGLShaderSource(type, '');
-            customSource.setSource(source);
-            this.#customShaderList.set(name, customSource);
+            return super.is(s);
         }
-    }
-    static getCustomSourceAnnotations(name) {
-        const customSource = this.#customShaderList.get(name);
-        if (customSource) {
-            return customSource.getCompileError().concat(customSource.getIncludeAnnotations());
-        }
-        return null;
-    }
-    static getIncludeAnnotations(includeName) {
-        let annotations;
-        for (const [shaderName, shaderSource] of this.#shaderList) {
-            annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
-            if (annotations.length) {
-                return annotations;
-            }
-        }
-        for (const [shaderName, shaderSource] of this.#customShaderList) {
-            annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
-            if (annotations.length) {
-                return annotations;
-            }
-        }
-    }
-    static #getIncludeAnnotations(includeName, shaderName, shaderSource) {
-        const errorArray = [];
-        if (shaderSource.isErroneous()) {
-            if (shaderSource.containsInclude(includeName)) {
-                const errors = shaderSource.getCompileError(false);
-                for (const error of errors) {
-                    const sourceRowToInclude = shaderSource.getSourceRowToInclude();
-                    for (const [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
-                        //let [includeName2, includeLength] = shaderSource.sourceRowToInclude[startLine];
-                        if (startLine <= error.row && (startLine + includeLength) > error.row && includeName == includeName2) {
-                            errorArray.push({ type: error.type, column: error.column, row: error.row - startLine, text: error.text });
-                        }
-                    }
-                }
-            }
-        }
-        return errorArray;
-    }
-    static get shaderList() {
-        return this.#shaderList.keys();
-    }
-    static resetShadersSource() {
-        for (const source of this.#shaderList.values()) {
-            source.reset();
-        }
-        for (const source of this.#customShaderList.values()) {
-            source.reset();
-        }
-    }
-    static set displayCompileError(displayCompileError) {
-        this.#displayCompileError = displayCompileError;
-    }
-    static get displayCompileError() {
-        return this.#displayCompileError;
-    }
-    static setCompileError(shaderName, shaderInfoLog) {
-        return;
     }
 }
-
-let id$1 = 0;
-class ShaderMaterial extends Material {
-    #shaderSource = '';
-    constructor(params = {}) {
-        super(params);
-        this.shaderSource = params.shaderSource;
-        const name = `shadermaterial_${++id$1}`;
-        if (params.vertex) {
-            ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.vertex);
-            this.shaderSource = name;
-        }
-        if (params.fragment) {
-            ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.fragment);
-        }
-        if (params.uniforms) {
-            for (const name in params.uniforms) {
-                this.uniforms[name] = params.uniforms[name];
-            }
-        }
-        if (params.defines) {
-            for (const name in params.defines) {
-                this.setDefine(name, params.defines[name]);
-            }
-        }
-    }
-    getShaderSource() {
-        return this.#shaderSource;
-    }
-    set shaderSource(shaderSource) {
-        this.#shaderSource = shaderSource;
-    }
-}
+registerEntity(Scene);
 
 var TextureTarget;
 (function (TextureTarget) {
@@ -5203,65 +5261,6 @@ var RenderBufferInternalFormat;
     RenderBufferInternalFormat[RenderBufferInternalFormat["DEPTH32F_STENCIL8"] = 36013] = "DEPTH32F_STENCIL8";
 })(RenderBufferInternalFormat || (RenderBufferInternalFormat = {}));
 
-class Scene extends Entity {
-    #layers = new Map();
-    #world;
-    background;
-    layers = new Set();
-    environment;
-    activeCamera;
-    constructor(parameters = {}) {
-        super(parameters);
-        this.activeCamera = parameters.camera;
-        this.background = parameters.background;
-        this.environment = parameters.environment;
-        this.#layers[Symbol.iterator] = function* () {
-            yield* [...this.entries()].sort((a, b) => {
-                return a[1] < b[1] ? -1 : 1;
-            });
-        };
-    }
-    addLayer(layer /*TODO: create a layer type*/, index) {
-        this.#layers.set(layer, index);
-        this.#updateLayers();
-        return layer;
-    }
-    removeLayer(layer /*TODO: create a layer type*/) {
-        this.#layers.delete(layer);
-        this.#updateLayers();
-    }
-    #updateLayers() {
-        this.layers.clear();
-        for (const [layer, index] of this.#layers) {
-            this.layers.add(layer);
-        }
-    }
-    setWorld(world) {
-        this.#world = world;
-    }
-    getWorld() {
-        return this.#world;
-    }
-    toString() {
-        return 'Scene ' + super.toString();
-    }
-    static async constructFromJSON(json) {
-        return new Scene({ name: json.name });
-    }
-    static getEntityName() {
-        return 'Scene';
-    }
-    is(s) {
-        if (s == 'Scene') {
-            return true;
-        }
-        else {
-            return super.is(s);
-        }
-    }
-}
-registerEntity(Scene);
-
 const tempVec3$u = vec3.create();
 class CubeBackground extends BackGround {
     #box = new Box();
@@ -5273,15 +5272,15 @@ class CubeBackground extends BackGround {
         this.#material.depthMask = false;
         this.#material.renderFace(RenderFace.Back);
         this.#material.renderLights = false;
-        this.#box.material = this.#material;
+        this.#box.setMaterial(this.#material);
         this.#scene.addChild(this.#box);
         if (params.texture) {
             this.setTexture(params.texture);
         }
     }
-    render(renderer, camera) {
+    render(renderer, camera, context) {
         this.#box.setPosition(camera.getPosition(tempVec3$u));
-        renderer.render(this.#scene, camera, 0, { DisableToolRendering: true });
+        renderer.render(this.#scene, camera, 0, context);
     }
     setTexture(texture) {
         this.#material.setTexture('uCubeTexture', texture);
@@ -6411,7 +6410,7 @@ class RenderTarget {
     }
     bind() {
         this.#frameBuffer.bind();
-        Graphics$1.viewport = this.#viewport;
+        Graphics$1.setViewport(this.#viewport);
     }
     unbind() {
         Graphics$1.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
@@ -6685,19 +6684,26 @@ class Composer {
     #readBuffer;
     #writeBuffer;
     constructor(renderTarget) {
-        if (!renderTarget) {
-            const rendererSize = Graphics$1.getSize();
-            renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
+        if (renderTarget) {
+            this.#setRenderTarget(renderTarget);
+            return;
         }
-        this.#setRenderTarget(renderTarget);
+        (async () => {
+            await Graphics$1.isReady();
+            if (!renderTarget) {
+                const rendererSize = Graphics$1.getSize();
+                renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
+                this.#setRenderTarget(renderTarget);
+            }
+        })();
     }
     render(delta, context) {
         let pass;
         let swapBuffer;
-        Graphics$1.getSize(tempVec2$3);
-        this.setSize(tempVec2$3[0], tempVec2$3[1]);
+        //Graphics.getSize(tempVec2);
+        //this.setSize(tempVec2[0], tempVec2[1]);
         let lastPass = -1;
-        for (let i = this.#passes.length - 1; i > 0; --i) {
+        for (let i = this.#passes.length - 1; i >= 0; --i) {
             if (this.#passes[i].enabled) {
                 lastPass = i;
                 break;
@@ -6713,12 +6719,14 @@ class Composer {
                 this.#readBuffer = this.#writeBuffer;
                 this.#writeBuffer = swapBuffer;
             }
-            pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
+            if (this.#readBuffer && this.#writeBuffer) {
+                pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
+            }
         }
     }
     savePicture(filename, width, height) {
         this.setSize(width, height);
-        this.render(0, { DisableToolRendering: true });
+        this.render(0, { DisableToolRendering: true, });
         Graphics$1._savePicture(filename);
     }
     addPass(pass) {
@@ -6736,8 +6744,8 @@ class Composer {
         if (this.#width != width || this.#height != height) {
             this.#width = width;
             this.#height = height;
-            this.#renderTarget1.resize(width, height);
-            this.#renderTarget2.resize(width, height);
+            this.#renderTarget1?.resize(width, height);
+            this.#renderTarget2?.resize(width, height);
             for (let i = 0, l = this.#passes.length; i < l; ++i) {
                 this.#passes[i].setSize(width, height);
             }
@@ -6841,14 +6849,14 @@ class GraphicsEvents extends StaticEventTarget {
     static resize(width, height) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
     }
-    static mouseMove(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseMove(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
-    static mouseDown(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseDown(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
-    static mouseUp(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseUp(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
     static wheel(x, y, pickedEntity, wheelEvent) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
@@ -8934,7 +8942,7 @@ class Manipulator extends Entity {
     #yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
     #zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
     #cursorPos = vec2.create();
-    #axisOrientation = ORIENTATION_WORLD;
+    #axisOrientation = ORIENTATION_WORLD; // TODO: create enum
     #near = vec3.create();
     #far = vec3.create();
     #startDragPosition = vec3.create();
@@ -8972,20 +8980,20 @@ class Manipulator extends Entity {
         this.enableY = true;
         this.enableZ = true;
         this.forEach((entity) => entity.setupPickingId());
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.resize(this.root?.activeCamera));
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize(this.root?.activeCamera));
         GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event) => {
             const detail = event.detail;
             if (this.#entityAxis.has(detail.entity)) {
                 this.#axis = this.#entityAxis.get(detail.entity);
                 switch (this.#mode) {
                     case ManipulatorMode.Translation:
-                        this.startTranslate(detail.x, detail.y);
+                        this.#startTranslate(detail.x, detail.y, detail.width, detail.height);
                         break;
                     case ManipulatorMode.Rotation:
-                        this.startRotate(detail.x, detail.y);
+                        this.#startRotate(detail.x, detail.y, detail.width, detail.height);
                         break;
                     case ManipulatorMode.Scale:
-                        this.startScale(detail.x, detail.y);
+                        this.#startScale(detail.x, detail.y, detail.width, detail.height);
                         break;
                 }
                 Graphics$1.dragging = true;
@@ -9000,13 +9008,13 @@ class Manipulator extends Entity {
             if (this.#entityAxis.has(detail.entity)) {
                 switch (this.#mode) {
                     case ManipulatorMode.Translation:
-                        this.#translationMoveHandler(detail.x, detail.y);
+                        this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
                         break;
                     case ManipulatorMode.Rotation:
-                        this.#rotationMoveHandler(detail.x, detail.y);
+                        this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
                         break;
                     case ManipulatorMode.Scale:
-                        this.#scaleMoveHandler(detail.x, detail.y);
+                        this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
                         break;
                 }
             }
@@ -9027,7 +9035,7 @@ class Manipulator extends Entity {
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, () => this.enableY = !this.enableY);
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
     }
-    resize(camera) {
+    #resize(camera) {
         if (!this.isVisible()) {
             return;
         }
@@ -9200,16 +9208,16 @@ class Manipulator extends Entity {
         this.#entityAxis.set(this.#zScale, ManipulatorAxis.Z);
         this.#entityAxis.set(zScaleTip, ManipulatorAxis.Z);
     }
-    startTranslate(x, y) {
+    #startTranslate(x, y, width, height) {
         if (this._parent) {
             this._parent.getWorldPosition(this.#startPosition);
         }
         else {
             this.getWorldPosition(this.#startPosition);
         }
-        this.#computeTranslationPosition(this.#startDragPosition, x, y);
+        this.#computeTranslationPosition(this.#startDragPosition, x, y, width, height);
     }
-    startRotate(x, y) {
+    #startRotate(x, y, width, height) {
         if (this._parent) {
             this._parent.getWorldQuaternion(this.#startQuaternion);
             this._parent.getQuaternion(this.#startLocalQuaternion);
@@ -9218,9 +9226,9 @@ class Manipulator extends Entity {
             this.getWorldQuaternion(this.#startQuaternion);
             this.getQuaternion(this.#startLocalQuaternion);
         }
-        this.#startDragVector = this.#computeQuaternion(x, y);
+        this.#startDragVector = this.#computeQuaternion(x, y, width, height);
     }
-    startScale(x, y) {
+    #startScale(x, y, width, height) {
         const startScalePosition = this.#startScalePosition;
         if (this._parent) {
             this._parent.getWorldPosition(this.#startPosition);
@@ -9228,15 +9236,15 @@ class Manipulator extends Entity {
         else {
             this.getWorldPosition(this.#startPosition);
         }
-        this.#computeTranslationPosition(this.#startScalePosition, x, y);
+        this.#computeTranslationPosition(this.#startScalePosition, x, y, width, height);
         vec3.div(startScalePosition, startScalePosition, this.scale);
         vec3.scale(startScalePosition, startScalePosition, 2 / ARROW_LENGTH);
         if (this._parent) {
             vec3.copy(this.#parentStartScale, this._parent._scale);
         }
     }
-    #translationMoveHandler(x, y) {
-        this.#computeTranslationPosition(tempVec3$p, x, y);
+    #translationMoveHandler(x, y, width, height) {
+        this.#computeTranslationPosition(tempVec3$p, x, y, width, height);
         vec3.sub(tempVec3$p, tempVec3$p, this.#startDragPosition);
         switch (this.#axis) {
             case ManipulatorAxis.None:
@@ -9277,11 +9285,11 @@ class Manipulator extends Entity {
             this.setWorldPosition(tempVec3$p);
         }
     }
-    #rotationMoveHandler(x, y) {
+    #rotationMoveHandler(x, y, width, height) {
         if (!this.camera) {
             return;
         }
-        const v3 = this.#computeQuaternion(x, y);
+        const v3 = this.#computeQuaternion(x, y, width, height);
         quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
         quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
         const viewDirection = this.camera.getViewDirection(vec3.create() /*TODO: optimize*/);
@@ -9312,8 +9320,8 @@ class Manipulator extends Entity {
             this.quaternion = translationManipulatorTempQuat;
         }
     }
-    #scaleMoveHandler(x, y) {
-        const v3 = this.#computeTranslationPosition(tempVec3$p, x, y);
+    #scaleMoveHandler(x, y, width, height) {
+        const v3 = this.#computeTranslationPosition(tempVec3$p, x, y, width, height);
         if (!v3) {
             return;
         }
@@ -9346,7 +9354,7 @@ class Manipulator extends Entity {
             this._parent.locked = true;
         }
     }
-    #computeTranslationPosition(out, x, y) {
+    #computeTranslationPosition(out, x, y, width, height) {
         const camera = this.camera;
         if (camera) {
             const projectionMatrix = camera.projectionMatrix;
@@ -9357,8 +9365,8 @@ class Manipulator extends Entity {
             const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             // transform the screen coordinates to normalized coordinates
-            this.#cursorPos[0] = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
+            this.#cursorPos[0] = (x / width) * 2.0 - 1.0;
+            this.#cursorPos[1] = 1.0 - (y / height) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
             this.#near[1] = this.#far[1] = this.#cursorPos[1];
             this.#near[2] = -1.0;
@@ -9418,92 +9426,18 @@ class Manipulator extends Entity {
             return out;
         }
     }
-    #computeQuaternion(x, y) {
+    #computeQuaternion(x, y, width, height) {
         const camera = this.camera;
         if (!camera) {
             return 0;
         }
         // transform the screen coordinates to normalized coordinates
-        const normalizedX = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
-        const normalizedY = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
+        const normalizedX = (x / width) * 2.0 - 1.0;
+        const normalizedY = 1.0 - (y / height) * 2.0;
         this.getWorldPosition(tempVec3$p);
         vec3.transformMat4(tempVec3$p, tempVec3$p, camera.cameraMatrix);
         vec3.transformMat4(tempVec3$p, tempVec3$p, camera.projectionMatrix);
         return Math.atan2(normalizedY - tempVec3$p[1], normalizedX - tempVec3$p[0]);
-    }
-    #computeQuaternion_removeme(x, y) {
-        const camera = this.camera;
-        if (camera) {
-            const projectionMatrix = camera.projectionMatrix;
-            const viewMatrix = camera.cameraMatrix;
-            camera.nearPlane;
-            camera.farPlane;
-            camera.aspectRatio;
-            const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-            const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
-            this.#cursorPos[0] = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
-            this.#near[0] = this.#far[0] = this.#cursorPos[0];
-            this.#near[1] = this.#far[1] = this.#cursorPos[1];
-            this.#near[2] = -1.0;
-            this.#far[2] = 1.0;
-            vec3.transformMat4(this.#near, this.#near, invProjectionMatrix);
-            vec3.transformMat4(this.#far, this.#far, invProjectionMatrix);
-            vec3.transformMat4(this.#near, this.#near, invViewMatrix);
-            vec3.transformMat4(this.#far, this.#far, invViewMatrix);
-            function lineIntersection(planePoint, planeNormal, linePoint, lineDirection) {
-                if (vec3.dot(planeNormal, lineDirection) == 0) {
-                    return vec3.create(); //TODO: optimize
-                }
-                const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
-                return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t); //TODO: optimize pass vec3 as param
-            }
-            let v4;
-            let planeNormal = vec3.create();
-            if (this.#axisOrientation == ORIENTATION_WORLD) {
-                switch (this.#axis) {
-                    case ManipulatorAxis.X:
-                        planeNormal = vec3.copy(planeNormal, xUnitVec3);
-                        break;
-                    case ManipulatorAxis.Y:
-                        planeNormal = vec3.copy(planeNormal, yUnitVec3);
-                        break;
-                    case ManipulatorAxis.Z:
-                        planeNormal = vec3.copy(planeNormal, zUnitVec3);
-                        break;
-                    default:
-                        this.getPositionFrom(camera, planeNormal);
-                        planeNormal = vec3.normalize(planeNormal, planeNormal);
-                        break;
-                }
-            }
-            else {
-                switch (this.#axis) {
-                    case ManipulatorAxis.X:
-                        planeNormal = vec3.transformQuat(planeNormal, xUnitVec3, this.#startQuaternion);
-                        break;
-                    case ManipulatorAxis.Y:
-                        planeNormal = vec3.transformQuat(planeNormal, yUnitVec3, this.#startQuaternion);
-                        break;
-                    case ManipulatorAxis.Z:
-                        planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.#startQuaternion);
-                        break;
-                    default:
-                        planeNormal = vec3.sub(vec3.create() /*TODO: optimize*/, this.#far, this.#near);
-                        break;
-                }
-            }
-            const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
-            v4 = lineIntersection(worldPos, planeNormal, this.#near, vec3.sub(vec3.create(), this.#far, this.#near));
-            if (!v4) {
-                return vec3.create(); //TODO: optimize
-            }
-            vec3.sub(v4, v4, worldPos);
-            quat.invert(translationManipulatorTempQuat, this.#startQuaternion);
-            vec3.transformQuat(v4, v4, translationManipulatorTempQuat);
-            vec3.normalize(v4, v4);
-            return v4;
-        }
     }
     setCamera(camera) {
         this.camera = camera;
@@ -10360,10 +10294,6 @@ const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
 class ShadowMap {
-    #glContext;
-    constructor() {
-        this.#glContext = Graphics$1.glContext;
-    }
     render(renderer, renderList, camera, context) {
         const lights = renderList.lights;
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
@@ -10536,7 +10466,7 @@ class Uniform {
                 case GL_FLOAT_MAT4:
                     return this.#uniformMatrix4fvArray;
                 default:
-                    throw 'Unknown uniform array type : ' + type;
+                    throw new Error('Unknown uniform array type : ' + type);
             }
         }
         else {
@@ -10573,7 +10503,7 @@ class Uniform {
                 case GL_SAMPLER_CUBE:
                     return this.#uniformSamplerCube;
                 default:
-                    throw 'Unknown uniform type : ' + type;
+                    throw new Error('Unknown uniform type : ' + type);
             }
         }
     }
@@ -10594,49 +10524,49 @@ class Uniform {
     getSize() {
         return this.#size;
     }
-    #uniform1i(glContext, value) {
+    #uniform1i = (glContext, value) => {
         glContext.uniform1i(this.#uniformLocation, value);
-    }
-    #uniform1iv(glContext, value) {
+    };
+    #uniform1iv = (glContext, value) => {
         glContext.uniform1iv(this.#uniformLocation, value);
-    }
-    #uniform2iv(glContext, value) {
+    };
+    #uniform2iv = (glContext, value) => {
         glContext.uniform2iv(this.#uniformLocation, value);
-    }
-    #uniform3iv(glContext, value) {
+    };
+    #uniform3iv = (glContext, value) => {
         glContext.uniform3iv(this.#uniformLocation, value);
-    }
-    #uniform4iv(glContext, value) {
+    };
+    #uniform4iv = (glContext, value) => {
         glContext.uniform4iv(this.#uniformLocation, value);
-    }
-    #uniform1f(glContext, value) {
+    };
+    #uniform1f = (glContext, value) => {
         glContext.uniform1f(this.#uniformLocation, value);
-    }
-    #uniform1fv(glContext, value) {
+    };
+    #uniform1fv = (glContext, value) => {
         glContext.uniform1fv(this.#uniformLocation, value);
-    }
-    #uniform2fv(glContext, value) {
+    };
+    #uniform2fv = (glContext, value) => {
         glContext.uniform2fv(this.#uniformLocation, value);
-    }
-    #uniform3fv(glContext, value) {
+    };
+    #uniform3fv = (glContext, value) => {
         glContext.uniform3fv(this.#uniformLocation, value);
-    }
-    #uniform4fv(glContext, value) {
+    };
+    #uniform4fv = (glContext, value) => {
         glContext.uniform4fv(this.#uniformLocation, value);
-    }
-    #uniformMatrix2fv(glContext, value) {
+    };
+    #uniformMatrix2fv = (glContext, value) => {
         glContext.uniformMatrix2fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix3fv(glContext, value) {
+    };
+    #uniformMatrix3fv = (glContext, value) => {
         glContext.uniformMatrix3fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix4fv(glContext, value) {
+    };
+    #uniformMatrix4fv = (glContext, value) => {
         glContext.uniformMatrix4fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix4fvArray(glContext, value) {
+    };
+    #uniformMatrix4fvArray = (glContext, value) => {
         glContext.uniformMatrix4fv(this.#uniformLocation, false, flattenArray(value, this.#size, 16));
-    }
-    #uniformSampler2D(glContext, texture) {
+    };
+    #uniformSampler2D = (glContext, texture) => {
         glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
         glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
         if (texture) {
@@ -10645,8 +10575,8 @@ class Uniform {
         else {
             glContext.bindTexture(GL_TEXTURE_2D, null);
         }
-    }
-    #uniformSampler2DArray(glContext, textures) {
+    };
+    #uniformSampler2DArray = (glContext, textures) => {
         glContext.uniform1iv(this.#uniformLocation, this.#textureUnit);
         for (let i = 0; i < this.#size; ++i) {
             const texture = textures[i];
@@ -10658,8 +10588,8 @@ class Uniform {
                 glContext.bindTexture(GL_TEXTURE_2D, null);
             }
         }
-    }
-    #uniformSamplerCube(glContext, texture) {
+    };
+    #uniformSamplerCube = (glContext, texture) => {
         glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
         glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
         if (texture) {
@@ -10668,7 +10598,7 @@ class Uniform {
         else {
             glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
         }
-    }
+    };
 }
 
 class Program {
@@ -10871,7 +10801,7 @@ class Renderer {
     }
     applyMaterial(program, material) {
     }
-    setupLights(renderList, camera, program, viewMatrix) {
+    #setupLights(renderList, camera, program, viewMatrix) {
         const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
         const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
         const colorIntensity = vec3.create(); //TODO: do not create a vec3
@@ -10910,7 +10840,7 @@ class Renderer {
         const spotShadowMap = [];
         const spotShadowMatrix = [];
         for (const spotLight of spotLights) {
-            if (spotLight.visible) {
+            if (spotLight.isVisible()) {
                 spotLight.getWorldPosition(lightPositionCameraSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
                 program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
@@ -11026,11 +10956,11 @@ class Renderer {
                 program.setUniformValue('uPickingColor', pickingColor);
             }
             //TODO: set this on resolution change
-            program.setUniformValue('uResolution', [Graphics$1.getWidth(), Graphics$1.getHeight(), camera.aspectRatio, 0]);
+            program.setUniformValue('uResolution', [context.width, context.height, camera.aspectRatio, 0]);
             //TODO: set this at start of the frame
             program.setUniformValue('uTime', [Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]);
             if (renderLights) {
-                this.setupLights(renderList, camera, program, cameraMatrix);
+                this.#setupLights(renderList, camera, program, cameraMatrix);
             }
             else {
                 program.setUniformValue('uLightPosition', lightPos);
@@ -11066,7 +10996,7 @@ class Renderer {
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
         while (currentObject) {
-            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
+            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
                 currentObject = objectStack.shift();
                 continue;
             }
@@ -11265,7 +11195,7 @@ class ForwardRenderer extends Renderer {
         this._prepareRenderList(renderList, scene, camera, delta, context);
         this.#shadowMap.render(this, renderList, camera, context);
         if (scene.background) {
-            scene.background.render(this, camera);
+            scene.background.render(this, camera, context);
         }
         this._renderRenderList(renderList, camera, true, context);
         WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
@@ -11336,6 +11266,7 @@ class Graphics {
     static OES_texture_float_linear;
     static #mediaRecorder;
     static dragging = false;
+    static #allowTransfertBitmap = true; // TODO: find a better way to do that
     static #mouseDownFunc = (event) => this.#mouseDown(event);
     static #mouseMoveFunc = (event) => this.#mouseMove(event);
     static #mouseUpFunc = (event) => this.#mouseUp(event);
@@ -11398,8 +11329,14 @@ class Graphics {
                 scenes = options.scenes;
             }
             else {
-                if (options.scene) {
-                    scenes = [{ scene: options.scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+                const scene = options.scene;
+                if (scene) {
+                    if (scene instanceof Scene) {
+                        scenes = [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+                    }
+                    else {
+                        scenes = [scene];
+                    }
                 }
                 else {
                     scenes = [];
@@ -11454,35 +11391,37 @@ class Graphics {
         canvas.removeEventListener('touchmove', this.#touchMoveFunc);
         canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
     }
-    static pickEntity(x, y) {
-        if (!this.#canvas) {
-            return null;
-        }
+    static pickEntity(htmlCanvas, x, y) {
         this.setIncludeCode('pickingMode', '#define PICKING_MODE');
+        this.#allowTransfertBitmap = false;
         GraphicsEvents.tick(0, performance.now(), 0);
+        this.#allowTransfertBitmap = true;
         this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
         this.glContext;
         const pixels = new Uint8Array(4);
-        this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        this.glContext?.readPixels(x, htmlCanvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
         const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
         return pickList.get(pickedEntityIndex) ?? null;
     }
     static #mouseDown(event) {
-        event.target.focus?.();
+        const htmlCanvas = event.target;
+        htmlCanvas.focus();
         const x = event.offsetX;
         const y = event.offsetY;
-        this.#pickedEntity = this.pickEntity(x, y);
-        GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
+        this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
+        GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
     }
     static #mouseMove(event) {
+        const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
+        GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
     }
     static #mouseUp(event) {
+        const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
+        GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
         this.#pickedEntity = null;
     }
     static #wheel(event) {
@@ -11506,15 +11445,31 @@ class Graphics {
     }
     static render(scene, camera, delta, context) {
         if (this.#offscreenCanvas && context.imageBitmap) {
-            this.#offscreenCanvas.width = context.imageBitmap.width;
-            this.#offscreenCanvas.height = context.imageBitmap.height;
-            this.setViewport(vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height));
+            let width = context.imageBitmap.width;
+            let height = context.imageBitmap.height;
+            this.#offscreenCanvas.width = width;
+            this.#offscreenCanvas.height = height;
+            this.setViewport(vec4.fromValues(0, 0, width, height));
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
-        this.#forwardRenderer.render(scene, camera, delta, context);
-        if (this.#offscreenCanvas) {
+        const width = this.#canvas?.width ?? this.#offscreenCanvas?.width ?? 0;
+        const height = this.#canvas?.height ?? this.#offscreenCanvas?.height ?? 0;
+        if (camera.autoResize) {
+            camera.left = -width;
+            camera.right = width;
+            camera.bottom = -height;
+            camera.top = height;
+            camera.aspectRatio = width / height;
+        }
+        this.#forwardRenderer.render(scene, camera, delta, {
+            renderContext: context,
+            width: width,
+            height: height,
+        });
+        const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
+        if (this.#offscreenCanvas && bipmapContext && this.#allowTransfertBitmap) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
-            (context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
+            bipmapContext.transferFromImageBitmap(bitmap);
         }
     }
     static renderMultiCanvas(delta, context = {}) {
@@ -11532,37 +11487,48 @@ class Graphics {
         if (this.#offscreenCanvas) {
             const parentElement = canvas.canvas.parentElement;
             if (canvas.autoResize && parentElement) {
-                const width = parentElement.clientWidth;
-                const height = parentElement.clientHeight;
+                const width = context.width ?? parentElement.clientWidth;
+                const height = context.height ?? parentElement.clientHeight;
                 this.#offscreenCanvas.width = width;
                 this.#offscreenCanvas.height = height;
                 canvas.canvas.width = width * this.#pixelRatio;
                 canvas.canvas.height = height * this.#pixelRatio;
             }
             else {
-                this.#offscreenCanvas.width = canvas.canvas.width;
-                this.#offscreenCanvas.height = canvas.canvas.height;
+                this.#offscreenCanvas.width = context.width ?? canvas.canvas.width;
+                this.#offscreenCanvas.height = context.height ?? canvas.canvas.height;
             }
-            this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
+            this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
         for (const canvasScene of canvas.scenes) {
-            const camera = canvasScene.scene.activeCamera;
-            if (camera) {
+            // TODO: setup viewport
+            const composer = canvasScene.composer;
+            if (composer?.enabled) {
+                composer.setSize(canvas.canvas.width, canvas.canvas.height);
+                composer.render(delta, context);
+                break;
+            }
+            const scene = canvasScene.scene;
+            const camera = canvasScene.camera ?? scene?.activeCamera;
+            if (scene && camera) {
+                const w = canvas.canvas.width;
+                const h = canvas.canvas.height;
                 if (camera.autoResize) {
-                    const w = canvas.canvas.width;
-                    const h = canvas.canvas.height;
                     camera.left = -w;
                     camera.right = w;
                     camera.bottom = -h;
                     camera.top = h;
                     camera.aspectRatio = w / h;
                 }
-                this.#forwardRenderer.render(canvasScene.scene, camera, delta, context);
+                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
             }
         }
-        const bitmap = this.#offscreenCanvas.transferToImageBitmap();
-        canvas.context.transferFromImageBitmap(bitmap);
+        if (this.#allowTransfertBitmap) {
+            const bitmap = this.#offscreenCanvas.transferToImageBitmap();
+            canvas.context.transferFromImageBitmap(bitmap);
+            bitmap.close();
+        }
     }
     static renderBackground() {
         if (this.autoClear) {
@@ -11753,8 +11719,8 @@ class Graphics {
         return this.#pixelRatio;
     }
     static setSize(width, height) {
-        width = Math.max(width, 1);
-        height = Math.max(height, 1);
+        width = width ?? this.#width;
+        height = height ?? this.#height;
         const previousWidth = this.#width;
         const previousHeight = this.#height;
         if (isNumeric(width)) {
@@ -11876,19 +11842,26 @@ class Graphics {
     }
     */
     static pushRenderTarget(renderTarget) {
-        this.#renderTargetStack.push(renderTarget);
-        this.#setRenderTarget(renderTarget);
+        const viewport = this.getViewport(vec4.create());
+        this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
+        this.#setRenderTarget(renderTarget, viewport);
     }
     static popRenderTarget() {
-        this.#renderTargetStack.pop();
-        const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
-        this.#setRenderTarget(renderTarget);
-        return renderTarget ?? null;
+        const popResult = this.#renderTargetStack.pop();
+        const target = this.#renderTargetStack[this.#renderTargetStack.length - 1];
+        if (target) {
+            this.#setRenderTarget(target.renderTarget, target.viewport);
+        }
+        else {
+            if (popResult) {
+                this.#setRenderTarget(null, popResult?.viewport);
+            }
+        }
     }
-    static #setRenderTarget(renderTarget) {
+    static #setRenderTarget(renderTarget, viewport) {
         if (!renderTarget) {
             this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
-            this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
+            this.setViewport(viewport);
         }
         else {
             renderTarget.bind();
@@ -11909,6 +11882,20 @@ class Graphics {
             this.setSize(previousWidth, previousHeight);
         }
     }
+    static async exportCanvas(canvas, filename, width, height, type, quality) {
+        const canvasDefinition = this.#canvases.get(canvas);
+        if (!canvasDefinition) {
+            return false;
+        }
+        try {
+            this.#allowTransfertBitmap = false;
+            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height });
+            this._savePicture(filename, type, quality);
+            this.#allowTransfertBitmap = true;
+        }
+        catch { }
+        return true;
+    }
     static async savePictureAsFile(filename, type, quality) {
         return new File([await this.toBlob(type, quality) ?? new Blob()], filename);
     }
@@ -11920,7 +11907,13 @@ class Graphics {
         const callback = function (blob) {
             promiseResolve(blob);
         };
-        this.#canvas?.toBlob(callback, type, quality);
+        if (this.#canvas) {
+            this.#canvas.toBlob(callback, type, quality);
+        }
+        else {
+            const blob = await this.#offscreenCanvas?.convertToBlob({ type: type, quality: quality });
+            promiseResolve(blob ?? null);
+        }
         return promise;
     }
     static async _savePicture(filename, type, quality) {
@@ -11974,12 +11967,15 @@ class Graphics {
     static getTime() {
         return this.#time;
     }
+    /*
     static getWidth() {
         return this.#width;
     }
+
     static getHeight() {
         return this.#height;
     }
+    */
     static getCanvas() {
         return this.#canvas;
     }
@@ -11989,15 +11985,6 @@ class Graphics {
 }
 setGraphics(Graphics);
 
-function resizeCamera(camera) {
-    const w = Graphics$1.getWidth() / 2.0;
-    const h = Graphics$1.getHeight() / 2.0;
-    camera.left = -w;
-    camera.right = w;
-    camera.bottom = -h;
-    camera.top = h;
-    camera.aspectRatio = w / h;
-}
 class ContextObserverClass {
     #observed = new Map();
     #listeners = new Map();
@@ -12021,15 +12008,14 @@ class ContextObserverClass {
     }
     static #processEvent(subject, dependent, event) {
         switch (true) {
-            case dependent.is('Camera'):
-                resizeCamera(dependent);
+            /*
+            case (dependent as Camera).is('Camera'):
+                resizeCamera(dependent as Camera);
                 break;
+            */
             case dependent instanceof FirstPersonControl: //TODO do it for any CameraControl?
             case dependent instanceof OrbitControl:
                 dependent.update();
-                break;
-            case dependent.isRenderTargetViewer:
-                dependent.refreshPlane();
                 break;
         }
     }
@@ -12051,10 +12037,10 @@ class ContextObserverClass {
     }
     #createListeners(subject, dependent) {
         switch (true) {
-            case dependent.is('Camera'):
+            //case (dependent as Camera).is('Camera'):
             case dependent instanceof FirstPersonControl: //TODO do it for any CameraControl?
             case dependent instanceof OrbitControl:
-            case dependent.isRenderTargetViewer:
+                //case (dependent as RenderTargetViewer).isRenderTargetViewer:
                 //subject.addEventListener('resize', this);
                 this.#addListener(subject, 'resize');
                 break;
@@ -12092,11 +12078,6 @@ class ContextObserverClass {
     }
     observe(subject, dependent) {
         this.#addObserver(subject, dependent);
-        switch (true) {
-            case dependent.is('Camera'):
-                resizeCamera(dependent);
-                break;
-        }
     }
     unobserve(subject, dependent) {
         this.#removeObserver(subject, dependent);
@@ -17378,8 +17359,8 @@ class SkeletonHelper extends Entity {
         if (!this.isVisible()) {
             return null;
         }
-        const normalizedX = (event.detail.x / Graphics$1.getWidth()) * 2 - 1;
-        const normalizedY = 1 - (event.detail.y / Graphics$1.getHeight()) * 2;
+        const normalizedX = (event.detail.x / event.detail.width) * 2 - 1;
+        const normalizedY = 1 - (event.detail.y / event.detail.height) * 2;
         const scene = this.root; // TODO: imbricated scenes
         if (!scene.is('Scene') || !scene.activeCamera) {
             return null;
@@ -29053,7 +29034,7 @@ function initEntitySubmenu() {
                 { i18n: '#spot_light', f: (entity) => entity.addChild(new SpotLight()) },
             ]
         },
-        { i18n: '#camera', f: (entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera())) },
+        { i18n: '#camera', f: (entity) => entity.addChild(new Camera()) },
         {
             i18n: '#control', submenu: [
                 {
@@ -70773,6 +70754,7 @@ const int NumLights = 1;
 AnalyticalLight lights[NumLights] = AnalyticalLight[](AnalyticalLight(vec3(40., 0., 50.), vec3(1)));
 
 #include source2_varying_pbr
+
 void main(void) {
 	#include compute_fragment_normal
 	#include compute_fragment_normal_world_space
@@ -71462,7 +71444,7 @@ class RemGenerator {
             const size = this.#cubeSize;
             cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
             Graphics$1.pushRenderTarget(cubeUVRenderTarget);
-            renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
+            renderer.render(scene, cubeCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
             Graphics$1.popRenderTarget();
         }
         backgroundBox.dispose();
@@ -71496,7 +71478,7 @@ class RemGenerator {
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
         Graphics$1.pushRenderTarget(cubeUVRenderTarget);
-        renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
+        renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
         Graphics$1.popRenderTarget();
     }
     #applyPMREM(cubeUVRenderTarget) {
@@ -71575,7 +71557,7 @@ class RemGenerator {
         const y = 4 * (this.#cubeSize - outputSize);
         targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
         Graphics$1.pushRenderTarget(targetOut);
-        renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
+        renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: targetOut.getWidth(), height: targetOut.getHeight() });
         Graphics$1.popRenderTarget();
     }
 }
@@ -72153,8 +72135,8 @@ class RenderTargetViewer {
     isRenderTargetViewer = true;
     #material;
     constructor(renderTarget) {
-        ContextObserver.observe(GraphicsEvents, this.#camera);
-        ContextObserver.observe(GraphicsEvents, this);
+        //ContextObserver.observe(GraphicsEvents, this.#camera);
+        //ContextObserver.observe(GraphicsEvents, this);
         this.#scene.addChild(this.#plane);
         this.#renderTarget = renderTarget;
         this.refreshPlane();
@@ -72167,7 +72149,7 @@ class RenderTargetViewer {
     }
     setRenderTarget(renderTarget) {
         this.#renderTarget = renderTarget;
-        this.#plane.material.setColorMap(renderTarget.getTexture());
+        this.#plane.getMaterial().setColorMap(renderTarget.getTexture());
     }
     setMaterial(material) {
         this.#material = material;
@@ -72192,11 +72174,18 @@ class RenderTargetViewer {
         this.refreshPlane();
     }
     refreshPlane() {
-        vec3.set(this.#plane._position, (this.#size[0] - Graphics$1.getWidth()) * 0.5 + this.#position[0], (Graphics$1.getHeight() - this.#size[1]) * 0.5 - this.#position[1], 0);
+        /*
+        // TODO
+        vec3.set(this.#plane._position,
+            (this.#size[0] - Graphics.getWidth()) * 0.5 + this.#position[0],
+            (Graphics.getHeight() - this.#size[1]) * 0.5 - this.#position[1],
+            0);
+        */
         this.#plane.setSize(this.#size[0], this.#size[1]);
     }
     render(renderer) {
-        renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+        // TODO
+        //renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
     }
     is(s) {
         return s == 'RenderTargetViewer';
