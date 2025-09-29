@@ -18,7 +18,7 @@ function resizeCamera(camera: Camera) {
 }
 */
 
-export type ContextObserverTarget = /*Camera | FirstPersonControl | */OrbitControl | RenderTargetViewer;
+export type ContextObserverTarget = /*Camera | FirstPersonControl | */OrbitControl/* | RenderTargetViewer*/;
 
 export type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
 
@@ -57,9 +57,11 @@ class ContextObserverClass {//TODO: create static class
 			case dependent instanceof OrbitControl:
 				dependent.update();
 				break;
+				/*
 			case (dependent as RenderTargetViewer).isRenderTargetViewer:
 				(dependent as RenderTargetViewer).refreshPlane();
 				break;
+				*/
 			default:
 		}
 	}
@@ -90,7 +92,7 @@ class ContextObserverClass {//TODO: create static class
 			//case (dependent as Camera).is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
-			case (dependent as RenderTargetViewer).isRenderTargetViewer:
+			//case (dependent as RenderTargetViewer).isRenderTargetViewer:
 				//subject.addEventListener('resize', this);
 				this.#addListener(subject, 'resize');
 				break;

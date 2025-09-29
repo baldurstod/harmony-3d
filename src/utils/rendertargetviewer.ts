@@ -23,7 +23,7 @@ export class RenderTargetViewer {
 
 	constructor(renderTarget: RenderTarget) {
 		//ContextObserver.observe(GraphicsEvents, this.#camera);
-		ContextObserver.observe(GraphicsEvents, this);
+		//ContextObserver.observe(GraphicsEvents, this);
 		this.#scene.addChild(this.#plane);
 
 		this.#renderTarget = renderTarget;
@@ -39,7 +39,7 @@ export class RenderTargetViewer {
 
 	setRenderTarget(renderTarget: RenderTarget) {
 		this.#renderTarget = renderTarget;
-		this.#plane.material!.setColorMap(renderTarget.getTexture());
+		this.#plane.getMaterial()!.setColorMap(renderTarget.getTexture());
 	}
 
 	setMaterial(material: Material) {
@@ -70,16 +70,21 @@ export class RenderTargetViewer {
 	}
 
 	refreshPlane() {
+
+		/*
+		// TODO
 		vec3.set(this.#plane._position,
 			(this.#size[0] - Graphics.getWidth()) * 0.5 + this.#position[0],
 			(Graphics.getHeight() - this.#size[1]) * 0.5 - this.#position[1],
 			0);
+		*/
 
 		this.#plane.setSize(this.#size[0], this.#size[1]);
 	}
 
 	render(renderer: Renderer) {
-		renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+		// TODO
+		//renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
 	}
 
 	is(s: string): boolean {
