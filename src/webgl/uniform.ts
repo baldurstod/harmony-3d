@@ -22,7 +22,7 @@ import {
 	GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE
 } from './constants';
 
-function flattenArray(array: Float32List[], arrayCount: number, arraySize: number) {
+function flattenArray(array: Float32List[], arrayCount: number, arraySize: number): Float32Array<ArrayBuffer> {
 	const out = new Float32Array(arrayCount * arraySize);//TODO: cache this
 	let offset = 0;
 	for (let i = 0; i < arrayCount; i++) {
@@ -40,13 +40,24 @@ const SAMPLERS = new Set([
 	GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
 	GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY]);
 
+type UniformSetter =
+	((glContext: Readonly<WebGLAnyRenderingContext>, value: GLint) => void) |
+	((glContext: WebGLAnyRenderingContext, value: Int32List) => void) |
+	((glContext: WebGLAnyRenderingContext, value: Float32List) => void) |
+	((glContext: WebGLAnyRenderingContext, value: Float32List[]) => void) |
+	((glContext: WebGLAnyRenderingContext, value: Texture) => void) |
+	((glContext: WebGLAnyRenderingContext, value: Texture[]) => void) |
+	((glContext: WebGLAnyRenderingContext, value: CubeTexture) => void)
+	;
+
 export class Uniform {
 	#activeInfo: WebGLActiveInfo;
 	#size: number
 	#uniformLocation: WebGLUniformLocation;
 	#isTextureSampler: boolean;
 	#textureUnit?: number[] | number;
-	setValue: (context: WebGLAnyRenderingContext, value: any) => void;
+	setValue: UniformSetter;
+
 	constructor(activeInfo: WebGLActiveInfo, uniformLocation: WebGLUniformLocation) {
 		this.#activeInfo = activeInfo;
 		this.#size = activeInfo.size;
@@ -60,7 +71,7 @@ export class Uniform {
 		this.#isTextureSampler = SAMPLERS.has(activeInfo.type);
 	}
 
-	#getSetter(type: GLenum) {
+	#getSetter(type: GLenum): UniformSetter {
 		const name = this.#activeInfo.name;
 		if (name.endsWith('[0]')) {
 			// Array
@@ -81,7 +92,7 @@ export class Uniform {
 				case GL_FLOAT_MAT4:
 					return this.#uniformMatrix4fvArray;
 				default:
-					throw 'Unknown uniform array type : ' + type;
+					throw new Error('Unknown uniform array type : ' + type);
 			}
 		} else {
 			// Scalar value
@@ -117,12 +128,12 @@ export class Uniform {
 				case GL_SAMPLER_CUBE:
 					return this.#uniformSamplerCube;
 				default:
-					throw 'Unknown uniform type : ' + type;
+					throw new Error('Unknown uniform type : ' + type);
 			}
 		}
 	}
 
-	setTextureUnit(textureUnit: number) {
+	setTextureUnit(textureUnit: number): void {
 		if (this.#activeInfo.name.endsWith('[0]')) {
 			this.#textureUnit = [];
 			for (let i = 0; i < this.#size; ++i) {
@@ -137,67 +148,67 @@ export class Uniform {
 		return this.#isTextureSampler;
 	}
 
-	getSize() {
+	getSize(): number {
 		return this.#size;
 	}
 
-	#uniform1i(glContext: WebGLAnyRenderingContext, value: number) {
+	#uniform1i = (glContext: WebGLAnyRenderingContext, value: GLint): void => {
 		glContext.uniform1i(this.#uniformLocation, value);
 	}
 
-	#uniform1iv(glContext: WebGLAnyRenderingContext, value: Int32List) {
+	#uniform1iv = (glContext: WebGLAnyRenderingContext, value: Int32List): void => {
 		glContext.uniform1iv(this.#uniformLocation, value);
 	}
 
-	#uniform2iv(glContext: WebGLAnyRenderingContext, value: Int32List) {
+	#uniform2iv = (glContext: WebGLAnyRenderingContext, value: Int32List): void => {
 		glContext.uniform2iv(this.#uniformLocation, value);
 	}
 
-	#uniform3iv(glContext: WebGLAnyRenderingContext, value: Int32List) {
+	#uniform3iv = (glContext: WebGLAnyRenderingContext, value: Int32List): void => {
 		glContext.uniform3iv(this.#uniformLocation, value);
 	}
 
-	#uniform4iv(glContext: WebGLAnyRenderingContext, value: Int32List) {
+	#uniform4iv = (glContext: WebGLAnyRenderingContext, value: Int32List): void => {
 		glContext.uniform4iv(this.#uniformLocation, value);
 	}
 
-	#uniform1f(glContext: WebGLAnyRenderingContext, value: GLfloat) {
+	#uniform1f = (glContext: WebGLAnyRenderingContext, value: GLfloat): void => {
 		glContext.uniform1f(this.#uniformLocation, value);
 	}
 
-	#uniform1fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniform1fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniform1fv(this.#uniformLocation, value);
 	}
 
-	#uniform2fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniform2fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniform2fv(this.#uniformLocation, value);
 	}
 
-	#uniform3fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniform3fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniform3fv(this.#uniformLocation, value);
 	}
 
-	#uniform4fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniform4fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniform4fv(this.#uniformLocation, value);
 	}
 
-	#uniformMatrix2fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniformMatrix2fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniformMatrix2fv(this.#uniformLocation, false, value);
 	}
 
-	#uniformMatrix3fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniformMatrix3fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniformMatrix3fv(this.#uniformLocation, false, value);
 	}
 
-	#uniformMatrix4fv(glContext: WebGLAnyRenderingContext, value: Float32List) {
+	#uniformMatrix4fv = (glContext: WebGLAnyRenderingContext, value: Float32List): void => {
 		glContext.uniformMatrix4fv(this.#uniformLocation, false, value);
 	}
 
-	#uniformMatrix4fvArray(glContext: WebGLAnyRenderingContext, value: Float32List[]) {
+	#uniformMatrix4fvArray = (glContext: WebGLAnyRenderingContext, value: Float32List[]): void => {
 		glContext.uniformMatrix4fv(this.#uniformLocation, false, flattenArray(value, this.#size, 16));
 	}
 
-	#uniformSampler2D(glContext: WebGLAnyRenderingContext, texture: Texture) {
+	#uniformSampler2D = (glContext: WebGLAnyRenderingContext, texture: Texture): void => {
 		glContext.uniform1i(this.#uniformLocation, (this.#textureUnit as number));
 		glContext.activeTexture(GL_TEXTURE0 + (this.#textureUnit as number));
 		if (texture) {
@@ -207,7 +218,7 @@ export class Uniform {
 		}
 	}
 
-	#uniformSampler2DArray(glContext: WebGLAnyRenderingContext, textures: Texture[]) {
+	#uniformSampler2DArray = (glContext: WebGLAnyRenderingContext, textures: Texture[]): void => {
 		glContext.uniform1iv(this.#uniformLocation, (this.#textureUnit as number[]));
 
 		for (let i = 0; i < this.#size; ++i) {
@@ -221,7 +232,7 @@ export class Uniform {
 		}
 	}
 
-	#uniformSamplerCube(glContext: WebGLAnyRenderingContext, texture: CubeTexture) {
+	#uniformSamplerCube = (glContext: WebGLAnyRenderingContext, texture: CubeTexture): void => {
 		glContext.uniform1i(this.#uniformLocation, (this.#textureUnit as number));
 		glContext.activeTexture(GL_TEXTURE0 + (this.#textureUnit as number));
 		if (texture) {
