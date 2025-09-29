@@ -1,13 +1,14 @@
 import { vec3 } from 'gl-matrix';
-import { Box } from '../primitives/box';
 import { Camera } from '../cameras/camera';
-import { Renderer } from '../renderers/renderer';
+import { InternalRenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
 import { ShaderMaterial } from '../materials/shadermaterial';
-import { Texture } from '../textures/texture';
-import { TextureMapping } from '../textures/constants';
-import { BackGround } from './background';
+import { Box } from '../primitives/box';
+import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
+import { TextureMapping } from '../textures/constants';
+import { Texture } from '../textures/texture';
+import { BackGround } from './background';
 
 const tempVec3 = vec3.create();
 
@@ -15,13 +16,14 @@ export class CubeBackground extends BackGround {
 	#box = new Box();
 	#scene = new Scene();
 	#material = new ShaderMaterial({ shaderSource: 'skybox' });
+
 	constructor(params: any = {}) {
 		super();
 		this.#material.depthTest = false;
 		this.#material.depthMask = false;
 		this.#material.renderFace(RenderFace.Back);
 		this.#material.renderLights = false;
-		this.#box.material = this.#material;
+		this.#box.setMaterial(this.#material);
 		this.#scene.addChild(this.#box);
 
 		if (params.texture) {
@@ -29,9 +31,9 @@ export class CubeBackground extends BackGround {
 		}
 	}
 
-	render(renderer: Renderer, camera: Camera) {
+	render(renderer: Renderer, camera: Camera, context: InternalRenderContext) {
 		this.#box.setPosition(camera.getPosition(tempVec3))
-		renderer.render(this.#scene, camera, 0, { DisableToolRendering: true });
+		renderer.render(this.#scene, camera, 0, context);
 	}
 
 	setTexture(texture: Texture) {

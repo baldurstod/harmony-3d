@@ -81,7 +81,7 @@ export class ForwardRenderer extends Renderer {
 
 		this.#shadowMap.render(this, renderList, camera, context);
 		if (scene.background) {
-			scene.background.render(this, camera);
+			scene.background.render(this, camera, context);
 		}
 
 		this._renderRenderList(renderList, camera, true, context);
