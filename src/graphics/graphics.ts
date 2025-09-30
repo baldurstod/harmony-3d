@@ -474,7 +474,6 @@ class Graphics {
 		if (this.#allowTransfertBitmap) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			canvas.context.transferFromImageBitmap(bitmap);
-			bitmap.close();
 		}
 
 		if (MEASURE_PERFORMANCE) {
