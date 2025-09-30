@@ -11467,7 +11467,7 @@ class Graphics {
             height: height,
         });
         const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
-        if (this.#offscreenCanvas && bipmapContext && this.#allowTransfertBitmap) {
+        if (this.#offscreenCanvas && context.transferBitmap !== false && bipmapContext && this.#allowTransfertBitmap) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
             bipmapContext.transferFromImageBitmap(bitmap);
         }
@@ -11524,11 +11524,29 @@ class Graphics {
                 this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
             }
         }
-        if (this.#allowTransfertBitmap) {
+        if (this.#allowTransfertBitmap && context.transferBitmap !== false) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
             canvas.context.transferFromImageBitmap(bitmap);
-            bitmap.close();
         }
+    }
+    /**
+     * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
+     *
+     * @remarks
+     *
+     * The caller is responsible to either consume or close the bitmap.
+     *
+     * @returns The transfered bitmap. If an error occur or Graphics was initialized with useOffscreenCanvas = false, null is returned.
+     */
+    static transferOffscreenToImageBitmap() {
+        try {
+            const bitmap = this.#offscreenCanvas?.transferToImageBitmap();
+            if (bitmap) {
+                return bitmap;
+            }
+        }
+        catch { }
+        return null;
     }
     static renderBackground() {
         if (this.autoClear) {

@@ -3168,6 +3168,16 @@ declare class Channel {
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
+                          /**
+                           * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
+                           *
+                           * @remarks
+                           *
+                           * The caller is responsible to either consume or close the bitmap.
+                           *
+                           * @returns The transfered bitmap. If an error occur or Graphics was initialized with useOffscreenCanvas = false, null is returned.
+                           */
+                          static transferOffscreenToImageBitmap(): ImageBitmap | null;
                           static renderBackground(): void;
                           static clear(color: boolean, depth: boolean, stencil: boolean): void;
                           static _tick(): void;
@@ -6515,6 +6525,8 @@ declare class Channel {
                           DisableToolRendering?: boolean;
                           width?: number;
                           height?: number;
+                          /** Transfert the image bitmap after rendering to the offscreen canvas, Default to true. Ignored if Graphics is initialized with useOffscreenCanvas = true */
+                          transferBitmap?: boolean;
                           imageBitmap?: {
                               context: ImageBitmapRenderingContext;
                               width: number;
