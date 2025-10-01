@@ -212,7 +212,6 @@ class Graphics {
 			this.autoResize = autoResize;
 		}
 
-
 		this.#readyPromiseResolve(true);
 		return this;
 	}
@@ -366,9 +365,9 @@ class Graphics {
 			WebGLStats.beginRender();
 		}
 
-		if (this.#offscreenCanvas && context.imageBitmap) {
-			let width = context.imageBitmap.width;
-			let height = context.imageBitmap.height;
+		if (this.#offscreenCanvas) {
+			let width = context.width ?? this.#offscreenCanvas.width;
+			let height = context.height ?? this.#offscreenCanvas.height;
 			this.#offscreenCanvas.width = width;
 			this.#offscreenCanvas.height = height;
 			this.setViewport(vec4.fromValues(0, 0, width, height));
@@ -394,10 +393,10 @@ class Graphics {
 			height: height,
 		});
 
-		const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
-		if (this.#offscreenCanvas && context.transferBitmap !== false && bipmapContext && this.#allowTransfertBitmap) {
+		//const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
+		if (this.#offscreenCanvas && context.transferBitmap !== false && this.#bipmapContext && this.#allowTransfertBitmap) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
-			bipmapContext.transferFromImageBitmap(bitmap);
+			this.#bipmapContext.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {

@@ -6524,11 +6524,6 @@ declare class Channel {
                           height?: number;
                           /** Transfert the image bitmap after rendering to the offscreen canvas, Default to true. Ignored if Graphics is initialized with useOffscreenCanvas = true */
                           transferBitmap?: boolean;
-                          imageBitmap?: {
-                              context: ImageBitmapRenderingContext;
-                              width: number;
-                              height: number;
-                          };
                       }
 
                       export declare class RenderDeferredLight extends RenderBase {
