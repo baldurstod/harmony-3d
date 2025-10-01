@@ -1,7 +1,7 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { Entity, EntityParameters } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
-import { Material, UniformValue } from '../materials/material';
+import { Material } from '../materials/material';
 import { MaterialManager } from '../materials/materialmanager';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { BoundingBox } from '../math/boundingbox';
@@ -11,6 +11,7 @@ import { Ray } from '../raycasting/ray';
 import { Raycaster } from '../raycasting/raycaster';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
+import { UniformValue } from '../webgl/uniform';
 
 const tempVec3 = vec3.create();
 

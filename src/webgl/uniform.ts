@@ -40,15 +40,11 @@ const SAMPLERS = new Set([
 	GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
 	GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY]);
 
-type UniformSetter =
-	((glContext: Readonly<WebGLAnyRenderingContext>, value: GLint) => void) |
-	((glContext: WebGLAnyRenderingContext, value: Int32List) => void) |
-	((glContext: WebGLAnyRenderingContext, value: Float32List) => void) |
-	((glContext: WebGLAnyRenderingContext, value: Float32List[]) => void) |
-	((glContext: WebGLAnyRenderingContext, value: Texture) => void) |
-	((glContext: WebGLAnyRenderingContext, value: Texture[]) => void) |
-	((glContext: WebGLAnyRenderingContext, value: CubeTexture) => void)
-	;
+type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
+
+export type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined;
+
+//export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;/
 
 export class Uniform {
 	#activeInfo: WebGLActiveInfo;
@@ -78,19 +74,19 @@ export class Uniform {
 			switch (type) {
 				case GL_BOOL:
 				case GL_INT:
-					return this.#uniform1iv;
+					return this.#uniform1iv as UniformSetter;
 				case GL_FLOAT:
-					return this.#uniform1fv;
+					return this.#uniform1fv as UniformSetter;
 				case GL_FLOAT_VEC2:
-					return this.#uniform2fv;
+					return this.#uniform2fv as UniformSetter;
 				case GL_FLOAT_VEC3:
-					return this.#uniform3fv;
+					return this.#uniform3fv as UniformSetter;
 				case GL_FLOAT_VEC4:
-					return this.#uniform4fv;
+					return this.#uniform4fv as UniformSetter;
 				case GL_SAMPLER_2D:
-					return this.#uniformSampler2DArray;
+					return this.#uniformSampler2DArray as UniformSetter;
 				case GL_FLOAT_MAT4:
-					return this.#uniformMatrix4fvArray;
+					return this.#uniformMatrix4fvArray as UniformSetter;
 				default:
 					throw new Error('Unknown uniform array type : ' + type);
 			}
@@ -99,34 +95,34 @@ export class Uniform {
 			switch (type) {
 				case GL_BOOL:
 				case GL_INT:
-					return this.#uniform1i;
+					return this.#uniform1i as UniformSetter;
 				case GL_FLOAT:
-					return this.#uniform1f;
+					return this.#uniform1f as UniformSetter;
 				case GL_BOOL_VEC2:
 				case GL_INT_VEC2:
-					return this.#uniform2iv;
+					return this.#uniform2iv as UniformSetter;
 				case GL_BOOL_VEC3:
 				case GL_INT_VEC3:
-					return this.#uniform3iv;
+					return this.#uniform3iv as UniformSetter;
 				case GL_BOOL_VEC4:
 				case GL_INT_VEC4:
-					return this.#uniform4iv;
+					return this.#uniform4iv as UniformSetter;
 				case GL_FLOAT_VEC2:
-					return this.#uniform2fv;
+					return this.#uniform2fv as UniformSetter;
 				case GL_FLOAT_VEC3:
-					return this.#uniform3fv;
+					return this.#uniform3fv as UniformSetter;
 				case GL_FLOAT_VEC4:
-					return this.#uniform4fv;
+					return this.#uniform4fv as UniformSetter;
 				case GL_FLOAT_MAT2:
-					return this.#uniformMatrix2fv;
+					return this.#uniformMatrix2fv as UniformSetter;
 				case GL_FLOAT_MAT3:
-					return this.#uniformMatrix3fv;
+					return this.#uniformMatrix3fv as UniformSetter;
 				case GL_FLOAT_MAT4:
-					return this.#uniformMatrix4fv;
+					return this.#uniformMatrix4fv as UniformSetter;
 				case GL_SAMPLER_2D:
-					return this.#uniformSampler2D;
+					return this.#uniformSampler2D as UniformSetter;
 				case GL_SAMPLER_CUBE:
-					return this.#uniformSamplerCube;
+					return this.#uniformSamplerCube as UniformSetter;
 				default:
 					throw new Error('Unknown uniform type : ' + type);
 			}

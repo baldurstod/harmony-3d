@@ -1,12 +1,13 @@
-import { vec2, vec3, vec4 } from 'gl-matrix';
+import { vec2, vec4 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { BlendingFactor } from '../enums/blending';
 import { Mesh } from '../objects/mesh';
 import { Texture } from '../textures/texture';
-import { JSONObject } from 'harmony-types';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
+import { UniformValue } from '../webgl/uniform';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 
@@ -30,7 +31,7 @@ export enum MaterialColorMode {
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
-export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
+//export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 //export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export type MaterialParams = {

@@ -70,7 +70,7 @@ export class ForwardRenderer extends Renderer {
 		WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
 
 		for (const uniform in material.uniforms) {
-			program.setUniformValue(uniform, material.uniforms[uniform]);
+			program.setUniformValue(uniform, material.uniforms[uniform]!);
 		}
 	}
 
