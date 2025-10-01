@@ -1,9 +1,9 @@
-import { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER } from './constants';
-import { Uniform } from './uniform';
-import { ShaderManager } from '../managers/shadermanager';
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
+import { ShaderManager } from '../managers/shadermanager';
 import { WebGLAnyRenderingContext } from '../types';
+import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from './constants';
 import { WebGLShaderSource } from './shadersource';
+import { Uniform, UniformValue } from './uniform';
 
 export class Program {
 	#glContext: WebGLAnyRenderingContext
@@ -19,7 +19,7 @@ export class Program {
 
 	constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string) {
 		this.#glContext = glContext;
-		this.#program = glContext.createProgram() as WebGLProgram;
+		this.#program = glContext.createProgram();
 		this.#vs = glContext.createShader(GL_VERTEX_SHADER) as WebGLShader;
 		this.#fs = glContext.createShader(GL_FRAGMENT_SHADER) as WebGLShader;
 		this.#vertexShaderName = vertexShaderName;
@@ -28,17 +28,7 @@ export class Program {
 		glContext.attachShader(this.#program, this.#fs);
 	}
 
-	get program() {
-		throw 'error';
-	}
-	get vs() {
-		throw 'error';
-	}
-	get fs() {
-		throw 'error';
-	}
-
-	setUniformValue(name: string, value: any) {
+	setUniformValue(name: string, value: UniformValue): void {
 		const uniform = this.uniforms.get(name);
 		if (uniform) {
 			uniform.setValue(this.#glContext, value);
@@ -51,7 +41,7 @@ export class Program {
 		}
 	}
 
-	validate(includeCode: string) {//TODO: remove include code
+	validate(includeCode: string): boolean {//TODO: remove include code
 		const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
 		const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
 
@@ -76,9 +66,10 @@ export class Program {
 				this.#valid = true;
 			}
 		}
+		return false;
 	}
 
-	invalidate() {
+	invalidate(): void {
 		this.#valid = false;
 	}
 
@@ -90,10 +81,10 @@ export class Program {
 		return this.#program;
 	}
 
-	#initProgram() {
+	#initProgram(): void {
 		this.attributes.clear();
 		this.uniforms.clear();
-		const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
+		const activeAttributes: GLint = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES) as GLint;
 		for (let i = 0; i < activeAttributes; i++) {
 			const attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
 			if (attribInfo) {
@@ -101,7 +92,7 @@ export class Program {
 			}
 		}
 
-		const activeUniforms = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS);
+		const activeUniforms: GLint = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS) as GLint;
 		for (let i = 0; i < activeUniforms; i++) {
 			const uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
 			if (uniformInfo) {
@@ -110,7 +101,7 @@ export class Program {
 		}
 
 		let samplerId = 0;
-		for (const [uniformName, uniform] of this.uniforms) {
+		for (const [, uniform] of this.uniforms) {
 			if (uniform.isTextureSampler()) {
 				uniform.setTextureUnit(samplerId);//setValue(this.#glContext, samplerId);
 				samplerId += uniform.getSize();
@@ -118,21 +109,21 @@ export class Program {
 		}
 	}
 
-	#setProgramAttribute(attributeName: string) {
+	#setProgramAttribute(attributeName: string): void {
 		const attributeLocation = this.#glContext.getAttribLocation(this.#program, attributeName);
 		this.attributes.set(attributeName, attributeLocation);//TODO: set in attributes ?
 	}
 
-	#setProgramUniform(uniformInfo: WebGLActiveInfo) {
+	#setProgramUniform(uniformInfo: WebGLActiveInfo): void {
 		const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
 		if (uniformLocation) {
 			this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
 		}
 	}
 
-	#compileShader(shader: WebGLShader, shaderName: string, shaderSource: WebGLShaderSource, includeCode: string) {
+	#compileShader(shader: WebGLShader, shaderName: string, shaderSource: WebGLShaderSource, includeCode: string): boolean {
 		if (!shaderSource || !shaderSource.isValid()) {
-			return null;
+			return false;
 		}
 
 		const compileSource = shaderSource.getCompileSource(includeCode);
