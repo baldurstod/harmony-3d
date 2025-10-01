@@ -6081,11 +6081,8 @@ declare class Channel {
                           attributes: Map<string, number>;
                           uniforms: Map<string, Uniform>;
                           constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string);
-                          get program(): void;
-                          get vs(): void;
-                          get fs(): void;
-                          setUniformValue(name: string, value: any): void;
-                          validate(includeCode: string): false | undefined;
+                          setUniformValue(name: string, value: UniformValue): void;
+                          validate(includeCode: string): boolean;
                           invalidate(): void;
                           isValid(): boolean;
                           getProgram(): WebGLProgram;
@@ -10840,9 +10837,9 @@ declare class Channel {
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
                       }
 
-                      declare type UniformSetter = ((glContext: Readonly<WebGLAnyRenderingContext>, value: GLint) => void) | ((glContext: WebGLAnyRenderingContext, value: Int32List) => void) | ((glContext: WebGLAnyRenderingContext, value: Float32List) => void) | ((glContext: WebGLAnyRenderingContext, value: Float32List[]) => void) | ((glContext: WebGLAnyRenderingContext, value: Texture) => void) | ((glContext: WebGLAnyRenderingContext, value: Texture[]) => void) | ((glContext: WebGLAnyRenderingContext, value: CubeTexture) => void);
+                      declare type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
 
-                      declare type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
+                      declare type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined;
 
                       export declare class UnlitGenericMaterial extends Source1Material {
                           #private;

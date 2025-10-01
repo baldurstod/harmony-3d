@@ -10431,6 +10431,7 @@ const SAMPLERS = new Set([
     GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
     GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY
 ]);
+//export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;/
 class Uniform {
     #activeInfo;
     #size;
@@ -10622,15 +10623,6 @@ class Program {
         glContext.attachShader(this.#program, this.#vs);
         glContext.attachShader(this.#program, this.#fs);
     }
-    get program() {
-        throw 'error';
-    }
-    get vs() {
-        throw 'error';
-    }
-    get fs() {
-        throw 'error';
-    }
     setUniformValue(name, value) {
         const uniform = this.uniforms.get(name);
         if (uniform) {
@@ -10661,6 +10653,7 @@ class Program {
                 this.#valid = true;
             }
         }
+        return false;
     }
     invalidate() {
         this.#valid = false;
@@ -10689,7 +10682,7 @@ class Program {
             }
         }
         let samplerId = 0;
-        for (const [uniformName, uniform] of this.uniforms) {
+        for (const [, uniform] of this.uniforms) {
             if (uniform.isTextureSampler()) {
                 uniform.setTextureUnit(samplerId); //setValue(this.#glContext, samplerId);
                 samplerId += uniform.getSize();
@@ -10708,7 +10701,7 @@ class Program {
     }
     #compileShader(shader, shaderName, shaderSource, includeCode) {
         if (!shaderSource || !shaderSource.isValid()) {
-            return null;
+            return false;
         }
         const compileSource = shaderSource.getCompileSource(includeCode);
         this.#glContext.shaderSource(shader, compileSource);
