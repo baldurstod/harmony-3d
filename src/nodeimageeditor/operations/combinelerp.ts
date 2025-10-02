@@ -1,13 +1,13 @@
+import { DEBUG } from '../../buildoptions';
+import { Graphics } from '../../graphics/graphics2';
+import { RenderTarget } from '../../textures/rendertarget';
+import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node } from '../node';
-import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
-import { DEBUG } from '../../buildoptions';
-import { RenderTarget } from '../../textures/rendertarget';
-import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
-import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics2';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
+import { registerOperation } from '../operations';
 
 export class CombineLerp extends Node {
 	#renderTarget?: RenderTarget;
@@ -43,7 +43,7 @@ export class CombineLerp extends Node {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
 		}
 		Graphics.pushRenderTarget(this.#renderTarget);
-		this.editor.render(this.material);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 
 		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);

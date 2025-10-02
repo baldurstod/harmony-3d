@@ -65,7 +65,7 @@ export class TextureLookup extends Node {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
 		}
 		Graphics.pushRenderTarget(this.#renderTarget);
-		this.editor.render(this.material);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 
 		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);

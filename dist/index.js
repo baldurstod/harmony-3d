@@ -14245,9 +14245,9 @@ class NodeImageEditor extends MyEventTarget {
         super();
         this.#scene.addChild(this.#fullScreenQuadMesh);
     }
-    render(material) {
+    render(material, width, height) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
     }
     addNode(operationName, params = {}) {
         params.textureSize = params.textureSize ?? this.textureSize;
@@ -15003,7 +15003,7 @@ class Node extends MyEventTarget {
         this.#previewRenderTarget = renderTarget2;
         Graphics$1.pushRenderTarget(renderTarget2);
         if (this.material) {
-            this.editor.render(this.material);
+            this.editor.render(this.material, previewSize, previewSize);
         }
         const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
         Graphics$1.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
@@ -15175,7 +15175,7 @@ class ApplySticker extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         /*let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();*/
@@ -15280,7 +15280,7 @@ class TextureLookup extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
@@ -16363,7 +16363,7 @@ class DrawCircle extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
@@ -16427,7 +16427,7 @@ class CombineAdd extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
@@ -16481,7 +16481,7 @@ class CombineLerp extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
@@ -16543,7 +16543,7 @@ let Multiply$1 = class Multiply extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         //let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         //Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
@@ -16593,7 +16593,7 @@ class Select extends Node {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
-        this.editor.render(this.material);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();

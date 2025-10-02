@@ -5316,7 +5316,7 @@ declare class Channel {
                           #private;
                           textureSize: number;
                           constructor();
-                          render(material: Material): void;
+                          render(material: Material, width: number, height: number): void;
                           addNode(operationName: string, params?: any): Node_2 | null;
                           removeNode(node: Node_2): void;
                           removeAllNodes(): void;

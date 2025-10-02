@@ -53,7 +53,7 @@ export class Multiply extends Node {
 		}
 
 		Graphics.pushRenderTarget(this.#renderTarget);
-		this.editor.render(this.material);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 
 		//let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		//Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);

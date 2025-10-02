@@ -37,9 +37,9 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		this.#scene.addChild(this.#fullScreenQuadMesh);
 	}
 
-	render(material: Material) {
+	render(material: Material, width: number, height: number) {
 		this.#fullScreenQuadMesh.setMaterial(material);
-		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
 
 	}
 

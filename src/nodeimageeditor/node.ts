@@ -260,7 +260,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.#previewRenderTarget = renderTarget2;
 		Graphics.pushRenderTarget(renderTarget2);
 		if (this.material) {
-			this.editor.render(this.material);
+			this.editor.render(this.material, previewSize, previewSize);
 		}
 
 		const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
