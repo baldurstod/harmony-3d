@@ -45,41 +45,41 @@ export class WebGLRenderingState {
 	static #usedVertexAttribArray: Uint8Array;
 	static #vertexAttribDivisor: Uint8Array;
 
-	static setGraphics() {
+	static setGraphics(): void {
 		this.#glContext = Graphics.glContext;
 
-		const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
+		const maxVertexAttribs: number = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS) as number;
 		this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
 		this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
 		this.#vertexAttribDivisor = new Uint8Array(maxVertexAttribs);
 	}
 
-	static clearColor(clearColor: vec4) {
+	static clearColor(clearColor: vec4): void {
 		if (!vec4.exactEquals(clearColor, this.#clearColor)) {
 			this.#glContext.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
 			vec4.copy(this.#clearColor, clearColor);
 		}
 	}
 
-	static getClearColor(out = vec4.create()) {
+	static getClearColor(out = vec4.create()): vec4 {
 		return vec4.copy(out, this.#clearColor);
 	}
 
-	static clearDepth(clearDepth: GLclampf) {
+	static clearDepth(clearDepth: GLclampf): void {
 		if (clearDepth !== this.#clearDepth) {
 			this.#glContext.clearDepth(clearDepth);
 			this.#clearDepth = clearDepth;
 		}
 	}
 
-	static clearStencil(clearStencil: GLint) {
+	static clearStencil(clearStencil: GLint): void {
 		if (clearStencil !== this.#clearStencil) {
 			this.#glContext.clearStencil(clearStencil);
 			this.#clearStencil = clearStencil;
 		}
 	}
 
-	static clear(color: boolean, depth: boolean, stencil: boolean) {
+	static clear(color: boolean, depth: boolean, stencil: boolean): void {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -87,74 +87,74 @@ export class WebGLRenderingState {
 		this.#glContext.clear(bits);
 	}
 
-	static colorMask(colorMask: vec4) {
+	static colorMask(colorMask: vec4): void {
 		if (!vec4.exactEquals(colorMask, this.#colorMask)) {
 			this.#glContext.colorMask(Boolean(colorMask[0]), Boolean(colorMask[1]), Boolean(colorMask[2]), Boolean(colorMask[3]));
 			vec4.copy(this.#colorMask, colorMask);
 		}
 	}
 
-	static depthMask(flag: boolean) {
+	static depthMask(flag: boolean): void {
 		if (flag !== this.#depthMask) {
 			this.#glContext.depthMask(flag);
 			this.#depthMask = flag;
 		}
 	}
 
-	static stencilMask(stencilMask: GLuint) {
+	static stencilMask(stencilMask: GLuint): void {
 		if (stencilMask !== this.#stencilMask) {
 			this.#glContext.stencilMask(stencilMask);
 			this.#stencilMask = stencilMask;
 		}
 	}
 
-	static lineWidth(width: GLfloat) {
+	static lineWidth(width: GLfloat): void {
 		if (width !== this.#lineWidth) {
 			this.#glContext.lineWidth(width);
 			this.#lineWidth = width;
 		}
 	}
 
-	static viewport(viewport: ReadonlyVec4) {
+	static viewport(viewport: ReadonlyVec4): void {
 		if (!vec4.exactEquals(viewport, this.#viewport)) {
 			this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 			vec4.copy(this.#viewport, viewport);
 		}
 	}
 
-	static scissor(scissor: ReadonlyVec4) {
+	static scissor(scissor: ReadonlyVec4): void {
 		if (!vec4.exactEquals(scissor, this.#scissor)) {
 			this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
 			vec4.copy(this.#scissor, scissor);
 		}
 	}
 
-	static enable(cap: GLenum) {
+	static enable(cap: GLenum): void {
 		if (this.#enabledCapabilities[cap] !== true) {
 			this.#glContext.enable(cap);
 			this.#enabledCapabilities[cap] = true;
 		}
 	}
 
-	static disable(cap: GLenum) {
+	static disable(cap: GLenum): void {
 		if (this.#enabledCapabilities[cap] !== false) {
 			this.#glContext.disable(cap);
 			this.#enabledCapabilities[cap] = false;
 		}
 	}
 
-	static isEnabled(cap: GLenum) {
+	static isEnabled(cap: GLenum): boolean {
 		return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
 	}
 
-	static useProgram(program: WebGLProgram) {
+	static useProgram(program: WebGLProgram): void {
 		if (this.#program !== program) {
 			this.#glContext.useProgram(program);
 			this.#program = program;
 		}
 	}
 
-	static enableVertexAttribArray(index: GLuint, divisor: GLuint = 0) {
+	static enableVertexAttribArray(index: GLuint, divisor: GLuint = 0): void {
 		if (this.#enabledVertexAttribArray[index] === 0) {
 			this.#glContext.enableVertexAttribArray(index);
 			this.#enabledVertexAttribArray[index] = 1;
@@ -171,14 +171,14 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static initUsedAttributes() {
+	static initUsedAttributes(): void {
 		const usedAttributes = this.#usedVertexAttribArray;
 		for (let i = 0, l = usedAttributes.length; i < l; i++) {
 			usedAttributes[i] = 0;
 		}
 	}
 
-	static disableUnusedAttributes() {
+	static disableUnusedAttributes(): void {
 		const usedAttributes = this.#usedVertexAttribArray;
 		const enabledAttributes = this.#enabledVertexAttribArray;
 		for (let i = 0, l = usedAttributes.length; i < l; i++) {
@@ -189,14 +189,14 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static depthFunc(func: GLenum) {
+	static depthFunc(func: GLenum): void {
 		if (this.#depthFunc !== func) {
 			this.#glContext.depthFunc(func);
 			this.#depthFunc = func;
 		}
 	}
 
-	static blendFunc(sourceFactor: GLenum, destinationFactor: GLenum) {
+	static blendFunc(sourceFactor: GLenum, destinationFactor: GLenum): void {
 		if ((this.#sourceFactor !== sourceFactor) || (this.#destinationFactor !== destinationFactor)) {
 			this.#glContext.blendFunc(sourceFactor, destinationFactor);
 			this.#sourceFactor = sourceFactor;
@@ -204,7 +204,7 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static blendFuncSeparate(srcRGB: GLenum, dstRGB: GLenum, srcAlpha: GLenum, dstAlpha: GLenum) {
+	static blendFuncSeparate(srcRGB: GLenum, dstRGB: GLenum, srcAlpha: GLenum, dstAlpha: GLenum): void {
 		if ((this.#srcRGB !== srcRGB) || (this.#dstRGB !== dstRGB) || (this.#srcAlpha !== srcAlpha) || (this.#dstAlpha !== dstAlpha)) {
 			this.#glContext.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
 			this.#srcRGB = srcRGB;
@@ -214,7 +214,7 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static blendEquationSeparate(modeRGB: GLenum, modeAlpha: GLenum) {
+	static blendEquationSeparate(modeRGB: GLenum, modeAlpha: GLenum): void {
 		if ((this.#modeRGB !== modeRGB) || (this.#modeAlpha !== modeAlpha)) {
 			this.#glContext.blendEquationSeparate(modeRGB, modeAlpha);
 			this.#modeRGB = modeRGB;
@@ -222,21 +222,21 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static cullFace(mode: GLenum) {
+	static cullFace(mode: GLenum): void {
 		if (this.#cullFace !== mode) {
 			this.#glContext.cullFace(mode);
 			this.#cullFace = mode;
 		}
 	}
 
-	static frontFace(mode: GLenum) {
+	static frontFace(mode: GLenum): void {
 		if (this.#frontFace !== mode) {
 			this.#glContext.frontFace(mode);
 			this.#frontFace = mode;
 		}
 	}
 
-	static polygonOffset(enable: boolean, factor: GLfloat, units: GLfloat) {
+	static polygonOffset(enable: boolean, factor: GLfloat, units: GLfloat): void {
 		if (enable) {
 			this.enable(GL_POLYGON_OFFSET_FILL);
 			if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {

@@ -145,7 +145,7 @@ class Graphics {
 	static #bipmapContext?: ImageBitmapRenderingContext | null;
 	static #pickedEntity: Entity | null = null;
 	static #animationFrame = 0;
-	static ANGLE_instanced_arrays: any;
+	static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
 	static OES_texture_float_linear: any;
 	static #mediaRecorder?: MediaRecorder;
 	static dragging = false;
