@@ -5,21 +5,29 @@ import { Texture } from '../textures/texture';
 import { GL_RENDERBUFFER } from './constants';
 import { Renderbuffer } from './renderbuffer';
 
-const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
+const ATTACHMENT_TYPE_RENDER_BUFFER = 0;//TODO: create enum
 const ATTACHMENT_TYPE_TEXTURE2D = 1;
-const ATTACHMENT_TYPE_TEXTURE_MULTIVIEW = 2;
-const ATTACHMENT_TYPE_TEXTURE_LAYER = 3;
+//const ATTACHMENT_TYPE_TEXTURE_MULTIVIEW = 2;
+//const ATTACHMENT_TYPE_TEXTURE_LAYER = 3;
+
+type FramebufferAttachment = {
+	renderbuffer?: Renderbuffer,
+	target?: GLenum,
+	texture?: Texture;
+	type: number,
+}
 
 export class Framebuffer {
 	#target: FrameBufferTarget;
 	#frameBuffer: WebGLFramebuffer;
 	#width = 1;
 	#height = 1;
-	#attachments = new Map<GLenum, any>();
+	#attachments = new Map<GLenum, FramebufferAttachment>();
 	#dirty = true;
+
 	constructor(target: FrameBufferTarget) {
 		this.#target = target;
-		this.#frameBuffer = Graphics.createFramebuffer() as WebGLFramebuffer;
+		this.#frameBuffer = Graphics.createFramebuffer();
 	}
 	/*
 	createRenderTarget(colorFormat, colorType, depth, stencil) {
@@ -41,17 +49,17 @@ export class Framebuffer {
 	}
 */
 
-	addRenderbuffer(attachmentPoint: number, renderbuffer: Renderbuffer) {
+	addRenderbuffer(attachmentPoint: number, renderbuffer: Renderbuffer): void {
 		this.#attachments.set(attachmentPoint, { renderbuffer: renderbuffer, type: ATTACHMENT_TYPE_RENDER_BUFFER });
 		this.#dirty = true;
 	}
 
-	addTexture2D(attachmentPoint: number, textureTarget: GLenum, texture: Texture) {
+	addTexture2D(attachmentPoint: number, textureTarget: GLenum, texture: Texture): void {
 		this.#attachments.set(attachmentPoint, { target: textureTarget, texture: texture, type: ATTACHMENT_TYPE_TEXTURE2D });
 		this.#dirty = true;
 	}
 
-	#setupAttachments() {
+	#setupAttachments(): void {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			Graphics.cleanupGLError();
 		}
@@ -60,7 +68,7 @@ export class Framebuffer {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					//Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
 					//Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-					Graphics.glContext!.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+					Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer!.getRenderbuffer());
 					if (ENABLE_GET_ERROR && DEBUG) {
 						Graphics.getGLError('framebufferRenderbuffer');
 					}
@@ -68,9 +76,9 @@ export class Framebuffer {
 					break;
 				case ATTACHMENT_TYPE_TEXTURE2D:
 					//console.error(Graphics.getError());
-					const webGLTexture = attachmentParams.texture.texture;
-					Graphics.glContext!.bindTexture(attachmentParams.target, null);
-					Graphics.glContext!.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+					const webGLTexture = attachmentParams.texture!.texture;
+					Graphics.glContext.bindTexture(attachmentParams.target!, null);
+					Graphics.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target!, webGLTexture, 0);
 					if (ENABLE_GET_ERROR && DEBUG) {
 						Graphics.getGLError('framebufferTexture2D');
 					}
@@ -104,10 +112,10 @@ export class Framebuffer {
 		for (const [attachmentPoint, attachment] of this.#attachments) {
 			switch (attachment.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
-					attachment.renderbuffer.dispose();
+					attachment.renderbuffer?.dispose();
 					break;
 				case ATTACHMENT_TYPE_TEXTURE2D:
-					attachment.texture.removeUser(this);
+					attachment.texture?.removeUser(this);
 					break;
 			}
 		}
