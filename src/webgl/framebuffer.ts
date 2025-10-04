@@ -90,11 +90,11 @@ export class Framebuffer {
 		//TODO: checkFramebufferStatus
 	}
 
-	bind() {
+	bind(): void {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			Graphics.cleanupGLError();
 		}
-		Graphics.glContext!.bindFramebuffer(this.#target, this.#frameBuffer);
+		Graphics.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
 		if (ENABLE_GET_ERROR && DEBUG) {
 			Graphics.getGLError('bindFramebuffer');
 		}
@@ -107,9 +107,9 @@ export class Framebuffer {
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		Graphics.deleteFramebuffer(this.#frameBuffer);
-		for (const [attachmentPoint, attachment] of this.#attachments) {
+		for (const [, attachment] of this.#attachments) {
 			switch (attachment.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					attachment.renderbuffer?.dispose();

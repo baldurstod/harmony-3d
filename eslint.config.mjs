@@ -8,6 +8,7 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/explicit-function-return-type": "error",
       "@typescript-eslint/no-deprecated": "error",
+      "@typescript-eslint/consistent-type-definitions": "off",
     }
   },
   {
