@@ -4,7 +4,7 @@ import { RenderBufferInternalFormat } from '../textures/constants';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_RENDERBUFFER } from './constants';
 
-function renderbufferStorage(renderbuffer: WebGLRenderbuffer, internalFormat: RenderBufferInternalFormat, width: number, height: number, samples: number) {
+function renderbufferStorage(renderbuffer: WebGLRenderbuffer, internalFormat: RenderBufferInternalFormat, width: number, height: number, samples: GLsizei): void {
 	const glContext: WebGLAnyRenderingContext = Graphics.glContext;
 	if (ENABLE_GET_ERROR && DEBUG) {
 		Graphics.cleanupGLError();
@@ -32,23 +32,24 @@ function renderbufferStorage(renderbuffer: WebGLRenderbuffer, internalFormat: Re
 export class Renderbuffer {
 	#renderbuffer: WebGLRenderbuffer;
 	#internalFormat: RenderBufferInternalFormat;
-	#samples?: number;
+	#samples?: GLsizei;
 
-	constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: number) {
-		this.#renderbuffer = Graphics.createRenderbuffer() as WebGLRenderbuffer;
+	constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: GLsizei) {
+		this.#renderbuffer = Graphics.createRenderbuffer();
 		this.#internalFormat = internalFormat;
+		this.#samples = samples;
 		renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
 	}
 
-	resize(width: number, height: number) {
+	resize(width: number, height: number): void {
 		renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
 	}
 
-	getRenderbuffer() {
+	getRenderbuffer(): WebGLRenderbuffer {
 		return this.#renderbuffer;
 	}
 
-	dispose() {
+	dispose(): void {
 		Graphics.deleteRenderbuffer(this.#renderbuffer);
 	}
 
