@@ -1,8 +1,7 @@
 import { createElement } from 'harmony-ui';
-
-import { TextureFactoryEventTarget } from '../textures/texturefactory';
 import { USE_STATS } from '../buildoptions';
-import { GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES } from '../webgl/constants';
+import { TextureEvent, TextureFactoryEventTarget } from '../textures/texturefactory';
+import { GL_LINE_LOOP, GL_LINE_STRIP, GL_LINES, GL_POINTS, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRIANGLES } from '../webgl/constants';
 
 export class WebGLStats {
 	static #frames = 0;
@@ -17,29 +16,30 @@ export class WebGLStats {
 	static #startRender = 0;
 	static #primitivePerMode = new Map<GLenum, number>();
 	static #htmlElement: HTMLElement;
+
 	static {
 		this.#initHtml();
 		this.#reset();
 
 		if (USE_STATS) {
-			TextureFactoryEventTarget.addEventListener('textureCreated', (event: Event) => this.#textures = (event as CustomEvent).detail.count);
-			TextureFactoryEventTarget.addEventListener('textureDeleted', (event: Event) => this.#textures = (event as CustomEvent).detail.count);
+			TextureFactoryEventTarget.addEventListener('textureCreated', (event: Event) => this.#textures = (event as CustomEvent<TextureEvent>).detail.count);
+			TextureFactoryEventTarget.addEventListener('textureDeleted', (event: Event) => this.#textures = (event as CustomEvent<TextureEvent>).detail.count);
 		}
 	}
 
-	static start() {
+	static start(): void {
 		this.#startTime = performance.now();
 	}
 
-	static beginRender() {
+	static beginRender(): void {
 		this.#startRender = performance.now();
 	}
 
-	static endRender() {
+	static endRender(): void {
 		this.#renderTime += performance.now() - this.#startRender;
 	}
 
-	static #reset() {
+	static #reset(): void {
 		this.#drawElements = 0;
 		this.#primitivePerMode.set(GL_POINTS, 0);
 		this.#primitivePerMode.set(GL_LINE_STRIP, 0);
@@ -50,7 +50,7 @@ export class WebGLStats {
 		this.#primitivePerMode.set(GL_TRIANGLES, 0);
 	}
 
-	static tick() {
+	static tick(): void {
 		this.#endTime = performance.now();
 		++this.#frames;
 
@@ -67,16 +67,16 @@ export class WebGLStats {
 		this.#reset();
 	}
 
-	static drawElements(mode: GLenum, count: number) {
+	static drawElements(mode: GLenum, count: number): void {
 		this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
 		++this.#drawElements;
 	}
 
-	static #initHtml() {
+	static #initHtml(): void {
 		this.#htmlElement = createElement('div');
 	}
 
-	static #updateHtml() {
+	static #updateHtml(): void {
 		this.#htmlElement.innerText = '';
 		this.#htmlElement.append(String(this.#fps));
 		this.#htmlElement.append(createElement('br'), `drawElements : ${this.#drawElements}`);
@@ -92,11 +92,11 @@ export class WebGLStats {
 		}
 	}
 
-	static get htmlElement() {
+	static get htmlElement(): HTMLElement {
 		return this.#htmlElement;
 	}
 
-	static getFps() {
+	static getFps(): number {
 		return this.#fps;
 	}
 }

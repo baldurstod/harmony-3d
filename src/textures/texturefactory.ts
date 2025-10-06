@@ -13,10 +13,15 @@ export function setTextureFactoryContext(c: WebGLAnyRenderingContext) {
 	context = c;
 }
 
+export type TextureEvent = {
+	texture: WebGLTexture;
+	count: number;
+}
+
 export function createTexture(): WebGLTexture | null {
 	const texture = context.createTexture();
 	textures.add(texture);
-	TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures.size } }));
+	TextureFactoryEventTarget.dispatchEvent(new CustomEvent<TextureEvent>('textureCreated', { detail: { texture: texture, count: textures.size } }));
 	return texture;
 }
 
@@ -24,7 +29,7 @@ export function deleteTexture(texture: WebGLTexture | null) {
 	if (texture) {
 		context.deleteTexture(texture);
 		textures.delete(texture);
-		TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+		TextureFactoryEventTarget.dispatchEvent(new CustomEvent<TextureEvent>('textureDeleted', { detail: { texture: texture, count: textures.size } }));
 	}
 }
 
