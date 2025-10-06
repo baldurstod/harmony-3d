@@ -1,11 +1,7 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 import { Camera, CameraProjection } from '../cameras/camera';
-import { Graphics } from '../graphics/graphics2';
-import { GraphicsEvents } from '../graphics/graphicsevents';
-import { ContextObserver } from '../helpers/contextobserver';
 import { Material } from '../materials/material';
 import { Plane } from '../primitives/plane';
-import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
 import { RenderTarget } from '../textures/rendertarget';
 
@@ -19,7 +15,7 @@ export class RenderTargetViewer {
 	#position = vec2.create();
 	#size = vec2.fromValues(DEFAULT_SIZE, DEFAULT_SIZE);
 	isRenderTargetViewer = true;
-	#material?: Material;
+	#material: Material | null = null;
 
 	constructor(renderTarget: RenderTarget) {
 		//ContextObserver.observe(GraphicsEvents, this.#camera);
@@ -34,42 +30,42 @@ export class RenderTargetViewer {
 	 * @deprecated Please use `setMaterial` instead.
 	 */
 	set material(material) {
-		throw 'deprecated'
-	}
-
-	setRenderTarget(renderTarget: RenderTarget) {
-		this.#renderTarget = renderTarget;
-		this.#plane.getMaterial()!.setColorMap(renderTarget.getTexture());
-	}
-
-	setMaterial(material: Material) {
-		this.#material = material;
-		this.#plane.setMaterial(material);
-		material.setColorMap(this.#renderTarget.getTexture());
-	}
-
-	getMaterial() {
-		return this.#material;
+		throw new Error('deprecated');
 	}
 
 	/**
 	 * @deprecated Please use `getMaterial` instead.
 	 */
-	get material() {
-		throw 'deprecated'
+	get material(): Material {
+		throw new Error('deprecated')
 	}
 
-	setPosition(x: number, y: number) {
+	setRenderTarget(renderTarget: RenderTarget): void {
+		this.#renderTarget = renderTarget;
+		this.#plane.getMaterial().setColorMap(renderTarget.getTexture());
+	}
+
+	setMaterial(material: Material): void {
+		this.#material = material;
+		this.#plane.setMaterial(material);
+		material.setColorMap(this.#renderTarget.getTexture());
+	}
+
+	getMaterial(): Material | null {
+		return this.#material;
+	}
+
+	setPosition(x: number, y: number): void {
 		vec2.set(this.#position, x, y);
 		this.refreshPlane();
 	}
 
-	setSize(x: number, y: number) {
+	setSize(x: number, y: number): void {
 		vec2.set(this.#size, x, y);
 		this.refreshPlane();
 	}
 
-	refreshPlane() {
+	refreshPlane(): void {
 
 		/*
 		// TODO
@@ -82,7 +78,7 @@ export class RenderTargetViewer {
 		this.#plane.setSize(this.#size[0], this.#size[1]);
 	}
 
-	render(renderer: Renderer) {
+	render(/*renderer: Renderer*/): void {
 		// TODO
 		//renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
 	}
