@@ -5892,7 +5892,7 @@ class OldMoviePass extends Pass {
     }
 }
 
-const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
+const ATTACHMENT_TYPE_RENDER_BUFFER = 0; //TODO: create enum
 const ATTACHMENT_TYPE_TEXTURE2D = 1;
 class Framebuffer {
     #target;
@@ -5965,13 +5965,13 @@ class Framebuffer {
     }
     dispose() {
         Graphics$1.deleteFramebuffer(this.#frameBuffer);
-        for (const [attachmentPoint, attachment] of this.#attachments) {
+        for (const [, attachment] of this.#attachments) {
             switch (attachment.type) {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
-                    attachment.renderbuffer.dispose();
+                    attachment.renderbuffer?.dispose();
                     break;
                 case ATTACHMENT_TYPE_TEXTURE2D:
-                    attachment.texture.removeUser(this);
+                    attachment.texture?.removeUser(this);
                     break;
             }
         }
@@ -5996,6 +5996,7 @@ class Renderbuffer {
     constructor(internalFormat, width, height, samples) {
         this.#renderbuffer = Graphics$1.createRenderbuffer();
         this.#internalFormat = internalFormat;
+        this.#samples = samples;
         renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
     }
     resize(width, height) {
@@ -57935,6 +57936,8 @@ class OperatorParam {
                     type = OperatorParamType.Bool;
                     value = kv3.getValue();
                     break;
+                case Kv3Type.Element:
+                    return this.#fromKv3Element(name, kv3.getValue());
                 default:
                     throw 'fix me, missing type';
             }
@@ -72144,7 +72147,7 @@ class RenderTargetViewer {
     #position = vec2.create();
     #size = vec2.fromValues(DEFAULT_SIZE, DEFAULT_SIZE);
     isRenderTargetViewer = true;
-    #material;
+    #material = null;
     constructor(renderTarget) {
         //ContextObserver.observe(GraphicsEvents, this.#camera);
         //ContextObserver.observe(GraphicsEvents, this);
@@ -72156,7 +72159,13 @@ class RenderTargetViewer {
      * @deprecated Please use `setMaterial` instead.
      */
     set material(material) {
-        throw 'deprecated';
+        throw new Error('deprecated');
+    }
+    /**
+     * @deprecated Please use `getMaterial` instead.
+     */
+    get material() {
+        throw new Error('deprecated');
     }
     setRenderTarget(renderTarget) {
         this.#renderTarget = renderTarget;
@@ -72169,12 +72178,6 @@ class RenderTargetViewer {
     }
     getMaterial() {
         return this.#material;
-    }
-    /**
-     * @deprecated Please use `getMaterial` instead.
-     */
-    get material() {
-        throw 'deprecated';
     }
     setPosition(x, y) {
         vec2.set(this.#position, x, y);
@@ -72194,7 +72197,7 @@ class RenderTargetViewer {
         */
         this.#plane.setSize(this.#size[0], this.#size[1]);
     }
-    render(renderer) {
+    render( /*renderer: Renderer*/) {
         // TODO
         //renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
     }

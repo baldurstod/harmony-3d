@@ -3155,7 +3155,7 @@ declare class Channel {
                           static speed: number;
                           static currentTick: number;
                           static glContext: WebGLAnyRenderingContext;
-                          static ANGLE_instanced_arrays: any;
+                          static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
                           static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
@@ -6474,7 +6474,7 @@ declare class Channel {
 
                       export declare class Renderbuffer {
                           #private;
-                          constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: number);
+                          constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: GLsizei);
                           resize(width: number, height: number): void;
                           getRenderbuffer(): WebGLRenderbuffer;
                           dispose(): void;
@@ -6682,18 +6682,18 @@ declare class Channel {
                           /**
                            * @deprecated Please use `setMaterial` instead.
                            */
-                          set material(material: void);
-                          setRenderTarget(renderTarget: RenderTarget): void;
-                          setMaterial(material: Material): void;
-                          getMaterial(): Material | undefined;
+                          set material(material: Material);
                           /**
                            * @deprecated Please use `getMaterial` instead.
                            */
-                          get material(): void;
+                          get material(): Material;
+                          setRenderTarget(renderTarget: RenderTarget): void;
+                          setMaterial(material: Material): void;
+                          getMaterial(): Material | null;
                           setPosition(x: number, y: number): void;
                           setSize(x: number, y: number): void;
                           refreshPlane(): void;
-                          render(renderer: Renderer): void;
+                          render(): void;
                           is(s: string): boolean;
                       }
 
@@ -10417,6 +10417,11 @@ declare class Channel {
                           YCoCg = 1,
                           NormalizeNormals = 2
                       }
+
+                      export declare type TextureEvent = {
+                          texture: WebGLTexture;
+                          count: number;
+                      };
 
                       export declare const TextureFactoryEventTarget: EventTarget;
 

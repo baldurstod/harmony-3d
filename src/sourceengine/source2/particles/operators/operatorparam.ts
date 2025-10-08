@@ -172,8 +172,8 @@ export class OperatorParam {
 	static #fromKv3Value(name: string, kv3: Kv3Value): OperatorParam {
 		//const operatorParam = new OperatorParam();
 
-		let type:OperatorParamType;
-		let value:OperatorParamValueType;
+		let type: OperatorParamType;
+		let value: OperatorParamValueType;
 
 		if (kv3.isArray()) {
 			type = OperatorParamType.Array;
@@ -216,6 +216,8 @@ export class OperatorParam {
 					type = OperatorParamType.Bool;
 					value = kv3.getValue() as boolean;
 					break;
+				case Kv3Type.Element:
+					return this.#fromKv3Element(name, kv3.getValue() as Kv3Element);
 				default:
 					throw 'fix me, missing type';
 			}
