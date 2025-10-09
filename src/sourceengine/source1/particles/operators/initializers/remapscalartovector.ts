@@ -48,6 +48,8 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 
 		const m_bLocalCoords = this.getParameter('use local system');
 
+		const m_bScaleInitialRange = this.getParameter('output is scalar of initial random range');
+
 		if ((m_flStartTime != -1) && (m_flStartTime != -1) && ((particle.currentTime < m_flStartTime) || (particle.currentTime >= m_flEndTime))) {
 			return;
 		}
@@ -58,7 +60,10 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 		tempVec3[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
 
 		const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
-		if (m_nFieldOutput == 0 && cp) { // Position
+		if (!cp) {
+			return;
+		}
+		if (m_nFieldOutput == 0 ) { // Position
 			if (!m_bLocalCoords) {
 				vec3.add(tempVec3, cp.getWorldPosition(tempVec3_2), tempVec3);
 			} else {
@@ -71,7 +76,16 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 				particle.setField(2, tempVec3);//previous position
 			}
 		} else {
-			throw 'code me';
+
+			if ( m_bScaleInitialRange ){
+				//Vector vecScaleInitial;
+				//SetVectorFromAttribute ( vecScaleInitial, pOutput );
+				const vecScaleInitial = particle.getField(m_nFieldOutput, true);
+				//vecOutput *= vecScaleInitial;
+				vec3.mul(tempVec3, tempVec3, vecScaleInitial);
+			}
+			//SetVectorAttribute( pOutput, vecOutput );
+			particle.setField(m_nFieldOutput, tempVec3);
 		}
 	}
 
