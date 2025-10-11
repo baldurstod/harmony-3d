@@ -5,6 +5,7 @@ export { ColorFade } from './colorfade';
 export { LifespanDecay } from './lifespandecay';
 export { LockToBone } from './locktobone';
 export { MovementBasic } from './movementbasic';
+export { Source1DampenToCP } from './movementdampenrelativetocontrolpoint';
 export { MovementLocktoControlPoint } from './movementlocktocontrolpoint';
 export { MovementMaxVelocity } from './movementmaxvelocity';
 export { MovementRotateParticleAroundAxis } from './movementrotateparticlearoundaxis';

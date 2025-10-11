@@ -7499,6 +7499,12 @@ declare class Channel {
                           addPropToLeaf(leafId: number, propId: number): void;
                       }
 
+                      export declare class Source1DampenToCP extends Source1ParticleOperator {
+                          static functionName: string;
+                          constructor(system: Source1ParticleSystem);
+                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                      }
+
                       export declare class Source1Material extends Material {
                           #private;
                           readonly vmt: Source1MaterialVmt;

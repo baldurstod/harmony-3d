@@ -8,6 +8,7 @@ export class Source1ParticleOperators {
 	static getOperator(system: Source1ParticleSystem, name: string) {
 		const n = name.replace(/\_/g, ' ').toLowerCase();
 		if (!this.#functions[n]) {
+			console.error('Missing operator:', name);
 			return null;
 		}
 		return new this.#functions[n](system);
