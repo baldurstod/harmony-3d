@@ -90,7 +90,7 @@ export class RenderRope extends Source1ParticleOperator {
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
 
-		this.setOrientationType(this.getParameter('orientation_type'));//TODO: remove orientation_type : only for RenderAnimatedSprites
+		this.setOrientationType(this.getParameter('orientation_type') ?? 0);//TODO: remove orientation_type : only for RenderAnimatedSprites
 		this.particleSystem.material!.renderFace(RenderFace.Both);
 		/*
 				switch (orientation) {

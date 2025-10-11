@@ -53351,7 +53351,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.mesh.setUniform('uParticles', this.#texture);
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
-        this.#orientationType = this.getParameter('orientation_type');
+        this.#orientationType = this.getParameter('orientation_type') ?? 0;
         this.setOrientationType(this.#orientationType);
         this.#initBuffers();
         /*
@@ -53502,7 +53502,7 @@ class RenderRope extends Source1ParticleOperator {
         this.mesh.setUniform('uParticles', this.texture);
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
-        this.setOrientationType(this.getParameter('orientation_type')); //TODO: remove orientation_type : only for RenderAnimatedSprites
+        this.setOrientationType(this.getParameter('orientation_type') ?? 0); //TODO: remove orientation_type : only for RenderAnimatedSprites
         this.particleSystem.material.renderFace(RenderFace.Both);
         /*
                 switch (orientation) {

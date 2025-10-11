@@ -156,7 +156,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
 
-		this.#orientationType = this.getParameter('orientation_type');
+		this.#orientationType = this.getParameter('orientation_type') ?? 0;
 		this.setOrientationType(this.#orientationType);
 		this.#initBuffers();
 		/*
