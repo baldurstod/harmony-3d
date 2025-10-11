@@ -49930,7 +49930,8 @@ class Source1ParticleOperator {
         this.doInit(particle, elapsedTime);
     }
     operateParticle(particle, elapsedTime) {
-        if (this.#endCapState != 1) {
+        const strength = this.getOperatorStrength();
+        if (strength > 0 && this.#endCapState != 1) {
             this.doOperate(particle, elapsedTime);
         }
     }

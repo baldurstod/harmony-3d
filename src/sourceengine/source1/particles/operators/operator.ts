@@ -42,7 +42,9 @@ export class Source1ParticleOperator {
 	}
 
 	operateParticle(particle: Source1Particle, elapsedTime: number) {
-		if (this.#endCapState != 1) {
+		const strength = this.getOperatorStrength();
+		if (strength > 0 && this.#endCapState != 1) {
+			// TODO: pass strength to doOperate
 			this.doOperate(particle, elapsedTime);
 		}
 	}
