@@ -1,4 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
+import { float, int } from 'harmony-types';
 import { ERROR, WARN } from '../../../buildoptions';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
@@ -16,6 +17,7 @@ import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID, PARAM_TYPE_INT, PARA
 import { Source1ParticleOperator } from './operators/operator';
 import { Source1Particle } from './particle';
 import { Source1ParticleControler } from './source1particlecontroler';
+import { RANDOM_FLOAT_MASK, randomFloats } from './randomfloats';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
@@ -41,7 +43,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	#materialPromise?: Promise<Source1Material>;
 	#renderers = new Map<string, Source1ParticleOperator>();
 	#particleCount = 0;
-	#randomSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+	#randomSeed = 0;//Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 	#maximumTimeStep = 0.1;
 	animable = true;
 	resetable = true;
@@ -932,6 +934,15 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 
 	getActiveParticlesCount(): number {
 		return this.#livingParticles.length;//TODO: optimize
+	}
+
+	randomVector(randomSampleId: int, min: float, max: float, out: vec3): void {
+		const delta = max - min;
+		const nBaseId = this.#randomSeed + randomSampleId;
+
+		out[0] = randomFloats[(nBaseId + 0) & RANDOM_FLOAT_MASK]! * delta + min;
+		out[1] = randomFloats[(nBaseId + 1) & RANDOM_FLOAT_MASK]! * delta + min;
+		out[2] = randomFloats[(nBaseId + 2) & RANDOM_FLOAT_MASK]! * delta + min;
 	}
 
 	buildContextMenu() {
