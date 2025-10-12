@@ -12,11 +12,15 @@ const DEFAULT_VELOCITY_SCALE = 0;/* TODO: check default value*/
 export class PositionFromParentParticles extends Source1ParticleOperator {
 	static functionName = 'Position From Parent Particles';
 	#velocitySCale = DEFAULT_VELOCITY_SCALE;
+	#randomDistribution = false;
 
 	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
 		switch (name) {
 			case 'Inherited Velocity Scale':
 				this.#velocitySCale = param as number;//TODO: convert to number
+				break;
+			case 'Random Parent Particle Distribution':
+				this.#randomDistribution = param == '1' ? true : false;
 				break;
 			default:
 				super.paramChanged(name, param);
@@ -35,6 +39,7 @@ export class PositionFromParentParticles extends Source1ParticleOperator {
 		const particleCount = parent.getActiveParticlesCount();
 		if (particleCount == 0) {
 			particle.die();
+			return;
 		}
 
 		const base = parent.getParticle();
