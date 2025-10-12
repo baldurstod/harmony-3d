@@ -72075,7 +72075,7 @@ class ObjExporter {
             if (mesh.parent?.isParticleSystem) {
                 continue;
             }
-            this.#fullScreenQuadMesh.material = mesh.material;
+            this.#fullScreenQuadMesh.setMaterial(mesh.getMaterial());
             this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
             Graphics$1.render(this.scene, this.camera, 0, { DisableToolRendering: true });
             //let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
@@ -72146,7 +72146,7 @@ class ObjExporter {
         }
         return files;
     }
-    async #exportMesh(digits, indices, vertices, normals, uvs) {
+    #exportMesh(digits, indices, vertices, normals, uvs) {
         const attributes = [
             { name: 'v', stride: 3, arr: vertices },
             { name: 'vn', stride: 3, arr: normals },

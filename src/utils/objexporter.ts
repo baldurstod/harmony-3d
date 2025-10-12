@@ -23,7 +23,7 @@ export class ObjExporter {
 		this.scene.addChild(this.#fullScreenQuadMesh);
 	}
 
-	async #renderMeshes(files: Set<File>, meshes: Set<Entity>) {
+	async #renderMeshes(files: Set<File>, meshes: Set<Entity>): Promise<void> {
 		const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
 		Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
 		Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -41,7 +41,7 @@ export class ObjExporter {
 			if ((mesh.parent as null | Source1ParticleSystem | Source2ParticleSystem)?.isParticleSystem) {
 				continue;
 			}
-			this.#fullScreenQuadMesh.material = (mesh as Mesh).material;
+			this.#fullScreenQuadMesh.setMaterial((mesh as Mesh).getMaterial());
 			this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
 			Graphics.render(this.scene, this.camera, 0, { DisableToolRendering: true });
 
@@ -62,11 +62,11 @@ export class ObjExporter {
 		await Promise.all(promises);
 	}
 
-	#addLine(line: string) {
+	#addLine(line: string): void {
 		this.#lines.push(line + '\n');
 	}
 
-	async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
+	async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}): Promise<Set<File>> {
 		const files = new Set<File>();
 		const loopSubdivision = new LoopSubdivision();
 
@@ -123,7 +123,7 @@ export class ObjExporter {
 		return files;
 	}
 
-	async #exportMesh(digits: number, indices: Uint8Array | Uint32Array, vertices: Float32Array, normals?: Float32Array, uvs?: Float32Array) {
+	#exportMesh(digits: number, indices: Uint8Array | Uint32Array, vertices: Float32Array, normals?: Float32Array, uvs?: Float32Array): void {
 		const attributes = [
 			{ name: 'v', stride: 3, arr: vertices },
 			{ name: 'vn', stride: 3, arr: normals },

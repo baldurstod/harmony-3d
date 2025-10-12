@@ -1,6 +1,7 @@
 import { Annotation as Annotation_2 } from '../webgl/shadersource';
 import { BinaryReader } from 'harmony-binary-reader';
 import { HarmonyMenuItems } from 'harmony-ui';
+import { int } from 'harmony-types';
 import { JSONObject } from 'harmony-types';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
@@ -15,6 +16,7 @@ import { Source2Particle as Source2Particle_2 } from '../../source2particle';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { Texture as Texture_3 } from '../../../../..';
+import { uint } from 'harmony-types';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import { vec4 } from 'gl-matrix';
@@ -1889,7 +1891,7 @@ declare class Channel {
                       size?: vec3;
                   };
 
-                  export declare function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex?: number): number;
+                  export declare function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex?: number): uint;
 
                   export declare const DEFAULT_GROUP_ID = 0;
 
@@ -2564,7 +2566,7 @@ declare class Channel {
 
                       export declare function getLoader(name: string): any | undefined;
 
-                      export declare function getRandomInt(max: number): number;
+                      export declare function getRandomInt(max: int): int;
 
                       export declare function getSceneExplorer(): SceneExplorer;
 
