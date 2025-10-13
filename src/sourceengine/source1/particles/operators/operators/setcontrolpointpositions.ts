@@ -61,7 +61,7 @@ export class SetControlPointPositions extends Source1ParticleOperator {
 			if (controlPoint) {
 				controlPoint.setWorldQuaternion(quat.create());
 			}
-			this.particleSystem.setControlPointParent(cpNumber, cpParent);
+			//this.particleSystem.setControlPointParent(cpNumber, cpParent);
 		}
 	}
 }

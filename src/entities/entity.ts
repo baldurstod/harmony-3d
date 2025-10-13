@@ -414,7 +414,6 @@ export class Entity {
 	}
 
 	parentChanged(parent: Entity | null): void {
-		throw new Error('override me ' + String(parent));
 	}
 
 	*getParentIterator(): Generator<Entity, null | undefined, unknown> {

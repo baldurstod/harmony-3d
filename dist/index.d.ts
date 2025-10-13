@@ -1,6 +1,8 @@
 import { Annotation as Annotation_2 } from '../webgl/shadersource';
 import { BinaryReader } from 'harmony-binary-reader';
+import { float } from 'harmony-types';
 import { HarmonyMenuItems } from 'harmony-ui';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { int } from 'harmony-types';
 import { JSONObject } from 'harmony-types';
 import { mat2 } from 'gl-matrix';
@@ -8,6 +10,8 @@ import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { MyEventTarget } from 'harmony-utils';
 import { quat } from 'gl-matrix';
+import { ReadonlyQuat } from 'gl-matrix';
+import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
 import { Shape } from './shape';
 import { Source1ModelInstance as Source1ModelInstance_2 } from '../export';
@@ -364,101 +368,14 @@ export declare class Bone extends Entity implements Lockable {
     setLocked(locked: boolean): void;
     isLocked(): boolean;
     reset(): void;
-    buildContextMenu(): {
-        visibility: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        remove: {
-            i18n: string;
-            f: () => void;
-        };
-        destroy: {
-            i18n: string;
-            f: () => void;
-        };
-        remove_more: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        name: {
-            i18n: string;
-            f: () => void;
-        };
-        add: {
-            i18n: string;
-            submenu: any;
-        };
-        entitynull_1: null;
-        position: {
-            i18n: string;
-            f: () => void;
-        };
-        translate: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_position: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_2: null;
-        quaternion: {
-            i18n: string;
-            f: () => void;
-        };
-        rotate: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        reset_rotation: {
-            i18n: string;
-            f: () => quat;
-        };
-        entitynull_3: null;
-        scale: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_scale: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_4: null;
-        wireframe: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        cast_shadows: {
-            i18n: string;
-            selected: boolean | undefined;
-            f: () => void;
-        };
-        receive_shadows: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        material: {
-            i18n: string;
-            submenu: {};
-        };
-    } & {
+    buildContextMenu(): HarmonyMenuItemsDict & {
         Bone_1: null;
         unlock: {
             i18n: string;
             f: (entity: Bone) => false;
         };
     };
-    toJSON(): any;
+    toJSON(): JSONObject;
     static constructFromJSON(json: JSONObject): Promise<Bone>;
     fromJSON(json: any): void;
     static getEntityName(): string;
@@ -490,94 +407,7 @@ export declare class BoundingBoxHelper extends Box {
 export declare class Box extends Mesh {
     #private;
     constructor(params?: BoxParameters);
-    buildContextMenu(): {
-        visibility: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        remove: {
-            i18n: string;
-            f: () => void;
-        };
-        destroy: {
-            i18n: string;
-            f: () => void;
-        };
-        remove_more: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        name: {
-            i18n: string;
-            f: () => void;
-        };
-        add: {
-            i18n: string;
-            submenu: any;
-        };
-        entitynull_1: null;
-        position: {
-            i18n: string;
-            f: () => void;
-        };
-        translate: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_position: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_2: null;
-        quaternion: {
-            i18n: string;
-            f: () => void;
-        };
-        rotate: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        reset_rotation: {
-            i18n: string;
-            f: () => quat;
-        };
-        entitynull_3: null;
-        scale: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_scale: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_4: null;
-        wireframe: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        cast_shadows: {
-            i18n: string;
-            selected: boolean | undefined;
-            f: () => void;
-        };
-        receive_shadows: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        material: {
-            i18n: string;
-            submenu: {};
-        };
-    } & {
+    buildContextMenu(): HarmonyMenuItemsDict & {
         Box_1: null;
         width: {
             i18n: string;
@@ -596,7 +426,7 @@ export declare class Box extends Mesh {
             f: () => void;
         };
     };
-    toJSON(): any;
+    toJSON(): JSONObject;
     static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Box | null>;
     static getEntityName(): string;
     setSize(width: number, height: number, depth: number): void;
@@ -680,6 +510,12 @@ export declare class BuildingRescueLevel extends Proxy_2 {
     execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
+declare enum BulgeControl {
+    Random = 0,
+    OrientationOfStartPoint = 1,
+    OrientationOfEndPoint = 2
+}
+
 /**
  * BurnLevel proxy.
  * @comment ouput variable name: resultVar
@@ -736,94 +572,7 @@ export declare class Camera extends Entity {
     get quaternion(): quat;
     toString(): string;
     setActiveCamera(): void;
-    buildContextMenu(): {
-        visibility: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        remove: {
-            i18n: string;
-            f: () => void;
-        };
-        destroy: {
-            i18n: string;
-            f: () => void;
-        };
-        remove_more: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        name: {
-            i18n: string;
-            f: () => void;
-        };
-        add: {
-            i18n: string;
-            submenu: any;
-        };
-        entitynull_1: null;
-        position: {
-            i18n: string;
-            f: () => void;
-        };
-        translate: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_position: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_2: null;
-        quaternion: {
-            i18n: string;
-            f: () => void;
-        };
-        rotate: {
-            i18n: string;
-            submenu: {
-                i18n: string;
-                f: () => void;
-            }[];
-        };
-        reset_rotation: {
-            i18n: string;
-            f: () => quat;
-        };
-        entitynull_3: null;
-        scale: {
-            i18n: string;
-            f: () => void;
-        };
-        reset_scale: {
-            i18n: string;
-            f: () => vec3;
-        };
-        entitynull_4: null;
-        wireframe: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        cast_shadows: {
-            i18n: string;
-            selected: boolean | undefined;
-            f: () => void;
-        };
-        receive_shadows: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        material: {
-            i18n: string;
-            submenu: {};
-        };
-    } & {
+    buildContextMenu(): HarmonyMenuItemsDict & {
         camera1: null;
         cameraPerspective: {
             i18n: string;
@@ -859,7 +608,7 @@ export declare class Camera extends Entity {
     invertProjection(v3: vec3): void;
     getViewDirection(v?: vec3): vec3;
     copy(source: Camera): void;
-    toJSON(): any;
+    toJSON(): JSONObject;
     static constructFromJSON(json: JSONObject): Promise<Camera>;
     static getEntityName(): string;
     is(s: string): boolean;
@@ -1191,7 +940,7 @@ declare class Channel {
              export declare class Circle extends LineSegments {
                  #private;
                  constructor(params?: any);
-                 toJSON(): any;
+                 toJSON(): JSONObject;
                  static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Circle | null>;
                  static getEntityName(): string;
              }
@@ -1312,94 +1061,7 @@ declare class Channel {
              export declare class Cone extends Mesh {
                  #private;
                  constructor(params?: ConeParameters);
-                 buildContextMenu(): {
-                     visibility: {
-                         i18n: string;
-                         selected: boolean;
-                         f: () => void;
-                     };
-                     remove: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     destroy: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     remove_more: {
-                         i18n: string;
-                         submenu: {
-                             i18n: string;
-                             f: () => void;
-                         }[];
-                     };
-                     name: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     add: {
-                         i18n: string;
-                         submenu: any;
-                     };
-                     entitynull_1: null;
-                     position: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     translate: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     reset_position: {
-                         i18n: string;
-                         f: () => vec3;
-                     };
-                     entitynull_2: null;
-                     quaternion: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     rotate: {
-                         i18n: string;
-                         submenu: {
-                             i18n: string;
-                             f: () => void;
-                         }[];
-                     };
-                     reset_rotation: {
-                         i18n: string;
-                         f: () => quat;
-                     };
-                     entitynull_3: null;
-                     scale: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     reset_scale: {
-                         i18n: string;
-                         f: () => vec3;
-                     };
-                     entitynull_4: null;
-                     wireframe: {
-                         i18n: string;
-                         selected: boolean;
-                         f: () => void;
-                     };
-                     cast_shadows: {
-                         i18n: string;
-                         selected: boolean | undefined;
-                         f: () => void;
-                     };
-                     receive_shadows: {
-                         i18n: string;
-                         selected: boolean;
-                         f: () => void;
-                     };
-                     material: {
-                         i18n: string;
-                         submenu: {};
-                     };
-                 } & {
+                 buildContextMenu(): HarmonyMenuItemsDict & {
                      Cone_1: null;
                      radius: {
                          i18n: string;
@@ -1434,9 +1096,11 @@ declare class Channel {
              }
 
              export declare class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOperator {
+                 #private;
                  static functionName: string;
                  constructor(system: Source1ParticleSystem);
-                 applyConstraint(particle: Source1Particle): void;
+                 paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
+                 applyConstraint(particle: Source1Particle): boolean;
              }
 
              export declare const ContextObserver: ContextObserverClass;
@@ -1473,19 +1137,22 @@ declare class Channel {
                  fVector: vec3;
                  uVector: vec3;
                  rVector: vec3;
-                 parentModel?: Entity;
+                 parentModel: Entity | null;
                  lastComputed: number;
                  snapshot?: Source2Snapshot;
                  model?: Source2ModelInstance;
                  getWorldTransformation(mat?: mat4): mat4;
                  getWorldQuaternion(q?: quat): quat;
-                 parentChanged(parent: Entity | null): void;
-                 set parentControlPoint(parentControlPoint: ControlPoint | undefined);
-                 get parentControlPoint(): ControlPoint | undefined;
+                 parentChanged(): void;
+                 set parentControlPoint(parentControlPoint: ControlPoint | null);
+                 get parentControlPoint(): ControlPoint | null;
                  step(): void;
                  resetDelta(): void;
                  deltaPosFrom(other: ControlPoint, out?: vec3): vec3;
-                 static constructFromJSON(json: JSONObject): Promise<ControlPoint>;
+                 getForwardVector(out?: vec3): vec3;
+                 getUpVector(out?: vec3): vec3;
+                 getRightVector(out?: vec3): vec3;
+                 static constructFromJSON(): Promise<ControlPoint>;
                  static getEntityName(): string;
              }
 
@@ -1651,94 +1318,7 @@ declare class Channel {
                   export declare class Cylinder extends Mesh {
                       #private;
                       constructor(params?: CylinderParameters);
-                      buildContextMenu(): {
-                          visibility: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          remove: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          destroy: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          remove_more: {
-                              i18n: string;
-                              submenu: {
-                                  i18n: string;
-                                  f: () => void;
-                              }[];
-                          };
-                          name: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          add: {
-                              i18n: string;
-                              submenu: any;
-                          };
-                          entitynull_1: null;
-                          position: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          translate: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          reset_position: {
-                              i18n: string;
-                              f: () => vec3;
-                          };
-                          entitynull_2: null;
-                          quaternion: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          rotate: {
-                              i18n: string;
-                              submenu: {
-                                  i18n: string;
-                                  f: () => void;
-                              }[];
-                          };
-                          reset_rotation: {
-                              i18n: string;
-                              f: () => quat;
-                          };
-                          entitynull_3: null;
-                          scale: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          reset_scale: {
-                              i18n: string;
-                              f: () => vec3;
-                          };
-                          entitynull_4: null;
-                          wireframe: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          cast_shadows: {
-                              i18n: string;
-                              selected: boolean | undefined;
-                              f: () => void;
-                          };
-                          receive_shadows: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          material: {
-                              i18n: string;
-                              submenu: {};
-                          };
-                      } & {
+                      buildContextMenu(): HarmonyMenuItemsDict & {
                           Cylinder_1: null;
                           radius: {
                               i18n: string;
@@ -1757,7 +1337,7 @@ declare class Channel {
                               f: () => void;
                           };
                       };
-                      toJSON(): any;
+                      toJSON(): JSONObject;
                       static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null>;
                       static getEntityName(): string;
                   }
@@ -1785,94 +1365,7 @@ declare class Channel {
                       setSize(size: vec3): void;
                       get size(): vec3;
                       refreshGeometry(): void;
-                      buildContextMenu(): {
-                          visibility: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          remove: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          destroy: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          remove_more: {
-                              i18n: string;
-                              submenu: {
-                                  i18n: string;
-                                  f: () => void;
-                              }[];
-                          };
-                          name: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          add: {
-                              i18n: string;
-                              submenu: any;
-                          };
-                          entitynull_1: null;
-                          position: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          translate: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          reset_position: {
-                              i18n: string;
-                              f: () => vec3;
-                          };
-                          entitynull_2: null;
-                          quaternion: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          rotate: {
-                              i18n: string;
-                              submenu: {
-                                  i18n: string;
-                                  f: () => void;
-                              }[];
-                          };
-                          reset_rotation: {
-                              i18n: string;
-                              f: () => quat;
-                          };
-                          entitynull_3: null;
-                          scale: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          reset_scale: {
-                              i18n: string;
-                              f: () => vec3;
-                          };
-                          entitynull_4: null;
-                          wireframe: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          cast_shadows: {
-                              i18n: string;
-                              selected: boolean | undefined;
-                              f: () => void;
-                          };
-                          receive_shadows: {
-                              i18n: string;
-                              selected: boolean;
-                              f: () => void;
-                          };
-                          material: {
-                              i18n: string;
-                              submenu: {};
-                          };
-                      } & {
+                      buildContextMenu(): HarmonyMenuItemsDict & {
                           StaticDecal_1: null;
                           size: {
                               i18n: string;
@@ -1959,9 +1452,7 @@ declare class Channel {
 
                   declare type DynamicParam = any;
 
-                  declare type DynamicParams = {
-                      [key: string]: DynamicParam;
-                  };
+                  declare type DynamicParams = Record<string, DynamicParam>;
 
                   export declare class EmitContinuously extends Source1ParticleOperator {
                       static functionName: string;
@@ -2023,11 +1514,12 @@ declare class Channel {
                       static editMaterial: (entity: Entity) => void;
                       readonly properties: Properties;
                       loadedPromise?: Promise<any>;
+                      readonly transparent: false;
                       constructor(params?: EntityParameters);
                       setParameters(parameters?: EntityParameters): void;
                       set name(name: string);
                       get name(): string;
-                      setPosition(position: vec3): void;
+                      setPosition(position: ReadonlyVec3): void;
                       getPosition(position?: vec3): vec3;
                       /**
                        * @deprecated Please use `setPosition` instead.
@@ -2039,17 +1531,17 @@ declare class Channel {
                       get position(): vec3;
                       getWorldPosition(vec?: vec3): vec3;
                       getPositionFrom(other: Entity, vec?: vec3): vec3;
-                      setWorldPosition(position: vec3): void;
+                      setWorldPosition(position: ReadonlyVec3): void;
                       getWorldQuaternion(q?: quat): quat;
-                      setWorldQuaternion(quaternion: quat): void;
+                      setWorldQuaternion(quaternion: ReadonlyQuat): void;
                       getWorldScale(vec?: vec3): vec3;
                       get positionAsString(): string;
-                      setQuaternion(quaternion: quat): void;
+                      setQuaternion(quaternion: ReadonlyQuat): void;
                       getQuaternion(quaternion?: quat): vec4;
                       /**
                        * @deprecated Please use `setQuaternion` instead.
                        */
-                      set quaternion(quaternion: quat);
+                      set quaternion(quaternion: ReadonlyQuat);
                       /**
                        * @deprecated Please use `getQuaternion` instead.
                        */
@@ -2058,19 +1550,17 @@ declare class Channel {
                       set scale(scale: vec3);
                       get scale(): vec3;
                       get worldMatrix(): mat4;
-                      render(canvas: HTMLCanvasElement): void;
-                      get transparent(): boolean;
-                      setVisible(visible?: boolean | undefined): void;
+                      setVisible(visible?: boolean): void;
                       /**
                        * @deprecated Please use `setVisible` instead.
                        */
                       set visible(visible: boolean);
-                      isVisible(): boolean;
-                      isVisibleSelf(): boolean | undefined;
                       /**
                        * @deprecated Please use `isVisible` instead.
                        */
                       get visible(): boolean;
+                      isVisible(): boolean;
+                      isVisibleSelf(): boolean | undefined;
                       /**
                        * @deprecated Please use `isVisibleSelf` instead.
                        */
@@ -2091,16 +1581,16 @@ declare class Channel {
                       set parent(parent: Entity | null);
                       get parent(): Entity | null;
                       get root(): Entity;
-                      addChild(child?: Entity | null): Entity | undefined;
+                      addChild(child?: Entity | null): Entity | null;
                       addChilds(...childs: Entity[]): void;
                       isParent(parent: Entity): boolean;
                       removeChild(child?: Entity | null): void;
                       toString(): string;
                       translate(v: vec3): void;
-                      translateOnAxis(axis: vec3, distance: number): this;
-                      translateX(distance: number): this;
-                      translateY(distance: number): this;
-                      translateZ(distance: number): this;
+                      translateOnAxis(axis: vec3, distance: number): Entity;
+                      translateX(distance: number): Entity;
+                      translateY(distance: number): Entity;
+                      translateZ(distance: number): Entity;
                       rotateX(rad: number): void;
                       rotateY(rad: number): void;
                       rotateZ(rad: number): void;
@@ -2120,13 +1610,13 @@ declare class Channel {
                        getAllChilds(includeSelf: boolean): Set<Entity>;
                        getBoundsModelSpace(min?: vec3, max?: vec3): void;
                        getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-                       getParentModel(): Entity | undefined;
+                       getParentModel(): Entity | null;
                        getChildList(type?: string): Set<Entity>;
                        forEach(callback: (ent: Entity) => void): void;
                        forEachVisible(callback: (ent: Entity) => void): void;
                        forEachParent(callback: (ent: Entity) => void): void;
                        setupPickingId(): void;
-                       get pickingColor(): vec3 | undefined;
+                       get pickingColor(): vec3 | null;
                        update(scene: Scene, camera: Camera, delta: number): void;
                        set castShadow(castShadow: boolean | undefined);
                        get castShadow(): boolean | undefined;
@@ -2138,94 +1628,7 @@ declare class Channel {
                        get serializable(): boolean;
                        set hideInExplorer(hideInExplorer: boolean);
                        get hideInExplorer(): boolean;
-                       buildContextMenu(): {
-                           visibility: {
-                               i18n: string;
-                               selected: boolean;
-                               f: () => void;
-                           };
-                           remove: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           destroy: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           remove_more: {
-                               i18n: string;
-                               submenu: {
-                                   i18n: string;
-                                   f: () => void;
-                               }[];
-                           };
-                           name: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           add: {
-                               i18n: string;
-                               submenu: any;
-                           };
-                           entitynull_1: null;
-                           position: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           translate: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           reset_position: {
-                               i18n: string;
-                               f: () => vec3;
-                           };
-                           entitynull_2: null;
-                           quaternion: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           rotate: {
-                               i18n: string;
-                               submenu: {
-                                   i18n: string;
-                                   f: () => void;
-                               }[];
-                           };
-                           reset_rotation: {
-                               i18n: string;
-                               f: () => quat;
-                           };
-                           entitynull_3: null;
-                           scale: {
-                               i18n: string;
-                               f: () => void;
-                           };
-                           reset_scale: {
-                               i18n: string;
-                               f: () => vec3;
-                           };
-                           entitynull_4: null;
-                           wireframe: {
-                               i18n: string;
-                               selected: boolean;
-                               f: () => void;
-                           };
-                           cast_shadows: {
-                               i18n: string;
-                               selected: boolean | undefined;
-                               f: () => void;
-                           };
-                           receive_shadows: {
-                               i18n: string;
-                               selected: boolean;
-                               f: () => void;
-                           };
-                           material: {
-                               i18n: string;
-                               submenu: {};
-                           };
-                       };
+                       buildContextMenu(): HarmonyMenuItemsDict;
                        raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                        setWireframe(wireframe: number, recursive?: boolean): void;
                        set wireframe(wireframe: number | undefined);
@@ -2244,9 +1647,9 @@ declare class Channel {
                        setLayer(layer?: number): void;
                        getLayer(): number | undefined;
                        setMaterialParam(name: string, value: DynamicParam): void;
-                       toJSON(): any;
+                       toJSON(): JSONObject;
                        static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null>;
-                       createChild(entityName: string, parameters: any): Promise<Material | Entity | undefined>;
+                       createChild(entityName: string, parameters: any): Promise<Entity | null>;
                        fromJSON(json: JSONObject): void;
                        static getEntityName(): string;
                        is(s: string): boolean;
@@ -2486,11 +1889,11 @@ declare class Channel {
 
                       export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
-                      declare type float = number;
-
                       export declare class Float32BufferAttribute extends BufferAttribute {
                           constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
                       }
+
+                      declare type float_2 = number;
 
                       export declare class FloatArrayNode extends ParametersNode {
                           #private;
@@ -3316,94 +2719,7 @@ declare class Channel {
                       export declare class Grid extends Mesh {
                           #private;
                           constructor(params?: GridParameters);
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Grid_1: null;
                               size: {
                                   i18n: string;
@@ -3654,7 +2970,7 @@ declare class Channel {
                       }
 
                       export declare class KeepOnlyLastChild extends Entity {
-                          addChild(child: Entity): Entity | undefined;
+                          addChild(child: Entity): Entity | null;
                           static getEntityName(): string;
                       }
 
@@ -3872,94 +3188,7 @@ declare class Channel {
                           get range(): number;
                           set shadowTextureSize(shadowTextureSize: number);
                           get shadowTextureSize(): number;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Light_1: null;
                               color: {
                                   i18n: string;
@@ -3975,7 +3204,7 @@ declare class Channel {
                                   f: () => void;
                               };
                           };
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<Light>;
                           fromJSON(json: JSONObject): void;
                           static set defaultTextureSize(textureSize: number);
@@ -4017,7 +3246,7 @@ declare class Channel {
                           set end(end: vec3);
                           getEnd(end?: vec3): vec3;
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Line>;
                           static getEntityName(): string;
                       }
@@ -4777,94 +4006,7 @@ declare class Channel {
                           toString(): string;
                           getBoundsModelSpace(min?: vec3, max?: vec3): void;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                           static getEntityName(): string;
                           is(s: string): boolean;
@@ -4969,94 +4111,7 @@ declare class Channel {
                           radius2: number;
                           constructor(radius?: number);
                           setRadius(radius: number): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Metaball_1: null;
                               radius: {
                                   i18n: string;
@@ -5072,94 +4127,7 @@ declare class Channel {
                           addBall(ball?: Metaball): Metaball;
                           setBalls(balls: Metaball[]): void;
                           updateGeometry(): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Metaballs_1: null;
                               add_ball: {
                                   i18n: string;
@@ -5713,6 +4681,14 @@ declare class Channel {
                           fromSvgPath(path: string): void;
                       }
 
+                      declare type PathParameters = {
+                          startControlPointNumber: uint;
+                          endControlPointNumber: uint;
+                          bulgeControl: BulgeControl;
+                          bulge: float;
+                          midPoint: float;
+                      };
+
                       export declare class PathPrefixRepository implements Repository {
                           #private;
                           prefix: string;
@@ -5755,94 +4731,7 @@ declare class Channel {
                           setWidth(width: number): void;
                           setHeight(height: number): void;
                           setSize(width: number, height?: number): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Plane_1: null;
                               width: {
                                   i18n: string;
@@ -5857,7 +4746,7 @@ declare class Channel {
                                   f: () => void;
                               };
                           };
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Plane>;
                           static getEntityName(): string;
                       }
@@ -5882,97 +4771,10 @@ declare class Channel {
                           constructor(params?: PointLightParameters);
                           set castShadow(castShadow: boolean | undefined);
                           get castShadow(): boolean | undefined;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<PointLight>;
                           fromJSON(json: JSONObject): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Light_1: null;
                               color: {
                                   i18n: string;
@@ -6850,94 +5652,7 @@ declare class Channel {
                            */
                           get axis(): vec3;
                           reset(): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               RotationControl_1: null;
                               rotation_axis: {
                                   i18n: string;
@@ -7445,7 +6160,7 @@ declare class Channel {
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           get bones(): Bone[];
                           reset(): void;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Skeleton>;
                           dispose(): void;
                           static getEntityName(): string;
@@ -7584,7 +6299,7 @@ declare class Channel {
                           constructor(params?: any);
                           get skeleton(): Skeleton | null;
                           set skeleton(skeleton: Skeleton | null);
-                          addChild(child?: Entity | null): Entity | undefined;
+                          addChild(child?: Entity | null): Entity | null;
                           removeChild(child: Entity): void;
                           set skin(skin: string);
                           get skin(): string;
@@ -7613,94 +6328,7 @@ declare class Channel {
                           getAttachment(attachmentName: string): Bone | undefined;
                           getBoneByName(boneName: string): Bone | undefined;
                           set material(material: Material);
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Source1ModelInstance_1: null;
                               skin: {
                                   i18n: string;
@@ -7752,7 +6380,7 @@ declare class Channel {
                           replaceMaterial(material: Material, recursive?: boolean): void;
                           resetMaterial(recursive?: boolean): void;
                           getAnimations(): Promise<Set<string>>;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null>;
                           fromJSON(json: JSONObject): void;
                           dispose(): void;
@@ -8025,7 +6653,7 @@ declare class Channel {
                           start(): void;
                           stop(): void;
                           stopChildren(): void;
-                          do(action: string, params: any): void;
+                          do(action: string): void;
                           reset(): void;
                           updateChilds(): void;
                           step(elapsedTime: number): void;
@@ -8037,9 +6665,9 @@ declare class Channel {
                           createParticle(creationTime: number, elapsedTime: number): Source1Particle | null;
                           getWorldPosition(vec?: vec3): vec3;
                           stepControlPoint(): void;
-                          setParam(element: CDmxAttribute): this | null | undefined;
+                          setParam(element: CDmxAttribute): Source1ParticleSystem | null;
                           addParam(param: string, type: string, value: any): void;
-                          setParameter(parameter: string, type: any, value: any): this | undefined;
+                          setParameter(parameter: string, type: any, value: any): Source1ParticleSystem | null;
                           propertyChanged(name: string): void;
                           getParameter(parameterName: string): any;
                           setMaxParticles(max: number): void;
@@ -8067,10 +6695,10 @@ declare class Channel {
                           setOrientation(orientation: quat): void;
                           setChildControlPointPosition(first: number, last: number, position: vec3): void;
                           setChildControlPointOrientation(first: number, last: number, orientation: quat): void;
-                          getParticle(index?: number): Source1Particle | undefined;
+                          getParticle(index?: number): Source1Particle | null;
                           getControlPointPosition(cpId: number): vec3;
                           setControlPointPosition(cpId: number, position: vec3): void;
-                          setControlPointParent(controlPointId: number, parentControlPointId: number): void;
+                          setControlPointParent(): void;
                           getWorldQuaternion(q?: quat): quat;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           set autoKill(autoKill: boolean);
@@ -8083,106 +6711,11 @@ declare class Channel {
                           static setSimulationSteps(simulationSteps: number): void;
                           getChildrenSystems(): Source1ParticleSystem[];
                           getActiveParticlesCount(): number;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
-                              SourceEngineParticleSystem_1: null;
-                              startStop: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
-                          toJSON(): any;
-                          static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem>;
+                          randomVector(randomSampleId: int, min: float, max: float, out: vec3): void;
+                          calculatePathValues(pathIn: PathParameters, timeStamp: float, startPnt: vec3, midPnt: vec3, endPnt: vec3): void;
+                          buildContextMenu(): HarmonyMenuItemsDict;
+                          toJSON(): JSONObject;
+                          static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem | null>;
                           static getEntityName(): string;
                       }
 
@@ -8597,7 +7130,7 @@ declare class Channel {
                           getIntParam(intName: string): number | null;
                           getIntParams(): Map<string, integer> | null;
                           getFloatParam(floatName: string): number | null;
-                          getFloatParams(): Map<string, float> | null;
+                          getFloatParams(): Map<string, float_2> | null;
                           getVectorParam(vectorName: string, out: vec4): vec4 | null;
                           getVectorParams(): Map<string, vec4> | null;
                           getDynamicParam(name: string): vec4 | null;
@@ -8686,7 +7219,7 @@ declare class Channel {
                           resetBodyGroups(): void;
                           get skeleton(): Skeleton | null;
                           setPosition(position: vec3): void;
-                          addChild(child: Entity): Entity | undefined;
+                          addChild(child?: Entity | null): Entity | null;
                           removeChild(child: Entity): void;
                           set skin(skin: number);
                           get skin(): number;
@@ -8701,94 +7234,7 @@ declare class Channel {
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;
                           getAnimations(): Promise<Set<string>>;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Source2ModelInstance_1: null;
                               skin: {
                                   i18n: string;
@@ -9074,98 +7520,11 @@ declare class Channel {
                           getBounds(minBounds: vec3, maxBounds: vec3): void;
                           getBoundsCenter(center: vec3): void;
                           parentChanged(parent: Entity | null): void;
-                          setParentModel(model?: Entity | undefined): void;
-                          getParentModel(): Entity | undefined;
+                          setParentModel(model?: Entity | null): void;
+                          getParentModel(): Entity | null;
                           getParticle(index?: number): Source2Particle | undefined;
                           dispose(): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Source2ParticleSystem_1: null;
                               startStop: {
                                   i18n: string;
@@ -9246,7 +7605,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#267@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -9865,94 +8224,7 @@ declare class Channel {
                           constructor(params?: SphereParameters);
                           setRadius(radius: number): void;
                           updateGeometry(): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Sphere_1: null;
                               radius: {
                                   i18n: string;
@@ -9968,7 +8240,7 @@ declare class Channel {
                               };
                           };
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Sphere>;
                           static getEntityName(): string;
                       }
@@ -10007,94 +8279,7 @@ declare class Channel {
                           set innerAngle(innerAngle: number);
                           get innerAngle(): number;
                           getDirection(out?: vec3): vec3;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Light_1: null;
                               color: {
                                   i18n: string;
@@ -10226,97 +8411,10 @@ declare class Channel {
                           set depth(depth: number);
                           set font(font: string);
                           set style(style: string);
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null>;
                           fromJSON(json: JSONObject): void;
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               Text3D_1: null;
                               text: {
                                   i18n: string;
@@ -10694,94 +8792,7 @@ declare class Channel {
                       export declare class TranslationControl extends Entity {
                           #private;
                           constructor(params?: any);
-                          buildContextMenu(): {
-                              visibility: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              remove: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              destroy: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              remove_more: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              name: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              add: {
-                                  i18n: string;
-                                  submenu: any;
-                              };
-                              entitynull_1: null;
-                              position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              translate: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_position: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_2: null;
-                              quaternion: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotate: {
-                                  i18n: string;
-                                  submenu: {
-                                      i18n: string;
-                                      f: () => void;
-                                  }[];
-                              };
-                              reset_rotation: {
-                                  i18n: string;
-                                  f: () => quat;
-                              };
-                              entitynull_3: null;
-                              scale: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset_scale: {
-                                  i18n: string;
-                                  f: () => vec3;
-                              };
-                              entitynull_4: null;
-                              wireframe: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              cast_shadows: {
-                                  i18n: string;
-                                  selected: boolean | undefined;
-                                  f: () => void;
-                              };
-                              receive_shadows: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => void;
-                              };
-                              material: {
-                                  i18n: string;
-                                  submenu: {};
-                              };
-                          } & {
+                          buildContextMenu(): HarmonyMenuItemsDict & {
                               TranslationControl_1: null;
                               speed: {
                                   i18n: string;
@@ -11179,12 +9190,12 @@ declare class Channel {
                       }
 
                       export declare const Zstd: {
-                          "__#236@#webAssembly"?: any;
-                          "__#236@#HEAPU8"?: Uint8Array;
+                          "__#237@#webAssembly"?: any;
+                          "__#237@#HEAPU8"?: Uint8Array;
                           decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer> | null>;
                           decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
                           getWebAssembly(): Promise<any>;
-                          "__#236@#initHeap"(): void;
+                          "__#237@#initHeap"(): void;
                       };
 
                       export { }

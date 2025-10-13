@@ -2363,6 +2363,7 @@ class Entity {
     properties = new Properties(); //Map<string, any>();
     loadedPromise;
     #layer = undefined;
+    transparent = false;
     constructor(params) {
         this.setParameters(params);
     }
@@ -2380,10 +2381,10 @@ class Entity {
             parameters.childs.forEach((child) => this.addChild(child));
         }
         if (parameters.position) {
-            this.position = parameters.position;
+            this.setPosition(parameters.position);
         }
         if (parameters.quaternion) {
-            this.quaternion = parameters.quaternion;
+            this.setQuaternion(parameters.quaternion);
         }
         if (parameters.scale) {
             this.scale = parameters.scale;
@@ -2463,10 +2464,10 @@ class Entity {
             vec3.sub(tempVec3_1$3, position, tempVec3_1$3);
             quat.invert(tempQuat$c, tempQuat$c);
             vec3.transformQuat(tempVec3_1$3, tempVec3_1$3, tempQuat$c);
-            this.position = tempVec3_1$3;
+            this.setPosition(tempVec3_1$3);
         }
         else {
-            this.position = position;
+            this.setPosition(position);
         }
     }
     getWorldQuaternion(q = quat.create()) {
@@ -2547,11 +2548,6 @@ class Entity {
         mat4.fromRotationTranslationScale(this.#worldMatrix, tempQuat$c, tempVec3_1$3, this.getWorldScale());
         return this.#worldMatrix;
     }
-    render(canvas) {
-    }
-    get transparent() {
-        return false;
-    }
     setVisible(visible) {
         const oldValue = this.#visible;
         this.#visible = visible;
@@ -2565,6 +2561,12 @@ class Entity {
     set visible(visible) {
         this.setVisible(visible);
     }
+    /**
+     * @deprecated Please use `isVisible` instead.
+     */
+    get visible() {
+        return this.isVisible();
+    }
     isVisible() {
         if (this.#visible === undefined) {
             return this._parent?.isVisible() ?? true;
@@ -2575,12 +2577,6 @@ class Entity {
     }
     isVisibleSelf() {
         return this.#visible;
-    }
-    /**
-     * @deprecated Please use `isVisible` instead.
-     */
-    get visible() {
-        return this.isVisible();
     }
     /**
      * @deprecated Please use `isVisibleSelf` instead.
@@ -2641,7 +2637,9 @@ class Entity {
     togglePlaying() {
         this.setPlaying(!this.#playing);
     }
-    do(action, params) { }
+    do(action, params) {
+        throw new Error('override me' + String(action) + String(params));
+    }
     #setParent(parent) {
         EntityObserver.parentChanged(this, this._parent, parent);
         if (this._parent != null) {
@@ -2653,7 +2651,8 @@ class Entity {
         this.#propagate();
         this.parentChanged(parent);
     }
-    parentChanged(parent) { }
+    parentChanged(parent) {
+    }
     *getParentIterator() {
         const ws = new WeakSet();
         let current = this._parent;
@@ -2736,20 +2735,23 @@ class Entity {
     }
     addChild(child) {
         if (!child) {
-            return;
+            return null;
         }
+        /*
         if (!(child instanceof Entity)) {
-            return;
+            if (DEBUG) {
+                console.log(child, ' is not instanceof Entity');
+            }
+            return null;
         }
+        */
         if (child === this) {
-            return;
+            return null;
         }
         if (this.#children.has(child)) {
-            return;
+            return null;
         }
-        if (this.isParent(child)) {
-            return;
-        }
+        if (this.isParent(child)) ;
         this.#children.add(child);
         EntityObserver.childAdded(this, child);
         child.#setParent(this);
@@ -2782,12 +2784,12 @@ class Entity {
     }
     translate(v) {
         vec3.add(tempVec3_1$3, this._position, v);
-        this.position = tempVec3_1$3;
+        this.setPosition(tempVec3_1$3);
     }
     translateOnAxis(axis, distance) {
         vec3.transformQuat(tempVec3_1$3, axis, this._quaternion);
         vec3.scaleAndAdd(tempVec3_1$3, this._position, tempVec3_1$3, distance);
-        this.position = tempVec3_1$3;
+        this.setPosition(tempVec3_1$3);
         return this;
     }
     translateX(distance) {
@@ -2842,7 +2844,7 @@ class Entity {
             quat.conjugate(tempQuat2$1, parent._quaternion);
             quat.mul(tempQuat$c, tempQuat2$1, tempQuat$c);
         }
-        this.quaternion = tempQuat$c;
+        this.setQuaternion(tempQuat$c);
     }
     getMeshList() {
         const meshList = new Set();
@@ -2931,7 +2933,7 @@ class Entity {
         return boundingBox;
     }
     getParentModel() {
-        return this._parent?.getParentModel();
+        return this._parent?.getParentModel() ?? null;
     }
     getChildList(type) {
         const ws = new WeakSet();
@@ -2979,7 +2981,7 @@ class Entity {
         this.#pickingColor = vec3.fromValues(((pickingId >> 16) & 0xFF) / 255.0, ((pickingId >> 8) & 0xFF) / 255.0, ((pickingId >> 0) & 0xFF) / 255.0);
     }
     get pickingColor() {
-        return this.#pickingColor ?? this._parent?.pickingColor;
+        return this.#pickingColor ?? this._parent?.pickingColor ?? null;
     }
     update(scene, camera, delta) {
     }
@@ -3087,19 +3089,19 @@ class Entity {
                 } } },
             add: { i18n: '#add', submenu: Entity.addSubMenu },
             entitynull_1: null,
-            position: { i18n: '#position', f: () => { const v = prompt('Position', this.position.join(' ')); if (v !== null) {
+            position: { i18n: '#position', f: () => { const v = prompt('Position', this.getPosition().join(' ')); if (v !== null) {
                     this.lockPos = true;
-                    this.position = stringToVec3(v);
+                    this.setPosition(stringToVec3(v));
                 } } },
             translate: { i18n: '#translate', f: () => { const t = prompt('Translation', '0 0 0'); if (t !== null) {
                     this.lockPos = true;
                     this.translate(stringToVec3(t));
                 } } },
-            reset_position: { i18n: '#reset_position', f: () => this.position = IDENTITY_VEC3 },
+            reset_position: { i18n: '#reset_position', f: () => this.setPosition(IDENTITY_VEC3) },
             entitynull_2: null,
-            quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) {
+            quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.getQuaternion().join(' ')); if (v !== null) {
                     this.lockRot = true;
-                    this.quaternion = stringToQuat(v);
+                    this.setQuaternion(stringToQuat(v));
                 } } },
             rotate: {
                 i18n: '#rotate', submenu: [
@@ -3129,7 +3131,7 @@ class Entity {
                         } } },
                 ]
             },
-            reset_rotation: { i18n: '#reset_rotation', f: () => this.quaternion = IDENTITY_QUAT$1 },
+            reset_rotation: { i18n: '#reset_rotation', f: () => this.setQuaternion(IDENTITY_QUAT$1) },
             entitynull_3: null,
             scale: {
                 i18n: '#scale', f: () => {
@@ -3161,6 +3163,7 @@ class Entity {
         return menu;
     }
     raycast(raycaster, intersections) {
+        throw new Error('override me');
     }
     setWireframe(wireframe, recursive = true) {
         this.wireframe = wireframe;
@@ -3302,10 +3305,10 @@ class Entity {
             json.visible = this.#visible ? true : false;
         }
         if (!vec3.exactEquals(this._position, IDENTITY_VEC3)) {
-            json.position = this.position;
+            json.position = this.getPosition();
         }
         if (!quat.exactEquals(this._quaternion, IDENTITY_QUAT$1)) {
-            json.quaternion = this.quaternion;
+            json.quaternion = this.getQuaternion();
         }
         if (!vec3.exactEquals(this._scale, UNITY_VEC3)) {
             json.scale = this.scale;
@@ -3347,16 +3350,17 @@ class Entity {
             this.addChild(entity);
             return entity;
         }
+        return null;
     }
     fromJSON(json) {
         this.id = json.id ?? generateRandomUUID();
         this.#name = json.name;
         this.#visible = json.visible;
         if (json.position) {
-            this.position = json.position;
+            this.setPosition(json.position);
         }
         if (json.quaternion) {
-            this.quaternion = json.quaternion;
+            this.setQuaternion(json.quaternion);
         }
         if (json.scale) {
             this.scale = json.scale;
@@ -4810,19 +4814,18 @@ class Mesh extends Entity {
     }
     buildContextMenu() {
         const contextMenu = super.buildContextMenu();
-        Object.assign(contextMenu.material.submenu, {
-            Mesh_1: null,
-            set_material: {
-                i18n: '#set_material', f: async () => {
-                    const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
-                    if (materialName) {
-                        await MaterialManager.getMaterial(materialName, (material) => { if (material) {
-                            this.setMaterial(material);
-                        } });
-                    }
+        const materialSubmenu = contextMenu.material.submenu;
+        materialSubmenu.mesh1 = null;
+        materialSubmenu.setMaterial = {
+            i18n: '#set_material', f: async () => {
+                const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
+                if (materialName) {
+                    await MaterialManager.getMaterial(materialName, (material) => { if (material) {
+                        this.setMaterial(material);
+                    } });
                 }
-            },
-        });
+            }
+        };
         return contextMenu;
     }
     raycast(raycaster, intersections) {
@@ -5314,6 +5317,16 @@ function generateCubeUVSize(height) {
     return { texelWidth, texelHeight, maxMip };
 }
 
+function vec3ToJSON(vec) {
+    return [...vec];
+}
+function quatToJSON(q) {
+    return [...q];
+}
+function mat4ToJSON(mat) {
+    return [...mat];
+}
+
 var CameraProjection;
 (function (CameraProjection) {
     CameraProjection[CameraProjection["Perspective"] = 0] = "Perspective";
@@ -5684,7 +5697,7 @@ class Camera extends Entity {
             json.aspectRatio = this.aspectRatio;
         }
         if (!vec3.equals(this.#upVector, DEFAULT_UP_VECTOR)) {
-            json.upVector = this.upVector;
+            json.upVector = vec3ToJSON(this.upVector);
         }
         if (this.left != DEFAULT_LEFT) {
             json.left = this.left;
@@ -10290,7 +10303,7 @@ class WebGLRenderingState {
 }
 
 const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
-const a$8 = vec4.create();
+const a$7 = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -10300,7 +10313,7 @@ class ShadowMap {
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$8);
+        WebGLRenderingState.getClearColor(a$7);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -10332,7 +10345,7 @@ class ShadowMap {
         blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
         scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
         depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(a$8);
+        WebGLRenderingState.clearColor(a$7);
         Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
     }
 }
@@ -12393,7 +12406,7 @@ class Light extends Entity {
     }
     toJSON() {
         const json = super.toJSON();
-        json.color = this.color;
+        json.color = vec3ToJSON(this.color);
         json.intensity = this.intensity;
         json.shadowtexturesize = this.shadowTextureSize;
         return json;
@@ -17170,8 +17183,8 @@ class Line extends Mesh {
     }
     toJSON() {
         const json = super.toJSON();
-        json.start = vec3.clone(this.start);
-        json.end = vec3.clone(this.end);
+        json.start = vec3ToJSON(this.start);
+        json.end = vec3ToJSON(this.end);
         json.material = this.getMaterial().toJSON();
         return json;
     }
@@ -17185,8 +17198,8 @@ class Line extends Mesh {
 }
 registerEntity(Line);
 
-const a$7 = vec3.create();
-const b$4 = vec3.create();
+const a$6 = vec3.create();
+const b$3 = vec3.create();
 const c$1 = vec3.create();
 class Raycaster {
     near;
@@ -17206,8 +17219,8 @@ class Raycaster {
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
         const projectionMatrixInverse = camera.projectionMatrixInverse;
-        const nearP = vec3.set(a$7, normalizedX, normalizedY, -1);
-        const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
+        const nearP = vec3.set(a$6, normalizedX, normalizedY, -1);
+        const farP = vec3.set(b$3, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
         vec3.transformQuat(nearP, nearP, camera.quaternion);
@@ -17686,9 +17699,9 @@ class Bone extends Entity {
     }
     toJSON() {
         const json = super.toJSON();
-        json.posetobone = mat4.clone(this.#poseToBone);
-        json.refposition = vec3.clone(this.#refPosition);
-        json.refquaternion = quat.clone(this.#refQuaternion);
+        json.posetobone = mat4ToJSON(this.#poseToBone);
+        json.refposition = vec3ToJSON(this.#refPosition);
+        json.refquaternion = quatToJSON(this.#refQuaternion);
         json.boneid = this.boneId;
         return json;
     }
@@ -19309,8 +19322,8 @@ class Metaball extends Entity {
 }
 
 var _a$5;
-const a$6 = vec3.create();
-const b$3 = vec3.create();
+const a$5 = vec3.create();
+const b$2 = vec3.create();
 const THRESHOLD = 0.99;
 class MetaballsBufferGeometry extends BufferGeometry {
     constructor(balls) {
@@ -19331,9 +19344,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$6, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-            vec3.sub(b$3, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$6, b$3);
+            vec3.sub(a$5, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+            vec3.cross(normal, a$5, b$2);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -19350,9 +19363,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
         const min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
         const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
         for (const ball of balls) {
-            vec3.set(b$3, ball.radius, ball.radius, ball.radius);
-            vec3.min(min, min, vec3.sub(a$6, ball.currentWorldPosition, b$3));
-            vec3.max(max, max, vec3.add(a$6, ball.currentWorldPosition, b$3));
+            vec3.set(b$2, ball.radius, ball.radius, ball.radius);
+            vec3.min(min, min, vec3.sub(a$5, ball.currentWorldPosition, b$2));
+            vec3.max(max, max, vec3.add(a$5, ball.currentWorldPosition, b$2));
         }
         return [min, max];
     }
@@ -19477,8 +19490,8 @@ class Metaballs extends Mesh {
     }
 }
 
-const a$5 = vec3.create();
-const b$2 = vec3.create();
+const a$4 = vec3.create();
+const b$1 = vec3.create();
 class TrianglesBufferGeometry extends BufferGeometry {
     constructor(triangles) {
         super();
@@ -19496,9 +19509,9 @@ class TrianglesBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$5, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-            vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$5, b$2);
+            vec3.sub(a$4, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(b$1, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+            vec3.cross(normal, a$4, b$1);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -26882,7 +26895,7 @@ class Source2ModelInstance extends Entity {
     }
     addChild(child) {
         if (!child) {
-            return;
+            return null;
         }
         const ret = super.addChild(child);
         if (child.skeleton) {
@@ -32664,14 +32677,12 @@ function loadScripts(array, callback) {
     })();
 }
 
-vec3.create(); //TODO: use IDENTITY_VEC3
-quat.create();
 const tempVec3$j = vec3.create();
 const tempQuat$5 = quat.create();
 const mat$2 = mat4.create();
 class ControlPoint extends Entity {
     isControlPoint = true;
-    #parentControlPoint;
+    #parentControlPoint = null;
     currentWorldPosition = vec3.create();
     prevWorldPosition = vec3.create();
     deltaWorldPosition = vec3.create();
@@ -32687,7 +32698,7 @@ class ControlPoint extends Entity {
     uVector = vec3.create();
     // Right vector
     rVector = vec3.create();
-    parentModel;
+    parentModel = null;
     lastComputed = -1;
     snapshot;
     model;
@@ -32706,7 +32717,7 @@ class ControlPoint extends Entity {
         }
         return q;
     }
-    parentChanged(parent) {
+    parentChanged() {
         const parentModel = this.getParentModel();
         this.forEach(entity => {
             if (entity.isControlPoint) {
@@ -32747,8 +32758,23 @@ class ControlPoint extends Entity {
     deltaPosFrom(other, out = vec3.create()) {
         return vec3.sub(out, other.currentWorldPosition, this.currentWorldPosition);
     }
-    static async constructFromJSON(json) {
-        return new ControlPoint();
+    getForwardVector(out = vec3.create()) {
+        vec3.set(out, 0, 1, 0); // +Y
+        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        return out;
+    }
+    getUpVector(out = vec3.create()) {
+        vec3.set(out, 0, 0, 1); // +Z
+        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        return out;
+    }
+    getRightVector(out = vec3.create()) {
+        vec3.set(out, 1, 0, 0); // +X
+        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        return out;
+    }
+    static constructFromJSON() {
+        return Promise.resolve(new ControlPoint());
     }
     static getEntityName() {
         return 'ControlPoint';
@@ -32756,25 +32782,25 @@ class ControlPoint extends Entity {
 }
 registerEntity(ControlPoint);
 
-let randomFloats;
+let randomFloats$1;
 const MAX_FLOATS = 4096;
 function initRandomFloats() {
-    randomFloats = new Array(MAX_FLOATS);
+    randomFloats$1 = new Array(MAX_FLOATS);
     for (let i = 0; i < MAX_FLOATS; i++) {
-        randomFloats[i] = Math.random();
+        randomFloats$1[i] = Math.random();
     }
 }
 function ParticleRandomFloat(id, offset) {
-    if (!randomFloats) {
+    if (!randomFloats$1) {
         initRandomFloats();
     }
-    return randomFloats[(id + offset) % MAX_FLOATS];
+    return randomFloats$1[(id + offset) % MAX_FLOATS];
 }
 function ParticleRandomVec3(vec, id, offset1, offset2, offset3) {
-    if (!randomFloats) {
+    if (!randomFloats$1) {
         initRandomFloats();
     }
-    vec3.set(vec, randomFloats[(id + offset1) % MAX_FLOATS], randomFloats[(id + offset2) % MAX_FLOATS], randomFloats[(id + offset3) % MAX_FLOATS]);
+    vec3.set(vec, randomFloats$1[(id + offset1) % MAX_FLOATS], randomFloats$1[(id + offset2) % MAX_FLOATS], randomFloats$1[(id + offset3) % MAX_FLOATS]);
     return vec;
 }
 
@@ -44785,8 +44811,533 @@ DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
  * TODO
  */
 
+var BulgeControl;
+(function (BulgeControl) {
+    BulgeControl[BulgeControl["Random"] = 0] = "Random";
+    BulgeControl[BulgeControl["OrientationOfStartPoint"] = 1] = "OrientationOfStartPoint";
+    BulgeControl[BulgeControl["OrientationOfEndPoint"] = 2] = "OrientationOfEndPoint";
+})(BulgeControl || (BulgeControl = {}));
+
+const randomFloats = [
+    0.336914, 0.671387, 0.539307, 0.165039, 0.258301, 0.146973, 0.475342, 0.993408,
+    0.882080, 0.733887, 0.152588, 0.192871, 0.873291, 0.637939, 0.859131, 0.836914,
+    0.277344, 0.026367, 0.864502, 0.327393, 0.428711, 0.684082, 0.916992, 0.935547,
+    0.643311, 0.082764, 0.033447, 0.086182, 0.575684, 0.121826, 0.342285, 0.419189,
+    0.409424, 0.177490, 0.049072, 0.252930, 0.459717, 0.561035, 0.581543, 0.470703,
+    0.662842, 0.936035, 0.912354, 0.965332, 0.523682, 0.661865, 0.484131, 0.030029,
+    0.958984, 0.370605, 0.626709, 0.736084, 0.241943, 0.307129, 0.969482, 0.269287,
+    0.215820, 0.995605, 0.300781, 0.984375, 0.621338, 0.785645, 0.432373, 0.895264,
+    0.098389, 0.857178, 0.220947, 0.981689, 0.667969, 0.898682, 0.603027, 0.588623,
+    0.206055, 0.536133, 0.245361, 0.999023, 0.758545, 0.152100, 0.015869, 0.546387,
+    0.101563, 0.920410, 0.566650, 0.793457, 0.077148, 0.675049, 0.032715, 0.645264,
+    0.654053, 0.536377, 0.599121, 0.300537, 0.404053, 0.115967, 0.646484, 0.162842,
+    0.886230, 0.412109, 0.552490, 0.632080, 0.623291, 0.846436, 0.313965, 0.505859,
+    0.487305, 0.644287, 0.517578, 0.892090, 0.146240, 0.218750, 0.484619, 0.904785,
+    0.551758, 0.809814, 0.721191, 0.871582, 0.847656, 0.062256, 0.647949, 0.708252,
+    0.690186, 0.593750, 0.061768, 0.406982, 0.169434, 0.874756, 0.139893, 0.792236,
+    0.783691, 0.855957, 0.198975, 0.706299, 0.594971, 0.739746, 0.307373, 0.123291,
+    0.480713, 0.027100, 0.697266, 0.534424, 0.070068, 0.641602, 0.472900, 0.598145,
+    0.211670, 0.977051, 0.145264, 0.311279, 0.975098, 0.904297, 0.999268, 0.725586,
+    0.039307, 0.669434, 0.578369, 0.285889, 0.867188, 0.982666, 0.797119, 0.755371,
+    0.950195, 0.383789, 0.426270, 0.337402, 0.075439, 0.841553, 0.794678, 0.074707,
+    0.021240, 0.627686, 0.036377, 0.921143, 0.229248, 0.208740, 0.698730, 0.622803,
+    0.943848, 0.673828, 0.826416, 0.107910, 0.366943, 0.352539, 0.256592, 0.930176,
+    0.556885, 0.378418, 0.205566, 0.286133, 0.623047, 0.986328, 0.781494, 0.974609,
+    0.239014, 0.883789, 0.859375, 0.884277, 0.856445, 0.521484, 0.332764, 0.489746,
+    0.880615, 0.553955, 0.961182, 0.360352, 0.489990, 0.175781, 0.777832, 0.020020,
+    0.346436, 0.250732, 0.094482, 0.900146, 0.185547, 0.317139, 0.686768, 0.517334,
+    0.350342, 0.774902, 0.978027, 0.819580, 0.967773, 0.811523, 0.038574, 0.791504,
+    0.196045, 0.543701, 0.705566, 0.586426, 0.585449, 0.016846, 0.413086, 0.583496,
+    0.772461, 0.728271, 0.289307, 0.482666, 0.389404, 0.302002, 0.331055, 0.759277,
+    0.885742, 0.745605, 0.444092, 0.341797, 0.607422, 0.436279, 0.102783, 0.874023,
+    0.868408, 0.662109, 0.287354, 0.918701, 0.892334, 0.685791, 0.500244, 0.433594,
+    0.664795, 0.734863, 0.933350, 0.078369, 0.808105, 0.790039, 0.404541, 0.005371,
+    0.976318, 0.800537, 0.482178, 0.472412, 0.656494, 0.835449, 0.713135, 0.629395,
+    0.468506, 0.038330, 0.143555, 0.375000, 0.140381, 0.427734, 0.822754, 0.267090,
+    0.253662, 0.683350, 0.788818, 0.531738, 0.214600, 0.877930, 0.659668, 0.640381,
+    0.954346, 0.227539, 0.167969, 0.491211, 0.084473, 0.272949, 0.961670, 0.065430,
+    0.696045, 0.625732, 0.177734, 0.782715, 0.934814, 0.385742, 0.401611, 0.018555,
+    0.686279, 0.749023, 0.114014, 0.106689, 0.501709, 0.471924, 0.151855, 0.088623,
+    0.677734, 0.425293, 0.910645, 0.483398, 0.872314, 0.782471, 0.163330, 0.574463,
+    0.119385, 0.809570, 0.947510, 0.197510, 0.887207, 0.577637, 0.021484, 0.020508,
+    0.641846, 0.321533, 0.957520, 0.893555, 0.625488, 0.424072, 0.612793, 0.003906,
+    0.060059, 0.388184, 0.724365, 0.195068, 0.263184, 0.919434, 0.094971, 0.550781,
+    0.997559, 0.763916, 0.300293, 0.530029, 0.583984, 0.767578, 0.745361, 0.691650,
+    0.170410, 0.762695, 0.949463, 0.349365, 0.757324, 0.302490, 0.498047, 0.397217,
+    0.213379, 0.019775, 0.587402, 0.562988, 0.573975, 0.360840, 0.320313, 0.258545,
+    0.948486, 0.186279, 0.976563, 0.190430, 0.865723, 0.162598, 0.547607, 0.339111,
+    0.392090, 0.273193, 0.714844, 0.797363, 0.403564, 0.449219, 0.747314, 0.844238,
+    0.835205, 0.110596, 0.134033, 0.214355, 0.766113, 0.109131, 0.013184, 0.875000,
+    0.737061, 0.320801, 0.639893, 0.744141, 0.751465, 0.127197, 0.011963, 0.353027,
+    0.693359, 0.440674, 0.264160, 0.780029, 0.529785, 0.800781, 0.671143, 0.332031,
+    0.400635, 0.981445, 0.770264, 0.435059, 0.298340, 0.437988, 0.163574, 0.271973,
+    0.039551, 0.043457, 0.866943, 0.009766, 0.651123, 0.846680, 0.653076, 0.125732,
+    0.530762, 0.868896, 0.268799, 0.958008, 0.142578, 0.461914, 0.303955, 0.010986,
+    0.620850, 0.522217, 0.510986, 0.338135, 0.914551, 0.411865, 0.604004, 0.706543,
+    0.238525, 0.510254, 0.103271, 0.632324, 0.422119, 0.440186, 0.265137, 0.277100,
+    0.221924, 0.201172, 0.599365, 0.244629, 0.177002, 0.293945, 0.368652, 0.649902,
+    0.100586, 0.622559, 0.905762, 0.209961, 0.257324, 0.249512, 0.428467, 0.369141,
+    0.166016, 0.635986, 0.798340, 0.940918, 0.993896, 0.803467, 0.320068, 0.929443,
+    0.650146, 0.058594, 0.065918, 0.609375, 0.616943, 0.379639, 0.221191, 0.200684,
+    0.486084, 0.437500, 0.871338, 0.795898, 0.863037, 0.700684, 0.517090, 0.821533,
+    0.319092, 0.397461, 0.852295, 0.864014, 0.591797, 0.514404, 0.925049, 0.715820,
+    0.384766, 0.734131, 0.899170, 0.703125, 0.210938, 0.783203, 0.687012, 0.850586,
+    0.532471, 0.025635, 0.975342, 0.852051, 0.612305, 0.910889, 0.159668, 0.407227,
+    0.669678, 0.096924, 0.733398, 0.304688, 0.015625, 0.372803, 0.329590, 0.858398,
+    0.033203, 0.830811, 0.914307, 0.022949, 0.451416, 0.106201, 0.664551, 0.895752,
+    0.366455, 0.230225, 0.595459, 0.296631, 0.291992, 0.375488, 0.952393, 0.052734,
+    0.132813, 0.549805, 0.828125, 0.065674, 0.318848, 0.031494, 0.605713, 0.534912,
+    0.611328, 0.259766, 0.445068, 0.660156, 0.848633, 0.055176, 0.323730, 0.122803,
+    0.697510, 0.097412, 0.989014, 0.348877, 0.536865, 0.442139, 0.269043, 0.762451,
+    0.926270, 0.118896, 0.458740, 0.496094, 0.253906, 0.084717, 0.648926, 0.754639,
+    0.648438, 0.488281, 0.533691, 0.048828, 0.050781, 0.847168, 0.431152, 0.638184,
+    0.938232, 0.092285, 0.970215, 0.037354, 0.852539, 0.586670, 0.729248, 0.227295,
+    0.482910, 0.051025, 0.135254, 0.082520, 0.812500, 0.391602, 0.598389, 0.605957,
+    0.949707, 0.464600, 0.863770, 0.024902, 0.989502, 0.937012, 0.435547, 0.565186,
+    0.370850, 0.801758, 0.143311, 0.354492, 0.715088, 0.423828, 0.796387, 0.384033,
+    0.093018, 0.813965, 0.356201, 0.535889, 0.229492, 0.553711, 0.080811, 0.711426,
+    0.082275, 0.713623, 0.097168, 0.847900, 0.197754, 0.057617, 0.970703, 0.282959,
+    0.252686, 0.082031, 0.847412, 0.274658, 0.806641, 0.027588, 0.844727, 0.748535,
+    0.667480, 0.200195, 0.814941, 0.912598, 0.463379, 0.304199, 0.815918, 0.481445,
+    0.345947, 0.936279, 0.851318, 0.796631, 0.119141, 0.328369, 0.185303, 0.911621,
+    0.527100, 0.342529, 0.652100, 0.435303, 0.537354, 0.051758, 0.998535, 0.597168,
+    0.031006, 0.056396, 0.003174, 0.702637, 0.262207, 0.433838, 0.052002, 0.776367,
+    0.993652, 0.836182, 0.055908, 0.694092, 0.768311, 0.073242, 0.908203, 0.548584,
+    0.873535, 0.205078, 0.551514, 0.726074, 0.302979, 0.136475, 0.381348, 0.702393,
+    0.054932, 0.796143, 0.079346, 0.049561, 0.539795, 0.731201, 0.175049, 0.570068,
+    0.171631, 0.899902, 0.467041, 0.623779, 0.913086, 0.386230, 0.451904, 0.878418,
+    0.880371, 0.316406, 0.468994, 0.145752, 0.920166, 0.162354, 0.944092, 0.816162,
+    0.887695, 0.802246, 0.546631, 0.803955, 0.491455, 0.064453, 0.284424, 0.153564,
+    0.291260, 0.730713, 0.173584, 0.942383, 0.640137, 0.480469, 0.552979, 0.413818,
+    0.222656, 0.364502, 0.736816, 0.351074, 0.245605, 0.183105, 0.697754, 0.308350,
+    0.467285, 0.333740, 0.400391, 0.301514, 0.601074, 0.874512, 0.571289, 0.994873,
+    0.438721, 0.865234, 0.795410, 0.476807, 0.409912, 0.651855, 0.375244, 0.139404,
+    0.776611, 0.713379, 0.406494, 0.359619, 0.635742, 0.261963, 0.210449, 0.669922,
+    0.612061, 0.363281, 0.013916, 0.504639, 0.113770, 0.814697, 0.826660, 0.016602,
+    0.079834, 0.668945, 0.453125, 0.591553, 0.258789, 0.345703, 0.271240, 0.198486,
+    0.239258, 0.975830, 0.203613, 0.974121, 0.408691, 0.775391, 0.071777, 0.503418,
+    0.483887, 0.223877, 0.805420, 0.813721, 0.326660, 0.327148, 0.616455, 0.615479,
+    0.430176, 0.153076, 0.979736, 0.611572, 0.543457, 0.095459, 0.897461, 0.406250,
+    0.657471, 0.108887, 0.002930, 0.959961, 0.396973, 0.901367, 0.572998, 0.056152,
+    0.630371, 0.762939, 0.910156, 0.965820, 0.397705, 0.171143, 0.401367, 0.453857,
+    0.493896, 0.837158, 0.636719, 0.596436, 0.645752, 0.894043, 0.990479, 0.885254,
+    0.863525, 0.650391, 0.761963, 0.947266, 0.573730, 0.941650, 0.212891, 0.805664,
+    0.153809, 0.957275, 0.044678, 0.743408, 0.579590, 0.240967, 0.172363, 0.056641,
+    0.327637, 0.787842, 0.431885, 0.652344, 0.616699, 0.629150, 0.893311, 0.691406,
+    0.054199, 0.840088, 0.930664, 0.708008, 0.398193, 0.988770, 0.959717, 0.666992,
+    0.000244, 0.696777, 0.365967, 0.547119, 0.127930, 0.141113, 0.348633, 0.531494,
+    0.584961, 0.398926, 0.728516, 0.709229, 0.391113, 0.265869, 0.244141, 0.972900,
+    0.663086, 0.258057, 0.317871, 0.740723, 0.704834, 0.138672, 0.819092, 0.802002,
+    0.563232, 0.072754, 0.085938, 0.868652, 0.521240, 0.206543, 0.696533, 0.420654,
+    0.897705, 0.783936, 0.067627, 0.686035, 0.537598, 0.660400, 0.784180, 0.292725,
+    0.444336, 0.128662, 0.862793, 0.260742, 0.789551, 0.820557, 0.319824, 0.045166,
+    0.483154, 0.533203, 0.022705, 0.249756, 0.201660, 0.124023, 0.966064, 0.117920,
+    0.129395, 0.241699, 0.585205, 0.481201, 0.904053, 0.627441, 0.979004, 0.041992,
+    0.619141, 0.525879, 0.682373, 0.497803, 0.907471, 0.303711, 0.562012, 0.495117,
+    0.500488, 0.674072, 0.552734, 0.249023, 0.088867, 0.293213, 0.221680, 0.457031,
+    0.187988, 0.950439, 0.453369, 0.014160, 0.881348, 0.050049, 0.686523, 0.476318,
+    0.524170, 0.552246, 0.077393, 0.621826, 0.829834, 0.030518, 0.295654, 0.215088,
+    0.438965, 0.271729, 0.384277, 0.580322, 0.191895, 0.096680, 0.281982, 0.984131,
+    0.675537, 0.638672, 0.329834, 0.426025, 0.768799, 0.484375, 0.287598, 0.694824,
+    0.822510, 0.351563, 0.736328, 0.905029, 0.755127, 0.661377, 0.138916, 0.236572,
+    0.662354, 0.299316, 0.906250, 0.771240, 0.680420, 0.039063, 0.029297, 0.246338,
+    0.876221, 0.506348, 0.474365, 0.476074, 0.289063, 0.514648, 0.751221, 0.909424,
+    0.921631, 0.121094, 0.628174, 0.171875, 0.881836, 0.819824, 0.002441, 0.955811,
+    0.407715, 0.288818, 0.690918, 0.193359, 0.090088, 0.461670, 0.057861, 0.597412,
+    0.247559, 0.479492, 0.222900, 0.106934, 0.147705, 0.750977, 0.322754, 0.435791,
+    0.672852, 0.795654, 0.036621, 0.125488, 0.036865, 0.224854, 0.012695, 0.023438,
+    0.191650, 0.816650, 0.381592, 0.448975, 0.112305, 0.944336, 0.017822, 0.645020,
+    0.113037, 0.881104, 0.157715, 0.692383, 0.331299, 0.177979, 0.771729, 0.223145,
+    0.854004, 0.698242, 0.821777, 0.341553, 0.638428, 0.161133, 0.040039, 0.592529,
+    0.679932, 0.558350, 0.363770, 0.423584, 0.710938, 0.219482, 0.738037, 0.339844,
+    0.433105, 0.104736, 0.653320, 0.688965, 0.087402, 0.593994, 0.387451, 0.111328,
+    0.254639, 0.346680, 0.615234, 0.588379, 0.273682, 0.141602, 0.418701, 0.294678,
+    0.569336, 0.442383, 0.598877, 0.075684, 0.677979, 0.761230, 0.919189, 0.861572,
+    0.320557, 0.790771, 0.064697, 0.144531, 0.934570, 0.721436, 0.684814, 0.251465,
+    0.762207, 0.767090, 0.528076, 0.385498, 0.269531, 0.879639, 0.576416, 0.419434,
+    0.875732, 0.672607, 0.823242, 0.785156, 0.877686, 0.432861, 0.416260, 0.066406,
+    0.233643, 0.703857, 0.719482, 0.352783, 0.837646, 0.615967, 0.593018, 0.137451,
+    0.199951, 0.712891, 0.885498, 0.923828, 0.777588, 0.669189, 0.546875, 0.400146,
+    0.374023, 0.455322, 0.577881, 0.328125, 0.954590, 0.680908, 0.836426, 0.699219,
+    0.803711, 0.350586, 0.259277, 0.878174, 0.798096, 0.904541, 0.314453, 0.820313,
+    0.949951, 0.125000, 0.782227, 0.008057, 0.303467, 0.976074, 0.189941, 0.216064,
+    0.069092, 0.070557, 0.680176, 0.983643, 0.182861, 0.656250, 0.133545, 0.389893,
+    0.277588, 0.229004, 0.148438, 0.193115, 0.562500, 0.835938, 0.172607, 0.550293,
+    0.290527, 0.146729, 0.334229, 0.334717, 0.707031, 0.023193, 0.969727, 0.593262,
+    0.708496, 0.884766, 0.329346, 0.362305, 0.305176, 0.072021, 0.591309, 0.135010,
+    0.434570, 0.394287, 0.239746, 0.532715, 0.751709, 0.760986, 0.083740, 0.763184,
+    0.765381, 0.230713, 0.312988, 0.819336, 0.338623, 0.619385, 0.152832, 0.971436,
+    0.656982, 0.585693, 0.089844, 0.513184, 0.732178, 0.548828, 0.980469, 0.022461,
+    0.340820, 0.411377, 0.829346, 0.644531, 0.804443, 0.086914, 0.468018, 0.368164,
+    0.243408, 0.824463, 0.350830, 0.416748, 0.025879, 0.156494, 0.989990, 0.129150,
+    0.814453, 0.574707, 0.790527, 0.296387, 0.510498, 0.990234, 0.480957, 0.565430,
+    0.550537, 0.461182, 0.359863, 0.966553, 0.316650, 0.187500, 0.032959, 0.460693,
+    0.692871, 0.294434, 0.857666, 0.217041, 0.128174, 0.207764, 0.309814, 0.846924,
+    0.531982, 0.047607, 0.555664, 0.198730, 0.049316, 0.576904, 0.709473, 0.518799,
+    0.069336, 0.601563, 0.228516, 0.048096, 0.479980, 0.108643, 0.080566, 0.386719,
+    0.535400, 0.465088, 0.472168, 0.105957, 0.310059, 0.489014, 0.987549, 0.406006,
+    0.673096, 0.366211, 0.681885, 0.509766, 0.600342, 0.506592, 0.558594, 0.875488,
+    0.413574, 0.083984, 0.015137, 0.559082, 0.093750, 0.805176, 0.933838, 0.775635,
+    0.826172, 0.451660, 0.779785, 0.158691, 0.346191, 0.601318, 0.407471, 0.545410,
+    0.712646, 0.845947, 0.741211, 0.337891, 0.393799, 0.407959, 0.095703, 0.817139,
+    0.198242, 0.818359, 0.272461, 0.051270, 0.350098, 0.445557, 0.485352, 0.168945,
+    0.855469, 0.427246, 0.189453, 0.646973, 0.648193, 0.717041, 0.737305, 0.222168,
+    0.704346, 0.235352, 0.126221, 0.617676, 0.108154, 0.287842, 0.237549, 0.544678,
+    0.761719, 0.832764, 0.781250, 0.501221, 0.168213, 0.262451, 0.325684, 0.396240,
+    0.970459, 0.631348, 0.134277, 0.337158, 0.006592, 0.217529, 0.333496, 0.698486,
+    0.810059, 0.391846, 0.361572, 0.265625, 0.919922, 0.408447, 0.299561, 0.524414,
+    0.076660, 0.233887, 0.147217, 0.247803, 0.720459, 0.655273, 0.178711, 0.642822,
+    0.076904, 0.408936, 0.113281, 0.201416, 0.730957, 0.200439, 0.885010, 0.100342,
+    0.369385, 0.395264, 0.542480, 0.940430, 0.684326, 0.666504, 0.228760, 0.699463,
+    0.127441, 0.212646, 0.835693, 0.029785, 0.656006, 0.354736, 0.278564, 0.339600,
+    0.549561, 0.149658, 0.593506, 0.298096, 0.492432, 0.447754, 0.264648, 0.634766,
+    0.166992, 0.515137, 0.382568, 0.142822, 0.783447, 0.953125, 0.439697, 0.267822,
+    0.121338, 0.735840, 0.087891, 0.507568, 0.595703, 0.655518, 0.610107, 0.541748,
+    0.645508, 0.057373, 0.624512, 0.191406, 0.832031, 0.702148, 0.330566, 0.087646,
+    0.242188, 0.099854, 0.307861, 0.430908, 0.684570, 0.939453, 0.031250, 0.924805,
+    0.462646, 0.120361, 0.545654, 0.789063, 0.719971, 0.072266, 0.353271, 0.996826,
+    0.627930, 0.093994, 0.920654, 0.058105, 0.430664, 0.403076, 0.448486, 0.589111,
+    0.524658, 0.148682, 0.671875, 0.470947, 0.851807, 0.367188, 0.749268, 0.746582,
+    0.429199, 0.466064, 0.519531, 0.645996, 0.125977, 0.549072, 0.547363, 0.294189,
+    0.254883, 0.634277, 0.663330, 0.528320, 0.178955, 0.730225, 0.063232, 0.979248,
+    0.733154, 0.543945, 0.668213, 0.228027, 0.896729, 0.167480, 0.551270, 0.174316,
+    0.271484, 0.519043, 0.310791, 0.664307, 0.984619, 0.534668, 0.541992, 0.604492,
+    0.946045, 0.870117, 0.161865, 0.660889, 0.587646, 0.770996, 0.573486, 0.035156,
+    0.895996, 0.812988, 0.452881, 0.854248, 0.404297, 0.371094, 0.561768, 0.132324,
+    0.009033, 0.954834, 0.522461, 0.134521, 0.538574, 0.145996, 0.968994, 0.620117,
+    0.582275, 0.609863, 0.325195, 0.620361, 0.070801, 0.633301, 0.116455, 0.236084,
+    0.485840, 0.519287, 0.264404, 0.008301, 0.632568, 0.091553, 0.142334, 0.050537,
+    0.358154, 0.126953, 0.572021, 0.471436, 0.017334, 0.754883, 0.735596, 0.313232,
+    0.780518, 0.903809, 0.314209, 0.324951, 0.188721, 0.586182, 0.421875, 0.565918,
+    0.179443, 0.723389, 0.242676, 0.592773, 0.818604, 0.501465, 0.092529, 0.126709,
+    0.250244, 0.787354, 0.104248, 0.758301, 0.395508, 0.804932, 0.090820, 0.828857,
+    0.014893, 0.899414, 0.716797, 0.942871, 0.839111, 0.493164, 0.625244, 0.867432,
+    0.504150, 0.718750, 0.725098, 0.365479, 0.256104, 0.653564, 0.355469, 0.808838,
+    0.933594, 0.525146, 0.808350, 0.454346, 0.775879, 0.184326, 0.052979, 0.658936,
+    0.243896, 0.799072, 0.603516, 0.854980, 0.947021, 0.004639, 0.503174, 0.003418,
+    0.682617, 0.492920, 0.887451, 0.924316, 0.475098, 0.766602, 0.917480, 0.964111,
+    0.971191, 0.145020, 0.071289, 0.722900, 0.144775, 0.335205, 0.613770, 0.643066,
+    0.186035, 0.081299, 0.393311, 0.123047, 0.261719, 0.196533, 0.433350, 0.263916,
+    0.935303, 0.278076, 0.732422, 0.328613, 0.937988, 0.706787, 0.467529, 0.203857,
+    0.279541, 0.957764, 0.600586, 0.226074, 0.213867, 0.563721, 0.132568, 0.802490,
+    0.318359, 0.035400, 0.606201, 0.721680, 0.735352, 0.917725, 0.045898, 0.173828,
+    0.486328, 0.241211, 0.243164, 0.181152, 0.637695, 0.670166, 0.964844, 0.367676,
+    0.826904, 0.903076, 0.457764, 0.041260, 0.161377, 0.955322, 0.752197, 0.769043,
+    0.163818, 0.117188, 0.971924, 0.611084, 0.560303, 0.319580, 0.194824, 0.325928,
+    0.477051, 0.264893, 0.043213, 0.002686, 0.690430, 0.896240, 0.409180, 0.765137,
+    0.741455, 0.689941, 0.860107, 0.704590, 0.983887, 0.869629, 0.452637, 0.376953,
+    0.839355, 0.951416, 0.378906, 0.042969, 0.287109, 0.064209, 0.195801, 0.494385,
+    0.720947, 0.139648, 0.570313, 0.250000, 0.181396, 0.461426, 0.921875, 0.939209,
+    0.690674, 0.393555, 0.693115, 0.614502, 0.322266, 0.720215, 0.636475, 0.840820,
+    0.958496, 0.931641, 0.063965, 0.770020, 0.298828, 0.606445, 0.886719, 0.506104,
+    0.958740, 0.525635, 0.297119, 0.567871, 0.358643, 0.365234, 0.187012, 0.570801,
+    0.116211, 0.786621, 0.336182, 0.388428, 0.913330, 0.494141, 0.696289, 0.848145,
+    0.699951, 0.596680, 0.276123, 0.015381, 0.685303, 0.677490, 0.463623, 0.866699,
+    0.283447, 0.909912, 0.215332, 0.062012, 0.495361, 0.307617, 0.465820, 0.005127,
+    0.937256, 0.606934, 0.465332, 0.379150, 0.685547, 0.111084, 0.753662, 0.516113,
+    0.412354, 0.058350, 0.553223, 0.181885, 0.963867, 0.639648, 0.502930, 0.018799,
+    0.588867, 0.974365, 0.657227, 0.122559, 0.773926, 0.526367, 0.243652, 0.254150,
+    0.618408, 0.589355, 0.657959, 0.209229, 0.670898, 0.621582, 0.523926, 0.572510,
+    0.053223, 0.093262, 0.187744, 0.291504, 0.083496, 0.229980, 0.109375, 0.340332,
+    0.496582, 0.659424, 0.626221, 0.183350, 0.059814, 0.711914, 0.526611, 0.425781,
+    0.995361, 0.784424, 0.170654, 0.275146, 0.402344, 0.972656, 0.624268, 0.923584,
+    0.744385, 0.902100, 0.361816, 0.682861, 0.971680, 0.441895, 0.186768, 0.144043,
+    0.801270, 0.853760, 0.099121, 0.584717, 0.443604, 0.423096, 0.855225, 0.976807,
+    0.326904, 0.614014, 0.337646, 0.821289, 0.109863, 0.405762, 0.000732, 0.157471,
+    0.377441, 0.987793, 0.766846, 0.059570, 0.434814, 0.186523, 0.332275, 0.214844,
+    0.072510, 0.640625, 0.280029, 0.105469, 0.280762, 0.946533, 0.845703, 0.028320,
+    0.044922, 0.603760, 0.059082, 0.255371, 0.143799, 0.678711, 0.182129, 0.085205,
+    0.915771, 0.610352, 0.457275, 0.617188, 0.060547, 0.774658, 0.829590, 0.854492,
+    0.313721, 0.592041, 0.156006, 0.469482, 0.743896, 0.750732, 0.004150, 0.352051,
+    0.853271, 0.313477, 0.456543, 0.841797, 0.007080, 0.389648, 0.849365, 0.942627,
+    0.561279, 0.391357, 0.214111, 0.164551, 0.554199, 0.246582, 0.012939, 0.364746,
+    0.104980, 0.046387, 0.002197, 0.420410, 0.802979, 0.156738, 0.028076, 0.115479,
+    0.405029, 0.708984, 0.782959, 0.851074, 0.748291, 0.088135, 0.681152, 0.099365,
+    0.624756, 0.338379, 0.642090, 0.221436, 0.997314, 0.548340, 0.259521, 0.464111,
+    0.016113, 0.793945, 0.773193, 0.930908, 0.316895, 0.522705, 0.755615, 0.361328,
+    0.923096, 0.323242, 0.487061, 0.474854, 0.800293, 0.025391, 0.417236, 0.895020,
+    0.700195, 0.508789, 0.031982, 0.467773, 0.890137, 0.450684, 0.710693, 0.204834,
+    0.724121, 0.707764, 0.425537, 0.233154, 0.716064, 0.668701, 0.255615, 0.388672,
+    0.893799, 0.224609, 0.978516, 0.195557, 0.145508, 0.499268, 0.890625, 0.495850,
+    0.362793, 0.900879, 0.902344, 0.882324, 0.811279, 0.579346, 0.128418, 0.126465,
+    0.283936, 0.406738, 0.588135, 0.281738, 0.358887, 0.946289, 0.641357, 0.616211,
+    0.747559, 0.651611, 0.872070, 0.858887, 0.834717, 0.694336, 0.005615, 0.744873,
+    0.836670, 0.643799, 0.602539, 0.020996, 0.107422, 0.055664, 0.961426, 0.900391,
+    0.867676, 0.133057, 0.995850, 0.737549, 0.807617, 0.289795, 0.354004, 0.972168,
+    0.139160, 0.582520, 0.497314, 0.514893, 0.759033, 0.778564, 0.128906, 0.862549,
+    0.600830, 0.070313, 0.966797, 0.097900, 0.252197, 0.758789, 0.529541, 0.840576,
+    0.373291, 0.268066, 0.728760, 0.376221, 0.394775, 0.434082, 0.840332, 0.729004,
+    0.759521, 0.908691, 0.884521, 0.504883, 0.460449, 0.288086, 0.983398, 0.213623,
+    0.816406, 0.716553, 0.629883, 0.414307, 0.158936, 0.828369, 0.008545, 0.780762,
+    0.364014, 0.204102, 0.465576, 0.675781, 0.666260, 0.503906, 0.299072, 0.171387,
+    0.511475, 0.072998, 0.809326, 0.248291, 0.182373, 0.853516, 0.364258, 0.466797,
+    0.399902, 0.001465, 0.722412, 0.830566, 0.115234, 0.740967, 0.566406, 0.068115,
+    0.140869, 0.107178, 0.242432, 0.290039, 0.079590, 0.591064, 0.620605, 0.515381,
+    0.229736, 0.770752, 0.707275, 0.455811, 0.114502, 0.485596, 0.628418, 0.590088,
+    0.175293, 0.289551, 0.077637, 0.787109, 0.042480, 0.357666, 0.790283, 0.512451,
+    0.447998, 0.825195, 0.724609, 0.893066, 0.769287, 0.739014, 0.101318, 0.152344,
+    0.096436, 0.752441, 0.494873, 0.020752, 0.297852, 0.036133, 0.907227, 0.477295,
+    0.869385, 0.742920, 0.952148, 0.714600, 0.053711, 0.687744, 0.660645, 0.633545,
+    0.439453, 0.888428, 0.908936, 0.443848, 0.030273, 0.885986, 0.284912, 0.238281,
+    0.933105, 0.343750, 0.963623, 0.194580, 0.996338, 0.473877, 0.545166, 0.931885,
+    0.399658, 0.871826, 0.398438, 0.410400, 0.344482, 0.921387, 0.850830, 0.944580,
+    0.250977, 0.150879, 0.834229, 0.267578, 0.734375, 0.939697, 0.913574, 0.636230,
+    0.283691, 0.948730, 0.306885, 0.557861, 0.764648, 0.253418, 0.582764, 0.505615,
+    0.340088, 0.261230, 0.727783, 0.016357, 0.658447, 0.559326, 0.102051, 0.714111,
+    0.535645, 0.650635, 0.622314, 0.383545, 0.916748, 0.955566, 0.116943, 0.018311,
+    0.750244, 0.208252, 0.773438, 0.281006, 0.095215, 0.928467, 0.426514, 0.177246,
+    0.219727, 0.367920, 0.495605, 0.443115, 0.380127, 0.175537, 0.452148, 0.641113,
+    0.786133, 0.602295, 0.784668, 0.034912, 0.061523, 0.962891, 0.715332, 0.580078,
+    0.363525, 0.533936, 0.009277, 0.740479, 0.285156, 0.402832, 0.821045, 0.441406,
+    0.568848, 0.336670, 0.185791, 0.211182, 0.218994, 0.492676, 0.205811, 0.655029,
+    0.784912, 0.676270, 0.709717, 0.335449, 0.081787, 0.529053, 0.794434, 0.301270,
+    0.449951, 0.929932, 0.232178, 0.717773, 0.548096, 0.644775, 0.590820, 0.774170,
+    0.458252, 0.560059, 0.117432, 0.007324, 0.630859, 0.096191, 0.182617, 0.905273,
+    0.848389, 0.587158, 0.699707, 0.390137, 0.618896, 0.597656, 0.812744, 0.998291,
+    0.590576, 0.991699, 0.838379, 0.331543, 0.166504, 0.993164, 0.525391, 0.811768,
+    0.629639, 0.312744, 0.285400, 0.608643, 0.512939, 0.621094, 0.953369, 0.965576,
+    0.223633, 0.295410, 0.133301, 0.267334, 0.678223, 0.439941, 0.010010, 0.693604,
+    0.619629, 0.306641, 0.475830, 0.952637, 0.074951, 0.218262, 0.873047, 0.469238,
+    0.236328, 0.791992, 0.310303, 0.355957, 0.450928, 0.274170, 0.509033, 0.421143,
+    0.683105, 0.839600, 0.466309, 0.986084, 0.516602, 0.691895, 0.105713, 0.724854,
+    0.695068, 0.026123, 0.579834, 0.617432, 0.107666, 0.208984, 0.496338, 0.673584,
+    0.448242, 0.940674, 0.999756, 0.384521, 0.053955, 0.807373, 0.165283, 0.906006,
+    0.838623, 0.844482, 0.335693, 0.483643, 0.133789, 0.437012, 0.778809, 0.544434,
+    0.755859, 0.508301, 0.712402, 0.705322, 0.634033, 0.129883, 0.013672, 0.377686,
+    0.661133, 0.456787, 0.888672, 0.947998, 0.043701, 0.356445, 0.366699, 0.470215,
+    0.176270, 0.639160, 0.239502, 0.557373, 0.342773, 0.968506, 0.185059, 0.518311,
+    0.378174, 0.279053, 0.663818, 0.673340, 0.001221, 0.437744, 0.188232, 0.317383,
+    0.203369, 0.252441, 0.226318, 0.188477, 0.160400, 0.703613, 0.265381, 0.940186,
+    0.833252, 0.636963, 0.429932, 0.638916, 0.208008, 0.968262, 0.343262, 0.130127,
+    0.650879, 0.563965, 0.689697, 0.044434, 0.387207, 0.447021, 0.773682, 0.151611,
+    0.463867, 0.210693, 0.889893, 0.674316, 0.261475, 0.927734, 0.903320, 0.124268,
+    0.713867, 0.234619, 0.992432, 0.119629, 0.606689, 0.183838, 0.555176, 0.266113,
+    0.618652, 0.402100, 0.204590, 0.083008, 0.995117, 0.226563, 0.417725, 0.633789,
+    0.581299, 0.906494, 0.948975, 0.561523, 0.679443, 0.768555, 0.095947, 0.667725,
+    0.376709, 0.075928, 0.827637, 0.118164, 0.502197, 0.057129, 0.871094, 0.602051,
+    0.891113, 0.206299, 0.890381, 0.581787, 0.353760, 0.371338, 0.653809, 0.834473,
+    0.917236, 0.856201, 0.939941, 0.273926, 0.834961, 0.322021, 0.382080, 0.990967,
+    0.281250, 0.564453, 0.633057, 0.001709, 0.614990, 0.502686, 0.838867, 0.219238,
+    0.266846, 0.355225, 0.062500, 0.075195, 0.703369, 0.071045, 0.907715, 0.260254,
+    0.160645, 0.216553, 0.863281, 0.277832, 0.623535, 0.883301, 0.099609, 0.197998,
+    0.000977, 0.590332, 0.488037, 0.259033, 0.918213, 0.427979, 0.599854, 0.263428,
+    0.913818, 0.365723, 0.327881, 0.912842, 0.837891, 0.815186, 0.255127, 0.764893,
+    0.760254, 0.093506, 0.739990, 0.830322, 0.067383, 0.138428, 0.535156, 0.680664,
+    0.103516, 0.817871, 0.200928, 0.929688, 0.248535, 0.180664, 0.781982, 0.966309,
+    0.860840, 0.469727, 0.576660, 0.436035, 0.167236, 0.975586, 0.450439, 0.027832,
+    0.897217, 0.679688, 0.666748, 0.060303, 0.131592, 0.400879, 0.125244, 0.142090,
+    0.706055, 0.402588, 0.963379, 0.711182, 0.831299, 0.697998, 0.898193, 0.532959,
+    0.530273, 0.356689, 0.244873, 0.837402, 0.300049, 0.440918, 0.157227, 0.911377,
+    0.625000, 0.151367, 0.917969, 0.962646, 0.179932, 0.471191, 0.286377, 0.475586,
+    0.034668, 0.748779, 0.208496, 0.124512, 0.471680, 0.742432, 0.777100, 0.812012,
+    0.991943, 0.344727, 0.822021, 0.729736, 0.559570, 0.276367, 0.906982, 0.449707,
+    0.066650, 0.383301, 0.769775, 0.416504, 0.654297, 0.988525, 0.358398, 0.538086,
+    0.401855, 0.385986, 0.225586, 0.698975, 0.909180, 0.662598, 0.061035, 0.098145,
+    0.136230, 0.244385, 0.542969, 0.827881, 0.978271, 0.723145, 0.922607, 0.008789,
+    0.571533, 0.491699, 0.498535, 0.687256, 0.884033, 0.311768, 0.042236, 0.958252,
+    0.604980, 0.237061, 0.122314, 0.377930, 0.575195, 0.727295, 0.950684, 0.608398,
+    0.231445, 0.091064, 0.630127, 0.347168, 0.973389, 0.123779, 0.817627, 0.278320,
+    0.150391, 0.765869, 0.368408, 0.793701, 0.615723, 0.012451, 0.956299, 0.749512,
+    0.509521, 0.529297, 0.649170, 0.291016, 0.956543, 0.332520, 0.513672, 0.916504,
+    0.012207, 0.374512, 0.932129, 0.418945, 0.607178, 0.347656, 0.825439, 0.392578,
+    0.667236, 0.777344, 0.123535, 0.357422, 0.967041, 0.439209, 0.248047, 0.446289,
+    0.218506, 0.445801, 0.135742, 0.905518, 0.915283, 0.515869, 0.063477, 0.740234,
+    0.910400, 0.462158, 0.614746, 0.996582, 0.250488, 0.368896, 0.555420, 0.514160,
+    0.102539, 0.876953, 0.464355, 0.315186, 0.333984, 0.114258, 0.110352, 0.527832,
+    0.296143, 0.786377, 0.605469, 0.331787, 0.377197, 0.085449, 0.549316, 0.796875,
+    0.110840, 0.204346, 0.419678, 0.105225, 0.521973, 0.772705, 0.670654, 0.843750,
+    0.830078, 0.635254, 0.280518, 0.886963, 0.293701, 0.473389, 0.507813, 0.775146,
+    0.813232, 0.986572, 0.042725, 0.011475, 0.134766, 0.199463, 0.906738, 0.256836,
+    0.044189, 0.419922, 0.815674, 0.822998, 0.977783, 0.760498, 0.541016, 0.895508,
+    0.681641, 0.528564, 0.632813, 0.813477, 0.513428, 0.373535, 0.305664, 0.299805,
+    0.659912, 0.460205, 0.047363, 0.333252, 0.372314, 0.073486, 0.505127, 0.771484,
+    0.336426, 0.997803, 0.158447, 0.960938, 0.347900, 0.449463, 0.502441, 0.594238,
+    0.132080, 0.749756, 0.941895, 0.005859, 0.304443, 0.149902, 0.564209, 0.968018,
+    0.371826, 0.199219, 0.260498, 0.609619, 0.089355, 0.019287, 0.359131, 0.413330,
+    0.817383, 0.322510, 0.806152, 0.176025, 0.041748, 0.555908, 0.950928, 0.207520,
+    0.898926, 0.308594, 0.367432, 0.799805, 0.792969, 0.842041, 0.742188, 0.927979,
+    0.952881, 0.370361, 0.534180, 0.683594, 0.380859, 0.116699, 0.827148, 0.665771,
+    0.292480, 0.270508, 0.676514, 0.230957, 0.474609, 0.600098, 0.428955, 0.901855,
+    0.199707, 0.315674, 0.349854, 0.930420, 0.811035, 0.077881, 0.064941, 0.527344,
+    0.427002, 0.459961, 0.308105, 0.120605, 0.468750, 0.225830, 0.944824, 0.010498,
+    0.718994, 0.997070, 0.726563, 0.715576, 0.493652, 0.894287, 0.338867, 0.251221,
+    0.789795, 0.197021, 0.114990, 0.603271, 0.213135, 0.357178, 0.902832, 0.658691,
+    0.459229, 0.224121, 0.687988, 0.595947, 0.862061, 0.085693, 0.092041, 0.360107,
+    0.347412, 0.656738, 0.379395, 0.218018, 0.753906, 0.170166, 0.390381, 0.455566,
+    0.858154, 0.831787, 0.779297, 0.760010, 0.027344, 0.553467, 0.328857, 0.695801,
+    0.572266, 0.443359, 0.500977, 0.189209, 0.424316, 0.178467, 0.094238, 0.013428,
+    0.792480, 0.181641, 0.998047, 0.501953, 0.383057, 0.079102, 0.721924, 0.122070,
+    0.870361, 0.532227, 0.424561, 0.674805, 0.192139, 0.482422, 0.306152, 0.756836,
+    0.493408, 0.843506, 0.765625, 0.710449, 0.321777, 0.676025, 0.164307, 0.567627,
+    0.081543, 0.490479, 0.571045, 0.943115, 0.161621, 0.330322, 0.537842, 0.114746,
+    0.450195, 0.006836, 0.392334, 0.053467, 0.598633, 0.977539, 0.111572, 0.098633,
+    0.511963, 0.069580, 0.387695, 0.546143, 0.941162, 0.727051, 0.490234, 0.861084,
+    0.928955, 0.520508, 0.115723, 0.649658, 0.642578, 0.295166, 0.965088, 0.918457,
+    0.918945, 0.163086, 0.312012, 0.462891, 0.447510, 0.420166, 0.665527, 0.211914,
+    0.520996, 0.846191, 0.473633, 0.778320, 0.736572, 0.091797, 0.988281, 0.436523,
+    0.040527, 0.717529, 0.318604, 0.432617, 0.011230, 0.614258, 0.810791, 0.648682,
+    0.569580, 0.324707, 0.750000, 0.947754, 0.155273, 0.788086, 0.010742, 0.249268,
+    0.144287, 0.349609, 0.520752, 0.729980, 0.806396, 0.059326, 0.303223, 0.067139,
+    0.421387, 0.843994, 0.637207, 0.858643, 0.814209, 0.554932, 0.251709, 0.730469,
+    0.109619, 0.630615, 0.379883, 0.456055, 0.274902, 0.349121, 0.580811, 0.723633,
+    0.018066, 0.541260, 0.387939, 0.039795, 0.040771, 0.960205, 0.458984, 0.343994,
+    0.141846, 0.231934, 0.017090, 0.791748, 0.931152, 0.797852, 0.731934, 0.694580,
+    0.691162, 0.276855, 0.785889, 0.745850, 0.942139, 0.487793, 0.228271, 0.807861,
+    0.023926, 0.889160, 0.140625, 0.232666, 0.110107, 0.315918, 0.372070, 0.582031,
+    0.121582, 0.180176, 0.386475, 0.058838, 0.038086, 0.731445, 0.202637, 0.574951,
+    0.446533, 0.050293, 0.542236, 0.227051, 0.194336, 0.850098, 0.857422, 0.937744,
+    0.886475, 0.232422, 0.542725, 0.316162, 0.880859, 0.797607, 0.575439, 0.953613,
+    0.066895, 0.657715, 0.753174, 0.283203, 0.705811, 0.541504, 0.220703, 0.701172,
+    0.454102, 0.032471, 0.452393, 0.409668, 0.926514, 0.903564, 0.263672, 0.785400,
+    0.422363, 0.841064, 0.410889, 0.613281, 0.004883, 0.426758, 0.106445, 0.738770,
+    0.291748, 0.508545, 0.578125, 0.565674, 0.480225, 0.581055, 0.415527, 0.849854,
+    0.104004, 0.184814, 0.418213, 0.628662, 0.324219, 0.348145, 0.831543, 0.635010,
+    0.986816, 0.583008, 0.124756, 0.710205, 0.382813, 0.545898, 0.727539, 0.890869,
+    0.869141, 0.260986, 0.170898, 0.654785, 0.801025, 0.429443, 0.442871, 0.245117,
+    0.756104, 0.772949, 0.577393, 0.000488, 0.631592, 0.659180, 0.048584, 0.956787,
+    0.850342, 0.153320, 0.627197, 0.026611, 0.025146, 0.522949, 0.928711, 0.507324,
+    0.028809, 0.518066, 0.512207, 0.031738, 0.945068, 0.369873, 0.692139, 0.100830,
+    0.752686, 0.190674, 0.510010, 0.294922, 0.741943, 0.478271, 0.757568, 0.953857,
+    0.232910, 0.000000, 0.746094, 0.831055, 0.915039, 0.738525, 0.275391, 0.069824,
+    0.354980, 0.799561, 0.611816, 0.363037, 0.101807, 0.423340, 0.934082, 0.284668,
+    0.859863, 0.351807, 0.652588, 0.596191, 0.519775, 0.286865, 0.451172, 0.962158,
+    0.612549, 0.587891, 0.887939, 0.431641, 0.169922, 0.302246, 0.117676, 0.725342,
+    0.049805, 0.869873, 0.127686, 0.677246, 0.429688, 0.458008, 0.172852, 0.804688,
+    0.308838, 0.248779, 0.491943, 0.061279, 0.037842, 0.864746, 0.326172, 0.520264,
+    0.925781, 0.268311, 0.412598, 0.414551, 0.352295, 0.701904, 0.866455, 0.574219,
+    0.074463, 0.718018, 0.375732, 0.704102, 0.592285, 0.397949, 0.239990, 0.341309,
+    0.768066, 0.019531, 0.174805, 0.945313, 0.290283, 0.865967, 0.877441, 0.029541,
+    0.478516, 0.389160, 0.827393, 0.982910, 0.868164, 0.608154, 0.180420, 0.103760,
+    0.257813, 0.103027, 0.902588, 0.670410, 0.100098, 0.538818, 0.045654, 0.899658,
+    0.405518, 0.220215, 0.381836, 0.187256, 0.321045, 0.987061, 0.411133, 0.761475,
+    0.150146, 0.809082, 0.440430, 0.454590, 0.155762, 0.800049, 0.666016, 0.084229,
+    0.810547, 0.257080, 0.278809, 0.410645, 0.949219, 0.969971, 0.948242, 0.943604,
+    0.298584, 0.092773, 0.370117, 0.506836, 0.499023, 0.237793, 0.739258, 0.168701,
+    0.510742, 0.900635, 0.460938, 0.908447, 0.539063, 0.531006, 0.380615, 0.230469,
+    0.159912, 0.014648, 0.823730, 0.931396, 0.824951, 0.166748, 0.324463, 0.517822,
+    0.536621, 0.490723, 0.279785, 0.985352, 0.165527, 0.586914, 0.226807, 0.326416,
+    0.604248, 0.119873, 0.148926, 0.026855, 0.689453, 0.282471, 0.631836, 0.235596,
+    0.828613, 0.225342, 0.394531, 0.877197, 0.901123, 0.169678, 0.399170, 0.646729,
+    0.737793, 0.021729, 0.135498, 0.011719, 0.911133, 0.554688, 0.810303, 0.954102,
+    0.339355, 0.605225, 0.361084, 0.872803, 0.360596, 0.500000, 0.159180, 0.162109,
+    0.108398, 0.478760, 0.227783, 0.343018, 0.486816, 0.916016, 0.861816, 0.938965,
+    0.174561, 0.538330, 0.078125, 0.763428, 0.757080, 0.071533, 0.457520, 0.665039,
+    0.194092, 0.567383, 0.270752, 0.859619, 0.791260, 0.617920, 0.888916, 0.165771,
+    0.202881, 0.515625, 0.486572, 0.746826, 0.470459, 0.412842, 0.714355, 0.017578,
+    0.396484, 0.312256, 0.311035, 0.458496, 0.417480, 0.922363, 0.646240, 0.889648,
+    0.607666, 0.946777, 0.321289, 0.445313, 0.479004, 0.825684, 0.272217, 0.301758,
+    0.274414, 0.212402, 0.503662, 0.484863, 0.364990, 0.112061, 0.302734, 0.097656,
+    0.499512, 0.557617, 0.742676, 0.154541, 0.280273, 0.595215, 0.689209, 0.234375,
+    0.247070, 0.839844, 0.215576, 0.362061, 0.853027, 0.891846, 0.262695, 0.424805,
+    0.193604, 0.856689, 0.487549, 0.190186, 0.881592, 0.155029, 0.076172, 0.201904,
+    0.712158, 0.296875, 0.314697, 0.223389, 0.951904, 0.416992, 0.060791, 0.310547,
+    0.981201, 0.702881, 0.540283, 0.385254, 0.297607, 0.547852, 0.168457, 0.184082,
+    0.870850, 0.178223, 0.685059, 0.268555, 0.088379, 0.922852, 0.418457, 0.340576,
+    0.179688, 0.808594, 0.041504, 0.380371, 0.874268, 0.131104, 0.855713, 0.934326,
+    0.747803, 0.820801, 0.101074, 0.920898, 0.774414, 0.963135, 0.732910, 0.746338,
+    0.728027, 0.540039, 0.207031, 0.972412, 0.983154, 0.589844, 0.589600, 0.664063,
+    0.919678, 0.594482, 0.174072, 0.860596, 0.551025, 0.479736, 0.889404, 0.994629,
+    0.562256, 0.188965, 0.189697, 0.007568, 0.430420, 0.780273, 0.038818, 0.148193,
+    0.743164, 0.579102, 0.404785, 0.354248, 0.150635, 0.362549, 0.982178, 0.345215,
+    0.619873, 0.078857, 0.212158, 0.720703, 0.233398, 0.257568, 0.697021, 0.678955,
+    0.748047, 0.915527, 0.497559, 0.505371, 0.160889, 0.240479, 0.718262, 0.992676,
+    0.021973, 0.052490, 0.833740, 0.851563, 0.138184, 0.427490, 0.104492, 0.644043,
+    0.584229, 0.001953, 0.991211, 0.489502, 0.932373, 0.511719, 0.862305, 0.309570,
+    0.068604, 0.843018, 0.959229, 0.046875, 0.823486, 0.754395, 0.560547, 0.672363,
+    0.028564, 0.073730, 0.346924, 0.860352, 0.731689, 0.596924, 0.539551, 0.982422,
+    0.945801, 0.679199, 0.481934, 0.348389, 0.477539, 0.991455, 0.794922, 0.663574,
+    0.490967, 0.812256, 0.476563, 0.047119, 0.892578, 0.888184, 0.793213, 0.033691,
+    0.312500, 0.523193, 0.883057, 0.334473, 0.492188, 0.006348, 0.990723, 0.084961,
+    0.757813, 0.497070, 0.172119, 0.202148, 0.709961, 0.624023, 0.275635, 0.432129,
+    0.752930, 0.974854, 0.438232, 0.164063, 0.388916, 0.960693, 0.878662, 0.802734,
+    0.192383, 0.824707, 0.977295, 0.309082, 0.513916, 0.597900, 0.305908, 0.390869,
+    0.447266, 0.357910, 0.754150, 0.120117, 0.203125, 0.113525, 0.089600, 0.688477,
+    0.335938, 0.537109, 0.572754, 0.091309, 0.098877, 0.235107, 0.956055, 0.833008,
+    0.196777, 0.010254, 0.955078, 0.080322, 0.390625, 0.668457, 0.701416, 0.643555,
+    0.601807, 0.772217, 0.035645, 0.292236, 0.196289, 0.375977, 0.967529, 0.398682,
+    0.732666, 0.225098, 0.393066, 0.682129, 0.938721, 0.722168, 0.907959, 0.719727,
+    0.681396, 0.980957, 0.594727, 0.454834, 0.531250, 0.222412, 0.717285, 0.845459,
+    0.892822, 0.642334, 0.479248, 0.936523, 0.083252, 0.879395, 0.856934, 0.422852,
+    0.442627, 0.156250, 0.849609, 0.076416, 0.550049, 0.864990, 0.926025, 0.568115,
+    0.989258, 0.708740, 0.578613, 0.896484, 0.805908, 0.941406, 0.778076, 0.745117,
+    0.688232, 0.416016, 0.245850, 0.652832, 0.169189, 0.571777, 0.459473, 0.024170,
+    0.879883, 0.861328, 0.319336, 0.146484, 0.700928, 0.240234, 0.154297, 0.197266,
+    0.472656, 0.651367, 0.716309, 0.854736, 0.544189, 0.052246, 0.981934, 0.372559,
+    0.266357, 0.272705, 0.035889, 0.290771, 0.741699, 0.359375, 0.566162, 0.293457,
+    0.431396, 0.167725, 0.970947, 0.266602, 0.875977, 0.425049, 0.743652, 0.935059,
+    0.173096, 0.634521, 0.677002, 0.927490, 0.988037, 0.112793, 0.494629, 0.707520,
+    0.086670, 0.089111, 0.943359, 0.613037, 0.776123, 0.832275, 0.045410, 0.824219,
+    0.062744, 0.415771, 0.206787, 0.569824, 0.507080, 0.473145, 0.401123, 0.438477,
+    0.345459, 0.217773, 0.033936, 0.865479, 0.376465, 0.676758, 0.330078, 0.973145,
+    0.516357, 0.395020, 0.464844, 0.240723, 0.967285, 0.231689, 0.022217, 0.766357,
+    0.776855, 0.216309, 0.305420, 0.158203, 0.019043, 0.841309, 0.054688, 0.131348,
+    0.270264, 0.511230, 0.073975, 0.671631, 0.718506, 0.701660, 0.009521, 0.980713,
+    0.355713, 0.822266, 0.023682, 0.781006, 0.973877, 0.509277, 0.288574, 0.034180,
+    0.500732, 0.176514, 0.968750, 0.678467, 0.334961, 0.779541, 0.985596, 0.726807,
+    0.006104, 0.647705, 0.928223, 0.979492, 0.477783, 0.130371, 0.209473, 0.695313,
+    0.311523, 0.382324, 0.504395, 0.521729, 0.147461, 0.909668, 0.585938, 0.674561,
+    0.747070, 0.041016, 0.207275, 0.323486, 0.558838, 0.891357, 0.526123, 0.722656,
+    0.985840, 0.488770, 0.961914, 0.481689, 0.801514, 0.180908, 0.788330, 0.758057,
+    0.891602, 0.563477, 0.466553, 0.552002, 0.760742, 0.577148, 0.705078, 0.314941,
+    0.852783, 0.323975, 0.738281, 0.297363, 0.136963, 0.512695, 0.356934, 0.210205,
+    0.378662, 0.848877, 0.411621, 0.978760, 0.723877, 0.149170, 0.635498, 0.734619,
+    0.779053, 0.533447, 0.610596, 0.396729, 0.242920, 0.448730, 0.251953, 0.838135,
+    0.695557, 0.499756, 0.935791, 0.788574, 0.247314, 0.530518, 0.524902, 0.137695,
+    0.231201, 0.216797, 0.130615, 0.436768, 0.980225, 0.556641, 0.807129, 0.927246,
+    0.927002, 0.446777, 0.599609, 0.867920, 0.969238, 0.217285, 0.792725, 0.219971,
+    0.444824, 0.878906, 0.996094, 0.540527, 0.341064, 0.048340, 0.688721, 0.744629,
+    0.604736, 0.584473, 0.700439, 0.444580, 0.037109, 0.136719, 0.131836, 0.237305,
+    0.756348, 0.422607, 0.901611, 0.735107, 0.568359, 0.756592, 0.410156, 0.649414,
+    0.875244, 0.090576, 0.876465, 0.191162, 0.626953, 0.373779, 0.864258, 0.051514,
+    0.999512, 0.763672, 0.994141, 0.374756, 0.911865, 0.179199, 0.415283, 0.046143,
+    0.381104, 0.518555, 0.675293, 0.926758, 0.260010, 0.951660, 0.608887, 0.488525,
+    0.580566, 0.932861, 0.879150, 0.318115, 0.613525, 0.043945, 0.040283, 0.719238,
+    0.353516, 0.647461, 0.570557, 0.994385, 0.602783, 0.825928, 0.394043, 0.003662,
+    0.951172, 0.818848, 0.786865, 0.528809, 0.750488, 0.255859, 0.154053, 0.876709,
+    0.154785, 0.485107, 0.007813, 0.453613, 0.034424, 0.932617, 0.897949, 0.558105,
+    0.030762, 0.173340, 0.753418, 0.403809, 0.434326, 0.137207, 0.282227, 0.080078,
+    0.849121, 0.711670, 0.065186, 0.090332, 0.925293, 0.883545, 0.456299, 0.573242,
+    0.583252, 0.325439, 0.074219, 0.047852, 0.392822, 0.984863, 0.330811, 0.560791,
+    0.441650, 0.235840, 0.559814, 0.395752, 0.234131, 0.733643, 0.520020, 0.833984,
+    0.764160, 0.129639, 0.446045, 0.639404, 0.068848, 0.024414, 0.478027, 0.112549,
+    0.276611, 0.270020, 0.844971, 0.527588, 0.566895, 0.804199, 0.896973, 0.183594,
+    0.631104, 0.924072, 0.246826, 0.094727, 0.304932, 0.781738, 0.118408, 0.842529,
+    0.269775, 0.014404, 0.626465, 0.767822, 0.729492, 0.190918, 0.544922, 0.564697,
+    0.992920, 0.317627, 0.024658, 0.925537, 0.414063, 0.583740, 0.569092, 0.143066,
+    0.655762, 0.759766, 0.799316, 0.056885, 0.273438, 0.882813, 0.281494, 0.795166,
+    0.020264, 0.066162, 0.523438, 0.238037, 0.880127, 0.157959, 0.236816, 0.992188,
+    0.924561, 0.578857, 0.498291, 0.130859, 0.344238, 0.964600, 0.798584, 0.672119,
+    0.622070, 0.794189, 0.661621, 0.474121, 0.399414, 0.842285, 0.166260, 0.220459,
+    0.640869, 0.351318, 0.764404, 0.202393, 0.726318, 0.498779, 0.959473, 0.395996,
+    0.929199, 0.415039, 0.246094, 0.301025, 0.516846, 0.164795, 0.141357, 0.789307,
+    0.286621, 0.343506, 0.625977, 0.147949, 0.654541, 0.279297, 0.770508, 0.937500,
+    0.282715, 0.205322, 0.833496, 0.665283, 0.751953, 0.964355, 0.462402, 0.184570,
+    0.195313, 0.557129, 0.791016, 0.882568, 0.610840, 0.004395, 0.787598, 0.556396,
+    0.209717, 0.408203, 0.816895, 0.373047, 0.369629, 0.344971, 0.870605, 0.120850,
+    0.987305, 0.118652, 0.658203, 0.873779, 0.292969, 0.692627, 0.568604, 0.922119,
+    0.469971, 0.575928, 0.985107, 0.288330, 0.192627, 0.437256, 0.414795, 0.628906,
+    0.647217, 0.540771, 0.111816, 0.342041, 0.420898, 0.767334, 0.224365, 0.739502,
+    0.843262, 0.894531, 0.916260, 0.820068, 0.564941, 0.256348, 0.238770, 0.386963,
+    0.960449, 0.284180, 0.385010, 0.687500, 0.683838, 0.275879, 0.945557, 0.936768,
+    0.032227, 0.607910, 0.062988, 0.322998, 0.241455, 0.818115, 0.567139, 0.973633,
+    0.829102, 0.938477, 0.046631, 0.962402, 0.576172, 0.309326, 0.979980, 0.176758,
+    0.421631, 0.329102, 0.315430, 0.333008, 0.160156, 0.455078, 0.562744, 0.417969,
+    0.898438, 0.771973, 0.725830, 0.159424, 0.254395, 0.441162, 0.371582, 0.102295,
+    0.151123, 0.468262, 0.637451, 0.087158, 0.405273, 0.063721, 0.155518, 0.403320,
+    0.989746, 0.957031, 0.137939, 0.543213, 0.428223, 0.054443, 0.872559, 0.823975,
+    0.815430, 0.609131, 0.912109, 0.806885, 0.067871, 0.556152, 0.923340, 0.769531,
+    0.618164, 0.055420, 0.803223, 0.156982, 0.262939, 0.693848, 0.894775, 0.270996,
+    0.463135, 0.998779, 0.845215, 0.149414, 0.081055, 0.253174, 0.037598, 0.842773,
+    0.526855, 0.306396, 0.068359, 0.078613, 0.211426, 0.508057, 0.295898, 0.496826,
+    0.374268, 0.234863, 0.832520, 0.489258, 0.140137, 0.193848, 0.029053, 0.798828,
+    0.914063, 0.086426, 0.866211, 0.857910, 0.914795, 0.554443, 0.285645, 0.135986
+];
+const MAX_RANDOM_FLOATS = 4096;
+const RANDOM_FLOAT_MASK = MAX_RANDOM_FLOATS - 1;
+
 var _a;
 const MAX_PARTICLE_CONTROL_POINTS = 64;
+//const RESET_DELAY = 0;
 let systemNumber = 0;
 class ParamType {
     param;
@@ -44807,7 +45358,7 @@ class Source1ParticleSystem extends Entity {
     #materialPromise;
     #renderers = new Map();
     #particleCount = 0;
-    #randomSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+    #randomSeed = 0; //Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
     #maximumTimeStep = 0.1;
     animable = true;
     resetable = true;
@@ -44909,7 +45460,7 @@ class Source1ParticleSystem extends Entity {
             childrenSystem.stop();
         }
     }
-    do(action, params) {
+    do(action) {
         switch (action) {
             case 'reset':
                 this.reset();
@@ -45089,8 +45640,8 @@ class Source1ParticleSystem extends Entity {
      * Step forces for each particle.
      */
     stepForces() {
-        for (let i = 0; i < this.#livingParticles.length; ++i) {
-            const particle = this.#livingParticles[i];
+        for (const particle of this.#livingParticles) {
+            //const particle = this.#livingParticles[i]!;
             for (const force of this.forces.values()) {
                 //const force = this.forces[j];
                 force.forceParticle(particle, this.elapsedTime);
@@ -45105,13 +45656,13 @@ class Source1ParticleSystem extends Entity {
         }
     }
     #stepRenderers(elapsedTime) {
-        for (const [_, renderer] of this.#renderers) {
+        for (const [, renderer] of this.#renderers) {
             renderer.updateParticles(this, this.#livingParticles, elapsedTime);
         }
     }
     #stepChildren(elapsedTime) {
-        for (const j in this.#childrenSystems) { //TODOv3
-            const child = this.#childrenSystems[j];
+        for (const child of this.#childrenSystems) {
+            //const child = this.#childrenSystems[j]!;
             child.#step(elapsedTime);
         }
     }
@@ -45174,12 +45725,10 @@ class Source1ParticleSystem extends Entity {
         return vec3.zero(vec);
     }
     stepControlPoint() {
-        for (let i = 0; i < this.#controlPoints.length; i++) {
-            const cp = this.#controlPoints[i];
-            if (!cp) {
-                continue;
+        for (const cp of this.#controlPoints) {
+            if (cp) {
+                cp.step();
             }
-            cp.step();
         }
         if (this.parentSystem) {
             this.setOrientation(this.parentSystem.getWorldQuaternion());
@@ -45200,7 +45749,7 @@ class Source1ParticleSystem extends Entity {
     }
     setParameter(parameter, type /*TODO: create an enum*/, value) {
         if (parameter == '')
-            return;
+            return null;
         if (this.parameters[parameter] === undefined) {
             this.parameters[parameter] = {};
         }
@@ -45354,7 +45903,7 @@ class Source1ParticleSystem extends Entity {
     }
     #addRenderer(renderer, id) {
         this.#renderers.set(id, renderer);
-        this.#getMaterial().then((material) => renderer.initRenderer());
+        this.#getMaterial().then(() => renderer.initRenderer());
     }
     getControlPoint(controlPointId) {
         if (controlPointId < 0 || controlPointId >= MAX_PARTICLE_CONTROL_POINTS) {
@@ -45450,7 +45999,7 @@ class Source1ParticleSystem extends Entity {
             for (let cpId = first; cpId <= last; ++cpId) {
                 const cp = child.getOwnControlPoint(cpId);
                 if (cp) {
-                    cp.position = position;
+                    cp.setPosition(position);
                     //The control point is now world positioned
                     //Therefore we remove it from the hierarchy
                     //cp.remove();
@@ -45479,7 +46028,7 @@ class Source1ParticleSystem extends Entity {
             index = Math.floor(Math.random() * this.poolParticles.length);
             return this.poolParticles[index];
         }*/
-        return this.#livingParticles[index];
+        return this.#livingParticles[index] ?? null;
     }
     getControlPointPosition(cpId) {
         const cp = this.getControlPoint(cpId);
@@ -45491,11 +46040,12 @@ class Source1ParticleSystem extends Entity {
     setControlPointPosition(cpId, position) {
         const cp = this.getOwnControlPoint(cpId);
         if (cp) {
-            cp.position = position;
+            cp.setPosition(position);
         }
     }
-    setControlPointParent(controlPointId, parentControlPointId) {
-        this.getControlPoint(controlPointId);
+    setControlPointParent( /*controlPointId: number, parentControlPointId: number*/) {
+        // TODO: this function does nothing ????
+        //const controlPoint = this.getControlPoint(controlPointId);
         this.parentSystem;
         /*
                 if (cp && cpParent) {
@@ -45532,7 +46082,7 @@ class Source1ParticleSystem extends Entity {
         this.#controlPoints.forEach(element => element.dispose());
         this.#controlPoints.length = 0;
         this.material?.removeUser(this);
-        for (const [_, renderer] of this.#renderers) {
+        for (const [, renderer] of this.#renderers) {
             renderer.dispose();
         }
         for (const child of this.#childrenSystems) {
@@ -45567,6 +46117,49 @@ class Source1ParticleSystem extends Entity {
     }
     getActiveParticlesCount() {
         return this.#livingParticles.length; //TODO: optimize
+    }
+    randomVector(randomSampleId, min, max, out) {
+        const delta = max - min;
+        const nBaseId = this.#randomSeed + randomSampleId;
+        out[0] = randomFloats[(nBaseId + 0) & RANDOM_FLOAT_MASK] * delta + min;
+        out[1] = randomFloats[(nBaseId + 1) & RANDOM_FLOAT_MASK] * delta + min;
+        out[2] = randomFloats[(nBaseId + 2) & RANDOM_FLOAT_MASK] * delta + min;
+    }
+    calculatePathValues(pathIn, timeStamp, startPnt, midPnt, endPnt) {
+        // TODO: use timeStamp to get control point at time
+        const startControlPoint = this.getControlPoint(pathIn.startControlPointNumber);
+        const endControlPoint = this.getControlPoint(pathIn.endControlPointNumber);
+        if (!startControlPoint || !endControlPoint) {
+            return;
+        }
+        startControlPoint.getWorldPosition(startPnt);
+        endControlPoint.getWorldPosition(endPnt);
+        vec3.lerp(midPnt, startPnt, endPnt, pathIn.midPoint);
+        if (pathIn.bulgeControl != BulgeControl.Random) {
+            const target = vec3.sub(vec3.create(), endPnt, startPnt); // TODO: optimize vec3.create()
+            let bulgeScale = 0.0;
+            let cp = startControlPoint;
+            if (pathIn.bulgeControl == BulgeControl.OrientationOfEndPoint) {
+                cp = endControlPoint;
+            }
+            //const controlPointOrientation: quat = cp.getWorldQuaternion();// TODO: optimize pass a quat
+            const fwd = cp.getForwardVector(); // TODO: optimize pass a vec3
+            const len = vec3.len(target);
+            if (len > 1.0e-6) {
+                vec3.scale(target, target, 1. / len);
+                bulgeScale = 1.0 - Math.abs(vec3.dot(target, fwd)); // bulge inversely scaled
+            }
+            const flOffsetDist = vec3.len(fwd);
+            if (flOffsetDist > 1.0e-6) {
+                vec3.scale(fwd, fwd, (pathIn.bulge * len * bulgeScale) / flOffsetDist);
+                vec3.add(midPnt, midPnt, fwd);
+            }
+        }
+        else {
+            const rndVector = vec3.create();
+            this.randomVector(0, -pathIn.bulge, pathIn.bulge, rndVector);
+            vec3.add(midPnt, midPnt, rndVector);
+        }
     }
     buildContextMenu() {
         const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
@@ -50297,44 +50890,227 @@ class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
 
-const a$4 = vec3.create();
-const b$1 = vec3.create();
-/*
-    DMXELEMENT_UNPACK_FIELD( "minimum distance", "0", float, m_fMinDistance )
-    DMXELEMENT_UNPACK_FIELD( "maximum distance", "100", float, m_flMaxDistance0 )
-    DMXELEMENT_UNPACK_FIELD( "maximum distance middle", "-1", float, m_flMaxDistanceMid )
-    DMXELEMENT_UNPACK_FIELD( "maximum distance end", "-1", float, m_flMaxDistance1 )
-    DMXELEMENT_UNPACK_FIELD( "travel time", "10", float, m_flTravelTime )
-    DMXELEMENT_UNPACK_FIELD( "random bulge", "0", float, m_PathParameters.m_flBulge )
-    DMXELEMENT_UNPACK_FIELD( "start control point number", "0", int, m_PathParameters.m_nStartControlPointNumber )
-    DMXELEMENT_UNPACK_FIELD( "end control point number", "0", int, m_PathParameters.m_nEndControlPointNumber )
-    DMXELEMENT_UNPACK_FIELD( "bulge control 0=random 1=orientation of start pnt 2=orientation of end point", "0", int, m_PathParameters.m_nBulgeControl )
-    DMXELEMENT_UNPACK_FIELD( "mid point position", "0.5", float, m_PathParameters.m_flMidPoint )
-    */
+const Four_Zeros = 0;
+const Four_Ones = 1;
+const Four_Twos = 2;
+const Four_PointFives = 0.5;
+function CmpGtSIMD(a, b) {
+    return a > b;
+}
+function CmpGeSIMD(a, b) {
+    return a >= b;
+}
+function CmpLtSIMD(a, b) {
+    return a < b;
+}
+function AndSIMD(a, b) {
+    return a && b;
+}
+function MulSIMD(a, b) {
+    return a * b;
+}
+function DivSIMD(a, b) {
+    return a / b;
+}
+function AddSIMD(a, b) {
+    return a + b;
+}
+function SubSIMD(a, b) {
+    return a - b;
+}
+function ReciprocalEstSIMD(a) {
+    return 1 / a;
+}
+function ReciprocalSIMD(a) {
+    return 1 / a;
+}
+function MaxSIMD(a, b) {
+    return Math.max(a, b);
+}
+function MinSIMD(a, b) {
+    return Math.min(a, b);
+}
+function BiasSIMD(val, precalc_param) {
+    // similar to bias function except pass precalced bias value from calling PreCalcBiasParameter.
+    // !!speed!! use reciprocal est?
+    // !!speed!! could save one op by precalcing _2_ values
+    return DivSIMD(val, AddSIMD(MulSIMD(precalc_param, SubSIMD(Four_Ones, val)), Four_Ones));
+}
+function MaskedAssign(ReplacementMask, NewValue, OldValue) {
+    // TODO: params are vec4
+    return ReplacementMask ? NewValue : OldValue;
+    /*return OrSIMD(
+        AndSIMD(ReplacementMask, NewValue),
+        AndNotSIMD(ReplacementMask, OldValue));*/
+}
+function SinEst01SIMD(val) {
+    return Math.sin(val * Math.PI);
+}
+function SimpleSplineRemapValWithDeltasClamped(val, A, BMinusA, OneOverBMinusA, C, DMinusC) {
+    //	if (A == B)
+    //		return val >= B ? D : C;
+    let cVal = (val - A) * OneOverBMinusA; //fltx4 cVal = MulSIMD(SubSIMD(val, A), OneOverBMinusA);
+    cVal = Math.min(Math.max(0.0, cVal), 1.0); //Clamp(cVal, 0.0, 1.0);//cVal = MinSIMD(Four_Ones, MaxSIMD(Four_Zeros, cVal));
+    return C + DMinusC * SimpleSpline(cVal); //AddSIMD(C, MulSIMD(DMinusC, SimpleSpline(cVal)));
+}
+
+vec3.create();
+vec3.create();
+const startPnt = vec3.create();
+const endPnt = vec3.create();
+const midP = vec3.create();
 class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOperator {
     static functionName = 'Constrain distance to path between two control points';
+    #minDistance = 0;
+    #maxDistance0 = 100;
+    #maxDistanceMid = -1;
+    #maxDistance1 = -1;
+    #travelTime = 10;
+    #pathParameters = {
+        startControlPointNumber: 0,
+        endControlPointNumber: 0,
+        bulgeControl: 0,
+        bulge: 0,
+        midPoint: 0.5,
+    };
     constructor(system) {
         super(system);
-        //this.setNameId('constrain distance to path between two control points');
-        this.addParam('start control point number', PARAM_TYPE_INT, 0);
-        this.addParam('end control point number', PARAM_TYPE_INT, 0);
-        this.addParam('travel time', PARAM_TYPE_FLOAT, 10);
+        // TODO: remove those params ?
         this.addParam('minimum distance', PARAM_TYPE_FLOAT, 0);
         this.addParam('maximum distance', PARAM_TYPE_FLOAT, 100);
-        this.addParam('offset of center', PARAM_TYPE_VECTOR, vec3.create());
-        // TODO: add more parameters
+        this.addParam('maximum distance middle', PARAM_TYPE_FLOAT, -1);
+        this.addParam('maximum distance end', PARAM_TYPE_FLOAT, -1);
+        this.addParam('travel time', PARAM_TYPE_FLOAT, 10);
+        this.addParam('random bulge', PARAM_TYPE_FLOAT, 0);
+        this.addParam('start control point number', PARAM_TYPE_INT, 0);
+        this.addParam('end control point number', PARAM_TYPE_INT, 0);
+        this.addParam('bulge control 0=random 1=orientation of start pnt 2=orientation of end point', PARAM_TYPE_INT, 0);
+        this.addParam('mid point position', PARAM_TYPE_FLOAT, 0.5);
+        /*
+            DMXELEMENT_UNPACK_FIELD( "minimum distance", "0", float, m_fMinDistance )
+            DMXELEMENT_UNPACK_FIELD( "maximum distance", "100", float, m_flMaxDistance0 )
+            DMXELEMENT_UNPACK_FIELD( "maximum distance middle", "-1", float, m_flMaxDistanceMid )
+            DMXELEMENT_UNPACK_FIELD( "maximum distance end", "-1", float, m_flMaxDistance1 )
+            DMXELEMENT_UNPACK_FIELD( "travel time", "10", float, m_flTravelTime )
+            DMXELEMENT_UNPACK_FIELD( "random bulge", "0", float, m_PathParameters.m_flBulge )
+            DMXELEMENT_UNPACK_FIELD( "start control point number", "0", int, m_PathParameters.m_nStartControlPointNumber )
+            DMXELEMENT_UNPACK_FIELD( "end control point number", "0", int, m_PathParameters.m_nEndControlPointNumber )
+            DMXELEMENT_UNPACK_FIELD( "bulge control 0=random 1=orientation of start pnt 2=orientation of end point", "0", int, m_PathParameters.m_nBulgeControl )
+            DMXELEMENT_UNPACK_FIELD( "mid point position", "0.5", float, m_PathParameters.m_flMidPoint )
+        */
+    }
+    paramChanged(name, value) {
+        switch (name) {
+            case 'minimum distance':
+                this.#minDistance = value;
+                break;
+            case 'maximum distance':
+                this.#maxDistance0 = value;
+                break;
+            case 'maximum distance middle':
+                this.#maxDistanceMid = value;
+                break;
+            case 'maximum distance end':
+                this.#maxDistance1 = value;
+                break;
+            case 'travel time':
+                this.#travelTime = value;
+                break;
+            case 'random bulge':
+                this.#pathParameters.bulge = value;
+                break;
+            case 'start control point number':
+                this.#pathParameters.startControlPointNumber = value;
+                break;
+            case 'end control point number':
+                this.#pathParameters.endControlPointNumber = value;
+                break;
+            case 'bulge control 0=random 1=orientation of start pnt 2=orientation of end point':
+                this.#pathParameters.bulgeControl = value;
+                break;
+            case 'mid point position':
+                this.#pathParameters.midPoint = value;
+                break;
+        }
     }
     applyConstraint(particle) {
-        const startNumber = this.getParameter('start control point number') || 0;
-        const endNumber = this.getParameter('end control point number') || 1;
-        let travelTime = this.getParameter('travel time') || 1;
-        travelTime = clamp$1(particle.currentTime / travelTime, 0, 1);
-        const startCP = this.particleSystem.getControlPoint(startNumber);
-        const endCP = this.particleSystem.getControlPoint(endNumber);
-        if (startCP && endCP) {
-            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$4));
-            vec3.scaleAndAdd(particle.position, a$4, delta, travelTime);
+        this.particleSystem.calculatePathValues(this.#pathParameters, this.particleSystem.currentTime, startPnt, midP, endPnt);
+        const CurTime = this.particleSystem.currentTime;
+        const TimeScale = (1.0 / (Math.max(0.001, this.#travelTime)));
+        let bConstantRadius = true;
+        const Rad0 = this.#maxDistance0;
+        let Radm = Rad0;
+        if (this.#maxDistanceMid >= 0.0) {
+            bConstantRadius = (this.#maxDistanceMid == this.#maxDistance0);
+            Radm = this.#maxDistanceMid;
         }
+        let Rad1 = Radm;
+        if (this.#maxDistance1 >= 0.0) {
+            bConstantRadius = bConstantRadius && (this.#maxDistance1 == this.#maxDistance0);
+            Rad1 = this.#maxDistance1;
+        }
+        const RadmMinusRad0 = Radm - Rad0;
+        const Rad1MinusRadm = Rad1 - Radm;
+        const SIMDMinDist = this.#minDistance;
+        const SIMDMinDist2 = this.#minDistance * this.#minDistance;
+        let SIMDMaxDist = Math.max(Rad0, Math.max(Radm, Rad1));
+        const SIMDMaxDist2 = SIMDMaxDist * SIMDMaxDist;
+        let bChangedSomething = false;
+        const StartP = vec3.clone(startPnt);
+        const MiddleP = vec3.clone(midP);
+        // form delta terms needed for quadratic bezier
+        const Delta0 = vec3.sub(vec3.create(), midP, startPnt);
+        const Delta1 = vec3.sub(vec3.create(), endPnt, midP);
+        //do {
+        const TScale = Math.min(1, TimeScale * (CurTime - particle.cTime));
+        // bezier(a,b,c,t)=lerp( lerp(a,b,t),lerp(b,c,t),t)
+        const L0 = vec3.scale(vec3.create(), Delta0, TScale);
+        vec3.add(L0, L0, StartP);
+        const L1 = vec3.scale(vec3.create(), Delta1, TScale);
+        vec3.add(L1, L1, MiddleP);
+        const Center = vec3.sub(vec3.create(), L1, L0);
+        vec3.scaleAndAdd(Center, L0, Center, TScale);
+        const pts = vec3.sub(vec3.create(), particle.position, Center);
+        // calculate radius at the point. !!speed!! - use speical case for constant radius
+        const dist_squared = vec3.sqrDist(particle.position, Center);
+        let TooFarMask = (dist_squared > SIMDMaxDist2);
+        if ((!bConstantRadius) && (!(TooFarMask))) {
+            // need to calculate and adjust for true radius =- we've only trivilally rejected note
+            // voodoo here - we update simdmaxdist for true radius, but not max dist^2, since
+            // that's used only for the trivial reject case, which we've already done
+            const R0 = (Rad0 + (RadmMinusRad0 * TScale));
+            const R1 = (Radm + (Rad1MinusRadm * TScale));
+            SIMDMaxDist = (R0 + ((R1 - R0) * TScale));
+            // now that we know the true radius, update our mask
+            TooFarMask = (dist_squared > (SIMDMaxDist * SIMDMaxDist));
+        }
+        const TooCloseMask = (dist_squared < SIMDMinDist2);
+        const NeedAdjust = (TooFarMask || TooCloseMask);
+        if ((NeedAdjust)) { // any out of bounds?
+            // change squared distance into approximate rsqr root
+            let guess = Math.sqrt(dist_squared);
+            // newton iteration for 1/sqrt(x) : y(n+1)=1/2 (y(n)*(3-x*y(n)^2));
+            //guess = MulSIMD(guess, SubSIMD(Four_Threes, MulSIMD(dist_squared, MulSIMD(guess, guess))));
+            //guess = MulSIMD(Four_PointFives, guess);
+            //pts *= guess;
+            vec3.scale(pts, pts, guess);
+            const clamp_far = vec3.scaleAndAdd(vec3.create(), Center, pts, SIMDMaxDist);
+            //clamp_far *= SIMDMaxDist;
+            //clamp_far += Center;
+            const clamp_near = vec3.scaleAndAdd(vec3.create(), Center, pts, SIMDMinDist);
+            //clamp_near *= SIMDMinDist;
+            //clamp_near += Center;
+            pts[0] = MaskedAssign(TooCloseMask, clamp_near[0], MaskedAssign(TooFarMask, clamp_far[0], particle.position[0]));
+            pts[1] = MaskedAssign(TooCloseMask, clamp_near[1], MaskedAssign(TooFarMask, clamp_far[1], particle.position[1]));
+            pts[2] = MaskedAssign(TooCloseMask, clamp_near[2], MaskedAssign(TooFarMask, clamp_far[2], particle.position[2]));
+            //* (pXYZ) = pts;
+            vec3.copy(particle.position, pts);
+            bChangedSomething = true;
+        }
+        //++pXYZ;
+        //++pCreationTime;
+        //} while (--nNumBlocks);
+        return bChangedSomething;
     }
 }
 Source1ParticleOperators.registerOperator(ConstrainDistanceToPathBetweenTwoControlPoints);
@@ -50737,10 +51513,14 @@ const DEFAULT_VELOCITY_SCALE$1 = 0; /* TODO: check default value*/
 let PositionFromParentParticles$1 = class PositionFromParentParticles extends Source1ParticleOperator {
     static functionName = 'Position From Parent Particles';
     #velocitySCale = DEFAULT_VELOCITY_SCALE$1;
+    #randomDistribution = false;
     paramChanged(name, param) {
         switch (name) {
             case 'Inherited Velocity Scale':
                 this.#velocitySCale = param; //TODO: convert to number
+                break;
+            case 'Random Parent Particle Distribution':
+                this.#randomDistribution = param == '1' ? true : false;
                 break;
             default:
                 super.paramChanged(name, param);
@@ -50757,6 +51537,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
         const particleCount = parent.getActiveParticlesCount();
         if (particleCount == 0) {
             particle.die();
+            return;
         }
         const base = parent.getParticle();
         if (base != null) {
@@ -51450,70 +52231,6 @@ class TrailLengthRandom extends Source1ParticleOperator {
     }
 }
 Source1ParticleOperators.registerOperator(TrailLengthRandom);
-
-const Four_Zeros = 0;
-const Four_Ones = 1;
-const Four_Twos = 2;
-const Four_PointFives = 0.5;
-function CmpGtSIMD(a, b) {
-    return a > b;
-}
-function CmpGeSIMD(a, b) {
-    return a >= b;
-}
-function CmpLtSIMD(a, b) {
-    return a < b;
-}
-function AndSIMD(a, b) {
-    return a && b;
-}
-function MulSIMD(a, b) {
-    return a * b;
-}
-function DivSIMD(a, b) {
-    return a / b;
-}
-function AddSIMD(a, b) {
-    return a + b;
-}
-function SubSIMD(a, b) {
-    return a - b;
-}
-function ReciprocalEstSIMD(a) {
-    return 1 / a;
-}
-function ReciprocalSIMD(a) {
-    return 1 / a;
-}
-function MaxSIMD(a, b) {
-    return Math.max(a, b);
-}
-function MinSIMD(a, b) {
-    return Math.min(a, b);
-}
-function BiasSIMD(val, precalc_param) {
-    // similar to bias function except pass precalced bias value from calling PreCalcBiasParameter.
-    // !!speed!! use reciprocal est?
-    // !!speed!! could save one op by precalcing _2_ values
-    return DivSIMD(val, AddSIMD(MulSIMD(precalc_param, SubSIMD(Four_Ones, val)), Four_Ones));
-}
-function MaskedAssign(ReplacementMask, NewValue, OldValue) {
-    // TODO: params are vec4
-    return ReplacementMask ? NewValue : OldValue;
-    /*return OrSIMD(
-        AndSIMD(ReplacementMask, NewValue),
-        AndNotSIMD(ReplacementMask, OldValue));*/
-}
-function SinEst01SIMD(val) {
-    return Math.sin(val * Math.PI);
-}
-function SimpleSplineRemapValWithDeltasClamped(val, A, BMinusA, OneOverBMinusA, C, DMinusC) {
-    //	if (A == B)
-    //		return val >= B ? D : C;
-    let cVal = (val - A) * OneOverBMinusA; //fltx4 cVal = MulSIMD(SubSIMD(val, A), OneOverBMinusA);
-    cVal = Math.min(Math.max(0.0, cVal), 1.0); //Clamp(cVal, 0.0, 1.0);//cVal = MinSIMD(Four_Ones, MaxSIMD(Four_Zeros, cVal));
-    return C + DMinusC * SimpleSpline(cVal); //AddSIMD(C, MulSIMD(DMinusC, SimpleSpline(cVal)));
-}
 
 const perm_a = [
     66, 147, 106, 213, 89, 115, 239, 25, 171, 175, 9, 114, 141, 226, 118, 128, 41, 208, 4, 56,
@@ -53178,7 +53895,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             if (cpNumber == headLocation) {
                 continue;
             }
-            const cpParent = this.getParameter(name + ' Control Point Parent');
+            this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
                 const a = vec3.add(tempVec3$4, cpLocation, vecControlPoint);
@@ -53191,7 +53908,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             if (controlPoint) {
                 controlPoint.setWorldQuaternion(quat.create());
             }
-            this.particleSystem.setControlPointParent(cpNumber, cpParent);
+            //this.particleSystem.setControlPointParent(cpNumber, cpParent);
         }
     }
 };
@@ -57217,609 +57934,6 @@ const Source2SnapshotLoader = new (function () {
     return Source2SnapshotLoader;
 }());
 
-const PARTICLE_FIELD_POSITION = 0;
-const PARTICLE_FIELD_POSITION_PREVIOUS = 2;
-const PARTICLE_FIELD_RADIUS = 3;
-const PARTICLE_FIELD_ROTATION_ROLL = 4;
-const PARTICLE_FIELD_ROTATION_ROLL_SPEED = 5;
-const PARTICLE_FIELD_COLOR = 6;
-const PARTICLE_FIELD_ALPHA = 7;
-const PARTICLE_FIELD_SEQUENCE_NUMBER = 9;
-const PARTICLE_FIELD_TRAIL_LENGTH = 10;
-const PARTICLE_FIELD_YAW = 12;
-const PARTICLE_FIELD_HITBOX_OFFSET_POSITION = 15;
-const PARTICLE_FIELD_SCRATCH_VECTOR = 17;
-const PARTICLE_FIELD_SCRATCH_FLOAT = 18;
-const PARTICLE_FIELD_PITCH = 20;
-const PARTICLE_FIELD_GLOW_RGB = 22;
-const PARTICLE_FIELD_GLOW_ALPHA = 23;
-const ATTRIBUTES_WHICH_ARE_ANGLES = 1 << PARTICLE_FIELD_ROTATION_ROLL | 1 << PARTICLE_FIELD_ROTATION_ROLL_SPEED | 1 << PARTICLE_FIELD_YAW | 1 << PARTICLE_FIELD_PITCH;
-const ATTRIBUTES_WHICH_ARE_0_TO_1 = 1 << PARTICLE_FIELD_ALPHA;
-
-const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
-class Source2Particle {
-    id;
-    isAlive = false;
-    position = vec3.create();
-    quaternion = quat.create();
-    prevPosition = vec3.create();
-    cpPosition = vec3.create();
-    velocity = vec3.create();
-    color = vec4.create();
-    initialColor = vec4.create();
-    normal = vec3.create();
-    scratchVec = vec3.create(); //?
-    scratch = 0;
-    hitboxOffsetPosition = vec3.create(); //?
-    glowRGB = vec3.create();
-    uMin = 0;
-    uMax = 1;
-    vMin = 0;
-    vMax = 1;
-    cTime = 0;
-    context = new Map();
-    system;
-    currentTime = 0;
-    timeToLive = 0;
-    initialTimeToLive = 0;
-    proportionOfLife = 0;
-    trail = []; //TODO: remove ?
-    modelName = '';
-    u = 0; //TODO: remove ?
-    v = 0; //TODO: remove ?
-    radius = 0;
-    initialRadius = 0;
-    rotationRoll = 0;
-    initialRoll = 0;
-    rotationSpeedRoll = 0;
-    rotationYaw = 0;
-    startAlpha = 0;
-    alpha = 0;
-    glowAlpha = 0;
-    sequence = 0;
-    initialSequence = 0;
-    sequence2 = 0;
-    frame = 0;
-    PositionFromParentParticles = false;
-    posLockedToCP = false;
-    rotLockedToCP = false;
-    trailLength = 0.1;
-    MovementRigidAttachToCP = false;
-    previousElapsedTime = 0;
-    skinning;
-    initialSkinnedPosition;
-    initialSkinnedNormal;
-    snapHitbox;
-    snapHitboxOffset;
-    bones;
-    initialVec;
-    static consoleAlphaAlternate = false;
-    static consolePitch = false;
-    constructor(id, system) {
-        //this.name = 'Particle ' + id;
-        //this.id = id;
-        //this.cpPosition = vec3.create();
-        //this.cpOrientation = quat.create();
-        //this.cpOrientationInvert = quat.create();
-        //this.cpPreviousTransform = mat4.create();//TODO: set this per particle list, not per particle
-        //this.offsetPosition = vec3.create();
-        this.system = system;
-        this.reset(id);
-        /*
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_XYZ, 0.0f, 0.0f, 0.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_PREV_XYZ, 0.0f, 0.0f, 0.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_LIFE_DURATION, 1.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_RADIUS, pDef->m_flConstantRadius);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ROTATION, pDef->m_flConstantRotation);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ROTATION_SPEED, pDef->m_flConstantRotationSpeed);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_TINT_RGB,
-                pDef->m_ConstantColor.r() / 255.0f, pDef->m_ConstantColor.g() / 255.0f,
-                pDef->m_ConstantColor.g() / 255.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ALPHA, pDef->m_ConstantColor.a() / 255.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_CREATION_TIME, 0.0f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_SEQUENCE_NUMBER, pDef->m_nConstantSequenceNumber);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_SEQUENCE_NUMBER1, pDef->m_nConstantSequenceNumber1);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_TRAIL_LENGTH, 0.1f);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_PARTICLE_ID, 0);
-            SetAttributeToConstant(PARTICLE_ATTRIBUTE_YAW, 0);*/
-    }
-    step(elapsedTime) {
-        this.currentTime += elapsedTime;
-        if (this.timeToLive) {
-            this.proportionOfLife = this.currentTime / this.timeToLive;
-        }
-    }
-    start() {
-        this.isAlive = true;
-        this.currentTime = 0;
-        this.proportionOfLife = 0;
-        this.trail = [];
-    }
-    die() {
-        this.isAlive = false;
-        this.modelName = '';
-    }
-    reset(id) {
-        this.id = id;
-        //this.firstRender = true;
-        this.currentTime = 0;
-        this.proportionOfLife = 0;
-        this.timeToLive = 1;
-        vec3.zero(this.position);
-        vec3.zero(this.prevPosition);
-        //vec3.zero(this.cpPosition);
-        //vec4.zero(this.cpOrientation);
-        //vec3.zero(this.offsetPosition);
-        vec3.zero(this.velocity);
-        vec4.set(this.color, 1, 1, 1, 1);
-        vec4.set(this.initialColor, 1, 1, 1, 1);
-        vec3.copy(this.normal, DEFAULT_PARTICLE_NORMAL);
-        vec3.zero(this.scratchVec);
-        this.scratch = 0;
-        this.u = 0;
-        this.v = 0;
-        this.radius = 5;
-        this.initialRadius = 5;
-        this.rotationRoll = 0;
-        this.initialRoll = 0;
-        this.rotationSpeedRoll = 0;
-        this.rotationYaw = 0;
-        this.startAlpha = 1;
-        this.alpha = this.startAlpha;
-        this.glowAlpha = 1;
-        // sequence number for animated textures
-        this.sequence = 0;
-        this.sequence2 = 0;
-        this.frame = 0;
-        this.PositionFromParentParticles = false;
-        this.posLockedToCP = false;
-        this.rotLockedToCP = false;
-        this.trailLength = 0.1;
-        this.MovementRigidAttachToCP = false;
-        this.context.clear();
-        //this.initialCPPosition = null;
-        //this.initialCPQuaternion = null;
-        //mat4.identity(this.cpPreviousTransform);
-    }
-    setInitialField(field /*TODO: create a field enum*/, value, mulInitial = false) {
-        this.setField(field, value, mulInitial, true);
-    }
-    setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
-        // TODO: create setScalarfield / setvectorfield
-        if (isNaN(field)) {
-            return;
-        }
-        //console.log('Field ' + field + ' ' + value);
-        switch (field) {
-            case 0: // Position
-                if (additive) {
-                    vec3.add(this.position, this.position, value);
-                }
-                else {
-                    vec3.copy(this.position, value);
-                }
-                if (setInitial) {
-                    vec3.copy(this.prevPosition, this.position);
-                }
-                break;
-            case 1: // Time to live
-                //if (mulInitial) {value*=this.initialSequence;}
-                //this.sequence = Math.round(value);
-                if (mulInitial) {
-                    value += this.initialTimeToLive;
-                }
-                this.timeToLive = value;
-                //console.log(value);
-                break;
-            case 2: // Previous position
-                vec3.copy(this.prevPosition, value);
-                break;
-            //case 2: vector position ?
-            case 3:
-                if (mulInitial) {
-                    value *= this.initialRadius;
-                }
-                this.radius = value;
-                if (setInitial) {
-                    this.initialRadius = value;
-                }
-                break;
-            case 4: //roll
-                //value*=57.3;
-                if (value instanceof Float32Array) {
-                    value = value[0];
-                }
-                if (mulInitial) {
-                    value += this.initialRoll;
-                }
-                this.rotationRoll = value; //TODO
-                break;
-            case 5:
-                this.rotationSpeedRoll = value * DEG_TO_RAD;
-                break;
-            case 6: // Color
-                if (mulInitial) {
-                    value[0] *= this.initialColor[0];
-                    value[1] *= this.initialColor[1];
-                    value[2] *= this.initialColor[2];
-                }
-                if (additive) {
-                    vec3.add(this.color, this.color, value);
-                }
-                else {
-                    vec3.copy(this.color, value);
-                }
-                //this.color.setColor({r:value[0], g:value[1], b:value[2]});
-                this.color[0] = clamp$1(this.color[0], 0.0, 1.0);
-                this.color[1] = clamp$1(this.color[1], 0.0, 1.0);
-                this.color[2] = clamp$1(this.color[2], 0.0, 1.0);
-                //vec3.copy(this.color, this.color[);
-                if (setInitial) {
-                    vec3.copy(this.initialColor, value);
-                    //this.initialColor.setColor({r:value[0], g:value[1], b:value[2]});
-                }
-                break;
-            case 7: // Alpha
-                if (mulInitial) {
-                    value *= this.startAlpha;
-                }
-                if (setInitial) {
-                    this.startAlpha = value;
-                }
-                this.alpha = value;
-                break;
-            //case 8: // creation time
-            case PARTICLE_FIELD_SEQUENCE_NUMBER:
-                this.sequence = value << 0;
-                break;
-            case PARTICLE_FIELD_TRAIL_LENGTH:
-                this.trailLength = value;
-                break;
-            case 12: // yaw
-                if (value instanceof Float32Array) {
-                    value = value[0];
-                }
-                this.rotationYaw = value; //TODO
-                break;
-            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
-                vec3.copy(this.hitboxOffsetPosition, value);
-                break;
-            case 16:
-                if (!Source2Particle.consoleAlphaAlternate) {
-                    console.warn('alpha alternate code me');
-                    Source2Particle.consoleAlphaAlternate = true;
-                }
-                break;
-            case PARTICLE_FIELD_SCRATCH_VECTOR:
-                vec3.copy(this.scratchVec, value);
-                break;
-            case PARTICLE_FIELD_SCRATCH_FLOAT:
-                this.scratch = value;
-                break;
-            case 20:
-                if (!Source2Particle.consolePitch) {
-                    console.warn('pitch code me');
-                    Source2Particle.consolePitch = true;
-                }
-                break;
-            case 21:
-                //TODO
-                vec3.copy(this.normal, value);
-                break;
-            case PARTICLE_FIELD_GLOW_RGB:
-                vec3.copy(this.glowRGB, value);
-                break;
-            case PARTICLE_FIELD_GLOW_ALPHA:
-                this.glowAlpha = value;
-                break;
-        }
-    }
-    /**
-    * TODO
-    */
-    /*
-    // required
-    DEFPARTICLE_ATTRIBUTE(XYZ, 0);
-
-    // particle lifetime (duration) of particle as a float.
-    DEFPARTICLE_ATTRIBUTE(LIFE_DURATION, 1);
-
-    // prev coordinates for verlet integration
-    DEFPARTICLE_ATTRIBUTE(PREV_XYZ, 2);
-
-    // radius of particle
-    DEFPARTICLE_ATTRIBUTE(RADIUS, 3);
-
-    // rotation angle of particle
-    DEFPARTICLE_ATTRIBUTE(ROTATION, 4);
-
-    // rotation speed of particle
-    DEFPARTICLE_ATTRIBUTE(ROTATION_SPEED, 5);
-
-    // tint of particle
-    DEFPARTICLE_ATTRIBUTE(TINT_RGB, 6);
-
-    // alpha tint of particle
-    DEFPARTICLE_ATTRIBUTE(ALPHA, 7);
-
-    // creation time stamp (relative to particle system creation)
-    DEFPARTICLE_ATTRIBUTE(CREATION_TIME, 8);
-
-    // sequnece # (which animation sequence number this particle uses)
-    DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER, 9);
-
-    // length of the trail
-    DEFPARTICLE_ATTRIBUTE(TRAIL_LENGTH, 10);
-
-    // unique particle identifier
-    DEFPARTICLE_ATTRIBUTE(PARTICLE_ID, 11);
-
-    // unique rotation around up vector
-    DEFPARTICLE_ATTRIBUTE(YAW, 12);
-
-    // second sequnece # (which animation sequence number this particle uses)
-    DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER1, 13);
-
-    // hit box index
-    DEFPARTICLE_ATTRIBUTE(HITBOX_INDEX, 14);
-
-    DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
-    */
-    getScalarField(field = 0, initial = false) {
-        switch (field) {
-            case 1: // Time to live
-                return initial ? this.initialTimeToLive : this.timeToLive;
-            case 3:
-                return this.radius;
-            case 4:
-                return this.rotationRoll;
-            case 5:
-                return this.rotationSpeedRoll;
-            case 7:
-                return this.alpha;
-            case 8: //creation time
-                return this.cTime;
-            case PARTICLE_FIELD_SEQUENCE_NUMBER:
-                return this.sequence;
-            case PARTICLE_FIELD_TRAIL_LENGTH:
-                return this.trailLength;
-            case 12: //yaw
-                return this.rotationYaw;
-            case 16:
-                if (!Source2Particle.consoleAlphaAlternate) {
-                    console.warn('alpha alternate code me');
-                    Source2Particle.consoleAlphaAlternate = true;
-                }
-                break;
-            case PARTICLE_FIELD_SCRATCH_FLOAT:
-                return this.scratch;
-            case 20:
-                if (!Source2Particle.consolePitch) {
-                    console.warn('pitch code me');
-                    Source2Particle.consolePitch = true;
-                }
-                break;
-        }
-        return 0;
-    }
-    getVectorField(out, field = 0, initial = false) {
-        switch (field) {
-            case PARTICLE_FIELD_POSITION:
-                vec3.copy(out, this.position);
-                break;
-            case PARTICLE_FIELD_POSITION_PREVIOUS:
-                vec3.copy(out, this.prevPosition);
-                break;
-            case PARTICLE_FIELD_COLOR:
-                vec3.copy(out, this.color);
-                break;
-            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
-                vec3.copy(out, this.hitboxOffsetPosition);
-                break;
-            case PARTICLE_FIELD_SCRATCH_VECTOR:
-                vec3.copy(out, this.scratchVec);
-                break;
-            case 21:
-                vec3.copy(out, this.normal);
-                break;
-            case PARTICLE_FIELD_GLOW_RGB:
-                vec3.copy(out, this.glowRGB);
-                break;
-        }
-        return out;
-    }
-    /**
-     * @deprecated Please use getScalarField instead.
-     */
-    getField(field = 0, initial = false) {
-        // TODO: create getScalarField / getVectorField
-        switch (field) {
-            case PARTICLE_FIELD_POSITION:
-                return this.position;
-            case 1: // Time to live
-                return initial ? this.initialTimeToLive : this.timeToLive;
-            case PARTICLE_FIELD_POSITION_PREVIOUS:
-                return this.prevPosition;
-            case 3:
-                return this.radius;
-            case 4:
-                return this.rotationRoll;
-            case 5:
-                return this.rotationSpeedRoll;
-            case PARTICLE_FIELD_COLOR:
-                return this.color;
-            case 7:
-                return this.alpha;
-            case 8: //creation time
-                return this.cTime;
-            case PARTICLE_FIELD_SEQUENCE_NUMBER:
-                return this.sequence;
-            case PARTICLE_FIELD_TRAIL_LENGTH:
-                return this.trailLength;
-            case 12: //yaw
-                return this.rotationYaw;
-            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
-                return this.hitboxOffsetPosition;
-            case 16:
-                if (!Source2Particle.consoleAlphaAlternate) {
-                    console.warn('alpha alternate code me');
-                    Source2Particle.consoleAlphaAlternate = true;
-                }
-                break;
-            case PARTICLE_FIELD_SCRATCH_VECTOR:
-                return this.scratchVec;
-            case PARTICLE_FIELD_SCRATCH_FLOAT:
-                return this.scratch;
-            case 20:
-                if (!Source2Particle.consolePitch) {
-                    console.warn('pitch code me');
-                    Source2Particle.consolePitch = true;
-                }
-                break;
-            case 21:
-                return this.normal;
-            case PARTICLE_FIELD_GLOW_RGB:
-                return this.glowRGB;
-        }
-        return 0;
-    }
-    /**
-    * TODO
-    */
-    setInitialSequence(sequence) {
-        this.sequence = sequence;
-        this.initialSequence = sequence;
-    }
-    /**
-    * TODO
-    */
-    setInitialRadius(radius) {
-        this.radius = radius;
-        this.initialRadius = radius;
-    }
-    /**
-    * TODO
-    */
-    setInitialTTL(timeToLive) {
-        this.timeToLive = timeToLive;
-        this.initialTimeToLive = timeToLive;
-    }
-    /**
-    * TODO
-    */
-    setInitialColor(color) {
-        this.color = color;
-        this.initialColor = color;
-    }
-    /**
-    * Set particle initial rotation roll.
-    * @param {Number} roll Initial rotation roll.
-    */
-    setInitialRoll(roll) {
-        this.rotationRoll = roll;
-        this.initialRoll = roll;
-    }
-    /**
-    * Get particle world position
-    * @param {vec3|null} The receiving vector. Created if null.
-    * @return {vec3} The world position.
-    */
-    getWorldPos(worldPos = vec3.create()) {
-        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
-        //vec3.transformQuat(worldPos, this.position, quat.create());
-        //vec3.transformQuat(worldPos, this.position, this.system.currentOrientation);
-        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
-        //if (this.initialCPPosition) {
-        //vec3.add(worldPos, worldPos, this.cpPosition);
-        //}
-        vec3.copy(worldPos, this.position);
-        return worldPos;
-    }
-    /**
-    * Get particle world position
-    * @param {vec3|null} The receiving vector. Created if null.
-    * @return {vec3} The world position.
-    */
-    getLocalPos(worldPos = vec3.create()) {
-        //worldPos = worldPos || vec3.create();
-        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
-        vec3.transformQuat(worldPos, this.position, quat.create());
-        //vec3.add(worldPos, worldPos, this.cpPosition);
-        return worldPos;
-    }
-}
-/* FIELDS
-0:velocity ??
-1: TTL
-3:radius
-4:roll
-5:roll speed ??
-6: color
-7: alpha
-8:current time
-10:scale
-12:yaw???
-//-----------------------------------------------------------------------------
-// Particle attributes
-//-----------------------------------------------------------------------------
-#define MAX_PARTICLE_ATTRIBUTES 32
-
-#define DEFPARTICLE_ATTRIBUTE(name, bit)						\
-    const int PARTICLE_ATTRIBUTE_##name##_MASK = (1 << bit);	\
-    const int PARTICLE_ATTRIBUTE_##name = bit;
-
-// required
-DEFPARTICLE_ATTRIBUTE(XYZ, 0);
-
-// particle lifetime (duration) of particle as a float.
-DEFPARTICLE_ATTRIBUTE(LIFE_DURATION, 1);
-
-// prev coordinates for verlet integration
-DEFPARTICLE_ATTRIBUTE(PREV_XYZ, 2);
-
-// radius of particle
-DEFPARTICLE_ATTRIBUTE(RADIUS, 3);
-
-// rotation angle of particle
-DEFPARTICLE_ATTRIBUTE(ROTATION, 4);
-
-// rotation speed of particle
-DEFPARTICLE_ATTRIBUTE(ROTATION_SPEED, 5);
-
-// tint of particle
-DEFPARTICLE_ATTRIBUTE(TINT_RGB, 6);
-
-// alpha tint of particle
-DEFPARTICLE_ATTRIBUTE(ALPHA, 7);
-
-// creation time stamp (relative to particle system creation)
-DEFPARTICLE_ATTRIBUTE(CREATION_TIME, 8);
-
-// sequnece # (which animation sequence number this particle uses)
-DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER, 9);
-
-// length of the trail
-DEFPARTICLE_ATTRIBUTE(TRAIL_LENGTH, 10);
-
-// unique particle identifier
-DEFPARTICLE_ATTRIBUTE(PARTICLE_ID, 11);
-
-// unique rotation around up vector
-DEFPARTICLE_ATTRIBUTE(YAW, 12);
-
-// second sequnece # (which animation sequence number this particle uses)
-DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER1, 13);
-
-// hit box index
-DEFPARTICLE_ATTRIBUTE(HITBOX_INDEX, 14);
-
-DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
-
-*/
-/**
- * TODO
- */
-
 var OperatorParamType;
 (function (OperatorParamType) {
     OperatorParamType[OperatorParamType["Null"] = 0] = "Null";
@@ -58931,6 +59045,609 @@ class Emitter extends Operator {
     }
 }
 
+const PARTICLE_FIELD_POSITION = 0;
+const PARTICLE_FIELD_POSITION_PREVIOUS = 2;
+const PARTICLE_FIELD_RADIUS = 3;
+const PARTICLE_FIELD_ROTATION_ROLL = 4;
+const PARTICLE_FIELD_ROTATION_ROLL_SPEED = 5;
+const PARTICLE_FIELD_COLOR = 6;
+const PARTICLE_FIELD_ALPHA = 7;
+const PARTICLE_FIELD_SEQUENCE_NUMBER = 9;
+const PARTICLE_FIELD_TRAIL_LENGTH = 10;
+const PARTICLE_FIELD_YAW = 12;
+const PARTICLE_FIELD_HITBOX_OFFSET_POSITION = 15;
+const PARTICLE_FIELD_SCRATCH_VECTOR = 17;
+const PARTICLE_FIELD_SCRATCH_FLOAT = 18;
+const PARTICLE_FIELD_PITCH = 20;
+const PARTICLE_FIELD_GLOW_RGB = 22;
+const PARTICLE_FIELD_GLOW_ALPHA = 23;
+const ATTRIBUTES_WHICH_ARE_ANGLES = 1 << PARTICLE_FIELD_ROTATION_ROLL | 1 << PARTICLE_FIELD_ROTATION_ROLL_SPEED | 1 << PARTICLE_FIELD_YAW | 1 << PARTICLE_FIELD_PITCH;
+const ATTRIBUTES_WHICH_ARE_0_TO_1 = 1 << PARTICLE_FIELD_ALPHA;
+
+const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
+class Source2Particle {
+    id;
+    isAlive = false;
+    position = vec3.create();
+    quaternion = quat.create();
+    prevPosition = vec3.create();
+    cpPosition = vec3.create();
+    velocity = vec3.create();
+    color = vec4.create();
+    initialColor = vec4.create();
+    normal = vec3.create();
+    scratchVec = vec3.create(); //?
+    scratch = 0;
+    hitboxOffsetPosition = vec3.create(); //?
+    glowRGB = vec3.create();
+    uMin = 0;
+    uMax = 1;
+    vMin = 0;
+    vMax = 1;
+    cTime = 0;
+    context = new Map();
+    system;
+    currentTime = 0;
+    timeToLive = 0;
+    initialTimeToLive = 0;
+    proportionOfLife = 0;
+    trail = []; //TODO: remove ?
+    modelName = '';
+    u = 0; //TODO: remove ?
+    v = 0; //TODO: remove ?
+    radius = 0;
+    initialRadius = 0;
+    rotationRoll = 0;
+    initialRoll = 0;
+    rotationSpeedRoll = 0;
+    rotationYaw = 0;
+    startAlpha = 0;
+    alpha = 0;
+    glowAlpha = 0;
+    sequence = 0;
+    initialSequence = 0;
+    sequence2 = 0;
+    frame = 0;
+    PositionFromParentParticles = false;
+    posLockedToCP = false;
+    rotLockedToCP = false;
+    trailLength = 0.1;
+    MovementRigidAttachToCP = false;
+    previousElapsedTime = 0;
+    skinning;
+    initialSkinnedPosition;
+    initialSkinnedNormal;
+    snapHitbox;
+    snapHitboxOffset;
+    bones;
+    initialVec;
+    static consoleAlphaAlternate = false;
+    static consolePitch = false;
+    constructor(id, system) {
+        //this.name = 'Particle ' + id;
+        //this.id = id;
+        //this.cpPosition = vec3.create();
+        //this.cpOrientation = quat.create();
+        //this.cpOrientationInvert = quat.create();
+        //this.cpPreviousTransform = mat4.create();//TODO: set this per particle list, not per particle
+        //this.offsetPosition = vec3.create();
+        this.system = system;
+        this.reset(id);
+        /*
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_XYZ, 0.0f, 0.0f, 0.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_PREV_XYZ, 0.0f, 0.0f, 0.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_LIFE_DURATION, 1.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_RADIUS, pDef->m_flConstantRadius);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ROTATION, pDef->m_flConstantRotation);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ROTATION_SPEED, pDef->m_flConstantRotationSpeed);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_TINT_RGB,
+                pDef->m_ConstantColor.r() / 255.0f, pDef->m_ConstantColor.g() / 255.0f,
+                pDef->m_ConstantColor.g() / 255.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_ALPHA, pDef->m_ConstantColor.a() / 255.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_CREATION_TIME, 0.0f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_SEQUENCE_NUMBER, pDef->m_nConstantSequenceNumber);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_SEQUENCE_NUMBER1, pDef->m_nConstantSequenceNumber1);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_TRAIL_LENGTH, 0.1f);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_PARTICLE_ID, 0);
+            SetAttributeToConstant(PARTICLE_ATTRIBUTE_YAW, 0);*/
+    }
+    step(elapsedTime) {
+        this.currentTime += elapsedTime;
+        if (this.timeToLive) {
+            this.proportionOfLife = this.currentTime / this.timeToLive;
+        }
+    }
+    start() {
+        this.isAlive = true;
+        this.currentTime = 0;
+        this.proportionOfLife = 0;
+        this.trail = [];
+    }
+    die() {
+        this.isAlive = false;
+        this.modelName = '';
+    }
+    reset(id) {
+        this.id = id;
+        //this.firstRender = true;
+        this.currentTime = 0;
+        this.proportionOfLife = 0;
+        this.timeToLive = 1;
+        vec3.zero(this.position);
+        vec3.zero(this.prevPosition);
+        //vec3.zero(this.cpPosition);
+        //vec4.zero(this.cpOrientation);
+        //vec3.zero(this.offsetPosition);
+        vec3.zero(this.velocity);
+        vec4.set(this.color, 1, 1, 1, 1);
+        vec4.set(this.initialColor, 1, 1, 1, 1);
+        vec3.copy(this.normal, DEFAULT_PARTICLE_NORMAL);
+        vec3.zero(this.scratchVec);
+        this.scratch = 0;
+        this.u = 0;
+        this.v = 0;
+        this.radius = 5;
+        this.initialRadius = 5;
+        this.rotationRoll = 0;
+        this.initialRoll = 0;
+        this.rotationSpeedRoll = 0;
+        this.rotationYaw = 0;
+        this.startAlpha = 1;
+        this.alpha = this.startAlpha;
+        this.glowAlpha = 1;
+        // sequence number for animated textures
+        this.sequence = 0;
+        this.sequence2 = 0;
+        this.frame = 0;
+        this.PositionFromParentParticles = false;
+        this.posLockedToCP = false;
+        this.rotLockedToCP = false;
+        this.trailLength = 0.1;
+        this.MovementRigidAttachToCP = false;
+        this.context.clear();
+        //this.initialCPPosition = null;
+        //this.initialCPQuaternion = null;
+        //mat4.identity(this.cpPreviousTransform);
+    }
+    setInitialField(field /*TODO: create a field enum*/, value, mulInitial = false) {
+        this.setField(field, value, mulInitial, true);
+    }
+    setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
+        // TODO: create setScalarfield / setvectorfield
+        if (isNaN(field)) {
+            return;
+        }
+        //console.log('Field ' + field + ' ' + value);
+        switch (field) {
+            case 0: // Position
+                if (additive) {
+                    vec3.add(this.position, this.position, value);
+                }
+                else {
+                    vec3.copy(this.position, value);
+                }
+                if (setInitial) {
+                    vec3.copy(this.prevPosition, this.position);
+                }
+                break;
+            case 1: // Time to live
+                //if (mulInitial) {value*=this.initialSequence;}
+                //this.sequence = Math.round(value);
+                if (mulInitial) {
+                    value += this.initialTimeToLive;
+                }
+                this.timeToLive = value;
+                //console.log(value);
+                break;
+            case 2: // Previous position
+                vec3.copy(this.prevPosition, value);
+                break;
+            //case 2: vector position ?
+            case 3:
+                if (mulInitial) {
+                    value *= this.initialRadius;
+                }
+                this.radius = value;
+                if (setInitial) {
+                    this.initialRadius = value;
+                }
+                break;
+            case 4: //roll
+                //value*=57.3;
+                if (value instanceof Float32Array) {
+                    value = value[0];
+                }
+                if (mulInitial) {
+                    value += this.initialRoll;
+                }
+                this.rotationRoll = value; //TODO
+                break;
+            case 5:
+                this.rotationSpeedRoll = value * DEG_TO_RAD;
+                break;
+            case 6: // Color
+                if (mulInitial) {
+                    value[0] *= this.initialColor[0];
+                    value[1] *= this.initialColor[1];
+                    value[2] *= this.initialColor[2];
+                }
+                if (additive) {
+                    vec3.add(this.color, this.color, value);
+                }
+                else {
+                    vec3.copy(this.color, value);
+                }
+                //this.color.setColor({r:value[0], g:value[1], b:value[2]});
+                this.color[0] = clamp$1(this.color[0], 0.0, 1.0);
+                this.color[1] = clamp$1(this.color[1], 0.0, 1.0);
+                this.color[2] = clamp$1(this.color[2], 0.0, 1.0);
+                //vec3.copy(this.color, this.color[);
+                if (setInitial) {
+                    vec3.copy(this.initialColor, value);
+                    //this.initialColor.setColor({r:value[0], g:value[1], b:value[2]});
+                }
+                break;
+            case 7: // Alpha
+                if (mulInitial) {
+                    value *= this.startAlpha;
+                }
+                if (setInitial) {
+                    this.startAlpha = value;
+                }
+                this.alpha = value;
+                break;
+            //case 8: // creation time
+            case PARTICLE_FIELD_SEQUENCE_NUMBER:
+                this.sequence = value << 0;
+                break;
+            case PARTICLE_FIELD_TRAIL_LENGTH:
+                this.trailLength = value;
+                break;
+            case 12: // yaw
+                if (value instanceof Float32Array) {
+                    value = value[0];
+                }
+                this.rotationYaw = value; //TODO
+                break;
+            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
+                vec3.copy(this.hitboxOffsetPosition, value);
+                break;
+            case 16:
+                if (!Source2Particle.consoleAlphaAlternate) {
+                    console.warn('alpha alternate code me');
+                    Source2Particle.consoleAlphaAlternate = true;
+                }
+                break;
+            case PARTICLE_FIELD_SCRATCH_VECTOR:
+                vec3.copy(this.scratchVec, value);
+                break;
+            case PARTICLE_FIELD_SCRATCH_FLOAT:
+                this.scratch = value;
+                break;
+            case 20:
+                if (!Source2Particle.consolePitch) {
+                    console.warn('pitch code me');
+                    Source2Particle.consolePitch = true;
+                }
+                break;
+            case 21:
+                //TODO
+                vec3.copy(this.normal, value);
+                break;
+            case PARTICLE_FIELD_GLOW_RGB:
+                vec3.copy(this.glowRGB, value);
+                break;
+            case PARTICLE_FIELD_GLOW_ALPHA:
+                this.glowAlpha = value;
+                break;
+        }
+    }
+    /**
+    * TODO
+    */
+    /*
+    // required
+    DEFPARTICLE_ATTRIBUTE(XYZ, 0);
+
+    // particle lifetime (duration) of particle as a float.
+    DEFPARTICLE_ATTRIBUTE(LIFE_DURATION, 1);
+
+    // prev coordinates for verlet integration
+    DEFPARTICLE_ATTRIBUTE(PREV_XYZ, 2);
+
+    // radius of particle
+    DEFPARTICLE_ATTRIBUTE(RADIUS, 3);
+
+    // rotation angle of particle
+    DEFPARTICLE_ATTRIBUTE(ROTATION, 4);
+
+    // rotation speed of particle
+    DEFPARTICLE_ATTRIBUTE(ROTATION_SPEED, 5);
+
+    // tint of particle
+    DEFPARTICLE_ATTRIBUTE(TINT_RGB, 6);
+
+    // alpha tint of particle
+    DEFPARTICLE_ATTRIBUTE(ALPHA, 7);
+
+    // creation time stamp (relative to particle system creation)
+    DEFPARTICLE_ATTRIBUTE(CREATION_TIME, 8);
+
+    // sequnece # (which animation sequence number this particle uses)
+    DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER, 9);
+
+    // length of the trail
+    DEFPARTICLE_ATTRIBUTE(TRAIL_LENGTH, 10);
+
+    // unique particle identifier
+    DEFPARTICLE_ATTRIBUTE(PARTICLE_ID, 11);
+
+    // unique rotation around up vector
+    DEFPARTICLE_ATTRIBUTE(YAW, 12);
+
+    // second sequnece # (which animation sequence number this particle uses)
+    DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER1, 13);
+
+    // hit box index
+    DEFPARTICLE_ATTRIBUTE(HITBOX_INDEX, 14);
+
+    DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
+    */
+    getScalarField(field = 0, initial = false) {
+        switch (field) {
+            case 1: // Time to live
+                return initial ? this.initialTimeToLive : this.timeToLive;
+            case 3:
+                return this.radius;
+            case 4:
+                return this.rotationRoll;
+            case 5:
+                return this.rotationSpeedRoll;
+            case 7:
+                return this.alpha;
+            case 8: //creation time
+                return this.cTime;
+            case PARTICLE_FIELD_SEQUENCE_NUMBER:
+                return this.sequence;
+            case PARTICLE_FIELD_TRAIL_LENGTH:
+                return this.trailLength;
+            case 12: //yaw
+                return this.rotationYaw;
+            case 16:
+                if (!Source2Particle.consoleAlphaAlternate) {
+                    console.warn('alpha alternate code me');
+                    Source2Particle.consoleAlphaAlternate = true;
+                }
+                break;
+            case PARTICLE_FIELD_SCRATCH_FLOAT:
+                return this.scratch;
+            case 20:
+                if (!Source2Particle.consolePitch) {
+                    console.warn('pitch code me');
+                    Source2Particle.consolePitch = true;
+                }
+                break;
+        }
+        return 0;
+    }
+    getVectorField(out, field = 0, initial = false) {
+        switch (field) {
+            case PARTICLE_FIELD_POSITION:
+                vec3.copy(out, this.position);
+                break;
+            case PARTICLE_FIELD_POSITION_PREVIOUS:
+                vec3.copy(out, this.prevPosition);
+                break;
+            case PARTICLE_FIELD_COLOR:
+                vec3.copy(out, this.color);
+                break;
+            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
+                vec3.copy(out, this.hitboxOffsetPosition);
+                break;
+            case PARTICLE_FIELD_SCRATCH_VECTOR:
+                vec3.copy(out, this.scratchVec);
+                break;
+            case 21:
+                vec3.copy(out, this.normal);
+                break;
+            case PARTICLE_FIELD_GLOW_RGB:
+                vec3.copy(out, this.glowRGB);
+                break;
+        }
+        return out;
+    }
+    /**
+     * @deprecated Please use getScalarField instead.
+     */
+    getField(field = 0, initial = false) {
+        // TODO: create getScalarField / getVectorField
+        switch (field) {
+            case PARTICLE_FIELD_POSITION:
+                return this.position;
+            case 1: // Time to live
+                return initial ? this.initialTimeToLive : this.timeToLive;
+            case PARTICLE_FIELD_POSITION_PREVIOUS:
+                return this.prevPosition;
+            case 3:
+                return this.radius;
+            case 4:
+                return this.rotationRoll;
+            case 5:
+                return this.rotationSpeedRoll;
+            case PARTICLE_FIELD_COLOR:
+                return this.color;
+            case 7:
+                return this.alpha;
+            case 8: //creation time
+                return this.cTime;
+            case PARTICLE_FIELD_SEQUENCE_NUMBER:
+                return this.sequence;
+            case PARTICLE_FIELD_TRAIL_LENGTH:
+                return this.trailLength;
+            case 12: //yaw
+                return this.rotationYaw;
+            case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
+                return this.hitboxOffsetPosition;
+            case 16:
+                if (!Source2Particle.consoleAlphaAlternate) {
+                    console.warn('alpha alternate code me');
+                    Source2Particle.consoleAlphaAlternate = true;
+                }
+                break;
+            case PARTICLE_FIELD_SCRATCH_VECTOR:
+                return this.scratchVec;
+            case PARTICLE_FIELD_SCRATCH_FLOAT:
+                return this.scratch;
+            case 20:
+                if (!Source2Particle.consolePitch) {
+                    console.warn('pitch code me');
+                    Source2Particle.consolePitch = true;
+                }
+                break;
+            case 21:
+                return this.normal;
+            case PARTICLE_FIELD_GLOW_RGB:
+                return this.glowRGB;
+        }
+        return 0;
+    }
+    /**
+    * TODO
+    */
+    setInitialSequence(sequence) {
+        this.sequence = sequence;
+        this.initialSequence = sequence;
+    }
+    /**
+    * TODO
+    */
+    setInitialRadius(radius) {
+        this.radius = radius;
+        this.initialRadius = radius;
+    }
+    /**
+    * TODO
+    */
+    setInitialTTL(timeToLive) {
+        this.timeToLive = timeToLive;
+        this.initialTimeToLive = timeToLive;
+    }
+    /**
+    * TODO
+    */
+    setInitialColor(color) {
+        this.color = color;
+        this.initialColor = color;
+    }
+    /**
+    * Set particle initial rotation roll.
+    * @param {Number} roll Initial rotation roll.
+    */
+    setInitialRoll(roll) {
+        this.rotationRoll = roll;
+        this.initialRoll = roll;
+    }
+    /**
+    * Get particle world position
+    * @param {vec3|null} The receiving vector. Created if null.
+    * @return {vec3} The world position.
+    */
+    getWorldPos(worldPos = vec3.create()) {
+        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
+        //vec3.transformQuat(worldPos, this.position, quat.create());
+        //vec3.transformQuat(worldPos, this.position, this.system.currentOrientation);
+        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
+        //if (this.initialCPPosition) {
+        //vec3.add(worldPos, worldPos, this.cpPosition);
+        //}
+        vec3.copy(worldPos, this.position);
+        return worldPos;
+    }
+    /**
+    * Get particle world position
+    * @param {vec3|null} The receiving vector. Created if null.
+    * @return {vec3} The world position.
+    */
+    getLocalPos(worldPos = vec3.create()) {
+        //worldPos = worldPos || vec3.create();
+        //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
+        vec3.transformQuat(worldPos, this.position, quat.create());
+        //vec3.add(worldPos, worldPos, this.cpPosition);
+        return worldPos;
+    }
+}
+/* FIELDS
+0:velocity ??
+1: TTL
+3:radius
+4:roll
+5:roll speed ??
+6: color
+7: alpha
+8:current time
+10:scale
+12:yaw???
+//-----------------------------------------------------------------------------
+// Particle attributes
+//-----------------------------------------------------------------------------
+#define MAX_PARTICLE_ATTRIBUTES 32
+
+#define DEFPARTICLE_ATTRIBUTE(name, bit)						\
+    const int PARTICLE_ATTRIBUTE_##name##_MASK = (1 << bit);	\
+    const int PARTICLE_ATTRIBUTE_##name = bit;
+
+// required
+DEFPARTICLE_ATTRIBUTE(XYZ, 0);
+
+// particle lifetime (duration) of particle as a float.
+DEFPARTICLE_ATTRIBUTE(LIFE_DURATION, 1);
+
+// prev coordinates for verlet integration
+DEFPARTICLE_ATTRIBUTE(PREV_XYZ, 2);
+
+// radius of particle
+DEFPARTICLE_ATTRIBUTE(RADIUS, 3);
+
+// rotation angle of particle
+DEFPARTICLE_ATTRIBUTE(ROTATION, 4);
+
+// rotation speed of particle
+DEFPARTICLE_ATTRIBUTE(ROTATION_SPEED, 5);
+
+// tint of particle
+DEFPARTICLE_ATTRIBUTE(TINT_RGB, 6);
+
+// alpha tint of particle
+DEFPARTICLE_ATTRIBUTE(ALPHA, 7);
+
+// creation time stamp (relative to particle system creation)
+DEFPARTICLE_ATTRIBUTE(CREATION_TIME, 8);
+
+// sequnece # (which animation sequence number this particle uses)
+DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER, 9);
+
+// length of the trail
+DEFPARTICLE_ATTRIBUTE(TRAIL_LENGTH, 10);
+
+// unique particle identifier
+DEFPARTICLE_ATTRIBUTE(PARTICLE_ID, 11);
+
+// unique rotation around up vector
+DEFPARTICLE_ATTRIBUTE(YAW, 12);
+
+// second sequnece # (which animation sequence number this particle uses)
+DEFPARTICLE_ATTRIBUTE(SEQUENCE_NUMBER1, 13);
+
+// hit box index
+DEFPARTICLE_ATTRIBUTE(HITBOX_INDEX, 14);
+
+DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
+
+*/
+/**
+ * TODO
+ */
+
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 const SOURCE2_DEFAULT_RADIUS = 5; // TODO: check default value
 const vec$8 = vec3.create();
@@ -58941,7 +59658,7 @@ class Source2ParticleSystem extends Entity {
     isSource2ParticleSystem = true;
     fileName;
     repository;
-    #parentModel;
+    #parentModel = null;
     animable = true;
     resetable = true;
     speed = 1;
@@ -59323,7 +60040,7 @@ class Source2ParticleSystem extends Entity {
         if (!model?.isSource2ModelInstance) {
             return;
         }
-        this.#parentModel = model;
+        this.#parentModel = model ?? null;
         this.getControlPoint(0).model = model;
         if (this.baseProperties.controlPointConfigurations) {
             for (const controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
