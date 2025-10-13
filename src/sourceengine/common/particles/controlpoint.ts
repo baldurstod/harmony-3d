@@ -1,13 +1,9 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
 import { Graphics } from '../../../graphics/graphics2';
 import { Source2ModelInstance } from '../../export';
 import { Source2Snapshot } from '../../source2/particles/source2snapshot';
-
-const identityVec3 = vec3.create();//TODO: use IDENTITY_VEC3
-const identityQuat = quat.create();
 
 const tempVec3 = vec3.create();
 const tempQuat = quat.create();
@@ -16,7 +12,7 @@ const mat = mat4.create();
 
 export class ControlPoint extends Entity {
 	isControlPoint = true;
-	#parentControlPoint?: ControlPoint;
+	#parentControlPoint: ControlPoint | null = null;
 
 	currentWorldPosition = vec3.create();
 	prevWorldPosition = vec3.create();
@@ -42,13 +38,13 @@ export class ControlPoint extends Entity {
 	snapshot?: Source2Snapshot;
 	model?: Source2ModelInstance;
 
-	getWorldTransformation(mat = mat4.create()) {
+	getWorldTransformation(mat = mat4.create()): mat4 {
 		this.getWorldQuaternion(tempQuat);
 		this.getWorldPosition(tempVec3);
 		return mat4.fromRotationTranslation(mat, tempQuat, tempVec3);
 	}
 
-	getWorldQuaternion(q = quat.create()) {
+	getWorldQuaternion(q = quat.create()): quat {
 		if (this.#parentControlPoint) {
 			this.#parentControlPoint.getWorldQuaternion(q);
 			quat.mul(q, q, this._quaternion);
@@ -58,7 +54,7 @@ export class ControlPoint extends Entity {
 		return q;
 	}
 
-	parentChanged(parent: Entity | null) {
+	parentChanged(): void {
 		const parentModel = this.getParentModel();
 		this.forEach(entity => {
 			if ((entity as ControlPoint).isControlPoint) {
@@ -71,11 +67,11 @@ export class ControlPoint extends Entity {
 		this.#parentControlPoint = parentControlPoint;
 	}
 
-	get parentControlPoint() {
+	get parentControlPoint(): ControlPoint | null {
 		return this.#parentControlPoint;
 	}
 
-	step() {
+	step(): void {
 		if (this.lastComputed < Graphics.currentTick) {
 			this.lastComputed = Graphics.currentTick;
 			vec3.copy(this.prevWorldPosition, this.currentWorldPosition);
@@ -85,13 +81,13 @@ export class ControlPoint extends Entity {
 		}
 	}
 
-	resetDelta() {
+	resetDelta(): void {
 		this.#compute();
 		vec3.zero(this.deltaWorldPosition);
 		mat4.identity(this.deltaWorldTransformation);
 	}
 
-	#compute() {
+	#compute(): void {
 		super.getWorldPosition(this.currentWorldPosition);
 		super.getWorldQuaternion(this.currentWorldQuaternion);
 		mat4.fromRotationTranslation(this.currentWorldTransformation, this.currentWorldQuaternion, this.currentWorldPosition);
@@ -104,15 +100,33 @@ export class ControlPoint extends Entity {
 		mat4.mul(this.deltaWorldTransformation, this.currentWorldTransformation, mat);
 	}
 
-	deltaPosFrom(other: ControlPoint, out = vec3.create()) {
+	deltaPosFrom(other: ControlPoint, out = vec3.create()): vec3 {
 		return vec3.sub(out, other.currentWorldPosition, this.currentWorldPosition);
 	}
 
-	static async constructFromJSON(json: JSONObject) {
-		return new ControlPoint();
+	getForwardVector(out: vec3 = vec3.create()): vec3 {
+		vec3.set(out, 0, 1, 0);// +Y
+		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		return out;
 	}
 
-	static getEntityName() {
+	getUpVector(out: vec3 = vec3.create()): vec3 {
+		vec3.set(out, 0, 0, 1);// +Z
+		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		return out;
+	}
+
+	getRightVector(out: vec3 = vec3.create()): vec3 {
+		vec3.set(out, 1, 0, 0);// +X
+		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		return out;
+	}
+
+	static constructFromJSON(): Promise<ControlPoint> {
+		return Promise.resolve(new ControlPoint());
+	}
+
+	static getEntityName(): string {
 		return 'ControlPoint';
 	}
 }
