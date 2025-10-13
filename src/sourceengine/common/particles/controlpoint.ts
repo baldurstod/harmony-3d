@@ -33,7 +33,7 @@ export class ControlPoint extends Entity {
 	// Right vector
 	rVector = vec3.create();
 
-	parentModel?: Entity;
+	parentModel: Entity | null = null;
 	lastComputed = -1;
 	snapshot?: Source2Snapshot;
 	model?: Source2ModelInstance;

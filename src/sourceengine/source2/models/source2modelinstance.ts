@@ -136,9 +136,9 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	addChild(child: Entity) {
+	addChild(child?: Entity | null): Entity | null {
 		if (!child) {
-			return;
+			return null;
 		}
 		const ret = super.addChild(child);
 		if ((child as any).skeleton) {

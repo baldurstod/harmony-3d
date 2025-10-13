@@ -6,6 +6,7 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
+import { vec3ToJSON } from '../utils/json';
 
 export enum CameraProjection {
 	Perspective = 0,
@@ -443,7 +444,7 @@ export class Camera extends Entity {
 			json.aspectRatio = this.aspectRatio;
 		}
 		if (!vec3.equals(this.#upVector, DEFAULT_UP_VECTOR)) {
-			json.upVector = this.upVector;
+			json.upVector = vec3ToJSON(this.upVector);
 		}
 		if (this.left != DEFAULT_LEFT) {
 			json.left = this.left;

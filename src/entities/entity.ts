@@ -1,4 +1,6 @@
-import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
+import { mat3, mat4, quat, ReadonlyQuat, ReadonlyVec3, vec3, vec4 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { DEBUG, VERBOSE } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { JSONLoader } from '../importers/jsonloader';
@@ -9,7 +11,6 @@ import { clamp, generateRandomUUID } from '../math/functions';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
-import { JSONObject } from 'harmony-types';
 import { Properties, Property } from '../utils/properties';
 import { stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';
@@ -55,7 +56,7 @@ export interface EntityParameters {
 	visible?: boolean;
 }
 
-export type DynamicParams = { [key: string]: DynamicParam }//TODO: create a map;
+export type DynamicParams = Record<string, DynamicParam>//TODO: create a map;
 export type DynamicParam = any/*TODO: create an actual type*/;
 
 export class Entity {
@@ -96,12 +97,13 @@ export class Entity {
 	readonly properties = new Properties()//Map<string, any>();
 	loadedPromise?: Promise<any>;
 	#layer?: number = undefined;
+	readonly transparent = false as const;
 
 	constructor(params?: EntityParameters) {
 		this.setParameters(params);
 	}
 
-	setParameters(parameters?: EntityParameters) {
+	setParameters(parameters?: EntityParameters): void {
 		if (!parameters) {
 			return;
 		}
@@ -116,10 +118,10 @@ export class Entity {
 			parameters.childs.forEach((child: Entity) => this.addChild(child));
 		}
 		if (parameters.position) {
-			this.position = parameters.position;
+			this.setPosition(parameters.position);
 		}
 		if (parameters.quaternion) {
-			this.quaternion = parameters.quaternion;
+			this.setQuaternion(parameters.quaternion);
 		}
 		if (parameters.scale) {
 			this.scale = parameters.scale;
@@ -147,11 +149,11 @@ export class Entity {
 		}
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
-	setPosition(position: vec3) {
+	setPosition(position: ReadonlyVec3): void {
 		if (this.lockPosition) {
 			return;
 		}
@@ -162,7 +164,7 @@ export class Entity {
 		}
 	}
 
-	getPosition(position: vec3 = vec3.create()) {
+	getPosition(position: vec3 = vec3.create()): vec3 {
 		return vec3.copy(position, this._position);
 	}
 
@@ -177,12 +179,12 @@ export class Entity {
 	/**
 	 * @deprecated Please use `getPosition` instead.
 	 */
-	get position() {
+	get position(): vec3 {
 		// TODO: deprecate
 		return this.getPosition();
 	}
 
-	getWorldPosition(vec = vec3.create()) {
+	getWorldPosition(vec = vec3.create()): vec3 {
 		if (this._parent) {
 			this._parent.getWorldPosition(vec);
 			this._parent.getWorldQuaternion(tempQuat);
@@ -195,27 +197,27 @@ export class Entity {
 		return vec;
 	}
 
-	getPositionFrom(other: Entity, vec = vec3.create()) {
+	getPositionFrom(other: Entity, vec = vec3.create()): vec3 {
 		this.getWorldPosition(tempVec3_1);
 		other.getWorldPosition(tempVec3_2);
 
 		return vec3.sub(vec, tempVec3_2, tempVec3_1);
 	}
 
-	setWorldPosition(position: vec3) {
+	setWorldPosition(position: ReadonlyVec3): void {
 		if (this._parent) {
 			this._parent.getWorldPosition(tempVec3_1);
 			this._parent.getWorldQuaternion(tempQuat);
 			vec3.sub(tempVec3_1, position, tempVec3_1);
 			quat.invert(tempQuat, tempQuat);
 			vec3.transformQuat(tempVec3_1, tempVec3_1, tempQuat);
-			this.position = tempVec3_1;
+			this.setPosition(tempVec3_1);
 		} else {
-			this.position = position;
+			this.setPosition(position);
 		}
 	}
 
-	getWorldQuaternion(q = quat.create()) {
+	getWorldQuaternion(q = quat.create()): quat {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(q);
 			quat.mul(q, q, this._quaternion);
@@ -225,7 +227,7 @@ export class Entity {
 		return q;
 	}
 
-	setWorldQuaternion(quaternion: quat) {
+	setWorldQuaternion(quaternion: ReadonlyQuat): void {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(tempQuat);
 			quat.invert(tempQuat, tempQuat);
@@ -235,7 +237,7 @@ export class Entity {
 		}
 	}
 
-	getWorldScale(vec = vec3.create()) {
+	getWorldScale(vec = vec3.create()): vec3 {
 		if (this._parent) {
 			this._parent.getWorldScale(vec);
 			vec3.mul(vec, vec, this._scale);
@@ -245,11 +247,11 @@ export class Entity {
 		return vec;
 	}
 
-	get positionAsString() {
+	get positionAsString(): string {
 		return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
 	}
 
-	setQuaternion(quaternion: quat) {
+	setQuaternion(quaternion: ReadonlyQuat): void {
 		if (this.lockRotation) {
 			return;
 		}
@@ -260,25 +262,25 @@ export class Entity {
 		}
 	}
 
-	getQuaternion(quaternion: quat = quat.create()) {
+	getQuaternion(quaternion: quat = quat.create()): vec4 {
 		return quat.copy(quaternion, this._quaternion);
 	}
 
 	/**
 	 * @deprecated Please use `setQuaternion` instead.
 	 */
-	set quaternion(quaternion: quat) {
+	set quaternion(quaternion: ReadonlyQuat) {
 		this.setQuaternion(quaternion);
 	}
 
 	/**
 	 * @deprecated Please use `getQuaternion` instead.
 	 */
-	get quaternion() {
+	get quaternion(): quat {
 		return this.getQuaternion();
 	}
 
-	get quaternionAsString() {
+	get quaternionAsString(): string {
 		return `${this._quaternion[0].toFixed(2)} ${this._quaternion[1].toFixed(2)} ${this._quaternion[2].toFixed(2)} ${this._quaternion[3].toFixed(2)}`;
 	}
 
@@ -289,11 +291,11 @@ export class Entity {
 		vec3.copy(this._scale, scale);
 	}
 
-	get scale() {
+	get scale(): vec3 {
 		return vec3.clone(this._scale);
 	}
 
-	get worldMatrix() {//TODO: remove ?
+	get worldMatrix(): mat4 {//TODO: remove ?
 		//TODO: optimize
 		this.getWorldPosition(tempVec3_1);
 		this.getWorldQuaternion(tempQuat);
@@ -304,14 +306,7 @@ export class Entity {
 		return this.#worldMatrix;
 	}
 
-	render(canvas: HTMLCanvasElement) {
-	}
-
-	get transparent() {
-		return false;
-	}
-
-	setVisible(visible?: boolean | undefined) {
+	setVisible(visible?: boolean): void {
 		const oldValue = this.#visible;
 		this.#visible = visible;
 		if (oldValue != visible) {
@@ -324,6 +319,13 @@ export class Entity {
 	 */
 	set visible(visible) {
 		this.setVisible(visible);
+	}
+
+	/**
+	 * @deprecated Please use `isVisible` instead.
+	 */
+	get visible(): boolean {
+		return this.isVisible();
 	}
 
 	isVisible(): boolean {
@@ -339,20 +341,13 @@ export class Entity {
 	}
 
 	/**
-	 * @deprecated Please use `isVisible` instead.
-	 */
-	get visible() {
-		return this.isVisible();
-	}
-
-	/**
 	 * @deprecated Please use `isVisibleSelf` instead.
 	 */
-	get visibleSelf() {
+	get visibleSelf(): boolean | undefined {
 		return this.#visible;
 	}
 
-	toggleVisibility() {
+	toggleVisibility(): void {
 		const oldValue = this.#visible;
 		if (this.#visible === undefined) {
 			if (this.isVisible()) {
@@ -386,7 +381,7 @@ export class Entity {
 		}
 	}
 
-	setPlaying(playing: boolean) {
+	setPlaying(playing: boolean): void {
 		const oldValue = this.#playing;
 		this.#playing = playing;
 		if (oldValue != playing) {
@@ -394,17 +389,19 @@ export class Entity {
 		}
 	}
 
-	isPlaying() {
+	isPlaying(): boolean {
 		return this.#playing;
 	}
 
-	togglePlaying() {
+	togglePlaying(): void {
 		this.setPlaying(!this.#playing);
 	}
 
-	do(action: string, params?: any) { }
+	do(action: string, params?: any): void {
+		throw new Error('override me' + String(action) + String(params));
+	}
 
-	#setParent(parent: Entity | null) {
+	#setParent(parent: Entity | null): void {
 		EntityObserver.parentChanged(this, this._parent, parent);
 		if (this._parent != null) {
 			this._parent.removeChild(this);
@@ -416,9 +413,11 @@ export class Entity {
 		this.parentChanged(parent);
 	}
 
-	parentChanged(parent: Entity | null) { }
+	parentChanged(parent: Entity | null): void {
+		throw new Error('override me ' + String(parent));
+	}
 
-	*getParentIterator() {
+	*getParentIterator(): Generator<Entity, null | undefined, unknown> {
 		const ws = new WeakSet<Entity>();
 
 		let current = this._parent;
@@ -434,33 +433,32 @@ export class Entity {
 		}
 	}
 
-
-	remove() {
+	remove(): void {
 		if (this._parent != null) {
 			this.#setParent(null);
 		}
 	}
 
-	removeThis() {
+	removeThis(): void {
 		for (const child of this.#children) {
 			child.parent = this.parent;
 		}
 		this.remove();
 	}
 
-	removeChildren() {
+	removeChildren(): void {
 		for (const child of this.#children) {
 			child.remove();
 		}
 	}
 
-	disposeChildren() {
+	disposeChildren(): void {
 		for (const child of this.#children) {
 			child.dispose();
 		}
 	}
 
-	removeSiblings() {
+	removeSiblings(): void {
 		if (this._parent != null) {
 			for (const child of this._parent.#children) {
 				if (child !== this) {
@@ -470,7 +468,7 @@ export class Entity {
 		}
 	}
 
-	removeSimilarSiblings() {
+	removeSimilarSiblings(): void {
 		if (this._parent != null) {
 			const constructorName = this.constructor.name;
 			for (const child of this._parent.#children) {
@@ -497,7 +495,7 @@ export class Entity {
 		return this._parent;
 	}
 
-	get root() {
+	get root(): Entity {
 		let currentEntity: Entity = this;
 		let parent: Entity | null;
 		while (currentEntity) {
@@ -511,33 +509,34 @@ export class Entity {
 		return currentEntity;
 	}
 
-	addChild(child?: Entity | null) {
+	addChild(child?: Entity | null): Entity | null {
 		if (!child) {
-			return
+			return null;
 		}
+		/*
 		if (!(child instanceof Entity)) {
 			if (DEBUG) {
 				console.log(child, ' is not instanceof Entity');
 			}
-			return;
+			return null;
 		}
+		*/
 		if (child === this) {
 			if (DEBUG) {
 				console.log('Cannot add an entity as child of itself');
 			}
-			return;
+			return null;
 		}
 		if (this.#children.has(child)) {
 			if (VERBOSE) {
 				console.info(child, ' is already a child of ', this);
 			}
-			return;
+			return null;
 		}
 		if (this.isParent(child)) {
 			if (DEBUG) {
 				console.info(child, ' is parent of ', this);
 			}
-			return;
 		}
 
 		this.#children.add(child);
@@ -546,7 +545,7 @@ export class Entity {
 		return child;
 	}
 
-	addChilds(...childs: Entity[]) {
+	addChilds(...childs: Entity[]): void {
 		childs.forEach(child => this.addChild(child));
 	}
 
@@ -562,7 +561,7 @@ export class Entity {
 		return false;
 	}
 
-	removeChild(child?: Entity | null) {
+	removeChild(child?: Entity | null): void {
 		if (child && this.#children.has(child)) {
 			this.#children.delete(child);
 			child.#setParent(null);
@@ -574,62 +573,62 @@ export class Entity {
 		}
 	}
 
-	toString() {
+	toString(): string {
 		return this.#name !== undefined ? this.#name : '';
 	}
 
-	translate(v: vec3) {
+	translate(v: vec3): void {
 		vec3.add(tempVec3_1, this._position, v);
-		this.position = tempVec3_1;
+		this.setPosition(tempVec3_1);
 	}
 
-	translateOnAxis(axis: vec3, distance: number) {
+	translateOnAxis(axis: vec3, distance: number): Entity {
 		vec3.transformQuat(tempVec3_1, axis, this._quaternion);
 		vec3.scaleAndAdd(tempVec3_1, this._position, tempVec3_1, distance);
-		this.position = tempVec3_1;
+		this.setPosition(tempVec3_1);
 		return this;
 	}
 
-	translateX(distance: number) {//TODO: optimize inline
+	translateX(distance: number): Entity {//TODO: optimize inline
 		return this.translateOnAxis(X_VECTOR, distance);
 	}
 
-	translateY(distance: number) {
+	translateY(distance: number): Entity {
 		return this.translateOnAxis(Y_VECTOR, distance);
 	}
 
-	translateZ(distance: number) {
+	translateZ(distance: number): Entity {
 		return this.translateOnAxis(Z_VECTOR, distance);
 	}
 
-	rotateX(rad: number) {
+	rotateX(rad: number): void {
 		quat.rotateX(this._quaternion, this._quaternion, rad);
 		this.locked = true;
 	}
 
-	rotateY(rad: number) {
+	rotateY(rad: number): void {
 		quat.rotateY(this._quaternion, this._quaternion, rad);
 		this.locked = true;
 	}
 
-	rotateZ(rad: number) {
+	rotateZ(rad: number): void {
 		quat.rotateZ(this._quaternion, this._quaternion, rad);
 		this.locked = true;
 	}
 
-	rotateGlobalX(rad: number) {
+	rotateGlobalX(rad: number): void {
 		quat.rotateX(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 		this.locked = true;
 	}
 
-	rotateGlobalY(rad: number) {
+	rotateGlobalY(rad: number): void {
 		quat.rotateY(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 		this.locked = true;
 	}
 
-	rotateGlobalZ(rad: number) {
+	rotateGlobalZ(rad: number): void {
 		quat.rotateZ(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 		this.locked = true;
@@ -653,7 +652,7 @@ export class Entity {
 			quat.conjugate(tempQuat2, parent._quaternion);
 			quat.mul(tempQuat, tempQuat2, tempQuat);
 		}
-		this.quaternion = tempQuat;
+		this.setQuaternion(tempQuat);
 	}
 
 	getMeshList(): Set<Entity> {
@@ -678,7 +677,7 @@ export class Entity {
 		return meshList;
 	}
 
-	showOutline(show: boolean, color?: vec4) {
+	showOutline(show: boolean, color?: vec4): void {
 		if (show) {
 			this.drawOutline = true;
 			this.materialsParams.drawOutline = true;
@@ -691,7 +690,7 @@ export class Entity {
 		}
 	}
 
-	getAllChilds(includeSelf: boolean) {
+	getAllChilds(includeSelf: boolean): Set<Entity> {
 		const ws = new WeakSet<Entity>();
 		const childs = new Set<Entity>();
 		const objectStack: Entity[] = [];
@@ -714,7 +713,7 @@ export class Entity {
 		return childs;
 	}
 
-	getBoundsModelSpace(min = vec3.create(), max = vec3.create()) {
+	getBoundsModelSpace(min = vec3.create(), max = vec3.create()): void {
 		//TODO: deprecate
 		if (this.#children.size > 0) {
 			min[0] = Infinity;
@@ -738,7 +737,7 @@ export class Entity {
 		}
 	}
 
-	getBoundingBox(boundingBox = new BoundingBox()) {
+	getBoundingBox(boundingBox = new BoundingBox()): BoundingBox {
 		boundingBox.reset();
 		const childBoundingBox = new BoundingBox();
 		for (const child of this.#children) {
@@ -749,11 +748,11 @@ export class Entity {
 		return boundingBox;
 	}
 
-	getParentModel(): Entity | undefined {
-		return this._parent?.getParentModel();
+	getParentModel(): Entity | null {
+		return this._parent?.getParentModel() ?? null;
 	}
 
-	getChildList(type?: string) {
+	getChildList(type?: string): Set<Entity> {
 		const ws = new WeakSet<Entity>();
 		const childs = new Set<Entity>();
 		const objectStack: Entity[] = [];
@@ -774,14 +773,14 @@ export class Entity {
 		return childs;
 	}
 
-	forEach(callback: (ent: Entity) => void) {
+	forEach(callback: (ent: Entity) => void): void {
 		callback(this);
 		for (const child of this.#children) {
 			child.forEach(callback);
 		}
 	}
 
-	forEachVisible(callback: (ent: Entity) => void) {
+	forEachVisible(callback: (ent: Entity) => void): void {
 		if (this.#visible) {
 			callback(this);
 			for (const child of this.#children) {
@@ -790,7 +789,7 @@ export class Entity {
 		}
 	}
 
-	forEachParent(callback: (ent: Entity) => void) {
+	forEachParent(callback: (ent: Entity) => void): void {
 		const parent = this._parent;
 		if (parent) {
 			callback(parent);
@@ -798,17 +797,17 @@ export class Entity {
 		}
 	}
 
-	setupPickingId() {
+	setupPickingId(): void {
 		const pickingId = ++incrementalPickingId;
 		pickList.set(pickingId, this);
 		this.#pickingColor = vec3.fromValues(((pickingId >> 16) & 0xFF) / 255.0, ((pickingId >> 8) & 0xFF) / 255.0, ((pickingId >> 0) & 0xFF) / 255.0);
 	}
 
-	get pickingColor(): vec3 | undefined {
-		return this.#pickingColor ?? this._parent?.pickingColor;
+	get pickingColor(): vec3 | null {
+		return this.#pickingColor ?? this._parent?.pickingColor ?? null;
 	}
 
-	update(scene: Scene, camera: Camera, delta: number) {
+	update(scene: Scene, camera: Camera, delta: number): void {
 	}
 
 	set castShadow(castShadow: boolean | undefined) {
@@ -823,7 +822,7 @@ export class Entity {
 		}
 	}
 
-	toggleCastShadow() {
+	toggleCastShadow(): void {
 		if (this.#castShadow === undefined) {
 			if (this.castShadow) {
 				this.castShadow = false;
@@ -857,7 +856,7 @@ export class Entity {
 		}
 	}
 
-	toggleReceiveShadow() {
+	toggleReceiveShadow(): void {
 		if (this.#receiveShadow === undefined) {
 			if (this.receiveShadow) {
 				this.receiveShadow = false;
@@ -883,7 +882,7 @@ export class Entity {
 		this.#serializable = serializable;
 	}
 
-	get serializable() {
+	get serializable(): boolean {
 		return this.#serializable;
 	}
 
@@ -891,46 +890,46 @@ export class Entity {
 		this.#hideInExplorer = hideInExplorer;
 	}
 
-	get hideInExplorer() {
+	get hideInExplorer(): boolean {
 		return this.#hideInExplorer;
 	}
 
-	buildContextMenu() {
+	buildContextMenu(): HarmonyMenuItemsDict {
 		const menu = {
-			visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
+			visibility: { i18n: '#visibility', selected: this.isVisible(), f: (): void => this.toggleVisibility() },
 
-			remove: { i18n: '#remove', f: () => this.remove() },
-			destroy: { i18n: '#destroy', f: () => this.dispose() },
+			remove: { i18n: '#remove', f: (): void => this.remove() },
+			destroy: { i18n: '#destroy', f: (): void => this.dispose() },
 			remove_more: {
 				i18n: '#remove_more', submenu: [
-					{ i18n: '#remove_this', f: () => this.removeThis() },
-					{ i18n: '#remove_childs', f: () => this.removeChildren() },
-					{ i18n: '#remove_siblings', f: () => this.removeSiblings() },
-					{ i18n: '#remove_similar_siblings', f: () => this.removeSimilarSiblings() },
+					{ i18n: '#remove_this', f: (): void => this.removeThis() },
+					{ i18n: '#remove_childs', f: (): void => this.removeChildren() },
+					{ i18n: '#remove_siblings', f: (): void => this.removeSiblings() },
+					{ i18n: '#remove_similar_siblings', f: (): void => this.removeSimilarSiblings() },
 				]
 			},
-			name: { i18n: '#name', f: () => { const n = prompt('Name', this.name); if (n !== null) { this.name = n; } } },
+			name: { i18n: '#name', f: (): void => { const n = prompt('Name', this.name); if (n !== null) { this.name = n; } } },
 			add: { i18n: '#add', submenu: Entity.addSubMenu },
 			entitynull_1: null,
-			position: { i18n: '#position', f: () => { const v = prompt('Position', this.position.join(' ')); if (v !== null) { this.lockPos = true; this.position = stringToVec3(v); } } },
-			translate: { i18n: '#translate', f: () => { const t = prompt('Translation', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
-			reset_position: { i18n: '#reset_position', f: () => this.position = IDENTITY_VEC3 },
+			position: { i18n: '#position', f: (): void => { const v = prompt('Position', this.getPosition().join(' ')); if (v !== null) { this.lockPos = true; this.setPosition(stringToVec3(v)); } } },
+			translate: { i18n: '#translate', f: (): void => { const t = prompt('Translation', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
+			reset_position: { i18n: '#reset_position', f: (): void => this.setPosition(IDENTITY_VEC3) },
 			entitynull_2: null,
-			quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) { this.lockRot = true; this.quaternion = stringToQuat(v); } } },
+			quaternion: { i18n: '#quaternion', f: (): void => { const v = prompt('Quaternion', this.getQuaternion().join(' ')); if (v !== null) { this.lockRot = true; this.setQuaternion(stringToQuat(v)); } } },
 			rotate: {
 				i18n: '#rotate', submenu: [
-					{ i18n: '#rotate_x_global', f: () => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y_global', f: () => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z_global', f: () => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_x', f: () => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y', f: () => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z', f: () => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x_global', f: (): void => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y_global', f: (): void => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z_global', f: (): void => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x', f: (): void => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y', f: (): void => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z', f: (): void => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
 				]
 			},
-			reset_rotation: { i18n: '#reset_rotation', f: () => this.quaternion = IDENTITY_QUAT },
+			reset_rotation: { i18n: '#reset_rotation', f: (): void => this.setQuaternion(IDENTITY_QUAT) },
 			entitynull_3: null,
 			scale: {
-				i18n: '#scale', f: () => {
+				i18n: '#scale', f: (): void => {
 					const s = prompt('Scale', this.scale.join(' ')); if (s !== null) {
 						const arr = s.split(' ');
 						if (arr.length == 3) {
@@ -941,18 +940,18 @@ export class Entity {
 					}
 				}
 			},
-			reset_scale: { i18n: '#reset_scale', f: () => this.scale = UNITY_VEC3 },
+			reset_scale: { i18n: '#reset_scale', f: (): vec3 => this.scale = UNITY_VEC3 },
 			entitynull_4: null,
-			wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: () => this.toggleWireframe() },
-			cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: () => this.toggleCastShadow() },
-			receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: () => this.toggleReceiveShadow() },
+			wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: (): void => this.toggleWireframe() },
+			cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: (): void => this.toggleCastShadow() },
+			receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: (): void => this.toggleReceiveShadow() },
 			material: { i18n: '#material', submenu: {} },
 		};
 
 		if ((this as any).material) {
 			Object.assign(menu.material.submenu, {
 				entitynull_5: null,
-				edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(this) }
+				edit_material: { i18n: '#edit_material', f: (): void => Entity.editMaterial(this) }
 			})
 		}
 
@@ -960,9 +959,10 @@ export class Entity {
 	}
 
 	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
+		throw new Error('override me');
 	}
 
-	setWireframe(wireframe: number, recursive = true) {
+	setWireframe(wireframe: number, recursive = true): void {
 		this.wireframe = wireframe;
 		if (recursive) {
 			for (const child of this.#children) {
@@ -979,11 +979,11 @@ export class Entity {
 		return this.#wireframe ?? this._parent?.wireframe ?? 0;
 	}
 
-	get children() {
+	get children(): Set<Entity> {
 		return this.#children;
 	}
 
-	toggleWireframe() {
+	toggleWireframe(): void {
 		if (this.#wireframe === undefined) {
 			switch (this.wireframe) {
 				case 0:
@@ -1018,12 +1018,12 @@ export class Entity {
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		this.remove();
 		EntityObserver.entityDeleted(this);
 	}
 
-	replaceMaterial(material: Material, recursive = true) {
+	replaceMaterial(material: Material, recursive = true): void {
 		if (recursive) {
 			for (const child of this.#children) {
 				child.replaceMaterial(material, recursive);
@@ -1031,7 +1031,7 @@ export class Entity {
 		}
 	}
 
-	resetMaterial(recursive = true) {
+	resetMaterial(recursive = true): void {
 		if (recursive) {
 			for (const child of this.#children) {
 				child.resetMaterial(recursive);
@@ -1039,7 +1039,7 @@ export class Entity {
 		}
 	}
 
-	setAttribute(attributeName: string, attributeValue: any) {
+	setAttribute(attributeName: string, attributeValue: any): void {
 		const oldValue = this.#attributes.get(attributeName);
 		this.#attributes.set(attributeName, attributeValue);
 
@@ -1067,7 +1067,7 @@ export class Entity {
 	propagate(): void {
 	}
 
-	copy(source: Entity) {
+	copy(source: Entity): void {
 		//TODO: should we copy world pos / quat ?
 		vec3.copy(this._position, source._position);
 		quat.copy(this._quaternion, source._quaternion);
@@ -1082,7 +1082,7 @@ export class Entity {
 		return this.properties.set(name, value);
 	}
 
-	setLayer(layer?: number) {
+	setLayer(layer?: number): void {
 		if (Number.isNaN(Number(layer))) {
 			this.#layer = undefined;
 		} else {
@@ -1098,11 +1098,11 @@ export class Entity {
 		}
 	}
 
-	setMaterialParam(name: string, value: DynamicParam) {
+	setMaterialParam(name: string, value: DynamicParam): void {
 		this.materialsParams[name] = value;
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const children: any[] = [];
 		for (const child of this.#children) {
 			if (child.#serializable) {
@@ -1119,10 +1119,10 @@ export class Entity {
 			json.visible = this.#visible ? true : false;
 		}
 		if (!vec3.exactEquals(this._position, IDENTITY_VEC3)) {
-			json.position = this.position;
+			json.position = this.getPosition();
 		}
 		if (!quat.exactEquals(this._quaternion, IDENTITY_QUAT)) {
-			json.quaternion = this.quaternion;
+			json.quaternion = this.getQuaternion();
 		}
 		if (!vec3.exactEquals(this._scale, UNITY_VEC3)) {
 			json.scale = this.scale;
@@ -1157,40 +1157,41 @@ export class Entity {
 		return entity;
 	}
 
-	async createChild(entityName: string, parameters: any) {
+	async createChild(entityName: string, parameters: any): Promise<Entity | null> {
 		const entity = await JSONLoader.fromJSON({
 			constructor: entityName,
 			...parameters,
-		});
+		}) as Entity | null;
 
 		if (entity) {
-			this.addChild(entity as Entity);
+			this.addChild(entity);
 			return entity;
 		}
+		return null
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		this.id = json.id as string ?? generateRandomUUID();
 		this.#name = json.name as string;
 		this.#visible = json.visible as boolean;
 		if (json.position) {
-			this.position = json.position as vec3;
+			this.setPosition(json.position as vec3);
 		}
 		if (json.quaternion) {
-			this.quaternion = json.quaternion as quat;
+			this.setQuaternion(json.quaternion as quat);
 		}
 		if (json.scale) {
 			this.scale = json.scale as vec3;
 		}
 		this.castShadow = json.castshadow as boolean;
 		this.receiveShadow = json.receiveshadow as boolean;
-		this.materialsParams = json.materialsparams as { [key: string]: DynamicParam };
+		this.materialsParams = json.materialsparams as DynamicParams;
 		this.#hideInExplorer = json.hideinexplorer as boolean ?? false;
 		this.wireframe = json.wireframe as number;
 		this.#layer = json.layer as number;
 	}
 
-	static getEntityName() {
+	static getEntityName(): string {
 		return 'Entity';
 	}
 

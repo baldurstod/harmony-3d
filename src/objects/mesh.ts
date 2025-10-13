@@ -12,6 +12,7 @@ import { Raycaster } from '../raycasting/raycaster';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
+import { HarmonyMenuItem, HarmonyMenuItemsDict } from 'harmony-ui';
 
 const tempVec3 = vec3.create();
 
@@ -196,19 +197,20 @@ export class Mesh extends Entity {
 		}
 	}
 
-	buildContextMenu() {
+	buildContextMenu(): HarmonyMenuItemsDict {
 		const contextMenu = super.buildContextMenu();
 
-		Object.assign(contextMenu.material.submenu, {
-			Mesh_1: null,
-			set_material: {
-				i18n: '#set_material', f: async () => {
-					const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
-						const material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
-					}
+		const materialSubmenu = contextMenu.material!.submenu as HarmonyMenuItemsDict;
+
+		materialSubmenu.mesh1 = null;
+
+		materialSubmenu.setMaterial = {
+			i18n: '#set_material', f: async () => {
+				const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
+					const material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 				}
-			},
-		})
+			}
+		};
 		return contextMenu;
 	}
 

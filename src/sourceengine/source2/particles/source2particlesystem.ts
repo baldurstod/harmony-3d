@@ -5,10 +5,10 @@ import { ControlPoint } from '../../common/particles/controlpoint';
 import { HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { Source2ModelInstance } from '../export';
 import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
+import { DEFAULT_EMITTER_INDEX } from './operators/emitters/emitter';
 import { Operator } from './operators/operator';
 import { Source2Particle } from './source2particle';
 import { Source2ParticleManager } from './source2particlemanager';
-import { DEFAULT_EMITTER_INDEX } from './operators/emitters/emitter';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
@@ -76,7 +76,7 @@ export class Source2ParticleSystem extends Entity {
 	isSource2ParticleSystem = true;
 	fileName: string;
 	repository: string;
-	#parentModel?: Entity;
+	#parentModel: Entity | null = null;
 	animable = true;
 	resetable = true;
 	speed = 1;
@@ -512,12 +512,12 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	setParentModel(model?: Entity | undefined) {
+	setParentModel(model?: Entity | null) {
 		if (!(model as Source2ModelInstance)?.isSource2ModelInstance) {
 			return;
 		}
 
-		this.#parentModel = model;
+		this.#parentModel = model ?? null;
 
 		this.getControlPoint(0).model = model as Source2ModelInstance;
 		if (this.baseProperties.controlPointConfigurations) {
@@ -552,7 +552,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	getParentModel(): Entity | undefined {
+	getParentModel(): Entity | null {
 		// TODO: remove recursion
 		if (this.parentSystem) {
 			return this.parentSystem.getParentModel();
