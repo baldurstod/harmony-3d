@@ -16,8 +16,9 @@ import { ParticleColor, WHITE } from './color';
 import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID, PARAM_TYPE_INT, PARAM_TYPE_STRING } from './constants';
 import { Source1ParticleOperator } from './operators/operator';
 import { Source1Particle } from './particle';
-import { Source1ParticleControler } from './source1particlecontroler';
+import { BulgeControl, PathParameters } from './path';
 import { RANDOM_FLOAT_MASK, randomFloats } from './randomfloats';
+import { Source1ParticleControler } from './source1particlecontroler';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
@@ -943,6 +944,46 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		out[0] = randomFloats[(nBaseId + 0) & RANDOM_FLOAT_MASK]! * delta + min;
 		out[1] = randomFloats[(nBaseId + 1) & RANDOM_FLOAT_MASK]! * delta + min;
 		out[2] = randomFloats[(nBaseId + 2) & RANDOM_FLOAT_MASK]! * delta + min;
+	}
+
+	calculatePathValues(pathIn: PathParameters, timeStamp: float, startPnt: vec3, midPnt: vec3, endPnt: vec3): void {
+		// TODO: use timeStamp to get control point at time
+		const startControlPoint = this.getControlPoint(pathIn.startControlPointNumber);
+		const endControlPoint = this.getControlPoint(pathIn.endControlPointNumber);
+
+		if (!startControlPoint || !endControlPoint) {
+			return;
+		}
+
+		startControlPoint.getWorldPosition(startPnt);
+		endControlPoint.getWorldPosition(endPnt);
+
+		vec3.lerp(midPnt, startPnt, endPnt, pathIn.midPoint);
+		if (pathIn.bulgeControl != BulgeControl.Random) {
+			const target = vec3.sub(vec3.create(), endPnt, startPnt);// TODO: optimize vec3.create()
+			let bulgeScale = 0.0;
+			let cp = startControlPoint;
+			if (pathIn.bulgeControl == BulgeControl.OrientationOfEndPoint) {
+				cp = endControlPoint;
+			}
+			const controlPointOrientation: quat = cp.getWorldQuaternion();// TODO: optimize pass a quat
+			const fwd = cp.getForwardVector();// TODO: optimize pass a vec3
+			const len = vec3.len(target);
+			if (len > 1.0e-6) {
+				vec3.scale(target, target, 1. / len);
+				bulgeScale = 1.0 - Math.abs(vec3.dot(target, fwd)); // bulge inversely scaled
+			}
+
+			const flOffsetDist = vec3.len(fwd);
+			if (flOffsetDist > 1.0e-6) {
+				vec3.scale(fwd, fwd, (pathIn.bulge * len * bulgeScale) / flOffsetDist);
+				vec3.add(midPnt, midPnt, fwd);
+			}
+		} else {
+			const rndVector = vec3.create();
+			this.randomVector(0, -pathIn.bulge, pathIn.bulge, rndVector);
+			vec3.add(midPnt, midPnt, rndVector);
+		}
 	}
 
 	buildContextMenu() {
