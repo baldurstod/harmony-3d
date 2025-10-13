@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
@@ -7,7 +8,7 @@ import { Material } from '../materials/material';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
-import { JSONObject } from 'harmony-types';
+import { vec3ToJSON } from '../utils/json';
 import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
 
 const DEFAULT_VEC3 = vec3.create();
@@ -69,8 +70,8 @@ export class Line extends Mesh {
 
 	toJSON() {
 		const json = super.toJSON();
-		json.start = vec3.clone(this.start);
-		json.end = vec3.clone(this.end);
+		json.start = vec3ToJSON(this.start);
+		json.end = vec3ToJSON(this.end);
 		json.material = this.getMaterial().toJSON();
 		return json;
 	}

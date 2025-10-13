@@ -5,6 +5,7 @@ import { Entity, EntityParameters } from '../entities/entity';
 import { JSONObject } from 'harmony-types';
 import { stringToVec3 } from '../utils/utils';
 import { LightShadow } from './lightshadow';
+import { vec3ToJSON } from '../utils/json';
 
 const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
 let defaultTextureSize = 1024;
@@ -80,7 +81,7 @@ export class Light extends Entity {
 
 	toJSON() {
 		const json = super.toJSON();
-		json.color = this.color;
+		json.color = vec3ToJSON(this.color);
 		json.intensity = this.intensity;
 		json.shadowtexturesize = this.shadowTextureSize;
 		return json;

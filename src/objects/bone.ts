@@ -6,6 +6,7 @@ import { Graphics } from '../graphics/graphics2';
 import { Lockable } from '../interfaces/lockable';
 import { JSONObject } from 'harmony-types';
 import { Skeleton } from './skeleton';
+import { mat4ToJSON, quatToJSON, vec3ToJSON } from '../utils/json';
 
 const tempWorldMat = mat4.create();
 const tempWorldQuat = quat.create();
@@ -317,9 +318,9 @@ export class Bone extends Entity implements Lockable {
 
 	toJSON() {
 		const json = super.toJSON();
-		json.posetobone = mat4.clone(this.#poseToBone);
-		json.refposition = vec3.clone(this.#refPosition);
-		json.refquaternion = quat.clone(this.#refQuaternion);
+		json.posetobone = mat4ToJSON(this.#poseToBone);
+		json.refposition = vec3ToJSON(this.#refPosition);
+		json.refquaternion = quatToJSON(this.#refQuaternion);
 		json.boneid = this.boneId;
 		return json;
 	}
