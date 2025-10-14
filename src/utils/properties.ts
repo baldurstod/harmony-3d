@@ -36,7 +36,7 @@ export class Properties {
 		return this.#properties.get(name);
 	}
 
-	copy(source: Properties, keys?: string[]) {
+	copy(source: Properties, keys?: string[]): void {
 		if (keys) {
 			for (const key of keys) {
 				const value = source.get(key);

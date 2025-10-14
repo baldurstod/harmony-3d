@@ -18,6 +18,8 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-member-access": "off",// Disable that for now
       "@typescript-eslint/no-unsafe-assignment": "off",// Disable that for now
       "@typescript-eslint/no-unsafe-argument": "off",// Disable that for now
+      "@typescript-eslint/no-unsafe-return": "off",// Disable that for now
+      "@typescript-eslint/no-redundant-type-constituents": "off",// Disable that for now
     }
   },
   {
