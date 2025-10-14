@@ -2639,7 +2639,7 @@ declare class Channel {
                           static savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
                           static toBlob(type?: string, quality?: number): Promise<Blob | null>;
                           static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
-                          static startRecording(frameRate: number | undefined, bitsPerSecond: number): void;
+                          static startRecording(frameRate: number | undefined, bitsPerSecond: number, canvas?: HTMLCanvasElement): void;
                           static stopRecording(fileName?: string): void;
                           static get ready(): Promise<boolean>;
                           static isReady(): Promise<void>;

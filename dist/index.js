@@ -11949,9 +11949,10 @@ class Graphics {
         this.#canvas.toBlob(callback);*/
         saveFile(await this.savePictureAsFile(filename, type, quality));
     }
-    static startRecording(frameRate = 60, bitsPerSecond) {
-        if (this.#canvas) {
-            const stream = this.#canvas.captureStream(frameRate);
+    static startRecording(frameRate = 60, bitsPerSecond, canvas) {
+        const recordCanvas = canvas ?? this.#canvas;
+        if (recordCanvas) {
+            const stream = recordCanvas.captureStream(frameRate);
             this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
             this.#mediaRecorder.start();
         }
