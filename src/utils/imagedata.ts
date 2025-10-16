@@ -1,6 +1,6 @@
 import { createElement } from 'harmony-ui';
 
-export function imageDataToImage(imagedata: ImageData, image = new Image()) {
+export function imageDataToImage(imagedata: ImageData, image = new Image()): HTMLImageElement {
 	const canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height }) as HTMLCanvasElement;
 	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 	canvas.width = imagedata.width;
@@ -11,7 +11,7 @@ export function imageDataToImage(imagedata: ImageData, image = new Image()) {
 	return image;
 }
 
-export function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number) {
+export function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void {
 	const rowLength = width * 4
 	const tempRow = new Uint8ClampedArray(rowLength);
 	const halfHeight = height * 0.5;

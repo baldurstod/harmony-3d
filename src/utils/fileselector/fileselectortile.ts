@@ -9,18 +9,18 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 
 	constructor() {
 		super();
-		this.addEventListener('click', (event) => {
+		this.addEventListener('click', () => {
 			if (this.#selector && this.#file) {
 				this.#selector.fileSelected(this.#file);
 			}
 		});
 	}
 
-	get file() {
+	get file(): FileSelectorFile | undefined {
 		return this.#file;
 	}
 
-	setFile(file: FileSelectorFile) {
+	setFile(file: FileSelectorFile): void {
 		this.#file = file;
 		this.#updateHtml();
 	}
@@ -29,7 +29,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 		this.#selector = selector;
 	}
 
-	connectedCallback() {
+	connectedCallback(): void {
 		this.#updateHtml();
 	}
 
@@ -41,7 +41,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 		}
 	}
 
-	#updateHtml() {
+	#updateHtml(): void {
 		if (this.#visible && this.#file) {
 			this.innerText = this.#file.name;
 		}
@@ -49,7 +49,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 }
 
 let definedTile = false;
-export function defineFileSelectorTile() {
+export function defineFileSelectorTile(): void {
 	if (window.customElements && !definedTile) {
 		customElements.define('file-selector-tile', HTMLFileSelectorTileElement);
 		definedTile = true;

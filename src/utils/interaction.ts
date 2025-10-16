@@ -25,7 +25,7 @@ export class Interaction {
 		Interaction.#instance = this;
 	}
 
-	#initHtml() {
+	#initHtml(): void {
 		if (this.#shadowRoot) {
 			return;
 		}
@@ -75,27 +75,29 @@ export class Interaction {
 		});
 	}
 
-	show() {
+	show(): void {
 		this.#initHtml();
 		show(this.#shadowRoot?.host as HTMLElement);
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
-	hide() {
+	hide(): void {
 		hide(this.#shadowRoot?.host as HTMLElement);
 	}
 
-	async getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void) {
+	getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void): void {
 		this.show();
 		//this.#htmlColorPicker.setOptions({alpha:false});
 		show(this.#htmlColorPicker);
 
+		/*
 		let promiseResolve: (value: vec4) => void;
 
 		const promise = new Promise<vec4>(resolve => {
 			promiseResolve = resolve;
 		});
+		*/
 		/*
 		this.#htmlColorPickeronDone = (color) => {
 			let rgba = color.rgba;
@@ -105,20 +107,20 @@ export class Interaction {
 			this.hide();
 		};
 		*/
-		this.#htmlColorPickeronChange = (color) => {
+		this.#htmlColorPickeronChange = (color): void => {
 			const rgba = color.rgba;
 			const c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
 			if (onChange) {
 				onChange(c);
 			}
 		};
-		this.#htmlColorPickerCancel = () => {
+		this.#htmlColorPickerCancel = (): void => {
 			if (onCancel) {
 				onCancel();
 			}
 		};
 
-		return promise;
+		return;
 	}
 
 	getString(x: number, y: number, list: Set<string> | string[] | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
@@ -142,7 +144,7 @@ export class Interaction {
 		}
 
 		let promiseResolve: (value: string) => void;
-		(this.#htmlInput as HTMLInputElement).onchange = (event) => {
+		(this.#htmlInput as HTMLInputElement).onchange = (event): void => {
 			for (const option of (this.#htmlInputDataList as HTMLDataListElement).options) {
 				if (option.value == (event.target as HTMLInputElement).value) {
 					promiseResolve(option.value);
@@ -217,7 +219,7 @@ export class Interaction {
 	}
 		*/
 
-	async selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void) {
+	selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void): void {
 		this.#initHtml();
 		//htmlContainer.append(this.#htmlFileSelector);
 		//this.show();
@@ -239,7 +241,7 @@ export class Interaction {
 		});
 	}
 
-	get htmlElement() {
+	get htmlElement(): HTMLElement {
 		return this.#shadowRoot?.host as HTMLElement;
 	}
 }
