@@ -1,3 +1,4 @@
+import { loadScript } from 'harmony-browser-utils';
 import { createElement, hide, I18n } from 'harmony-ui';
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
@@ -84,7 +85,7 @@ export class ShaderEditor extends HTMLElement {
 		if (aceScript == '') {
 			this.#initEditor2(c);
 		} else {
-			loadScripts([aceScript], () => this.#initEditor2(c));//TODO: variable
+			loadScript(aceScript).then(() => this.#initEditor2(c));
 		}
 		ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
 		ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
@@ -259,24 +260,4 @@ export class ShaderEditor extends HTMLElement {
 
 if (window.customElements) {
 	customElements.define('shader-editor', ShaderEditor);
-}
-
-function loadScripts(array: string[], callback: () => void) {
-	const loader = function (src: string, handler: () => void) {
-		const script = createElement('script') as HTMLScriptElement;
-		script.src = src;
-		script.onload = () => {
-			script.onload = null;
-			handler();
-		}
-		const head = document.getElementsByTagName('head')[0];
-		(head || document.body).appendChild(script);
-	};
-	(function run() {
-		if (array.length != 0) {
-			loader(array.shift()!, run);
-		} else {
-			callback && callback();
-		}
-	})();
 }
