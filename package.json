@@ -1,12 +1,12 @@
 {
 	"name": "harmony-3d",
-	"version": "0.30.0",
+	"version": "0.30.1",
 	"description": "3D viewer",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"type": "module",
 	"scripts": {
-		"lint": "npm eslint"
+		"lint": "clear && npx eslint ./src/"
 	},
 	"dependencies": {
 		"@derschmale/io-rgbe": "github:baldurstod/io-rgbe",

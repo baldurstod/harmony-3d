@@ -34,6 +34,7 @@ const int NumLights = 1;
 AnalyticalLight lights[NumLights] = AnalyticalLight[](AnalyticalLight(vec3(40., 0., 50.), vec3(1)));
 
 #include source2_varying_pbr
+
 void main(void) {
 	#include compute_fragment_normal
 	#include compute_fragment_normal_world_space

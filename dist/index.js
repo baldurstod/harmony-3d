@@ -1,7 +1,7 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { MyEventTarget, StaticEventTarget, setTimeoutPromise, Queue, Map2, once as once$1 } from 'harmony-utils';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
-import { ShortcutHandler, saveFile } from 'harmony-browser-utils';
+import { ShortcutHandler, saveFile, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
@@ -3998,7 +3998,7 @@ class HTMLFileSelectorTileElement extends HTMLElement {
     #file;
     constructor() {
         super();
-        this.addEventListener('click', (event) => {
+        this.addEventListener('click', () => {
             if (this.#selector && this.#file) {
                 this.#selector.fileSelected(this.#file);
             }
@@ -4461,9 +4461,9 @@ class Interaction {
         }
         Interaction.#instance = this;
     }
-    #initHtml() {
+    #initHTML() {
         if (this.#shadowRoot) {
-            return;
+            return this.#shadowRoot.host;
         }
         this.#shadowRoot = createShadowRoot('div', {
             parent: document.body,
@@ -4502,22 +4502,27 @@ class Interaction {
         this.#htmlFileSelector = createElement('div', {
             style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
         });
+        return this.#shadowRoot.host;
     }
     show() {
-        this.#initHtml();
-        show(this.#shadowRoot?.host);
+        show(this.#initHTML());
         hide(this.#htmlInput);
         hide(this.#htmlColorPicker);
     }
     hide() {
         hide(this.#shadowRoot?.host);
     }
-    async getColor(x, y, defaultValue, onChange, onCancel) {
+    getColor(x, y, defaultValue, onChange, onCancel) {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
         show(this.#htmlColorPicker);
-        const promise = new Promise(resolve => {
+        /*
+        let promiseResolve: (value: vec4) => void;
+
+        const promise = new Promise<vec4>(resolve => {
+            promiseResolve = resolve;
         });
+        */
         /*
         this.#htmlColorPickeronDone = (color) => {
             let rgba = color.rgba;
@@ -4539,7 +4544,7 @@ class Interaction {
                 onCancel();
             }
         };
-        return promise;
+        return;
     }
     getString(x, y, list, defaultValue) {
         this.show();
@@ -4633,8 +4638,8 @@ class Interaction {
         }
     }
         */
-    async selectFile(htmlContainer, fileList, callback) {
-        this.#initHtml();
+    selectFile(htmlContainer, fileList, callback) {
+        this.#initHTML();
         //htmlContainer.append(this.#htmlFileSelector);
         //this.show();
         //this.#htmlFileSelector.style.display = '';
@@ -4654,7 +4659,7 @@ class Interaction {
         });
     }
     get htmlElement() {
-        return this.#shadowRoot?.host;
+        return this.#shadowRoot?.host ?? this.#initHTML();
     }
 }
 
@@ -11492,7 +11497,8 @@ class Graphics {
             return;
         }
         if (this.#offscreenCanvas) {
-            const parentElement = canvas.canvas.parentElement;
+            const htmlCanvas = canvas.canvas;
+            const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode.host;
             if (canvas.autoResize && parentElement) {
                 const width = context.width ?? parentElement.clientWidth;
                 const height = context.height ?? parentElement.clientHeight;
@@ -32501,7 +32507,7 @@ class ShaderEditor extends HTMLElement {
             this.#initEditor2(c);
         }
         else {
-            loadScripts([aceScript], () => this.#initEditor2(c)); //TODO: variable
+            loadScript(aceScript).then(() => this.#initEditor2(c));
         }
         ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
         ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
@@ -32656,26 +32662,6 @@ class ShaderEditor extends HTMLElement {
 }
 if (window.customElements) {
     customElements.define('shader-editor', ShaderEditor);
-}
-function loadScripts(array, callback) {
-    const loader = function (src, handler) {
-        const script = createElement('script');
-        script.src = src;
-        script.onload = () => {
-            script.onload = null;
-            handler();
-        };
-        const head = document.getElementsByTagName('head')[0];
-        (head || document.body).appendChild(script);
-    };
-    (function run() {
-        if (array.length != 0) {
-            loader(array.shift(), run);
-        }
-        else {
-            callback && callback();
-        }
-    })();
 }
 
 const tempVec3$j = vec3.create();

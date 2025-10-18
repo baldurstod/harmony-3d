@@ -6336,7 +6336,7 @@ declare class Channel {
                               };
                               tint: {
                                   i18n: string;
-                                  f: (entity: Source1ModelInstance) => Promise<vec4>;
+                                  f: (entity: Source1ModelInstance) => Promise<void>;
                               };
                               reset_tint: {
                                   i18n: string;

@@ -427,7 +427,8 @@ class Graphics {
 		}
 
 		if (this.#offscreenCanvas) {
-			const parentElement = canvas.canvas.parentElement;
+			const htmlCanvas = canvas.canvas;
+			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
 			if (canvas.autoResize && parentElement) {
 				const width = context.width ?? parentElement.clientWidth;
 				const height = context.height ?? parentElement.clientHeight;
