@@ -25,9 +25,9 @@ export class Interaction {
 		Interaction.#instance = this;
 	}
 
-	#initHtml(): void {
+	#initHTML(): HTMLElement {
 		if (this.#shadowRoot) {
-			return;
+			return this.#shadowRoot.host as HTMLElement;
 		}
 
 		this.#shadowRoot = createShadowRoot('div', {
@@ -73,17 +73,18 @@ export class Interaction {
 		this.#htmlFileSelector = createElement('div', {
 			style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
 		});
+
+		return this.#shadowRoot.host as HTMLElement;
 	}
 
 	show(): void {
-		this.#initHtml();
-		show(this.#shadowRoot?.host as HTMLElement);
+		show(this.#initHTML());
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
 	hide(): void {
-		hide(this.#shadowRoot?.host as HTMLElement);
+		hide(this.#shadowRoot?.host as (HTMLElement | undefined));
 	}
 
 	getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void): void {
@@ -220,7 +221,7 @@ export class Interaction {
 		*/
 
 	selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void): void {
-		this.#initHtml();
+		this.#initHTML();
 		//htmlContainer.append(this.#htmlFileSelector);
 		//this.show();
 		//this.#htmlFileSelector.style.display = '';
@@ -242,6 +243,6 @@ export class Interaction {
 	}
 
 	get htmlElement(): HTMLElement {
-		return this.#shadowRoot?.host as HTMLElement;
+		return this.#shadowRoot?.host as (HTMLElement | undefined) ?? this.#initHTML();
 	}
 }
