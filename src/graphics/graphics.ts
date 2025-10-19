@@ -371,6 +371,17 @@ class Graphics {
 			this.#offscreenCanvas.width = width;
 			this.#offscreenCanvas.height = height;
 			this.setViewport(vec4.fromValues(0, 0, width, height));
+		} else {
+			const htmlCanvas = this.#canvas!;
+			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
+			if (this.autoResize && parentElement) {
+				const width = context.width ?? parentElement.clientWidth;
+				const height = context.height ?? parentElement.clientHeight;
+
+				htmlCanvas.width = width * this.#pixelRatio;
+				htmlCanvas.height = height * this.#pixelRatio;
+				this.setViewport(vec4.fromValues(0, 0, width, height));
+			}
 		}
 
 		this.renderBackground();//TODOv3 put in rendering pipeline

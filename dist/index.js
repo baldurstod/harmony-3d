@@ -11463,6 +11463,17 @@ class Graphics {
             this.#offscreenCanvas.height = height;
             this.setViewport(vec4.fromValues(0, 0, width, height));
         }
+        else {
+            const htmlCanvas = this.#canvas;
+            const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode.host;
+            if (this.autoResize && parentElement) {
+                const width = context.width ?? parentElement.clientWidth;
+                const height = context.height ?? parentElement.clientHeight;
+                htmlCanvas.width = width * this.#pixelRatio;
+                htmlCanvas.height = height * this.#pixelRatio;
+                this.setViewport(vec4.fromValues(0, 0, width, height));
+            }
+        }
         this.renderBackground(); //TODOv3 put in rendering pipeline
         const width = this.#canvas?.width ?? this.#offscreenCanvas?.width ?? 0;
         const height = this.#canvas?.height ?? this.#offscreenCanvas?.height ?? 0;
