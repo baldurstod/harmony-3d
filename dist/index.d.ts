@@ -5720,15 +5720,15 @@ declare class Channel {
 
                       export declare class Scene extends Entity {
                           #private;
-                          background?: BackGround;
+                          background: BackGround | null;
                           layers: Set<any>;
-                          environment?: Environment;
-                          activeCamera?: Camera;
+                          environment: Environment | null;
+                          activeCamera: Camera | null;
                           constructor(parameters?: SceneParameters);
                           addLayer(layer: any, index: number): any;
                           removeLayer(layer: any): void;
                           setWorld(world: World): void;
-                          getWorld(): World | undefined;
+                          getWorld(): World | null;
                           toString(): string;
                           static constructFromJSON(json: JSONObject): Promise<Scene>;
                           static getEntityName(): string;

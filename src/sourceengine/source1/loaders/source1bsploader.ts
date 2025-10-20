@@ -126,9 +126,7 @@ export class Source1BspLoader extends SourceBinaryLoader {
 
 	#parseLump(reader: BinaryReader, lump: SourceBSPLump, bsp: SourceBSP) {
 		const lumpData = null;
-		if (lump.lumpLen === 0) {
-			lump.lumpData = Object.create(null);
-		} else {
+		if (lump.lumpLen !== 0) {
 			/*if (reader.getString(4, lump.lumpOffset) === 'LZMA') {
 				const uncompressedSize = reader.getUint32();
 				const compressedSize = reader.getUint32();

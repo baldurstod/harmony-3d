@@ -5103,16 +5103,16 @@ registerEntity(Box);
 
 class Scene extends Entity {
     #layers = new Map();
-    #world;
+    #world = null;
     background;
     layers = new Set();
-    environment;
-    activeCamera;
+    environment = null;
+    activeCamera = null;
     constructor(parameters = {}) {
         super(parameters);
-        this.activeCamera = parameters.camera;
-        this.background = parameters.background;
-        this.environment = parameters.environment;
+        this.activeCamera = parameters.camera ?? null;
+        this.background = parameters.background ?? null;
+        this.environment = parameters.environment ?? null;
         this.#layers[Symbol.iterator] = function* () {
             yield* [...this.entries()].sort((a, b) => {
                 return a[1] < b[1] ? -1 : 1;
@@ -42696,10 +42696,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         }
     }
     #parseLump(reader, lump, bsp) {
-        if (lump.lumpLen === 0) {
-            lump.lumpData = Object.create(null);
-        }
-        else {
+        if (lump.lumpLen !== 0) {
             /*if (reader.getString(4, lump.lumpOffset) === 'LZMA') {
                 const uncompressedSize = reader.getUint32();
                 const compressedSize = reader.getUint32();
