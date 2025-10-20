@@ -1,9 +1,9 @@
+import { JSONObject } from 'harmony-types';
 import { BackGround } from '../backgrounds/background';
 import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
 import { World } from '../objects/world';
-import { JSONObject } from 'harmony-types';
 import { Environment } from './environments/environment';
 
 export type SceneParameters = EntityParameters & {
@@ -14,18 +14,18 @@ export type SceneParameters = EntityParameters & {
 
 export class Scene extends Entity {
 	#layers = new Map<any/*TODO: create a layer type*/, number>();
-	#world?: World;
-	background?: BackGround;
+	#world: World | null = null;
+	background: BackGround | null;
 	layers = new Set<any/*TODO: create a layer type*/>();
-	environment?: Environment;
-	activeCamera?: Camera;
+	environment: Environment | null = null;
+	activeCamera: Camera | null = null;
 
 	constructor(parameters: SceneParameters = {}) {
 		super(parameters);
 
-		this.activeCamera = parameters.camera;
-		this.background = parameters.background;
-		this.environment = parameters.environment;
+		this.activeCamera = parameters.camera ?? null;
+		this.background = parameters.background ?? null;
+		this.environment = parameters.environment ?? null;
 
 		this.#layers[Symbol.iterator] = function* (): MapIterator<[any, any]> {
 			yield* [...this.entries()].sort(

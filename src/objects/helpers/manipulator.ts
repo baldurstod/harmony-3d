@@ -216,7 +216,7 @@ export class Manipulator extends Entity {
 		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
 	}
 
-	#resize(camera?: Camera) {
+	#resize(camera?: Camera | null) {
 		if (!this.isVisible()) {
 			return;
 		}
