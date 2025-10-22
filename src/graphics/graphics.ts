@@ -91,19 +91,23 @@ export type CanvasScene = {
  * Definition of a single canvas on the page.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type Canvas = {
+export type CanvasAttributes = {
 	/** Canvas name. Default to an empty string. */
 	name: string;
 	/** Enable rendering. */
 	enabled: boolean;
 	/** Html canvas. */
-	canvas: HTMLCanvasElement;
+	readonly canvas: HTMLCanvasElement;
 	/** Rendering context associated with the canvas. */
-	context: ImageBitmapRenderingContext;
+	readonly context: ImageBitmapRenderingContext;
 	/** List of scenes rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
 	scenes: CanvasScene[];
 	/** Auto resize this canvas to fit it's container */
 	autoResize: boolean;
+	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
+	width?: number;
+	/** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
+	height?: number;
 }
 
 type RenderTargetEntry = {
@@ -136,7 +140,7 @@ class Graphics {
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	static #canvas?: HTMLCanvasElement;
-	static #canvases = new Map<HTMLCanvasElement, Canvas>();
+	static #canvases = new Map<HTMLCanvasElement, CanvasAttributes>();
 	static #width = 300;
 	static #height = 150;
 	static #offscreenCanvas?: OffscreenCanvas;
@@ -216,10 +220,11 @@ class Graphics {
 		return this;
 	}
 
-	static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement {
+	static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): CanvasAttributes | null {
 		canvas = canvas ?? createElement('canvas') as HTMLCanvasElement;
-		if (this.#canvases.has(canvas)) {
-			return canvas;
+		let attributes = this.#canvases.get(canvas);
+		if (attributes) {
+			return attributes;
 		}
 
 		this.listenCanvas(canvas);
@@ -227,7 +232,7 @@ class Graphics {
 		try {
 			const bipmapContext = canvas.getContext('bitmaprenderer');
 			if (!bipmapContext) {
-				return canvas;
+				return null;
 			}
 
 			let scenes: CanvasScene[];
@@ -246,17 +251,19 @@ class Graphics {
 				}
 			}
 
-			this.#canvases.set(canvas, {
+			attributes = {
 				name: options.name ?? ' ',
 				enabled: true,
 				canvas: canvas,
 				context: bipmapContext,
 				scenes: scenes,
 				autoResize: options.autoResize ?? false,
-			});
-		} catch (e) { }
+			};
 
-		return canvas;
+			this.#canvases.set(canvas, attributes);
+			return attributes;
+		} catch (e) { }
+		return null;
 	}
 
 
@@ -427,7 +434,7 @@ class Graphics {
 		}
 	}
 
-	static #renderMultiCanvas(canvas: Canvas, delta: number, context: RenderContext) {
+	static #renderMultiCanvas(canvas: CanvasAttributes, delta: number, context: RenderContext) {
 		// TODO: mutualize with the method render()
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
@@ -440,18 +447,21 @@ class Graphics {
 		if (this.#offscreenCanvas) {
 			const htmlCanvas = canvas.canvas;
 			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
+			let width: number;
+			let height: number;
 			if (canvas.autoResize && parentElement) {
-				const width = context.width ?? parentElement.clientWidth;
-				const height = context.height ?? parentElement.clientHeight;
-				this.#offscreenCanvas.width = width;
-				this.#offscreenCanvas.height = height;
-
-				canvas.canvas.width = width * this.#pixelRatio;
-				canvas.canvas.height = height * this.#pixelRatio;
+				width = context.width ?? parentElement.clientWidth;
+				height = context.height ?? parentElement.clientHeight;
 			} else {
-				this.#offscreenCanvas.width = context.width ?? canvas.canvas.width;
-				this.#offscreenCanvas.height = context.height ?? canvas.canvas.height;
+				width = canvas.width ?? context.width ?? canvas.canvas.width;
+				height = canvas.height ?? context.height ?? canvas.canvas.height;
 			}
+			this.#offscreenCanvas.width = width;
+			this.#offscreenCanvas.height = height;
+
+			canvas.canvas.width = width * this.#pixelRatio;
+			canvas.canvas.height = height * this.#pixelRatio;
+
 			this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
 		}
 

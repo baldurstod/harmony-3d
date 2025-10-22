@@ -656,10 +656,33 @@ export declare enum CameraProjection {
 }
 
 /**
+ * Definition of a single canvas on the page.
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
+export declare type CanvasAttributes = {
+    /** Canvas name. Default to an empty string. */
+    name: string;
+    /** Enable rendering. */
+    enabled: boolean;
+    /** Html canvas. */
+    readonly canvas: HTMLCanvasElement;
+    /** Rendering context associated with the canvas. */
+    readonly context: ImageBitmapRenderingContext;
+    /** List of scenes rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
+    scenes: CanvasScene[];
+    /** Auto resize this canvas to fit it's container */
+    autoResize: boolean;
+    /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
+    width?: number;
+    /** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
+    height?: number;
+};
+
+/**
  * Definition of a single scene rendered into a Canvas.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-declare type CanvasScene = {
+export declare type CanvasScene = {
     /** Rendered scene. Ignored if composer exist and is enabled */
     scene?: Scene;
     /** Camera. If none provided, scene activeCamera will be used. */
@@ -2564,7 +2587,7 @@ declare class Channel {
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
                           static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
-                          static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement;
+                          static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): CanvasAttributes | null;
                           static removeCanvas(canvas: HTMLCanvasElement): void;
                           static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void;
                           static listenCanvas(canvas: HTMLCanvasElement): void;

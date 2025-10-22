@@ -11327,14 +11327,15 @@ class Graphics {
     }
     static addCanvas(canvas, options) {
         canvas = canvas ?? createElement('canvas');
-        if (this.#canvases.has(canvas)) {
-            return canvas;
+        let attributes = this.#canvases.get(canvas);
+        if (attributes) {
+            return attributes;
         }
         this.listenCanvas(canvas);
         try {
             const bipmapContext = canvas.getContext('bitmaprenderer');
             if (!bipmapContext) {
-                return canvas;
+                return null;
             }
             let scenes;
             if (options.scenes) {
@@ -11354,17 +11355,19 @@ class Graphics {
                     scenes = [];
                 }
             }
-            this.#canvases.set(canvas, {
+            attributes = {
                 name: options.name ?? ' ',
                 enabled: true,
                 canvas: canvas,
                 context: bipmapContext,
                 scenes: scenes,
                 autoResize: options.autoResize ?? false,
-            });
+            };
+            this.#canvases.set(canvas, attributes);
+            return attributes;
         }
         catch (e) { }
-        return canvas;
+        return null;
     }
     static removeCanvas(canvas) {
         if (this.#canvases.has(canvas)) {
@@ -11510,18 +11513,20 @@ class Graphics {
         if (this.#offscreenCanvas) {
             const htmlCanvas = canvas.canvas;
             const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode.host;
+            let width;
+            let height;
             if (canvas.autoResize && parentElement) {
-                const width = context.width ?? parentElement.clientWidth;
-                const height = context.height ?? parentElement.clientHeight;
-                this.#offscreenCanvas.width = width;
-                this.#offscreenCanvas.height = height;
-                canvas.canvas.width = width * this.#pixelRatio;
-                canvas.canvas.height = height * this.#pixelRatio;
+                width = context.width ?? parentElement.clientWidth;
+                height = context.height ?? parentElement.clientHeight;
             }
             else {
-                this.#offscreenCanvas.width = context.width ?? canvas.canvas.width;
-                this.#offscreenCanvas.height = context.height ?? canvas.canvas.height;
+                width = canvas.width ?? context.width ?? canvas.canvas.width;
+                height = canvas.height ?? context.height ?? canvas.canvas.height;
             }
+            this.#offscreenCanvas.width = width;
+            this.#offscreenCanvas.height = height;
+            canvas.canvas.width = width * this.#pixelRatio;
+            canvas.canvas.height = height * this.#pixelRatio;
             this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
