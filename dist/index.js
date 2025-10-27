@@ -39948,6 +39948,9 @@ class Source1ModelInstance extends Entity {
         return super.addChild(this.#skeleton);
     }
     addChild(child) {
+        if (!child) {
+            return null;
+        }
         const ret = super.addChild(child);
         child.skeleton?.setParentSkeleton(this.#skeleton ?? null);
         return ret;

@@ -104,6 +104,9 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	addChild(child?: Entity | null) {
+		if (!child) {
+			return null;
+		}
 		const ret = super.addChild(child);
 		(child as unknown as HasSkeleton).skeleton?.setParentSkeleton(this.#skeleton ?? null);
 		return ret;
