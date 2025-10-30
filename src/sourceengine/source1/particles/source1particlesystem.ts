@@ -3,7 +3,7 @@ import { float, int, JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { ERROR, WARN } from '../../../buildoptions';
 import { registerEntity } from '../../../entities/entities';
-import { Entity } from '../../../entities/entity';
+import { Entity, EntityParameters } from '../../../entities/entity';
 import { Loopable } from '../../../interfaces/loopable';
 import { BoundingBox } from '../../../math/boundingbox';
 import { ControlPoint } from '../../common/particles/controlpoint';
@@ -33,6 +33,12 @@ export class ParamType {
 		this.type = type;
 	}
 }
+
+export type Source1ParticleSystemParameters = EntityParameters & {
+	repository: string,
+	name: string,
+	id?: string
+};
 
 export class Source1ParticleSystem extends Entity implements Loopable {
 	isParticleSystem = true;
@@ -91,22 +97,24 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	maxParticles: number = DEFAULT_MAX_PARTICLES;
 	resetDelay = 0;
 	snapshot: any/*TODO: better type*/;
+	readonly system: string;
 
 	static #speed = 1.0;
 	static #simulationSteps = 1;
 	//constructor(repository, parameters, id) {
-	constructor(params?: any) {
-		params.name = params.name ?? `System ${systemNumber++}`;
-		super(params);
-		this.repository = params.repository;
+	constructor(parameters: Source1ParticleSystemParameters) {
+		//parameters.name = parameters.name ?? `System ${systemNumber++}`;
+		super(parameters);
+		this.repository = parameters.repository;
+		this.system = parameters.name;
 		this.addParam('max_particles', PARAM_TYPE_INT, 50);
 		this.addParam('initial_particles', PARAM_TYPE_INT, 0);
 		this.addParam('material', PARAM_TYPE_STRING, '');
 		this.addParam('snapshot', PARAM_TYPE_STRING, '');
 		this.addParam('color', PARAM_TYPE_COLOR, new ParticleColor(255, 255, 255, 255));
 		this.addParam('radius', PARAM_TYPE_FLOAT, 1);
-		this.addParam('name', PARAM_TYPE_STRING, params.name);
-		this.addParam('id', PARAM_TYPE_ID, params.id);
+		this.addParam('name', PARAM_TYPE_STRING, parameters.name);
+		this.addParam('id', PARAM_TYPE_ID, parameters.id);
 
 		this.addParam('minimum sim tick rate', PARAM_TYPE_FLOAT, 0);
 		this.addParam('maximum sim tick rate', PARAM_TYPE_FLOAT, 1);

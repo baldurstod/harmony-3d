@@ -6670,7 +6670,8 @@ declare class Channel {
                           maxParticles: number;
                           resetDelay: number;
                           snapshot: any;
-                          constructor(params?: any);
+                          readonly system: string;
+                          constructor(parameters: Source1ParticleSystemParameters);
                           start(): void;
                           stop(): void;
                           stopChildren(): void;
@@ -6739,6 +6740,12 @@ declare class Channel {
                           static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem | null>;
                           static getEntityName(): string;
                       }
+
+                      declare type Source1ParticleSystemParameters = EntityParameters & {
+                          repository: string;
+                          name: string;
+                          id?: string;
+                      };
 
                       export declare class Source1PcfLoader extends SourceBinaryLoader {
                           #private;

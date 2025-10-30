@@ -45343,8 +45343,6 @@ const RANDOM_FLOAT_MASK = MAX_RANDOM_FLOATS - 1;
 
 var _a;
 const MAX_PARTICLE_CONTROL_POINTS = 64;
-//const RESET_DELAY = 0;
-let systemNumber = 0;
 class ParamType {
     param;
     type;
@@ -45406,21 +45404,23 @@ class Source1ParticleSystem extends Entity {
     maxParticles = DEFAULT_MAX_PARTICLES$2;
     resetDelay = 0;
     snapshot;
+    system;
     static #speed = 1.0;
     static #simulationSteps = 1;
     //constructor(repository, parameters, id) {
-    constructor(params) {
-        params.name = params.name ?? `System ${systemNumber++}`;
-        super(params);
-        this.repository = params.repository;
+    constructor(parameters) {
+        //parameters.name = parameters.name ?? `System ${systemNumber++}`;
+        super(parameters);
+        this.repository = parameters.repository;
+        this.system = parameters.name;
         this.addParam('max_particles', PARAM_TYPE_INT, 50);
         this.addParam('initial_particles', PARAM_TYPE_INT, 0);
         this.addParam('material', PARAM_TYPE_STRING, '');
         this.addParam('snapshot', PARAM_TYPE_STRING, '');
         this.addParam('color', PARAM_TYPE_COLOR, new ParticleColor(255, 255, 255, 255));
         this.addParam('radius', PARAM_TYPE_FLOAT, 1);
-        this.addParam('name', PARAM_TYPE_STRING, params.name);
-        this.addParam('id', PARAM_TYPE_ID, params.id);
+        this.addParam('name', PARAM_TYPE_STRING, parameters.name);
+        this.addParam('id', PARAM_TYPE_ID, parameters.id);
         this.addParam('minimum sim tick rate', PARAM_TYPE_FLOAT, 0);
         this.addParam('maximum sim tick rate', PARAM_TYPE_FLOAT, 1);
         this.addParam('maximum time step', PARAM_TYPE_FLOAT, 0.1);
