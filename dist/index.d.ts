@@ -1908,8 +1908,6 @@ declare class Channel {
                           removeAllControllers(): void;
                       }
 
-                      declare type FlexWeight = Record<string, number>;
-
                       export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
                       export declare class Float32BufferAttribute extends BufferAttribute {
@@ -6396,7 +6394,7 @@ declare class Channel {
                           set quaternion(quaternion: vec4);
                           get quaternion(): vec4;
                           static set animSpeed(speed: number);
-                          setFlexes(flexes?: {}): void;
+                          setFlexes(flexes: Map<string, number>): void;
                           resetFlexParameters(): void;
                           playDefaultAnim(): Promise<void>;
                           getHitboxes(): Hitbox[];
@@ -8077,7 +8075,7 @@ declare class Channel {
                           getAnimList(): Promise<Set<string>>;
                           getFlexRules(): MdlStudioFlexRule[];
                           getFlexControllers(): MdlStudioFlexController[];
-                          runFlexesRules(flexesWeight: FlexWeight, g_flexdescweight: Float32Array): void;
+                          runFlexesRules(flexesWeight: Map<string, number>, g_flexdescweight: Float32Array): void;
                           addExternalMdl(mdlName: string): void;
                           getBoneCount(): number;
                           getBones(): MdlBone[];

@@ -38,7 +38,7 @@ const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
 export const MAX_STUDIO_FLEX_DESC = 1024;
 export const MAX_STUDIO_FLEX_CTRL = 96;
 
-export type FlexWeight = Record<string, number>;
+//export type FlexWeight = Record<string, number>;
 
 type Tuple<
 	T,
@@ -378,7 +378,7 @@ export class SourceMdl {
 		return this.flexControllers;
 	}
 
-	runFlexesRules(flexesWeight: FlexWeight, g_flexdescweight: Float32Array): void {
+	runFlexesRules(flexesWeight: Map<string, number>, g_flexdescweight: Float32Array): void {
 		//this.g_flexdescweight = this.g_flexdescweight || new Float32Array(MAX_STUDIO_FLEX_DESC);
 		const src = new Float32Array(MAX_STUDIO_FLEX_CTRL * 4);//TODO: optimize
 
@@ -389,7 +389,7 @@ export class SourceMdl {
 
 				// remap m_flexweights to full dynamic range, global flexcontroller indexes
 				if (j >= 0 && j < MAX_STUDIO_FLEX_CTRL * 4) {
-					const flexWeight = flexesWeight[flexController.name] ?? this.flexController.getControllerValue(flexController.name);
+					const flexWeight = flexesWeight.get(flexController.name) ?? this.flexController.getControllerValue(flexController.name);
 					src[j] = flexWeight * (flexController.max - flexController.min) + flexController.min;
 				}
 			}

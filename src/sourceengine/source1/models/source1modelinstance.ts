@@ -39,8 +39,8 @@ export type Source1ModelAnimation = { name: string, weight: number }/*TODO: impr
 
 export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel {
 	isSource1ModelInstance = true;
-	#poseParameters = new Map<string, number>();
-	#flexParameters = {};
+	readonly #poseParameters = new Map<string, number>();
+	readonly #flexParameters = new Map<string, number>();
 	#flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
 	#materialOverride: Material | null = null;
 	#animations = new Animations();
@@ -799,13 +799,16 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#animSpeed = speed;
 	}
 
-	setFlexes(flexes = {}) {
-		this.#flexParameters = flexes;
+	setFlexes(flexes: Map<string, number>) {
+		this.#flexParameters.clear();
+		for (const [name, value] of flexes) {
+			this.#flexParameters.set(name, value);
+		}
 		this.#refreshFlexes();
 	}
 
 	resetFlexParameters() {
-		this.#flexParameters = {};
+		this.#flexParameters.clear();
 		this.#refreshFlexes();
 	}
 

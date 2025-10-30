@@ -39437,7 +39437,7 @@ class SourceMdl {
                 const j = flexController.localToGlobal;
                 // remap m_flexweights to full dynamic range, global flexcontroller indexes
                 if (j >= 0 && j < MAX_STUDIO_FLEX_CTRL * 4) {
-                    const flexWeight = flexesWeight[flexController.name] ?? this.flexController.getControllerValue(flexController.name);
+                    const flexWeight = flexesWeight.get(flexController.name) ?? this.flexController.getControllerValue(flexController.name);
                     src[j] = flexWeight * (flexController.max - flexController.min) + flexController.min;
                 }
             }
@@ -39891,7 +39891,7 @@ const defaultMaterial = new MeshBasicMaterial();
 class Source1ModelInstance extends Entity {
     isSource1ModelInstance = true;
     #poseParameters = new Map();
-    #flexParameters = {};
+    #flexParameters = new Map();
     #flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
     #materialOverride = null;
     #animations = new Animations();
@@ -40568,12 +40568,15 @@ class Source1ModelInstance extends Entity {
     static set animSpeed(speed) {
         this.#animSpeed = speed;
     }
-    setFlexes(flexes = {}) {
-        this.#flexParameters = flexes;
+    setFlexes(flexes) {
+        this.#flexParameters.clear();
+        for (const [name, value] of flexes) {
+            this.#flexParameters.set(name, value);
+        }
         this.#refreshFlexes();
     }
     resetFlexParameters() {
-        this.#flexParameters = {};
+        this.#flexParameters.clear();
         this.#refreshFlexes();
     }
     #refreshFlexes() {
