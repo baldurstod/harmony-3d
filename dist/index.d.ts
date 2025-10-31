@@ -128,6 +128,7 @@ export declare class AnimatedTextureProxy extends Proxy_2 {
 
 export declare class AnimatedWeaponSheen extends Proxy_2 {
     #private;
+    static frameRate: number;
     init(): void;
     execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }

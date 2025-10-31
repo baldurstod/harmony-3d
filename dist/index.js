@@ -49206,6 +49206,7 @@ class AnimatedWeaponSheen extends Proxy {
     #animatedtexturevar = '';
     #animatedtextureframenumvar = '';
     #animatedtextureframerate = 1;
+    static frameRate = 25;
     init() {
         this.#animatedtexturevar = this.datas['animatedtexturevar'];
         this.#animatedtextureframenumvar = this.datas['animatedtextureframenumvar'];
@@ -49213,7 +49214,8 @@ class AnimatedWeaponSheen extends Proxy {
     }
     execute(variables, proxyParams, time) {
         if (proxyParams['SheenTintColor']) {
-            variables.set(this.#animatedtextureframenumvar, time * this.#animatedtextureframerate);
+            // Notice: the game ignore the material frame rate parameter and uses a convar instead
+            variables.set(this.#animatedtextureframenumvar, time * AnimatedWeaponSheen.frameRate /*this.#animatedtextureframerate*/);
         }
         else {
             variables.set(this.#animatedtextureframenumvar, 0);
