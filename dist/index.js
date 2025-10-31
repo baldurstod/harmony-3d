@@ -40540,6 +40540,9 @@ class Source1ModelInstance extends Entity {
     getRandomPointOnModel(vec, initialVec, bones) {
         const hitboxes = this.getHitboxes();
         const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+        if (!hitbox) {
+            return vec;
+        }
         const bone = hitbox.parent;
         if (bone) {
             bones.push([bone, 1]);

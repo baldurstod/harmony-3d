@@ -765,7 +765,11 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3 {
 		const hitboxes = this.getHitboxes();
-		const hitbox = hitboxes[getRandomInt(hitboxes.length)]!;
+		const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+		if (!hitbox) {
+			return vec;
+		}
+
 		const bone = hitbox.parent;
 		if (bone) {
 			bones.push([bone, 1]);
