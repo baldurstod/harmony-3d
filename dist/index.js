@@ -11554,10 +11554,12 @@ class Graphics {
                 continue;
             }
             if (canvasScene.viewport) {
-                w = canvas.canvas.width * canvasScene.viewport.width;
-                h = canvas.canvas.height * canvasScene.viewport.height;
-                this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-                this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                const x = Math.round(canvasScene.viewport.x * canvas.canvas.width);
+                const y = Math.round(canvasScene.viewport.y * canvas.canvas.height);
+                w = Math.round((canvasScene.viewport.x + canvasScene.viewport.width) * canvas.canvas.width) - x;
+                h = Math.round((canvasScene.viewport.y + canvasScene.viewport.height) * canvas.canvas.height) - y;
+                this.setViewport(vec4.fromValues(x, y, w, h));
+                this.setScissor(vec4.fromValues(x, y, w, h));
                 this.enableScissorTest();
             }
             const composer = canvasScene.composer;
