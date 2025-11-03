@@ -56,10 +56,10 @@ declare interface AddCanvasOptions {
     enabled?: boolean;
     /** Auto resize the canvas to fit its parent. Default to false. */
     autoResize?: boolean;
-    /** Add a single scene to the canvas. A scene can be part of several canvases. If scenes or groups are provided, this property will be ignored. */
-    scene?: Scene | CanvasScene;
-    /** Add several scenes to the canvas. If groups is provided, this property will be ignored. */
-    scenes?: CanvasScene[];
+    /** Add a single scene to the canvas. A scene can be part of several canvases. If views or layouts are provided, this property will be ignored. */
+    scene?: Scene | CanvasView;
+    /** Add several views to the canvas. If layouts is provided, this property will be ignored. */
+    views?: CanvasView[];
     /** Add several groups to the canvas. */
     layouts?: CanvasLayout[];
     /** The layout to render */
@@ -674,11 +674,11 @@ export declare type CanvasAttributes = {
     readonly canvas: HTMLCanvasElement;
     /** Rendering context associated with the canvas. */
     readonly context: ImageBitmapRenderingContext;
-    /** The layout to render. If unset, no layout is rendered */
+    /** The layout to render. If unset, no layout is rendered. */
     useLayout?: string;
-    /** Scene layouts. A single layout will be rendered at a time */
+    /** Canvas layouts. */
     layouts: Map<string, CanvasLayout>;
-    /** Auto resize this canvas to fit it's container */
+    /** Auto resize this canvas to fit it's container. */
     autoResize: boolean;
     /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
     width?: number;
@@ -687,23 +687,21 @@ export declare type CanvasAttributes = {
 };
 
 /**
- * Definition of a group of scenes
+ * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
 declare type CanvasLayout = {
     /** Layout name. Default to an empty string. */
     name: string;
     /** List of scenes */
-    scenes: CanvasScene[];
-    /** Enable rendering. Default to true. */
-    enabled?: boolean;
+    views: CanvasView[];
 };
 
 /**
- * Definition of a single scene rendered into a Canvas.
+ * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export declare type CanvasScene = {
+export declare type CanvasView = {
     /** Rendered scene. Ignored if composer exist and is enabled */
     scene?: Scene;
     /** Camera. If none provided, scene activeCamera will be used. */

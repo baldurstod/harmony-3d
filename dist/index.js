@@ -11345,21 +11345,21 @@ class Graphics {
                     layouts.set(layout.name, layout);
                 }
             }
-            else if (options.scenes) {
+            else if (options.views) {
                 useLayout = 'default';
-                const layout = { name: useLayout, scenes: options.scenes };
+                const layout = { name: useLayout, views: options.views };
                 layouts.set(layout.name, layout);
             }
             else {
                 useLayout = 'default';
                 const scene = options.scene;
                 if (scene) {
-                    const layout = { name: useLayout, scenes: [] };
+                    const layout = { name: useLayout, views: [] };
                     if (scene instanceof Scene) {
-                        layout.scenes.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
+                        layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
                     }
                     else {
-                        layout.scenes.push(scene);
+                        layout.views.push(scene);
                     }
                     layouts.set(layout.name, layout);
                 }
@@ -11546,10 +11546,10 @@ class Graphics {
         let w = canvas.canvas.width;
         let h = canvas.canvas.height;
         const layout = canvas.layouts.get(canvas.useLayout);
-        if (!layout || layout.enabled === false) {
+        if (!layout) {
             return;
         }
-        for (const canvasScene of layout.scenes) {
+        for (const canvasScene of layout.views) {
             if (canvasScene.enabled === false) {
                 continue;
             }

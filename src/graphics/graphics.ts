@@ -66,10 +66,10 @@ interface AddCanvasOptions {
 	enabled?: boolean;
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean;
-	/** Add a single scene to the canvas. A scene can be part of several canvases. If scenes or groups are provided, this property will be ignored. */
-	scene?: Scene | CanvasScene;
-	/** Add several scenes to the canvas. If groups is provided, this property will be ignored. */
-	scenes?: CanvasScene[];
+	/** Add a single scene to the canvas. A scene can be part of several canvases. If views or layouts are provided, this property will be ignored. */
+	scene?: Scene | CanvasView;
+	/** Add several views to the canvas. If layouts is provided, this property will be ignored. */
+	views?: CanvasView[];
 	/** Add several groups to the canvas. */
 	layouts?: CanvasLayout[];
 	/** The layout to render */
@@ -84,14 +84,14 @@ export type CanvasLayout = {
 	/** Layout name. Default to an empty string. */
 	name: string;
 	/** List of scenes */
-	scenes: CanvasScene[];
+	views: CanvasView[];
 }
 
 /**
  * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type CanvasScene = {
+export type CanvasView = {
 	/** Rendered scene. Ignored if composer exist and is enabled */
 	scene?: Scene,
 	/** Camera. If none provided, scene activeCamera will be used. */
@@ -261,19 +261,19 @@ class Graphics {
 				for (const layout of options.layouts) {
 					layouts.set(layout.name, layout);
 				}
-			} else if (options.scenes) {
+			} else if (options.views) {
 				useLayout = 'default';
-				const layout: CanvasLayout = { name: useLayout, scenes: options.scenes };
+				const layout: CanvasLayout = { name: useLayout, views: options.views };
 				layouts.set(layout.name, layout);
 			} else {
 				useLayout = 'default';
 				const scene = options.scene;
 				if (scene) {
-					const layout: CanvasLayout = { name: useLayout, scenes: [] };
+					const layout: CanvasLayout = { name: useLayout, views: [] };
 					if (scene instanceof Scene) {
-						layout.scenes.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
+						layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
 					} else {
-						layout.scenes.push(scene);
+						layout.views.push(scene);
 					}
 					layouts.set(layout.name, layout);
 				}
@@ -508,7 +508,7 @@ class Graphics {
 			return;
 		}
 
-		for (const canvasScene of layout.scenes) {
+		for (const canvasScene of layout.views) {
 			if (canvasScene.enabled === false) {
 				continue;
 			}
