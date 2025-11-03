@@ -11337,25 +11337,31 @@ class Graphics {
             if (!bipmapContext) {
                 return null;
             }
-            let groups;
-            if (options.groups) {
-                groups = options.groups;
+            const layouts = new Map();
+            let useLayout;
+            if (options.layouts) {
+                useLayout = options.useLayout;
+                for (const layout of options.layouts) {
+                    layouts.set(layout.name, layout);
+                }
             }
             else if (options.scenes) {
-                groups = [{ scenes: options.scenes }];
+                useLayout = 'default';
+                const layout = { name: useLayout, scenes: options.scenes };
+                layouts.set(layout.name, layout);
             }
             else {
+                useLayout = 'default';
                 const scene = options.scene;
                 if (scene) {
+                    const layout = { name: useLayout, scenes: [] };
                     if (scene instanceof Scene) {
-                        groups = [{ scenes: [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }] }];
+                        layout.scenes.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
                     }
                     else {
-                        groups = [{ scenes: [scene] }];
+                        layout.scenes.push(scene);
                     }
-                }
-                else {
-                    groups = [];
+                    layouts.set(layout.name, layout);
                 }
             }
             attributes = {
@@ -11363,8 +11369,9 @@ class Graphics {
                 enabled: true,
                 canvas: canvas,
                 context: bipmapContext,
-                groups: groups,
+                layouts: layouts,
                 autoResize: options.autoResize ?? false,
+                useLayout: useLayout,
             };
             this.#canvases.set(canvas, attributes);
             return attributes;
@@ -11513,6 +11520,9 @@ class Graphics {
         if (!canvas.canvas.checkVisibility()) {
             return;
         }
+        if (canvas.useLayout === undefined) {
+            return;
+        }
         if (this.#offscreenCanvas) {
             const htmlCanvas = canvas.canvas;
             const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode.host;
@@ -11535,42 +11545,41 @@ class Graphics {
         this.renderBackground(); //TODOv3 put in rendering pipeline
         let w = canvas.canvas.width;
         let h = canvas.canvas.height;
-        for (const canvasGroup of canvas.groups) {
-            if (canvasGroup.enabled === false) {
+        const layout = canvas.layouts.get(canvas.useLayout);
+        if (!layout || layout.enabled === false) {
+            return;
+        }
+        for (const canvasScene of layout.scenes) {
+            if (canvasScene.enabled === false) {
                 continue;
             }
-            for (const canvasScene of canvasGroup.scenes) {
-                if (canvasScene.enabled === false) {
-                    continue;
-                }
-                if (canvasScene.viewport) {
-                    w = canvas.canvas.width * canvasScene.viewport.width;
-                    h = canvas.canvas.height * canvasScene.viewport.height;
-                    this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-                    this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-                    this.enableScissorTest();
-                }
-                const composer = canvasScene.composer;
-                if (composer?.enabled) {
-                    composer.setSize(canvas.canvas.width, canvas.canvas.height);
-                    composer.render(delta, context);
-                    break;
-                }
-                const scene = canvasScene.scene;
-                const camera = canvasScene.camera ?? scene?.activeCamera;
-                if (scene && camera) {
-                    if (camera.autoResize) {
-                        camera.left = -w;
-                        camera.right = w;
-                        camera.bottom = -h;
-                        camera.top = h;
-                        camera.aspectRatio = w / h;
-                    }
-                    this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
-                }
-                // TODO: set in the previous state
-                this.disableScissorTest();
+            if (canvasScene.viewport) {
+                w = canvas.canvas.width * canvasScene.viewport.width;
+                h = canvas.canvas.height * canvasScene.viewport.height;
+                this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                this.enableScissorTest();
             }
+            const composer = canvasScene.composer;
+            if (composer?.enabled) {
+                composer.setSize(canvas.canvas.width, canvas.canvas.height);
+                composer.render(delta, context);
+                break;
+            }
+            const scene = canvasScene.scene;
+            const camera = canvasScene.camera ?? scene?.activeCamera;
+            if (scene && camera) {
+                if (camera.autoResize) {
+                    camera.left = -w;
+                    camera.right = w;
+                    camera.bottom = -h;
+                    camera.top = h;
+                    camera.aspectRatio = w / h;
+                }
+                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+            }
+            // TODO: set in the previous state
+            this.disableScissorTest();
         }
         if (this.#allowTransfertBitmap && context.transferBitmap !== false) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();

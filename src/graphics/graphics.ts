@@ -71,22 +71,24 @@ interface AddCanvasOptions {
 	/** Add several scenes to the canvas. If groups is provided, this property will be ignored. */
 	scenes?: CanvasScene[];
 	/** Add several groups to the canvas. */
-	groups?: CanvasSceneGroup[];
+	layouts?: CanvasLayout[];
+	/** The layout to render */
+	useLayout?: string;
 }
 
 /**
- * Definition of a group of scenes
+ * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type CanvasSceneGroup = {
+export type CanvasLayout = {
+	/** Layout name. Default to an empty string. */
+	name: string;
 	/** List of scenes */
 	scenes: CanvasScene[];
-	/** Enable rendering. Default to true. */
-	enabled?: boolean;
 }
 
 /**
- * Definition of a single scene rendered into a Canvas.
+ * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
 export type CanvasScene = {
@@ -115,9 +117,11 @@ export type CanvasAttributes = {
 	readonly canvas: HTMLCanvasElement;
 	/** Rendering context associated with the canvas. */
 	readonly context: ImageBitmapRenderingContext;
-	/** List of scene groups rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
-	groups: CanvasSceneGroup[];
-	/** Auto resize this canvas to fit it's container */
+	/** The layout to render. If unset, no layout is rendered. */
+	useLayout?: string;
+	/** Canvas layouts. */
+	layouts: Map<string, CanvasLayout>;
+	/** Auto resize this canvas to fit it's container. */
 	autoResize: boolean;
 	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
 	width?: number;
@@ -250,21 +254,28 @@ class Graphics {
 				return null;
 			}
 
-			let groups: CanvasSceneGroup[];
-			if (options.groups) {
-				groups = options.groups;
+			const layouts = new Map<string, CanvasLayout>();
+			let useLayout: string | undefined;
+			if (options.layouts) {
+				useLayout = options.useLayout;
+				for (const layout of options.layouts) {
+					layouts.set(layout.name, layout);
+				}
 			} else if (options.scenes) {
-				groups = [{ scenes: options.scenes }];
+				useLayout = 'default';
+				const layout: CanvasLayout = { name: useLayout, scenes: options.scenes };
+				layouts.set(layout.name, layout);
 			} else {
+				useLayout = 'default';
 				const scene = options.scene;
 				if (scene) {
+					const layout: CanvasLayout = { name: useLayout, scenes: [] };
 					if (scene instanceof Scene) {
-						groups = [{ scenes: [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }] }];
+						layout.scenes.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
 					} else {
-						groups = [{ scenes: [scene] }];
+						layout.scenes.push(scene);
 					}
-				} else {
-					groups = [];
+					layouts.set(layout.name, layout);
 				}
 			}
 
@@ -273,8 +284,9 @@ class Graphics {
 				enabled: true,
 				canvas: canvas,
 				context: bipmapContext,
-				groups: groups,
+				layouts: layouts,
 				autoResize: options.autoResize ?? false,
+				useLayout: useLayout,
 			};
 
 			this.#canvases.set(canvas, attributes);
@@ -461,6 +473,10 @@ class Graphics {
 			return;
 		}
 
+		if (canvas.useLayout === undefined) {
+			return;
+		}
+
 		if (this.#offscreenCanvas) {
 			const htmlCanvas = canvas.canvas;
 			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
@@ -486,46 +502,48 @@ class Graphics {
 
 		let w = canvas.canvas.width;
 		let h = canvas.canvas.height;
-		for (const canvasGroup of canvas.groups) {
-			if (canvasGroup.enabled === false) {
+		const layout = canvas.layouts.get(canvas.useLayout);
+
+		if (!layout) {
+			return;
+		}
+
+		for (const canvasScene of layout.scenes) {
+			if (canvasScene.enabled === false) {
 				continue;
 			}
-			for (const canvasScene of canvasGroup.scenes) {
-				if (canvasScene.enabled === false) {
-					continue;
-				}
-				if (canvasScene.viewport) {
-					w = canvas.canvas.width * canvasScene.viewport.width;
-					h = canvas.canvas.height * canvasScene.viewport.height;
-					this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-					this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-					this.enableScissorTest();
-				}
-
-				const composer = canvasScene.composer;
-				if (composer?.enabled) {
-					composer.setSize(canvas.canvas.width, canvas.canvas.height);
-					composer.render(delta, context);
-					break;
-				}
-
-				const scene = canvasScene.scene;
-				const camera = canvasScene.camera ?? scene?.activeCamera;
-				if (scene && camera) {
-					if (camera.autoResize) {
-						camera.left = -w;
-						camera.right = w;
-						camera.bottom = -h;
-						camera.top = h;
-						camera.aspectRatio = w / h;
-					}
-					this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
-				}
-
-				// TODO: set in the previous state
-				this.disableScissorTest();
+			if (canvasScene.viewport) {
+				w = canvas.canvas.width * canvasScene.viewport.width;
+				h = canvas.canvas.height * canvasScene.viewport.height;
+				this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+				this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+				this.enableScissorTest();
 			}
+
+			const composer = canvasScene.composer;
+			if (composer?.enabled) {
+				composer.setSize(canvas.canvas.width, canvas.canvas.height);
+				composer.render(delta, context);
+				break;
+			}
+
+			const scene = canvasScene.scene;
+			const camera = canvasScene.camera ?? scene?.activeCamera;
+			if (scene && camera) {
+				if (camera.autoResize) {
+					camera.left = -w;
+					camera.right = w;
+					camera.bottom = -h;
+					camera.top = h;
+					camera.aspectRatio = w / h;
+				}
+				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+			}
+
+			// TODO: set in the previous state
+			this.disableScissorTest();
 		}
+
 
 		if (this.#allowTransfertBitmap && context.transferBitmap !== false) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
