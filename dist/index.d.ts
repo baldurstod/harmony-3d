@@ -49,7 +49,7 @@ export declare class Add extends Proxy_2 {
     execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
-declare interface AddCanvasOptions {
+export declare interface AddCanvasOptions {
     /** Canvas name. Default to an empty string. */
     name?: string;
     /** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
@@ -690,7 +690,7 @@ export declare type CanvasAttributes = {
  * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-declare type CanvasLayout = {
+export declare type CanvasLayout = {
     /** Layout name. Default to an empty string. */
     name: string;
     /** List of scenes */
@@ -2728,7 +2728,7 @@ declare class Channel {
                           static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
                       }
 
-                      declare interface GraphicsInitOptions {
+                      export declare interface GraphicsInitOptions {
                           /**
                            * The canvas to render into. Method getContext() must not have been called on the canvas.
                            * If no canvas is provided, one will be created.

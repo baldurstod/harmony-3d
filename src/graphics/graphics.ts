@@ -43,7 +43,7 @@ export enum ShaderDebugMode {
 	None = 0,
 }
 
-interface GraphicsInitOptions {
+export interface GraphicsInitOptions {
 	/**
 	 * The canvas to render into. Method getContext() must not have been called on the canvas.
 	 * If no canvas is provided, one will be created.
@@ -59,7 +59,7 @@ interface GraphicsInitOptions {
 	webGL?: WebGLContextAttributes
 }
 
-interface AddCanvasOptions {
+export interface AddCanvasOptions {
 	/** Canvas name. Default to an empty string. */
 	name?: string;
 	/** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
