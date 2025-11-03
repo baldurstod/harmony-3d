@@ -438,6 +438,7 @@ export declare class Box extends Mesh {
 }
 
 declare type BoxParameters = MeshParameters & {
+    size?: number;
     width?: number;
     height?: number;
     depth?: number;

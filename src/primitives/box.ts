@@ -9,6 +9,7 @@ import { JSONObject } from 'harmony-types';
 import { Entity } from '../entities/entity';
 
 export type BoxParameters = MeshParameters & {
+	size?: number,
 	width?: number,
 	height?: number,
 	depth?: number,
@@ -28,7 +29,7 @@ export class Box extends Mesh {
 		params.geometry = new BoxBufferGeometry();
 		params.material = params.material ?? new MeshBasicMaterial();
 		super(params);
-		this.#size[0] = params.width ?? 1;
+		this.#size[0] = params.width ?? params.size ?? 1;
 		this.#size[1] = params.height ?? this.#size[0];
 		this.#size[2] = params.depth ?? this.#size[0];
 		this.#widthSegments = params.widthSegments ?? 1;
