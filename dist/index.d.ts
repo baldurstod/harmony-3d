@@ -56,10 +56,12 @@ declare interface AddCanvasOptions {
     enabled?: boolean;
     /** Auto resize the canvas to fit its parent. Default to false. */
     autoResize?: boolean;
-    /** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
+    /** Add a single scene to the canvas. A scene can be part of several canvases. If scenes or groups are provided, this property will be ignored. */
     scene?: Scene | CanvasScene;
-    /** Add several scenes to the canvas. */
+    /** Add several scenes to the canvas. If groups is provided, this property will be ignored. */
     scenes?: CanvasScene[];
+    /** Add several groups to the canvas. */
+    groups?: CanvasSceneGroup[];
 }
 
 export declare function addIncludeSource(name: string, source?: string): void;
@@ -670,8 +672,8 @@ export declare type CanvasAttributes = {
     readonly canvas: HTMLCanvasElement;
     /** Rendering context associated with the canvas. */
     readonly context: ImageBitmapRenderingContext;
-    /** List of scenes rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
-    scenes: CanvasScene[];
+    /** List of scene groups rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
+    groups: CanvasSceneGroup[];
     /** Auto resize this canvas to fit it's container */
     autoResize: boolean;
     /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
@@ -693,6 +695,19 @@ export declare type CanvasScene = {
     viewport?: Viewport;
     /** Render a composer instead of a scene. */
     composer?: Composer;
+    /** Enable rendering. Default to true. */
+    enabled?: boolean;
+};
+
+/**
+ * Definition of a group of scenes
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
+declare type CanvasSceneGroup = {
+    /** List of scenes */
+    scenes: CanvasScene[];
+    /** Enable rendering. Default to true. */
+    enabled?: boolean;
 };
 
 export declare type CDmxAttribute = {

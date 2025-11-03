@@ -66,10 +66,23 @@ interface AddCanvasOptions {
 	enabled?: boolean;
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean;
-	/** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
+	/** Add a single scene to the canvas. A scene can be part of several canvases. If scenes or groups are provided, this property will be ignored. */
 	scene?: Scene | CanvasScene;
-	/** Add several scenes to the canvas. */
+	/** Add several scenes to the canvas. If groups is provided, this property will be ignored. */
 	scenes?: CanvasScene[];
+	/** Add several groups to the canvas. */
+	groups?: CanvasSceneGroup[];
+}
+
+/**
+ * Definition of a group of scenes
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
+export type CanvasSceneGroup = {
+	/** List of scenes */
+	scenes: CanvasScene[];
+	/** Enable rendering. Default to true. */
+	enabled?: boolean;
 }
 
 /**
@@ -85,6 +98,8 @@ export type CanvasScene = {
 	viewport?: Viewport,
 	/** Render a composer instead of a scene. */
 	composer?: Composer,
+	/** Enable rendering. Default to true. */
+	enabled?: boolean;
 }
 
 /**
@@ -100,8 +115,8 @@ export type CanvasAttributes = {
 	readonly canvas: HTMLCanvasElement;
 	/** Rendering context associated with the canvas. */
 	readonly context: ImageBitmapRenderingContext;
-	/** List of scenes rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
-	scenes: CanvasScene[];
+	/** List of scene groups rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
+	groups: CanvasSceneGroup[];
 	/** Auto resize this canvas to fit it's container */
 	autoResize: boolean;
 	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
@@ -235,19 +250,21 @@ class Graphics {
 				return null;
 			}
 
-			let scenes: CanvasScene[];
-			if (options.scenes) {
-				scenes = options.scenes;
+			let groups: CanvasSceneGroup[];
+			if (options.groups) {
+				groups = options.groups;
+			} else if (options.scenes) {
+				groups = [{ scenes: options.scenes }];
 			} else {
 				const scene = options.scene;
 				if (scene) {
 					if (scene instanceof Scene) {
-						scenes = [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+						groups = [{ scenes: [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }] }];
 					} else {
-						scenes = [scene];
+						groups = [{ scenes: [scene] }];
 					}
 				} else {
-					scenes = [];
+					groups = [];
 				}
 			}
 
@@ -256,7 +273,7 @@ class Graphics {
 				enabled: true,
 				canvas: canvas,
 				context: bipmapContext,
-				scenes: scenes,
+				groups: groups,
 				autoResize: options.autoResize ?? false,
 			};
 
@@ -469,37 +486,45 @@ class Graphics {
 
 		let w = canvas.canvas.width;
 		let h = canvas.canvas.height;
-		for (const canvasScene of canvas.scenes) {
-			if (canvasScene.viewport) {
-				w = canvas.canvas.width * canvasScene.viewport.width;
-				h = canvas.canvas.height * canvasScene.viewport.height;
-				this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-				this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-				this.enableScissorTest();
+		for (const canvasGroup of canvas.groups) {
+			if (canvasGroup.enabled === false) {
+				continue;
 			}
-
-			const composer = canvasScene.composer;
-			if (composer?.enabled) {
-				composer.setSize(canvas.canvas.width, canvas.canvas.height);
-				composer.render(delta, context);
-				break;
-			}
-
-			const scene = canvasScene.scene;
-			const camera = canvasScene.camera ?? scene?.activeCamera;
-			if (scene && camera) {
-				if (camera.autoResize) {
-					camera.left = -w;
-					camera.right = w;
-					camera.bottom = -h;
-					camera.top = h;
-					camera.aspectRatio = w / h;
+			for (const canvasScene of canvasGroup.scenes) {
+				if (canvasScene.enabled === false) {
+					continue;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
-			}
+				if (canvasScene.viewport) {
+					w = canvas.canvas.width * canvasScene.viewport.width;
+					h = canvas.canvas.height * canvasScene.viewport.height;
+					this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+					this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+					this.enableScissorTest();
+				}
 
-			// TODO: set in the previous state
-			this.disableScissorTest();
+				const composer = canvasScene.composer;
+				if (composer?.enabled) {
+					composer.setSize(canvas.canvas.width, canvas.canvas.height);
+					composer.render(delta, context);
+					break;
+				}
+
+				const scene = canvasScene.scene;
+				const camera = canvasScene.camera ?? scene?.activeCamera;
+				if (scene && camera) {
+					if (camera.autoResize) {
+						camera.left = -w;
+						camera.right = w;
+						camera.bottom = -h;
+						camera.top = h;
+						camera.aspectRatio = w / h;
+					}
+					this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+				}
+
+				// TODO: set in the previous state
+				this.disableScissorTest();
+			}
 		}
 
 		if (this.#allowTransfertBitmap && context.transferBitmap !== false) {

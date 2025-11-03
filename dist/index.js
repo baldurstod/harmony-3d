@@ -11337,22 +11337,25 @@ class Graphics {
             if (!bipmapContext) {
                 return null;
             }
-            let scenes;
-            if (options.scenes) {
-                scenes = options.scenes;
+            let groups;
+            if (options.groups) {
+                groups = options.groups;
+            }
+            else if (options.scenes) {
+                groups = [{ scenes: options.scenes }];
             }
             else {
                 const scene = options.scene;
                 if (scene) {
                     if (scene instanceof Scene) {
-                        scenes = [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+                        groups = [{ scenes: [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }] }];
                     }
                     else {
-                        scenes = [scene];
+                        groups = [{ scenes: [scene] }];
                     }
                 }
                 else {
-                    scenes = [];
+                    groups = [];
                 }
             }
             attributes = {
@@ -11360,7 +11363,7 @@ class Graphics {
                 enabled: true,
                 canvas: canvas,
                 context: bipmapContext,
-                scenes: scenes,
+                groups: groups,
                 autoResize: options.autoResize ?? false,
             };
             this.#canvases.set(canvas, attributes);
@@ -11532,34 +11535,42 @@ class Graphics {
         this.renderBackground(); //TODOv3 put in rendering pipeline
         let w = canvas.canvas.width;
         let h = canvas.canvas.height;
-        for (const canvasScene of canvas.scenes) {
-            if (canvasScene.viewport) {
-                w = canvas.canvas.width * canvasScene.viewport.width;
-                h = canvas.canvas.height * canvasScene.viewport.height;
-                this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-                this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
-                this.enableScissorTest();
+        for (const canvasGroup of canvas.groups) {
+            if (canvasGroup.enabled === false) {
+                continue;
             }
-            const composer = canvasScene.composer;
-            if (composer?.enabled) {
-                composer.setSize(canvas.canvas.width, canvas.canvas.height);
-                composer.render(delta, context);
-                break;
-            }
-            const scene = canvasScene.scene;
-            const camera = canvasScene.camera ?? scene?.activeCamera;
-            if (scene && camera) {
-                if (camera.autoResize) {
-                    camera.left = -w;
-                    camera.right = w;
-                    camera.bottom = -h;
-                    camera.top = h;
-                    camera.aspectRatio = w / h;
+            for (const canvasScene of canvasGroup.scenes) {
+                if (canvasScene.enabled === false) {
+                    continue;
                 }
-                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+                if (canvasScene.viewport) {
+                    w = canvas.canvas.width * canvasScene.viewport.width;
+                    h = canvas.canvas.height * canvasScene.viewport.height;
+                    this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                    this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                    this.enableScissorTest();
+                }
+                const composer = canvasScene.composer;
+                if (composer?.enabled) {
+                    composer.setSize(canvas.canvas.width, canvas.canvas.height);
+                    composer.render(delta, context);
+                    break;
+                }
+                const scene = canvasScene.scene;
+                const camera = canvasScene.camera ?? scene?.activeCamera;
+                if (scene && camera) {
+                    if (camera.autoResize) {
+                        camera.left = -w;
+                        camera.right = w;
+                        camera.bottom = -h;
+                        camera.top = h;
+                        camera.aspectRatio = w / h;
+                    }
+                    this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+                }
+                // TODO: set in the previous state
+                this.disableScissorTest();
             }
-            // TODO: set in the previous state
-            this.disableScissorTest();
         }
         if (this.#allowTransfertBitmap && context.transferBitmap !== false) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
