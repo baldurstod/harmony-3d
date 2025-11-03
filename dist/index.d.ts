@@ -2644,8 +2644,13 @@ declare class Channel {
                            * @deprecated Please use `getViewport` instead.
                            */
                           static get viewport(): ReadonlyVec4;
+                          static setScissor(scissor: ReadonlyVec4): void;
+                          /**
+                           * @deprecated Please use `setScissor` instead.
+                           */
                           static set scissor(scissor: ReadonlyVec4);
-                          static set scissorTest(scissorTest: boolean);
+                          static enableScissorTest(): void;
+                          static disableScissorTest(): void;
                           static checkCanvasSize(): void;
                           static play(): void;
                           static pause(): void;

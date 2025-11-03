@@ -11530,8 +11530,16 @@ class Graphics {
             this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
+        let w = canvas.canvas.width;
+        let h = canvas.canvas.height;
         for (const canvasScene of canvas.scenes) {
-            // TODO: setup viewport
+            if (canvasScene.viewport) {
+                w = canvas.canvas.width * canvasScene.viewport.width;
+                h = canvas.canvas.height * canvasScene.viewport.height;
+                this.setViewport(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                this.setScissor(vec4.fromValues(canvasScene.viewport.x * canvas.canvas.width, canvasScene.viewport.y * canvas.canvas.height, w, h));
+                this.enableScissorTest();
+            }
             const composer = canvasScene.composer;
             if (composer?.enabled) {
                 composer.setSize(canvas.canvas.width, canvas.canvas.height);
@@ -11541,8 +11549,6 @@ class Graphics {
             const scene = canvasScene.scene;
             const camera = canvasScene.camera ?? scene?.activeCamera;
             if (scene && camera) {
-                const w = canvas.canvas.width;
-                const h = canvas.canvas.height;
                 if (camera.autoResize) {
                     camera.left = -w;
                     camera.right = w;
@@ -11552,6 +11558,8 @@ class Graphics {
                 }
                 this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
             }
+            // TODO: set in the previous state
+            this.disableScissorTest();
         }
         if (this.#allowTransfertBitmap && context.transferBitmap !== false) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
@@ -11816,17 +11824,21 @@ class Graphics {
     static get viewport() {
         return this.getViewport(vec4.create());
     }
-    static set scissor(scissor) {
+    static setScissor(scissor) {
         vec4.copy(this.#scissor, scissor);
         WebGLRenderingState.scissor(scissor);
     }
-    static set scissorTest(scissorTest) {
-        if (scissorTest) {
-            WebGLRenderingState.enable(GL_SCISSOR_TEST);
-        }
-        else {
-            WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        }
+    /**
+     * @deprecated Please use `setScissor` instead.
+     */
+    static set scissor(scissor) {
+        this.setScissor(scissor);
+    }
+    static enableScissorTest() {
+        WebGLRenderingState.enable(GL_SCISSOR_TEST);
+    }
+    static disableScissorTest() {
+        WebGLRenderingState.disable(GL_SCISSOR_TEST);
     }
     static checkCanvasSize() {
         if (!this.#autoResize) {
