@@ -2,10 +2,11 @@ import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
 import { Camera, CameraProjection } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
+import { SceneNode } from '../entities/scenenode';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
-import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
@@ -340,6 +341,11 @@ export class Renderer {
 					objectStack.push(child);
 				}
 			}
+
+			if ((currentObject as SceneNode).isSceneNode && (currentObject as SceneNode).entity) {
+				objectStack.push((currentObject as SceneNode).entity!);
+			}
+
 			if (currentObject.isRenderable) {
 				renderList.addObject(currentObject);
 			} else {

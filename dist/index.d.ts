@@ -5802,6 +5802,16 @@ declare class Channel {
                           setJointsRadius(radius: number): void;
                       }
 
+                      export declare class SceneNode extends Entity {
+                          entity: Entity | null;
+                          isSceneNode: true;
+                          constructor(params?: SceneNodeParameters);
+                      }
+
+                      declare type SceneNodeParameters = EntityParameters & {
+                          entity?: Entity;
+                      };
+
                       declare type SceneParameters = EntityParameters & {
                           camera?: Camera;
                           background?: BackGround;
