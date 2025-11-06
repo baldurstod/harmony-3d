@@ -11263,6 +11263,12 @@ var ShaderDebugMode;
 (function (ShaderDebugMode) {
     ShaderDebugMode[ShaderDebugMode["None"] = 0] = "None";
 })(ShaderDebugMode || (ShaderDebugMode = {}));
+const defaultViewport = {
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
+};
 class Graphics {
     static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
     static #viewport = vec4.create();
@@ -11593,15 +11599,14 @@ class Graphics {
             if (canvasScene.enabled === false) {
                 continue;
             }
-            if (canvasScene.viewport) {
-                const x = Math.round(canvasScene.viewport.x * canvas.canvas.width);
-                const y = Math.round(canvasScene.viewport.y * canvas.canvas.height);
-                w = Math.round((canvasScene.viewport.x + canvasScene.viewport.width) * canvas.canvas.width) - x;
-                h = Math.round((canvasScene.viewport.y + canvasScene.viewport.height) * canvas.canvas.height) - y;
-                this.setViewport(vec4.fromValues(x, y, w, h));
-                this.setScissor(vec4.fromValues(x, y, w, h));
-                this.enableScissorTest();
-            }
+            const viewport = canvasScene.viewport ?? defaultViewport;
+            const x = Math.round(viewport.x * canvas.canvas.width);
+            const y = Math.round(viewport.y * canvas.canvas.height);
+            w = Math.round((viewport.x + viewport.width) * canvas.canvas.width) - x;
+            h = Math.round((viewport.y + viewport.height) * canvas.canvas.height) - y;
+            this.setViewport(vec4.fromValues(x, y, w, h));
+            this.setScissor(vec4.fromValues(x, y, w, h));
+            this.enableScissorTest();
             const composer = canvasScene.composer;
             if (composer?.enabled) {
                 composer.setSize(canvas.canvas.width, canvas.canvas.height);

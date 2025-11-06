@@ -9012,7 +9012,7 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
-                      declare type Viewport = {
+                      export declare type Viewport = {
                           x: number;
                           y: number;
                           width: number;
