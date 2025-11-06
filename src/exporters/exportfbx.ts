@@ -325,7 +325,7 @@ function exportSkeleton(fbxScene: FBXScene, skeleton: Skeleton, context: FbxCont
 
 function exportBone(fbxScene: FBXScene, bone: Bone, context: FbxContext, exportedClusters: WeakMap<Bone, FBXCluster>, fbxSkin: FBXSkin, boneDatas: FbxBoneData, meshPose: FBXPose) {
 	const fbxManager = fbxScene.manager;
-	const boneParent = (bone.parent as Bone | undefined) ?? bone.skeleton;
+	const boneParent = (bone.parent as Bone | undefined) ?? bone.getSkeleton();
 	const boneParentSkeletonBone = bone.parentSkeletonBone;
 	if (boneParent) {
 		if ((boneParent as Bone).isBone) {
@@ -384,7 +384,7 @@ function exportBone(fbxScene: FBXScene, bone: Bone, context: FbxContext, exporte
 			const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB) as FBXSkeleton;
 			fbxBone.nodeAttribute = fbxLimb;
 
-			fbxBone.parent = exportedBones.get(boneParent) ?? fbxScene.rootNode;
+			fbxBone.parent = (boneParent && exportedBones.get(boneParent)) ?? fbxScene.rootNode;
 
 			exportedBones.set(bone, fbxBone);
 		}

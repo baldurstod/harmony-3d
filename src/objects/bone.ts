@@ -1,12 +1,12 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
-import { Entity } from '../entities/entity';
+import { Entity, EntityParameters } from '../entities/entity';
 import { Graphics } from '../graphics/graphics2';
 import { Lockable } from '../interfaces/lockable';
-import { JSONObject } from 'harmony-types';
-import { Skeleton } from './skeleton';
 import { mat4ToJSON, quatToJSON, vec3ToJSON } from '../utils/json';
+import { Skeleton } from './skeleton';
 
 const tempWorldMat = mat4.create();
 const tempWorldQuat = quat.create();
@@ -16,6 +16,11 @@ const tempPosition = vec3.create();
 
 const tempQuat1 = quat.create();
 const tempVec1 = vec3.create();
+
+export type BoneParameters = EntityParameters & {
+	boneId?: number,
+	skeleton?: Skeleton,
+};
 
 export class Bone extends Entity implements Lockable {
 	isBone = true;
@@ -27,7 +32,7 @@ export class Bone extends Entity implements Lockable {
 	#worldQuat = quat.create();
 	#worldScale = vec3.fromValues(1, 1, 1);
 	#parentSkeletonBone: Bone | null = null;
-	#skeleton: Skeleton;
+	#skeleton: Skeleton | null = null;
 	#refPosition = vec3.create();
 	#refQuaternion = quat.create();
 	dirty = true;
@@ -37,10 +42,10 @@ export class Bone extends Entity implements Lockable {
 	readonly _initialQuaternion = quat.create();
 	readonly _initialPosition = vec3.create();
 
-	constructor(params?: any/*TODO: improve type*/) {
+	constructor(params: BoneParameters) {
 		super(params);
 		this.#boneId = params.boneId ?? -1;
-		this.#skeleton = params.skeleton;
+		this.#skeleton = params.skeleton ?? null;
 	}
 
 	set position(position) {
@@ -125,12 +130,12 @@ export class Bone extends Entity implements Lockable {
 		return this._parent;
 	}
 
-	set skeleton(skeleton) {
+	setSkeleton(skeleton: Skeleton): void {
 		this.#skeleton = skeleton;
 		this.dirty = true;
 	}
 
-	get skeleton() {
+	getSkeleton(): Skeleton | null {
 		return this.#skeleton;
 	}
 
@@ -154,7 +159,7 @@ export class Bone extends Entity implements Lockable {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-			|| ((this._parent == undefined) && (true || (this.#skeleton.lastComputed > this.lastComputed)))//TODOv3: remove true
+			|| ((this._parent == undefined) && (true || (this.#skeleton && (this.#skeleton!.lastComputed > this.lastComputed))))//TODOv3: remove true
 		) {
 			this.#compute();
 		}
@@ -165,7 +170,7 @@ export class Bone extends Entity implements Lockable {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-			|| ((this._parent == undefined) && (true || (this.#skeleton.lastComputed > this.lastComputed)))//TODOv3: remove true
+			|| ((this._parent == undefined) && (true || (this.#skeleton && (this.#skeleton!.lastComputed > this.lastComputed))))//TODOv3: remove true
 		) {
 			this.#compute();
 		}
@@ -176,7 +181,7 @@ export class Bone extends Entity implements Lockable {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-			|| ((this._parent == undefined) && (true || (this.#skeleton.lastComputed > this.lastComputed)))//TODOv3: remove true
+			|| ((this._parent == undefined) && (true || (this.#skeleton && (this.#skeleton!.lastComputed > this.lastComputed))))//TODOv3: remove true
 		) {
 			this.#compute();
 		}
@@ -187,7 +192,7 @@ export class Bone extends Entity implements Lockable {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-			|| ((this._parent == undefined) && (true || (this.#skeleton.lastComputed > this.lastComputed)))//TODOv3: remove true
+			|| ((this._parent == undefined) && (true || (this.#skeleton && (this.#skeleton!.lastComputed > this.lastComputed))))//TODOv3: remove true
 		) {
 			this.#compute();
 		}
@@ -326,7 +331,7 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	static async constructFromJSON(json: JSONObject) {
-		return new Bone({ name: json.name });
+		return new Bone({ name: json.name as string });
 	}
 
 	fromJSON(json: any) {
