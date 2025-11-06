@@ -717,6 +717,14 @@ export declare type CanvasView = {
     composer?: Composer;
     /** Enable rendering. Default to true. */
     enabled?: boolean;
+    /** View layer. Higher values are in front of others. Default to 0. */
+    layer?: number;
+    /** Clear color buffer before rendering. Default to false. */
+    clearColor?: boolean;
+    /** Clear depth buffer before rendering. Default to false. */
+    clearDepth?: boolean;
+    /** Clear stencil buffer before rendering. Default to false. */
+    clearStencil?: boolean;
 };
 
 export declare type CDmxAttribute = {

@@ -102,6 +102,14 @@ export type CanvasView = {
 	composer?: Composer,
 	/** Enable rendering. Default to true. */
 	enabled?: boolean;
+	/** View layer. Higher values are in front of others. Default to 0. */
+	layer?: number;
+	/** Clear color buffer before rendering. Default to false. */
+	clearColor?: boolean;
+	/** Clear depth buffer before rendering. Default to false. */
+	clearDepth?: boolean;
+	/** Clear stencil buffer before rendering. Default to false. */
+	clearStencil?: boolean;
 }
 
 /**
@@ -534,6 +542,8 @@ class Graphics {
 			return;
 		}
 
+		// TODO: optimize: sort once
+		layout.views.sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0));
 		for (const canvasScene of layout.views) {
 			if (canvasScene.enabled === false) {
 				continue;
@@ -548,6 +558,8 @@ class Graphics {
 			this.setViewport(vec4.fromValues(x, y, w, h));
 			this.setScissor(vec4.fromValues(x, y, w, h));
 			this.enableScissorTest();
+
+			this.#forwardRenderer!.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
 
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {

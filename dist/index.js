@@ -11595,6 +11595,8 @@ class Graphics {
         if (!layout) {
             return;
         }
+        // TODO: optimize: sort once
+        layout.views.sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0));
         for (const canvasScene of layout.views) {
             if (canvasScene.enabled === false) {
                 continue;
@@ -11607,6 +11609,7 @@ class Graphics {
             this.setViewport(vec4.fromValues(x, y, w, h));
             this.setScissor(vec4.fromValues(x, y, w, h));
             this.enableScissorTest();
+            this.#forwardRenderer.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
             const composer = canvasScene.composer;
             if (composer?.enabled) {
                 composer.setSize(canvas.canvas.width, canvas.canvas.height);
