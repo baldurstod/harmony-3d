@@ -123,7 +123,8 @@ export class FirstPersonControl extends CameraControl {
 	}
 
 	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
-		document.exitPointerLock();
+		// In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
+		setTimeout(() => document.exitPointerLock(), 100);
 		const mouseEvent = event.detail.mouseEvent;
 		mouseEvent.preventDefault();
 		//event.stopPropagation();
