@@ -337,7 +337,7 @@ export declare class Bone extends Entity implements Lockable {
     tempQuaternion: quat;
     readonly _initialQuaternion: quat;
     readonly _initialPosition: vec3;
-    constructor(params?: any);
+    constructor(params: BoneParameters);
     set position(position: vec3);
     get position(): vec3;
     setWorldPosition(position: vec3): void;
@@ -353,8 +353,8 @@ export declare class Bone extends Entity implements Lockable {
     get scale(): vec3;
     set parent(parent: Entity | null);
     get parent(): Entity | null;
-    set skeleton(skeleton: Skeleton);
-    get skeleton(): Skeleton;
+    setSkeleton(skeleton: Skeleton): void;
+    getSkeleton(): Skeleton | null;
     set parentSkeletonBone(parentSkeletonBone: Bone | null);
     get parentSkeletonBone(): Bone | null;
     get boneMat(): mat4;
@@ -385,6 +385,11 @@ export declare class Bone extends Entity implements Lockable {
     fromJSON(json: any): void;
     static getEntityName(): string;
 }
+
+declare type BoneParameters = EntityParameters & {
+    boneId?: number;
+    skeleton?: Skeleton;
+};
 
 export declare class BoundingBox {
     min: vec3;
@@ -6370,6 +6375,7 @@ declare class Channel {
                           playSequence(sequenceName: string): void;
                           addAnimation(id: number, animationName: string, weight?: number): Promise<void>;
                           update(scene: Scene, camera: Camera, delta: number): void;
+                          updateAsync(scene: Scene, camera: Camera, delta: number): Promise<void>;
                           setMaterialOverride(materialOverride: Material | null): Promise<void>;
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;

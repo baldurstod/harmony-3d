@@ -266,7 +266,19 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#playSequences(delta: number) {//TODO
+	async updateAsync(scene: Scene, camera: Camera, delta: number): Promise<void> {
+		if (this.#skeleton && this.isPlaying()) {
+			await this.#playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
+			this.#skeleton.setBonesMatrix();
+		}
+		for (const mesh of this.#meshes) {
+			if ((mesh as SkeletalMesh).skeleton) {
+				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
+			}
+		}
+	}
+
+	async #playSequences(delta: number): Promise<void> {//TODO
 		if (Source1ModelInstance.useNewAnimSystem || this.useNewAnimSystem) {
 			this.frame += delta;
 			this.#animate();
@@ -287,6 +299,20 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 				sequence = seqContext.s;
 
 				if (!sequence) {
+					const sequence = await this.sourceModel.mdl.getSequence(sequenceName);
+					if (sequence) {
+						seqContext.s = sequence;
+						seqContext.startTime = now;
+						if (sequence.autolayer) {
+							const autoLayerList = sequence.autolayer;
+
+							for (let autoLayerIndex = 0; autoLayerIndex < autoLayerList.length; ++autoLayerIndex) {
+								const autoLayer = autoLayerList[autoLayerIndex];
+							}
+						}
+					}
+
+					/*
 					this.sourceModel.mdl.getSequence(sequenceName).then((sequence) => {
 						if (sequence) {
 							seqContext.s = sequence;
@@ -307,11 +333,12 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 											this.sequences[autoLayerSequenceName] = { s: autoLayerSequence, startTime: now }
 										}
 									}
-									*/
+									* /
 								}
 							}
 						}
 					});
+					*/
 				}
 			}
 			if (sequence) {

@@ -9862,7 +9862,7 @@ function exportSkeleton(fbxScene, skeleton, context, fbxMesh, boneDatas, meshPos
 }
 function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneDatas, meshPose) {
     const fbxManager = fbxScene.manager;
-    const boneParent = bone.parent ?? bone.skeleton;
+    const boneParent = bone.parent ?? bone.getSkeleton();
     const boneParentSkeletonBone = bone.parentSkeletonBone;
     if (boneParent) {
         if (boneParent.isBone) {
@@ -9912,7 +9912,7 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
             fbxBone.localRotation.value = angles;
             const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB);
             fbxBone.nodeAttribute = fbxLimb;
-            fbxBone.parent = exportedBones.get(boneParent) ?? fbxScene.rootNode;
+            fbxBone.parent = (boneParent && exportedBones.get(boneParent)) ?? fbxScene.rootNode;
             exportedBones.set(bone, fbxBone);
         }
     }
@@ -17527,7 +17527,7 @@ class Bone extends Entity {
     #worldQuat = quat.create();
     #worldScale = vec3.fromValues(1, 1, 1);
     #parentSkeletonBone = null;
-    #skeleton;
+    #skeleton = null;
     #refPosition = vec3.create();
     #refQuaternion = quat.create();
     dirty = true;
@@ -17536,10 +17536,10 @@ class Bone extends Entity {
     tempQuaternion = quat.create();
     _initialQuaternion = quat.create();
     _initialPosition = vec3.create();
-    constructor(params /*TODO: improve type*/) {
+    constructor(params) {
         super(params);
         this.#boneId = params.boneId ?? -1;
-        this.#skeleton = params.skeleton;
+        this.#skeleton = params.skeleton ?? null;
     }
     set position(position) {
         super.position = position;
@@ -17609,11 +17609,11 @@ class Bone extends Entity {
     get parent() {
         return this._parent;
     }
-    set skeleton(skeleton) {
+    setSkeleton(skeleton) {
         this.#skeleton = skeleton;
         this.dirty = true;
     }
-    get skeleton() {
+    getSkeleton() {
         return this.#skeleton;
     }
     set parentSkeletonBone(parentSkeletonBone) {
@@ -18581,8 +18581,7 @@ class Skeleton extends Entity {
         const boneNameLowerCase = boneName.toLowerCase();
         let bone = this.#bonesByName.get(boneNameLowerCase);
         if (!bone) {
-            const bone = new Bone({ name: boneName, boneId: boneId });
-            bone.skeleton = this;
+            const bone = new Bone({ name: boneName, boneId: boneId, skeleton: this });
             //this.addChild(bone);
             this._bones[boneId] = bone;
             this.#bonesByName.set(boneNameLowerCase, bone);
@@ -40129,7 +40128,18 @@ class Source1ModelInstance extends Entity {
             }
         }
     }
-    #playSequences(delta) {
+    async updateAsync(scene, camera, delta) {
+        if (this.#skeleton && this.isPlaying()) {
+            await this.#playSequences(delta * _a$1.#animSpeed * this.animationSpeed);
+            this.#skeleton.setBonesMatrix();
+        }
+        for (const mesh of this.#meshes) {
+            if (mesh.skeleton) {
+                mesh.skeleton.setBonesMatrix();
+            }
+        }
+    }
+    async #playSequences(delta) {
         if (_a$1.useNewAnimSystem || this.useNewAnimSystem) {
             this.frame += delta;
             this.#animate();
@@ -40147,14 +40157,27 @@ class Source1ModelInstance extends Entity {
             if (seqContext) {
                 sequence = seqContext.s;
                 if (!sequence) {
+                    const sequence = await this.sourceModel.mdl.getSequence(sequenceName);
+                    if (sequence) {
+                        seqContext.s = sequence;
+                        seqContext.startTime = now;
+                        if (sequence.autolayer) {
+                            const autoLayerList = sequence.autolayer;
+                            for (let autoLayerIndex = 0; autoLayerIndex < autoLayerList.length; ++autoLayerIndex) {
+                                autoLayerList[autoLayerIndex];
+                            }
+                        }
+                    }
+                    /*
                     this.sourceModel.mdl.getSequence(sequenceName).then((sequence) => {
                         if (sequence) {
                             seqContext.s = sequence;
                             seqContext.startTime = now;
                             if (sequence.autolayer) {
                                 const autoLayerList = sequence.autolayer;
+
                                 for (let autoLayerIndex = 0; autoLayerIndex < autoLayerList.length; ++autoLayerIndex) {
-                                    autoLayerList[autoLayerIndex];
+                                    const autoLayer = autoLayerList[autoLayerIndex];
                                     //if (autoLayer && (autoLayer.start !== 0 || autoLayer.end !== 0)) {
                                     //if (autoLayer && (autoLayer.start !== autoLayer.end)) {//TODOV2
                                     //if (autoLayer) {//TODOV2
@@ -40166,11 +40189,12 @@ class Source1ModelInstance extends Entity {
                                             this.sequences[autoLayerSequenceName] = { s: autoLayerSequence, startTime: now }
                                         }
                                     }
-                                    */
+                                    * /
                                 }
                             }
                         }
                     });
+                    */
                 }
             }
             if (sequence) {
