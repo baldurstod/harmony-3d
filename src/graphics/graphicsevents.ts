@@ -5,6 +5,8 @@ export enum GraphicsEvent {
 	MouseMove = 'mousemove',
 	MouseDown = 'mousedown',
 	MouseUp = 'mouseup',
+	MouseClick = 'mouseclick',
+	MouseDblClick = 'mousedblclick',
 	Wheel = 'wheel',
 	Resize = 'resize',
 	Tick = 'tick',
@@ -67,6 +69,14 @@ export class GraphicsEvents extends StaticEventTarget {
 
 	static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
 		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	}
+
+	static mouseClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	}
+
+	static mouseDblClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
 	}
 
 	static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent) {

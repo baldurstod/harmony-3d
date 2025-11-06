@@ -176,6 +176,8 @@ class Graphics {
 	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
 	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
 	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
+	static #mouseClickFunc = (event: MouseEvent) => this.#mouseClick(event);
+	static #mouseDblClickFunc = (event: MouseEvent) => this.#mouseDblClick(event);
 	static #keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event);
 	static #keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event);
 	static #wheelFunc = (event: WheelEvent) => this.#wheel(event);
@@ -314,6 +316,8 @@ class Graphics {
 		canvas.addEventListener('mousedown', this.#mouseDownFunc);
 		canvas.addEventListener('mousemove', this.#mouseMoveFunc);
 		canvas.addEventListener('mouseup', this.#mouseUpFunc);
+		canvas.addEventListener('click', this.#mouseClickFunc);
+		canvas.addEventListener('dblclick', this.#mouseDblClickFunc);
 		canvas.addEventListener('keydown', this.#keyDownFunc);
 		canvas.addEventListener('keyup', this.#keyUpFunc);
 		canvas.addEventListener('wheel', this.#wheelFunc);
@@ -329,6 +333,8 @@ class Graphics {
 		canvas.removeEventListener('mousedown', this.#mouseDownFunc);
 		canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
 		canvas.removeEventListener('mouseup', this.#mouseUpFunc);
+		canvas.removeEventListener('click', this.#mouseClickFunc);
+		canvas.removeEventListener('dblclick', this.#mouseDblClickFunc);
 		canvas.removeEventListener('keydown', this.#keyDownFunc);
 		canvas.removeEventListener('keyup', this.#keyUpFunc);
 		canvas.removeEventListener('wheel', this.#wheelFunc);
@@ -373,7 +379,20 @@ class Graphics {
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
-		this.#pickedEntity = null;
+	}
+
+	static #mouseClick(event: MouseEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		const x = event.offsetX;
+		const y = event.offsetY;
+		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+	}
+
+	static #mouseDblClick(event: MouseEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		const x = event.offsetX;
+		const y = event.offsetY;
+		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 	}
 
 	static #wheel(event: WheelEvent) {

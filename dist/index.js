@@ -6851,6 +6851,8 @@ var GraphicsEvent;
     GraphicsEvent["MouseMove"] = "mousemove";
     GraphicsEvent["MouseDown"] = "mousedown";
     GraphicsEvent["MouseUp"] = "mouseup";
+    GraphicsEvent["MouseClick"] = "mouseclick";
+    GraphicsEvent["MouseDblClick"] = "mousedblclick";
     GraphicsEvent["Wheel"] = "wheel";
     GraphicsEvent["Resize"] = "resize";
     GraphicsEvent["Tick"] = "tick";
@@ -6876,6 +6878,12 @@ class GraphicsEvents extends StaticEventTarget {
     }
     static mouseUp(x, y, width, height, pickedEntity, mouseEvent) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseClick(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseDblClick(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
     static wheel(x, y, pickedEntity, wheelEvent) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
@@ -6997,7 +7005,8 @@ class FirstPersonControl extends CameraControl {
         this.#mouseDragOn = true;
     }
     #onMouseUp(event) {
-        document.exitPointerLock();
+        // In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
+        setTimeout(() => document.exitPointerLock(), 100);
         const mouseEvent = event.detail.mouseEvent;
         mouseEvent.preventDefault();
         //event.stopPropagation();
@@ -7910,7 +7919,8 @@ class OrbitControl extends CameraControl {
         }
     }
     #onMouseUp(event) {
-        document.exitPointerLock();
+        // In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
+        setTimeout(() => document.exitPointerLock(), 100);
         if (this.enabled === false) {
             return;
         }
@@ -11295,6 +11305,8 @@ class Graphics {
     static #mouseDownFunc = (event) => this.#mouseDown(event);
     static #mouseMoveFunc = (event) => this.#mouseMove(event);
     static #mouseUpFunc = (event) => this.#mouseUp(event);
+    static #mouseClickFunc = (event) => this.#mouseClick(event);
+    static #mouseDblClickFunc = (event) => this.#mouseDblClick(event);
     static #keyDownFunc = (event) => GraphicsEvents.keyDown(event);
     static #keyUpFunc = (event) => GraphicsEvents.keyUp(event);
     static #wheelFunc = (event) => this.#wheel(event);
@@ -11408,6 +11420,8 @@ class Graphics {
         canvas.addEventListener('mousedown', this.#mouseDownFunc);
         canvas.addEventListener('mousemove', this.#mouseMoveFunc);
         canvas.addEventListener('mouseup', this.#mouseUpFunc);
+        canvas.addEventListener('click', this.#mouseClickFunc);
+        canvas.addEventListener('dblclick', this.#mouseDblClickFunc);
         canvas.addEventListener('keydown', this.#keyDownFunc);
         canvas.addEventListener('keyup', this.#keyUpFunc);
         canvas.addEventListener('wheel', this.#wheelFunc);
@@ -11422,6 +11436,8 @@ class Graphics {
         canvas.removeEventListener('mousedown', this.#mouseDownFunc);
         canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
         canvas.removeEventListener('mouseup', this.#mouseUpFunc);
+        canvas.removeEventListener('click', this.#mouseClickFunc);
+        canvas.removeEventListener('dblclick', this.#mouseDblClickFunc);
         canvas.removeEventListener('keydown', this.#keyDownFunc);
         canvas.removeEventListener('keyup', this.#keyUpFunc);
         canvas.removeEventListener('wheel', this.#wheelFunc);
@@ -11460,7 +11476,18 @@ class Graphics {
         const x = event.offsetX;
         const y = event.offsetY;
         GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
-        this.#pickedEntity = null;
+    }
+    static #mouseClick(event) {
+        const htmlCanvas = event.target;
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+    }
+    static #mouseDblClick(event) {
+        const htmlCanvas = event.target;
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
     }
     static #wheel(event) {
         const x = event.offsetX;

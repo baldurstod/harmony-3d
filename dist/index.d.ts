@@ -2708,6 +2708,8 @@ declare class Channel {
                           MouseMove = "mousemove",
                           MouseDown = "mousedown",
                           MouseUp = "mouseup",
+                          MouseClick = "mouseclick",
+                          MouseDblClick = "mousedblclick",
                           Wheel = "wheel",
                           Resize = "resize",
                           Tick = "tick",
@@ -2725,6 +2727,8 @@ declare class Channel {
                           static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+                          static mouseClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+                          static mouseDblClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
                           static keyDown(keyboardEvent: KeyboardEvent): void;
                           static keyUp(keyboardEvent: KeyboardEvent): void;
