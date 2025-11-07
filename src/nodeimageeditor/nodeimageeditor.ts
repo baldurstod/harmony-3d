@@ -26,6 +26,8 @@ export type NodeImageEditorEvent = {
 
 export type AddNodeParameters = {
 	textureSize?: number;
+	lenght?: number;
+	[key: string]: any;
 }
 
 export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, CustomEvent<NodeImageEditorEvent>> {

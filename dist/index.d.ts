@@ -70,6 +70,8 @@ export declare function addIncludeSource(name: string, source?: string): void;
 
 declare type AddNodeParameters = {
     textureSize?: number;
+    lenght?: number;
+    [key: string]: any;
 };
 
 export declare class AgeNoise extends Operator {
