@@ -14369,13 +14369,12 @@ class NodeImageEditor extends MyEventTarget {
         Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
     }
     addNode(operationName, params = {}) {
-        params.textureSize = params.textureSize ?? this.textureSize;
         if (!operationName) {
             return null;
         }
         const node = getOperation(operationName, this, params);
         if (node) {
-            this.textureSize = params.textureSize;
+            this.textureSize = params.textureSize ?? this.textureSize;
             this.#nodes.add(node);
             this.#dispatchEvent(NodeImageEditorEventType.NodeAdded, node);
         }

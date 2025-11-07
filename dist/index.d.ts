@@ -68,6 +68,10 @@ export declare interface AddCanvasOptions {
 
 export declare function addIncludeSource(name: string, source?: string): void;
 
+declare type AddNodeParameters = {
+    textureSize?: number;
+};
+
 export declare class AgeNoise extends Operator {
     #private;
     _paramChanged(paramName: string, param: OperatorParam): void;
@@ -4351,7 +4355,7 @@ declare class Channel {
                           textureSize: number;
                           constructor();
                           render(material: Material, width: number, height: number): void;
-                          addNode(operationName: string, params?: any): Node_2 | null;
+                          addNode(operationName: string, params?: AddNodeParameters): Node_2 | null;
                           removeNode(node: Node_2): void;
                           removeAllNodes(): void;
                           getVariable(name: string): number | undefined;

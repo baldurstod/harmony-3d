@@ -24,6 +24,10 @@ export type NodeImageEditorEvent = {
 	eventName?: string;
 }
 
+export type AddNodeParameters = {
+	textureSize?: number;
+}
+
 export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, CustomEvent<NodeImageEditorEvent>> {
 	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
@@ -43,14 +47,13 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 
 	}
 
-	addNode(operationName: string, params: any = {}): Node | null {
-		params.textureSize = params.textureSize ?? this.textureSize;
+	addNode(operationName: string, params: AddNodeParameters = {}): Node | null {
 		if (!operationName) {
 			return null;
 		}
 		const node = getOperation(operationName, this, params);
 		if (node) {
-			this.textureSize = params.textureSize;
+			this.textureSize = params.textureSize ?? this.textureSize;
 			this.#nodes.add(node);
 			this.#dispatchEvent(NodeImageEditorEventType.NodeAdded, node);
 		}
