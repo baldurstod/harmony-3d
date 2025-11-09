@@ -7001,7 +7001,7 @@ class FirstPersonControl extends CameraControl {
                 //case 2: this.#moveBackward = true; break;
             }
         }
-        event.target.requestPointerLock();
+        mouseEvent.target.requestPointerLock();
         this.#mouseDragOn = true;
     }
     #onMouseUp(event) {
