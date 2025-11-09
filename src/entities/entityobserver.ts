@@ -12,11 +12,6 @@ export interface ParentChangedEventData { child: Entity, oldParent: Entity | nul
 export interface ChildAddedEventData { child: Entity, parent: Entity | null }
 export type ChildRemovedEventData = ChildAddedEventData;
 export interface EntityDeletedEventData { entity: Entity }
-export interface PropertyChangedEventData { entity: Entity, name: string, value: any, oldValue: any }
-export type AttributeChangedEventData = PropertyChangedEventData;
-
-export type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData |
-	EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
 
 export enum EntityObserverEventType {
 	ParentChanged = 'parentchanged',

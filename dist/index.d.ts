@@ -221,8 +221,6 @@ export declare class AttractToControlPoint extends Operator {
     doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
 }
 
-export declare type AttributeChangedEventData = PropertyChangedEventData;
-
 export declare class AudioGroup {
     #private;
     name: string;
@@ -1757,8 +1755,6 @@ declare class Channel {
                       };
 
                       export declare type EntityObserverEvent = EntityObserverParentChangedEvent | EntityObserverChildAddedEvent | EntityObserverChildRemovedEvent | EntityObserverEntityDeletedEvent | EntityObserverPropertyChangedEvent | EntityObserverAttributeChangedEvent;
-
-                      export declare type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData | EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
 
                       export declare enum EntityObserverEventType {
                           ParentChanged = "parentchanged",
@@ -4986,13 +4982,6 @@ declare class Channel {
                           type: string;
                           value: PropertyValues;
                           constructor(type: string, value: PropertyValues);
-                      }
-
-                      export declare interface PropertyChangedEventData {
-                          entity: Entity;
-                          name: string;
-                          value: any;
-                          oldValue: any;
                       }
 
                       export declare enum PropertyType {
