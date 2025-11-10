@@ -441,6 +441,7 @@ class Graphics {
 			this.#offscreenCanvas.width = width;
 			this.#offscreenCanvas.height = height;
 			this.setViewport(vec4.fromValues(0, 0, width, height));
+			this.disableScissorTest();
 		} else {
 			const htmlCanvas = this.#canvas!;
 			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
@@ -451,6 +452,7 @@ class Graphics {
 				htmlCanvas.width = width * this.#pixelRatio;
 				htmlCanvas.height = height * this.#pixelRatio;
 				this.setViewport(vec4.fromValues(0, 0, width, height));
+				this.disableScissorTest();
 			}
 		}
 
@@ -528,8 +530,6 @@ class Graphics {
 
 			canvas.canvas.width = width * this.#pixelRatio;
 			canvas.canvas.height = height * this.#pixelRatio;
-
-			this.setViewport(vec4.fromValues(0, 0, this.#offscreenCanvas.width, this.#offscreenCanvas.height));
 		}
 
 		this.renderBackground();//TODOv3 put in rendering pipeline
@@ -549,17 +549,20 @@ class Graphics {
 				continue;
 			}
 
-			const viewport = canvasScene.viewport ?? defaultViewport;
+			const canvasViewport = canvasScene.viewport ?? defaultViewport;
 
-			const x = Math.round(viewport.x * canvas.canvas.width);
-			const y = Math.round(viewport.y * canvas.canvas.height);
-			w = Math.round((viewport.x + viewport.width) * canvas.canvas.width) - x;
-			h = Math.round((viewport.y + viewport.height) * canvas.canvas.height) - y;
-			this.setViewport(vec4.fromValues(x, y, w, h));
-			this.setScissor(vec4.fromValues(x, y, w, h));
+			const x = Math.round(canvasViewport.x * canvas.canvas.width);
+			const y = Math.round(canvasViewport.y * canvas.canvas.height);
+			w = Math.round((canvasViewport.x + canvasViewport.width) * canvas.canvas.width) - x;
+			h = Math.round((canvasViewport.y + canvasViewport.height) * canvas.canvas.height) - y;
+			const viewport = vec4.fromValues(x, y, w, h);
+			this.setViewport(viewport);
+			this.setScissor(viewport);
 			this.enableScissorTest();
 
-			this.#forwardRenderer!.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
+			if (canvasScene.clearColor || canvasScene.clearDepth || canvasScene.clearStencil) {
+				this.#forwardRenderer!.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
+			}
 
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
@@ -878,7 +881,7 @@ class Graphics {
 			this.#offscreenCanvas!.height = this.#canvas.height;
 		}
 
-		this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
+		//this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
 	}
 
 	static setViewport(viewport: ReadonlyVec4): void {
@@ -1037,7 +1040,7 @@ class Graphics {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
-			this.setViewport(viewport);
+			//this.setViewport(viewport);
 		} else {
 			renderTarget.bind();
 		}

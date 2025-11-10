@@ -69,7 +69,7 @@ export declare interface AddCanvasOptions {
 export declare function addIncludeSource(name: string, source?: string): void;
 
 declare type AddNodeParameters = {
-    textureSize?: number;
+    textureSize: number;
     lenght?: number;
     [key: string]: any;
 };
@@ -4353,7 +4353,7 @@ declare class Channel {
                           textureSize: number;
                           constructor();
                           render(material: Material, width: number, height: number): void;
-                          addNode(operationName: string, params?: AddNodeParameters): Node_2 | null;
+                          addNode(operationName: string, params: AddNodeParameters): Node_2 | null;
                           removeNode(node: Node_2): void;
                           removeAllNodes(): void;
                           getVariable(name: string): number | undefined;
@@ -5819,6 +5819,7 @@ declare class Channel {
                           entity: Entity | null;
                           isSceneNode: true;
                           constructor(params?: SceneNodeParameters);
+                          static getEntityName(): string;
                       }
 
                       declare type SceneNodeParameters = EntityParameters & {
