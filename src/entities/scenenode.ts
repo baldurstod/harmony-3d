@@ -13,5 +13,9 @@ export class SceneNode extends Entity {
 		super(params);
 		this.entity = params?.entity ?? null;
 	}
+
+	static getEntityName() {
+		return 'Scene node';
+	}
 }
 registerEntity(SceneNode);
