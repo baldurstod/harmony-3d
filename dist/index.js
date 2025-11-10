@@ -20288,51 +20288,54 @@ class PathPrefixRepository {
 }
 
 class Repositories {
-    static #repositories = {};
+    static #repositories = new Map();
     static addRepository(repo) {
-        this.#repositories[repo.name] = repo;
+        this.#repositories.set(repo.name, repo);
         return repo;
     }
     static getRepository(name) {
-        return this.#repositories[name];
+        return this.#repositories.get(name);
     }
     static getRepositoryList() {
         return Object.keys(this.#repositories);
     }
     static async getFile(repositoryName, filepath) {
-        const repo = this.#repositories[repositoryName];
+        const repo = this.#repositories.get(repositoryName);
         if (!repo) {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFile(filepath);
     }
     static async getFileAsArrayBuffer(repositoryName, filepath) {
-        const repo = this.#repositories[repositoryName];
+        const repo = this.#repositories.get(repositoryName);
         if (!repo) {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsArrayBuffer(filepath);
     }
     static async getFileAsText(repositoryName, filepath) {
-        const repo = this.#repositories[repositoryName];
+        const repo = this.#repositories.get(repositoryName);
         if (!repo) {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsText(filepath);
     }
     static async getFileAsBlob(repositoryName, filepath) {
-        const repo = this.#repositories[repositoryName];
+        const repo = this.#repositories.get(repositoryName);
         if (!repo) {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsBlob(filepath);
     }
     static async getFileAsJson(repositoryName, filepath) {
-        const repo = this.#repositories[repositoryName];
+        const repo = this.#repositories.get(repositoryName);
         if (!repo) {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsJson(filepath);
+    }
+    static getRepositories() {
+        return new Map(this.#repositories);
     }
 }
 

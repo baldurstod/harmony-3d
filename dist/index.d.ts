@@ -5587,6 +5587,7 @@ declare class Channel {
                           static getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
                           static getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
                           static getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
+                          static getRepositories(): Map<string, Repository>;
                       }
 
                       export declare interface Repository {

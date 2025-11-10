@@ -1,15 +1,15 @@
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class Repositories {
-	static #repositories: Record<string, Repository> = {};
+	static #repositories = new Map<string, Repository>();
 
 	static addRepository(repo: Repository): Repository {
-		this.#repositories[repo.name] = repo;
+		this.#repositories.set(repo.name, repo);
 		return repo;
 	}
 
 	static getRepository(name: string): Repository | undefined {
-		return this.#repositories[name];
+		return this.#repositories.get(name);
 	}
 
 	static getRepositoryList(): string[] {
@@ -17,7 +17,7 @@ export class Repositories {
 	}
 
 	static async getFile(repositoryName: string, filepath: string): Promise<RepositoryFileResponse> {
-		const repo = this.#repositories[repositoryName];
+		const repo = this.#repositories.get(repositoryName);
 		if (!repo) {
 			return { error: RepositoryError.RepoNotFound };
 		}
@@ -26,7 +26,7 @@ export class Repositories {
 	}
 
 	static async getFileAsArrayBuffer(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse> {
-		const repo = this.#repositories[repositoryName];
+		const repo = this.#repositories.get(repositoryName);
 		if (!repo) {
 			return { error: RepositoryError.RepoNotFound };
 		}
@@ -35,7 +35,7 @@ export class Repositories {
 	}
 
 	static async getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse> {
-		const repo = this.#repositories[repositoryName];
+		const repo = this.#repositories.get(repositoryName);
 		if (!repo) {
 			return { error: RepositoryError.RepoNotFound };
 		}
@@ -44,7 +44,7 @@ export class Repositories {
 	}
 
 	static async getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse> {
-		const repo = this.#repositories[repositoryName];
+		const repo = this.#repositories.get(repositoryName);
 		if (!repo) {
 			return { error: RepositoryError.RepoNotFound };
 		}
@@ -53,11 +53,15 @@ export class Repositories {
 	}
 
 	static async getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse> {
-		const repo = this.#repositories[repositoryName];
+		const repo = this.#repositories.get(repositoryName);
 		if (!repo) {
 			return { error: RepositoryError.RepoNotFound };
 		}
 
 		return repo?.getFileAsJson(filepath);
+	}
+
+	static getRepositories(): Map<string, Repository> {
+		return new Map<string, Repository>(this.#repositories);
 	}
 }
