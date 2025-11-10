@@ -25,7 +25,7 @@ export type NodeImageEditorEvent = {
 }
 
 export type AddNodeParameters = {
-	textureSize?: number;
+	textureSize: number;
 	lenght?: number;
 	[key: string]: any;
 }
@@ -49,13 +49,13 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 
 	}
 
-	addNode(operationName: string, params: AddNodeParameters = {}): Node | null {
+	addNode(operationName: string, params: AddNodeParameters): Node | null {
 		if (!operationName) {
 			return null;
 		}
 		const node = getOperation(operationName, this, params);
 		if (node) {
-			this.textureSize = params.textureSize ?? this.textureSize;
+			//this.textureSize = params.textureSize ?? this.textureSize;
 			this.#nodes.add(node);
 			this.#dispatchEvent(NodeImageEditorEventType.NodeAdded, node);
 		}
