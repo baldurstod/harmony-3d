@@ -236,7 +236,7 @@ class Graphics {
 		}
 		*/
 
-		this.#initContext(contextAttributes);
+		this.#initContext(contextAttributes.webGL);
 		this.#initObserver();
 
 		WebGLRenderingState.setGraphics();
@@ -667,7 +667,7 @@ class Graphics {
 		}
 	}
 
-	static #initContext(contextAttributes: GraphicsInitOptions) {
+	static #initContext(contextAttributes: WebGLContextAttributes = {}) {
 		const canvas = this.#offscreenCanvas ?? this.#canvas;
 		if (this.#offscreenCanvas) {
 			//this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');

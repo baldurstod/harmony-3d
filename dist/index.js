@@ -11344,7 +11344,7 @@ class Graphics {
             this.#canvas.setAttribute('tabindex', "1");
         }
         */
-        this.#initContext(contextAttributes);
+        this.#initContext(contextAttributes.webGL);
         this.#initObserver();
         WebGLRenderingState.setGraphics();
         // init state
@@ -11695,7 +11695,7 @@ class Graphics {
         }
         this.#lastTick = tick;
     }
-    static #initContext(contextAttributes) {
+    static #initContext(contextAttributes = {}) {
         const canvas = this.#offscreenCanvas ?? this.#canvas;
         if (this.#offscreenCanvas) ;
         if (!canvas) {
