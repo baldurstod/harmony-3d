@@ -8832,7 +8832,7 @@ class Sphere extends Mesh {
         this.updateGeometry();
     }
     updateGeometry() {
-        this.geometry.updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
+        this.getGeometry().updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -11297,6 +11297,9 @@ class CanvasAttributes {
     }
     addLayout(layout) {
         this.layouts.set(layout.name, layout);
+    }
+    getLayout(name) {
+        return this.layouts.get(name) ?? null;
     }
 }
 const defaultViewport = {

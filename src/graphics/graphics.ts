@@ -148,6 +148,10 @@ export class CanvasAttributes {
 	addLayout(layout: CanvasLayout): void {
 		this.layouts.set(layout.name, layout);
 	}
+
+	getLayout(name: string): CanvasLayout | null {
+		return this.layouts.get(name) ?? null;
+	}
 }
 
 type RenderTargetEntry = {

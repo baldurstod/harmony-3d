@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
@@ -8,7 +9,6 @@ import { PI, TAU } from '../math/constants';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
-import { JSONObject } from 'harmony-types';
 import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
 
 const intersectionPoint1 = vec3.create();
@@ -60,7 +60,7 @@ export class Sphere extends Mesh {
 	}
 
 	updateGeometry() {
-		(this.geometry as SphereBufferGeometry).updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
+		(this.getGeometry() as SphereBufferGeometry).updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
 	}
 
 	buildContextMenu() {

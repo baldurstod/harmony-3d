@@ -697,6 +697,7 @@ export declare class CanvasAttributes {
     height?: number;
     constructor(name: string, canvas: HTMLCanvasElement, context: ImageBitmapRenderingContext, autoResize: boolean);
     addLayout(layout: CanvasLayout): void;
+    getLayout(name: string): CanvasLayout | null;
 }
 
 /**
