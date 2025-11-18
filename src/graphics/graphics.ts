@@ -118,11 +118,11 @@ export type CanvasView = {
  * Definition of a single canvas on the page.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type CanvasAttributes = {
+export class CanvasAttributes {
 	/** Canvas name. */
-	name: string;
+	readonly name: string;
 	/** Enable rendering. */
-	enabled: boolean;
+	enabled = true;
 	/** Html canvas. */
 	readonly canvas: HTMLCanvasElement;
 	/** Rendering context associated with the canvas. */
@@ -130,13 +130,24 @@ export type CanvasAttributes = {
 	/** The layout to render. If unset, no layout is rendered. */
 	useLayout?: string;
 	/** Canvas layouts. */
-	layouts: Map<string, CanvasLayout>;
+	readonly layouts = new Map<string, CanvasLayout>;
 	/** Auto resize this canvas to fit it's container. */
 	autoResize: boolean;
 	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
 	width?: number;
 	/** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
 	height?: number;
+
+	constructor(name: string, canvas: HTMLCanvasElement, context: ImageBitmapRenderingContext, autoResize: boolean) {
+		this.name = name;
+		this.canvas = canvas;
+		this.context = context;
+		this.autoResize = autoResize;
+	}
+
+	addLayout(layout: CanvasLayout): void {
+		this.layouts.set(layout.name, layout);
+	}
 }
 
 type RenderTargetEntry = {
@@ -175,6 +186,7 @@ class Graphics {
 	static #renderTargetStack: RenderTargetEntry[] = [];
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
+	// Canvas used when useOffscreenCanvas is set to false
 	static #canvas?: HTMLCanvasElement;
 	static #canvases = new Map<string, CanvasAttributes>();
 	static #width = 300;
@@ -272,8 +284,9 @@ class Graphics {
 			if (!bipmapContext) {
 				return null;
 			}
+			attributes = new CanvasAttributes(options.name, canvas, bipmapContext, options.autoResize ?? false);
 
-			const layouts = new Map<string, CanvasLayout>();
+			const layouts = attributes.layouts;
 			let useLayout: string | undefined;
 			if (options.layouts) {
 				useLayout = options.useLayout;
@@ -298,7 +311,8 @@ class Graphics {
 				}
 			}
 
-			attributes = {
+			/*
+			{
 				name: options.name ?? ' ',
 				enabled: true,
 				canvas: canvas,
@@ -307,6 +321,7 @@ class Graphics {
 				autoResize: options.autoResize ?? false,
 				useLayout: useLayout,
 			};
+			*/
 
 			this.#canvases.set(options.name, attributes);
 			return attributes;

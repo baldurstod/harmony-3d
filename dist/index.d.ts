@@ -676,9 +676,9 @@ export declare enum CameraProjection {
  * Definition of a single canvas on the page.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export declare type CanvasAttributes = {
+export declare class CanvasAttributes {
     /** Canvas name. */
-    name: string;
+    readonly name: string;
     /** Enable rendering. */
     enabled: boolean;
     /** Html canvas. */
@@ -688,14 +688,16 @@ export declare type CanvasAttributes = {
     /** The layout to render. If unset, no layout is rendered. */
     useLayout?: string;
     /** Canvas layouts. */
-    layouts: Map<string, CanvasLayout>;
+    readonly layouts: Map<string, CanvasLayout>;
     /** Auto resize this canvas to fit it's container. */
     autoResize: boolean;
     /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
     width?: number;
     /** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
     height?: number;
-};
+    constructor(name: string, canvas: HTMLCanvasElement, context: ImageBitmapRenderingContext, autoResize: boolean);
+    addLayout(layout: CanvasLayout): void;
+}
 
 /**
  * Definition of a scene layout
@@ -2626,6 +2628,7 @@ declare class Channel {
                           static addCanvas(options: AddCanvasOptions): CanvasAttributes | null;
                           static removeCanvas(name: string): void;
                           static enableCanvas(name: string, enable: boolean): void;
+                          static getCanvas(name: string): CanvasAttributes | null;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
                           static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
@@ -2712,7 +2715,7 @@ declare class Channel {
                           static getGLError(context: string): void;
                           static useLogDepth(use: boolean): void;
                           static getTime(): number;
-                          static getCanvas(): HTMLCanvasElement | undefined;
+                          static getOnScreenCanvas(): HTMLCanvasElement | undefined;
                           static getForwardRenderer(): ForwardRenderer | undefined;
                       }
 
