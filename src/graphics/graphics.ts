@@ -330,6 +330,10 @@ class Graphics {
 		}
 	}
 
+	static getCanvas(name: string): CanvasAttributes | null {
+		return this.#canvases.get(name) ?? null;
+	}
+
 	static listenCanvas(canvas: HTMLCanvasElement): void {
 		canvas.addEventListener('mousedown', this.#mouseDownFunc);
 		canvas.addEventListener('mousemove', this.#mouseMoveFunc);
@@ -1172,7 +1176,7 @@ class Graphics {
 	}
 	*/
 
-	static getCanvas() {
+	static getOnScreenCanvas() {
 		return this.#canvas;
 	}
 
