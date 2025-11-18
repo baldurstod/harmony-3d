@@ -50,8 +50,10 @@ export declare class Add extends Proxy_2 {
 }
 
 export declare interface AddCanvasOptions {
-    /** Canvas name. Default to an empty string. */
-    name?: string;
+    /** Canvas name. */
+    name: string;
+    /** The HTMLCanvasElement that will be used. One will be created if not provided. */
+    canvas?: HTMLCanvasElement;
     /** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
     enabled?: boolean;
     /** Auto resize the canvas to fit its parent. Default to false. */
@@ -675,7 +677,7 @@ export declare enum CameraProjection {
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
 export declare type CanvasAttributes = {
-    /** Canvas name. Default to an empty string. */
+    /** Canvas name. */
     name: string;
     /** Enable rendering. */
     enabled: boolean;
@@ -2621,9 +2623,9 @@ declare class Channel {
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
                           static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
-                          static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): CanvasAttributes | null;
-                          static removeCanvas(canvas: HTMLCanvasElement): void;
-                          static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void;
+                          static addCanvas(options: AddCanvasOptions): CanvasAttributes | null;
+                          static removeCanvas(name: string): void;
+                          static enableCanvas(name: string, enable: boolean): void;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
                           static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
@@ -2697,7 +2699,7 @@ declare class Channel {
                           static pushRenderTarget(renderTarget: RenderTarget | null): void;
                           static popRenderTarget(): void;
                           static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): void;
-                          static exportCanvas(canvas: HTMLCanvasElement, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean>;
+                          static exportCanvas(name: string, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean>;
                           static savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
                           static toBlob(type?: string, quality?: number): Promise<Blob | null>;
                           static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;

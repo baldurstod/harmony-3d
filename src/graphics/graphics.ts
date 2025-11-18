@@ -60,8 +60,10 @@ export interface GraphicsInitOptions {
 }
 
 export interface AddCanvasOptions {
-	/** Canvas name. Default to an empty string. */
-	name?: string;
+	/** Canvas name. */
+	name: string;
+	/** The HTMLCanvasElement that will be used. One will be created if not provided. */
+	canvas?: HTMLCanvasElement;
 	/** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
 	enabled?: boolean;
 	/** Auto resize the canvas to fit its parent. Default to false. */
@@ -117,7 +119,7 @@ export type CanvasView = {
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
 export type CanvasAttributes = {
-	/** Canvas name. Default to an empty string. */
+	/** Canvas name. */
 	name: string;
 	/** Enable rendering. */
 	enabled: boolean;
@@ -174,7 +176,7 @@ class Graphics {
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	static #canvas?: HTMLCanvasElement;
-	static #canvases = new Map<HTMLCanvasElement, CanvasAttributes>();
+	static #canvases = new Map<string, CanvasAttributes>();
 	static #width = 300;
 	static #height = 150;
 	static #offscreenCanvas?: OffscreenCanvas;
@@ -256,9 +258,9 @@ class Graphics {
 		return this;
 	}
 
-	static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): CanvasAttributes | null {
-		canvas = canvas ?? createElement('canvas') as HTMLCanvasElement;
-		let attributes = this.#canvases.get(canvas);
+	static addCanvas(options: AddCanvasOptions): CanvasAttributes | null {
+		const canvas = options.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		let attributes = this.#canvases.get(options.name);
 		if (attributes) {
 			return attributes;
 		}
@@ -306,24 +308,25 @@ class Graphics {
 				useLayout: useLayout,
 			};
 
-			this.#canvases.set(canvas, attributes);
+			this.#canvases.set(options.name, attributes);
 			return attributes;
 		} catch (e) { }
 		return null;
 	}
 
 
-	static removeCanvas(canvas: HTMLCanvasElement): void {
-		if (this.#canvases.has(canvas)) {
-			this.unlistenCanvas(canvas);
-			this.#canvases.delete(canvas);
+	static removeCanvas(name: string): void {
+		const canvasAttributes = this.#canvases.get(name);
+		if (canvasAttributes) {
+			this.unlistenCanvas(canvasAttributes.canvas);
+			this.#canvases.delete(name);
 		}
 	}
 
-	static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void {
-		const c = this.#canvases.get(canvas)
-		if (c) {
-			c.enabled = enable;
+	static enableCanvas(name: string, enable: boolean): void {
+		const canvasAttributes = this.#canvases.get(name)
+		if (canvasAttributes) {
+			canvasAttributes.enabled = enable;
 		}
 	}
 
@@ -1061,8 +1064,8 @@ class Graphics {
 		}
 	}
 
-	static async exportCanvas(canvas: HTMLCanvasElement, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean> {
-		const canvasDefinition = this.#canvases.get(canvas);
+	static async exportCanvas(name: string, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean> {
+		const canvasDefinition = this.#canvases.get(name);
 		if (!canvasDefinition) {
 			return false;
 		}

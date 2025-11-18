@@ -11359,9 +11359,9 @@ class Graphics {
         this.#readyPromiseResolve(true);
         return this;
     }
-    static addCanvas(canvas, options) {
-        canvas = canvas ?? createElement('canvas');
-        let attributes = this.#canvases.get(canvas);
+    static addCanvas(options) {
+        const canvas = options.canvas ?? createElement('canvas');
+        let attributes = this.#canvases.get(options.name);
         if (attributes) {
             return attributes;
         }
@@ -11407,22 +11407,23 @@ class Graphics {
                 autoResize: options.autoResize ?? false,
                 useLayout: useLayout,
             };
-            this.#canvases.set(canvas, attributes);
+            this.#canvases.set(options.name, attributes);
             return attributes;
         }
         catch (e) { }
         return null;
     }
-    static removeCanvas(canvas) {
-        if (this.#canvases.has(canvas)) {
-            this.unlistenCanvas(canvas);
-            this.#canvases.delete(canvas);
+    static removeCanvas(name) {
+        const canvasAttributes = this.#canvases.get(name);
+        if (canvasAttributes) {
+            this.unlistenCanvas(canvasAttributes.canvas);
+            this.#canvases.delete(name);
         }
     }
-    static enableCanvas(canvas, enable) {
-        const c = this.#canvases.get(canvas);
-        if (c) {
-            c.enabled = enable;
+    static enableCanvas(name, enable) {
+        const canvasAttributes = this.#canvases.get(name);
+        if (canvasAttributes) {
+            canvasAttributes.enabled = enable;
         }
     }
     static listenCanvas(canvas) {
@@ -12018,8 +12019,8 @@ class Graphics {
             this.setSize(previousWidth, previousHeight);
         }
     }
-    static async exportCanvas(canvas, filename, width, height, type, quality) {
-        const canvasDefinition = this.#canvases.get(canvas);
+    static async exportCanvas(name, filename, width, height, type, quality) {
+        const canvasDefinition = this.#canvases.get(name);
         if (!canvasDefinition) {
             return false;
         }
