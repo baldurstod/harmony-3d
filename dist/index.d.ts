@@ -704,18 +704,23 @@ export declare class CanvasAttributes {
  * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export declare type CanvasLayout = {
-    /** Layout name. Default to an empty string. */
-    name: string;
-    /** List of scenes */
-    views: CanvasView[];
-};
+export declare class CanvasLayout {
+    /** Layout name.  */
+    readonly name: string;
+    /** List of views */
+    readonly views: Map<string, CanvasView>;
+    constructor(name: string, views?: CanvasView[]);
+    addView(view: CanvasView): void;
+    removeView(name: string): void;
+}
 
 /**
  * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export declare type CanvasView = {
+export declare class CanvasView {
+    /** View name.  */
+    readonly name: string;
     /** Rendered scene. Ignored if composer exist and is enabled */
     scene?: Scene;
     /** Camera. If none provided, scene activeCamera will be used. */
@@ -734,7 +739,29 @@ export declare type CanvasView = {
     clearDepth?: boolean;
     /** Clear stencil buffer before rendering. Default to false. */
     clearStencil?: boolean;
-};
+    constructor(params: {
+        /** View name.  */
+        name: string;
+        /** Rendered scene. Ignored if composer exist and is enabled */
+        scene?: Scene;
+        /** Camera. If none provided, scene activeCamera will be used. */
+        camera?: Camera;
+        /** Viewport. If none provided, The whole canvas will be used. */
+        viewport?: Viewport;
+        /** Render a composer instead of a scene. */
+        composer?: Composer;
+        /** Enable rendering. Default to true. */
+        enabled?: boolean;
+        /** View layer. Higher values are in front of others. Default to 0. */
+        layer?: number;
+        /** Clear color buffer before rendering. Default to false. */
+        clearColor?: boolean;
+        /** Clear depth buffer before rendering. Default to false. */
+        clearDepth?: boolean;
+        /** Clear stencil buffer before rendering. Default to false. */
+        clearStencil?: boolean;
+    });
+}
 
 export declare type CDmxAttribute = {
     typeName: string;
@@ -9023,12 +9050,18 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
-                      export declare type Viewport = {
+                      export declare class Viewport {
                           x: number;
                           y: number;
                           width: number;
                           height: number;
-                      };
+                          constructor(params?: {
+                              x?: number;
+                              y?: number;
+                              width?: number;
+                              height?: number;
+                          });
+                      }
 
                       declare type VmtParameter = [
                       typeof SHADER_PARAM_TYPE_TEXTURE | typeof SHADER_PARAM_TYPE_INTEGER | typeof SHADER_PARAM_TYPE_COLOR | typeof SHADER_PARAM_TYPE_VEC2 | typeof SHADER_PARAM_TYPE_VEC3 | typeof SHADER_PARAM_TYPE_VEC4 | typeof SHADER_PARAM_TYPE_ENVMAP | typeof SHADER_PARAM_TYPE_FLOAT | typeof SHADER_PARAM_TYPE_BOOL | typeof SHADER_PARAM_TYPE_FOURCC | typeof SHADER_PARAM_TYPE_MATRIX | typeof SHADER_PARAM_TYPE_MATERIAL | typeof SHADER_PARAM_TYPE_STRING | typeof SHADER_PARAM_TYPE_MATRIX4X2,

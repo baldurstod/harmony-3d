@@ -82,26 +82,45 @@ export interface AddCanvasOptions {
  * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type CanvasLayout = {
-	/** Layout name. Default to an empty string. */
-	name: string;
-	/** List of scenes */
-	views: CanvasView[];
+export class CanvasLayout {
+	/** Layout name.  */
+	readonly name: string;
+	/** List of views */
+	readonly views = new Map<string, CanvasView>;
+
+	constructor(name: string, views?: CanvasView[]) {
+		this.name = name;
+		if (views) {
+			for (const view of views) {
+				this.addView(view);
+			}
+		}
+	}
+
+	addView(view: CanvasView): void {
+		this.views.set(view.name, view);
+	}
+
+	removeView(name: string): void {
+		this.views.delete(name);
+	}
 }
 
 /**
  * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
-export type CanvasView = {
+export class CanvasView {
+	/** View name.  */
+	readonly name: string;
 	/** Rendered scene. Ignored if composer exist and is enabled */
-	scene?: Scene,
+	scene?: Scene;
 	/** Camera. If none provided, scene activeCamera will be used. */
-	camera?: Camera,
+	camera?: Camera;
 	/** Viewport. If none provided, The whole canvas will be used. */
-	viewport?: Viewport,
+	viewport?: Viewport;
 	/** Render a composer instead of a scene. */
-	composer?: Composer,
+	composer?: Composer;
 	/** Enable rendering. Default to true. */
 	enabled?: boolean;
 	/** View layer. Higher values are in front of others. Default to 0. */
@@ -112,6 +131,40 @@ export type CanvasView = {
 	clearDepth?: boolean;
 	/** Clear stencil buffer before rendering. Default to false. */
 	clearStencil?: boolean;
+
+	constructor(params: {
+		/** View name.  */
+		name: string,
+		/** Rendered scene. Ignored if composer exist and is enabled */
+		scene?: Scene,
+		/** Camera. If none provided, scene activeCamera will be used. */
+		camera?: Camera,
+		/** Viewport. If none provided, The whole canvas will be used. */
+		viewport?: Viewport,
+		/** Render a composer instead of a scene. */
+		composer?: Composer,
+		/** Enable rendering. Default to true. */
+		enabled?: boolean,
+		/** View layer. Higher values are in front of others. Default to 0. */
+		layer?: number,
+		/** Clear color buffer before rendering. Default to false. */
+		clearColor?: boolean,
+		/** Clear depth buffer before rendering. Default to false. */
+		clearDepth?: boolean,
+		/** Clear stencil buffer before rendering. Default to false. */
+		clearStencil?: boolean,
+	}) {
+		this.name = params.name;
+		this.scene = params.scene;
+		this.camera = params.camera;
+		this.viewport = params.viewport;
+		this.composer = params.composer;
+		this.enabled = params.enabled;
+		this.layer = params.layer;
+		this.clearColor = params.clearColor;
+		this.clearDepth = params.clearDepth;
+		this.clearStencil = params.clearStencil;
+	}
 }
 
 /**
@@ -299,17 +352,18 @@ class Graphics {
 				}
 			} else if (options.views) {
 				useLayout = 'default';
-				const layout: CanvasLayout = { name: useLayout, views: options.views };
+				const layout: CanvasLayout = new CanvasLayout(useLayout, options.views);//{ name: useLayout, views: options.views };
 				layouts.set(layout.name, layout);
 			} else {
 				useLayout = 'default';
 				const scene = options.scene;
 				if (scene) {
-					const layout: CanvasLayout = { name: useLayout, views: [] };
+					const layout: CanvasLayout = new CanvasLayout(useLayout);//{ name: useLayout, views: [] };
 					if (scene instanceof Scene) {
-						layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
+						//layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
+						layout.addView(new CanvasView({ name: 'all', scene: scene, viewport: new Viewport() }));
 					} else {
-						layout.views.push(scene);
+						layout.addView(scene);//views.push(scene);
 					}
 					layouts.set(layout.name, layout);
 				}
@@ -569,8 +623,8 @@ class Graphics {
 		}
 
 		// TODO: optimize: sort once
-		layout.views.sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0));
-		for (const canvasScene of layout.views) {
+		[...layout.views.entries()].sort((a, b) => (a[1].layer ?? 0) - (b[1].layer ?? 0));
+		for (const [, canvasScene] of layout.views) {
 			if (canvasScene.enabled === false) {
 				continue;
 			}
