@@ -28440,7 +28440,7 @@ class Source2ParticleManagerClass {
 const Source2ParticleManager = new Source2ParticleManagerClass();
 
 var _a$2;
-const MAX_ANIMATIONS = 2;
+const MAX_ANIMATIONS = 3;
 let dataListId = 0;
 function getDataListId() {
     return `animations-datalist${++dataListId}`;
@@ -47955,7 +47955,7 @@ class Source1TextureManagerClass {
         path = path.toLowerCase();
         const texture = this.#texturesList.get(repository, path);
         if (texture) {
-            return texture; //.getFrame(frame);//TODOv3: add frame back
+            return texture.getFrame(frame);
         }
         const pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
         //const fullPath = repository + pathWithMaterials;

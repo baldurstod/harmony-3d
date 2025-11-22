@@ -8,7 +8,7 @@ import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
 import { SceneExplorer } from './sceneexplorer';
 
-const MAX_ANIMATIONS = 2;
+const MAX_ANIMATIONS = 3;
 
 let dataListId = 0;
 function getDataListId() {

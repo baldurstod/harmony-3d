@@ -6862,7 +6862,7 @@ declare class Channel {
                           constructor();
                           getTexture(repository: string, path: string, needCubeMap?: boolean, srgb?: boolean): AnimatedTexture | null;
                           getVtf(repository: string, path: string): Promise<Source1Vtf | null>;
-                          getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
+                          getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null | undefined>;
                           getInternalTextureName(): string;
                           addInternalTexture(repository: string, texture?: AnimatedTexture): {
                               name: string;
