@@ -121,7 +121,7 @@ export class SceneExplorerEntity extends HTMLElement {
 								}),
 							],
 							events: {
-								change: (event: Event) => (this.#entity as unknown as Lockable)?.setLocked((event.target as HTMLHarmonyToggleButtonElement).state),
+								change: (event: Event) => (this.#entity as unknown as Lockable)?.lockAll((event.target as HTMLHarmonyToggleButtonElement).state),
 							}
 						}) as HTMLHarmonyToggleButtonElement,
 						this.#htmlReset = createElement('div', {

@@ -455,8 +455,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 
 		for (const bone of skeleton._bones) {
-			if (!bone.locked) {
+			if (!bone.lockPosition) {
 				bone.position = bone.tempPosition;
+			}
+			if (!bone.lockRotation) {
 				bone.quaternion = bone.tempQuaternion;
 			}
 		}

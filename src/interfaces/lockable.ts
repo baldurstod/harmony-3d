@@ -1,5 +1,9 @@
 export interface Lockable {
 	isLockable: true;
-	setLocked: (locked: boolean) => void;
-	isLocked: () => boolean;
+
+	lockPosition: boolean;
+	lockRotation: boolean;
+	lockScale: boolean;
+	isAnyLocked: () => boolean;
+	lockAll: (locked: boolean) => void;
 }

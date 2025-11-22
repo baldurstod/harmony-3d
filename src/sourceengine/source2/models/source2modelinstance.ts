@@ -246,17 +246,21 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 
 				const propBone = this.#skeleton.getBoneByName(boneName);
 				if (propBone) {
-					if (!propBone.locked) {
-						propBone.quaternion = pos.Angle || identityQuat;
+					if (!propBone.lockPosition) {
 						propBone.position = pos.Position || identityVec3;
+					}
+					if (!propBone.lockRotation) {
+						propBone.quaternion = pos.Angle || identityQuat;
 					}
 				}
 			}
 		} else {
 			for (const bone of this.#skeleton.bones) {
-				if (!bone.locked) {
-					bone.quaternion = bone.refQuaternion;
+				if (!bone.lockPosition) {
 					bone.position = bone.refPosition;
+				}
+				if (!bone.lockRotation) {
+					bone.quaternion = bone.refQuaternion;
 				}
 			}
 		}

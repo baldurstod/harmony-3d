@@ -2351,11 +2351,10 @@ class Entity {
     _parent = null;
     materialsParams = {};
     isRenderable = false;
-    lockPos = false;
-    lockRot = false;
-    //lockScale = false;
+    lockPos = false; // TODO: remove
+    lockRot = false; // TODO: remove
     drawOutline = false;
-    locked = false; // Prevents updates from animation system
+    // Prevents updates from animation system
     lockPosition = false;
     lockRotation = false;
     lockScale = false;
@@ -2803,30 +2802,30 @@ class Entity {
     }
     rotateX(rad) {
         quat.rotateX(this._quaternion, this._quaternion, rad);
-        this.locked = true;
+        this.lockRotation = true;
     }
     rotateY(rad) {
         quat.rotateY(this._quaternion, this._quaternion, rad);
-        this.locked = true;
+        this.lockRotation = true;
     }
     rotateZ(rad) {
         quat.rotateZ(this._quaternion, this._quaternion, rad);
-        this.locked = true;
+        this.lockRotation = true;
     }
     rotateGlobalX(rad) {
         quat.rotateX(tempQuat$c, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$c, this._quaternion);
-        this.locked = true;
+        this.lockRotation = true;
     }
     rotateGlobalY(rad) {
         quat.rotateY(tempQuat$c, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$c, this._quaternion);
-        this.locked = true;
+        this.lockRotation = true;
     }
     rotateGlobalZ(rad) {
         quat.rotateZ(tempQuat$c, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$c, this._quaternion);
-        this.locked = true;
+        this.lockRotation = true;
     }
     /**
      * Makes this object look at the specified location.
@@ -9308,7 +9307,7 @@ class Manipulator extends Entity {
         vec3.add(tempVec3$p, this.#startPosition, tempVec3$p);
         if (this._parent) {
             this._parent.setWorldPosition(tempVec3$p);
-            this._parent.locked = true;
+            this._parent.lockPosition = true;
         }
         else {
             this.setWorldPosition(tempVec3$p);
@@ -9343,7 +9342,7 @@ class Manipulator extends Entity {
         quat.mul(translationManipulatorTempQuat, translationManipulatorTempQuat, this.#startLocalQuaternion);
         if (this._parent) {
             this._parent.quaternion = translationManipulatorTempQuat;
-            this._parent.locked = true;
+            this._parent.lockRotation = true;
         }
         else {
             this.quaternion = translationManipulatorTempQuat;
@@ -9380,7 +9379,7 @@ class Manipulator extends Entity {
         }
         if (this._parent) {
             this._parent.scale = vec3.mul(v3, v3, this.#parentStartScale);
-            this._parent.locked = true;
+            this._parent.lockScale = true;
         }
     }
     #computeTranslationPosition(out, x, y, width, height) {
@@ -17910,22 +17909,22 @@ class Bone extends Entity {
         return false;
         //return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
     }
-    setLocked(locked) {
+    lockAll(locked) {
         this.lockPosition = locked;
         this.lockRotation = locked;
         this.lockScale = locked;
     }
-    isLocked() {
-        return this.lockPosition && this.lockRotation && this.lockScale;
+    isAnyLocked() {
+        return this.lockPosition || this.lockRotation || this.lockScale;
     }
     reset() {
         vec3.zero(this._position);
         quat.identity(this._quaternion);
     }
     buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), this.locked ? {
+        return Object.assign(super.buildContextMenu(), this.isAnyLocked() ? {
             Bone_1: null,
-            unlock: { i18n: '#unlock', f: (entity) => entity.locked = false },
+            unlock: { i18n: '#unlock', f: (entity) => entity.lockAll(false) },
         } : null);
     }
     toJSON() {
@@ -27221,18 +27220,22 @@ class Source2ModelInstance extends Entity {
                 const boneName = pos.name.toLowerCase();
                 const propBone = this.#skeleton.getBoneByName(boneName);
                 if (propBone) {
-                    if (!propBone.locked) {
-                        propBone.quaternion = pos.Angle || identityQuat;
+                    if (!propBone.lockPosition) {
                         propBone.position = pos.Position || identityVec3$1;
+                    }
+                    if (!propBone.lockRotation) {
+                        propBone.quaternion = pos.Angle || identityQuat;
                     }
                 }
             }
         }
         else {
             for (const bone of this.#skeleton.bones) {
-                if (!bone.locked) {
-                    bone.quaternion = bone.refQuaternion;
+                if (!bone.lockPosition) {
                     bone.position = bone.refPosition;
+                }
+                if (!bone.lockRotation) {
+                    bone.quaternion = bone.refQuaternion;
                 }
             }
         }
@@ -28542,7 +28545,7 @@ class SceneExplorerEntity extends HTMLElement {
                                 }),
                             ],
                             events: {
-                                change: (event) => this.#entity?.setLocked(event.target.state),
+                                change: (event) => this.#entity?.lockAll(event.target.state),
                             }
                         }),
                         this.#htmlReset = createElement('div', {
@@ -39271,9 +39274,11 @@ class SourceAnimation {
             */
             let b = dynamicPropBones[boneIndex];
             if (b) {
-                if (!b.locked) {
-                    b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
+                if (!b.lockPosition) {
                     b.position = posRemoveMeMe ?? b._initialPosition;
+                }
+                if (!b.lockRotation) {
+                    b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
                 }
             }
             else {
@@ -40464,8 +40469,10 @@ class Source1ModelInstance extends Entity {
             }*/
         }
         for (const bone of skeleton._bones) {
-            if (!bone.locked) {
+            if (!bone.lockPosition) {
                 bone.position = bone.tempPosition;
+            }
+            if (!bone.lockRotation) {
                 bone.quaternion = bone.tempQuaternion;
             }
         }

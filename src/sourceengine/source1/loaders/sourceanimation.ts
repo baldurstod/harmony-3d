@@ -258,9 +258,11 @@ export class SourceAnimation {
 
 			let b = dynamicPropBones[boneIndex];
 			if (b) {
-				if (!b.locked) {
-					b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
+				if (!b.lockPosition) {
 					b.position = posRemoveMeMe ?? b._initialPosition;
+				}
+				if (!b.lockRotation) {
+					b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
 				}
 			} else {
 				throw 'fix me';

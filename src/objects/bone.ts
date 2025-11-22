@@ -298,15 +298,14 @@ export class Bone extends Entity implements Lockable {
 		//return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
 	}
 
-	setLocked(locked: boolean) {
+	lockAll(locked: boolean): void {
 		this.lockPosition = locked;
 		this.lockRotation = locked;
 		this.lockScale = locked;
 	}
 
-
-	isLocked(): boolean {
-		return this.lockPosition && this.lockRotation && this.lockScale;
+	isAnyLocked(): boolean {
+		return this.lockPosition || this.lockRotation || this.lockScale;
 	}
 
 	reset() {
@@ -315,9 +314,9 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	buildContextMenu() {
-		return Object.assign(super.buildContextMenu(), this.locked ? {
+		return Object.assign(super.buildContextMenu(), this.isAnyLocked() ? {
 			Bone_1: null,
-			unlock: { i18n: '#unlock', f: (entity: Bone) => entity.locked = false },
+			unlock: { i18n: '#unlock', f: (entity: Bone) => entity.lockAll(false) },
 		} : null);
 	}
 

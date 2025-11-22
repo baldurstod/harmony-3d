@@ -85,11 +85,10 @@ export class Entity {
 	_parent: Entity | null = null;
 	materialsParams: DynamicParams = {};
 	isRenderable = false;
-	lockPos = false;
-	lockRot = false;
-	//lockScale = false;
+	lockPos = false;// TODO: remove
+	lockRot = false;// TODO: remove
 	drawOutline = false;
-	locked = false; // Prevents updates from animation system
+	// Prevents updates from animation system
 	lockPosition = false;
 	lockRotation = false;
 	lockScale = false;
@@ -602,35 +601,35 @@ export class Entity {
 
 	rotateX(rad: number): void {
 		quat.rotateX(this._quaternion, this._quaternion, rad);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	rotateY(rad: number): void {
 		quat.rotateY(this._quaternion, this._quaternion, rad);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	rotateZ(rad: number): void {
 		quat.rotateZ(this._quaternion, this._quaternion, rad);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	rotateGlobalX(rad: number): void {
 		quat.rotateX(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	rotateGlobalY(rad: number): void {
 		quat.rotateY(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	rotateGlobalZ(rad: number): void {
 		quat.rotateZ(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
-		this.locked = true;
+		this.lockRotation = true;
 	}
 
 	/**

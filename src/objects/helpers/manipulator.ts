@@ -488,7 +488,7 @@ export class Manipulator extends Entity {
 		vec3.add(tempVec3, this.#startPosition, tempVec3);
 		if (this._parent) {
 			this._parent.setWorldPosition(tempVec3);
-			this._parent.locked = true;
+			this._parent.lockPosition = true;
 		} else {
 			this.setWorldPosition(tempVec3);
 		}
@@ -529,7 +529,7 @@ export class Manipulator extends Entity {
 
 		if (this._parent) {
 			this._parent.quaternion = translationManipulatorTempQuat;
-			this._parent.locked = true;
+			this._parent.lockRotation = true;
 		} else {
 			this.quaternion = translationManipulatorTempQuat;
 		}
@@ -569,7 +569,7 @@ export class Manipulator extends Entity {
 
 		if (this._parent) {
 			this._parent.scale = vec3.mul(v3, v3, this.#parentStartScale);
-			this._parent.locked = true;
+			this._parent.lockScale = true;
 		}
 	}
 

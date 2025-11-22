@@ -376,14 +376,14 @@ export declare class Bone extends Entity implements Lockable {
     set boneId(boneId: number);
     get boneId(): number;
     isProcedural(): boolean;
-    setLocked(locked: boolean): void;
-    isLocked(): boolean;
+    lockAll(locked: boolean): void;
+    isAnyLocked(): boolean;
     reset(): void;
     buildContextMenu(): HarmonyMenuItemsDict & {
         Bone_1: null;
         unlock: {
             i18n: string;
-            f: (entity: Bone) => false;
+            f: (entity: Bone) => void;
         };
     };
     toJSON(): JSONObject;
@@ -1600,7 +1600,6 @@ declare class Channel {
                       lockPos: boolean;
                       lockRot: boolean;
                       drawOutline: boolean;
-                      locked: boolean;
                       lockPosition: boolean;
                       lockRotation: boolean;
                       lockScale: boolean;
@@ -3395,8 +3394,11 @@ declare class Channel {
 
                       export declare interface Lockable {
                           isLockable: true;
-                          setLocked: (locked: boolean) => void;
-                          isLocked: () => boolean;
+                          lockPosition: boolean;
+                          lockRotation: boolean;
+                          lockScale: boolean;
+                          isAnyLocked: () => boolean;
+                          lockAll: (locked: boolean) => void;
                       }
 
                       export declare class LockToBone extends Source1ParticleOperator {
