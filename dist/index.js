@@ -2800,6 +2800,9 @@ class Entity {
     translateZ(distance) {
         return this.translateOnAxis(Z_VECTOR$2, distance);
     }
+    resetRotation() {
+        quat.identity(this._quaternion);
+    }
     rotateX(rad) {
         quat.rotateX(this._quaternion, this._quaternion, rad);
         this.lockRotation = true;

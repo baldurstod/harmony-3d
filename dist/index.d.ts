@@ -8,6 +8,7 @@ import { JSONObject } from 'harmony-types';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
+import { Millisecond } from 'harmony-types';
 import { MyEventTarget } from 'harmony-utils';
 import { quat } from 'gl-matrix';
 import { ReadonlyQuat } from 'gl-matrix';
@@ -1683,6 +1684,7 @@ declare class Channel {
                       translateX(distance: number): Entity;
                       translateY(distance: number): Entity;
                       translateZ(distance: number): Entity;
+                      resetRotation(): void;
                       rotateX(rad: number): void;
                       rotateY(rad: number): void;
                       rotateZ(rad: number): void;
@@ -2764,7 +2766,7 @@ declare class Channel {
 
                       export declare class GraphicsEvents extends StaticEventTarget {
                           static readonly isGraphicsEvents: true;
-                          static tick(delta: number, time: number, speed: number): void;
+                          static tick(delta: number, time: Millisecond, speed: number): void;
                           static resize(width: number, height: number): void;
                           static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
@@ -2798,7 +2800,7 @@ declare class Channel {
 
                       export declare interface GraphicTickEvent {
                           delta: number;
-                          time: number;
+                          time: Millisecond;
                           speed: number;
                       }
 

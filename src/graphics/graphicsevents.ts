@@ -1,3 +1,4 @@
+import { Millisecond } from 'harmony-types';
 import { StaticEventTarget } from 'harmony-utils';
 import { Entity } from '../entities/entity';
 
@@ -19,7 +20,7 @@ export enum GraphicsEvent {
 
 export interface GraphicTickEvent {
 	delta: number,
-	time: number,
+	time: Millisecond,
 	speed: number,
 }
 
@@ -51,7 +52,7 @@ export interface GraphicKeyboardEventData {
 export class GraphicsEvents extends StaticEventTarget {
 	static readonly isGraphicsEvents: true = true;
 
-	static tick(delta: number, time: number, speed: number) {
+	static tick(delta: number, time: Millisecond, speed: number) {
 		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
 	}
 

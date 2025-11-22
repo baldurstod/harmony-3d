@@ -599,6 +599,10 @@ export class Entity {
 		return this.translateOnAxis(Z_VECTOR, distance);
 	}
 
+	resetRotation() {
+		quat.identity(this._quaternion);
+	}
+
 	rotateX(rad: number): void {
 		quat.rotateX(this._quaternion, this._quaternion, rad);
 		this.lockRotation = true;
