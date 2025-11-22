@@ -10,6 +10,14 @@ import { Source1VtfLoader } from '../loaders/source1vtfloader';
 import { Source1Vtf } from './source1vtf';
 
 let internalTextureId = 0;
+
+function cleanupPath(path: string): string {
+	path = path.replace(/\.vtf$/, '');
+	path = path.replace(/\.psd/, '');
+	path = path.replace('\\', '/');
+	return path.toLowerCase();
+}
+
 class Source1TextureManagerClass {
 	#texturesList = new Map2<string, string, AnimatedTexture>();
 	#vtfList = new Map2<string, string, Source1Vtf>();
@@ -52,9 +60,7 @@ class Source1TextureManagerClass {
 		if (false && TESTING && needCubeMap) {
 			return this.#defaultTextureCube;
 		}
-		path = path.replace(/\.vtf$/, '');
-		path = path.replace(/\.psd/, '');
-		path = path.toLowerCase();
+		path = cleanupPath(path);
 
 		const texture = this.#texturesList.get(repository, path);
 		if (texture !== undefined) {
@@ -85,9 +91,7 @@ class Source1TextureManagerClass {
 
 	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true) {
 		frame = Math.floor(frame);
-		path = path.replace(/\.vtf$/, '');
-		path = path.replace(/\.psd/, '');
-		path = path.toLowerCase();
+		path = cleanupPath(path);
 
 		const texture = this.#texturesList.get(repository, path);
 		if (texture) {

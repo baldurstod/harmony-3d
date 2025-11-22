@@ -47890,6 +47890,12 @@ function str2abABGR(reader, start, length) {
 }
 
 let internalTextureId = 0;
+function cleanupPath(path) {
+    path = path.replace(/\.vtf$/, '');
+    path = path.replace(/\.psd/, '');
+    path = path.replace('\\', '/');
+    return path.toLowerCase();
+}
 class Source1TextureManagerClass {
     #texturesList = new Map2();
     #vtfList = new Map2();
@@ -47922,9 +47928,7 @@ class Source1TextureManagerClass {
         return vtf;
     }
     #getTexture(repository, path, needCubeMap, srgb = true, allocatedTexture) {
-        path = path.replace(/\.vtf$/, '');
-        path = path.replace(/\.psd/, '');
-        path = path.toLowerCase();
+        path = cleanupPath(path);
         const texture = this.#texturesList.get(repository, path);
         if (texture !== undefined) {
             return texture;
@@ -47950,9 +47954,7 @@ class Source1TextureManagerClass {
     }
     async getTextureAsync(repository, path, frame, needCubeMap, defaultTexture, srgb = true) {
         frame = Math.floor(frame);
-        path = path.replace(/\.vtf$/, '');
-        path = path.replace(/\.psd/, '');
-        path = path.toLowerCase();
+        path = cleanupPath(path);
         const texture = this.#texturesList.get(repository, path);
         if (texture) {
             return texture.getFrame(frame);
