@@ -11486,6 +11486,9 @@ class Graphics {
                 return null;
             }
             attributes = new CanvasAttributes(options.name, canvas, bipmapContext, options.autoResize ?? false);
+            attributes.width = options.width;
+            attributes.height = options.height;
+            attributes.useLayout = options.useLayout;
             const layouts = attributes.layouts;
             let useLayout;
             if (options.layouts) {
@@ -11690,7 +11693,7 @@ class Graphics {
         }
     }
     static #renderMultiCanvas(canvas, delta, context) {
-        if (!canvas.canvas.checkVisibility()) {
+        if (!context.forceRendering && !canvas.canvas.checkVisibility()) {
             return;
         }
         if (canvas.useLayout === undefined) {
@@ -11698,7 +11701,7 @@ class Graphics {
         }
         if (this.#offscreenCanvas) {
             const htmlCanvas = canvas.canvas;
-            const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode.host;
+            const parentElement = htmlCanvas.parentElement ?? htmlCanvas.parentNode?.host;
             let width;
             let height;
             if (canvas.autoResize && parentElement) {
@@ -12147,11 +12150,13 @@ class Graphics {
         }
         try {
             this.#allowTransfertBitmap = false;
-            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height });
+            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height, forceRendering: true });
             this._savePicture(filename, type, quality);
             this.#allowTransfertBitmap = true;
         }
-        catch { }
+        catch (e) {
+            console.info(e);
+        }
         return true;
     }
     static async savePictureAsFile(filename, type, quality) {

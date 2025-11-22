@@ -76,6 +76,10 @@ export interface AddCanvasOptions {
 	layouts?: CanvasLayout[];
 	/** The layout to render */
 	useLayout?: string;
+	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
+	width?: number;
+	/** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
+	height?: number;
 }
 
 /**
@@ -342,6 +346,9 @@ class Graphics {
 				return null;
 			}
 			attributes = new CanvasAttributes(options.name, canvas, bipmapContext, options.autoResize ?? false);
+			attributes.width = options.width;
+			attributes.height = options.height;
+			attributes.useLayout = options.useLayout;
 
 			const layouts = attributes.layouts;
 			let useLayout: string | undefined;
@@ -386,7 +393,6 @@ class Graphics {
 		} catch (e) { }
 		return null;
 	}
-
 
 	static removeCanvas(name: string): void {
 		const canvasAttributes = this.#canvases.get(name);
@@ -585,7 +591,7 @@ class Graphics {
 			WebGLStats.beginRender();
 		}
 
-		if (!canvas.canvas.checkVisibility()) {
+		if (!context.forceRendering && !canvas.canvas.checkVisibility()) {
 			return;
 		}
 
@@ -595,7 +601,7 @@ class Graphics {
 
 		if (this.#offscreenCanvas) {
 			const htmlCanvas = canvas.canvas;
-			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as ShadowRoot).host;
+			const parentElement = htmlCanvas.parentElement ?? (htmlCanvas.parentNode as (ShadowRoot | null))?.host;
 			let width: number;
 			let height: number;
 			if (canvas.autoResize && parentElement) {
@@ -1149,10 +1155,12 @@ class Graphics {
 
 		try {
 			this.#allowTransfertBitmap = false;
-			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height });
+			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height, forceRendering: true });
 			this._savePicture(filename, type, quality);
 			this.#allowTransfertBitmap = true;
-		} catch { }
+		} catch (e) {
+			console.info(e);
+		}
 
 		return true;
 	}

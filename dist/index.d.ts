@@ -67,6 +67,10 @@ export declare interface AddCanvasOptions {
     layouts?: CanvasLayout[];
     /** The layout to render */
     useLayout?: string;
+    /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
+    width?: number;
+    /** Canvas height. Ignored if autoResize is set to true or a height parameter is passed to renderMultiCanvas() */
+    height?: number;
 }
 
 export declare function addIncludeSource(name: string, source?: string): void;
@@ -5424,6 +5428,8 @@ declare class Channel {
                           height?: number;
                           /** Transfert the image bitmap after rendering to the offscreen canvas, Default to true. Ignored if Graphics is initialized with useOffscreenCanvas = true */
                           transferBitmap?: boolean;
+                          /** Force rendering even when the canvas is not visible. Default to false. */
+                          forceRendering?: boolean;
                       }
 
                       export declare class RenderDeferredLight extends RenderBase {
