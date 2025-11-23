@@ -629,8 +629,8 @@ class Graphics {
 		}
 
 		// TODO: optimize: sort once
-		[...layout.views.entries()].sort((a, b) => (a[1].layer ?? 0) - (b[1].layer ?? 0));
-		for (const [, canvasScene] of layout.views) {
+		const sortedViews = [...layout.views.entries()].sort((a, b) => (a[1].layer ?? 0) - (b[1].layer ?? 0));
+		for (const [, canvasScene] of sortedViews) {
 			if (canvasScene.enabled === false) {
 				continue;
 			}
