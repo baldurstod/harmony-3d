@@ -2502,7 +2502,14 @@ class Entity {
     get positionAsString() {
         return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
     }
+    // TODO: deprecate setQuaternion, getQuaternion
     setQuaternion(quaternion) {
+        this.setOrientation(quaternion);
+    }
+    getQuaternion(quaternion = quat.create()) {
+        return this.getOrientation(quaternion);
+    }
+    setOrientation(quaternion) {
         if (this.lockRotation) {
             return;
         }
@@ -2512,7 +2519,7 @@ class Entity {
             EntityObserver.propertyChanged(this, 'quaternion', oldValue, this._quaternion);
         }
     }
-    getQuaternion(quaternion = quat.create()) {
+    getOrientation(quaternion = quat.create()) {
         return quat.copy(quaternion, this._quaternion);
     }
     /**

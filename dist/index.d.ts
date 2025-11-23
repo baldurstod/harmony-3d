@@ -1634,7 +1634,9 @@ declare class Channel {
                       getWorldScale(vec?: vec3): vec3;
                       get positionAsString(): string;
                       setQuaternion(quaternion: ReadonlyQuat): void;
-                      getQuaternion(quaternion?: quat): vec4;
+                      getQuaternion(quaternion?: quat): quat;
+                      setOrientation(quaternion: ReadonlyQuat): void;
+                      getOrientation(quaternion?: quat): quat;
                       /**
                        * @deprecated Please use `setQuaternion` instead.
                        */
