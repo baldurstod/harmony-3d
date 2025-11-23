@@ -28934,6 +28934,15 @@ class SceneExplorer {
         }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
+        GraphicsEvents.addEventListener(GraphicsEvent.MouseClick, (event) => {
+            if (Graphics$1.dragging) {
+                return;
+            }
+            const entity = event.detail.entity;
+            if (entity) {
+                this.selectEntity(entity, true);
+            }
+        });
     }
     /**
      * @deprecated Please use `setScene` instead.

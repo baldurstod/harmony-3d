@@ -9,8 +9,8 @@ import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Entity } from '../entities/entity';
 import { EntityObserver, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
 import { KeepOnlyLastChild } from '../entities/keeponlylastchild';
-import { GraphicsEvents } from '../graphics/graphicsevents';
-import { ContextObserver } from '../helpers/contextobserver';
+import { Graphics } from '../graphics/graphics2';
+import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
 import { AmbientLight } from '../lights/ambientlight';
 import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
@@ -128,6 +128,17 @@ export class SceneExplorer {
 
 		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent<EntityObserverPropertyChangedEvent>).detail));
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
+
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseClick, (event: Event) => {
+			if (Graphics.dragging) {
+				return;
+			}
+
+			const entity = (event as CustomEvent<GraphicMouseEventData>).detail.entity;
+			if (entity) {
+				this.selectEntity(entity, true);
+			}
+		});
 	}
 
 	/**
