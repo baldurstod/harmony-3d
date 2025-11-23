@@ -2355,6 +2355,7 @@ class Entity {
     lockRot = false; // TODO: remove
     drawOutline = false;
     // Prevents updates from animation system
+    locked = false;
     lockPosition = false;
     lockRotation = false;
     lockScale = false;
@@ -2412,7 +2413,7 @@ class Entity {
         return this.#name;
     }
     setPosition(position) {
-        if (this.lockPosition) {
+        if (this.locked) {
             return;
         }
         const oldValue = vec3.copy(tempVec3_4$1, this._position);
@@ -2510,7 +2511,7 @@ class Entity {
         return this.getOrientation(quaternion);
     }
     setOrientation(quaternion) {
-        if (this.lockRotation) {
+        if (this.locked) {
             return;
         }
         const oldValue = quat.copy(tempQuat3, this._quaternion);
@@ -2538,7 +2539,7 @@ class Entity {
         return `${this._quaternion[0].toFixed(2)} ${this._quaternion[1].toFixed(2)} ${this._quaternion[2].toFixed(2)} ${this._quaternion[3].toFixed(2)}`;
     }
     set scale(scale) {
-        if (this.lockScale) {
+        if (this.locked) {
             return;
         }
         vec3.copy(this._scale, scale);
@@ -28560,7 +28561,11 @@ class SceneExplorerEntity extends HTMLElement {
                                 }),
                             ],
                             events: {
-                                change: (event) => this.#entity?.lockAll(event.target.state),
+                                change: (event) => {
+                                    if (this.#entity) {
+                                        this.#entity.locked = event.target.state;
+                                    }
+                                },
                             }
                         }),
                         this.#htmlReset = createElement('div', {

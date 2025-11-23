@@ -1605,6 +1605,7 @@ declare class Channel {
                       lockPos: boolean;
                       lockRot: boolean;
                       drawOutline: boolean;
+                      locked: boolean;
                       lockPosition: boolean;
                       lockRotation: boolean;
                       lockScale: boolean;
@@ -3402,11 +3403,7 @@ declare class Channel {
 
                       export declare interface Lockable {
                           isLockable: true;
-                          lockPosition: boolean;
-                          lockRotation: boolean;
-                          lockScale: boolean;
-                          isAnyLocked: () => boolean;
-                          lockAll: (locked: boolean) => void;
+                          locked: boolean;
                       }
 
                       export declare class LockToBone extends Source1ParticleOperator {

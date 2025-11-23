@@ -89,6 +89,7 @@ export class Entity {
 	lockRot = false;// TODO: remove
 	drawOutline = false;
 	// Prevents updates from animation system
+	locked = false;
 	lockPosition = false;
 	lockRotation = false;
 	lockScale = false;
@@ -153,7 +154,7 @@ export class Entity {
 	}
 
 	setPosition(position: ReadonlyVec3): void {
-		if (this.lockPosition) {
+		if (this.locked) {
 			return;
 		}
 		const oldValue = vec3.copy(tempVec3_4, this._position);
@@ -260,7 +261,7 @@ export class Entity {
 	}
 
 	setOrientation(quaternion: ReadonlyQuat): void {
-		if (this.lockRotation) {
+		if (this.locked) {
 			return;
 		}
 		const oldValue = quat.copy(tempQuat3, this._quaternion);
@@ -293,7 +294,7 @@ export class Entity {
 	}
 
 	set scale(scale) {
-		if (this.lockScale) {
+		if (this.locked) {
 			return;
 		}
 		vec3.copy(this._scale, scale);
