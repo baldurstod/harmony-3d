@@ -89,13 +89,13 @@ class Source1TextureManagerClass {
 		return this.#texturesList.get(repository, path) ?? null;
 	}
 
-	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true) {
+	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true): Promise<Texture | null> {
 		frame = Math.floor(frame);
 		path = cleanupPath(path);
 
 		const texture = this.#texturesList.get(repository, path);
 		if (texture) {
-			return texture.getFrame(frame);
+			return texture.getFrame(frame) ?? null;
 		}
 		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
 		//const fullPath = repository + pathWithMaterials;

@@ -47995,7 +47995,7 @@ class Source1TextureManagerClass {
         path = cleanupPath(path);
         const texture = this.#texturesList.get(repository, path);
         if (texture) {
-            return texture.getFrame(frame);
+            return texture.getFrame(frame) ?? null;
         }
         const pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
         //const fullPath = repository + pathWithMaterials;
