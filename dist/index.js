@@ -2758,7 +2758,9 @@ class Entity {
         if (this.#children.has(child)) {
             return null;
         }
-        if (this.isParent(child)) ;
+        if (this.isParent(child)) {
+            return null;
+        }
         this.#children.add(child);
         EntityObserver.childAdded(this, child);
         child.#setParent(this);
@@ -28460,7 +28462,7 @@ function getDataListId() {
 }
 class SceneExplorerEntity extends HTMLElement {
     #doOnce;
-    #entity;
+    #entity = null;
     #htmlHeader;
     #htmlContent;
     #htmlAnimations;
@@ -28476,7 +28478,7 @@ class SceneExplorerEntity extends HTMLElement {
     static #entitiesHTML = new Map();
     static #selectedEntity;
     static #explorer;
-    static #draggedEntity;
+    static #draggedEntity = null;
     static {
         EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event) => _a$2.#expandEntityChilds(event.detail.parent));
         EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event) => _a$2.#expandEntityChilds(event.detail.parent));
@@ -28623,7 +28625,7 @@ class SceneExplorerEntity extends HTMLElement {
                 }
             });
             this.addEventListener('dragend', () => {
-                _a$2.#draggedEntity = undefined;
+                _a$2.#draggedEntity = null;
             });
         }
     }
@@ -28883,7 +28885,7 @@ function getSceneExplorer() {
 class SceneExplorer {
     static #instance;
     #scene;
-    #selectedEntity;
+    #selectedEntity = null;
     #manipulator;
     #skeletonHelper = new SkeletonHelper({ visible: false });
     #htmlProperties;
@@ -29226,7 +29228,7 @@ class SceneExplorer {
         return htmlEntityElement;
     }
     selectEntity(entity, scrollIntoView = false) {
-        if (this.#selectedEntity == entity) {
+        if (this.#selectedEntity == entity || entity == this.#manipulator || (entity && entity?.isParent(this.#manipulator))) {
             return;
         }
         this.#selectedEntity = entity;

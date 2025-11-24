@@ -545,6 +545,7 @@ export class Entity {
 			if (DEBUG) {
 				console.info(child, ' is parent of ', this);
 			}
+			return null;
 		}
 
 		this.#children.add(child);

@@ -5849,8 +5849,8 @@ declare class Channel {
                           get scene(): Scene | undefined;
                           get htmlElement(): HTMLElement;
                           applyFilter(): void;
-                          selectEntity(entity: Entity | undefined, scrollIntoView?: boolean): void;
-                          getSelectedEntity(): Entity | undefined;
+                          selectEntity(entity: Entity | null, scrollIntoView?: boolean): void;
+                          getSelectedEntity(): Entity | null;
                           getEntityHtml(entity: Entity): void;
                           showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
                           editMaterial(material: Material): void;

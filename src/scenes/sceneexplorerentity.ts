@@ -17,7 +17,7 @@ function getDataListId() {
 
 export class SceneExplorerEntity extends HTMLElement {
 	#doOnce;
-	#entity?: Entity;
+	#entity: Entity | null = null;
 	#htmlHeader;
 	#htmlContent: HTMLElement;
 	#htmlAnimations?: HTMLElement;
@@ -34,7 +34,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	static #entitiesHTML = new Map<Entity, SceneExplorerEntity>();
 	static #selectedEntity?: SceneExplorerEntity;
 	static #explorer?: SceneExplorer;
-	static #draggedEntity?: Entity;
+	static #draggedEntity: Entity | null = null;
 
 	static {
 		EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent<EntityObserverChildAddedEvent>).detail.parent));
@@ -184,7 +184,7 @@ export class SceneExplorerEntity extends HTMLElement {
 				}
 			});
 			this.addEventListener('dragend', () => {
-				SceneExplorerEntity.#draggedEntity = undefined;
+				SceneExplorerEntity.#draggedEntity = null;
 			});
 		}
 	}

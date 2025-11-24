@@ -73,7 +73,7 @@ export function getSceneExplorer() {
 export class SceneExplorer {
 	static #instance: SceneExplorer;
 	#scene?: Scene;
-	#selectedEntity?: Entity;
+	#selectedEntity: Entity | null = null;
 	#manipulator!: Manipulator;
 	#skeletonHelper = new SkeletonHelper({ visible: false });
 	#htmlProperties!: HTMLElement;
@@ -443,10 +443,11 @@ export class SceneExplorer {
 		return htmlEntityElement;
 	}
 
-	selectEntity(entity: Entity | undefined, scrollIntoView = false) {
-		if (this.#selectedEntity == entity) {
+	selectEntity(entity: Entity | null, scrollIntoView = false) {
+		if (this.#selectedEntity == entity || entity == this.#manipulator || (entity && entity?.isParent(this.#manipulator))) {
 			return;
 		}
+
 		this.#selectedEntity = entity;
 		entity?.addChild(this.#manipulator);
 		entity?.addChild(this.#skeletonHelper);
@@ -466,7 +467,7 @@ export class SceneExplorer {
 		return this.#selectedEntity;
 	}
 
-	#updateEntityElement(entity?: Entity) {
+	#updateEntityElement(entity: Entity | null) {
 		if (entity) {
 			//this.#updateEntityTitle(entity);
 			this.#htmlName.innerText = entity.name ?? (entity.constructor as typeof Entity).getEntityName();
