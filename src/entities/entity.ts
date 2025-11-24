@@ -972,7 +972,7 @@ export class Entity {
 	}
 
 	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
-		throw new Error('override me');
+		//throw new Error('override me');
 	}
 
 	setWireframe(wireframe: number, recursive = true): void {

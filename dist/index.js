@@ -3175,7 +3175,7 @@ class Entity {
         return menu;
     }
     raycast(raycaster, intersections) {
-        throw new Error('override me');
+        //throw new Error('override me');
     }
     setWireframe(wireframe, recursive = true) {
         this.wireframe = wireframe;
@@ -17533,15 +17533,19 @@ class SkeletonHelper extends Entity {
             return;
         }
         this.#clearSkeleton();
-        if (parent.isSkeleton) {
-            this.#skeleton = parent;
+        let current = parent;
+        while (current) {
+            if (current.isSkeleton) {
+                this.#skeleton = current;
+                return;
+            }
+            else if (current.skeleton) {
+                this.#skeleton = current.skeleton;
+                return;
+            }
+            current = current.parent;
         }
-        else if (parent.skeleton) {
-            this.#skeleton = parent.skeleton;
-        }
-        else {
-            this.#skeleton = null;
-        }
+        this.#skeleton = null;
     }
     #clearSkeleton() {
         this.#lines.forEach(value => value.dispose());
@@ -17603,12 +17607,18 @@ class SkeletonHelper extends Entity {
         });
     }
     #mouseMoved(event) {
+        if (Graphics$1.dragging) {
+            return;
+        }
         const picked = this.#pickBone(event);
         if (picked) {
             this.#highlit(picked);
         }
     }
     #mouseUp(event) {
+        if (Graphics$1.dragging) {
+            return;
+        }
         const closest = this.#pickBone(event);
         if (closest) {
             let bone = closest.properties.getObject('bone');
@@ -28936,15 +28946,18 @@ class SceneExplorer {
         }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseClick, (event) => {
-            if (Graphics$1.dragging) {
+        /*
+        GraphicsEvents.addEventListener(GraphicsEvent.MouseClick, (event: Event) => {
+            if (Graphics.dragging) {
                 return;
             }
-            const entity = event.detail.entity;
+
+            const entity = (event as CustomEvent<GraphicMouseEventData>).detail.entity;
             if (entity) {
                 this.selectEntity(entity, true);
             }
         });
+        */
     }
     /**
      * @deprecated Please use `setScene` instead.

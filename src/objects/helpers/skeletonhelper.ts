@@ -1,6 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Entity, EntityParameters } from '../../entities/entity';
-import { Graphics } from '../../graphics/graphics2';
 import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { HasSkeleton } from '../../interfaces/hasskeleton';
 import { LineMaterial } from '../../materials/linematerial';
@@ -12,6 +11,7 @@ import { Scene } from '../../scenes/scene';
 import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
 import { Bone } from '../bone';
 import { Skeleton } from '../skeleton';
+import { Graphics } from '../../graphics/graphics2';
 
 const tempVec3 = vec3.create();
 
@@ -68,13 +68,19 @@ export class SkeletonHelper extends Entity {
 		}
 
 		this.#clearSkeleton();
-		if ((parent as Skeleton).isSkeleton) {
-			this.#skeleton = parent as Skeleton;
-		} else if ((parent as unknown as HasSkeleton).skeleton) {
-			this.#skeleton = (parent as unknown as HasSkeleton).skeleton;
-		} else {
-			this.#skeleton = null;
+
+		let current: Entity | null = parent;
+		while (current) {
+			if ((current as Skeleton).isSkeleton) {
+				this.#skeleton = current as Skeleton;
+				return;
+			} else if ((current as unknown as HasSkeleton).skeleton) {
+				this.#skeleton = (current as unknown as HasSkeleton).skeleton;
+				return;
+			}
+			current = current.parent;
 		}
+		this.#skeleton = null;
 	}
 
 	#clearSkeleton() {
@@ -149,6 +155,9 @@ export class SkeletonHelper extends Entity {
 	}
 
 	#mouseMoved(event: CustomEvent<GraphicMouseEventData>) {
+		if (Graphics.dragging) {
+			return;
+		}
 		const picked = this.#pickBone(event);
 		if (picked) {
 			this.#highlit(picked as Line);
@@ -156,6 +165,9 @@ export class SkeletonHelper extends Entity {
 	}
 
 	#mouseUp(event: CustomEvent<GraphicMouseEventData>) {
+		if (Graphics.dragging) {
+			return;
+		}
 		const closest: Entity | null = this.#pickBone(event);
 		if (closest) {
 			let bone: Bone = closest.properties.getObject('bone') as Bone;
