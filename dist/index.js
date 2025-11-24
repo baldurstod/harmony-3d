@@ -48011,11 +48011,11 @@ class Source1TextureManagerClass {
         }
         return this.#texturesList.get(repository, path)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture); //TODOv3
     }
-    getInternalTextureName() {
+    #getInternalTextureName() {
         return 'source1texturemanager_' + (++internalTextureId);
     }
-    addInternalTexture(repository, texture) {
-        const textureName = this.getInternalTextureName();
+    addInternalTexture(repository, path, texture) {
+        const textureName = path ?? this.#getInternalTextureName();
         texture = texture ?? new AnimatedTexture(); //TODOv3: add params + create animated texture
         this.setTexture(repository, textureName, texture);
         texture.addFrame(0, TextureManager.createTexture());
