@@ -1,7 +1,7 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
 import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
-import { setTimeoutPromise } from 'harmony-utils';
+import { fileToImage, setTimeoutPromise } from 'harmony-utils';
 import { Graphics } from '../../graphics/graphics2';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { TextureManager } from '../../textures/texturemanager';
@@ -17,7 +17,7 @@ import { NodeImageEditorGui } from './nodeimageeditorgui';
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
 
-function dropFiles(evt: DragEvent, node: Node): void {
+async function dropFiles(evt: DragEvent, node: Node): Promise<void> {
 	const files = (evt.target as HTMLInputElement).files; // FileList object
 	if (!files) {
 		return;
@@ -30,36 +30,25 @@ function dropFiles(evt: DragEvent, node: Node): void {
 			continue;
 		}
 
-		const reader = new FileReader();
+		const image = await fileToImage(f);
+		if (image) {
+			const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
 
-		// Closure to capture the file information.
-		reader.onload = (function (theFile) {
-			return function (e) {
-				const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+			if (node instanceof ApplySticker) {
+				texture.wrapS = GL_CLAMP_TO_EDGE;
+				texture.wrapT = GL_CLAMP_TO_EDGE;
+			}
+			texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
-				if (node instanceof ApplySticker) {
-					texture.wrapS = GL_CLAMP_TO_EDGE;
-					texture.wrapT = GL_CLAMP_TO_EDGE;
-				}
-				texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
-
-				const image = new Image();
-				image.onload = () => {
-					TextureManager.fillTextureWithImage(texture, image);
-					(node as ApplySticker | TextureLookup).inputTexture = texture;
-					node.invalidate();
-					node.validate();
-				};
-				image.src = (e.target as FileReader).result?.toString() ?? '';
-			};
-		})(f);
-
-		// Read in the image file as a data URL.
-		reader.readAsDataURL(f);
+			TextureManager.fillTextureWithImage(texture, image);
+			(node as ApplySticker | TextureLookup).inputTexture = texture;
+			node.invalidate();
+			node.validate();
+		}
 	}
 }
 
-function dropFilesSpecular(evt: DragEvent, node: Node): void {
+async function dropFilesSpecular(evt: DragEvent, node: Node): Promise<void> {
 	const files = (evt.target as HTMLInputElement).files; // FileList object
 	if (!files) {
 		return;
@@ -72,35 +61,24 @@ function dropFilesSpecular(evt: DragEvent, node: Node): void {
 			continue;
 		}
 
-		const reader = new FileReader();
+		const image = await fileToImage(f);
+		if (image) {
+			const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
 
-		// Closure to capture the file information.
-		reader.onload = (function (theFile) {
-			return function (e) {
-				const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+			if (node instanceof ApplySticker) {
+				texture.wrapS = GL_CLAMP_TO_EDGE;
+				texture.wrapT = GL_CLAMP_TO_EDGE;
+			}
+			texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
-				if (node instanceof ApplySticker) {
-					texture.wrapS = GL_CLAMP_TO_EDGE;
-					texture.wrapT = GL_CLAMP_TO_EDGE;
-				}
-				texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
-
-				const image = new Image();
-				image.onload = () => {
-					TextureManager.fillTextureWithImage(texture, image);
-					const specular = node.getInput('specular');
-					if (specular) {
-						specular.value = texture;
-					}
-					//node.invalidate();
-					node.validate();
-				};
-				image.src = (e.target as FileReader).result?.toString() ?? '';
-			};
-		})(f);
-
-		// Read in the image file as a data URL.
-		reader.readAsDataURL(f);
+			TextureManager.fillTextureWithImage(texture, image);
+			const specular = node.getInput('specular');
+			if (specular) {
+				specular.value = texture;
+			}
+			//node.invalidate();
+			node.validate();
+		}
 	}
 }
 
