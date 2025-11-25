@@ -96,20 +96,20 @@ export class NodeGui {
 	#html!: HTMLElement;
 	#htmlPreview!: HTMLElement;
 	#htmlRectSelector!: HTMLHarmony2dManipulatorElement;
-	#drag: string = '';
+	#drag = '';
 	#htmlParamsContainer!: HTMLElement;
 	_ioGui = new Map<Input | Output, HTMLElement>();// TODO: set private
-	#refreshTimeout: number = 0;
+	#refreshTimeout = 0;
 	#nodeChanged: () => void;
 	#node: Node;
 	#nodeImageEditorGui: NodeImageEditorGui;
-	#dragStartClientX: number = 0;
-	#dragStartClientY: number = 0;
+	#dragStartClientX = 0;
+	#dragStartClientY = 0;
 	#htmlParams = new Map<string, HTMLElement | HTMLElement[]>();
 	#htmlParamsValue = new Map<HTMLElement, HTMLInputElement>();
 
 	constructor(nodeImageEditorGui: NodeImageEditorGui, node: Node) {
-		this.#nodeChanged = () => {
+		this.#nodeChanged = (): void => {
 			clearTimeout(this.#refreshTimeout);
 			this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);
 		}
@@ -124,15 +124,15 @@ export class NodeGui {
 		this.#html.classList[!expanded ? 'add' : 'remove']('collapsed');
 	}
 
-	get expanded() {
+	get expanded(): boolean {
 		return this.#expanded;
 	}
 
-	get node() {
+	get node(): Node {
 		return this.#node;
 	}
 
-	get html() {
+	get html(): HTMLElement {
 		return this.#html;
 	}
 
@@ -140,7 +140,7 @@ export class NodeGui {
 		this.#nodeImageEditorGui = nodeImageEditorGui;
 	}
 
-	#handlePreviewDragOver(event: DragEvent) {
+	#handlePreviewDragOver(event: DragEvent): void {
 		event.preventDefault();
 		console.log(event);
 		switch (this.#drag) {
@@ -153,7 +153,7 @@ export class NodeGui {
 		}
 	}
 
-	#increasePreviewSize() {
+	#increasePreviewSize(): void {
 		if (this.#node) {
 			this.#node.previewSize *= 2;
 			this.#node.updatePreview();
@@ -161,7 +161,7 @@ export class NodeGui {
 		}
 	}
 
-	#decreasePreviewSize() {
+	#decreasePreviewSize(): void {
 		if (this.#node) {
 			this.#node.previewSize /= 2;
 			this.#node.updatePreview();
@@ -169,7 +169,7 @@ export class NodeGui {
 		}
 	}
 
-	#initHtml() {
+	#initHtml(): void {
 		let htmlInputs: HTMLElement;
 		let htmlOutputs: HTMLElement;
 		this.#html = createElement('div', {
@@ -231,17 +231,17 @@ export class NodeGui {
 
 		if (this.#node.hasPreview) {
 			const htmlSavePicture = createElement('button', { i18n: '#save_picture' });
-			htmlSavePicture.addEventListener('click', () => this.#node.savePicture());
+			htmlSavePicture.addEventListener('click', () => { this.#node.savePicture() });
 			this.#html.append(htmlSavePicture);
 
 			const htmlSaveVTF = createElement('button', { i18n: '#save_vtf' });
-			htmlSaveVTF.addEventListener('click', () => this.#node.saveVTF());
+			htmlSaveVTF.addEventListener('click', () => { this.#node.saveVTF() });
 			this.#html.append(htmlSaveVTF);
 		}
 
 		if ((this.#node instanceof TextureLookup) || this.#node instanceof ApplySticker) {
 			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
-			inputImage.addEventListener('input', (event) => dropFiles(event as DragEvent, this.#node));
+			inputImage.addEventListener('input', (event) => { dropFiles(event as DragEvent, this.#node) });
 
 			this.#htmlPreview.addEventListener('click', (event) => { if (event.target == this.#node.previewPic) { inputImage.click() } });
 		}
@@ -250,7 +250,7 @@ export class NodeGui {
 			this.#html.append(htmlLoadStickerSpecular);
 
 			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
-			inputImage.addEventListener('input', (event) => dropFilesSpecular(event as DragEvent, this.#node));
+			inputImage.addEventListener('input', (event) => { dropFilesSpecular(event as DragEvent, this.#node) });
 
 			htmlLoadStickerSpecular.addEventListener('click', () => inputImage.click());
 		}
@@ -258,9 +258,9 @@ export class NodeGui {
 		this.#initResizeObserver();
 	}
 
-	#initResizeObserver() {
-		const callback: ResizeObserverCallback = (entries, observer) => {
-			entries.forEach(entry => {
+	#initResizeObserver(): void {
+		const callback: ResizeObserverCallback = (entries) => {
+			entries.forEach(() => {
 				this.#updateManipulator();
 			});
 		};
@@ -268,9 +268,9 @@ export class NodeGui {
 		resizeObserver.observe(this.#htmlPreview);
 	}
 
-	#refreshHtml() {
+	#refreshHtml(): void {
 		this.#htmlParamsContainer.innerText = '';
-		for (const [_, param] of this.#node.params) {
+		for (const [, param] of this.#node.params) {
 			if (param.length && param.length > 1) {
 				for (let i = 0; i < param.length; ++i) {
 					this.#htmlParamsContainer.append(this.#getParamHTML(param, i));
@@ -501,7 +501,7 @@ export class NodeGui {
 		return paramHtml;
 	}
 
-	#updateManipulator() {
+	#updateManipulator(): void {
 		const rect = this.#htmlPreview.getBoundingClientRect();
 		const A = this.#node.getValue('top left') as vec2;
 		const D = this.#node.getValue('bottom left') as vec2;
@@ -538,7 +538,7 @@ export class NodeGui {
 		});
 	}
 
-	#setParamValue(param: NodeParam, stringValue: string, index?: number, updateManipulator = true) {
+	#setParamValue(param: NodeParam, stringValue: string, index?: number, updateManipulator = true): void {
 		const node = this.#node;
 		let value: any;
 		switch (param.type) {
@@ -565,7 +565,7 @@ export class NodeGui {
 		node.revalidate();
 	}
 
-	#createIo(io: Input | Output) {
+	#createIo(io: Input | Output): HTMLElement {
 		const html = createElement('div', { class: 'node-image-editor-node-io' });
 		this._ioGui.set(io, html);
 		return html;
@@ -581,7 +581,7 @@ export class NodeGui {
 		const newBottomLeft = vec2.copy(vec2.create(), bottomLeft);
 		const newTopRight = vec2.copy(vec2.create(), topRight);
 
-		let delta: number;
+		//let delta: number;
 		const top = vec2.sub(vec2.create(), topRight, topLeft);
 		const left = vec2.sub(vec2.create(), bottomLeft, topLeft);
 		const bottomRight = vec2.add(vec2.create(), top, bottomLeft);
