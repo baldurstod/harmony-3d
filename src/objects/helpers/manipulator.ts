@@ -1,6 +1,5 @@
 import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
-
 import { Camera } from '../../cameras/camera';
 import { EngineEntityAttributes, Entity, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics2';
@@ -184,6 +183,10 @@ export class Manipulator extends Entity {
 			if (!detail.entity?.isVisible()) {
 				return;
 			}
+			if (this.#axis == ManipulatorAxis.None) {
+				return;
+			}
+
 			if (this.#entityAxis.has(detail.entity)) {
 				switch (this.#mode) {
 					case ManipulatorMode.Translation:
@@ -202,6 +205,7 @@ export class Manipulator extends Entity {
 			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity!)) {
 				Graphics.dragging = false;
 				this.#setAxisSelected(false);
+				this.#axis = ManipulatorAxis.None;
 			}
 		});
 

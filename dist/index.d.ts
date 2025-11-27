@@ -1504,7 +1504,6 @@ declare class Channel {
                       static decodeBC3(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
                       static decodeBC4(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
                       static decodeBC7(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
-                      static getWebAssembly(): Promise<any>;
                   }
 
                   export declare class DistanceCull extends Operator {
@@ -3422,8 +3421,8 @@ declare class Channel {
                           #private;
                           constructor();
                           subdivide(indices: Uint8Array | Uint32Array, vertices: Float32Array, subdivideCount?: number, tolerance?: number): Promise<{
-                              indices: Uint32Array<ArrayBuffer>;
-                              vertices: Float32Array<ArrayBuffer>;
+                              indices: Uint32Array;
+                              vertices: Float32Array;
                           }>;
                       }
 
@@ -9315,13 +9314,9 @@ declare class Channel {
                           getFileList(): Promise<RepositoryFileListResponse>;
                       }
 
-                      export declare const Zstd: {
-                          "__#237@#webAssembly"?: any;
-                          "__#237@#HEAPU8"?: Uint8Array;
-                          decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer> | null>;
-                          decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
-                          getWebAssembly(): Promise<any>;
-                          "__#237@#initHeap"(): void;
-                      };
+                      export declare class Zstd {
+                          #private;
+                          static decompress(compressedDatas: Uint8Array): Promise<Uint8Array | null>;
+                      }
 
                       export { }
