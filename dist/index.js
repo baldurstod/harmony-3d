@@ -46872,26 +46872,30 @@ function guidToString(bytes) {
 }
 function cDmxElementToSTring(element, context) {
     let lines = [];
-    context.elementsLine.set(element.guid2, context.line);
+    if (element) {
+        context.elementsLine.set(element.guid2, context.line);
+    }
     let isDmeParticleSystemDefinition = false;
-    if (element.type == 'DmeParticleSystemDefinition') {
+    if (element?.type == 'DmeParticleSystemDefinition') {
         isDmeParticleSystemDefinition = true;
     }
-    lines.push(makeTabs(context.tabs) + `"${element.type}"`);
+    lines.push(makeTabs(context.tabs) + `"${element?.type}"`);
     ++context.line;
     lines.push(makeTabs(context.tabs) + '{');
     ++context.line;
     ++context.tabs;
-    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element.guid2}"`);
-    if (isDmeParticleSystemDefinition) {
+    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element?.guid2}"`);
+    if (element && isDmeParticleSystemDefinition) {
         context.elementsLine.set(element.name, context.line);
     }
     ++context.line;
-    lines.push(makeTabs(context.tabs) + `"name" "string" "${element.name}"`);
+    lines.push(makeTabs(context.tabs) + `"name" "string" "${element?.name}"`);
     ++context.line;
-    for (const attribute of element.attributes) {
-        lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
-        ++context.line;
+    if (element) {
+        for (const attribute of element.attributes) {
+            lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
+            ++context.line;
+        }
     }
     --context.tabs;
     lines.push(makeTabs(context.tabs) + '}');
@@ -46903,7 +46907,7 @@ function cDmxAttributeToSTring(attribute, context) {
     line = `"${attribute.typeName}"`;
     switch (attribute.type) {
         case CDmxAttributeType.Element:
-            line += ` "element" "${attribute.value.guid2}"`;
+            line += ` "element" "${attribute.value?.guid2 ?? 'null'}"`;
             break;
         case CDmxAttributeType.Integer:
             line += ` "int" ${attribute.value}`;
