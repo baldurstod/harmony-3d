@@ -1112,7 +1112,7 @@ class Graphics {
 			this.#setRenderTarget(target.renderTarget, target.viewport);
 		} else {
 			if (popResult) {
-				this.#setRenderTarget(null, popResult?.viewport);
+				this.#setRenderTarget(null, popResult.viewport);
 			}
 		}
 	}
@@ -1126,7 +1126,7 @@ class Graphics {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
-			//this.setViewport(viewport);
+			this.setViewport(viewport);
 		} else {
 			renderTarget.bind();
 		}

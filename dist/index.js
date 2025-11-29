@@ -10379,7 +10379,7 @@ class ShadowMap {
                         shadowViewport = shadow.viewPorts[viewPortIndex];
                         vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
                         shadow.computeShadowMatrix(viewPortIndex);
-                        Graphics$1.viewport = viewPort;
+                        Graphics$1.setViewport(viewPort);
                         renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
                     }
                     Graphics$1.popRenderTarget();
@@ -12129,14 +12129,14 @@ class Graphics {
         }
         else {
             if (popResult) {
-                this.#setRenderTarget(null, popResult?.viewport);
+                this.#setRenderTarget(null, popResult.viewport);
             }
         }
     }
     static #setRenderTarget(renderTarget, viewport) {
         if (!renderTarget) {
             this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
-            //this.setViewport(viewport);
+            this.setViewport(viewport);
         }
         else {
             renderTarget.bind();
