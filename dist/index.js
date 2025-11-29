@@ -11513,11 +11513,13 @@ class Graphics {
             }
             else if (options.views) {
                 useLayout = 'default';
+                attributes.useLayout = useLayout;
                 const layout = new CanvasLayout(useLayout, options.views); //{ name: useLayout, views: options.views };
                 layouts.set(layout.name, layout);
             }
             else {
                 useLayout = 'default';
+                attributes.useLayout = useLayout;
                 const scene = options.scene;
                 if (scene) {
                     const layout = new CanvasLayout(useLayout); //{ name: useLayout, views: [] };
