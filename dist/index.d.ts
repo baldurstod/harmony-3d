@@ -3475,7 +3475,7 @@ declare class Channel {
                           enumerable: boolean;
                           camera?: Camera;
                           size: number;
-                          constructor(params?: any);
+                          constructor(params?: ManipulatorParameters);
                           setCamera(camera: Camera): void;
                           /**
                            * @deprecated Please use `setMode` instead.
@@ -3498,6 +3498,8 @@ declare class Channel {
                           Rotation = 1,
                           Scale = 2
                       }
+
+                      declare type ManipulatorParameters = EntityParameters;
 
                       /**
                        * Map entities

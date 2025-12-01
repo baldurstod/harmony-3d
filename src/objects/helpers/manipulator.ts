@@ -1,7 +1,7 @@
 import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 import { Camera } from '../../cameras/camera';
-import { EngineEntityAttributes, Entity, LAYER_MAX } from '../../entities/entity';
+import { EngineEntityAttributes, Entity, EntityParameters, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics2';
 import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { RenderFace } from '../../materials/constants';
@@ -83,6 +83,8 @@ export enum ManipulatorAxis {
 	View,
 }
 
+export type ManipulatorParameters = EntityParameters;
+
 export class Manipulator extends Entity {
 	#entityAxis = new Map<Entity, ManipulatorAxis>();
 	#xMaterial = new MeshBasicMaterial();
@@ -135,7 +137,7 @@ export class Manipulator extends Entity {
 	#enableY = false;
 	#enableZ = false;
 
-	constructor(params?: any) {
+	constructor(params?: ManipulatorParameters) {
 		super(params);
 		this.wireframe = 0;
 		this.setLayer(LAYER_MAX);
