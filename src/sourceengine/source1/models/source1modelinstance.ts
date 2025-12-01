@@ -199,16 +199,17 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	}
 
-	set tint(tint: vec3 | null) {
+	setTint(tint: vec4 | null): void {
 		this.#tint = tint ? vec4.clone(tint as vec4) : null;
 		this.materialsParams['ItemTintColor'] = tint;
 	}
 
-	getTint(out?: vec4): vec4 | undefined {
+	getTint(out = vec4.create(),): vec4 | null {
 		if (this.#tint) {
-			out = vec4.copy(out ?? vec4.create(), this.#tint);
+			out = vec4.copy(out, this.#tint);
 			return out;
 		}
+		return null;
 	}
 
 	setPoseParameter(paramName: string, paramValue: number) {
@@ -776,8 +777,8 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return Object.assign(super.buildContextMenu(), {
 			Source1ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
-			tint: { i18n: '#tint', f: async (entity: Source1ModelInstance) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint as vec3; }, (tint = entity.tint) => { entity.tint = tint; }) },
-			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance) => entity.tint = null, disabled: this.#tint === undefined },
+			tint: { i18n: '#tint', f: async (entity: Source1ModelInstance) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
+			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance) => entity.setTint(null), disabled: this.#tint === undefined },
 			animation: { i18n: '#animation', f: async (entity: Source1ModelInstance) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
 			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity: Source1ModelInstance) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]!; } } },
 			Source1ModelInstance_2: null,

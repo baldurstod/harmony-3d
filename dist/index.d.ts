@@ -6417,8 +6417,8 @@ declare class Channel {
                           get skin(): string;
                           setSkin(skin: string): Promise<void>;
                           set sheen(sheen: vec3);
-                          set tint(tint: vec3 | null);
-                          getTint(out?: vec4): vec4 | undefined;
+                          setTint(tint: vec4 | null): void;
+                          getTint(out?: vec4): vec4 | null;
                           setPoseParameter(paramName: string, paramValue: number): void;
                           playAnimation(name: string): void;
                           setAnimation(id: number, name: string, weight: number): Promise<void>;
@@ -6453,7 +6453,7 @@ declare class Channel {
                               };
                               reset_tint: {
                                   i18n: string;
-                                  f: (entity: Source1ModelInstance) => null;
+                                  f: (entity: Source1ModelInstance) => void;
                                   disabled: boolean;
                               };
                               animation: {

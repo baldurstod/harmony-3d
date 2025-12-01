@@ -40250,15 +40250,16 @@ class Source1ModelInstance extends Entity {
         this.materialsParams['SheenMaskOffsetY'] = offsetY; //TODOv3: set y offset
         this.materialsParams['SheenMaskDirection'] = sheenDir;
     }
-    set tint(tint) {
+    setTint(tint) {
         this.#tint = tint ? vec4.clone(tint) : null;
         this.materialsParams['ItemTintColor'] = tint;
     }
-    getTint(out) {
+    getTint(out = vec4.create()) {
         if (this.#tint) {
-            out = vec4.copy(out ?? vec4.create(), this.#tint);
+            out = vec4.copy(out, this.#tint);
             return out;
         }
+        return null;
     }
     setPoseParameter(paramName, paramValue) {
         this.#poseParameters.set(paramName, paramValue);
@@ -40767,8 +40768,8 @@ class Source1ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source1ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
-            reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = null, disabled: this.#tint === undefined },
+            tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
+            reset_tint: { i18n: '#reset_tint', f: (entity) => entity.setTint(null), disabled: this.#tint === undefined },
             animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
                 } } },
