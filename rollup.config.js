@@ -4,6 +4,7 @@ import image from '@rollup/plugin-image';
 import css from 'rollup-plugin-import-css';
 import typescript from '@rollup/plugin-typescript';
 import wasm from '@rollup/plugin-wasm';
+import { string as plugin_string } from 'rollup-plugin-string'
 
 const TEMP_BUILD = './dist/dts/index.js';
 
@@ -17,6 +18,9 @@ export default [
 		plugins: [
 			css(),
 			image(),
+			plugin_string({
+				include: "**/*.wgsl",
+			}),
 			typescript(),
 			wasm(
 				{
