@@ -322,7 +322,7 @@ export class Renderer {
 		}
 	}
 
-	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
+	protected prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
 		const objectStack = [];

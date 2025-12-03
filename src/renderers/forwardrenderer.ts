@@ -11,13 +11,8 @@ import { Renderer } from './renderer';
 import { RenderList } from './renderlist';
 
 export class ForwardRenderer extends Renderer {
-	#shadowMap: ShadowMap;
+	#shadowMap = new ShadowMap();
 	#frame = 0;
-
-	constructor() {
-		super();
-		this.#shadowMap = new ShadowMap();
-	}
 
 	applyMaterial(program: Program, material: Material) {
 		if (material.depthTest) {
@@ -77,7 +72,7 @@ export class ForwardRenderer extends Renderer {
 	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
 		const renderList = new RenderList();//TODO: optimize
 		camera.dirty();//Force matrices to recompute
-		this._prepareRenderList(renderList, scene, camera, delta, context);
+		this.prepareRenderList(renderList, scene, camera, delta, context);
 
 		this.#shadowMap.render(this, renderList, camera, context);
 		if (scene.background) {
