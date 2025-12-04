@@ -30,7 +30,7 @@ type FbxContext = {
 }/*TODO: create a context type*/;
 type FbxBoneData = { bi: Map<number, number[]>, bw: Map<number, number[]> };
 
-export async function exportToBinaryFBX(entity: Entity) {
+export async function exportToBinaryFBX(entity: Entity): Promise<ArrayBuffer> {
 	const fbxManager = new FBXManager();
 	const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
 	return new FBXExporter().exportBinary(fbxFile);
