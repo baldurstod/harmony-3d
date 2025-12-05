@@ -1150,7 +1150,7 @@ declare class Channel {
                  #private;
                  enabled: boolean;
                  constructor(renderTarget?: RenderTarget);
-                 render(delta: number, context: RenderContext): void;
+                 render(delta: number, context?: RenderContext): void;
                  savePicture(filename: string, width: number, height: number): void;
                  addPass(pass: Pass): void;
                  setSize(width: number, height: number): void;
@@ -1849,7 +1849,7 @@ declare class Channel {
 
                       export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
-                      export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBufferLike>;
+                      export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBuffer>;
 
                       declare class ExpressionSample {
                           v: number;
@@ -2019,12 +2019,23 @@ declare class Channel {
                           static getFontList(): Promise<Map<string, Set<string>>>;
                       }
 
-                      declare class ForwardRenderer extends Renderer {
+                      declare class ForwardRenderer implements Renderer {
                           #private;
                           constructor();
                           applyMaterial(program: Program, material: Material): void;
                           render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
+                          renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void;
                           set scissorTest(scissorTest: boolean);
+                          /**
+                           * Invalidate all shader (force recompile)
+                           */
+                          invalidateShaders(): void;
+                          clear(color: boolean, depth: boolean, stencil: boolean): void;
+                          setToneMapping(toneMapping: ToneMapping): void;
+                          getToneMapping(): ToneMapping;
+                          setToneMappingExposure(exposure: number): void;
+                          getToneMappingExposure(): number;
+                          clearColor(clearColor: vec4): void;
                       }
 
                       export declare class Framebuffer {
@@ -3000,11 +3011,6 @@ declare class Channel {
                           FloatArray = 1001
                       }
 
-                      declare class InstancedBufferGeometry extends BufferGeometry {
-                          instanceCount: number;
-                          constructor(count?: number);
-                      }
-
                       export declare class InstantaneousEmitter extends Emitter {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
@@ -3081,9 +3087,19 @@ declare class Channel {
                       }
 
                       /**
+                       * Kv3Array
+                       */
+                      export declare class Kv3Array {
+                          values: (Kv3Element | Kv3Value)[];
+                          push(value: Kv3Element | Kv3Value): void;
+                          getValue(index: string): Kv3Element | Kv3Value | undefined;
+                          exportAsText(linePrefix: string): string;
+                      }
+
+                      /**
                        * Kv3Element
                        */
-                      declare class Kv3Element {
+                      export declare class Kv3Element {
                           #private;
                           isKv3Element: true;
                           setProperty(property: string, value: Kv3Element | Kv3Value | null): void;
@@ -3120,7 +3136,7 @@ declare class Channel {
                       /**
                        * Kv3File
                        */
-                      declare class Kv3File {
+                      export declare class Kv3File {
                           isKv3File: true;
                           root: null | Kv3Element;
                           setRoot(root: Kv3Element): void;
@@ -3131,7 +3147,7 @@ declare class Channel {
                           getValueAsElementArray(path: string): Kv3Element[] | null;
                       }
 
-                      declare enum Kv3Flag {
+                      export declare enum Kv3Flag {
                           None = 0,
                           ResourceName = 2,
                           Panorama = 3,
@@ -3139,7 +3155,7 @@ declare class Channel {
                           Subclass = 5
                       }
 
-                      declare enum Kv3Type {
+                      export declare enum Kv3Type {
                           Unknown = 0,
                           Null = 1,
                           Bool = 2,
@@ -3165,7 +3181,7 @@ declare class Channel {
                           TypedArray3 = 25
                       }
 
-                      declare class Kv3Value {
+                      export declare class Kv3Value {
                           #private;
                           isKv3Value: true;
                           constructor(type: Kv3Type, value: Kv3ValueType, flag?: Kv3Flag, subType?: Kv3Type);
@@ -3182,13 +3198,13 @@ declare class Channel {
                           exportAsText(linePrefix?: string): string;
                       }
 
-                      declare type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
+                      export declare type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
-                      declare type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
+                      export declare type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
 
-                      declare type Kv3ValueTypeArrays = number[];
+                      export declare type Kv3ValueTypeArrays = number[];
 
-                      declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
+                      export declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 
                       declare class KvAttribute {
                           name: string;
@@ -3674,7 +3690,7 @@ declare class Channel {
 
                       export declare const MATERIAL_CULLING_NONE = 0;
 
-                      declare enum MaterialColorMode {
+                      export declare enum MaterialColorMode {
                           None = 0,
                           PerVertex = 1,
                           PerMesh = 2
@@ -5439,27 +5455,16 @@ declare class Channel {
                           updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
                       }
 
-                      declare class Renderer {
-                          #private;
-                          constructor();
-                          getProgram(mesh: Mesh, material: Material): Program;
-                          applyMaterial(program: Program, material: Material): void;
-                          renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights?: boolean, lightPos?: vec3): void;
-                          _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
-                          _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void;
-                          render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
-                          clear(color: boolean, depth: boolean, stencil: boolean): void;
-                          /**
-                           * Invalidate all shader (force recompile)
-                           */
-                          invalidateShaders(): void;
-                          clearColor(clearColor: vec4): void;
-                          clearDepth(clearDepth: GLclampf): void;
-                          clearStencil(clearStencil: GLint): void;
-                          setToneMapping(toneMapping: ToneMapping): void;
-                          getToneMapping(): ToneMapping;
-                          setToneMappingExposure(exposure: number): void;
-                          getToneMappingExposure(): number;
+                      declare interface Renderer {
+                          render: (scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) => void;
+                          renderShadowMap: (renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) => void;
+                          clear: (color: boolean, depth: boolean, stencil: boolean) => void;
+                          invalidateShaders: () => void;
+                          setToneMapping: (toneMapping: ToneMapping) => void;
+                          getToneMapping: () => ToneMapping;
+                          setToneMappingExposure: (exposure: number) => void;
+                          getToneMappingExposure: () => number;
+                          clearColor: (clearColor: vec4) => void;
                       }
 
                       export declare enum RenderFace {
@@ -7216,6 +7221,12 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
+                      export declare class Source2Kv3Value {
+                          type: number;
+                          value?: boolean | number | bigint;
+                          constructor(type: number);
+                      }
+
                       export declare class Source2LifespanDecay extends Operator {
                           doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
                       }
@@ -7726,7 +7737,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#267@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -8078,6 +8089,11 @@ declare class Channel {
                           lightmapVecs: [vec4, vec4];
                           flags: number;
                           texdata: number;
+                      }
+
+                      export declare class SourceKv3String {
+                          id: number;
+                          constructor(id: number);
                       }
 
                       declare class SourceMdl {

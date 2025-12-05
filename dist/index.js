@@ -6728,7 +6728,20 @@ class Composer {
             }
         })();
     }
-    render(delta, context) {
+    render(delta, context = {}) {
+        const previousWidth = context.width;
+        const previousHeight = context.height;
+        try {
+            context.width = this.#width;
+            context.height = this.#height;
+            this.#render(delta, context);
+        }
+        finally {
+            context.width = previousWidth;
+            context.width = previousHeight;
+        }
+    }
+    #render(delta, context = {}) {
         let pass;
         let swapBuffer;
         //Graphics.getSize(tempVec2);
@@ -10380,7 +10393,7 @@ class ShadowMap {
                         vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
                         shadow.computeShadowMatrix(viewPortIndex);
                         Graphics$1.setViewport(viewPort);
-                        renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
+                        renderer.renderShadowMap(renderList, shadow.camera, false, context, lightPos);
                     }
                     Graphics$1.popRenderTarget();
                 }
@@ -10776,81 +10789,278 @@ class Program {
     }
 }
 
-const tempViewProjectionMatrix = mat4.create();
-const lightDirection = vec3.create();
-function getDefinesAsString(meshOrMaterial) {
-    const defines = [];
-    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
-        if (value === false) {
-            defines.push('#undef ' + name);
-        }
-        else {
-            defines.push('#define ' + name + ' ' + value);
+function sortLights(first, second) {
+    if (first.castShadow) {
+        return -1;
+    }
+    return 1;
+}
+class RenderList {
+    lights = [];
+    pointLights = [];
+    spotLights = [];
+    ambientLights = [];
+    transparentList = [];
+    opaqueList = [];
+    pointLightShadows = 0;
+    spotLightShadows = 0;
+    reset() {
+        this.lights = [];
+        this.pointLights = [];
+        this.spotLights = [];
+        this.ambientLights = [];
+        this.transparentList = [];
+        this.opaqueList = [];
+        this.pointLightShadows = 0;
+        this.spotLightShadows = 0;
+    }
+    finish() {
+        this.pointLights.sort(sortLights);
+        this.spotLights.sort(sortLights);
+    }
+    addObject(entity) {
+        if (entity.isVisible() !== false) {
+            if (entity.isLight) {
+                this.lights.push(entity);
+                if (entity.isAmbientLight) {
+                    this.ambientLights.push(entity);
+                }
+                else if (entity.isPointLight) {
+                    this.pointLights.push(entity);
+                    if (entity.castShadow) {
+                        ++this.pointLightShadows;
+                    }
+                }
+                else if (entity.isSpotLight) {
+                    this.spotLights.push(entity);
+                    if (entity.castShadow) {
+                        ++this.spotLightShadows;
+                    }
+                }
+            }
+            else {
+                const material = entity.material;
+                if (material) {
+                    if (material.blend) { //TODOv3 changeblend
+                        this.transparentList.push(entity);
+                    }
+                    else {
+                        this.opaqueList.push(entity);
+                    }
+                }
+            }
         }
     }
-    return defines.join('\n') + '\n';
 }
-class Renderer {
+
+const tempViewProjectionMatrix = mat4.create();
+const lightDirection = vec3.create();
+class ForwardRenderer {
+    #shadowMap = new ShadowMap();
+    #frame = 0;
+    #materialsProgram = new Map();
+    #glContext;
+    #globalIncludeCode = '';
     #toneMapping = ToneMapping.None;
     #toneMappingExposure = 1.;
-    #glContext;
-    #materialsProgram = new Map();
-    #globalIncludeCode = '';
     constructor() {
         this.#glContext = Graphics$1.glContext;
     }
-    getProgram(mesh, material) {
-        let includeCode = Graphics$1.getIncludeCode();
-        includeCode += this.#globalIncludeCode;
-        includeCode += getDefinesAsString(mesh);
-        includeCode += getDefinesAsString(material);
-        includeCode += material.getShaderSource();
-        let program = this.#materialsProgram.get(includeCode);
-        if (!program) {
-            const shaderSource = material.getShaderSource();
-            program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
-            this.#materialsProgram.set(includeCode, program);
+    applyMaterial(program, material) {
+        if (material.depthTest) {
+            WebGLRenderingState.enable(GL_DEPTH_TEST);
+            WebGLRenderingState.depthFunc(material.depthFunc);
         }
-        if (!program.isValid()) {
-            let includeCode = Graphics$1.getIncludeCode();
-            includeCode += this.#globalIncludeCode;
-            includeCode += getDefinesAsString(mesh);
-            includeCode += getDefinesAsString(material);
-            program.validate(includeCode);
-            material._dirtyProgram = false;
+        else {
+            WebGLRenderingState.disable(GL_DEPTH_TEST);
         }
-        return program;
+        WebGLRenderingState.depthMask(material.depthMask);
+        WebGLRenderingState.colorMask(material.colorMask);
+        if (material.blend) {
+            WebGLRenderingState.enable(GL_BLEND);
+            WebGLRenderingState.blendFuncSeparate(material.srcRGB, material.dstRGB, material.srcAlpha, material.dstAlpha);
+            WebGLRenderingState.blendEquationSeparate(material.modeRGB, material.modeAlpha);
+        }
+        else {
+            WebGLRenderingState.disable(GL_BLEND);
+        }
+        /*
+        if (material.disableCulling === true) {
+            WebGLRenderingState.disable(GL_CULL_FACE);
+        } else {
+            WebGLRenderingState.enable(GL_CULL_FACE);
+            WebGLRenderingState.cullFace(material.cullMode);
+        }
+            */
+        const renderFace = material.getRenderFace();
+        switch (renderFace) {
+            case RenderFace.Front:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_BACK);
+                break;
+            case RenderFace.Back:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_FRONT);
+                break;
+            case RenderFace.Both:
+                WebGLRenderingState.disable(GL_CULL_FACE);
+                break;
+            case RenderFace.None:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_FRONT_AND_BACK);
+                break;
+        }
+        WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
+        for (const uniform in material.uniforms) {
+            program.setUniformValue(uniform, material.uniforms[uniform]);
+        }
     }
-    #setupVertexAttributes(program, geometry, wireframe) {
-        WebGLRenderingState.initUsedAttributes();
-        const geometryAttributes = geometry.attributes;
-        const programAttributes = program.attributes;
-        for (const [attributeName, attribute] of geometryAttributes) {
-            const attributeLocation = programAttributes.get(attributeName);
-            if (attributeName == 'index') {
+    render(scene, camera, delta, context) {
+        const renderList = new RenderList(); //TODO: optimize
+        camera.dirty(); //Force matrices to recompute
+        this.#prepareRenderList(renderList, scene, camera, delta, context);
+        this.#shadowMap.render(this, renderList, camera, context);
+        if (scene.background) {
+            scene.background.render(this, camera, context);
+        }
+        this.#renderRenderList(renderList, camera, true, context);
+        WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
+        ++this.#frame;
+    }
+    #prepareRenderList(renderList, scene, camera, delta, context) {
+        renderList.reset();
+        let currentObject = scene;
+        const objectStack = [];
+        //scene.pointLights = scene.getChildList(PointLight);
+        //scene.ambientLights = scene.getChildList(AmbientLight);
+        while (currentObject) {
+            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
+                currentObject = objectStack.shift();
+                continue;
+            }
+            //objectStack.push(currentObject);
+            for (const child of currentObject.children) {
+                {
+                    objectStack.push(child);
+                }
+            }
+            if (currentObject.isSceneNode && currentObject.entity) {
+                objectStack.push(currentObject.entity);
+            }
+            if (currentObject.isRenderable) {
+                renderList.addObject(currentObject);
+            }
+            else {
+                currentObject.update(scene, camera, delta);
+            }
+            currentObject = objectStack.shift();
+        }
+        renderList.finish();
+    }
+    renderShadowMap(renderList, camera, renderLights, context, lightPos) {
+        this.#renderRenderList(renderList, camera, renderLights, context, lightPos);
+    }
+    #renderRenderList(renderList, camera, renderLights, context, lightPos) {
+        for (const child of renderList.opaqueList) {
+            this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+        }
+        if (renderLights) {
+            for (const child of renderList.transparentList) {
+                this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+            }
+        }
+    }
+    #renderObject(context, renderList, object, camera, geometry, material, renderLights = true, lightPos) {
+        if (!object.isRenderable) {
+            return;
+        }
+        if (object.isVisible() === false) {
+            return;
+        }
+        if (geometry.count === 0) {
+            return;
+        }
+        if (!renderLights) {
+            if (!object.castShadow) {
+                return;
+            }
+        }
+        renderLights &&= material.renderLights;
+        material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
+        const cameraMatrix = camera.cameraMatrix;
+        const projectionMatrix = camera.projectionMatrix;
+        mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
+        //object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
+        mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
+        //let viewProjectionMatrix = mat4.create();//TODOv3 don't recreate the matrix
+        mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix); //TODO: compute this in camera
+        if (renderLights) {
+            this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
+            if (!object.receiveShadow) {
+                Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+            }
+        }
+        else {
+            this.#unsetLights();
+        }
+        if (camera.projection == CameraProjection.Perspective) {
+            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
+        }
+        else {
+            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
+        }
+        const program = this.#getProgram(object, material);
+        if (program.isValid()) {
+            WebGLRenderingState.useProgram(program.getProgram());
+            if (renderLights) {
+                material.beforeRender(camera);
+            }
+            this.applyMaterial(program, material);
+            program.setUniformValue('uModelMatrix', object.worldMatrix);
+            program.setUniformValue('uModelViewMatrix', object._mvMatrix);
+            program.setUniformValue('uViewMatrix', cameraMatrix);
+            program.setUniformValue('uProjectionMatrix', projectionMatrix);
+            program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2)); //TODO: perf: compute that once we set camera farplane
+            program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
+            program.setUniformValue('uNormalMatrix', object._normalMatrix);
+            program.setUniformValue('uCameraPosition', camera.position);
+            const pickingColor = object.pickingColor;
+            if (pickingColor) {
+                program.setUniformValue('uPickingColor', pickingColor);
+            }
+            //TODO: set this on resolution change
+            program.setUniformValue('uResolution', [context.width, context.height, camera.aspectRatio, 0]);
+            //TODO: set this at start of the frame
+            program.setUniformValue('uTime', [Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]);
+            if (renderLights) {
+                this.#setupLights(renderList, camera, program, cameraMatrix);
+            }
+            else {
+                program.setUniformValue('uLightPosition', lightPos);
+                program.setUniformValue('uLightNear', camera.nearPlane);
+                program.setUniformValue('uLightFar', camera.farPlane);
+            }
+            const wireframe = object.wireframe;
+            this.#setupVertexAttributes(program, geometry, wireframe);
+            this.#setupVertexUniforms(program, object);
+            if (geometry.instanceCount === undefined) {
                 if (wireframe == 1) {
-                    attribute.updateWireframe(this.#glContext); //TODO: put somewhere else
+                    //TODO: case where original geometry is GL_LINES
+                    this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
                 }
                 else {
-                    attribute.update(this.#glContext); //TODO: put somewhere else
+                    this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
                 }
-                this.#glContext.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, attribute._buffer);
             }
-            else if (attributeLocation !== undefined) {
-                attribute.update(this.#glContext); //TODO: put somewhere else
-                WebGLRenderingState.enableVertexAttribArray(attributeLocation, attribute.divisor);
-                this.#glContext.bindBuffer(GL_ARRAY_BUFFER, attribute._buffer);
-                this.#glContext.vertexAttribPointer(attributeLocation, attribute.itemSize, attribute.type, false, 0, 0);
+            else {
+                if (Graphics$1.isWebGL2) {
+                    this.#glContext.drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+                }
+                else {
+                    Graphics$1.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+                }
             }
         }
-        WebGLRenderingState.disableUnusedAttributes();
-    }
-    #setupVertexUniforms(program, mesh) {
-        for (const uniform in mesh.uniforms) {
-            program.setUniformValue(uniform, mesh.uniforms[uniform]);
-        }
-    }
-    applyMaterial(program, material) {
     }
     #setupLights(renderList, camera, program, viewMatrix) {
         const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
@@ -10931,6 +11141,25 @@ class Renderer {
         }
         program.setUniformValue('uAmbientLight', ambientAccumulator);
     }
+    set scissorTest(scissorTest) {
+        if (scissorTest) {
+            WebGLRenderingState.enable(GL_SCISSOR_TEST);
+        }
+        else {
+            WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        }
+    }
+    /**
+     * Invalidate all shader (force recompile)
+     */
+    invalidateShaders() {
+        for (const shader of this.#materialsProgram.values()) {
+            shader.invalidate();
+        }
+    }
+    clear(color, depth, stencil) {
+        WebGLRenderingState.clear(color, depth, stencil);
+    }
     #setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
         Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
         Graphics$1.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
@@ -10948,164 +11177,56 @@ class Renderer {
         Graphics$1.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
         //TODO: other lights of disable lighting all together
     }
-    renderObject(context, renderList, object, camera, geometry, material, renderLights = true, lightPos) {
-        if (!object.isRenderable) {
-            return;
+    #getProgram(mesh, material) {
+        let includeCode = Graphics$1.getIncludeCode();
+        includeCode += this.#globalIncludeCode;
+        includeCode += getDefinesAsString(mesh);
+        includeCode += getDefinesAsString(material);
+        includeCode += material.getShaderSource();
+        let program = this.#materialsProgram.get(includeCode);
+        if (!program) {
+            const shaderSource = material.getShaderSource();
+            program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
+            this.#materialsProgram.set(includeCode, program);
         }
-        if (object.isVisible() === false) {
-            return;
+        if (!program.isValid()) {
+            let includeCode = Graphics$1.getIncludeCode();
+            includeCode += this.#globalIncludeCode;
+            includeCode += getDefinesAsString(mesh);
+            includeCode += getDefinesAsString(material);
+            program.validate(includeCode);
+            material._dirtyProgram = false;
         }
-        if (geometry.count === 0) {
-            return;
-        }
-        if (!renderLights) {
-            if (!object.castShadow) {
-                return;
-            }
-        }
-        renderLights &&= material.renderLights;
-        material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
-        const cameraMatrix = camera.cameraMatrix;
-        const projectionMatrix = camera.projectionMatrix;
-        mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
-        //object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
-        mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
-        //let viewProjectionMatrix = mat4.create();//TODOv3 don't recreate the matrix
-        mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix); //TODO: compute this in camera
-        if (renderLights) {
-            this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
-            if (!object.receiveShadow) {
-                Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-            }
-        }
-        else {
-            this.#unsetLights();
-        }
-        if (camera.projection == CameraProjection.Perspective) {
-            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
-        }
-        else {
-            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
-        }
-        const program = this.getProgram(object, material);
-        if (program.isValid()) {
-            WebGLRenderingState.useProgram(program.getProgram());
-            if (renderLights) {
-                material.beforeRender(camera);
-            }
-            this.applyMaterial(program, material);
-            program.setUniformValue('uModelMatrix', object.worldMatrix);
-            program.setUniformValue('uModelViewMatrix', object._mvMatrix);
-            program.setUniformValue('uViewMatrix', cameraMatrix);
-            program.setUniformValue('uProjectionMatrix', projectionMatrix);
-            program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2)); //TODO: perf: compute that once we set camera farplane
-            program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
-            program.setUniformValue('uNormalMatrix', object._normalMatrix);
-            program.setUniformValue('uCameraPosition', camera.position);
-            const pickingColor = object.pickingColor;
-            if (pickingColor) {
-                program.setUniformValue('uPickingColor', pickingColor);
-            }
-            //TODO: set this on resolution change
-            program.setUniformValue('uResolution', [context.width, context.height, camera.aspectRatio, 0]);
-            //TODO: set this at start of the frame
-            program.setUniformValue('uTime', [Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]);
-            if (renderLights) {
-                this.#setupLights(renderList, camera, program, cameraMatrix);
-            }
-            else {
-                program.setUniformValue('uLightPosition', lightPos);
-                program.setUniformValue('uLightNear', camera.nearPlane);
-                program.setUniformValue('uLightFar', camera.farPlane);
-            }
-            const wireframe = object.wireframe;
-            this.#setupVertexAttributes(program, geometry, wireframe);
-            this.#setupVertexUniforms(program, object);
-            if (geometry.instanceCount === undefined) {
+        return program;
+    }
+    #setupVertexAttributes(program, geometry, wireframe) {
+        WebGLRenderingState.initUsedAttributes();
+        const geometryAttributes = geometry.attributes;
+        const programAttributes = program.attributes;
+        for (const [attributeName, attribute] of geometryAttributes) {
+            const attributeLocation = programAttributes.get(attributeName);
+            if (attributeName == 'index') {
                 if (wireframe == 1) {
-                    //TODO: case where original geometry is GL_LINES
-                    this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
+                    attribute.updateWireframe(this.#glContext); //TODO: put somewhere else
                 }
                 else {
-                    this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
+                    attribute.update(this.#glContext); //TODO: put somewhere else
                 }
+                this.#glContext.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, attribute._buffer);
             }
-            else {
-                if (Graphics$1.isWebGL2) {
-                    this.#glContext.drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
-                }
-                else {
-                    Graphics$1.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
-                }
-            }
-        }
-    }
-    _prepareRenderList(renderList, scene, camera, delta, context) {
-        renderList.reset();
-        let currentObject = scene;
-        const objectStack = [];
-        //scene.pointLights = scene.getChildList(PointLight);
-        //scene.ambientLights = scene.getChildList(AmbientLight);
-        while (currentObject) {
-            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
-                currentObject = objectStack.shift();
-                continue;
-            }
-            //objectStack.push(currentObject);
-            for (const child of currentObject.children) {
-                {
-                    objectStack.push(child);
-                }
-            }
-            if (currentObject.isSceneNode && currentObject.entity) {
-                objectStack.push(currentObject.entity);
-            }
-            if (currentObject.isRenderable) {
-                renderList.addObject(currentObject);
-            }
-            else {
-                currentObject.update(scene, camera, delta);
-            }
-            currentObject = objectStack.shift();
-        }
-        renderList.finish();
-    }
-    _renderRenderList(renderList, camera, renderLights, context, lightPos) {
-        for (const child of renderList.opaqueList) {
-            this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
-        }
-        if (renderLights) {
-            for (const child of renderList.transparentList) {
-                this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+            else if (attributeLocation !== undefined) {
+                attribute.update(this.#glContext); //TODO: put somewhere else
+                WebGLRenderingState.enableVertexAttribArray(attributeLocation, attribute.divisor);
+                this.#glContext.bindBuffer(GL_ARRAY_BUFFER, attribute._buffer);
+                this.#glContext.vertexAttribPointer(attributeLocation, attribute.itemSize, attribute.type, false, 0, 0);
             }
         }
+        WebGLRenderingState.disableUnusedAttributes();
     }
-    render(scene, camera, delta, context) {
-    }
-    clear(color, depth, stencil) {
-        WebGLRenderingState.clear(color, depth, stencil);
-    }
-    /*
-        get vpMatrix() {
-            return mat4.mul(mat4.create(), this.currentCamera.projectionMatrix, this.viewMatrix);
+    #setupVertexUniforms(program, mesh) {
+        for (const uniform in mesh.uniforms) {
+            program.setUniformValue(uniform, mesh.uniforms[uniform]);
         }
-            */
-    /**
-     * Invalidate all shader (force recompile)
-     */
-    invalidateShaders() {
-        for (const shader of this.#materialsProgram.values()) {
-            shader.invalidate();
-        }
-    }
-    clearColor(clearColor) {
-        WebGLRenderingState.clearColor(clearColor);
-    }
-    clearDepth(clearDepth) {
-        WebGLRenderingState.clearDepth(clearDepth);
-    }
-    clearStencil(clearStencil) {
-        WebGLRenderingState.clearStencil(clearStencil);
     }
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
@@ -11121,148 +11242,21 @@ class Renderer {
     getToneMappingExposure() {
         return this.#toneMappingExposure;
     }
-}
-
-function sortLights(first, second) {
-    if (first.castShadow) {
-        return -1;
-    }
-    return 1;
-}
-class RenderList {
-    lights = [];
-    pointLights = [];
-    spotLights = [];
-    ambientLights = [];
-    transparentList = [];
-    opaqueList = [];
-    pointLightShadows = 0;
-    spotLightShadows = 0;
-    reset() {
-        this.lights = [];
-        this.pointLights = [];
-        this.spotLights = [];
-        this.ambientLights = [];
-        this.transparentList = [];
-        this.opaqueList = [];
-        this.pointLightShadows = 0;
-        this.spotLightShadows = 0;
-    }
-    finish() {
-        this.pointLights.sort(sortLights);
-        this.spotLights.sort(sortLights);
-    }
-    addObject(entity) {
-        if (entity.isVisible() !== false) {
-            if (entity.isLight) {
-                this.lights.push(entity);
-                if (entity.isAmbientLight) {
-                    this.ambientLights.push(entity);
-                }
-                else if (entity.isPointLight) {
-                    this.pointLights.push(entity);
-                    if (entity.castShadow) {
-                        ++this.pointLightShadows;
-                    }
-                }
-                else if (entity.isSpotLight) {
-                    this.spotLights.push(entity);
-                    if (entity.castShadow) {
-                        ++this.spotLightShadows;
-                    }
-                }
-            }
-            else {
-                const material = entity.material;
-                if (material) {
-                    if (material.blend) { //TODOv3 changeblend
-                        this.transparentList.push(entity);
-                    }
-                    else {
-                        this.opaqueList.push(entity);
-                    }
-                }
-            }
-        }
+    clearColor(clearColor) {
+        WebGLRenderingState.clearColor(clearColor);
     }
 }
-
-class ForwardRenderer extends Renderer {
-    #shadowMap;
-    #frame = 0;
-    constructor() {
-        super();
-        this.#shadowMap = new ShadowMap();
-    }
-    applyMaterial(program, material) {
-        if (material.depthTest) {
-            WebGLRenderingState.enable(GL_DEPTH_TEST);
-            WebGLRenderingState.depthFunc(material.depthFunc);
+function getDefinesAsString(meshOrMaterial) {
+    const defines = [];
+    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
+        if (value === false) {
+            defines.push('#undef ' + name);
         }
         else {
-            WebGLRenderingState.disable(GL_DEPTH_TEST);
-        }
-        WebGLRenderingState.depthMask(material.depthMask);
-        WebGLRenderingState.colorMask(material.colorMask);
-        if (material.blend) {
-            WebGLRenderingState.enable(GL_BLEND);
-            WebGLRenderingState.blendFuncSeparate(material.srcRGB, material.dstRGB, material.srcAlpha, material.dstAlpha);
-            WebGLRenderingState.blendEquationSeparate(material.modeRGB, material.modeAlpha);
-        }
-        else {
-            WebGLRenderingState.disable(GL_BLEND);
-        }
-        /*
-        if (material.disableCulling === true) {
-            WebGLRenderingState.disable(GL_CULL_FACE);
-        } else {
-            WebGLRenderingState.enable(GL_CULL_FACE);
-            WebGLRenderingState.cullFace(material.cullMode);
-        }
-            */
-        const renderFace = material.getRenderFace();
-        switch (renderFace) {
-            case RenderFace.Front:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_BACK);
-                break;
-            case RenderFace.Back:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_FRONT);
-                break;
-            case RenderFace.Both:
-                WebGLRenderingState.disable(GL_CULL_FACE);
-                break;
-            case RenderFace.None:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_FRONT_AND_BACK);
-                break;
-        }
-        WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
-        for (const uniform in material.uniforms) {
-            program.setUniformValue(uniform, material.uniforms[uniform]);
+            defines.push('#define ' + name + ' ' + value);
         }
     }
-    render(scene, camera, delta, context) {
-        const renderList = new RenderList(); //TODO: optimize
-        camera.dirty(); //Force matrices to recompute
-        this._prepareRenderList(renderList, scene, camera, delta, context);
-        this.#shadowMap.render(this, renderList, camera, context);
-        if (scene.background) {
-            scene.background.render(this, camera, context);
-        }
-        this._renderRenderList(renderList, camera, true, context);
-        WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
-        ++this.#frame;
-    }
-    set scissorTest(scissorTest) {
-        if (scissorTest) {
-            WebGLRenderingState.enable(GL_SCISSOR_TEST);
-        }
-        else {
-            WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        }
-    }
+    return defines.join('\n') + '\n';
 }
 
 class Viewport {
@@ -14177,6 +14171,61 @@ class FontManager {
     }
 }
 
+class GridMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this.spacing = params.spacing ?? 1;
+        this.setBlending(MATERIAL_BLENDING_NORMAL);
+        this.renderFace(RenderFace.Both);
+    }
+    set spacing(spacing) {
+        this.uniforms['uSpacing'] = spacing;
+    }
+    getShaderSource() {
+        return 'grid';
+    }
+}
+Material.materialList['Grid'] = GridMaterial;
+
+class MeshFlatMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this.setDefine('FLAT_SHADING');
+    }
+    getShaderSource() {
+        return 'meshphong';
+    }
+}
+Material.materialList['MeshFlat'] = MeshFlatMaterial;
+
+class MeshPhongMaterial extends Material {
+    map = null;
+    lightMap = null;
+    lightMapIntensity = 1.0;
+    aoMap = null;
+    aoMapIntensity = 1.0;
+    specularMap = null;
+    alphaMap = null;
+    envMap = null;
+    combine = 0 /*MultiplyOperation*/;
+    reflectivity = 1;
+    refractionRatio = 0.98;
+    wireframe = false;
+    wireframeLinewidth = 1;
+    wireframeLinecap = 'round';
+    wireframeLinejoin = 'round';
+    skinning = false;
+    morphTargets = false;
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
+    }
+    getShaderSource() {
+        return 'meshphong';
+    }
+}
+Material.materialList['MeshPhong'] = MeshPhongMaterial;
+
 class MeshBasicPbrMaterial extends Material {
     constructor(params = {}) {
         super(params);
@@ -14238,61 +14287,6 @@ class MeshBasicPbrMaterial extends Material {
 }
 Material.materialList['MeshBasicPbr'] = MeshBasicPbrMaterial;
 registerEntity(MeshBasicPbrMaterial);
-
-class GridMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this.spacing = params.spacing ?? 1;
-        this.setBlending(MATERIAL_BLENDING_NORMAL);
-        this.renderFace(RenderFace.Both);
-    }
-    set spacing(spacing) {
-        this.uniforms['uSpacing'] = spacing;
-    }
-    getShaderSource() {
-        return 'grid';
-    }
-}
-Material.materialList['Grid'] = GridMaterial;
-
-class MeshFlatMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this.setDefine('FLAT_SHADING');
-    }
-    getShaderSource() {
-        return 'meshphong';
-    }
-}
-Material.materialList['MeshFlat'] = MeshFlatMaterial;
-
-class MeshPhongMaterial extends Material {
-    map = null;
-    lightMap = null;
-    lightMapIntensity = 1.0;
-    aoMap = null;
-    aoMapIntensity = 1.0;
-    specularMap = null;
-    alphaMap = null;
-    envMap = null;
-    combine = 0 /*MultiplyOperation*/;
-    reflectivity = 1;
-    refractionRatio = 0.98;
-    wireframe = false;
-    wireframeLinewidth = 1;
-    wireframeLinecap = 'round';
-    wireframeLinejoin = 'round';
-    skinning = false;
-    morphTargets = false;
-    constructor(params = {}) {
-        super(params);
-        this.setValues(params);
-    }
-    getShaderSource() {
-        return 'meshphong';
-    }
-}
-Material.materialList['MeshPhong'] = MeshPhongMaterial;
 
 class ShaderToyMaterial extends Material {
     constructor(params = {}) {
@@ -33090,6 +33084,33 @@ var source_declare_particle = `
 `;
 
 Includes['source_declare_particle'] = source_declare_particle;
+
+/**
+ * Kv3Array
+ */
+class Kv3Array {
+    values = [];
+    push(value) {
+        this.values.push(value);
+    }
+    getValue(index /*yes it's a string*/) {
+        return this.values[Number(index)];
+    }
+    exportAsText(linePrefix) {
+        const out = [];
+        const linePrefix2 = linePrefix + '\t';
+        out.push('\r\n');
+        out.push(linePrefix);
+        out.push('[\r\n');
+        for (const val of this.values) {
+            out.push(val.exportAsText(linePrefix2));
+            out.push(',\r\n');
+        }
+        out.push(linePrefix);
+        out.push(']');
+        return out.join('');
+    }
+}
 
 /*
 Copyright (c) 2011 Juan Mellado
@@ -73255,4 +73276,4 @@ class RenderTargetViewer {
     }
 }
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, Source2Kv3Value, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceKv3String, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

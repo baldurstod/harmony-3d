@@ -55,7 +55,7 @@ export class ShadowMap {
 
 						shadow.computeShadowMatrix(viewPortIndex);
 						Graphics.setViewport(viewPort);
-						renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
+						renderer.renderShadowMap(renderList, shadow.camera, false, context, lightPos);
 					}
 					Graphics.popRenderTarget();
 				}

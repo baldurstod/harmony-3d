@@ -1,12 +1,11 @@
-export * from './pbr/export';
 export * from './constants';
 export { GridMaterial } from './gridmaterial';
 export { LineMaterial } from './linematerial';
-export { Material } from './material';
-export { MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_NONE, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT_AND_BACK } from './material';
+export { Material, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MaterialColorMode } from './material';
 export { MateriaParameter, MateriaParameterType } from './materialparameter';
 export { MeshBasicMaterial } from './meshbasicmaterial';
 export { MeshFlatMaterial } from './meshflatmaterial';
 export { MeshPhongMaterial } from './meshphongmaterial';
+export * from './pbr/export';
 export { ShaderMaterial } from './shadermaterial';
 export { ShaderToyMaterial } from './shadertoymaterial';
