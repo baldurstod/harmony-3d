@@ -32,7 +32,20 @@ export class Composer {
 		})();
 	}
 
-	render(delta: number, context: RenderContext) {
+	render(delta: number, context: RenderContext = {}) {
+		const previousWidth = context.width;
+		const previousHeight = context.height;
+		try {
+			context.width = this.#width;
+			context.height = this.#height;
+			this.#render(delta, context);
+		} finally {
+			context.width = previousWidth;
+			context.width = previousHeight;
+		}
+	}
+
+	#render(delta: number, context: RenderContext = {}) {
 		let pass: Pass;
 		let swapBuffer;
 
