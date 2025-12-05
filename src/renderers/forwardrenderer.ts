@@ -37,7 +37,6 @@ export class ForwardRenderer implements Renderer {
 		this.#glContext = Graphics.glContext;
 	}
 
-
 	applyMaterial(program: Program, material: Material) {
 		if (material.depthTest) {
 			WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -366,10 +365,6 @@ export class ForwardRenderer implements Renderer {
 			WebGLRenderingState.disable(GL_SCISSOR_TEST);
 		}
 	}
-
-	/**
-	 * Invalidate all shader (force recompile)
-	 */
 	invalidateShaders() {
 		for (const shader of this.#materialsProgram.values()) {
 			shader.invalidate();

@@ -5,6 +5,7 @@ import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from './constants';
 export enum ShaderType {
 	Vertex = GL_VERTEX_SHADER,
 	Fragment = GL_FRAGMENT_SHADER,
+	Wgsl = 'wgsl',
 }
 
 function getHeader(type: ShaderType): string {
@@ -13,6 +14,8 @@ function getHeader(type: ShaderType): string {
 			return '#include header_vertex';
 		case ShaderType.Fragment:
 			return '#include header_fragment';
+		case ShaderType.Wgsl:
+			return '';
 	}
 }
 

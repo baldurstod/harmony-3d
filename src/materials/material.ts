@@ -499,5 +499,9 @@ export class Material {
 	getShaderSource(): string {
 		return this.shaderSource;
 	}
+
+	getWebGPUShader(): string {
+		throw new Error('Override this function');
+	}
 }
 registerEntity(Material);

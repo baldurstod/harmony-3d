@@ -14,5 +14,8 @@
     "declarationDir": "dist/dts",
     //"noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
+		"types": [
+			"@webgpu/types",
+		],
   }
 }

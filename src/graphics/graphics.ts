@@ -7,7 +7,7 @@ import { Composer } from '../composer/composer';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
 import { Entity } from '../entities/entity';
 import { pickList } from '../entities/picklist';
-import { RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { isNumeric } from '../math/functions';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
@@ -19,9 +19,11 @@ import { WebGLStats } from '../utils/webglstats';
 import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_FRAMEBUFFER, GL_RGBA, GL_SCISSOR_TEST, GL_STENCIL_BUFFER_BIT, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { WebGLShaderSource } from '../webgl/shadersource';
+import { WebGPURenderer } from '../webgpu/webgpurenderer';
 import { setGraphics } from './graphics2';
 import { GraphicsEvents } from './graphicsevents';
 import { Viewport } from './viewport';
+import { WebGPUInternal } from './webgpuinternal';
 
 const FULL_PATATE = false;
 
@@ -43,6 +45,17 @@ export enum ShaderDebugMode {
 	None = 0,
 }
 
+/** Context type for the canvas. */
+export enum ContextType {
+	/** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
+	WebGL = 'webgl',
+	/** WebGPU context. */
+	WebGPU = 'webgpu',
+}
+
+type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+type GPUConfiguration = PartialBy<GPUCanvasConfiguration, 'device' | 'format'>;
+
 export interface GraphicsInitOptions {
 	/**
 	 * The canvas to render into. Method getContext() must not have been called on the canvas.
@@ -54,9 +67,13 @@ export interface GraphicsInitOptions {
 	useOffscreenCanvas?: boolean,
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean,
+	/** Canvas type. Defaults to WebGL */
+	type?: ContextType;
 
 	/** WebGL attributes passed to getContext() */
 	webGL?: WebGLContextAttributes
+	/** WebGPU configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
+	webGPU?: GPUConfiguration;
 }
 
 export interface AddCanvasOptions {
@@ -64,7 +81,7 @@ export interface AddCanvasOptions {
 	name: string;
 	/** The HTMLCanvasElement that will be used. One will be created if not provided. */
 	canvas?: HTMLCanvasElement;
-	/** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
+	/** Set the canvas state to enabled. A disabled canvas will not be rendered. Default to true. */
 	enabled?: boolean;
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean;
@@ -231,6 +248,7 @@ class Graphics {
 	static #autoResize = false;
 	static isWebGL = false;
 	static isWebGL2 = false;
+	static isWebGPU = false;
 	static autoClear = true;
 	static autoClearColor = false;
 	static autoClearDepth = true;
@@ -254,7 +272,9 @@ class Graphics {
 	static #height = 150;
 	static #offscreenCanvas?: OffscreenCanvas;
 	static #forwardRenderer?: ForwardRenderer;
+	static #webGPURenderer?: WebGPURenderer;
 	static glContext: WebGLAnyRenderingContext;
+	static gpuContext: GPUCanvasContext;
 	static #bipmapContext?: ImageBitmapRenderingContext | null;
 	static #pickedEntity: Entity | null = null;
 	static #animationFrame = 0;
@@ -295,7 +315,7 @@ class Graphics {
 		this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
 	}
 
-	static initCanvas(contextAttributes: GraphicsInitOptions = {}) {
+	static async initCanvas(contextAttributes: GraphicsInitOptions = {}): Promise<typeof Graphics> {
 		if (contextAttributes.useOffscreenCanvas) {
 			this.#offscreenCanvas = new OffscreenCanvas(0, 0);
 		} else {
@@ -311,16 +331,15 @@ class Graphics {
 		}
 		*/
 
-		this.#initContext(contextAttributes.webGL);
+		await this.#initContext(contextAttributes);
 		this.#initObserver();
 
-		WebGLRenderingState.setGraphics();
-
 		// init state
-		WebGLRenderingState.enable(GL_CULL_FACE);
+		if (this.glContext) {
+			WebGLRenderingState.enable(GL_CULL_FACE);
+		}
 		// init state end
 		//this.clearColor = vec4.fromValues(0, 0, 0, 255);
-		this.#forwardRenderer = new ForwardRenderer();
 
 		const autoResize = contextAttributes.autoResize;
 		if (autoResize !== undefined) {
@@ -544,9 +563,6 @@ class Graphics {
 			}
 		}
 
-		this.renderBackground();//TODOv3 put in rendering pipeline
-
-
 		const width = this.#canvas?.width ?? this.#offscreenCanvas?.width ?? 0;
 		const height = this.#canvas?.height ?? this.#offscreenCanvas?.height ?? 0;
 
@@ -558,13 +574,21 @@ class Graphics {
 			camera.aspectRatio = width / height;
 		}
 
-		this.#forwardRenderer!.render(scene, camera, delta, {
+		const internalRenderContext: InternalRenderContext = {
 			renderContext: context,
 			width: width,
 			height: height,
-		});
+		}
 
-		//const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
+		if (this.isWebGL || this.isWebGL2) {
+			//this.#renderWebGL(scene, camera, delta, internalRenderContext);
+			this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
+		} else {
+			if (this.isWebGPU) {
+				this.#webGPURenderer!.render(scene, camera, delta, internalRenderContext);
+			}
+		}
+
 		if (this.#offscreenCanvas && context.transferBitmap !== false && this.#bipmapContext && this.#allowTransfertBitmap) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			this.#bipmapContext.transferFromImageBitmap(bitmap);
@@ -654,7 +678,7 @@ class Graphics {
 
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
-				composer.setSize(canvas.canvas.width, canvas.canvas.height);
+				composer.setSize(w, h);
 				composer.render(delta, context);
 				break;
 			}
@@ -669,7 +693,7 @@ class Graphics {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+				(this.#forwardRenderer ?? this.#webGPURenderer)!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
 			}
 
 			// TODO: set in the previous state
@@ -722,9 +746,11 @@ class Graphics {
 		if (stencil) bits |= GL_STENCIL_BUFFER_BIT;
 
 		//TODO check if doing a complete state reinitilisation is better ?
-		WebGLRenderingState.colorMask(VEC4_ALL_1);
-		WebGLRenderingState.depthMask(true);
-		WebGLRenderingState.stencilMask(Number.MAX_SAFE_INTEGER);
+		if (this.glContext) {
+			WebGLRenderingState.colorMask(VEC4_ALL_1);
+			WebGLRenderingState.depthMask(true);
+			WebGLRenderingState.stencilMask(Number.MAX_SAFE_INTEGER);
+		}
 
 		this.glContext?.clear(bits);
 	}
@@ -755,7 +781,19 @@ class Graphics {
 		}
 	}
 
-	static #initContext(contextAttributes: WebGLContextAttributes = {}) {
+	static async #initContext(graphicOptions: GraphicsInitOptions = {}) {
+		if (graphicOptions.type == ContextType.WebGPU) {
+			this.#initWebGPUContext(graphicOptions.webGPU);
+			this.#webGPURenderer = new WebGPURenderer();
+		} else {
+			this.#initWebGLContext(graphicOptions.webGL);
+			this.#forwardRenderer = new ForwardRenderer();
+
+			WebGLRenderingState.setGraphics();
+		}
+	}
+
+	static #initWebGLContext(contextAttributes: WebGLContextAttributes = {}) {
 		const canvas = this.#offscreenCanvas ?? this.#canvas;
 		if (this.#offscreenCanvas) {
 			//this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');
@@ -820,11 +858,48 @@ class Graphics {
 		}
 	}
 
-	/**
-	 * @deprecated Please use `setShaderPrecision` instead.
-	 */
-	static set shaderPrecision(shaderPrecision: ShaderPrecision) {
-		this.setShaderPrecision(shaderPrecision);
+	static async #initWebGPUContext(configuration: GPUConfiguration = {}): Promise<void> {
+		const canvas = this.#offscreenCanvas ?? this.#canvas;
+		if (!canvas) {
+			return;
+		}
+
+		try {
+			const context = canvas.getContext('webgpu');
+			if (context == null) {
+				throw new Error('unable to init WebGPU context');
+			}
+			this.gpuContext = context;
+			this.isWebGPU = true;
+			//context.configure(configuration);
+			await this.#configureWebGPU(configuration);
+
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	}
+
+	static async #configureWebGPU(configuration: GPUConfiguration): Promise<boolean> {
+		const adapter = await navigator.gpu.requestAdapter();
+		if (!adapter) {
+			return false;
+		}
+
+		if (!configuration.device) {
+			configuration.device = await adapter.requestDevice();
+		}
+		if (!configuration.format) {
+			configuration.format = navigator.gpu.getPreferredCanvasFormat();
+		}
+
+		WebGPUInternal.config = configuration as GPUCanvasConfiguration;
+		WebGPUInternal.adapter = adapter;
+		WebGPUInternal.device = configuration.device;
+		WebGPUInternal.format = configuration.format;
+
+		this.gpuContext.configure(configuration as GPUCanvasConfiguration);
+		return true;
 	}
 
 	static setShaderPrecision(shaderPrecision: ShaderPrecision) {
@@ -884,7 +959,9 @@ class Graphics {
 	}
 
 	static clearColor(clearColor: vec4) {
-		WebGLRenderingState.clearColor(clearColor);
+		if (this.glContext) {
+			WebGLRenderingState.clearColor(clearColor);
+		}
 	}
 
 	static getClearColor(clearColor?: vec4) {
@@ -892,15 +969,21 @@ class Graphics {
 	}
 
 	static clearDepth(clearDepth: GLclampf) {
-		WebGLRenderingState.clearDepth(clearDepth);
+		if (this.glContext) {
+			WebGLRenderingState.clearDepth(clearDepth);
+		}
 	}
 
 	static clearStencil(clearStencil: GLint) {
-		WebGLRenderingState.clearStencil(clearStencil);
+		if (this.glContext) {
+			WebGLRenderingState.clearStencil(clearStencil);
+		}
 	}
 
 	static setColorMask(mask: vec4) {
-		WebGLRenderingState.colorMask(mask);
+		if (this.glContext) {
+			WebGLRenderingState.colorMask(mask);
+		}
 	}
 
 	static set autoResize(autoResize) {
@@ -974,7 +1057,10 @@ class Graphics {
 
 	static setViewport(viewport: ReadonlyVec4): void {
 		vec4.copy(this.#viewport, viewport);
-		WebGLRenderingState.viewport(viewport);
+
+		if (this.glContext) {
+			WebGLRenderingState.viewport(viewport);
+		}
 	}
 
 	/**
@@ -997,7 +1083,9 @@ class Graphics {
 
 	static setScissor(scissor: ReadonlyVec4): void {
 		vec4.copy(this.#scissor, scissor);
-		WebGLRenderingState.scissor(scissor);
+		if (this.glContext) {
+			WebGLRenderingState.scissor(scissor);
+		}
 	}
 
 	/**
@@ -1008,11 +1096,15 @@ class Graphics {
 	}
 
 	static enableScissorTest(): void {
-		WebGLRenderingState.enable(GL_SCISSOR_TEST);
+		if (this.glContext) {
+			WebGLRenderingState.enable(GL_SCISSOR_TEST);
+		}
 	}
 
 	static disableScissorTest(): void {
-		WebGLRenderingState.disable(GL_SCISSOR_TEST);
+		if (this.glContext) {
+			WebGLRenderingState.disable(GL_SCISSOR_TEST);
+		}
 	}
 
 	static checkCanvasSize() {

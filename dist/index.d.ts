@@ -55,7 +55,7 @@ export declare interface AddCanvasOptions {
     name: string;
     /** The HTMLCanvasElement that will be used. One will be created if not provided. */
     canvas?: HTMLCanvasElement;
-    /** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
+    /** Set the canvas state to enabled. A disabled canvas will not be rendered. Default to true. */
     enabled?: boolean;
     /** Auto resize the canvas to fit its parent. Default to false. */
     autoResize?: boolean;
@@ -76,7 +76,7 @@ export declare interface AddCanvasOptions {
 export declare function addIncludeSource(name: string, source?: string): void;
 
 declare type AddNodeParameters = {
-    textureSize: number;
+    textureSize?: number;
     lenght?: number;
     [key: string]: any;
 };
@@ -1215,6 +1215,14 @@ declare class Channel {
 
              declare type ContextObserverTarget = OrbitControl;
 
+             /** Context type for the canvas. */
+             export declare enum ContextType {
+                 /** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
+                 WebGL = "webgl",
+                 /** WebGPU context. */
+                 WebGPU = "webgpu"
+             }
+
              export declare class ContinuousEmitter extends Emitter {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
@@ -2026,9 +2034,6 @@ declare class Channel {
                           render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
                           renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void;
                           set scissorTest(scissorTest: boolean);
-                          /**
-                           * Invalidate all shader (force recompile)
-                           */
                           invalidateShaders(): void;
                           clear(color: boolean, depth: boolean, stencil: boolean): void;
                           setToneMapping(toneMapping: ToneMapping): void;
@@ -2634,6 +2639,8 @@ declare class Channel {
 
                       export declare const GL_ZERO = 0;
 
+                      declare type GPUConfiguration = PartialBy<GPUCanvasConfiguration, 'device' | 'format'>;
+
                       export declare class GrainPass extends Pass {
                           #private;
                           constructor(camera: Camera);
@@ -2660,6 +2667,7 @@ declare class Channel {
                           #private;
                           static isWebGL: boolean;
                           static isWebGL2: boolean;
+                          static isWebGPU: boolean;
                           static autoClear: boolean;
                           static autoClearColor: boolean;
                           static autoClearDepth: boolean;
@@ -2667,10 +2675,11 @@ declare class Channel {
                           static speed: number;
                           static currentTick: number;
                           static glContext: WebGLAnyRenderingContext;
+                          static gpuContext: GPUCanvasContext;
                           static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
-                          static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
+                          static initCanvas(contextAttributes?: GraphicsInitOptions): Promise<typeof Graphics_2>;
                           static addCanvas(options: AddCanvasOptions): CanvasAttributes | null;
                           static removeCanvas(name: string): void;
                           static enableCanvas(name: string, enable: boolean): void;
@@ -2694,10 +2703,6 @@ declare class Channel {
                           static renderBackground(): void;
                           static clear(color: boolean, depth: boolean, stencil: boolean): void;
                           static _tick(): void;
-                          /**
-                           * @deprecated Please use `setShaderPrecision` instead.
-                           */
-                          static set shaderPrecision(shaderPrecision: ShaderPrecision);
                           static setShaderPrecision(shaderPrecision: ShaderPrecision): void;
                           static setShaderQuality(shaderQuality: ShaderQuality): void;
                           static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
@@ -2809,8 +2814,12 @@ declare class Channel {
                           useOffscreenCanvas?: boolean;
                           /** Auto resize the canvas to fit its parent. Default to false. */
                           autoResize?: boolean;
+                          /** Canvas type. Defaults to WebGL */
+                          type?: ContextType;
                           /** WebGL attributes passed to getContext() */
                           webGL?: WebGLContextAttributes;
+                          /** WebGPU configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
+                          webGPU?: GPUConfiguration;
                       }
 
                       declare type GraphicsType = typeof Graphics_2;
@@ -3198,13 +3207,13 @@ declare class Channel {
                           exportAsText(linePrefix?: string): string;
                       }
 
-                      export declare type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
+                      declare type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
-                      export declare type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
+                      declare type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
 
-                      export declare type Kv3ValueTypeArrays = number[];
+                      declare type Kv3ValueTypeArrays = number[];
 
-                      export declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
+                      declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 
                       declare class KvAttribute {
                           name: string;
@@ -3676,6 +3685,7 @@ declare class Channel {
                           static getEntityName(): string;
                           get shaderSource(): string;
                           getShaderSource(): string;
+                          getWebGPUShader(): string;
                       }
 
                       export declare const MATERIAL_BLENDING_NONE = 0;
@@ -4410,7 +4420,7 @@ declare class Channel {
                           textureSize: number;
                           constructor();
                           render(material: Material, width: number, height: number): void;
-                          addNode(operationName: string, params: AddNodeParameters): Node_2 | null;
+                          addNode(operationName: string, params?: AddNodeParameters): Node_2 | null;
                           removeNode(node: Node_2): void;
                           removeAllNodes(): void;
                           getVariable(name: string): number | undefined;
@@ -4747,6 +4757,8 @@ declare class Channel {
                           oldParent: Entity | null;
                           newParent: Entity | null;
                       }
+
+                      declare type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
                       declare class ParticleColor {
                           r: number;
@@ -5459,6 +5471,9 @@ declare class Channel {
                           render: (scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) => void;
                           renderShadowMap: (renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) => void;
                           clear: (color: boolean, depth: boolean, stencil: boolean) => void;
+                          /**
+                           * Invalidate all shader (force recompile)
+                           */
                           invalidateShaders: () => void;
                           setToneMapping: (toneMapping: ToneMapping) => void;
                           getToneMapping: () => ToneMapping;
@@ -6199,7 +6214,8 @@ declare class Channel {
 
                       declare enum ShaderType {
                           Vertex = 35633,
-                          Fragment = 35632
+                          Fragment = 35632,
+                          Wgsl = "wgsl"
                       }
 
                       export declare class ShadowMap {
@@ -7221,12 +7237,6 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
-                      export declare class Source2Kv3Value {
-                          type: number;
-                          value?: boolean | number | bigint;
-                          constructor(type: number);
-                      }
-
                       export declare class Source2LifespanDecay extends Operator {
                           doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
                       }
@@ -7737,7 +7747,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#267@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -8089,11 +8099,6 @@ declare class Channel {
                           lightmapVecs: [vec4, vec4];
                           flags: number;
                           texdata: number;
-                      }
-
-                      export declare class SourceKv3String {
-                          id: number;
-                          constructor(id: number);
                       }
 
                       declare class SourceMdl {

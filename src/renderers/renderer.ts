@@ -12,6 +12,9 @@ export interface Renderer {
 	render: (scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) => void;
 	renderShadowMap: (renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) => void;
 	clear: (color: boolean, depth: boolean, stencil: boolean) => void;
+	/**
+	* Invalidate all shader (force recompile)
+	*/
 	invalidateShaders: () => void;
 
 	setToneMapping: (toneMapping: ToneMapping) => void;
