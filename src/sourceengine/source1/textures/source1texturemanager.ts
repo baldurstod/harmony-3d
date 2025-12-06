@@ -5,7 +5,7 @@ import { Color } from '../../../core/color';
 import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
-import { TextureManager } from '../../../textures/texturemanager';
+import { DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR, TextureManager } from '../../../textures/texturemanager';
 import { Source1VtfLoader } from '../loaders/source1vtfloader';
 import { Source1Vtf } from './source1vtf';
 
@@ -27,8 +27,21 @@ class Source1TextureManagerClass {
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1)));
-			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1), undefined, undefined, true));
+			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({
+				webgpuDescriptor: {
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+				color: new Color(0.5, 0.75, 1),
+			}));
+			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
+				webgpuDescriptor: {
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+				color: new Color(0.5, 0.75, 1),
+				needCubeMap: true,				//new Color(0.5, 0.75, 1), undefined, undefined, true
+			}));
 			this.#defaultTexture.addUser(this);
 			this.#defaultTextureCube.addUser(this);
 		});
@@ -122,7 +135,7 @@ class Source1TextureManagerClass {
 		const textureName = path ?? this.#getInternalTextureName();
 		texture = texture ?? new AnimatedTexture();//TODOv3: add params + create animated texture
 		this.setTexture(repository, textureName, texture);
-		texture.addFrame(0, TextureManager.createTexture());
+		texture.addFrame(0, TextureManager.createTexture({ webgpuDescriptor: DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR }));
 		return { name: textureName, texture: texture };
 	}
 
@@ -150,16 +163,31 @@ class Source1TextureManagerClass {
 }
 export const Source1TextureManager = new Source1TextureManagerClass();
 
-export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, srgb: boolean) {
+export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, srgb: boolean): void {
 	const alphaBits = vtf.getAlphaBits();
 	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
 	const glContext = Graphics.glContext;
+	const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
+	const size = vtf.getMipMapSize(currentMipMap);
+	if (!size) {
+		return;
+	}
+
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
-		const texture = TextureManager.createTexture();//TODOv3: add params
+
+		const texture = TextureManager.createTexture({
+			webgpuDescriptor: {
+				size: {
+					width: size.width,
+					height: size.height,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+			}
+		});//TODOv3: add params
 		texture.properties.set('vtf', vtf);
 		texture.setAlphaBits(alphaBits);
-		const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
 		vtf.fillTexture(glContext, texture, currentMipMap, frameIndex, srgb);
 		animatedTexture.addFrame(frameIndex, texture);
 	}

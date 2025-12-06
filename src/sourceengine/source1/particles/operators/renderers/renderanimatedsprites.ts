@@ -9,7 +9,7 @@ import { Mesh } from '../../../../../objects/mesh';
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -183,7 +183,16 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 	}
 
 	#createParticlesTexture() {
-		this.#texture = TextureManager.createTexture();
+		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+			webgpuDescriptor: {
+				size: {
+					width: TEXTURE_WIDTH,
+					height: MAX_PARTICLES_IN_A_SYSTEM,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			}
+		});
 		this.#texture.addUser(this);
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);

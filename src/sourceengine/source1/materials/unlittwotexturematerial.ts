@@ -21,7 +21,12 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 		if (vmt['$texture2']) {
 			this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, vmt['$texture2'], vmt['$frame2'] as number ?? 0));
 		} else {
-			this.setColor2Map(TextureManager.createCheckerTexture());
+			this.setColor2Map(TextureManager.createCheckerTexture({
+				webgpuDescriptor: {
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+			}));
 		}
 
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

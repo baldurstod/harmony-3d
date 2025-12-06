@@ -8,6 +8,7 @@ import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_SRGB } from './vtfconstants';
+import { uint } from 'harmony-types';
 
 export interface VTFMipMap {
 	height: number;
@@ -160,6 +161,20 @@ export class Source1Vtf {
 		return entry.mipMaps[mipmapLvl];
 	}
 	*/
+
+	getMipMapSize(level: uint): { width: uint, height: uint } | null {
+		const res48 = this.getResource(VTF_ENTRY_IMAGE_DATAS);
+		if (!res48) {
+			return null;
+		}
+
+		const mipmap = res48.mipMaps![level];
+		if (!mipmap) {
+			return null;
+		}
+
+		return { width: mipmap.width, height: mipmap.height };
+	}
 
 	fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb = true): void {
 		if (this.flags & TEXTUREFLAGS_ENVMAP) {

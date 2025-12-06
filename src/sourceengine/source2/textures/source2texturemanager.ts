@@ -10,7 +10,7 @@ import { SpriteSheet } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
 import { GL_LINEAR, GL_R8, GL_RED, GL_RGBA, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
-import { Source2TextureBlock, Source2VtexBlock } from '../loaders/source2fileblock';
+import { Source2VtexBlock } from '../loaders/source2fileblock';
 import { Source2TextureLoader } from '../loaders/source2textureloader';
 import { Source2Texture } from './source2texture';
 
@@ -25,7 +25,15 @@ class Source2TextureManagerClass {
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture = TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1));
+			this.#defaultTexture = TextureManager.createCheckerTexture({
+				webgpuDescriptor: {
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+				color: new Color(0.5, 0.75, 1),
+			});
+
+
 			this.#defaultTexture.addUser(this);
 			//this._missingTexture = TextureManager.createCheckerTexture();
 			this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
@@ -75,7 +83,18 @@ class Source2TextureManagerClass {
 			const promise = new Promise<AnimatedTexture>(async resolve => {
 				const vtex = await this.getVtex(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
-				const texture = TextureManager.createTexture();//TODOv3: add params
+				//const texture = TextureManager.createTexture();//TODOv3: add params
+				const texture = TextureManager.createTexture({
+					webgpuDescriptor: {
+						size: {
+							width: vtex?.getWidth()  ?? 1,
+							height: vtex?.getHeight()  ?? 1,
+						},
+						format: 'rgba8unorm',
+						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+					}
+				});//TODOv3: add params
+
 				if (vtex) {
 					this.#initTexture(texture, vtex);
 					if (vtex.spriteSheet) {

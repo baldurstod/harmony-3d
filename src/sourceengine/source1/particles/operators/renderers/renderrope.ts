@@ -8,7 +8,7 @@ import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geome
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
@@ -20,7 +20,7 @@ const tempVec2 = vec2.create();
 export class RenderRope extends Source1ParticleOperator {
 	static functionName = 'render rope';
 	#maxParticles = 0;
-	texture?: Texture;
+	#texture?: Texture;
 	geometry?: BeamBufferGeometry;
 	imgData?: Float32Array;
 
@@ -85,7 +85,7 @@ export class RenderRope extends Source1ParticleOperator {
 		this.mesh.setDefine('IS_ROPE');
 		this.mesh.setDefine('USE_VERTEX_COLOR');
 		this.#createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture!);
+		this.mesh.setUniform('uParticles', this.#texture!);
 
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
@@ -116,10 +116,19 @@ export class RenderRope extends Source1ParticleOperator {
 	}
 
 	#createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
-		this.texture.addUser(this);
+		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+			webgpuDescriptor: {
+				size: {
+					width: TEXTURE_WIDTH,
+					height: MAX_PARTICLES_IN_A_SYSTEM,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			}
+		});
+		this.#texture.addUser(this);
 		const gl = Graphics.glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -128,7 +137,7 @@ export class RenderRope extends Source1ParticleOperator {
 	#updateParticlesTexture() {// TODO: create a renderoperator class and put this method in it
 		const gl = Graphics.glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
 		if (Graphics.isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
 		} else {
@@ -170,7 +179,7 @@ export class RenderRope extends Source1ParticleOperator {
 
 	dispose() {
 		this.mesh?.dispose();
-		this.texture?.removeUser(this);
+		this.#texture?.removeUser(this);
 	}
 }
 Source1ParticleOperators.registerOperator(RenderRope);

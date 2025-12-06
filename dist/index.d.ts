@@ -20,7 +20,6 @@ import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2a
 import { Source2Particle as Source2Particle_2 } from '../../source2particle';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
-import { Texture as Texture_3 } from '../../../../..';
 import { uint } from 'harmony-types';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
@@ -1286,11 +1285,32 @@ declare class Channel {
                  doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
              }
 
+             declare type CreateCheckerTextureParams = TextureParams & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+                 color?: Color;
+                 needCubeMap?: boolean;
+             };
+
+             declare type CreateFlatTextureParams = CreateTextureParams_2 & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptor;
+                 color?: Color;
+             };
+
              export declare class CreateFromParentParticles extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
                  doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              }
+
+             declare type CreateImageTextureParams = TextureParams & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+                 image: HTMLImageElement;
+             };
+
+             declare type CreateNoiseTextureParams = TextureParams & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptor;
+                 needCubeMap?: boolean;
+             };
 
              export declare class CreateOnModel extends Operator {
                  #private;
@@ -1310,7 +1330,16 @@ declare class Channel {
                  doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              }
 
-             export declare function createTexture(): WebGLTexture | null;
+             export declare function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | null;
+
+             export declare type CreateTextureParams = {
+                 dimension?: GPUTextureDimension;
+             };
+
+             declare type CreateTextureParams_2 = TextureParams & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptor;
+                 needCubeMap?: boolean;
+             };
 
              export declare class CreateWithinBox extends Operator {
                  #private;
@@ -1930,7 +1959,7 @@ declare class Channel {
                           files?: FileSelectorFile[];
                       }
 
-                      export declare function fillCheckerTexture(texture: Texture, color: Color, width: number | undefined, height: number | undefined, needCubeMap: boolean): Texture;
+                      export declare function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): Texture;
 
                       export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): Texture;
 
@@ -2025,22 +2054,6 @@ declare class Channel {
                           static setFontsPath(url: URL): void;
                           static getFont(name: string, style?: string): Promise<Font | undefined>;
                           static getFontList(): Promise<Map<string, Set<string>>>;
-                      }
-
-                      declare class ForwardRenderer implements Renderer {
-                          #private;
-                          constructor();
-                          applyMaterial(program: Program, material: Material): void;
-                          render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void;
-                          renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void;
-                          set scissorTest(scissorTest: boolean);
-                          invalidateShaders(): void;
-                          clear(color: boolean, depth: boolean, stencil: boolean): void;
-                          setToneMapping(toneMapping: ToneMapping): void;
-                          getToneMapping(): ToneMapping;
-                          setToneMappingExposure(exposure: number): void;
-                          getToneMappingExposure(): number;
-                          clearColor(clearColor: vec4): void;
                       }
 
                       export declare class Framebuffer {
@@ -2674,6 +2687,7 @@ declare class Channel {
                           static autoClearStencil: boolean;
                           static speed: number;
                           static currentTick: number;
+                          static readonly ready: Promise<boolean>;
                           static glContext: WebGLAnyRenderingContext;
                           static gpuContext: GPUCanvasContext;
                           static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
@@ -2759,15 +2773,13 @@ declare class Channel {
                           static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
                           static startRecording(frameRate: number | undefined, bitsPerSecond: number, canvas?: HTMLCanvasElement): void;
                           static stopRecording(fileName?: string): void;
-                          static get ready(): Promise<boolean>;
-                          static isReady(): Promise<void>;
                           static getParameter(param: GLenum): any;
                           static cleanupGLError(): void;
                           static getGLError(context: string): void;
                           static useLogDepth(use: boolean): void;
                           static getTime(): number;
                           static getOnScreenCanvas(): HTMLCanvasElement | undefined;
-                          static getForwardRenderer(): ForwardRenderer | undefined;
+                          static getForwardRenderer(): Renderer;
                       }
 
                       export declare enum GraphicsEvent {
@@ -2881,6 +2893,14 @@ declare class Channel {
                       }
 
                       export declare const HALF_PI: number;
+
+                      export declare type HarmonyGPUTextureDescriptor = Omit<GPUTextureDescriptor, 'size'> & {
+                          size: RequiredBy<GPUExtent3DDict, 'height'>;
+                      };
+
+                      export declare type HarmonyGPUTextureDescriptorOptionalSize = Omit<GPUTextureDescriptor, 'size'> & {
+                          size?: RequiredBy<GPUExtent3DDict, 'height'>;
+                      };
 
                       declare interface HasHitBoxes {
                           getHitboxes(): Hitbox[];
@@ -5519,7 +5539,6 @@ declare class Channel {
                       export declare class RenderRope extends Source1ParticleOperator {
                           #private;
                           static functionName: string;
-                          texture?: Texture;
                           geometry?: BeamBufferGeometry;
                           imgData?: Float32Array;
                           constructor(system: Source1ParticleSystem);
@@ -5552,7 +5571,6 @@ declare class Channel {
                       export declare class RenderSprites extends RenderBase {
                           #private;
                           geometry: BufferGeometry;
-                          texture: Texture_3;
                           imgData: Float32Array;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
@@ -5571,7 +5589,6 @@ declare class Channel {
                       export declare class RenderSpriteTrail extends Source1ParticleOperator {
                           #private;
                           static functionName: string;
-                          texture?: Texture;
                           geometry?: BufferGeometry;
                           imgData?: Float32Array;
                           constructor(system: Source1ParticleSystem);
@@ -5731,6 +5748,8 @@ declare class Channel {
                           text?: string | null;
                           error?: RepositoryError;
                       }
+
+                      declare type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 
                       export declare class RgbeImporter {
                           #private;
@@ -6965,6 +6984,10 @@ declare class Channel {
                            * TODO
                            */
                           getResource(type: number): VTFResourceEntry | null;
+                          getMipMapSize(level: uint): {
+                              width: uint;
+                              height: uint;
+                          } | null;
                           fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
                           getFormat(): number;
                           getType(): number;
@@ -8754,12 +8777,12 @@ declare class Channel {
                       export declare class TextureManager {
                           #private;
                           static setTexture(path: string, texture: Texture): void;
-                          static createTexture(textureParams?: TextureParams): Texture;
+                          static createTexture(textureParams: CreateTextureParams_2): Texture;
                           static deleteTexture(texture: Texture): void;
-                          static createFlatTexture(color?: Color, needCubeMap?: boolean): Texture;
-                          static createCheckerTexture(color?: Color, width?: number, height?: number, needCubeMap?: boolean): Texture;
-                          static createNoiseTexture(width: number, height: number, needCubeMap?: boolean): Texture;
-                          static createTextureFromImage(image: HTMLImageElement, textureParams?: TextureParams): Texture;
+                          static createFlatTexture(textureParams: CreateFlatTextureParams): Texture;
+                          static createCheckerTexture(textureParams: CreateCheckerTextureParams): Texture;
+                          static createNoiseTexture(textureParams: CreateNoiseTextureParams): Texture;
+                          static createTextureFromImage(textureParams: CreateImageTextureParams): Texture;
                           static fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;
                       }
 
@@ -8769,7 +8792,13 @@ declare class Channel {
                           CubeUvMapping = 2
                       }
 
-                      declare type TextureParams = any;
+                      declare type TextureParams = {
+                          [key: string]: unknown;
+                          image?: HTMLImageElement;
+                          flipY?: boolean;
+                          premultiplyAlpha?: boolean;
+                          colorSpace?: ColorSpace;
+                      };
 
                       declare enum TextureRole {
                           Color = 0,

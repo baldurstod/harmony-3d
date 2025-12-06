@@ -5,7 +5,7 @@ import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geome
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
 import { Source2ParticleSystem } from '../../export';
@@ -181,7 +181,16 @@ export class RenderRopes extends RenderBase {
 	}
 
 	#createParticlesTexture() {
-		this.#texture = TextureManager.createTexture();
+		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+			webgpuDescriptor: {
+				size: {
+					width: TEXTURE_WIDTH,
+					height: MAX_PARTICLES_IN_A_SYSTEM,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			}
+		});
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

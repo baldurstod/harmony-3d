@@ -23,7 +23,7 @@ export class Composer {
 		}
 
 		(async () => {
-			await Graphics.isReady();
+			await Graphics.ready;
 			if (!renderTarget) {
 				const rendererSize = Graphics.getSize();
 				renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });

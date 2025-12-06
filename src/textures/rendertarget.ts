@@ -28,7 +28,16 @@ export class RenderTarget {
 		if (params.texture) {
 			this.#texture = params.texture;
 		} else {
-			this.#texture = TextureManager.createTexture({ internalFormat: params.internalFormat, format: params.format, type: params.type }/*{minFilter:GL_LINEAR, wrapS:GL_CLAMP_TO_EDGE, wrapT:GL_CLAMP_TO_EDGE}*/);
+			this.#texture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+					size: { width, height },
+				},
+				internalFormat: params.internalFormat,
+				format: params.format,
+				type: params.type
+			}/*{minFilter:GL_LINEAR, wrapS:GL_CLAMP_TO_EDGE, wrapT:GL_CLAMP_TO_EDGE}*/);
 		}
 		this.#texture.addUser(this);
 		this.#texture.minFilter = GL_LINEAR;

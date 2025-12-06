@@ -46,7 +46,7 @@ export class Skeleton extends Entity {
 	}
 
 	#createBoneMatrixArray() {
-		this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4);
+		this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
 		mat4.identity(this.#imgData);
 		const index = 0;
 		for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
@@ -55,7 +55,16 @@ export class Skeleton extends Entity {
 	}
 
 	#createBoneMatrixTexture() {
-		this.#texture = TextureManager.createTexture();
+			this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+				webgpuDescriptor: {
+					size: {
+						width: 4/* matrix cols */,
+						height: MAX_HARDWARE_BONES,
+					},
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING,
+				}
+			});
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);//TODOv3: pass param to texture and remove this
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -67,9 +76,9 @@ export class Skeleton extends Entity {
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (Graphics.isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}

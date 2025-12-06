@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { MyEventTarget, StaticEventTarget, setTimeoutPromise, fileToImage, Queue, Map2, once as once$1 } from 'harmony-utils';
+import { MyEventTarget, StaticEventTarget, once as once$1, setTimeoutPromise, fileToImage, Queue, Map2 } from 'harmony-utils';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
 import { ShortcutHandler, saveFile, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
@@ -6059,14 +6059,27 @@ class Color {
     }
 }
 
+class WebGPUInternal {
+    static config;
+    static adapter;
+    static device;
+    static format;
+}
+
 const textures$1 = new Set();
 let context$1;
 const TextureFactoryEventTarget = new EventTarget();
 function setTextureFactoryContext(c) {
     context$1 = c;
 }
-function createTexture() {
-    const texture = context$1.createTexture();
+function createTexture(descriptor) {
+    let texture;
+    if (Graphics$1.isWebGPU) {
+        texture = WebGPUInternal.device.createTexture(descriptor);
+    }
+    else {
+        texture = context$1.createTexture();
+    }
     textures$1.add(texture);
     TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures$1.size } }));
     return texture;
@@ -6121,7 +6134,7 @@ function fillFlatTexture(texture, color, needCubeMap) {
     }
     return texture;
 }
-function fillCheckerTexture(texture, color, width = 64, height = 64, needCubeMap) {
+function fillCheckerTexture(texture, color, width, height, needCubeMap) {
     if (texture) {
         const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
@@ -6338,6 +6351,7 @@ class Texture {
     }
 }
 
+const DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR = { /*TODO: set actual values*/ size: { width: 1, height: 1, depthOrArrayLayers: 1 }, format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT };
 class TextureManager {
     static #texturesList = new Map();
     static setTexture(path, texture) {
@@ -6345,7 +6359,11 @@ class TextureManager {
     }
     static createTexture(textureParams) {
         const texture = new Texture(textureParams);
-        texture.texture = createTexture();
+        texture.texture = createTexture(textureParams.webgpuDescriptor /*?? {
+            size: [1],
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+        }*/);
         //TODOv3: init texture parameters
         //texture.setParameters(Graphics.glContext, target);
         return texture;
@@ -6353,24 +6371,28 @@ class TextureManager {
     static deleteTexture(texture) {
         deleteTexture(texture.texture);
     }
-    static createFlatTexture(color = new Color(1, 0, 1), needCubeMap = false) {
-        const texture = this.createTexture();
-        fillFlatTexture(texture, color, needCubeMap);
-        return texture;
-    }
-    static createCheckerTexture(color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false) {
-        const texture = this.createTexture();
-        fillCheckerTexture(texture, color, width, height, needCubeMap);
-        return texture;
-    }
-    static createNoiseTexture(width, height, needCubeMap = false) {
-        const texture = this.createTexture();
-        fillNoiseTexture(texture, width, height, needCubeMap);
-        return texture;
-    }
-    static createTextureFromImage(image, textureParams) {
+    static createFlatTexture(textureParams /*, color: Color = new Color(1, 0, 1), needCubeMap = false*/) {
         const texture = this.createTexture(textureParams);
-        fillTextureWithImage(texture, image);
+        fillFlatTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.needCubeMap ?? false);
+        return texture;
+    }
+    static createCheckerTexture(textureParams /*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
+        if (!textureParams.webgpuDescriptor.size) {
+            textureParams.webgpuDescriptor.size = { width: 64, height: 64 };
+        }
+        const texture = this.createTexture(textureParams);
+        fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.webgpuDescriptor.size.width, textureParams.webgpuDescriptor.size.height ?? 64, textureParams.needCubeMap ?? false);
+        return texture;
+    }
+    static createNoiseTexture(textureParams /*, width: number, height: number, needCubeMap = false*/) {
+        const texture = this.createTexture(textureParams);
+        fillNoiseTexture(texture, textureParams.webgpuDescriptor.size.width, textureParams.webgpuDescriptor.size.height, textureParams.needCubeMap);
+        return texture;
+    }
+    static createTextureFromImage(textureParams) {
+        textureParams.webgpuDescriptor.size = { width: textureParams.image.naturalWidth, height: textureParams.image.naturalHeight }; //[image.naturalWidth, image.naturalHeight, 1];
+        const texture = this.createTexture(textureParams);
+        fillTextureWithImage(texture, textureParams.image);
         return texture;
     }
     static fillTextureWithImage(texture, image) {
@@ -6398,7 +6420,16 @@ class RenderTarget {
             this.#texture = params.texture;
         }
         else {
-            this.#texture = TextureManager.createTexture({ internalFormat: params.internalFormat, format: params.format, type: params.type } /*{minFilter:GL_LINEAR, wrapS:GL_CLAMP_TO_EDGE, wrapT:GL_CLAMP_TO_EDGE}*/);
+            this.#texture = TextureManager.createTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+                    size: { width, height },
+                },
+                internalFormat: params.internalFormat,
+                format: params.format,
+                type: params.type
+            } /*{minFilter:GL_LINEAR, wrapS:GL_CLAMP_TO_EDGE, wrapT:GL_CLAMP_TO_EDGE}*/);
         }
         this.#texture.addUser(this);
         this.#texture.minFilter = GL_LINEAR;
@@ -6726,7 +6757,7 @@ class Composer {
             return;
         }
         (async () => {
-            await Graphics$1.isReady();
+            await Graphics$1.ready;
             if (!renderTarget) {
                 const rendererSize = Graphics$1.getSize();
                 renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
@@ -11262,13 +11293,9 @@ function getDefinesAsString(meshOrMaterial) {
     return defines.join('\n') + '\n';
 }
 
-class WebGPUInternal {
-    static config;
-    static adapter;
-    static device;
-    static format;
-}
-
+// remove these when unused
+const clearColorError = once$1(() => console.error('TODO clearColor'));
+const clearError = once$1(() => console.error('TODO clear'));
 mat4.create();
 class WebGPURenderer {
     #renderList = new RenderList();
@@ -11296,10 +11323,10 @@ class WebGPURenderer {
         throw new Error('TODO');
     }
     clear(color, depth, stencil) {
-        throw new Error('TODO');
+        clearError();
     }
     clearColor(clearColor) {
-        throw new Error('TODO');
+        clearColorError();
     }
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
@@ -11442,7 +11469,7 @@ class WebGPURenderer {
      */
     #getShaderModule(material) {
         const shaderName = material.getShaderSource();
-        let shaderModule = this.#materialsShaderModule.get(shaderName);
+        let shaderModule = this.#materialsShaderModule.get(shaderName + '.wgsl');
         if (shaderModule) {
             return shaderModule;
         }
@@ -11642,7 +11669,7 @@ class Graphics {
     static #renderBuffers = new Set();
     static #renderTargetStack = [];
     static #readyPromiseResolve;
-    static #readyPromise = new Promise((resolve) => this.#readyPromiseResolve = resolve);
+    static ready = new Promise((resolve) => this.#readyPromiseResolve = resolve);
     // Canvas used when useOffscreenCanvas is set to false
     static #canvas;
     static #canvases = new Map();
@@ -11650,7 +11677,7 @@ class Graphics {
     static #height = 150;
     static #offscreenCanvas;
     static #forwardRenderer;
-    static #webGPURenderer;
+    //static #webGPURenderer?: WebGPURenderer;
     static glContext;
     static gpuContext;
     static #bipmapContext;
@@ -11915,15 +11942,17 @@ class Graphics {
             width: width,
             height: height,
         };
+        this.#forwardRenderer.render(scene, camera, delta, internalRenderContext);
+        /*
         if (this.isWebGL || this.isWebGL2) {
             //this.#renderWebGL(scene, camera, delta, internalRenderContext);
-            this.#forwardRenderer.render(scene, camera, delta, internalRenderContext);
-        }
-        else {
+        } else {
             if (this.isWebGPU) {
-                this.#webGPURenderer.render(scene, camera, delta, internalRenderContext);
+                this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
+                this.#webGPURenderer!.render(scene, camera, delta, internalRenderContext);
             }
         }
+        */
         if (this.#offscreenCanvas && context.transferBitmap !== false && this.#bipmapContext && this.#allowTransfertBitmap) {
             const bitmap = this.#offscreenCanvas.transferToImageBitmap();
             this.#bipmapContext.transferFromImageBitmap(bitmap);
@@ -12003,7 +12032,7 @@ class Graphics {
                     camera.top = h;
                     camera.aspectRatio = w / h;
                 }
-                (this.#forwardRenderer ?? this.#webGPURenderer).render(scene, camera, delta, { renderContext: context, width: w, height: h });
+                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
             }
             // TODO: set in the previous state
             this.disableScissorTest();
@@ -12069,8 +12098,8 @@ class Graphics {
     }
     static async #initContext(graphicOptions = {}) {
         if (graphicOptions.type == ContextType.WebGPU) {
-            this.#initWebGPUContext(graphicOptions.webGPU);
-            this.#webGPURenderer = new WebGPURenderer();
+            await this.#initWebGPUContext(graphicOptions.webGPU);
+            this.#forwardRenderer = new WebGPURenderer();
         }
         else {
             this.#initWebGLContext(graphicOptions.webGL);
@@ -12512,12 +12541,6 @@ class Graphics {
         this.#mediaRecorder.stop();
         //Stop the canvas stream
         this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
-    }
-    static get ready() {
-        return this.#readyPromise;
-    }
-    static async isReady() {
-        await this.#readyPromise;
     }
     static getParameter(param) {
         return this.glContext?.getParameter(param);
@@ -14587,7 +14610,13 @@ registerEntity(MeshBasicPbrMaterial);
 class ShaderToyMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this.setTexture('noiseMap', TextureManager.createNoiseTexture(256, 256));
+        this.setTexture('noiseMap', TextureManager.createNoiseTexture({
+            webgpuDescriptor: {
+                size: { width: 256, height: 256 },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            },
+        }));
     }
     getShaderSource() {
         return 'shadertoy';
@@ -15888,7 +15917,17 @@ async function dropFiles(evt, node) {
         }
         const image = await fileToImage(f);
         if (image) {
-            const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+            const texture = TextureManager.createTexture({
+                webgpuDescriptor: {
+                    size: {
+                        width: image.naturalWidth,
+                        height: image.naturalHeight,
+                    },
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+                minFilter: GL_LINEAR,
+            });
             if (node instanceof ApplySticker) {
                 texture.wrapS = GL_CLAMP_TO_EDGE;
                 texture.wrapT = GL_CLAMP_TO_EDGE;
@@ -15914,7 +15953,17 @@ async function dropFilesSpecular(evt, node) {
         }
         const image = await fileToImage(f);
         if (image) {
-            const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+            const texture = TextureManager.createTexture({
+                webgpuDescriptor: {
+                    size: {
+                        width: image.naturalWidth,
+                        height: image.naturalHeight,
+                    },
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+                minFilter: GL_LINEAR,
+            });
             if (node instanceof ApplySticker) {
                 texture.wrapS = GL_CLAMP_TO_EDGE;
                 texture.wrapT = GL_CLAMP_TO_EDGE;
@@ -18978,14 +19027,23 @@ class Skeleton extends Entity {
         return this.#texture;
     }
     #createBoneMatrixArray() {
-        this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4);
+        this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4 /* 4 by 4 matrix*/);
         mat4.identity(this.#imgData);
         for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
             this.#imgData.copyWithin(i * 16, 0, 16);
         }
     }
     #createBoneMatrixTexture() {
-        this.#texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: 4 /* matrix cols */,
+                    height: MAX_HARDWARE_BONES,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -18996,10 +19054,10 @@ class Skeleton extends Entity {
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (Graphics$1.isWebGL2) {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
@@ -21948,6 +22006,17 @@ class Source1Vtf {
         return entry.mipMaps[mipmapLvl];
     }
     */
+    getMipMapSize(level) {
+        const res48 = this.getResource(VTF_ENTRY_IMAGE_DATAS);
+        if (!res48) {
+            return null;
+        }
+        const mipmap = res48.mipMaps[level];
+        if (!mipmap) {
+            return null;
+        }
+        return { width: mipmap.width, height: mipmap.height };
+    }
     fillTexture(glContext, texture, mipmapLvl, frame1 = 0, srgb = true) {
         if (this.flags & TEXTUREFLAGS_ENVMAP) {
             this.#fillCubeMapTexture(glContext, texture.texture, mipmapLvl, srgb);
@@ -33194,7 +33263,10 @@ Shaders['sketch.vs'] = sketch_vs;
 
 var meshbasic_wgsl = "struct VertexOut {\n  @builtin(position) position : vec4f,\n  @location(0) color : vec4f\n}\n\n@vertex\nfn vertex_main(@location(0) position: vec4f,\n               @location(1) color: vec4f) -> VertexOut\n{\n  var output : VertexOut;\n  output.position = position;\n  output.color = color;\n  return output;\n}\n\n@fragment\nfn fragment_main(fragData: VertexOut) -> @location(0) vec4f\n{\n  return fragData.color;\n}\n";
 
+var meshphong_wgsl = "struct VertexOut {\n  @builtin(position) position : vec4f,\n  @location(0) color : vec4f\n}\n\n@vertex\nfn vertex_main(@location(0) position: vec4f,\n               @location(1) color: vec4f) -> VertexOut\n{\n  var output : VertexOut;\n  output.position = position;\n  output.color = color;\n  return output;\n}\n\n@fragment\nfn fragment_main(fragData: VertexOut) -> @location(0) vec4f\n{\n  return fragData.color;\n}\n";
+
 Shaders['meshbasic.wgsl'] = meshbasic_wgsl;
+Shaders['meshphong.wgsl'] = meshphong_wgsl;
 
 /**
  * Kv3Array
@@ -48236,8 +48308,21 @@ class Source1TextureManagerClass {
     fallbackRepository = '';
     constructor() {
         Graphics$1.ready.then(() => {
-            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1)));
-            this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1), undefined, undefined, true));
+            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+                color: new Color(0.5, 0.75, 1),
+            }));
+            this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+                color: new Color(0.5, 0.75, 1),
+                needCubeMap: true, //new Color(0.5, 0.75, 1), undefined, undefined, true
+            }));
             this.#defaultTexture.addUser(this);
             this.#defaultTextureCube.addUser(this);
         });
@@ -48312,7 +48397,7 @@ class Source1TextureManagerClass {
         const textureName = path ?? this.#getInternalTextureName();
         texture = texture ?? new AnimatedTexture(); //TODOv3: add params + create animated texture
         this.setTexture(repository, textureName, texture);
-        texture.addFrame(0, TextureManager.createTexture());
+        texture.addFrame(0, TextureManager.createTexture({ webgpuDescriptor: DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR }));
         return { name: textureName, texture: texture };
     }
     setTexture(repository, path, texture) {
@@ -48341,11 +48426,24 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     //animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
     const glContext = Graphics$1.glContext;
+    const currentMipMap = vtf.mipmapCount; //TODOv3: choose mipmap
+    const size = vtf.getMipMapSize(currentMipMap);
+    if (!size) {
+        return;
+    }
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
-        const texture = TextureManager.createTexture(); //TODOv3: add params
+        const texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: size.width,
+                    height: size.height,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            }
+        }); //TODOv3: add params
         texture.properties.set('vtf', vtf);
         texture.setAlphaBits(alphaBits);
-        const currentMipMap = vtf.mipmapCount; //TODOv3: choose mipmap
         vtf.fillTexture(glContext, texture, currentMipMap, frameIndex, srgb);
         animatedTexture.addFrame(frameIndex, texture);
     }
@@ -48655,7 +48753,17 @@ function initDefaultParameters(defaultParameters, parameters, variables) {
 let defaultTexture;
 function getDefaultTexture() {
     if (!defaultTexture) {
-        defaultTexture = TextureManager.createFlatTexture(new Color(1, 1, 1));
+        defaultTexture = TextureManager.createFlatTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: 1,
+                    height: 1,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            },
+            color: new Color(1, 1, 1),
+        });
         defaultTexture.addUser(Source1Material);
     }
     return defaultTexture;
@@ -49641,7 +49749,12 @@ class EyeRefractMaterial extends Source1Material {
             this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, vmt['$iris'], vmt['$frame'] || 0));
         }
         else {
-            this.setColorMap(TextureManager.createCheckerTexture());
+            this.setColorMap(TextureManager.createCheckerTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+            }));
         }
     }
     afterProcessProxies() {
@@ -50698,7 +50811,12 @@ class UnlitTwoTextureMaterial extends Source1Material {
             this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, vmt['$texture2'], vmt['$frame2'] ?? 0));
         }
         else {
-            this.setColor2Map(TextureManager.createCheckerTexture());
+            this.setColor2Map(TextureManager.createCheckerTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+            }));
         }
         this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         if (vmt['$additive'] == 1) {
@@ -54525,6 +54643,7 @@ class SetControlPointToParticlesCenter extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(SetControlPointToParticlesCenter);
 
+const MAX_PARTICLES_IN_A_SYSTEM = 5000;
 const TEXTURE_WIDTH = 8;
 
 const tempQuat$3 = quat.create();
@@ -54683,7 +54802,16 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.#texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: TEXTURE_WIDTH,
+                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
         this.#texture.addUser(this);
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
@@ -54751,7 +54879,7 @@ const tempVec2$1 = vec2.create();
 class RenderRope extends Source1ParticleOperator {
     static functionName = 'render rope';
     #maxParticles = 0;
-    texture;
+    #texture;
     geometry;
     imgData;
     constructor(system) {
@@ -54806,7 +54934,7 @@ class RenderRope extends Source1ParticleOperator {
         this.mesh.setDefine('IS_ROPE');
         this.mesh.setDefine('USE_VERTEX_COLOR');
         this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
+        this.mesh.setUniform('uParticles', this.#texture);
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
         this.setOrientationType(this.getParameter('orientation_type') ?? 0); //TODO: remove orientation_type : only for RenderAnimatedSprites
@@ -54833,17 +54961,26 @@ class RenderRope extends Source1ParticleOperator {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.texture = TextureManager.createTexture();
-        this.texture.addUser(this);
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: TEXTURE_WIDTH,
+                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
+        this.#texture.addUser(this);
         const gl = Graphics$1.glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture() {
         const gl = Graphics$1.glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
@@ -54882,7 +55019,7 @@ class RenderRope extends Source1ParticleOperator {
     }
     dispose() {
         this.mesh?.dispose();
-        this.texture?.removeUser(this);
+        this.#texture?.removeUser(this);
     }
 }
 Source1ParticleOperators.registerOperator(RenderRope);
@@ -54921,7 +55058,7 @@ Source1ParticleOperators.registerOperator(RenderScreenVelocityRotate);
 
 class RenderSpriteTrail extends Source1ParticleOperator {
     static functionName = 'render_sprite_trail';
-    texture;
+    #texture;
     geometry;
     imgData;
     constructor(system) {
@@ -55006,7 +55143,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.mesh.setUniform('uParticles', this.texture);
+        this.mesh.setUniform('uParticles', this.#texture);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.particleSystem.addChild(this.mesh);
         this.geometry = geometry;
@@ -55018,17 +55155,26 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.imgData = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.texture = TextureManager.createTexture();
-        this.texture.addUser(this);
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: TEXTURE_WIDTH,
+                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
+        this.#texture.addUser(this);
         const gl = Graphics$1.glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture(maxParticles, pixels) {
         const gl = Graphics$1.glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
         }
@@ -55149,7 +55295,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
     */
     dispose() {
         this.mesh?.dispose();
-        this.texture?.removeUser(this);
+        this.#texture?.removeUser(this);
     }
 }
 Source1ParticleOperators.registerOperator(RenderSpriteTrail);
@@ -60897,7 +61043,13 @@ class Source2TextureManagerClass {
     EXT_texture_compression_rgtc;
     constructor() {
         Graphics$1.ready.then(() => {
-            this.#defaultTexture = TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1));
+            this.#defaultTexture = TextureManager.createCheckerTexture({
+                webgpuDescriptor: {
+                    format: 'rgba8unorm',
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                },
+                color: new Color(0.5, 0.75, 1),
+            });
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
             this.WEBGL_compressed_texture_s3tc = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc');
@@ -60939,7 +61091,17 @@ class Source2TextureManagerClass {
             const promise = new Promise(async (resolve) => {
                 const vtex = await this.getVtex(repository, path);
                 animatedTexture.properties.set('vtex', vtex);
-                const texture = TextureManager.createTexture(); //TODOv3: add params
+                //const texture = TextureManager.createTexture();//TODOv3: add params
+                const texture = TextureManager.createTexture({
+                    webgpuDescriptor: {
+                        size: {
+                            width: vtex?.getWidth() ?? 1,
+                            height: vtex?.getHeight() ?? 1,
+                        },
+                        format: 'rgba8unorm',
+                        usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                    }
+                }); //TODOv3: add params
                 if (vtex) {
                     this.#initTexture(texture, vtex);
                     if (vtex.spriteSheet) {
@@ -69603,7 +69765,16 @@ class RenderRopes extends RenderBase {
         this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.#texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: TEXTURE_WIDTH,
+                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -69690,7 +69861,16 @@ class RenderSprites extends RenderBase {
     #maxParticles = 0;
     #featheringMode = DEFAULT_FEATHERING_MODE;
     #featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
-    texture = TextureManager.createTexture();
+    #texture = TextureManager.createTexture({
+        webgpuDescriptor: {
+            size: {
+                width: TEXTURE_WIDTH,
+                height: MAX_PARTICLES_IN_A_SYSTEM,
+            },
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.TEXTURE_BINDING,
+        }
+    });
     imgData; //TODO: set private ?
     #addSelfAmount = DEFAULT_ADD_SELF_AMOUNT$1;
     #blendFramesSeq0 = DEFAULT_BLEND_FRAMES_SEQ_0;
@@ -69853,6 +70033,7 @@ class RenderSprites extends RenderBase {
         this.geometry.attributes.get('aTextureCoord2').dirty = true;
     }
     setMaxParticles(maxParticles) {
+        maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM);
         this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this.#initBuffers();
@@ -69891,7 +70072,7 @@ class RenderSprites extends RenderBase {
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
         this.#initParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
+        this.mesh.setUniform('uParticles', this.#texture);
         this.setMaxParticles(particleSystem.maxParticles);
         particleSystem.addChild(this.mesh);
     }
@@ -69900,14 +70081,14 @@ class RenderSprites extends RenderBase {
     }
     #initParticlesTexture() {
         const gl = Graphics$1.glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
         const gl = Graphics$1.glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
@@ -70132,7 +70313,16 @@ class RenderTrails extends RenderBase {
         this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.#texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture({
+            webgpuDescriptor: {
+                size: {
+                    width: TEXTURE_WIDTH,
+                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING,
+            }
+        });
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

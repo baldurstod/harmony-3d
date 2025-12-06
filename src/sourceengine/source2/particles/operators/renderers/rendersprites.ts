@@ -6,7 +6,7 @@ import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
 import { Mesh } from '../../../../../objects/mesh';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
 import { Source2ParticleSystem } from '../../export';
@@ -49,7 +49,16 @@ export class RenderSprites extends RenderBase {
 	#maxParticles = 0;
 	#featheringMode = DEFAULT_FEATHERING_MODE;
 	#featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
-	texture = TextureManager.createTexture();
+	#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+		webgpuDescriptor: {
+			size: {
+				width: TEXTURE_WIDTH,
+				height: MAX_PARTICLES_IN_A_SYSTEM,
+			},
+			format: 'rgba8unorm',
+			usage: GPUTextureUsage.TEXTURE_BINDING,
+		}
+	});
 	imgData!: Float32Array;//TODO: set private ?
 	#addSelfAmount = DEFAULT_ADD_SELF_AMOUNT;
 	#blendFramesSeq0 = DEFAULT_BLEND_FRAMES_SEQ_0;
@@ -226,6 +235,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	setMaxParticles(maxParticles: number): void {
+		maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM);
 		this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
 		this.#createParticlesArray();
 		this.#initBuffers();
@@ -268,7 +278,7 @@ export class RenderSprites extends RenderBase {
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.#initParticlesTexture();
-		this.mesh!.setUniform('uParticles', this.texture);
+		this.mesh!.setUniform('uParticles', this.#texture);
 
 		this.setMaxParticles(particleSystem.maxParticles);
 		particleSystem.addChild(this.mesh);
@@ -280,7 +290,7 @@ export class RenderSprites extends RenderBase {
 
 	#initParticlesTexture() {
 		const gl = Graphics.glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -289,7 +299,7 @@ export class RenderSprites extends RenderBase {
 	updateParticlesTexture() {
 		const gl = Graphics.glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (Graphics.isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
 		} else {

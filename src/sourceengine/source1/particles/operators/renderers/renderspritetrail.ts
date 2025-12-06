@@ -9,7 +9,7 @@ import { Mesh } from '../../../../../objects/mesh';
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_FLOAT } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -20,7 +20,7 @@ import { Source1ParticleOperator } from '../operator';
 
 export class RenderSpriteTrail extends Source1ParticleOperator {
 	static functionName = 'render_sprite_trail';
-	texture?: Texture;
+	#texture?: Texture;
 	geometry?: BufferGeometry;
 	imgData?: Float32Array;
 
@@ -117,7 +117,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.mesh.setUniform('uParticles', this.texture!);
+		this.mesh.setUniform('uParticles', this.#texture!);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
@@ -131,10 +131,19 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 
 	#createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
-		this.texture.addUser(this);
+		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
+			webgpuDescriptor: {
+				size: {
+					width: TEXTURE_WIDTH,
+					height: MAX_PARTICLES_IN_A_SYSTEM,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			}
+		});
+		this.#texture.addUser(this);
 		const gl = Graphics.glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -143,7 +152,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	#updateParticlesTexture(maxParticles: number, pixels: Float32Array) {
 		const gl = Graphics.glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
 		if (Graphics.isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
 		} else {
@@ -274,7 +283,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 
 	dispose() {
 		this.mesh?.dispose();
-		this.texture?.removeUser(this);
+		this.#texture?.removeUser(this);
 	}
 }
 Source1ParticleOperators.registerOperator(RenderSpriteTrail);

@@ -118,7 +118,17 @@ function initDefaultParameters(defaultParameters: VmtParameters, parameters: Vmt
 let defaultTexture: Texture;
 function getDefaultTexture(): Texture {
 	if (!defaultTexture) {
-		defaultTexture = TextureManager.createFlatTexture(new Color(1, 1, 1));
+		defaultTexture = TextureManager.createFlatTexture({
+			webgpuDescriptor: {
+				size: {
+					width: 1,
+					height: 1,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			},
+			color: new Color(1, 1, 1),
+		});
 		defaultTexture.addUser(Source1Material);
 	}
 	return defaultTexture;

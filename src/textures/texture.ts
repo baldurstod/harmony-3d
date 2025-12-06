@@ -4,7 +4,14 @@ import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
 import { deleteTexture } from './texturefactory';
 
-export type TextureParams = any/*TODO:create a proper type*/;
+export type TextureParams = {
+	[key: string]: unknown;
+	//webgpuDescriptor: GPUTextureDescriptor;
+	image?: HTMLImageElement;
+	flipY?: boolean;
+	premultiplyAlpha?: boolean;
+	colorSpace?: ColorSpace;
+};
 
 export class Texture {
 	mapping = TextureMapping.UvMapping;

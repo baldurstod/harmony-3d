@@ -32,7 +32,17 @@ async function dropFiles(evt: DragEvent, node: Node): Promise<void> {
 
 		const image = await fileToImage(f);
 		if (image) {
-			const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+			const texture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					size: {
+						width: image.naturalWidth,
+						height: image.naturalHeight,
+					},
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+				minFilter: GL_LINEAR,
+			});
 
 			if (node instanceof ApplySticker) {
 				texture.wrapS = GL_CLAMP_TO_EDGE;
@@ -63,7 +73,17 @@ async function dropFilesSpecular(evt: DragEvent, node: Node): Promise<void> {
 
 		const image = await fileToImage(f);
 		if (image) {
-			const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+			const texture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					size: {
+						width: image.naturalWidth,
+						height: image.naturalHeight,
+					},
+					format: 'rgba8unorm',
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				},
+				minFilter: GL_LINEAR,
+			});
 
 			if (node instanceof ApplySticker) {
 				texture.wrapS = GL_CLAMP_TO_EDGE;

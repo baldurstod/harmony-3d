@@ -11,6 +11,7 @@ import { InternalRenderContext, RenderContext } from '../interfaces/rendercontex
 import { Material } from '../materials/material';
 import { isNumeric } from '../math/functions';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
+import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
 import { RenderTarget } from '../textures/rendertarget';
 import { setTextureFactoryContext } from '../textures/texturefactory';
@@ -53,7 +54,10 @@ export enum ContextType {
 	WebGPU = 'webgpu',
 }
 
-type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+
+
 type GPUConfiguration = PartialBy<GPUCanvasConfiguration, 'device' | 'format'>;
 
 export interface GraphicsInitOptions {
@@ -264,15 +268,15 @@ class Graphics {
 	static #renderBuffers = new Set<WebGLRenderbuffer>();
 	static #renderTargetStack: RenderTargetEntry[] = [];
 	static #readyPromiseResolve: (value: boolean) => void;
-	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
+	static readonly ready = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	// Canvas used when useOffscreenCanvas is set to false
 	static #canvas?: HTMLCanvasElement;
 	static #canvases = new Map<string, CanvasAttributes>();
 	static #width = 300;
 	static #height = 150;
 	static #offscreenCanvas?: OffscreenCanvas;
-	static #forwardRenderer?: ForwardRenderer;
-	static #webGPURenderer?: WebGPURenderer;
+	static #forwardRenderer: Renderer;
+	//static #webGPURenderer?: WebGPURenderer;
 	static glContext: WebGLAnyRenderingContext;
 	static gpuContext: GPUCanvasContext;
 	static #bipmapContext?: ImageBitmapRenderingContext | null;
@@ -580,14 +584,17 @@ class Graphics {
 			height: height,
 		}
 
+		this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
+		/*
 		if (this.isWebGL || this.isWebGL2) {
 			//this.#renderWebGL(scene, camera, delta, internalRenderContext);
-			this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
 		} else {
 			if (this.isWebGPU) {
+				this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
 				this.#webGPURenderer!.render(scene, camera, delta, internalRenderContext);
 			}
 		}
+		*/
 
 		if (this.#offscreenCanvas && context.transferBitmap !== false && this.#bipmapContext && this.#allowTransfertBitmap) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
@@ -693,7 +700,7 @@ class Graphics {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				(this.#forwardRenderer ?? this.#webGPURenderer)!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
 			}
 
 			// TODO: set in the previous state
@@ -783,8 +790,8 @@ class Graphics {
 
 	static async #initContext(graphicOptions: GraphicsInitOptions = {}) {
 		if (graphicOptions.type == ContextType.WebGPU) {
-			this.#initWebGPUContext(graphicOptions.webGPU);
-			this.#webGPURenderer = new WebGPURenderer();
+			await this.#initWebGPUContext(graphicOptions.webGPU);
+			this.#forwardRenderer = new WebGPURenderer();
 		} else {
 			this.#initWebGLContext(graphicOptions.webGL);
 			this.#forwardRenderer = new ForwardRenderer();
@@ -1309,14 +1316,6 @@ class Graphics {
 		this.#mediaRecorder.stop();
 		//Stop the canvas stream
 		this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
-	}
-
-	static get ready() {
-		return this.#readyPromise;
-	}
-
-	static async isReady() {
-		await this.#readyPromise;
 	}
 
 	static getParameter(param: GLenum) {
