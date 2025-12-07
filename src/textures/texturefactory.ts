@@ -1,11 +1,12 @@
 import { vec3 } from 'gl-matrix';
 import { Color } from '../core/color';
+import { RequiredBy } from '../graphics/graphics';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_NEAREST, GL_RGB, GL_RGBA, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../webgl/constants';
+import { fillCheckerTextureWebGPU } from '../webgpu/textures/texturefactorywebgpu';
 import { Texture } from './texture';
-import { RequiredBy } from '../graphics/graphics';
 
 const textures = new Set<WebGLTexture | GPUTexture>();
 let context: WebGLAnyRenderingContext;
@@ -34,7 +35,7 @@ export type HarmonyGPUTextureDescriptor = Omit<GPUTextureDescriptor, 'size'> & {
 	size: RequiredBy<GPUExtent3DDict, 'height'>;
 }
 
-export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | null {
+export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | GPUTexture | null {
 	let texture: WebGLTexture | GPUTexture;
 	if (Graphics.isWebGPU) {
 		texture = WebGPUInternal.device.createTexture(descriptor);
@@ -99,47 +100,62 @@ export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boo
 	return texture;
 }
 
+/*
 export function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean) {
-	if (texture) {
-		const byteArray = new Uint8Array(width * height * 3);
-		let pixelIndex = 0;
+	if (Graphics.isWebGPU) {
+		return fillCheckerTextureWebGPU(texture, color, width, height, needCubeMap);
+	} else {
+		return fillCheckerTextureWebGL(texture, color, width, height, needCubeMap);
+	}
+}
+*/
 
-		const r = color.r * 255;
-		const g = color.g * 255;
-		const b = color.b * 255;
+export function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean) {
+	const byteArray = new Uint8Array(width * height * 3);
+	let pixelIndex = 0;
 
-		for (let i = 0; i < width; i++) {
-			for (let j = 0; j < height; j++) {
-				if ((i + j) % 2 == 0) {
-					byteArray[pixelIndex] = r;
-					byteArray[pixelIndex + 1] = g;
-					byteArray[pixelIndex + 2] = b;
-				}
-				pixelIndex += 3;
+	const r = color.r * 255;
+	const g = color.g * 255;
+	const b = color.b * 255;
+
+	for (let i = 0; i < width; i++) {
+		for (let j = 0; j < height; j++) {
+			if ((i + j) % 2 == 0) {
+				byteArray[pixelIndex] = r;
+				byteArray[pixelIndex + 1] = g;
+				byteArray[pixelIndex + 2] = b;
 			}
-		}
-		if (needCubeMap) {
-			context.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			context.generateMipmap(GL_TEXTURE_CUBE_MAP);
-			context.bindTexture(GL_TEXTURE_CUBE_MAP, null);
-		} else {
-			context.bindTexture(GL_TEXTURE_2D, texture.texture);//TODOv3: pass param to createTexture and remove this
-			context.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-			context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-			context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-			context.generateMipmap(GL_TEXTURE_2D);
-			context.bindTexture(GL_TEXTURE_2D, null);
+			pixelIndex += 3;
 		}
 	}
-	return texture;
+	if (Graphics.isWebGPU) {
+		return fillCheckerTextureWebGPU(byteArray, texture, color, width, height, needCubeMap);
+	} else {
+		return fillCheckerTextureWebGL(byteArray, texture, color, width, height, needCubeMap);
+	}
+}
+
+function fillCheckerTextureWebGL(byteArray: Uint8Array, texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): void {
+	if (needCubeMap) {
+		context.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		context.generateMipmap(GL_TEXTURE_CUBE_MAP);
+		context.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+	} else {
+		context.bindTexture(GL_TEXTURE_2D, texture.texture);//TODOv3: pass param to createTexture and remove this
+		context.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+		context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		context.generateMipmap(GL_TEXTURE_2D);
+		context.bindTexture(GL_TEXTURE_2D, null);
+	}
 }
 
 export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap = false) {//TODO: do a proper noise

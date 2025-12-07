@@ -1,4 +1,5 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
+import { once } from 'harmony-utils';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -19,7 +20,12 @@ import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/shadersource';
 
+// remove these when unused
+const clearColorError = once(() => console.error('TODO clearColor'));
+const clearError = once(() => console.error('TODO clear'));
+
 const tempViewProjectionMatrix = mat4.create();
+
 export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
 	#shadowMap = new ShadowMap();
@@ -28,7 +34,7 @@ export class WebGPURenderer implements Renderer {
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
 
-	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
+	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = this.#renderList;
 		renderList.reset();
 		camera.dirty();//Force matrices to recompute
@@ -47,37 +53,37 @@ export class WebGPURenderer implements Renderer {
 		this.#renderRenderList(renderList, camera, renderLights, context, lightPos);
 	}
 
-	invalidateShaders() {
-		throw new Error('TODO');
+	invalidateShaders(): void {
+		this.#materialsShaderModule.clear();
 	}
 
-	clear(color: boolean, depth: boolean, stencil: boolean) {
-		throw new Error('TODO');
+	clear(color: boolean, depth: boolean, stencil: boolean): void {
+		clearError();
 	}
 
-	clearColor(clearColor: vec4) {
-		throw new Error('TODO');
+	clearColor(clearColor: vec4): void {
+		clearColorError();
 	}
 
-	setToneMapping(toneMapping: ToneMapping) {
+	setToneMapping(toneMapping: ToneMapping): void {
 		this.#toneMapping = toneMapping;
 		Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
 	}
 
-	getToneMapping() {
+	getToneMapping(): ToneMapping {
 		return this.#toneMapping;
 	}
 
-	setToneMappingExposure(exposure: number) {
+	setToneMappingExposure(exposure: number): void {
 		this.#toneMappingExposure = exposure;
 		Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
 	}
 
-	getToneMappingExposure() {
+	getToneMappingExposure(): number {
 		return this.#toneMappingExposure;
 	}
 
-	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
+	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
 		const objectStack = [];
@@ -111,20 +117,19 @@ export class WebGPURenderer implements Renderer {
 		renderList.finish();
 	}
 
-	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) {
+	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
 		for (const child of renderList.opaqueList) {
-			this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), renderLights, lightPos);
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), renderLights, lightPos);
 			}
 		}
 	}
 
-
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3): void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -189,7 +194,8 @@ export class WebGPURenderer implements Renderer {
 				}]
 			},
 			primitive: {
-				topology: 'triangle-list'
+				topology: 'triangle-list',
+				cullMode: 'back',// TODO: setup material culling
 			},
 			layout: 'auto'
 		};
@@ -202,7 +208,7 @@ export class WebGPURenderer implements Renderer {
 				//clearValue: clearColor,//TODO
 				loadOp: 'clear',
 				storeOp: 'store',
-				view: Graphics.gpuContext.getCurrentTexture().createView()
+				view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
 			}]
 		};
 
@@ -210,6 +216,7 @@ export class WebGPURenderer implements Renderer {
 		passEncoder.setPipeline(renderPipeline);
 		passEncoder.setVertexBuffer(0, vertexBuffer);
 		passEncoder.draw(geometry.count);
+		//passEncoder.draw(3);
 
 		// End the render pass
 		passEncoder.end();
@@ -223,15 +230,13 @@ export class WebGPURenderer implements Renderer {
 		}
 	}
 
-
-
 	/**
 	 * Get a shader module for the material
 	 * @param material The material
 	 * @returns a shader module or null
 	 */
 	#getShaderModule(material: Material): GPUShaderModule | null {
-		const shaderName = material.getShaderSource();
+		const shaderName = material.getShaderSource() + '.wgsl';
 
 		let shaderModule = this.#materialsShaderModule.get(shaderName);
 		if (shaderModule) {
@@ -253,7 +258,7 @@ export class WebGPURenderer implements Renderer {
 		return shaderModule;
 	}
 
-	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number) {
+	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number): void {
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
 		Graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
@@ -263,7 +268,7 @@ export class WebGPURenderer implements Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	#unsetLights() {
+	#unsetLights(): void {
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
 		Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');

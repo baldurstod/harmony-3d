@@ -365,6 +365,7 @@ export class ForwardRenderer implements Renderer {
 			WebGLRenderingState.disable(GL_SCISSOR_TEST);
 		}
 	}
+
 	invalidateShaders() {
 		for (const shader of this.#materialsProgram.values()) {
 			shader.invalidate();

@@ -32,9 +32,6 @@ export type CreateImageTextureParams = TextureParams & {
 	image: HTMLImageElement;
 };
 
-
-export const DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR: HarmonyGPUTextureDescriptor = { /*TODO: set actual values*/size: { width: 1, height: 1, depthOrArrayLayers: 1 }, format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT };
-
 export class TextureManager {
 	static #texturesList = new Map<string, Texture>();
 

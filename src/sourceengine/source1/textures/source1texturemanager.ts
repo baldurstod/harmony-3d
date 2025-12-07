@@ -5,9 +5,10 @@ import { Color } from '../../../core/color';
 import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
-import { DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR, TextureManager } from '../../../textures/texturemanager';
+import { TextureManager } from '../../../textures/texturemanager';
 import { Source1VtfLoader } from '../loaders/source1vtfloader';
 import { Source1Vtf } from './source1vtf';
+import { HarmonyGPUTextureDescriptor } from '../../../textures/texturefactory';
 
 let internalTextureId = 0;
 
@@ -132,6 +133,7 @@ class Source1TextureManagerClass {
 	}
 
 	addInternalTexture(repository: string, path?: string, texture?: AnimatedTexture): { name: string, texture: AnimatedTexture } {
+		const DEFAULT_WEBGPU_TEXTURE_DESCRIPTOR: HarmonyGPUTextureDescriptor = { /*TODO: set actual values*/size: { width: 1, height: 1, depthOrArrayLayers: 1 }, format: 'rgba8unorm', usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT };
 		const textureName = path ?? this.#getInternalTextureName();
 		texture = texture ?? new AnimatedTexture();//TODOv3: add params + create animated texture
 		this.setTexture(repository, textureName, texture);

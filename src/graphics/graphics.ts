@@ -278,7 +278,6 @@ class Graphics {
 	static #forwardRenderer: Renderer;
 	//static #webGPURenderer?: WebGPURenderer;
 	static glContext: WebGLAnyRenderingContext;
-	static gpuContext: GPUCanvasContext;
 	static #bipmapContext?: ImageBitmapRenderingContext | null;
 	static #pickedEntity: Entity | null = null;
 	static #animationFrame = 0;
@@ -876,7 +875,7 @@ class Graphics {
 			if (context == null) {
 				throw new Error('unable to init WebGPU context');
 			}
-			this.gpuContext = context;
+			WebGPUInternal.gpuContext = context;
 			this.isWebGPU = true;
 			//context.configure(configuration);
 			await this.#configureWebGPU(configuration);
@@ -905,7 +904,7 @@ class Graphics {
 		WebGPUInternal.device = configuration.device;
 		WebGPUInternal.format = configuration.format;
 
-		this.gpuContext.configure(configuration as GPUCanvasConfiguration);
+		WebGPUInternal.gpuContext.configure(configuration as GPUCanvasConfiguration);
 		return true;
 	}
 
