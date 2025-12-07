@@ -5,10 +5,10 @@ import { Color } from '../../../core/color';
 import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
+import { HarmonyGPUTextureDescriptor } from '../../../textures/texturefactory';
 import { TextureManager } from '../../../textures/texturemanager';
 import { Source1VtfLoader } from '../loaders/source1vtfloader';
 import { Source1Vtf } from './source1vtf';
-import { HarmonyGPUTextureDescriptor } from '../../../textures/texturefactory';
 
 let internalTextureId = 0;
 
@@ -28,18 +28,8 @@ class Source1TextureManagerClass {
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({
-				webgpuDescriptor: {
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-				},
-				color: new Color(0.5, 0.75, 1),
-			}));
+			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), }));
 			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
-				webgpuDescriptor: {
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-				},
 				color: new Color(0.5, 0.75, 1),
 				needCubeMap: true,				//new Color(0.5, 0.75, 1), undefined, undefined, true
 			}));

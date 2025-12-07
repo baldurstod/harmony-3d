@@ -12,12 +12,11 @@ export type CreateFlatTextureParams = CreateTextureParams & {
 	color?: Color;
 };
 
-export type CreateCheckerTextureParams = TextureParams & {
-	webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+export type CreateCheckerTextureParams = {
+	width?: number,
+	height?: number,
 	color?: Color;
 	needCubeMap?: boolean;
-	//width?: number; // TODO: fix, redundant with webgpuDescriptor.size
-	//height?: number;// TODO: fix, redundant with webgpuDescriptor.size
 };
 
 export type CreateNoiseTextureParams = TextureParams & {
@@ -61,12 +60,16 @@ export class TextureManager {
 		return texture;
 	}
 
-	static createCheckerTexture(textureParams: CreateCheckerTextureParams/*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
-		if (!textureParams.webgpuDescriptor.size) {
-			textureParams.webgpuDescriptor.size = { width: 64, height: 64 };
+	static createCheckerTexture(textureParams: CreateCheckerTextureParams = {}/*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
+		const width = textureParams.width ?? 64;
+		const height = textureParams.height ?? 64;
+		const descriptor: GPUTextureDescriptor = {
+			size: [width, height],
+			format: 'rgba8unorm',
+			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		}
 		const texture = this.createTexture(textureParams as CreateTextureParams);
-		fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.webgpuDescriptor.size.width, textureParams.webgpuDescriptor.size.height ?? 64, textureParams.needCubeMap ?? false);
+		fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
 		return texture;
 	}
 

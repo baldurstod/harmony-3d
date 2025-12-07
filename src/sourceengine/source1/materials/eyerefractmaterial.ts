@@ -29,12 +29,7 @@ export class EyeRefractMaterial extends Source1Material {
 		if (vmt['$iris']) {
 			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, vmt['$iris'], vmt['$frame'] || 0));
 		} else {
-			this.setColorMap(TextureManager.createCheckerTexture({
-				webgpuDescriptor: {
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-				},
-			}));
+			this.setColorMap(TextureManager.createCheckerTexture());
 		}
 	}
 

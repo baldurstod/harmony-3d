@@ -26,10 +26,6 @@ class Source2TextureManagerClass {
 	constructor() {
 		Graphics.ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture({
-				webgpuDescriptor: {
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-				},
 				color: new Color(0.5, 0.75, 1),
 			});
 
