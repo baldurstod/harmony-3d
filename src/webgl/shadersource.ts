@@ -28,6 +28,7 @@ export interface Annotation {
 	text: string,
 };
 
+// TODO: rename this class to ShaderSource, also used for webgpu
 export class WebGLShaderSource {
 	static isWebGL2: boolean;
 	#includes = new Set<string>();
@@ -40,6 +41,7 @@ export class WebGLShaderSource {
 	#isErroneous = false;
 	#error = '';
 	#lineDelta = 0;
+
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
 			throw new Error('error : type must be defined in WebGLShaderSource');
@@ -226,7 +228,12 @@ export class WebGLShaderSource {
 			return source;
 
 		}
-		return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
+
+		if (this.#type == ShaderType.Wgsl) {
+			return includeCode + this.#compileSource;
+		} else {
+			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
+		}
 	}
 
 	getCompileSourceLineNumber(includeCode: string): string {
@@ -240,7 +247,9 @@ export class WebGLShaderSource {
 
 	setCompileError(error: string, includeCode = ''): void {
 		let lineDelta = ((includeCode).match(/\n/g) || []).length;
-		lineDelta += 1;//#version line
+		if (this.#type == ShaderType.Fragment || this.#type == ShaderType.Vertex) {
+			lineDelta += 1;//#version line
+		}
 
 		this.#isErroneous = true;
 		this.#error = error;
@@ -248,6 +257,14 @@ export class WebGLShaderSource {
 	}
 
 	getCompileError(convertRows = true): Annotation[] {
+		if (this.#type == ShaderType.Wgsl) {
+			return this.#getWebGPUCompileError(convertRows);
+		} else {
+			return this.#getWebGLCompileError(convertRows);
+		}
+	}
+
+	#getWebGLCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
 		const splitRegex = /(ERROR|WARNING) *: *(\d*):(\d*): */;
 
@@ -277,6 +294,28 @@ export class WebGLShaderSource {
 				errorArray.push({ type: errorType.toLowerCase(), column: Number(errorCol), row: row, text: errorText });
 			}
 		}
+		return errorArray;
+	}
+
+	#getWebGPUCompileError(convertRows = true): Annotation[] {
+		const errorArray: Annotation[] = [];
+		const splitRegex = /Error while parsing WGSL: *: *(\d*):(\d*) *error: *(\S[^\r\n]*)/;
+
+		const arr = this.#error.split(splitRegex);
+
+		if (arr.length > 3) {
+			let row = Number(arr[1]);
+			const column = Number(arr[2]);
+			const text = arr[3]!;
+
+			row = Math.max(row - this.#lineDelta, 0);
+			if (convertRows) {
+				row = this.compileRowToSourceRow(row);
+			}
+
+			errorArray.push({ type: 'error', column, row, text });
+		}
+
 		return errorArray;
 	}
 
