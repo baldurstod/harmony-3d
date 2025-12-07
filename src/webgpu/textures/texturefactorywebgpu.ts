@@ -23,8 +23,13 @@ export function fillCheckerTextureWebGPU(/*byteArray: Uint8Array, */texture: Tex
 	}
 
 	if (needCubeMap) {
-		throw new Error('fillCheckerTextureWebGPU: missing cubemap');
+		for (let i = 0; i < 6; i++) {
+			WebGPUInternal.device.queue.writeTexture({
+				texture: (texture.texture as GPUTexture),
+				origin: { x: 0, y: 0, z: i },
+			}, byteArray as BufferSource, { bytesPerRow: height * 4 }, { width, height, });
+		}
 	} else {
-		WebGPUInternal.device.queue.writeTexture({ texture: (texture.texture as GPUTexture) }, byteArray as BufferSource, { bytesPerRow: height * 3 }, { width, height });
+		WebGPUInternal.device.queue.writeTexture({ texture: (texture.texture as GPUTexture) }, byteArray as BufferSource, { bytesPerRow: height * 4 }, { width, height, });
 	}
 }

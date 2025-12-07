@@ -63,12 +63,12 @@ export class TextureManager {
 	static createCheckerTexture(textureParams: CreateCheckerTextureParams = {}/*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
 		const width = textureParams.width ?? 64;
 		const height = textureParams.height ?? 64;
-		const descriptor: GPUTextureDescriptor = {
-			size: [width, height],
+		const descriptor: HarmonyGPUTextureDescriptor = {
+			size: { width, height, depthOrArrayLayers: textureParams.needCubeMap ? 6 : 1 },
 			format: 'rgba8unorm',
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		}
-		const texture = this.createTexture(textureParams as CreateTextureParams);
+		const texture = this.createTexture({ webgpuDescriptor: descriptor });
 		fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
 		return texture;
 	}
