@@ -361,10 +361,10 @@ export class WebGPURenderer implements Renderer {
 			if (error) {
 				const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
 				console.warn(m, shaderSource.getCompileSourceLineNumber(''), m);
-
-				shaderSource.setCompileError(error.message);
 			}
 		});
+
+		shaderModule.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo));
 
 		// Schedule the execution to validate the shader
 		WebGPUInternal.device.queue.submit([]);

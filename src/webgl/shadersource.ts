@@ -23,8 +23,9 @@ const PRAGMA_REGEX = /#pragma (\w+)/;
 
 export interface Annotation {
 	type: string,
-	column: number,
 	row: number,
+	column: number,
+	length?: number,
 	text: string,
 };
 
@@ -41,6 +42,7 @@ export class WebGLShaderSource {
 	#isErroneous = false;
 	#error = '';
 	#lineDelta = 0;
+	#compilationInfo: GPUCompilationInfo | null = null;
 
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
@@ -94,6 +96,7 @@ export class WebGLShaderSource {
 
 		this.#isErroneous = false;
 		this.#error = '';
+		this.#compilationInfo = null;
 		this.#lineDelta = 0;
 	}
 
@@ -256,6 +259,12 @@ export class WebGLShaderSource {
 		this.#lineDelta = lineDelta;
 	}
 
+	setCompilationInfo(compilationInfo: GPUCompilationInfo): void {
+		this.#isErroneous = true;
+		this.#compilationInfo = compilationInfo;
+		this.#lineDelta = 0;
+	}
+
 	getCompileError(convertRows = true): Annotation[] {
 		if (this.#type == ShaderType.Wgsl) {
 			return this.#getWebGPUCompileError(convertRows);
@@ -299,21 +308,18 @@ export class WebGLShaderSource {
 
 	#getWebGPUCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
-		const splitRegex = /Error while parsing WGSL: *: *(\d*):(\d*) *error: *(\S[^\r\n]*)/;
 
-		const arr = this.#error.split(splitRegex);
+		if (this.#compilationInfo) {
+			for (const message of this.#compilationInfo.messages) {
+				let row = Math.max(message.lineNum - this.#lineDelta, 0);
+				if (convertRows) {
+					row = this.compileRowToSourceRow(row);
+				}
 
-		if (arr.length > 3) {
-			let row = Number(arr[1]);
-			const column = Number(arr[2]);
-			const text = arr[3]!;
-
-			row = Math.max(row - this.#lineDelta, 0);
-			if (convertRows) {
-				row = this.compileRowToSourceRow(row);
+				const lines = message.message.split('\n');
+				// Drop the message beyond the first line; webgpu compilation messages can be very verbose
+				errorArray.push({ type: message.type, column: message.linePos, row, text: lines[0]!, length: message.length });
 			}
-
-			errorArray.push({ type: 'error', column, row, text });
 		}
 
 		return errorArray;
