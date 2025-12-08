@@ -29,6 +29,12 @@ export interface Annotation {
 	text: string,
 };
 
+export interface WebGPUUniform {
+	type: string,
+	alignment: number,
+	size: number,
+};
+
 // TODO: rename this class to ShaderSource, also used for webgpu
 export class WebGLShaderSource {
 	static isWebGL2: boolean;
@@ -233,6 +239,7 @@ export class WebGLShaderSource {
 		}
 
 		if (this.#type == ShaderType.Wgsl) {
+			parseWgsl(includeCode + this.#compileSource);
 			return includeCode + this.#compileSource;
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
@@ -374,5 +381,263 @@ export class WebGLShaderSource {
 
 	getSourceRowToInclude(): Map<number, [string, number]> {
 		return new Map(this.#sourceRowToInclude);
+	}
+	/*
+		#getUniforms(source: string): void {
+			const uniforms: WebGPUUniform[][] = [];
+
+
+			const sourceLineArray = source.split('\n');
+			sourceLineArray.unshift(getHeader(this.#type) ?? '');
+			let compileRow = 1;
+			//TODOv3: use regexp to do a better job
+			const outArray: string[] = [];
+			for (let i = 0; i < sourceLineArray.length; ++i) {
+				const line = sourceLineArray[i]!;
+				let actualSize = 1;
+				if (line.startsWith('#extension')) {
+					this.#extensions += line + '\n';
+					sourceLineArray.splice(i, 1);
+					actualSize = 0;
+				} else if (line.trim().startsWith('#include')) {
+					//this.extensions += line + '\n';
+					const includeName = line.replace('#include', '').trim();
+					const include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
+					if (include) {
+						this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
+						outArray.push(...include);
+						compileRow += include.length;
+						actualSize = include.length;
+					} else {
+						if (include === undefined) {
+							console.error(`Include not found : ${line}`)
+						}
+					}
+				} else {
+					outArray.push(line);
+					++compileRow;
+				}
+				this.#sizeOfSourceRow[i] = actualSize;
+			}
+		}
+			*/
+}
+
+
+
+export enum WgslToken {
+	At,
+	OpenBrace,
+	CloseBrace,
+	OpenParenthesis,
+	CloseParenthesis,
+	Colon,
+	Comma,
+	//EOF,
+}
+
+function* getNextChar(wgsl: string): Generator<string, null, unknown> {
+	let offset = 0;
+	const length = wgsl.length;
+
+	for (const c of wgsl) {
+		yield c;
+	}
+	return null;
+}
+
+type ShaderUniform = {
+	binding: number;
+	group: number;
+	uniforms: Map<string, number>;
+}
+
+type WgslVar = {
+	name: string;
+	type: string;// TODO: create an enum ?
+}
+
+type WgslStruct = {
+	name: string;
+	vars: WgslVar[];
+}
+/**
+ *
+ * @param source
+ * @returns
+ */
+function parseWgsl(source: string): ShaderUniform[] {
+	const uniforms: ShaderUniform[] = [];
+	//const syntaxError = new Error('syntax error');
+
+	const structs = new Map<string, WgslStruct>();
+
+	let currentStruct: WgslStruct | null = null;
+	let beginAttribute = false;
+
+	const tokenIterator = getNextToken(source);
+	for (const token of tokenIterator) {
+		switch (token) {
+			case 'struct':
+				const structName = tokenIterator.next().value;
+				if (typeof structName != 'string') {
+					//throw syntaxError;
+					return uniforms;
+				}
+				currentStruct = { name: structName, vars: [] };
+
+				const t = tokenIterator.next().value;
+				if (t != WgslToken.OpenBrace) {
+					//throw syntaxError;
+					return uniforms;
+				}
+
+				for (const token of tokenIterator) {
+					if (token == WgslToken.CloseBrace) {
+						// Terminate the struct
+						structs.set(currentStruct.name, currentStruct);
+						break;
+					}
+
+					const StructName = token;
+					if (typeof StructName != 'string') {
+						//throw syntaxError;
+						return uniforms;
+					}
+
+
+					const colon = tokenIterator.next().value;
+					if (colon != WgslToken.Colon) {
+						//throw syntaxError;
+						return uniforms;
+					}
+
+					const structType = tokenIterator.next().value;
+					if (typeof structType != 'string') {
+						//throw syntaxError;
+						return uniforms;
+					}
+
+					const commaOrClosingBrace = tokenIterator.next().value;
+					if (commaOrClosingBrace != WgslToken.Comma && commaOrClosingBrace != WgslToken.CloseBrace) {
+						//throw syntaxError;
+						return uniforms;
+					}
+
+					currentStruct.vars.push({ name: StructName, type: structType });
+				}
+
+				break;
+			case WgslToken.At:
+				break
+			case WgslToken.CloseBrace:
+				break;
+			default:
+				break;
+		}
+		//console.info(token);
+	}
+
+	console.info(structs);
+
+	return uniforms;
+}
+/*
+function* getNextToken(source: string): Generator<WgslToken | string, void, unknown> {
+	const iterator = getNextToken2(source);
+	for (const token of iterator) {
+		console.info(token);
+		yield token;
+	}
+}
+*/
+
+function* getNextToken(source: string): Generator<WgslToken | string, void, unknown> {
+	let offset = 0;
+	const length = source.length;
+
+	let forwardSlash = false;
+	let lineComment = false;
+	let blockComment = false;
+	let literal = false;
+	let literalString = '';
+
+	const charIterator = getNextChar(source);
+	for (const char of charIterator) {
+		if (lineComment) {
+			// Eat chars until EOL
+			if (char == '\n' || char == '\r') {
+				lineComment = false;
+			}
+			continue;
+		}
+
+		if (blockComment) {
+			// Eat chars until end of block comment
+			if (char == '*' && charIterator.next().value == '/') {
+				blockComment = false;
+			}
+			continue;
+		}
+
+		if (literal && (char == '{' || char == '}' || char == '(' || char == ')' || char == ':' || char == ',' || char == '\n' || char == '\r' || char == '/' || char == ' ' || char == '\t')) {
+			// Terminate and emit the string
+			yield literalString;
+			literal = false;
+			literalString = '';
+		}
+
+		switch (char) {
+			case '@':
+				yield WgslToken.At;
+				break;
+			case '{':
+				yield WgslToken.OpenBrace;
+				break;
+			case '}':
+				yield WgslToken.CloseBrace;
+				break;
+			case '(':
+				yield WgslToken.OpenParenthesis;
+				break;
+			case ')':
+				yield WgslToken.CloseParenthesis;
+				break;
+			case ':':
+				yield WgslToken.Colon;
+				break;
+			case ',':
+				yield WgslToken.Comma;
+				break;
+			case '\n':
+			case '\r':
+				// EOL is not a statement terminator, do nothing unless we are in a line comment or a string (handled above)
+				break;
+			case '/':
+				if (forwardSlash) {
+					// Start a line comment
+					forwardSlash = false;
+					lineComment = true;
+				} else {
+					forwardSlash = true;
+				}
+				break;
+			case '*':
+				if (forwardSlash) {
+					// Start a block comment
+					forwardSlash = false;
+					blockComment = true;
+				} else {
+					literalString += char;
+				}
+				break;
+			case ' ':
+			case '\t':
+				break;
+			default:
+				literal = true;
+				literalString += char;
+				break;
+		}
 	}
 }
