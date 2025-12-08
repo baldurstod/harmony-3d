@@ -905,6 +905,15 @@ class Graphics {
 		WebGPUInternal.format = configuration.format;
 
 		WebGPUInternal.gpuContext.configure(configuration as GPUCanvasConfiguration);
+
+		/*
+		configuration.device.addEventListener('uncapturederror', event => {
+			// Process the error
+			console.info(event.error.message);
+			// WebGPU error won't go to  the console
+			event.preventDefault();
+		});
+		*/
 		return true;
 	}
 

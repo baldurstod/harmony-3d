@@ -19,6 +19,7 @@ import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/shadersource';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -152,31 +153,116 @@ export class WebGPURenderer implements Renderer {
 
 		const device = WebGPUInternal.device;
 
+
+		const geometryAttributes = geometry.attributes;
+		const indexAttribute = geometryAttributes.get('index');
+		const positionAttribute = geometryAttributes.get('aVertexPosition');
+		if (!indexAttribute || !positionAttribute) {
+			return;
+		}
+
+		const indices = indexAttribute._array;
+		const indexBuffer = device.createBuffer({
+			label: 'index',
+			//size: sphereMesh.indices.byteLength,
+			size: indices.length * 2/* index is uint16*/,
+			usage: GPUBufferUsage.INDEX,
+			mappedAtCreation: true,
+		});
+
+		new Uint16Array(indexBuffer.getMappedRange()).set(indices);
+		indexBuffer.unmap();
+		/*
 		const vertices = new Float32Array([
 			0.0, 0.6, 0, 1, 1, 0, 0, 1,
 			-0.5, -0.6, 0, 1, 0, 1, 0, 1,
 			0.5, -0.6, 0, 1, 0, 0, 1, 1
 		]);
+		*/
+		const vertices = positionAttribute._array;
 
 		const vertexBuffer = device.createBuffer({
-			size: vertices.byteLength, // make it big enough to store vertices in
+			label: 'position',
+			//size: vertices.byteLength, // make it big enough to store vertices in
+			size: vertices.length * 4/* position is float32*/,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+			//mappedAtCreation: true,
 		});
 
 		device.queue.writeBuffer(vertexBuffer, 0, vertices, 0, vertices.length);
+
+		const SIZE_UNIFORM_MATRIX = 4 * 16;
+		const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
+		const uniformBuffer = device.createBuffer({
+			size: uniformBufferSize,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+		});
+				mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
+
+/*
+			program.setUniformValue('uModelMatrix', object.worldMatrix);
+			program.setUniformValue('uModelViewMatrix', object._mvMatrix);
+			program.setUniformValue('uViewMatrix', cameraMatrix);
+			program.setUniformValue('uProjectionMatrix', projectionMatrix);
+			program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
+			program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
+			program.setUniformValue('uNormalMatrix', object._normalMatrix);
+			*/
+
+			/*
+				modelMatrix : mat4x4f,
+	viewMatrix : mat4x4f,
+	modelViewMatrix : mat4x4f,
+	projectionMatrix : mat4x4f,
+	viewProjectionMatrix : mat4x4f,
+	normalMatrix : mat4x4f,
+	*/
+
+
+		device.queue.writeBuffer(
+			uniformBuffer,
+			0 * SIZE_UNIFORM_MATRIX,
+			object.worldMatrix as BufferSource,
+		);
+		device.queue.writeBuffer(
+			uniformBuffer,
+			1 * SIZE_UNIFORM_MATRIX,
+			camera.cameraMatrix as BufferSource,
+		);
+		device.queue.writeBuffer(
+			uniformBuffer,
+			2 * SIZE_UNIFORM_MATRIX,
+			object._mvMatrix as BufferSource,
+		);
+		device.queue.writeBuffer(
+			uniformBuffer,
+			3 * SIZE_UNIFORM_MATRIX,
+			camera.projectionMatrix as BufferSource,
+		);
+		device.queue.writeBuffer(
+			uniformBuffer,
+			4 * SIZE_UNIFORM_MATRIX,
+			tempViewProjectionMatrix as BufferSource,
+		);
+		device.queue.writeBuffer(
+			uniformBuffer,
+			5 * SIZE_UNIFORM_MATRIX,
+			object._normalMatrix as BufferSource,
+		);
 
 
 		const vertexBuffers: GPUVertexBufferLayout[] = [{
 			attributes: [{
 				shaderLocation: 0, // position
 				offset: 0,
-				format: 'float32x4'
-			}, {
+				format: 'float32x3'
+			},/* {
 				shaderLocation: 1, // color
 				offset: 16,
 				format: 'float32x4'
-			}],
-			arrayStride: 32,
+			},*/
+			],
+			arrayStride: 12,
 			stepMode: 'vertex'
 		}];
 
@@ -201,6 +287,22 @@ export class WebGPURenderer implements Renderer {
 		};
 
 		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
+
+
+
+		const uniformBindGroup = device.createBindGroup({
+			layout: renderPipeline.getBindGroupLayout(0),
+			entries: [
+				{
+					binding: 0,
+					resource: {
+						buffer: uniformBuffer,
+					},
+				},
+			],
+		});
+
+
 		const commandEncoder = device.createCommandEncoder();
 
 		const renderPassDescriptor: GPURenderPassDescriptor = {
@@ -214,8 +316,10 @@ export class WebGPURenderer implements Renderer {
 
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 		passEncoder.setPipeline(renderPipeline);
+		passEncoder.setBindGroup(0, uniformBindGroup);
+		passEncoder.setIndexBuffer(indexBuffer, 'uint16');
 		passEncoder.setVertexBuffer(0, vertexBuffer);
-		passEncoder.draw(geometry.count);
+		passEncoder.drawIndexed(geometry.count);
 		//passEncoder.draw(3);
 
 		// End the render pass
@@ -223,7 +327,6 @@ export class WebGPURenderer implements Renderer {
 
 		// 10: End frame by passing array of command buffers to command queue for execution
 		device.queue.submit([commandEncoder.finish()]);
-
 
 		if (USE_STATS) {
 			WebGLStats.drawElements(object.renderMode, geometry.count);
@@ -248,10 +351,23 @@ export class WebGPURenderer implements Renderer {
 			return null;
 		}
 
+		WebGPUInternal.device.pushErrorScope('validation');
 		shaderModule = WebGPUInternal.device.createShaderModule({
 			code: shaderSource.getCompileSource(),
 			label: shaderName,
 		});
+
+		WebGPUInternal.device.popErrorScope().then(error => {
+			if (error) {
+				const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
+				console.warn(m, shaderSource.getCompileSourceLineNumber(''), m);
+
+				shaderSource.setCompileError(error.message);
+			}
+		});
+
+		// Schedule the execution to validate the shader
+		WebGPUInternal.device.queue.submit([]);
 
 		this.#materialsShaderModule.set(shaderName, shaderModule);
 
