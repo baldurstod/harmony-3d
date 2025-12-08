@@ -4,4 +4,3 @@ export * from './includes/export';
 export { ShaderEditor } from './shadereditor';
 export { Shaders } from './shaders';
 export * from './shaders/export';
-export * from './webgpu/export';

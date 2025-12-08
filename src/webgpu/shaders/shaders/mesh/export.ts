@@ -1,4 +1,4 @@
-import { Shaders } from '../../../shaders';
+import { Shaders } from '../../../../shaders/shaders';
 
 import meshbasic_wgsl from './meshbasic.wgsl';
 Shaders['meshbasic.wgsl'] = meshbasic_wgsl;
