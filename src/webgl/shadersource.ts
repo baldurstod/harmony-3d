@@ -50,7 +50,6 @@ export class WebGLShaderSource {
 	#error = '';
 	#lineDelta = 0;
 	#compilationInfo: GPUCompilationInfo | null = null;
-	wgslReflection: WgslReflect | null = null;
 
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
@@ -242,7 +241,6 @@ export class WebGLShaderSource {
 
 		if (this.#type == ShaderType.Wgsl) {
 			const source = includeCode + this.#compileSource;
-			this.wgslReflection = new WgslReflect(source);
 			return source;
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);

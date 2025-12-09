@@ -29,7 +29,7 @@ const tempViewProjectionMatrix = mat4.create();
 
 type WgslModule = {
 	module: GPUShaderModule;
-	reflection: WgslReflect;
+	reflection?: WgslReflect;
 }
 
 export class WebGPURenderer implements Renderer {
@@ -206,68 +206,12 @@ export class WebGPURenderer implements Renderer {
 		*/
 		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
 
-		/*
-		program.setUniformValue('uModelMatrix', object.worldMatrix);
-		program.setUniformValue('uModelViewMatrix', object._mvMatrix);
-		program.setUniformValue('uViewMatrix', cameraMatrix);
-		program.setUniformValue('uProjectionMatrix', projectionMatrix);
-		program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
-		program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
-		program.setUniformValue('uNormalMatrix', object._normalMatrix);
-		*/
-
-		/*
-		modelMatrix : mat4x4f,
-		viewMatrix : mat4x4f,
-		modelViewMatrix : mat4x4f,
-		projectionMatrix : mat4x4f,
-		viewProjectionMatrix : mat4x4f,
-		normalMatrix : mat4x4f,
-		*/
-
-		/*
-				device.queue.writeBuffer(
-					uniformBuffer,
-					0 * SIZE_UNIFORM_MATRIX,
-					object.worldMatrix as BufferSource,
-				);
-				device.queue.writeBuffer(
-					uniformBuffer,
-					1 * SIZE_UNIFORM_MATRIX,
-					camera.cameraMatrix as BufferSource,
-				);
-				device.queue.writeBuffer(
-					uniformBuffer,
-					2 * SIZE_UNIFORM_MATRIX,
-					object._mvMatrix as BufferSource,
-				);
-				device.queue.writeBuffer(
-					uniformBuffer,
-					3 * SIZE_UNIFORM_MATRIX,
-					camera.projectionMatrix as BufferSource,
-				);
-				device.queue.writeBuffer(
-					uniformBuffer,
-					4 * SIZE_UNIFORM_MATRIX,
-					tempViewProjectionMatrix as BufferSource,
-				);
-				device.queue.writeBuffer(
-					uniformBuffer,
-					5 * SIZE_UNIFORM_MATRIX,
-					object._normalMatrix as BufferSource,
-				);
-				*/
-
 		const vertexBuffers: GPUVertexBufferLayout[] = [{
 			attributes: [{
 				shaderLocation: 0, // position
 				offset: 0,
 				format: 'float32x3'
-			},/* {
-				shaderLocation: 1, // color
-				offset: 16,
-				format: 'float32x4'
-			},*/
+			},
 			],
 			arrayStride: 12,
 			stepMode: 'vertex'
@@ -296,114 +240,52 @@ export class WebGPURenderer implements Renderer {
 		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
 
 		const groups = new Map2<number, number, GPUBuffer>();
-		for (const uniform of shaderModule.reflection.uniforms) {
-			// TODO: make this once
-			/*
-			let binding = 0;
-			let group = 0;
-			if (uniform.attributes) {
-				for (const attribute of uniform.attributes) {
-					if (attribute.name == 'binding') {
-						binding = Number(attribute.value);
-					}
-					if (attribute.name == 'group') {
-						group = Number(attribute.value);
-					}
-				}
-			}
-			*/
-			const uniformBuffer = device.createBuffer({
-				size: uniform.size,
-				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-			});
+		if (shaderModule.reflection) {
+			for (const uniform of shaderModule.reflection.uniforms) {
+				const uniformBuffer = device.createBuffer({
+					size: uniform.size,
+					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+				});
 
-			groups.set(uniform.group, uniform.binding, uniformBuffer);
+				groups.set(uniform.group, uniform.binding, uniformBuffer);
 
-			const members = uniform.members;
-			if (members) {
-				for (const member of members) {
-					let bufferSource: BufferSource | null = null;
-					/*
-									device.queue.writeBuffer(
-										uniformBuffer,
-										0 * SIZE_UNIFORM_MATRIX,
-										object.worldMatrix as BufferSource,
-									);
-									device.queue.writeBuffer(
-										uniformBuffer,
-										1 * SIZE_UNIFORM_MATRIX,
-										camera.cameraMatrix as BufferSource,
-									);
-									device.queue.writeBuffer(
-										uniformBuffer,
-										2 * SIZE_UNIFORM_MATRIX,
-										object._mvMatrix as BufferSource,
-									);
-									device.queue.writeBuffer(
-										uniformBuffer,
-										3 * SIZE_UNIFORM_MATRIX,
-										camera.projectionMatrix as BufferSource,
-									);
-									device.queue.writeBuffer(
-										uniformBuffer,
-										4 * SIZE_UNIFORM_MATRIX,
-										tempViewProjectionMatrix as BufferSource,
-									);
-									device.queue.writeBuffer(
-										uniformBuffer,
-										5 * SIZE_UNIFORM_MATRIX,
-										object._normalMatrix as BufferSource,
-									);
-									*/
+				const members = uniform.members;
+				if (members) {
+					for (const member of members) {
+						let bufferSource: BufferSource | null = null;
 
+						switch (member.name) {
+							case 'modelMatrix':
+								bufferSource = object.worldMatrix as BufferSource;
+								break;
+							case 'viewMatrix':
+								bufferSource = camera.cameraMatrix as BufferSource;
+								break;
+							case 'modelViewMatrix':
+								bufferSource = object._mvMatrix as BufferSource;
+								break;
+							case 'projectionMatrix':
+								bufferSource = camera.projectionMatrix as BufferSource;
+								break;
+							case 'viewProjectionMatrix':
+								tempViewProjectionMatrix as BufferSource;
+								break;
+							case 'normalMatrix':
+								object._normalMatrix as BufferSource;
+								break;
+						}
 
-					switch (member.name) {
-						case 'modelMatrix':
-							bufferSource = object.worldMatrix as BufferSource;
-							break;
-						case 'viewMatrix':
-							bufferSource = camera.cameraMatrix as BufferSource;
-							break;
-						case 'modelViewMatrix':
-							bufferSource = object._mvMatrix as BufferSource;
-							break;
-						case 'projectionMatrix':
-							bufferSource = camera.projectionMatrix as BufferSource;
-							break;
-						case 'viewProjectionMatrix':
-							tempViewProjectionMatrix as BufferSource;
-							break;
-						case 'normalMatrix':
-							object._normalMatrix as BufferSource;
-							break;
-					}
-
-					if (bufferSource) {
-						device.queue.writeBuffer(
-							uniformBuffer,
-							member.offset,
-							bufferSource,
-						);
+						if (bufferSource) {
+							device.queue.writeBuffer(
+								uniformBuffer,
+								member.offset,
+								bufferSource,
+							);
+						}
 					}
 				}
 			}
 		}
-
-
-		/*
-				const uniformBindGroup = device.createBindGroup({
-					layout: renderPipeline.getBindGroupLayout(0),
-					entries: [
-						{
-							binding: 0,// corresponds to @binding
-							resource: {
-								buffer: uniformBuffer,
-							},
-						},
-					],
-				});
-				*/
-
 
 		const commandEncoder = device.createCommandEncoder();
 
@@ -492,7 +374,12 @@ export class WebGPURenderer implements Renderer {
 		// Schedule the execution to validate the shader
 		WebGPUInternal.device.queue.submit([]);
 
-		shaderModule = { module, reflection: new WgslReflect(source) };
+		let reflection
+		try {
+			reflection = new WgslReflect(source);
+		} catch (e) { }
+
+		shaderModule = { module, reflection };
 		this.#materialsShaderModule.set(shaderName, shaderModule);
 
 		return shaderModule;
