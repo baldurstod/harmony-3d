@@ -239,7 +239,9 @@ export class WebGLShaderSource {
 		}
 
 		if (this.#type == ShaderType.Wgsl) {
-			parseWgsl(includeCode + this.#compileSource);
+			try {
+				parseWgsl(includeCode + this.#compileSource);
+			} catch (e) { }
 			return includeCode + this.#compileSource;
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
@@ -426,12 +428,15 @@ export class WebGLShaderSource {
 
 
 export enum WgslToken {
-	At,
+	At = 1,
 	OpenBrace,
 	CloseBrace,
 	OpenParenthesis,
 	CloseParenthesis,
+	OpenChevron,
+	CloseChevron,
 	Colon,
+	SemiColon,
 	Comma,
 	//EOF,
 }
@@ -452,6 +457,12 @@ type ShaderUniform = {
 	uniforms: Map<string, number>;
 }
 
+type ShaderUniformInternal = {
+	binding: number;
+	group: number;
+	uniforms: string//Map<string, number>;
+}
+
 type WgslVar = {
 	name: string;
 	type: string;// TODO: create an enum ?
@@ -468,12 +479,34 @@ type WgslStruct = {
  */
 function parseWgsl(source: string): ShaderUniform[] {
 	const uniforms: ShaderUniform[] = [];
-	//const syntaxError = new Error('syntax error');
+	const globalUniforms: ShaderUniformInternal[] = [];
+	const syntaxError = new Error('syntax error');
+
+	const syntax = new Map<string, string | RegExp>([
+		['ident', 'ident_pattern_token _disambiguate_template'],
+		['ident_pattern_token', /([_\p{XID_Start}][\p{XID_Continue}]+)|([\p{XID_Start}])/u],
+		['struct_decl', "'struct' ident struct_body_decl"],
+		['struct_body_decl', "'{' struct_member ( ',' struct_member ) * ',' ? '}'"],
+		['struct_member', "attribute * member_ident ':' type_specifier"],
+		['member_ident', 'ident_pattern_token'],
+		['type_specifier', 'template_elaborated_ident'],
+		['template_elaborated_ident', 'ident _disambiguate_template template_list ?'],
+		['_disambiguate_template', ''],
+		['template_list', '_template_args_start template_arg_comma_list _template_args_end'],
+		['_template_args_start', '<'],
+		['_template_args_end', '>'],
+		['template_arg_comma_list', "template_arg_expression ( ',' template_arg_expression ) * ',' ?"],
+		['template_arg_expression', 'expression'],
+		['expression', "relational_expression | short_circuit_or_expression '||' relational_expression | short_circuit_and_expression '&&' relational_expression | bitwise_expression"],
+	])
+
 
 	const structs = new Map<string, WgslStruct>();
 
 	let currentStruct: WgslStruct | null = null;
 	let beginAttribute = false;
+	const attributeStack = new Map<string, number>();
+	let isUniformBuffer = false;
 
 	const tokenIterator = getNextToken(source);
 	for (const token of tokenIterator) {
@@ -481,64 +514,153 @@ function parseWgsl(source: string): ShaderUniform[] {
 			case 'struct':
 				const structName = tokenIterator.next().value;
 				if (typeof structName != 'string') {
-					//throw syntaxError;
-					return uniforms;
+					throw syntaxError;
 				}
 				currentStruct = { name: structName, vars: [] };
 
-				const t = tokenIterator.next().value;
-				if (t != WgslToken.OpenBrace) {
-					//throw syntaxError;
-					return uniforms;
+				//const t = tokenIterator.next().value;
+				if (tokenIterator.next().value != WgslToken.OpenBrace) {
+					throw syntaxError;
 				}
 
-				for (const token of tokenIterator) {
-					if (token == WgslToken.CloseBrace) {
+				//for (const token2 of tokenIterator) {
+				let token2;
+				while (token2 = tokenIterator.next().value) {
+					if (token2 == WgslToken.CloseBrace) {
 						// Terminate the struct
 						structs.set(currentStruct.name, currentStruct);
 						break;
 					}
 
-					const StructName = token;
-					if (typeof StructName != 'string') {
-						//throw syntaxError;
-						return uniforms;
+					const structName = token2;
+					if (typeof structName != 'string') {
+						throw syntaxError;
 					}
 
 
 					const colon = tokenIterator.next().value;
 					if (colon != WgslToken.Colon) {
-						//throw syntaxError;
-						return uniforms;
+						throw syntaxError;
 					}
 
 					const structType = tokenIterator.next().value;
 					if (typeof structType != 'string') {
-						//throw syntaxError;
-						return uniforms;
+						throw syntaxError;
 					}
 
 					const commaOrClosingBrace = tokenIterator.next().value;
 					if (commaOrClosingBrace != WgslToken.Comma && commaOrClosingBrace != WgslToken.CloseBrace) {
-						//throw syntaxError;
-						return uniforms;
+						throw syntaxError;
 					}
 
-					currentStruct.vars.push({ name: StructName, type: structType });
+					currentStruct.vars.push({ name: structName, type: structType });
 				}
 
 				break;
 			case WgslToken.At:
-				break
+				const attributeName = tokenIterator.next().value;
+				if (typeof attributeName != 'string') {
+					throw syntaxError;
+				}
+
+				const t1 = tokenIterator.next().value;
+				if (t1 == 'fn') {
+					let token2;
+					while (token2 = tokenIterator.next().value) {
+						if (token2 == WgslToken.OpenBrace) {
+							break;
+						}
+					}
+
+					break;
+				}
+				if (t1 != WgslToken.OpenParenthesis) {
+					throw syntaxError;
+				}
+
+				const attributeValue = tokenIterator.next().value;
+				if (typeof attributeValue != 'string') {
+					throw syntaxError;
+				}
+
+				let t = tokenIterator.next().value;
+				if (t == WgslToken.Comma) {
+					t = tokenIterator.next().value;
+				}
+				if (t != WgslToken.CloseParenthesis) {
+					throw syntaxError;
+				}
+
+				attributeStack.set(attributeName, Number(attributeValue));
+
+				break;
 			case WgslToken.CloseBrace:
+				break;
+			case 'var':
+				if (tokenIterator.next().value != WgslToken.OpenChevron) {
+					throw syntaxError;
+				}
+
+				const varType = tokenIterator.next().value;
+				if (typeof varType != 'string') {
+					throw syntaxError;
+				}
+
+				if (varType == 'uniform') {
+					isUniformBuffer = true;
+				}
+
+				if (tokenIterator.next().value != WgslToken.CloseChevron) {
+					throw syntaxError;
+				}
+
+				const varName = tokenIterator.next().value;
+				if (typeof varName != 'string') {
+					throw syntaxError;
+				}
+
+				if (tokenIterator.next().value != WgslToken.Colon) {
+					throw syntaxError;
+				}
+
+				const structType = tokenIterator.next().value;
+				if (typeof structType != 'string') {
+					throw syntaxError;
+				}
+
+				if (tokenIterator.next().value != WgslToken.SemiColon) {
+					throw syntaxError;
+				}
+
+				if (isUniformBuffer) {
+					let binding = 0;
+					let group = 0;
+					for (const [attributeName, attributeValue] of attributeStack) {
+						if (attributeName == 'binding') {
+							binding = attributeValue;
+						}
+						if (attributeName == 'group') {
+							group = attributeValue;
+						}
+					}
+					globalUniforms.push({ binding, group, uniforms: structType });
+					attributeStack.clear();
+					isUniformBuffer = false;
+				}
+
+				break;
+			case ';':
+				attributeStack.clear();
+				isUniformBuffer = false;
 				break;
 			default:
 				break;
 		}
-		//console.info(token);
+		//console.info(attributeStack);
 	}
 
 	console.info(structs);
+	console.info(globalUniforms);
 
 	return uniforms;
 }
@@ -580,7 +702,7 @@ function* getNextToken(source: string): Generator<WgslToken | string, void, unkn
 			continue;
 		}
 
-		if (literal && (char == '{' || char == '}' || char == '(' || char == ')' || char == ':' || char == ',' || char == '\n' || char == '\r' || char == '/' || char == ' ' || char == '\t')) {
+		if (literal && (char == '@' || char == '{' || char == '}' || char == '(' || char == ')' || char == '<' || char == '>' || char == ':' || char == ';' || char == ',' || char == '\n' || char == '\r' || char == '/' || char == ' ' || char == '\t')) {
 			// Terminate and emit the string
 			yield literalString;
 			literal = false;
@@ -603,8 +725,17 @@ function* getNextToken(source: string): Generator<WgslToken | string, void, unkn
 			case ')':
 				yield WgslToken.CloseParenthesis;
 				break;
+			case '<':
+				yield WgslToken.OpenChevron;
+				break;
+			case '>':
+				yield WgslToken.CloseChevron;
+				break;
 			case ':':
 				yield WgslToken.Colon;
+				break;
+			case ';':
+				yield WgslToken.SemiColon;
 				break;
 			case ',':
 				yield WgslToken.Comma;
