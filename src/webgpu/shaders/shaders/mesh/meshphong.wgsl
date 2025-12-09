@@ -7,7 +7,7 @@ struct Uniforms {
 	normalMatrix : mat4x4f,
 }
 
-@binding(0) @group(0) var<uniform> uniforms : Uniforms;
+@group(0) @binding(0) var<uniform> uniforms : Uniforms;
 
 
 struct VertexOut {

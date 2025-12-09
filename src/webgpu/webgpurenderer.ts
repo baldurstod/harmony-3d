@@ -1,5 +1,6 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
-import { once } from 'harmony-utils';
+import { Map2, once } from 'harmony-utils';
+import { WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -19,7 +20,6 @@ import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/shadersource';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -27,11 +27,16 @@ const clearError = once(() => console.error('TODO clear'));
 
 const tempViewProjectionMatrix = mat4.create();
 
+type WgslModule = {
+	module: GPUShaderModule;
+	reflection: WgslReflect;
+}
+
 export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
 	#shadowMap = new ShadowMap();
 	#frame = 0;
-	#materialsShaderModule = new Map<string, GPUShaderModule>();
+	#materialsShaderModule = new Map<string, WgslModule>();
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
 
@@ -193,63 +198,65 @@ export class WebGPURenderer implements Renderer {
 
 		const SIZE_UNIFORM_MATRIX = 4 * 16;
 		const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
+		/*
 		const uniformBuffer = device.createBuffer({
 			size: uniformBufferSize,
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
-				mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
+		*/
+		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
 
-/*
-			program.setUniformValue('uModelMatrix', object.worldMatrix);
-			program.setUniformValue('uModelViewMatrix', object._mvMatrix);
-			program.setUniformValue('uViewMatrix', cameraMatrix);
-			program.setUniformValue('uProjectionMatrix', projectionMatrix);
-			program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
-			program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
-			program.setUniformValue('uNormalMatrix', object._normalMatrix);
-			*/
+		/*
+		program.setUniformValue('uModelMatrix', object.worldMatrix);
+		program.setUniformValue('uModelViewMatrix', object._mvMatrix);
+		program.setUniformValue('uViewMatrix', cameraMatrix);
+		program.setUniformValue('uProjectionMatrix', projectionMatrix);
+		program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
+		program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
+		program.setUniformValue('uNormalMatrix', object._normalMatrix);
+		*/
 
-			/*
-				modelMatrix : mat4x4f,
-	viewMatrix : mat4x4f,
-	modelViewMatrix : mat4x4f,
-	projectionMatrix : mat4x4f,
-	viewProjectionMatrix : mat4x4f,
-	normalMatrix : mat4x4f,
-	*/
+		/*
+		modelMatrix : mat4x4f,
+		viewMatrix : mat4x4f,
+		modelViewMatrix : mat4x4f,
+		projectionMatrix : mat4x4f,
+		viewProjectionMatrix : mat4x4f,
+		normalMatrix : mat4x4f,
+		*/
 
-
-		device.queue.writeBuffer(
-			uniformBuffer,
-			0 * SIZE_UNIFORM_MATRIX,
-			object.worldMatrix as BufferSource,
-		);
-		device.queue.writeBuffer(
-			uniformBuffer,
-			1 * SIZE_UNIFORM_MATRIX,
-			camera.cameraMatrix as BufferSource,
-		);
-		device.queue.writeBuffer(
-			uniformBuffer,
-			2 * SIZE_UNIFORM_MATRIX,
-			object._mvMatrix as BufferSource,
-		);
-		device.queue.writeBuffer(
-			uniformBuffer,
-			3 * SIZE_UNIFORM_MATRIX,
-			camera.projectionMatrix as BufferSource,
-		);
-		device.queue.writeBuffer(
-			uniformBuffer,
-			4 * SIZE_UNIFORM_MATRIX,
-			tempViewProjectionMatrix as BufferSource,
-		);
-		device.queue.writeBuffer(
-			uniformBuffer,
-			5 * SIZE_UNIFORM_MATRIX,
-			object._normalMatrix as BufferSource,
-		);
-
+		/*
+				device.queue.writeBuffer(
+					uniformBuffer,
+					0 * SIZE_UNIFORM_MATRIX,
+					object.worldMatrix as BufferSource,
+				);
+				device.queue.writeBuffer(
+					uniformBuffer,
+					1 * SIZE_UNIFORM_MATRIX,
+					camera.cameraMatrix as BufferSource,
+				);
+				device.queue.writeBuffer(
+					uniformBuffer,
+					2 * SIZE_UNIFORM_MATRIX,
+					object._mvMatrix as BufferSource,
+				);
+				device.queue.writeBuffer(
+					uniformBuffer,
+					3 * SIZE_UNIFORM_MATRIX,
+					camera.projectionMatrix as BufferSource,
+				);
+				device.queue.writeBuffer(
+					uniformBuffer,
+					4 * SIZE_UNIFORM_MATRIX,
+					tempViewProjectionMatrix as BufferSource,
+				);
+				device.queue.writeBuffer(
+					uniformBuffer,
+					5 * SIZE_UNIFORM_MATRIX,
+					object._normalMatrix as BufferSource,
+				);
+				*/
 
 		const vertexBuffers: GPUVertexBufferLayout[] = [{
 			attributes: [{
@@ -268,12 +275,12 @@ export class WebGPURenderer implements Renderer {
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
 			vertex: {
-				module: shaderModule,
+				module: shaderModule.module,
 				entryPoint: 'vertex_main',
 				buffers: vertexBuffers
 			},
 			fragment: {
-				module: shaderModule,
+				module: shaderModule.module,
 				entryPoint: 'fragment_main',
 				targets: [{
 					format: WebGPUInternal.format,
@@ -288,19 +295,114 @@ export class WebGPURenderer implements Renderer {
 
 		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
 
+		const groups = new Map2<number, number, GPUBuffer>();
+		for (const uniform of shaderModule.reflection.uniforms) {
+			// TODO: make this once
+			/*
+			let binding = 0;
+			let group = 0;
+			if (uniform.attributes) {
+				for (const attribute of uniform.attributes) {
+					if (attribute.name == 'binding') {
+						binding = Number(attribute.value);
+					}
+					if (attribute.name == 'group') {
+						group = Number(attribute.value);
+					}
+				}
+			}
+			*/
+			const uniformBuffer = device.createBuffer({
+				size: uniform.size,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
+
+			groups.set(uniform.group, uniform.binding, uniformBuffer);
+
+			const members = uniform.members;
+			if (members) {
+				for (const member of members) {
+					let bufferSource: BufferSource | null = null;
+					/*
+									device.queue.writeBuffer(
+										uniformBuffer,
+										0 * SIZE_UNIFORM_MATRIX,
+										object.worldMatrix as BufferSource,
+									);
+									device.queue.writeBuffer(
+										uniformBuffer,
+										1 * SIZE_UNIFORM_MATRIX,
+										camera.cameraMatrix as BufferSource,
+									);
+									device.queue.writeBuffer(
+										uniformBuffer,
+										2 * SIZE_UNIFORM_MATRIX,
+										object._mvMatrix as BufferSource,
+									);
+									device.queue.writeBuffer(
+										uniformBuffer,
+										3 * SIZE_UNIFORM_MATRIX,
+										camera.projectionMatrix as BufferSource,
+									);
+									device.queue.writeBuffer(
+										uniformBuffer,
+										4 * SIZE_UNIFORM_MATRIX,
+										tempViewProjectionMatrix as BufferSource,
+									);
+									device.queue.writeBuffer(
+										uniformBuffer,
+										5 * SIZE_UNIFORM_MATRIX,
+										object._normalMatrix as BufferSource,
+									);
+									*/
 
 
-		const uniformBindGroup = device.createBindGroup({
-			layout: renderPipeline.getBindGroupLayout(0),
-			entries: [
-				{
-					binding: 0,
-					resource: {
-						buffer: uniformBuffer,
-					},
-				},
-			],
-		});
+					switch (member.name) {
+						case 'modelMatrix':
+							bufferSource = object.worldMatrix as BufferSource;
+							break;
+						case 'viewMatrix':
+							bufferSource = camera.cameraMatrix as BufferSource;
+							break;
+						case 'modelViewMatrix':
+							bufferSource = object._mvMatrix as BufferSource;
+							break;
+						case 'projectionMatrix':
+							bufferSource = camera.projectionMatrix as BufferSource;
+							break;
+						case 'viewProjectionMatrix':
+							tempViewProjectionMatrix as BufferSource;
+							break;
+						case 'normalMatrix':
+							object._normalMatrix as BufferSource;
+							break;
+					}
+
+					if (bufferSource) {
+						device.queue.writeBuffer(
+							uniformBuffer,
+							member.offset,
+							bufferSource,
+						);
+					}
+				}
+			}
+		}
+
+
+		/*
+				const uniformBindGroup = device.createBindGroup({
+					layout: renderPipeline.getBindGroupLayout(0),
+					entries: [
+						{
+							binding: 0,// corresponds to @binding
+							resource: {
+								buffer: uniformBuffer,
+							},
+						},
+					],
+				});
+				*/
 
 
 		const commandEncoder = device.createCommandEncoder();
@@ -316,7 +418,27 @@ export class WebGPURenderer implements Renderer {
 
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 		passEncoder.setPipeline(renderPipeline);
-		passEncoder.setBindGroup(0, uniformBindGroup);
+
+		for (const [groupId, group] of groups.getMap()) {
+			const entries: GPUBindGroupEntry[] = [];
+			for (const [bindingId, uniformBuffer] of group) {
+				entries.push({
+					binding: bindingId,// corresponds to @binding
+					resource: {
+						buffer: uniformBuffer,
+					},
+				});
+
+
+			}
+
+			const uniformBindGroup = device.createBindGroup({
+				layout: renderPipeline.getBindGroupLayout(groupId),// corresponds to @group
+				entries: entries,
+			});
+			passEncoder.setBindGroup(groupId, uniformBindGroup);
+		}
+
 		passEncoder.setIndexBuffer(indexBuffer, 'uint16');
 		passEncoder.setVertexBuffer(0, vertexBuffer);
 		passEncoder.drawIndexed(geometry.count);
@@ -338,7 +460,7 @@ export class WebGPURenderer implements Renderer {
 	 * @param material The material
 	 * @returns a shader module or null
 	 */
-	#getShaderModule(material: Material): GPUShaderModule | null {
+	#getShaderModule(material: Material): WgslModule | null {
 		const shaderName = material.getShaderSource() + '.wgsl';
 
 		let shaderModule = this.#materialsShaderModule.get(shaderName);
@@ -352,8 +474,9 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		WebGPUInternal.device.pushErrorScope('validation');
-		shaderModule = WebGPUInternal.device.createShaderModule({
-			code: shaderSource.getCompileSource(),
+		const source = shaderSource.getCompileSource();
+		const module = WebGPUInternal.device.createShaderModule({
+			code: source,
 			label: shaderName,
 		});
 
@@ -364,11 +487,12 @@ export class WebGPURenderer implements Renderer {
 			}
 		});
 
-		shaderModule.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo));
+		module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo));
 
 		// Schedule the execution to validate the shader
 		WebGPUInternal.device.queue.submit([]);
 
+		shaderModule = { module, reflection: new WgslReflect(source) };
 		this.#materialsShaderModule.set(shaderName, shaderModule);
 
 		return shaderModule;

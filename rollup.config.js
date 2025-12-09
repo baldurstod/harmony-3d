@@ -56,6 +56,7 @@ export default [
 			'@derschmale/io-rgbe',
 			'@zip.js/zip.js',
 			'murmurhash',
+			'wgsl_reflect',
 		],
 	},
 ];
