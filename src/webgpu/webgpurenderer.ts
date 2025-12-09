@@ -19,7 +19,7 @@ import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
-import { ShaderType } from '../webgl/shadersource';
+import { ShaderType } from '../webgl/types';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));

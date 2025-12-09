@@ -1,13 +1,6 @@
-import { WgslReflect } from 'wgsl_reflect';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
-import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from './constants';
-
-export enum ShaderType {
-	Vertex = GL_VERTEX_SHADER,
-	Fragment = GL_FRAGMENT_SHADER,
-	Wgsl = 'wgsl',
-}
+import { ShaderType } from './types';
 
 function getHeader(type: ShaderType): string {
 	switch (type) {
@@ -122,7 +115,7 @@ export class WebGLShaderSource {
 			return undefined;
 		}
 		recursion.add(includeName);
-		const include = getIncludeSource(includeName);
+		const include = getIncludeSource(includeName, this.#type);
 		if (include == undefined) {
 			return undefined;
 		}

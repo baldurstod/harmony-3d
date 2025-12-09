@@ -4,7 +4,7 @@ import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
 import { Graphics } from '../graphics/graphics2';
 import { ShaderManager } from '../managers/shadermanager';
-import { ShaderType } from '../webgl/shadersource';
+import { ShaderType } from '../webgl/types';
 import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';
 import { ShaderEventTarget } from './shadereventtarget';
 
@@ -186,7 +186,7 @@ export class ShaderEditor extends HTMLElement {
 	set editorIncludeName(includeName: string) {
 		if (includeName) {
 			this.#editorIncludeName = includeName;
-			const source = getIncludeSource(this.#editorIncludeName);
+			const source = getIncludeSource(this.#editorIncludeName, this.#shaderType);
 			if (source) {
 				this.#shaderEditor.setValue(source);
 				this.#editMode = EDIT_MODE_INCLUDE;
@@ -201,7 +201,7 @@ export class ShaderEditor extends HTMLElement {
 		if (this.#editMode == EDIT_MODE_SHADER) {
 			ShaderManager.setCustomSource(this.#shaderType, this.#editorShaderName, customSource);
 		} else {
-			setCustomIncludeSource(this.#editorIncludeName, customSource);
+			setCustomIncludeSource(this.#editorIncludeName, customSource, this.#shaderType);
 			ShaderManager.resetShadersSource();
 			Graphics.invalidateShaders();
 		}
