@@ -1,6 +1,7 @@
+import { FinalLine, preprocessWgslLineMap } from 'wgsl-preprocessor';
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 import { Shaders } from '../shaders/shaders';
-import { WebGLShaderSource } from '../webgl/shadersource';
+import { Annotation, WebGLShaderSource } from '../webgl/shadersource';
 import { ShaderType } from '../webgl/types';
 
 export class ShaderManager {
@@ -62,7 +63,15 @@ export class ShaderManager {
 		}
 	}
 
-	static #getIncludeAnnotations(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
+	static #getIncludeAnnotations(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): Annotation[] {
+		if (shaderSource.getType() == ShaderType.Wgsl) {
+			return this.#getIncludeAnnotationsWgsl(includeName, shaderName, shaderSource);
+		} else {
+			return this.#getIncludeAnnotationsGlsl(includeName, shaderName, shaderSource);
+		}
+	}
+
+	static #getIncludeAnnotationsGlsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
 		const errorArray = [];
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName)) {
@@ -80,6 +89,40 @@ export class ShaderManager {
 		}
 		return errorArray;
 	}
+
+		static #getIncludeAnnotationsWgsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): Annotation[] {
+		function findInclude(line: FinalLine): FinalLine | null {
+			if (line.sourceName == includeName) {
+				return line;
+			}
+
+			if (line.includeLine) {
+				return findInclude(line.includeLine);
+			}
+			return null;
+		}
+
+		const errorArray: Annotation[] = [];
+		if (shaderSource.isErroneous()) {
+			if (shaderSource.containsInclude(includeName)) {
+
+				const lines = preprocessWgslLineMap(shaderSource.getOriginSource());
+				const errors = shaderSource.getCompileError(false);
+				for (const error of errors) {
+					const line = lines[error.row - 1];
+					if (!line) {
+						continue;
+					}
+					const includeLine = findInclude(line);
+					if (includeLine) {
+						errorArray.push({ type: error.type, column: error.column, row: includeLine.originLine, text: error.text });
+					}
+				}
+			}
+		}
+		return errorArray;
+	}
+
 
 	static get shaderList() {
 		return this.#shaderList.keys();

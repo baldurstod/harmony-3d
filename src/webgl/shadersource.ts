@@ -1,3 +1,4 @@
+import { getIncludeList, preprocessWgsl, preprocessWgslLineMap } from 'wgsl-preprocessor';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
 import { ShaderType } from './types';
@@ -53,6 +54,14 @@ export class WebGLShaderSource {
 	}
 
 	setSource(source: string): void {
+		if (this.#type == ShaderType.Wgsl) {
+			this.#setSourceWgsl(source);
+		} else {
+			this.#setSourceGlsl(source);
+		}
+	}
+
+	#setSourceGlsl(source: string): void {
 		this.#source = source;
 		this.#extensions = '';
 		this.#sizeOfSourceRow = [];
@@ -93,6 +102,23 @@ export class WebGLShaderSource {
 			this.#sizeOfSourceRow[i] = actualSize;
 		}
 		this.#compileSource = outArray.join('\n');
+
+		this.#isErroneous = false;
+		this.#error = '';
+		this.#compilationInfo = null;
+		this.#lineDelta = 0;
+	}
+
+	#setSourceWgsl(source: string): void {
+		this.#source = source;
+		this.#extensions = '';
+		this.#sizeOfSourceRow = [];
+		this.#sourceRowToInclude.clear();
+		this.#includes.clear();
+
+		//const [compileSource, lines] = preprocessWgslLineMap(source);
+
+		this.#compileSource = source;
 
 		this.#isErroneous = false;
 		this.#error = '';
@@ -233,8 +259,8 @@ export class WebGLShaderSource {
 		}
 
 		if (this.#type == ShaderType.Wgsl) {
-			const source = includeCode + this.#compileSource;
-			return source;
+			//const source = includeCode + this.#compileSource;
+			return preprocessWgsl(this.#compileSource);
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
 		}
@@ -310,11 +336,17 @@ export class WebGLShaderSource {
 	#getWebGPUCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
 
+		const lineMap = preprocessWgslLineMap(this.#compileSource);
+
 		if (this.#compilationInfo) {
 			for (const message of this.#compilationInfo.messages) {
-				let row = Math.max(message.lineNum - this.#lineDelta, 0);
+				let row = message.lineNum;//Math.max(message.lineNum - this.#lineDelta, 0);
 				if (convertRows) {
-					row = this.compileRowToSourceRow(row);
+					//row = this.compileRowToSourceRow(row);
+					const map = lineMap[row - 1];
+					if (map) {
+						row = map.originLine;
+					}
 				}
 
 				const lines = message.message.split('\n');
@@ -366,7 +398,19 @@ export class WebGLShaderSource {
 	}
 
 	containsInclude(includeName: string): boolean {
+		if (this.#type == ShaderType.Wgsl) {
+			return this.#containsIncludeWgsl(includeName);
+		} else {
+			return this.#containsIncludeGlsl(includeName);
+		}
+	}
+
+	#containsIncludeGlsl(includeName: string): boolean {
 		return this.#includes.has(includeName);
+	}
+
+	#containsIncludeWgsl(includeName: string): boolean {
+		return getIncludeList(this.#compileSource).has(includeName);
 	}
 
 	getType(): ShaderType {
@@ -375,6 +419,10 @@ export class WebGLShaderSource {
 
 	getSourceRowToInclude(): Map<number, [string, number]> {
 		return new Map(this.#sourceRowToInclude);
+	}
+
+	getOriginSource() {
+		return this.#compileSource;
 	}
 	/*
 		#getUniforms(source: string): void {

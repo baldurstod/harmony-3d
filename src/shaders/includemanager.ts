@@ -1,13 +1,16 @@
+import { setWgslInclude } from 'wgsl-preprocessor';
 import { ShaderType } from '../webgl/types';
 import { Includes, WgslIncludes } from './includes';
 import { ShaderEventTarget } from './shadereventtarget';
 
-const includeSources = new Map<string, string>();
+const includeSources = new Map<string, string>();//TODO: remove and replace by includeSources2
+const includeSources2 = new Set<string>();
 const customIncludeSourcesGlsl = new Map<string, string>();
 const customIncludeSourcesWgsl = new Map<string, string>();
 
 export function addIncludeSource(name: string, source = '') {
 	includeSources.set(name, source);
+	includeSources2.add(name);
 	ShaderEventTarget.dispatchEvent(new CustomEvent('includeadded'));
 }
 
@@ -63,8 +66,9 @@ function setCustomIncludeSourceWgsl(name: string, source: string) {
 	} else {
 		customIncludeSourcesWgsl.set(name, source);
 	}
+	setWgslInclude(name, getIncludeSourceWgsl(name) ?? '');
 }
 
 export function getIncludeList() {
-	return includeSources.keys();
+	return includeSources2;
 }

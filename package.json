@@ -23,7 +23,8 @@
 		"harmony-vpk": "github:baldurstod/harmony-vpk",
 		"meshoptimizer": "^0.21.0",
 		"murmurhash": "github:baldurstod/murmurhash",
-		"wgsl_reflect": "^1.2.3"
+		"wgsl_reflect": "^1.2.3",
+		"wgsl-preprocessor": "github:baldurstod/wgsl-preprocessor"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.29.0",

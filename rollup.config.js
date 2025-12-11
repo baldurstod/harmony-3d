@@ -57,6 +57,7 @@ export default [
 			'@zip.js/zip.js',
 			'murmurhash',
 			'wgsl_reflect',
+			'wgsl-preprocessor',
 		],
 	},
 ];
