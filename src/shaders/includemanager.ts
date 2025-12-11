@@ -1,4 +1,4 @@
-import { setWgslInclude } from 'wgsl-preprocessor';
+import { WgslPreprocessor } from 'wgsl-preprocessor';
 import { ShaderType } from '../webgl/types';
 import { Includes, WgslIncludes } from './includes';
 import { ShaderEventTarget } from './shadereventtarget';
@@ -66,9 +66,17 @@ function setCustomIncludeSourceWgsl(name: string, source: string) {
 	} else {
 		customIncludeSourcesWgsl.set(name, source);
 	}
-	setWgslInclude(name, getIncludeSourceWgsl(name) ?? '');
+	WgslPreprocessor.setWgslInclude(name, getIncludeSourceWgsl(name) ?? '');
 }
 
 export function getIncludeList() {
 	return includeSources2;
+}
+
+/**
+ * Init wgsl-preprocessor
+ */
+export function addWgslInclude(name: string, source: string): void {
+	WgslIncludes.set(name, source);
+	WgslPreprocessor.setWgslInclude(name, source);
 }

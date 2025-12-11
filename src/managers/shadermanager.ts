@@ -1,4 +1,4 @@
-import { FinalLine, preprocessWgslLineMap } from 'wgsl-preprocessor';
+import { FinalLine, WgslPreprocessor } from 'wgsl-preprocessor';
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 import { Shaders } from '../shaders/shaders';
 import { Annotation, WebGLShaderSource } from '../webgl/shadersource';
@@ -90,7 +90,7 @@ export class ShaderManager {
 		return errorArray;
 	}
 
-		static #getIncludeAnnotationsWgsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): Annotation[] {
+	static #getIncludeAnnotationsWgsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): Annotation[] {
 		function findInclude(line: FinalLine): FinalLine | null {
 			if (line.sourceName == includeName) {
 				return line;
@@ -106,7 +106,7 @@ export class ShaderManager {
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName)) {
 
-				const lines = preprocessWgslLineMap(shaderSource.getOriginSource());
+				const lines = WgslPreprocessor.preprocessWgslLineMap(shaderSource.getOriginSource());
 				const errors = shaderSource.getCompileError(false);
 				for (const error of errors) {
 					const line = lines[error.row - 1];

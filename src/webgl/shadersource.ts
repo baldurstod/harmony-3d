@@ -1,4 +1,4 @@
-import { getIncludeList, preprocessWgsl, preprocessWgslLineMap } from 'wgsl-preprocessor';
+import { WgslPreprocessor } from 'wgsl-preprocessor';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
 import { ShaderType } from './types';
@@ -260,7 +260,7 @@ export class WebGLShaderSource {
 
 		if (this.#type == ShaderType.Wgsl) {
 			//const source = includeCode + this.#compileSource;
-			return preprocessWgsl(this.#compileSource);
+			return WgslPreprocessor.preprocessWgsl(this.#compileSource);
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
 		}
@@ -336,7 +336,7 @@ export class WebGLShaderSource {
 	#getWebGPUCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
 
-		const lineMap = preprocessWgslLineMap(this.#compileSource);
+		const lineMap = WgslPreprocessor.preprocessWgslLineMap(this.#compileSource);
 
 		if (this.#compilationInfo) {
 			for (const message of this.#compilationInfo.messages) {
@@ -410,7 +410,7 @@ export class WebGLShaderSource {
 	}
 
 	#containsIncludeWgsl(includeName: string): boolean {
-		return getIncludeList(this.#compileSource).has(includeName);
+		return WgslPreprocessor.getIncludeList(this.#compileSource).has(includeName);
 	}
 
 	getType(): ShaderType {
