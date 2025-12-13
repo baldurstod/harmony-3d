@@ -217,29 +217,8 @@ export class WebGPURenderer implements Renderer {
 			stepMode: 'vertex'
 		}];
 
-		const pipelineDescriptor: GPURenderPipelineDescriptor = {
-			vertex: {
-				module: shaderModule.module,
-				entryPoint: 'vertex_main',
-				buffers: vertexBuffers
-			},
-			fragment: {
-				module: shaderModule.module,
-				entryPoint: 'fragment_main',
-				targets: [{
-					format: WebGPUInternal.format,
-				}]
-			},
-			primitive: {
-				topology: 'triangle-list',
-				cullMode: 'back',// TODO: setup material culling
-			},
-			layout: 'auto'
-		};
-
-		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
-
 		const groups = new Map2<number, number, GPUBuffer>();
+
 		if (shaderModule.reflection) {
 			for (const uniform of shaderModule.reflection.uniforms) {
 				const uniformBuffer = device.createBuffer({
@@ -301,6 +280,28 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
+
+		const bindGroupLayouts: GPUBindGroupLayout[] = [];
+		for (const [groupId, group] of groups.getMap()) {
+			const entries: GPUBindGroupLayoutEntry[] = [];
+			for (const [bindingId, uniformBuffer] of group) {
+				entries.push({
+					binding: bindingId,// corresponds to @binding
+					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
+					buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
+				});
+			}
+
+			bindGroupLayouts.push(device.createBindGroupLayout({
+				entries: entries,
+			}))
+		}
+
+
+		const pipelineLayout = device.createPipelineLayout({
+			bindGroupLayouts: bindGroupLayouts,
+		});
+
 		const commandEncoder = device.createCommandEncoder();
 
 		const renderPassDescriptor: GPURenderPassDescriptor = {
@@ -311,6 +312,28 @@ export class WebGPURenderer implements Renderer {
 				view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
 			}]
 		};
+
+		const pipelineDescriptor: GPURenderPipelineDescriptor = {
+			vertex: {
+				module: shaderModule.module,
+				entryPoint: 'vertex_main',
+				buffers: vertexBuffers
+			},
+			fragment: {
+				module: shaderModule.module,
+				entryPoint: 'fragment_main',
+				targets: [{
+					format: WebGPUInternal.format,
+				}]
+			},
+			primitive: {
+				topology: 'triangle-list',
+				cullMode: 'back',// TODO: setup material culling
+			},
+			layout: pipelineLayout,
+		};
+
+		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
 
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 		passEncoder.setPipeline(renderPipeline);
