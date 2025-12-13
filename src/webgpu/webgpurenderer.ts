@@ -243,6 +243,7 @@ export class WebGPURenderer implements Renderer {
 		if (shaderModule.reflection) {
 			for (const uniform of shaderModule.reflection.uniforms) {
 				const uniformBuffer = device.createBuffer({
+					label: uniform.name,
 					size: uniform.size,
 					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 				});
@@ -253,6 +254,7 @@ export class WebGPURenderer implements Renderer {
 				if (members) {
 					for (const member of members) {
 						let bufferSource: BufferSource | null = null;
+						uniformBuffer.label = uniform.name + '.' + member.name;
 
 						switch (member.name) {
 							case 'modelMatrix':
@@ -268,11 +270,14 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = camera.projectionMatrix as BufferSource;
 								break;
 							case 'viewProjectionMatrix':
-								tempViewProjectionMatrix as BufferSource;
+								bufferSource = tempViewProjectionMatrix as BufferSource;
 								break;
 							case 'normalMatrix':
-								object._normalMatrix as BufferSource;
+								bufferSource = object._normalMatrix as BufferSource;
 								break;
+							//default:
+							//	bufferSource = new Float32Array(member.size) as BufferSource;
+
 						}
 
 						if (bufferSource) {
@@ -283,6 +288,15 @@ export class WebGPURenderer implements Renderer {
 							);
 						}
 					}
+				} else {
+					/*
+					const bufferSource = new Uint8Array(uniform.size) as BufferSource;
+					device.queue.writeBuffer(
+						uniformBuffer,
+						0,
+						bufferSource,
+					);
+					*/
 				}
 			}
 		}
@@ -315,6 +329,7 @@ export class WebGPURenderer implements Renderer {
 			}
 
 			const uniformBindGroup = device.createBindGroup({
+				label: String(groupId),
 				layout: renderPipeline.getBindGroupLayout(groupId),// corresponds to @group
 				entries: entries,
 			});

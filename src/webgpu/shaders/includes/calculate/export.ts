@@ -9,5 +9,5 @@ addWgslInclude('calculate_fragment_color_map', calculate_fragment_color_map);
 import calculate_fragment_diffuse from './calculate_fragment_diffuse.wgsl';
 addWgslInclude('calculate_fragment_diffuse', calculate_fragment_diffuse);
 
-import compute_fragment_normal from './compute_fragment_normal.wgsl';
-addWgslInclude('compute_fragment_normal', compute_fragment_normal);
+import calculate_fragment_normal from './calculate_fragment_normal.wgsl';
+addWgslInclude('calculate_fragment_normal', calculate_fragment_normal);
