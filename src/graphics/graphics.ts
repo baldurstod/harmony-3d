@@ -950,6 +950,7 @@ class Graphics {
 	}
 
 	static #refreshIncludeCode() {
+		// TODO: remove this function and move this to getIncludeCode
 		this.#globalIncludeCode = '';
 		for (const code of this.#includeCode.values()) {
 			this.#globalIncludeCode += code + '\n';

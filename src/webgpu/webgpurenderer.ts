@@ -20,6 +20,7 @@ import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
+import { getDefinesAsString } from '../renderers/forwardrenderer';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -39,7 +40,7 @@ export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
 	#shadowMap = new ShadowMap();
 	#frame = 0;
-	#materialsShaderModule = new Map<string, WgslModule>();
+	#materialsShaderModule = new Map2<string, string, WgslModule>();
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
 
@@ -154,7 +155,21 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
-		const shaderModule = this.#getShaderModule(material);
+		let includeCode = '';
+
+		includeCode += getDefinesAsString(object);
+		includeCode += getDefinesAsString(material);
+		if (renderLights) {
+			includeCode += this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
+			if (!object.receiveShadow) {
+				//Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+				includeCode += '#undef USE_SHADOW_MAPPING';
+			}
+		} else {
+			includeCode += this.#unsetLights();
+		}
+
+		const shaderModule = this.#getShaderModule(material, includeCode);
 		if (!shaderModule) {
 			return;
 		}
@@ -267,7 +282,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = object._normalMatrix as BufferSource;
 								break;
 							default:
-								//console.error('unknwon uniform', uniform.name, member.name);
+							//console.error('unknwon uniform', uniform.name, member.name);
 							//	bufferSource = new Float32Array(member.size) as BufferSource;
 
 						}
@@ -499,10 +514,10 @@ export class WebGPURenderer implements Renderer {
 	 * @param material The material
 	 * @returns a shader module or null
 	 */
-	#getShaderModule(material: Material): WgslModule | null {
+	#getShaderModule(material: Material, includes: string): WgslModule | null {
 		const shaderName = material.getShaderSource() + '.wgsl';
 
-		let shaderModule = this.#materialsShaderModule.get(shaderName);
+		let shaderModule = this.#materialsShaderModule.get(shaderName, includes);
 		if (shaderModule) {
 			return shaderModule;
 		}
@@ -513,7 +528,7 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		WebGPUInternal.device.pushErrorScope('validation');
-		const source = shaderSource.getCompileSource();
+		const source = shaderSource.getCompileSource(includes);
 		const module = WebGPUInternal.device.createShaderModule({
 			code: source,
 			label: shaderName,
@@ -522,7 +537,7 @@ export class WebGPURenderer implements Renderer {
 		WebGPUInternal.device.popErrorScope().then(error => {
 			if (error) {
 				const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
-				console.warn(m, shaderSource.getCompileSourceLineNumber(''), m);
+				console.warn(m, shaderSource.getCompileSourceLineNumber(includes), m);
 			}
 		});
 
@@ -537,27 +552,49 @@ export class WebGPURenderer implements Renderer {
 		} catch (e) { }
 
 		shaderModule = { module, reflection };
-		this.#materialsShaderModule.set(shaderName, shaderModule);
+		this.#materialsShaderModule.set(shaderName, includes, shaderModule);
 
 		return shaderModule;
 	}
 
-	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number): void {
+	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number): string {
+		/*
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
 		Graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
 		Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
 		Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
 		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
+		*/
 		//TODO: other lights of disable lighting all together
+
+		return `
+#define USE_SHADOW_MAPPING
+#define NUM_POINT_LIGHTS ${pointLights}
+#define NUM_PBR_LIGHTS ${pointLights}
+#define NUM_SPOT_LIGHTS ${spotLights}
+#define NUM_POINT_LIGHT_SHADOWS ${pointLightShadows}
+#define NUM_SPOT_LIGHT_SHADOWS ${spotLightShadows}
+`
+
 	}
 
-	#unsetLights(): void {
+	#unsetLights(): string {
+		/*
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
 		Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
 		Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
 		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
 		//TODO: other lights of disable lighting all together
+		*/
+		return `
+#undef USE_SHADOW_MAPPING
+#define NUM_POINT_LIGHTS 0
+#define NUM_PBR_LIGHTS 0
+#define NUM_SPOT_LIGHTS 0
+#define NUM_POINT_LIGHT_SHADOWS 0
+#define NUM_SPOT_LIGHT_SHADOWS 0
+`
 	}
 }

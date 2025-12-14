@@ -259,8 +259,7 @@ export class WebGLShaderSource {
 		}
 
 		if (this.#type == ShaderType.Wgsl) {
-			//const source = includeCode + this.#compileSource;
-			return WgslPreprocessor.preprocessWgsl(this.#compileSource);
+			return WgslPreprocessor.preprocessWgsl(includeCode + this.#compileSource);
 		} else {
 			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
 		}

@@ -471,7 +471,7 @@ export class ForwardRenderer implements Renderer {
 	}
 }
 
-function getDefinesAsString(meshOrMaterial: Material | Mesh) {
+export function getDefinesAsString(meshOrMaterial: Material | Mesh) {
 	const defines = [];
 	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
 		if (value === false) {
