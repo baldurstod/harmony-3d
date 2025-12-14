@@ -401,21 +401,17 @@ export class ForwardRenderer implements Renderer {
 		includeCode += this.#globalIncludeCode;
 		includeCode += getDefinesAsString(mesh);
 		includeCode += getDefinesAsString(material);
-		includeCode += material.getShaderSource();
+		const includeCodeWithShaderName = includeCode + material.getShaderSource();
 
-		let program: Program | undefined = this.#materialsProgram.get(includeCode);
+		let program: Program | undefined = this.#materialsProgram.get(includeCodeWithShaderName);
 		if (!program) {
 			const shaderSource = material.getShaderSource();
 
 			program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
-			this.#materialsProgram.set(includeCode, program);
+			this.#materialsProgram.set(includeCodeWithShaderName, program);
 		}
 
 		if (!program.isValid()) {
-			let includeCode = Graphics.getIncludeCode();
-			includeCode += this.#globalIncludeCode;
-			includeCode += getDefinesAsString(mesh);
-			includeCode += getDefinesAsString(material);
 			program.validate(includeCode);
 			material._dirtyProgram = false;
 		}
