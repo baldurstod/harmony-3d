@@ -9,6 +9,9 @@ addWgslInclude('declare_fragment_color_map', declare_fragment_color_map);
 import declare_fragment_diffuse from './declare_fragment_diffuse.wgsl';
 addWgslInclude('declare_fragment_diffuse', declare_fragment_diffuse);
 
+import declare_fragment_light_warp from './declare_fragment_light_warp.wgsl';
+addWgslInclude('declare_fragment_light_warp', declare_fragment_light_warp);
+
 import declare_lights from './declare_lights.wgsl';
 addWgslInclude('declare_lights', declare_lights);
 
