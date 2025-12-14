@@ -37,7 +37,7 @@ export class ForwardRenderer implements Renderer {
 		this.#glContext = Graphics.glContext;
 	}
 
-	applyMaterial(program: Program, material: Material) {
+	#applyMaterial(program: Program, material: Material) {
 		if (material.depthTest) {
 			WebGLRenderingState.enable(GL_DEPTH_TEST);
 			WebGLRenderingState.depthFunc(material.depthFunc);
@@ -208,7 +208,7 @@ export class ForwardRenderer implements Renderer {
 			if (renderLights) {
 				material.beforeRender(camera);
 			}
-			this.applyMaterial(program, material);
+			this.#applyMaterial(program, material);
 
 			program.setUniformValue('uModelMatrix', object.worldMatrix);
 			program.setUniformValue('uModelViewMatrix', object._mvMatrix);

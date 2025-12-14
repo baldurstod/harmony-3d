@@ -17,8 +17,8 @@
 #define NUM_HEMI_LIGHTS 0
 
 //uniform vec3 lightProbe[ 9 ];
-@group(1) @binding(7) var<uniform> lightProbe: array<vec4f, 9>;
-@group(1) @binding(8) var<uniform> ambientLight: vec4f;
+@group(1) @binding(7) var<uniform> lightProbe: array<vec3f, 9>;
+@group(1) @binding(8) var<uniform> ambientLight: vec3f;
 
 	struct GeometricContext {
 		position: vec3<f32>,

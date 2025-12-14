@@ -50,7 +50,7 @@
 
 	let iblIrradiance: vec3f = vec3( 0.0 );
 
-	let iblIrradiance: vec3f = getAmbientLightIrradiance( uAmbientLight );
+	var irradiance: vec3f = getAmbientLightIrradiance( ambientLight );
 
 	irradiance += getLightProbeIrradiance( lightProbe, geometry );
 
@@ -73,7 +73,7 @@
 		#endif
 	#endif
 
-	RE_IndirectDiffuse( irradiance, geometry, material, reflectedLight );
+	RE_IndirectDiffuse( irradiance, geometry, material, &reflectedLight );
 
 #endif
 

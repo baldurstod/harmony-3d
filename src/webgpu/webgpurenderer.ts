@@ -32,6 +32,9 @@ type WgslModule = {
 	reflection?: WgslReflect;
 }
 
+
+const lightDirection = vec3.create();
+
 export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
 	#shadowMap = new ShadowMap();
@@ -219,6 +222,15 @@ export class WebGPURenderer implements Renderer {
 
 		const groups = new Map2<number, number, GPUBuffer>();
 
+		if (renderLights) {
+			material.beforeRender(camera);
+		}
+
+		let uniforms = new Map<string, BufferSource>();
+		if (renderLights) {
+			this.#setupLights(renderList, camera, camera.cameraMatrix, uniforms);
+		}
+
 		if (shaderModule.reflection) {
 			for (const uniform of shaderModule.reflection.uniforms) {
 				const uniformBuffer = device.createBuffer({
@@ -254,7 +266,8 @@ export class WebGPURenderer implements Renderer {
 							case 'normalMatrix':
 								bufferSource = object._normalMatrix as BufferSource;
 								break;
-							//default:
+							default:
+								//console.error('unknwon uniform', uniform.name, member.name);
 							//	bufferSource = new Float32Array(member.size) as BufferSource;
 
 						}
@@ -268,6 +281,16 @@ export class WebGPURenderer implements Renderer {
 						}
 					}
 				} else {
+					//console.error('unknwon uniform', uniform.name);
+					const bufferSource = uniforms.get(uniform.name);
+					if (bufferSource) {
+						device.queue.writeBuffer(
+							uniformBuffer,
+							0,
+							bufferSource,
+						);
+
+					}
 					/*
 					const bufferSource = new Uint8Array(uniform.size) as BufferSource;
 					device.queue.writeBuffer(
@@ -373,6 +396,102 @@ export class WebGPURenderer implements Renderer {
 		if (USE_STATS) {
 			WebGLStats.drawElements(object.renderMode, geometry.count);
 		}
+	}
+
+	#setupLights(renderList: RenderList, camera: Camera, viewMatrix: mat4, uniforms: Map<string, BufferSource>): void {
+		//const uniforms = new Map<string, any>();
+		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
+		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
+		const colorIntensity = vec3.create();//TODO: do not create a vec3
+		const pointLights = renderList.pointLights;//scene.getChildList(PointLight);
+		const spotLights = renderList.spotLights;
+
+		let shadow;
+		let pointLightId = 0;
+		const pointShadowMap = [];
+		const pointShadowMatrix = [];
+		/*
+		for (const pointLight of pointLights) {
+			if (pointLight.isVisible()) {
+				pointLight.getWorldPosition(lightPositionWorldSpace);;
+				vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
+				program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
+				program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+				program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
+				//program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
+				//program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
+				program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
+				program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+
+				shadow = pointLight.shadow;
+				if (shadow && pointLight.castShadow) {
+					pointShadowMap.push(shadow.renderTarget.getTexture());
+					pointShadowMatrix.push(shadow.shadowMatrix);
+					program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
+					program.setUniformValue('uPointLightShadows[' + pointLightId + '].near', shadow.camera.nearPlane);
+					program.setUniformValue('uPointLightShadows[' + pointLightId + '].far', shadow.camera.farPlane);
+					program.setUniformValue('uPointLightShadows[' + pointLightId + '].enabled', true);
+				}
+				++pointLightId;
+			}
+		}
+		*/
+		//program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
+		//program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
+
+
+		let spotLightId = 0;
+		const spotShadowMap = [];
+		const spotShadowMatrix = [];
+		/*
+		for (const spotLight of spotLights) {
+			if (spotLight.isVisible()) {
+				spotLight.getWorldPosition(lightPositionCameraSpace);
+				vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
+				program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
+				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
+				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
+
+				spotLight.getDirection(lightDirection);
+				const m = viewMatrix;
+				const x = lightDirection[0];
+				const y = lightDirection[1];
+				const z = lightDirection[2];
+				lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
+				lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
+				lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
+				program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
+
+				shadow = spotLight.shadow;
+				if (shadow && spotLight.castShadow) {
+					spotShadowMap.push(shadow.renderTarget.getTexture());
+					spotShadowMatrix.push(shadow.shadowMatrix);
+					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
+					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
+				}
+				++spotLightId;
+			}
+		}
+		*/
+		//program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
+		//program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
+
+		const ambientLights = renderList.ambientLights;//scene.getChildList(AmbientLight);
+		const ambientAccumulator = vec3.create();//TODO: do not create a vec3
+		for (const ambientLight of ambientLights) {
+			if (ambientLight.isVisible()) {
+				vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
+			}
+		}
+
+		//shaderModule.reflection?.uniforms.
+		uniforms.set('ambientLight', ambientAccumulator as BufferSource);
+
+		//return uniforms;
 	}
 
 	/**
