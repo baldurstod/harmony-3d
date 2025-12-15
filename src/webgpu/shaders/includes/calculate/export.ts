@@ -23,3 +23,27 @@ addWgslInclude('calculate_fragment_standard', calculate_fragment_standard);
 
 import calculate_lights_setup_vars from './calculate_lights_setup_vars.wgsl';
 addWgslInclude('calculate_lights_setup_vars', calculate_lights_setup_vars);
+
+import calculate_vertex_uv from './calculate_vertex_uv.wgsl';
+addWgslInclude('calculate_vertex_uv', calculate_vertex_uv);
+
+import calculate_vertex from './calculate_vertex.wgsl';
+addWgslInclude('calculate_vertex', calculate_vertex);
+
+import calculate_vertex_color from './calculate_vertex_color.wgsl';
+addWgslInclude('calculate_vertex_color', calculate_vertex_color);
+
+import calculate_vertex_log_depth from './calculate_vertex_log_depth.wgsl';
+addWgslInclude('calculate_vertex_log_depth', calculate_vertex_log_depth);
+
+import calculate_vertex_projection from './calculate_vertex_projection.wgsl';
+addWgslInclude('calculate_vertex_projection', calculate_vertex_projection);
+
+import calculate_vertex_shadow_mapping from './calculate_vertex_shadow_mapping.wgsl';
+addWgslInclude('calculate_vertex_shadow_mapping', calculate_vertex_shadow_mapping);
+
+import calculate_vertex_skinning from './calculate_vertex_skinning.wgsl';
+addWgslInclude('calculate_vertex_skinning', calculate_vertex_skinning);
+
+import calculate_vertex_standard from './calculate_vertex_standard.wgsl';
+addWgslInclude('calculate_vertex_standard', calculate_vertex_standard);

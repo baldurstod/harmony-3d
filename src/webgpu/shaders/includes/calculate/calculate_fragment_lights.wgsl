@@ -4,9 +4,8 @@
 	#endif
 
 	#if NUM_POINT_LIGHT_SHADOWS > 0
-		#pragma unroll
-		for ( int i = 0; i < NUM_POINT_LIGHT_SHADOWS; i ++ ) {
-			computePointLightIrradiance(uPointLights[i], geometry, directLight);
+		for ( var i = 0; i < NUM_POINT_LIGHT_SHADOWS; i ++ ) {
+			computePointLightIrradiance(pointLights[i], geometry, directLight);
 			#ifdef USE_SHADOW_MAPPING
 				pointLightShadow = uPointLightShadows[ i ];
 				directLight.color *= getPointShadow( uPointShadowMap[i], pointLightShadow.mapSize, /*pointLightShadow.shadowBias*/0.0, /*pointLightShadow.shadowRadius*/0.0, vPointShadowCoord[i], pointLightShadow.near, pointLightShadow.far);
@@ -15,10 +14,9 @@
 		}
 	#endif
 
-	#pragma unroll
-	for ( int i = NUM_POINT_LIGHT_SHADOWS; i < NUM_POINT_LIGHTS; i ++ ) {
-		computePointLightIrradiance(uPointLights[i], geometry, directLight);
-		RE_Direct( directLight, geometry, material, reflectedLight );
+	for ( var i = NUM_POINT_LIGHT_SHADOWS; i < NUM_POINT_LIGHTS; i ++ ) {
+		computePointLightIrradiance(pointLights[i], geometry, &directLight);
+		RE_Direct( directLight, geometry, material, &reflectedLight );
 	}
 #endif
 
@@ -28,8 +26,7 @@
 	#endif
 
 	#if NUM_SPOT_LIGHT_SHADOWS > 0
-		#pragma unroll
-		for ( int i = 0; i < NUM_SPOT_LIGHT_SHADOWS; i ++ ) {
+		for ( var i = 0; i < NUM_SPOT_LIGHT_SHADOWS; i ++ ) {
 			computeSpotLightIrradiance(uSpotLights[i], geometry, directLight);
 			#ifdef USE_SHADOW_MAPPING
 				spotLightShadow = uSpotLightShadows[ i ];
@@ -39,8 +36,7 @@
 		}
 	#endif
 
-	#pragma unroll
-	for ( int i = NUM_SPOT_LIGHT_SHADOWS; i < NUM_SPOT_LIGHTS; i ++ ) {
+	for ( var i = NUM_SPOT_LIGHT_SHADOWS; i < NUM_SPOT_LIGHTS; i ++ ) {
 		computeSpotLightIrradiance(uSpotLights[i], geometry, directLight);
 		RE_Direct( directLight, geometry, material, reflectedLight );
 	}

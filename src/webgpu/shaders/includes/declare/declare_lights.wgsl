@@ -47,7 +47,8 @@
 	};
 
 #if NUM_POINT_LIGHTS > 0
-	uniform PointLight uPointLights[NUM_POINT_LIGHTS];
+	//uniform PointLight uPointLights[NUM_POINT_LIGHTS];
+	@group(1) @binding(9) var<uniform> pointLights: array<PointLight, NUM_POINT_LIGHTS>;
 #endif
 
 	fn punctualLightIntensityToIrradianceFactor(lightDistance: f32, cutoffDistance: f32, decayExponent: f32 ) -> f32 {

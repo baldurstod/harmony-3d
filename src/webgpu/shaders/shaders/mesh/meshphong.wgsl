@@ -17,11 +17,26 @@
 #include varying_standard
 
 @vertex
-fn vertex_main(@location(0) position: vec3f) -> VertexOut
+fn vertex_main(
+	@location(0) position: vec3f,
+	@location(1) normal: vec3f,
+	@location(2) texcoord: vec2f,
+) -> VertexOut
 {
 	var output : VertexOut;
-	output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
+	//output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
 	//output.position = vec4<f32>(position.x, position.y, position.z, 1.0);
+
+	#include calculate_vertex_uv
+	#include calculate_vertex
+	#include calculate_vertex_skinning
+	#include calculate_vertex_projection
+	#include calculate_vertex_color
+	#include calculate_vertex_shadow_mapping
+	#include calculate_vertex_standard
+	#include calculate_vertex_log_depth
+	output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
+
 	return output;
 }
 
@@ -72,6 +87,9 @@ fragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse 
 
 
 
+	return vec4f( normalize(fragInput.position.xyz), fragColor.a);
+	return vec4f(ambientLight, fragColor.a);
 	//return fragData.color;
-	return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+	//return vec4<f32>(1.0, 1.0, 1.0, 1.0);
+	return fragColor;
 }

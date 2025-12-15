@@ -3,8 +3,8 @@ export default `
 	#ifdef HARDWARE_SKINNING
 		mat4 skinMat = accumulateSkinMat();
 		vec4 vertexPositionWorldSpace = skinMat * vertexPositionModelSpace;
-		vec3 vertexNormalWorldSpace = vec3(skinMat * vertexNormalModelSpace).xyz;
-		vec3 vertexTangentWorldSpace = vec3(skinMat * vertexTangentModelSpace).xyz;
+		vec3 vertexNormalWorldSpace = vec3(skinMat * vertexNormalModelSpace);
+		vec3 vertexTangentWorldSpace = vec3(skinMat * vertexTangentModelSpace);
 	#else
 		#define vertexPositionWorldSpace vertexPositionModelSpace
 		#define vertexNormalWorldSpace vertexNormalModelSpace.xyz
@@ -12,8 +12,8 @@ export default `
 	#endif
 #else
 	vec4 vertexPositionWorldSpace = uModelMatrix * vertexPositionModelSpace;
-	vec3 vertexNormalWorldSpace = vec3(uModelMatrix * vertexNormalModelSpace).xyz;
-	vec3 vertexTangentWorldSpace = vec3(uModelMatrix * vertexTangentModelSpace).xyz;
+	vec3 vertexNormalWorldSpace = vec3(uModelMatrix * vertexNormalModelSpace);
+	vec3 vertexTangentWorldSpace = vec3(uModelMatrix * vertexTangentModelSpace);
 #endif
 vVertexPositionWorldSpace = vertexPositionWorldSpace;
 vVertexNormalWorldSpace = vertexNormalWorldSpace;
