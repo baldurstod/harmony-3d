@@ -170,12 +170,15 @@ export class ShaderEditor extends HTMLElement {
 			this.#editorShaderName = shaderName;
 			const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
 			if (source) {
-				if (this.#shaderEditor) {
-					this.#shaderEditor.setValue(source.getSource());
-				}
 				this.#shaderType = source.getType();
 				this.#editMode = EDIT_MODE_SHADER;
+				if (this.#shaderEditor) {
+					const code = source.getSource();
+					this.#shaderEditor.setValue(code);
+					ShaderManager.setCustomSource(this.#shaderType, this.#editorShaderName, code);
+				}
 			}
+			this.#setAnnotations(this.#editorShaderName);
 		}
 	}
 
@@ -215,14 +218,14 @@ export class ShaderEditor extends HTMLElement {
 		} else {
 			if (this.#editMode == EDIT_MODE_SHADER) {
 				Graphics.invalidateShaders();
-				setTimeout(() => this.setAnnotations(this.#editorShaderName), this.#annotationsDelay);
+				setTimeout(() => this.#setAnnotations(this.#editorShaderName), this.#annotationsDelay);
 			} else {
 				setTimeout(() => this.#shaderEditor.getSession().setAnnotations(ShaderManager.getIncludeAnnotations(this.#editorIncludeName)), this.#annotationsDelay);
 			}
 		}
 	}
 
-	setAnnotations(shaderName: string) {
+	#setAnnotations(shaderName: string) {
 		if (shaderName == this.#editorShaderName) {
 			this.#shaderEditor.getSession().setAnnotations(ShaderManager.getCustomSourceAnnotations(shaderName));
 		}
