@@ -181,7 +181,9 @@ export class WebGPURenderer implements Renderer {
 		const geometryAttributes = geometry.attributes;
 		const indexAttribute = geometryAttributes.get('index');
 		const positionAttribute = geometryAttributes.get('aVertexPosition');
-		if (!indexAttribute || !positionAttribute) {
+		const normalAttribute = geometryAttributes.get('aVertexNormal');
+		const textureCoordAttribute = geometryAttributes.get('aTextureCoord');
+		if (!indexAttribute || !positionAttribute || !normalAttribute || !textureCoordAttribute) {
 			return;
 		}
 
@@ -204,16 +206,32 @@ export class WebGPURenderer implements Renderer {
 		]);
 		*/
 		const vertices = positionAttribute._array;
+		const normals = normalAttribute._array;
+		const textureCoords = textureCoordAttribute._array;
 
-		const vertexBuffer = device.createBuffer({
+		const positionBuffer = device.createBuffer({
 			label: 'position',
-			//size: vertices.byteLength, // make it big enough to store vertices in
 			size: vertices.length * 4/* position is float32*/,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-			//mappedAtCreation: true,
 		});
 
-		device.queue.writeBuffer(vertexBuffer, 0, vertices, 0, vertices.length);
+		device.queue.writeBuffer(positionBuffer, 0, vertices, 0, vertices.length);
+
+		const normalBuffer = device.createBuffer({
+			label: 'normal',
+			size: normals.length * 4/* normal is float32*/,
+			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+		});
+
+		device.queue.writeBuffer(normalBuffer, 0, normals, 0, normals.length);
+
+		const textureCoordBuffer = device.createBuffer({
+			label: 'texture coords',
+			size: textureCoords.length * 4/* normal is float32*/,
+			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+		});
+
+		device.queue.writeBuffer(textureCoordBuffer, 0, textureCoords, 0, textureCoords.length);
 
 		const SIZE_UNIFORM_MATRIX = 4 * 16;
 		const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
@@ -226,10 +244,21 @@ export class WebGPURenderer implements Renderer {
 		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
 
 		const vertexBuffers: GPUVertexBufferLayout[] = [{
-			attributes: [{
+			attributes: [
+			{
 				shaderLocation: 0, // position
 				offset: 0,
 				format: 'float32x3'
+			},
+			{
+				shaderLocation: 1, // normal
+				offset: 0,
+				format: 'float32x3'
+			},
+			{
+				shaderLocation: 2, // texcoord
+				offset: 0,
+				format: 'float32x2'
 			},
 			],
 			arrayStride: 12,
@@ -399,7 +428,9 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-		passEncoder.setVertexBuffer(0, vertexBuffer);
+		passEncoder.setVertexBuffer(0, positionBuffer);
+		passEncoder.setVertexBuffer(1, normalBuffer);
+		passEncoder.setVertexBuffer(2, textureCoordBuffer);
 		passEncoder.drawIndexed(geometry.count);
 		//passEncoder.draw(3);
 
