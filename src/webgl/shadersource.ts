@@ -41,6 +41,7 @@ export class WebGLShaderSource {
 	#sourceRowToInclude = new Map<number, [string, number]>();
 	#compileSource = '';
 	#isErroneous = false;
+	erroneousDefines?: Map<string, string>;
 	#error = '';
 	#lineDelta = 0;
 	#compilationInfo: GPUCompilationInfo | null = null;
@@ -265,9 +266,13 @@ export class WebGLShaderSource {
 		}
 	}
 
-	getCompileSourceLineNumber(includeCode: string): string {
-		const source = this.getCompileSource(includeCode);
-		const sourceLineArray = source.split('\n');
+	getCompileSourceWebGPU(defines: Map<string, string>): string {
+		return WgslPreprocessor.preprocessWgsl(this.#compileSource, defines);
+	}
+
+	getCompileSourceLineNumber(compileSource: string): string {
+		//const source = this.getCompileSource(includeCode);
+		const sourceLineArray = compileSource.split('\n');
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
 			sourceLineArray[i] = (i + 1).toString().padStart(4) + ' ' + sourceLineArray[i];
 		}
@@ -285,10 +290,11 @@ export class WebGLShaderSource {
 		this.#lineDelta = lineDelta;
 	}
 
-	setCompilationInfo(compilationInfo: GPUCompilationInfo): void {
+	setCompilationInfo(compilationInfo: GPUCompilationInfo, defines: Map<string, string>): void {
 		this.#isErroneous = true;
 		this.#compilationInfo = compilationInfo;
 		this.#lineDelta = 0;
+		this.erroneousDefines = new Map(defines);
 	}
 
 	getCompileError(convertRows = true): Annotation[] {
@@ -335,7 +341,7 @@ export class WebGLShaderSource {
 	#getWebGPUCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
 
-		const lineMap = WgslPreprocessor.preprocessWgslLineMap(this.#compileSource);
+		const lineMap = WgslPreprocessor.preprocessWgslLineMap(this.#compileSource, this.erroneousDefines);
 
 		if (this.#compilationInfo) {
 			for (const message of this.#compilationInfo.messages) {

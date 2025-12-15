@@ -106,7 +106,7 @@ export class ShaderManager {
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName)) {
 
-				const lines = WgslPreprocessor.preprocessWgslLineMap(shaderSource.getOriginSource());
+				const lines = WgslPreprocessor.preprocessWgslLineMap(shaderSource.getOriginSource(), shaderSource.erroneousDefines);
 				const errors = shaderSource.getCompileError(false);
 				for (const error of errors) {
 					const line = lines[error.row - 1];

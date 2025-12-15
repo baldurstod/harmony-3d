@@ -156,20 +156,21 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		let includeCode = '';
+		const defines = new Map<string, string>();
 
 		includeCode += getDefinesAsString(object);
 		includeCode += getDefinesAsString(material);
 		if (renderLights) {
-			includeCode += this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
+			includeCode += this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
 			if (!object.receiveShadow) {
 				//Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 				includeCode += '#undef USE_SHADOW_MAPPING';
 			}
 		} else {
-			includeCode += this.#unsetLights();
+			includeCode += this.#unsetLights(defines);
 		}
 
-		const shaderModule = this.#getShaderModule(material, includeCode);
+		const shaderModule = this.#getShaderModule(material, defines);
 		if (!shaderModule) {
 			return;
 		}
@@ -514,10 +515,15 @@ export class WebGPURenderer implements Renderer {
 	 * @param material The material
 	 * @returns a shader module or null
 	 */
-	#getShaderModule(material: Material, includes: string): WgslModule | null {
+	#getShaderModule(material: Material, defines: Map<string, string>): WgslModule | null {
 		const shaderName = material.getShaderSource() + '.wgsl';
 
-		let shaderModule = this.#materialsShaderModule.get(shaderName, includes);
+		let key = '';
+		for (const define of defines) {
+			key += define[0] + '\n' + define[1] + '\n';
+		}
+
+		let shaderModule = this.#materialsShaderModule.get(shaderName, key);
 		if (shaderModule) {
 			return shaderModule;
 		}
@@ -528,36 +534,36 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		WebGPUInternal.device.pushErrorScope('validation');
-		const source = shaderSource.getCompileSource(includes);
+		const compileSource = shaderSource.getCompileSourceWebGPU(defines);
 		const module = WebGPUInternal.device.createShaderModule({
-			code: source,
+			code: compileSource,
 			label: shaderName,
 		});
 
 		WebGPUInternal.device.popErrorScope().then(error => {
 			if (error) {
 				const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
-				console.warn(m, shaderSource.getCompileSourceLineNumber(includes), m);
+				console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
 			}
 		});
 
-		module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo));
+		module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo, defines));
 
 		// Schedule the execution to validate the shader
 		WebGPUInternal.device.queue.submit([]);
 
 		let reflection
 		try {
-			reflection = new WgslReflect(source);
+			reflection = new WgslReflect(compileSource);
 		} catch (e) { }
 
 		shaderModule = { module, reflection };
-		this.#materialsShaderModule.set(shaderName, includes, shaderModule);
+		this.#materialsShaderModule.set(shaderName, key, shaderModule);
 
 		return shaderModule;
 	}
 
-	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number): string {
+	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number, defines: Map<string, string>): void {
 		/*
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
@@ -567,7 +573,13 @@ export class WebGPURenderer implements Renderer {
 		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
 		*/
 		//TODO: other lights of disable lighting all together
-
+		defines.set('USE_SHADOW_MAPPING', '');
+		defines.set('NUM_POINT_LIGHTS', String(pointLights));
+		defines.set('NUM_PBR_LIGHTS', String(pointLights));
+		defines.set('NUM_SPOT_LIGHTS', String(spotLights));
+		defines.set('NUM_POINT_LIGHT_SHADOWS', String(pointLightShadows));
+		defines.set('NUM_SPOT_LIGHT_SHADOWS', String(spotLightShadows));
+		/*
 		return `
 #define USE_SHADOW_MAPPING
 #define NUM_POINT_LIGHTS ${pointLights}
@@ -576,10 +588,10 @@ export class WebGPURenderer implements Renderer {
 #define NUM_POINT_LIGHT_SHADOWS ${pointLightShadows}
 #define NUM_SPOT_LIGHT_SHADOWS ${spotLightShadows}
 `
-
+*/
 	}
 
-	#unsetLights(): string {
+	#unsetLights(defines: Map<string, string>): void {
 		/*
 		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
@@ -588,6 +600,14 @@ export class WebGPURenderer implements Renderer {
 		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
 		//TODO: other lights of disable lighting all together
 		*/
+
+		defines.delete('USE_SHADOW_MAPPING');
+		defines.set('NUM_POINT_LIGHTS', '0');
+		defines.set('NUM_PBR_LIGHTS', '0');
+		defines.set('NUM_SPOT_LIGHTS', '0');
+		defines.set('NUM_POINT_LIGHT_SHADOWS', '0');
+		defines.set('NUM_SPOT_LIGHT_SHADOWS', '0');
+		/*
 		return `
 #undef USE_SHADOW_MAPPING
 #define NUM_POINT_LIGHTS 0
@@ -596,5 +616,6 @@ export class WebGPURenderer implements Renderer {
 #define NUM_POINT_LIGHT_SHADOWS 0
 #define NUM_SPOT_LIGHT_SHADOWS 0
 `
+*/
 	}
 }
