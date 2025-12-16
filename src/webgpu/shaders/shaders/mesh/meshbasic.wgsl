@@ -20,8 +20,6 @@ fn vertex_main(
 ) -> VertexOut
 {
 	var output : VertexOut;
-	//output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
-	//output.position = vec4<f32>(position.x, position.y, position.z, 1.0);
 
 	#include calculate_vertex_uv
 	#include calculate_vertex
@@ -31,7 +29,6 @@ fn vertex_main(
 	#include calculate_vertex_shadow_mapping
 	#include calculate_vertex_standard
 	#include calculate_vertex_log_depth
-	output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
 
 	return output;
 }

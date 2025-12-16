@@ -1,5 +1,5 @@
-#include compute_fragment_depth
-#include compute_silhouette_color
+#include calculate_fragment_depth
+#include calculate_silhouette_color
 #ifdef PICKING_MODE
 	gl_FragColor = vec4(uPickingColor, 1.0);
 #endif

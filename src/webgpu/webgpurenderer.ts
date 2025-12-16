@@ -20,7 +20,6 @@ import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
-import { getDefinesAsString } from '../renderers/forwardrenderer';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -155,19 +154,20 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
-		let includeCode = '';
 		const defines = new Map<string, string>();
 
-		includeCode += getDefinesAsString(object);
-		includeCode += getDefinesAsString(material);
+		getDefines(object, defines);
+		getDefines(material, defines);
 		if (renderLights) {
-			includeCode += this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
+			this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
+			/*
 			if (!object.receiveShadow) {
 				//Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 				includeCode += '#undef USE_SHADOW_MAPPING';
 			}
+			*/
 		} else {
-			includeCode += this.#unsetLights(defines);
+			this.#unsetLights(defines);
 		}
 
 		const shaderModule = this.#getShaderModule(material, defines);
@@ -188,7 +188,7 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		const indices = indexAttribute._array;
-        const size = Math.ceil(indices.length / 2) * 4;
+		const size = Math.ceil(indices.length / 2) * 4;
 		const indexBuffer = device.createBuffer({
 			label: 'index',
 			//size: sphereMesh.indices.byteLength,
@@ -273,6 +273,9 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		let uniforms = new Map<string, BufferSource>();
+
+		uniforms.set('meshColor', material.color as BufferSource);
+
 		if (renderLights) {
 			this.#setupLights(renderList, camera, camera.cameraMatrix, uniforms);
 		}
@@ -348,7 +351,7 @@ export class WebGPURenderer implements Renderer {
 						//console.error('unknwon array uniform', uniform.name);
 
 					}
-				} else {
+				} else {// uniform is neither a struct nor an array
 					const bufferSource = uniforms.get(uniform.name);
 					if (bufferSource) {
 						device.queue.writeBuffer(
@@ -398,7 +401,7 @@ export class WebGPURenderer implements Renderer {
 		const renderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: [{
 				//clearValue: clearColor,//TODO
-				loadOp: 'clear',
+				loadOp: 'load',
 				storeOp: 'store',
 				view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
 			}]
@@ -679,5 +682,11 @@ export class WebGPURenderer implements Renderer {
 #define NUM_SPOT_LIGHT_SHADOWS 0
 `
 */
+	}
+}
+
+export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string, string>): void {
+	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
+		defines.set(name, value as string);
 	}
 }
