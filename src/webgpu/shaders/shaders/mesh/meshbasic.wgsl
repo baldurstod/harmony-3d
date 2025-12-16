@@ -1,19 +1,53 @@
-struct VertexOut {
-	@builtin(position) position : vec4f,
-	@location(0) color : vec4f
-}
+#include matrix_uniforms
+#include declare_texture_transform
+#include declare_vertex_skinning
+
+#include declare_fragment_diffuse
+#include declare_fragment_color_map
+#include declare_fragment_alpha_test
+
+#include declare_lights
+//#include declare_shadow_mapping
+#include declare_log_depth
+
+#include varying_standard
 
 @vertex
-fn vertex_main(@location(0) position: vec4f, @location(1) color: vec4f) -> VertexOut
+fn vertex_main(
+	@location(0) position: vec3f,
+	@location(1) normal: vec3f,
+	@location(2) texcoord: vec2f,
+) -> VertexOut
 {
 	var output : VertexOut;
-	output.position = position;
-	output.color = color;
+	//output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
+	//output.position = vec4<f32>(position.x, position.y, position.z, 1.0);
+
+	#include calculate_vertex_uv
+	#include calculate_vertex
+	#include calculate_vertex_skinning
+	#include calculate_vertex_projection
+	#include calculate_vertex_color
+	#include calculate_vertex_shadow_mapping
+	#include calculate_vertex_standard
+	#include calculate_vertex_log_depth
+	output.position = uniforms.projectionMatrix * uniforms.viewMatrix * uniforms.modelMatrix * vec4<f32>(position, 1.0);
+
 	return output;
 }
 
 @fragment
-fn fragment_main(fragData: VertexOut) -> @location(0) vec4f
+fn fragment_main(fragInput: VertexOut) -> @location(0) vec4f
 {
-	return fragData.color;
+	var fragColor: vec4f;
+	#include calculate_fragment_diffuse
+	#include calculate_fragment_color_map
+#ifdef USE_COLOR_MAP
+	diffuseColor *= texelColor;
+#endif
+	fragColor = diffuseColor;
+
+	#include calculate_fragment_standard
+
+	return fragColor;
 }

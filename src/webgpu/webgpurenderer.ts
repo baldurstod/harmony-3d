@@ -1,6 +1,6 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
-import { WgslReflect } from 'wgsl_reflect';
+import { StructInfo, WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -245,21 +245,21 @@ export class WebGPURenderer implements Renderer {
 
 		const vertexBuffers: GPUVertexBufferLayout[] = [{
 			attributes: [
-			{
-				shaderLocation: 0, // position
-				offset: 0,
-				format: 'float32x3'
-			},
-			{
-				shaderLocation: 1, // normal
-				offset: 0,
-				format: 'float32x3'
-			},
-			{
-				shaderLocation: 2, // texcoord
-				offset: 0,
-				format: 'float32x2'
-			},
+				{
+					shaderLocation: 0, // position
+					offset: 0,
+					format: 'float32x3'
+				},
+				{
+					shaderLocation: 1, // normal
+					offset: 0,
+					format: 'float32x3'
+				},
+				{
+					shaderLocation: 2, // texcoord
+					offset: 0,
+					format: 'float32x2'
+				},
 			],
 			arrayStride: 12,
 			stepMode: 'vertex'
@@ -312,7 +312,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = object._normalMatrix as BufferSource;
 								break;
 							default:
-							//console.error('unknwon uniform', uniform.name, member.name);
+								console.error('unknwon uniform', uniform.name, member.name);
 							//	bufferSource = new Float32Array(member.size) as BufferSource;
 
 						}
@@ -325,8 +325,29 @@ export class WebGPURenderer implements Renderer {
 							);
 						}
 					}
+				} else if (uniform.isArray) {
+					const members = (uniform.format as StructInfo).members;
+					if (members) {
+						const structSize = (uniform.format as StructInfo).size;
+						for (const member of members) {
+							for (let i = 0; i < uniform.count; i++) {
+								const bufferSource = uniforms.get(`${uniform.name}[${i}].${member.name}`);
+								if (!bufferSource) {
+									continue
+								}
+
+								device.queue.writeBuffer(
+									uniformBuffer,
+									member.offset + structSize * i,
+									bufferSource,
+								);
+							}
+						}
+					} else {
+						//console.error('unknwon array uniform', uniform.name);
+
+					}
 				} else {
-					//console.error('unknwon uniform', uniform.name);
 					const bufferSource = uniforms.get(uniform.name);
 					if (bufferSource) {
 						device.queue.writeBuffer(
@@ -334,7 +355,8 @@ export class WebGPURenderer implements Renderer {
 							0,
 							bufferSource,
 						);
-
+					} else {
+						console.error('unknwon uniform', uniform.name);
 					}
 					/*
 					const bufferSource = new Uint8Array(uniform.size) as BufferSource;
@@ -415,8 +437,6 @@ export class WebGPURenderer implements Renderer {
 						buffer: uniformBuffer,
 					},
 				});
-
-
 			}
 
 			const uniformBindGroup = device.createBindGroup({
@@ -457,32 +477,42 @@ export class WebGPURenderer implements Renderer {
 		let pointLightId = 0;
 		const pointShadowMap = [];
 		const pointShadowMatrix = [];
-		/*
+
 		for (const pointLight of pointLights) {
 			if (pointLight.isVisible()) {
 				pointLight.getWorldPosition(lightPositionWorldSpace);;
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
-				program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
-				program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-				program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
+
+				uniforms.set('pointLights[' + pointLightId + '].position', lightPositionCameraSpace as BufferSource);
+				uniforms.set('pointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity) as BufferSource);
+				uniforms.set('pointLights[' + pointLightId + '].range', new Float32Array([pointLight.range]) as BufferSource);
+
+				uniforms.set('pbrLights[' + pointLightId + '].position', lightPositionWorldSpace as BufferSource);
+				uniforms.set('pbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity) as BufferSource);
+				//program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
+				//program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+				//program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
 				//program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
 				//program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
-				program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
-				program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+				//program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
+				//program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
 
 				shadow = pointLight.shadow;
 				if (shadow && pointLight.castShadow) {
+					//TODO
+					/*
 					pointShadowMap.push(shadow.renderTarget.getTexture());
 					pointShadowMatrix.push(shadow.shadowMatrix);
 					program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
 					program.setUniformValue('uPointLightShadows[' + pointLightId + '].near', shadow.camera.nearPlane);
 					program.setUniformValue('uPointLightShadows[' + pointLightId + '].far', shadow.camera.farPlane);
 					program.setUniformValue('uPointLightShadows[' + pointLightId + '].enabled', true);
+					*/
 				}
 				++pointLightId;
 			}
 		}
-		*/
+
 		//program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
 		//program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
 

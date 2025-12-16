@@ -86,7 +86,8 @@ fragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse 
 	#include calculate_fragment_log_depth
 
 
-
+	return vec4f( abs(normalize(fragInput.vVertexNormalModelSpace.xy)),0.0, fragColor.a);
+	return vec4f( abs(normalize(fragInput.vTextureCoord.xy)),0.0, fragColor.a);
 	return vec4f( normalize(fragInput.position.xyz), fragColor.a);
 	return vec4f(ambientLight, fragColor.a);
 	//return fragData.color;
