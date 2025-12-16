@@ -1,0 +1,6 @@
+.ace_link_marker {
+	position: absolute;
+	border-bottom: 3px solid red;
+	background: yellow;
+	opacity: 30%;
+}

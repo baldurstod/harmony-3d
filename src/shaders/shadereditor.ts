@@ -1,5 +1,5 @@
 import { loadScript } from 'harmony-browser-utils';
-import { createElement, hide, I18n } from 'harmony-ui';
+import { createElement, hide, I18n, shadowRootStyle } from 'harmony-ui';
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
 import { Graphics } from '../graphics/graphics2';
@@ -7,9 +7,12 @@ import { ShaderManager } from '../managers/shadermanager';
 import { ShaderType } from '../webgl/types';
 import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';
 import { ShaderEventTarget } from './shadereventtarget';
+import shaderEditorCSS from '../css/shadereditor.css';
 
 const EDIT_MODE_SHADER = 0;
 const EDIT_MODE_INCLUDE = 1;
+
+type Token = { start: number, value: string, row?: number };
 
 export class ShaderEditor extends HTMLElement {
 	#initialized = false;
@@ -24,6 +27,9 @@ export class ShaderEditor extends HTMLElement {
 	#editorShaderName: string = '';
 	#editorIncludeName: string = '';
 	#shaderType: ShaderType = ShaderType.Vertex;
+	#uuid?: Token;//TODO: change name
+	#isOpen = false;
+	#marker = -1;
 
 	initEditor(options: any = {}) {
 		if (this.#initialized) {
@@ -31,6 +37,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 
 		this.#shadowRoot = this.attachShadow({ mode: 'closed' });
+		shadowRootStyle(this.#shadowRoot, shaderEditorCSS);
 		I18n.observeElement(this.#shadowRoot);
 
 
@@ -109,6 +116,8 @@ export class ShaderEditor extends HTMLElement {
 				this.recompile();
 			},
 		});
+
+		this.#initEditorEvents();
 		this.#reloadGLSLList();
 	}
 
@@ -187,7 +196,10 @@ export class ShaderEditor extends HTMLElement {
 	}
 
 	set editorIncludeName(includeName: string) {
-		if (includeName) {
+		if (includeName && this.#editorIncludeName != includeName) {
+			if (this.#htmlShaderNameSelect) {
+				this.#htmlShaderNameSelect.value = includeName;
+			}
 			this.#editorIncludeName = includeName;
 			const source = getIncludeSource(this.#editorIncludeName, this.#shaderType);
 			if (source) {
@@ -259,6 +271,107 @@ export class ShaderEditor extends HTMLElement {
 		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('remove-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 	}
+
+	#initEditorEvents() {
+		this.#shaderEditor.renderer.content.addEventListener('mousemove', (event: MouseEvent) => this.#onMouseMove(event));
+		this.#shaderEditor.renderer.content.addEventListener('click', (event: MouseEvent) => this.#onClick(event));
+	}
+
+	#onMouseMove(event: MouseEvent): void {
+		const canvasPos = this.#shaderEditor.renderer.scroller.getBoundingClientRect();
+		const offset = (event.clientX + this.#shaderEditor.renderer.scrollLeft - canvasPos.left - this.#shaderEditor.renderer.$padding) / this.#shaderEditor.renderer.characterWidth;
+		const row = Math.floor((event.clientY + this.#shaderEditor.renderer.scrollTop - canvasPos.top) / this.#shaderEditor.renderer.lineHeight);
+		const col = Math.round(offset);
+
+		const screenPos = { row: row, column: col, side: offset - col > 0 ? 1 : -1 };
+		const session = this.#shaderEditor.session;
+		const docPos = session.screenToDocumentPosition(screenPos.row, screenPos.column);
+
+		const selectionRange = this.#shaderEditor.selection.getRange();
+		if (!selectionRange.isEmpty()) {
+			/*
+			if (selectionRange.start.row <= row && selectionRange.end.row >= row) {
+				console.info('clear');
+			}
+				*/
+			//return this.clear();
+		}
+		const token = this.#findUuid(docPos.row, docPos.column);
+
+		this.#uuid = token;
+		if (!token) {
+			return this.#clearMarkers();
+		}
+		this.#isOpen = true
+		this.#shaderEditor.renderer.setCursorStyle('pointer');
+
+		session.removeMarker(this.#marker);
+
+		const range = new (globalThis as any).ace.Range(token.row, token.start, token.row, token.start + token.value.length);
+		this.#marker = session.addMarker(range, 'ace_link_marker', 'text', true);
+	}
+
+	#onClick(event: MouseEvent) {
+		if (!this.#uuid) {
+			return;
+		}
+		this.#selectToken(this.#uuid.value);
+	}
+
+	#findUuid(row: number, column: number): Token | undefined {
+		const editor = this.#shaderEditor;
+		const session = editor.session;
+		const line: string = session.getLine(row);
+
+		if (!line.trim().startsWith('#include')) {
+			return;
+		}
+
+		// example 946f0e0f-6b2b-4cd3-9117-8f5468f20936
+		const match = this.#getMatchAround(/\w+/g, line, column);
+		if (!match) {
+			return;
+		}
+
+		if (match.value == 'include') {
+			return;
+		}
+
+		match.row = row;
+		return match;
+	};
+
+	#getMatchAround(regExp: RegExp, line: string, col: number) {
+		let match: undefined | Token;
+		regExp.lastIndex = 0;
+		line.replace(regExp, (str: string, ...args: any[]): string => {
+			const offset = args[args.length - 2] as number;
+			const length = str.length;
+			if (offset <= col && offset + length >= col) {
+
+				match = {
+					start: offset,
+					value: str
+				};
+			}
+			return '';
+		});
+
+		return match;
+	};
+
+	#selectToken(token: string) {
+		this.editorIncludeName = token;
+	}
+
+	#clearMarkers() {
+		if (this.#isOpen) {
+			this.#shaderEditor.session.removeMarker(this.#marker);
+			this.#shaderEditor.renderer.setCursorStyle('');
+			this.#isOpen = false;
+		}
+	};
+
 }
 
 if (window.customElements) {
