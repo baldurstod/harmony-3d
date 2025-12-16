@@ -11,6 +11,7 @@
 	"dependencies": {
 		"@derschmale/io-rgbe": "github:baldurstod/io-rgbe",
 		"@zip.js/zip.js": "github:baldurstod/zip.js",
+		"ace-builds": "^1.43.5",
 		"fast-png": "^7.0.1",
 		"gl-matrix": "^3.4.3",
 		"harmony-binary-reader": "github:baldurstod/harmony-binary-reader",

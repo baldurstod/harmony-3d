@@ -58,6 +58,7 @@ export default [
 			'murmurhash',
 			'wgsl_reflect',
 			'wgsl-preprocessor',
+			'ace-builds',
 		],
 	},
 ];

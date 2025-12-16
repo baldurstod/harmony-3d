@@ -39,15 +39,15 @@ export class ShaderManager {
 		}
 	}
 
-	static getCustomSourceAnnotations(name: string) {
+	static getCustomSourceAnnotations(name: string): Annotation[] {
 		const customSource = this.#customShaderList.get(name);
 		if (customSource) {
 			return customSource.getCompileError().concat(customSource.getIncludeAnnotations());
 		}
-		return null;
+		return [];
 	}
 
-	static getIncludeAnnotations(includeName: string) {
+	static getIncludeAnnotations(includeName: string): Annotation[] {
 		let annotations;
 		for (const [shaderName, shaderSource] of this.#shaderList) {
 			annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
@@ -61,6 +61,7 @@ export class ShaderManager {
 				return annotations;
 			}
 		}
+		return [];
 	}
 
 	static #getIncludeAnnotations(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): Annotation[] {
