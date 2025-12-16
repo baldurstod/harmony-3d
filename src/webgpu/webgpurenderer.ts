@@ -188,10 +188,11 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		const indices = indexAttribute._array;
+        const size = Math.ceil(indices.length / 2) * 4;
 		const indexBuffer = device.createBuffer({
 			label: 'index',
 			//size: sphereMesh.indices.byteLength,
-			size: indices.length * 2/* index is uint16*/,
+			size: size,
 			usage: GPUBufferUsage.INDEX,
 			mappedAtCreation: true,
 		});
