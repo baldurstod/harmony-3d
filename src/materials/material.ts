@@ -3,7 +3,7 @@ import { JSONObject } from 'harmony-types';
 import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
-import { BlendingFactor } from '../enums/blending';
+import { BlendingFactor, BlendingFactorWebGPU } from '../enums/blending';
 import { Mesh } from '../objects/mesh';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
@@ -58,7 +58,7 @@ export class Material {
 	parameters: MaterialParams;
 	depthTest: boolean;
 	depthFunc: any;
-	depthMask: boolean;
+	depthMask = true;
 	colorMask: vec4;
 	blend = false;
 	srcRGB: BlendingFactor = BlendingFactor.One;
@@ -80,7 +80,6 @@ export class Material {
 		this.parameters = params;
 		this.depthTest = params.depthTest ?? true;
 		this.depthFunc = GL_LESS;
-		this.depthMask = true;
 
 		this.colorMask = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 		this.modeRGB = GL_FUNC_ADD;
@@ -233,6 +232,36 @@ export class Material {
 
 	getRenderFace() {
 		return this.#renderFace;
+	}
+
+	getWebGPUCullMode(): GPUCullMode {
+		switch (this.#renderFace) {
+			case RenderFace.Front:
+				return 'back';
+			case RenderFace.Back:
+				return 'front';
+			case RenderFace.None:
+				// Not supported for webgpu
+				break;
+		}
+		return 'none';
+	}
+
+	getWebGPUBlending(): GPUBlendState | undefined {
+		if (!this.blend) {
+			return undefined;
+		}
+
+		return {
+			color: {
+				srcFactor: BlendingFactorWebGPU.get(this.srcRGB) ??'one',
+				dstFactor: BlendingFactorWebGPU.get(this.dstRGB) ??'one-minus-src-alpha'
+			},
+			alpha: {
+				srcFactor: BlendingFactorWebGPU.get(this.srcAlpha) ??'one',
+				dstFactor: BlendingFactorWebGPU.get(this.dstAlpha) ??'one-minus-src-alpha'
+			},
+		};
 	}
 
 	setColorMode(colorMode: MaterialColorMode) {

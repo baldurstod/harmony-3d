@@ -33,10 +33,16 @@ fn vertex_main(
 	return output;
 }
 
+struct FragmentOutput {
+	@location(0) color: vec4<f32>,
+	@builtin(frag_depth) depth: f32,
+};
+
 @fragment
-fn fragment_main(fragInput: VertexOut) -> @location(0) vec4f
+fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 {
 	var fragColor: vec4f;
+	var fragDepth: f32 = fragInput.position.w;
 	#include calculate_fragment_diffuse
 	#include calculate_fragment_color_map
 #ifdef USE_COLOR_MAP
@@ -46,5 +52,5 @@ fn fragment_main(fragInput: VertexOut) -> @location(0) vec4f
 
 	#include calculate_fragment_standard
 
-	return fragColor;
+	return FragmentOutput(fragColor, fragDepth);
 }

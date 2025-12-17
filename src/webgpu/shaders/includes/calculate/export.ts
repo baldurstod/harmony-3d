@@ -6,6 +6,9 @@ addWgslInclude('calculate_fragment_alpha_test', calculate_fragment_alpha_test);
 import calculate_fragment_color_map from './calculate_fragment_color_map.wgsl';
 addWgslInclude('calculate_fragment_color_map', calculate_fragment_color_map);
 
+import calculate_fragment_depth from './calculate_fragment_depth.wgsl';
+addWgslInclude('calculate_fragment_depth', calculate_fragment_depth);
+
 import calculate_fragment_diffuse from './calculate_fragment_diffuse.wgsl';
 addWgslInclude('calculate_fragment_diffuse', calculate_fragment_diffuse);
 

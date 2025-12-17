@@ -4,4 +4,5 @@ export class WebGPUInternal {
 	static adapter: GPUAdapter;
 	static device: GPUDevice;
 	static format: GPUTextureFormat;
+	static depthTexture: GPUTexture;
 }

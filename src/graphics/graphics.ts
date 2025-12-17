@@ -906,6 +906,13 @@ class Graphics {
 
 		WebGPUInternal.gpuContext.configure(configuration as GPUCanvasConfiguration);
 
+		WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
+			//size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
+			size: [1, 1],
+			format: "depth24plus",
+			usage: GPUTextureUsage.RENDER_ATTACHMENT,
+		});
+
 		/*
 		configuration.device.addEventListener('uncapturederror', event => {
 			// Process the error

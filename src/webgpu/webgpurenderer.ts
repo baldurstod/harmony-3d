@@ -47,6 +47,18 @@ export class WebGPURenderer implements Renderer {
 		const renderList = this.#renderList;
 		renderList.reset();
 		camera.dirty();//Force matrices to recompute
+
+		const depthTexture = WebGPUInternal.depthTexture;
+		if (depthTexture.width != context.width || depthTexture.height != context.height) {
+			WebGPUInternal.depthTexture.destroy();
+
+			WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
+				size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
+				format: 'depth24plus',
+				usage: GPUTextureUsage.RENDER_ATTACHMENT,
+			});
+		}
+
 		this.#prepareRenderList(renderList, scene, camera, delta, context);
 
 		//this.#shadowMap.render(this, renderList, camera, context);
@@ -127,18 +139,20 @@ export class WebGPURenderer implements Renderer {
 	}
 
 	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
+		let clearDepth = true;
 		for (const child of renderList.opaqueList) {
-			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), renderLights, lightPos);
+			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
+			clearDepth = false;
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), renderLights, lightPos);
+				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
 			}
 		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3): void {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearDepth: boolean, renderLights = true, lightPos?: vec3): void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -404,7 +418,13 @@ export class WebGPURenderer implements Renderer {
 				loadOp: 'load',
 				storeOp: 'store',
 				view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
-			}]
+			}],
+			depthStencilAttachment: {
+				view: WebGPUInternal.depthTexture.createView(),
+				depthClearValue: 1.0,
+				depthLoadOp: clearDepth ? 'clear' : 'load',
+				depthStoreOp: 'store',
+			},
 		};
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
@@ -418,11 +438,17 @@ export class WebGPURenderer implements Renderer {
 				entryPoint: 'fragment_main',
 				targets: [{
 					format: WebGPUInternal.format,
+					blend: material.getWebGPUBlending(),
 				}]
 			},
 			primitive: {
 				topology: 'triangle-list',
-				cullMode: 'back',// TODO: setup material culling
+				cullMode: material.getWebGPUCullMode(),
+			},
+			depthStencil: {
+				depthWriteEnabled: material.depthMask,
+				depthCompare: material.depthTest ? 'less' : 'always',
+				format: 'depth24plus',
 			},
 			layout: pipelineLayout,
 		};

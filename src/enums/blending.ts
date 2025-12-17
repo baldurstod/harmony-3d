@@ -18,6 +18,21 @@ export enum BlendingFactor {
 	SrcAlphaSaturate = GL_SRC_ALPHA_SATURATE,
 }
 
+export const BlendingFactorWebGPU = new Map<BlendingFactor, GPUBlendFactor>([
+	[BlendingFactor.Zero, 'zero'],
+	[BlendingFactor.One, 'one'],
+	[BlendingFactor.SrcColor, 'src'],
+	[BlendingFactor.OneMinusSrcColor, 'one-minus-src'],
+	[BlendingFactor.DstColor, 'dst'],
+	[BlendingFactor.OneMinusDstColor, 'one-minus-dst'],
+	[BlendingFactor.SrcAlpha, 'src-alpha'],
+	[BlendingFactor.OneMinusSrcAlpha, 'one-minus-src-alpha'],
+	[BlendingFactor.DstAlpha, 'dst-alpha'],
+	[BlendingFactor.OneMinusDstAlpha, 'one-minus-dst-alpha'],
+	[BlendingFactor.ConstantColor, 'constant'],
+	[BlendingFactor.OneMinusConstantColor, 'one-minus-constant'],
+]);
+
 export enum BlendingEquation {
 	Add = GL_FUNC_ADD,
 	Subtract = GL_FUNC_SUBTRACT,
