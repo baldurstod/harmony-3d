@@ -625,6 +625,7 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		WebGPUInternal.device.pushErrorScope('validation');
+		const definesSnapshot = new Map(defines);
 		const compileSource = shaderSource.getCompileSourceWebGPU(defines);
 		const module = WebGPUInternal.device.createShaderModule({
 			code: compileSource,
@@ -638,7 +639,7 @@ export class WebGPURenderer implements Renderer {
 			}
 		});
 
-		module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo, defines));
+		module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo, definesSnapshot));
 
 		// Schedule the execution to validate the shader
 		WebGPUInternal.device.queue.submit([]);

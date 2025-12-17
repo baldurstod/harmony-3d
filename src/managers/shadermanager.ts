@@ -10,7 +10,7 @@ export class ShaderManager {
 	static #customShaderList = new Map<string, WebGLShaderSource>();
 
 	static addSource(type: ShaderType, name: string, source: string) {
-		this.#shaderList.set(name, new WebGLShaderSource(type, source));
+		this.#shaderList.set(name, new WebGLShaderSource(name, type, source));
 		ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
 	}
 
@@ -33,7 +33,7 @@ export class ShaderManager {
 		if (source == '') {
 			this.#customShaderList.delete(name);
 		} else {
-			const customSource = this.#customShaderList.get(name) ?? new WebGLShaderSource(type, '');
+			const customSource = this.#customShaderList.get(name) ?? new WebGLShaderSource(name, type, '');
 			customSource.setSource(source);
 			this.#customShaderList.set(name, customSource);
 		}
@@ -75,7 +75,7 @@ export class ShaderManager {
 	static #getIncludeAnnotationsGlsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
 		const errorArray = [];
 		if (shaderSource.isErroneous()) {
-			if (shaderSource.containsInclude(includeName)) {
+			if (shaderSource.containsInclude(includeName, shaderSource.erroneousDefines)) {
 				const errors = shaderSource.getCompileError(false);
 				for (const error of errors) {
 					const sourceRowToInclude = shaderSource.getSourceRowToInclude();
@@ -105,7 +105,7 @@ export class ShaderManager {
 
 		const errorArray: Annotation[] = [];
 		if (shaderSource.isErroneous()) {
-			if (shaderSource.containsInclude(includeName)) {
+			if (shaderSource.containsInclude(includeName, shaderSource.erroneousDefines)) {
 
 				const lines = WgslPreprocessor.preprocessWgslLineMap(shaderSource.getOriginSource(), shaderSource.erroneousDefines);
 				const errors = shaderSource.getCompileError(false);

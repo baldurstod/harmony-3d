@@ -33,6 +33,7 @@ export interface WebGPUUniform {
 // TODO: rename this class to ShaderSource, also used for webgpu
 export class WebGLShaderSource {
 	static isWebGL2: boolean;
+	#name: string;
 	#includes = new Set<string>();
 	#type: ShaderType;
 	#source = '';
@@ -46,10 +47,11 @@ export class WebGLShaderSource {
 	#lineDelta = 0;
 	#compilationInfo: GPUCompilationInfo | null = null;
 
-	constructor(type: ShaderType, source: string) {
+	constructor(name: string, type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
 			throw new Error('error : type must be defined in WebGLShaderSource');
 		}
+		this.#name = name;
 		this.#type = type;
 		this.setSource(source);
 	}
@@ -291,10 +293,14 @@ export class WebGLShaderSource {
 	}
 
 	setCompilationInfo(compilationInfo: GPUCompilationInfo, defines: Map<string, string>): void {
+		if (compilationInfo.messages.length == 0) {
+			return;
+		}
+		// TODO: we may have only warnings / info messages
 		this.#isErroneous = true;
 		this.#compilationInfo = compilationInfo;
 		this.#lineDelta = 0;
-		this.erroneousDefines = new Map(defines);
+		this.erroneousDefines = defines;
 	}
 
 	getCompileError(convertRows = true): Annotation[] {
@@ -402,20 +408,20 @@ export class WebGLShaderSource {
 		this.setSource(this.#source);
 	}
 
-	containsInclude(includeName: string): boolean {
+	containsInclude(includeName: string, defines?: Map<string, string>): boolean {
 		if (this.#type == ShaderType.Wgsl) {
-			return this.#containsIncludeWgsl(includeName);
+			return this.#containsIncludeWgsl(includeName, defines);
 		} else {
-			return this.#containsIncludeGlsl(includeName);
+			return this.#containsIncludeGlsl(includeName, defines);
 		}
 	}
 
-	#containsIncludeGlsl(includeName: string): boolean {
+	#containsIncludeGlsl(includeName: string, defines?: Map<string, string>): boolean {
 		return this.#includes.has(includeName);
 	}
 
-	#containsIncludeWgsl(includeName: string): boolean {
-		return WgslPreprocessor.getIncludeList(this.#compileSource).has(includeName);
+	#containsIncludeWgsl(includeName: string, defines?: Map<string, string>): boolean {
+		return WgslPreprocessor.getIncludeList(this.#compileSource, defines).has(includeName);
 	}
 
 	getType(): ShaderType {
