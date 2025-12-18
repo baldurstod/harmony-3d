@@ -372,7 +372,6 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 
-		// example 946f0e0f-6b2b-4cd3-9117-8f5468f20936
 		const match = this.#getMatchAround(/\w+/g, line, column);
 		if (!match) {
 			return;
@@ -392,7 +391,7 @@ export class ShaderEditor extends HTMLElement {
 		line.replace(regExp, (str: string, ...args: any[]): string => {
 			const offset = args[args.length - 2] as number;
 			const length = str.length;
-			if (offset <= col && offset + length >= col) {
+			if (offset <= col && offset + length > col) {
 
 				match = {
 					start: offset,
