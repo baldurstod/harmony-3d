@@ -1,4 +1,4 @@
-import { WgslPreprocessor } from 'wgsl-preprocessor';
+import { WgslPreprocessor } from 'amandine';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
 import { ShaderType } from './types';

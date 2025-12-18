@@ -2,6 +2,7 @@
 #include declare_texture_transform
 #include declare_vertex_skinning
 
+#include declare_fragment_standard
 #include declare_fragment_diffuse
 #include declare_fragment_color_map
 #include declare_fragment_alpha_test
@@ -33,16 +34,11 @@ fn vertex_main(
 	return output;
 }
 
-struct FragmentOutput {
-	@location(0) color: vec4<f32>,
-	@builtin(frag_depth) depth: f32,
-};
-
 @fragment
 fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 {
 	var fragColor: vec4f;
-	var fragDepth: f32 = fragInput.position.w;
+	var fragDepth: f32;
 	#include calculate_fragment_diffuse
 	#include calculate_fragment_color_map
 #ifdef USE_COLOR_MAP
@@ -51,6 +47,6 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 	fragColor = diffuseColor;
 
 	#include calculate_fragment_standard
-
-	return FragmentOutput(fragColor, fragDepth);
+	#include output_fragment
+	//return FragmentOutput(fragColor, fragDepth);
 }

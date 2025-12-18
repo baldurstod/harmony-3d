@@ -1,4 +1,4 @@
-import { FinalLine, WgslPreprocessor } from 'wgsl-preprocessor';
+import { FinalLine, WgslPreprocessor } from 'amandine';
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 import { Shaders } from '../shaders/shaders';
 import { Annotation, WebGLShaderSource } from '../webgl/shadersource';

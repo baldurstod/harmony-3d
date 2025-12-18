@@ -12,6 +12,9 @@ addWgslInclude('declare_fragment_diffuse', declare_fragment_diffuse);
 import declare_fragment_light_warp from './declare_fragment_light_warp.wgsl';
 addWgslInclude('declare_fragment_light_warp', declare_fragment_light_warp);
 
+import declare_fragment_standard from './declare_fragment_standard.wgsl';
+addWgslInclude('declare_fragment_standard', declare_fragment_standard);
+
 import declare_lights from './declare_lights.wgsl';
 addWgslInclude('declare_lights', declare_lights);
 

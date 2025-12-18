@@ -1,4 +1,4 @@
-import { WgslPreprocessor } from 'wgsl-preprocessor';
+import { WgslPreprocessor } from 'amandine';
 import { ShaderType } from '../webgl/types';
 import { Includes, WgslIncludes } from './includes';
 import { ShaderEventTarget } from './shadereventtarget';

@@ -12,6 +12,7 @@
 		"@derschmale/io-rgbe": "github:baldurstod/io-rgbe",
 		"@zip.js/zip.js": "github:baldurstod/zip.js",
 		"ace-builds": "^1.43.5",
+		"amandine": "github:baldurstod/amandine",
 		"fast-png": "^7.0.1",
 		"gl-matrix": "^3.4.3",
 		"harmony-binary-reader": "github:baldurstod/harmony-binary-reader",
@@ -24,8 +25,7 @@
 		"harmony-vpk": "github:baldurstod/harmony-vpk",
 		"meshoptimizer": "^0.21.0",
 		"murmurhash": "github:baldurstod/murmurhash",
-		"wgsl_reflect": "^1.2.3",
-		"wgsl-preprocessor": "github:baldurstod/wgsl-preprocessor"
+		"wgsl_reflect": "^1.2.3"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.29.0",
