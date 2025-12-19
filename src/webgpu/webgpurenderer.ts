@@ -1,4 +1,4 @@
-import { mat4, vec3, vec4 } from 'gl-matrix';
+import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
@@ -327,7 +327,20 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = tempViewProjectionMatrix as BufferSource;
 								break;
 							case 'normalMatrix':
-								bufferSource = object._normalMatrix as BufferSource;
+								// In WGSL, mat3x3 actually are mat4x3
+								// TODO: improve this
+								mat3.normalFromMat4(object._normalMatrix, camera.cameraMatrix);//TODO: fixme
+								const m = new Float32Array(12);
+								m[0] = object._normalMatrix[0];
+								m[1] = object._normalMatrix[1];
+								m[2] = object._normalMatrix[2];
+								m[4] = object._normalMatrix[3];
+								m[5] = object._normalMatrix[4];
+								m[6] = object._normalMatrix[5];
+								m[8] = object._normalMatrix[6];
+								m[9] = object._normalMatrix[7];
+								m[10] = object._normalMatrix[8];
+								bufferSource = m as BufferSource;
 								break;
 							default:
 								console.error('unknwon uniform', uniform.name, member.name);
