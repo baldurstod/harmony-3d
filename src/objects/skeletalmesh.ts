@@ -1,12 +1,13 @@
 import { mat4, vec2, vec3 } from 'gl-matrix';
+import { MAX_HARDWARE_BONES } from '../constants';
 import { BoundingBox } from '../math/boundingbox';
 import { getNormal, getUV } from '../math/triangle';
+import { Intersection } from '../raycasting/intersection';
 import { Ray } from '../raycasting/ray';
+import { Raycaster } from '../raycasting/raycaster';
+import { Bone } from './bone';
 import { Mesh, MeshParameters, ObjDatas } from './mesh';
 import { Skeleton } from './skeleton';
-import { Bone } from './bone';
-import { Raycaster } from '../raycasting/raycaster';
-import { Intersection } from '../raycasting/intersection';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -42,6 +43,7 @@ export class SkeletalMesh extends Mesh {
 		this.setUniform('uBoneMatrix', this.skeleton.getTexture());
 		this.setDefine('HARDWARE_SKINNING');//TODOv3 proper defines
 		this.setDefine('SKELETAL_MESH');
+		this.setDefine('MAX_HARDWARE_BONES', MAX_HARDWARE_BONES);
 	}
 
 	set bonesPerVertex(bonesPerVertex) {

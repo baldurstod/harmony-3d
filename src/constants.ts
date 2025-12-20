@@ -6,7 +6,7 @@ export const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
 export const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
 
 
-export const MAX_HARDWARE_BONES = 256;
+export const MAX_HARDWARE_BONES = 256/* don't raise above 1024: max webgpu uniforms size */;
 
 export const TEXTURE_CLEANUP_DELAY = 100000;
 
