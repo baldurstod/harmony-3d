@@ -18,6 +18,7 @@ import { RenderList } from '../renderers/renderlist';
 import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
+import { Texture } from '../textures/texture';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 
@@ -168,6 +169,8 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
+		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
+
 		const defines = new Map<string, string>();
 
 		getDefines(object, defines);
@@ -280,7 +283,9 @@ export class WebGPURenderer implements Renderer {
 			stepMode: 'vertex'
 		}];
 
-		const groups = new Map2<number, number, GPUBuffer>();
+		type Binding = { buffer?: GPUBuffer, texture?: GPUTexture, sampler?: GPUSampler };
+
+		const groups = new Map2<number, number, Binding>();
 
 		if (renderLights) {
 			material.beforeRender(camera);
@@ -302,7 +307,7 @@ export class WebGPURenderer implements Renderer {
 					usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 				});
 
-				groups.set(uniform.group, uniform.binding, uniformBuffer);
+				groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
 
 				const members = uniform.members;
 				if (members) {
@@ -399,18 +404,59 @@ export class WebGPURenderer implements Renderer {
 					*/
 				}
 			}
-		}
 
+			for (const shaderTexture of shaderModule.reflection.textures) {
+				switch (shaderTexture.name) {
+					case 'colorTexture':
+						const texture = (material.uniforms.colorMap as Texture | undefined)?.texture;
+						if (texture) {
+							groups.set(shaderTexture.group, shaderTexture.binding, { texture: texture as GPUTexture });
+						}
+						break;
+					default:
+						// TODO
+						break;
+				}
+			}
+
+			for (const shaderSampler of shaderModule.reflection.samplers) {
+				switch (shaderSampler.name) {
+					case 'colorSampler':
+						const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
+						if (sampler) {
+							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+						}
+						break;
+					default:
+						// TODO
+						break;
+				}
+			}
+		}
 
 		const bindGroupLayouts: GPUBindGroupLayout[] = [];
 		for (const [groupId, group] of groups.getMap()) {
 			const entries: GPUBindGroupLayoutEntry[] = [];
-			for (const [bindingId, uniformBuffer] of group) {
-				entries.push({
+			for (const [bindingId, binding] of group) {
+				const entry: GPUBindGroupLayoutEntry = {
 					binding: bindingId,// corresponds to @binding
 					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
-					buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
-				});
+					//buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
+				}
+
+				if (binding.buffer) {
+					entry.buffer = {};
+				}
+
+				if (binding.texture) {
+					entry.texture = {};
+				}
+
+				if (binding.sampler) {
+					entry.sampler = {};
+				}
+
+				entries.push(entry);
 			}
 
 			bindGroupLayouts.push(device.createBindGroupLayout({
@@ -474,12 +520,26 @@ export class WebGPURenderer implements Renderer {
 		for (const [groupId, group] of groups.getMap()) {
 			const entries: GPUBindGroupEntry[] = [];
 			for (const [bindingId, uniformBuffer] of group) {
-				entries.push({
-					binding: bindingId,// corresponds to @binding
-					resource: {
-						buffer: uniformBuffer,
-					},
-				});
+				if (uniformBuffer.buffer) {
+					entries.push({
+						binding: bindingId,// corresponds to @binding
+						resource: {
+							buffer: uniformBuffer.buffer,
+						},
+					});
+				}
+				if (uniformBuffer.texture) {
+					entries.push({
+						binding: bindingId,// corresponds to @binding
+						resource: uniformBuffer.texture,
+					});
+				}
+				if (uniformBuffer.sampler) {
+					entries.push({
+						binding: bindingId,// corresponds to @binding
+						resource: uniformBuffer.sampler,
+					});
+				}
 			}
 
 			const uniformBindGroup = device.createBindGroup({

@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
+import { uint } from 'harmony-types';
 import { ENABLE_S3TC } from '../../../buildoptions';
 import { Graphics } from '../../../graphics/graphics2';
+import { WebGPUInternal } from '../../../graphics/webgpuinternal';
 import { Detex } from '../../../textures/detex';
 import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '../../../textures/enums';
 import { SpriteSheet } from '../../../textures/spritesheet';
@@ -8,7 +10,6 @@ import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_SRGB } from './vtfconstants';
-import { uint } from 'harmony-types';
 
 export interface VTFMipMap {
 	height: number;
@@ -215,10 +216,10 @@ export class Source1Vtf {
 			//TODO: show error
 			return;
 		}
-		const webGLTexture = texture.texture;
+		//const webGLTexture = texture.texture;
 
-		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-		glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
+		//glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+		//glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
 
 		const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
 		const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
@@ -227,7 +228,14 @@ export class Source1Vtf {
 		texture.height = mipmap.height;
 
 		const data = mipmap.frames[frame]?.[face];
-
+		if (data) {
+			if (Graphics.isWebGPU) {
+				this.#fillTextureWebGPU(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
+			} else {
+				this.#fillTextureWebGL(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
+			}
+		}
+		/*
 		if (data) {
 			if (this.isDxtCompressed()) {
 				fillTextureDxt(glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, data, clampS, clampT, srgb && this.isSRGB());
@@ -244,8 +252,41 @@ export class Source1Vtf {
 		glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clampT ? GL_CLAMP_TO_EDGE : GL_REPEAT);
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+		*/
 
 		//this.filled = true;
+	}
+
+	#fillTextureWebGL(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
+
+		const webGLTexture = texture.texture;
+
+		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+		glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
+		if (data) {
+			if (this.isDxtCompressed()) {
+				fillTextureDxt(glContext, webGLTexture, GL_TEXTURE_2D, width, height, vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, data, clampS, clampT, srgb && this.isSRGB());
+			} else {
+				glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+				glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data);
+			}
+		}
+
+		glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clampS ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clampT ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glContext.bindTexture(GL_TEXTURE_2D, null);
+		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+	}
+
+	#fillTextureWebGPU(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
+		WebGPUInternal.device.queue.writeTexture(
+			{ texture: texture.texture as GPUTexture },
+			data as BufferSource,
+			{ bytesPerRow: width * 4 },
+			{ width: width, height: height },
+		);
 	}
 
 	/**
@@ -432,6 +473,15 @@ return 0;
 		}
 
 		return new ImageData(datas, mipmapWidth, mipmapHeight);
+	}
+
+	getWebGPUFormat(): GPUTextureFormat {
+		// TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
+		if (this.isDxtCompressed()) {
+			return 'bc1-rgba-unorm';
+		} else {
+			return 'rgba8unorm';
+		}
 	}
 }
 

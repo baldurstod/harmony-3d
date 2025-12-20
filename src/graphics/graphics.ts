@@ -893,7 +893,9 @@ class Graphics {
 		}
 
 		if (!configuration.device) {
-			configuration.device = await adapter.requestDevice();
+			configuration.device = await adapter.requestDevice({
+				requiredFeatures: ['texture-compression-bc'],
+			});
 		}
 		if (!configuration.format) {
 			configuration.format = navigator.gpu.getPreferredCanvasFormat();

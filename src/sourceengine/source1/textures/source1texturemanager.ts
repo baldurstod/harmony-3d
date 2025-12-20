@@ -166,15 +166,15 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 		return;
 	}
 
+	const webGPUFormat = vtf.getWebGPUFormat();
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
-
 		const texture = TextureManager.createTexture({
 			webgpuDescriptor: {
 				size: {
 					width: size.width,
 					height: size.height,
 				},
-				format: 'rgba8unorm',
+				format: webGPUFormat,
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 			}
 		});//TODOv3: add params

@@ -30,7 +30,9 @@ export class Texture {
 	flipY = false;
 	premultiplyAlpha = false;
 	dirty = true;
-	texture: WebGLTexture | null = null;
+	texture: WebGLTexture | GPUTexture | null = null;
+	// WebGPU sampler
+	sampler: GPUSampler | null = null;
 	width = 0;
 	height = 0;
 	isTexture = true;

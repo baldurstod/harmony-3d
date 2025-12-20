@@ -1,4 +1,6 @@
 import { Color } from '../core/color';
+import { Graphics } from '../graphics/graphics2';
+import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { createTexture, deleteTexture, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, HarmonyGPUTextureDescriptor, HarmonyGPUTextureDescriptorOptionalSize } from '../textures/texturefactory';
 import { Texture, TextureParams } from './texture';
 
@@ -45,6 +47,9 @@ export class TextureManager {
 			format: 'rgba8unorm',
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 		}*/);
+		if (Graphics.isWebGPU) {
+			texture.sampler = WebGPUInternal.device.createSampler();
+		}
 		//TODOv3: init texture parameters
 		//texture.setParameters(Graphics.glContext, target);
 		return texture;
