@@ -160,7 +160,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
 	const glContext = Graphics.glContext;
-	const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
+	const currentMipMap = vtf.mipmapCount - 1;//TODOv3: choose mipmap
 	const size = vtf.getMipMapSize(currentMipMap);
 	if (!size) {
 		return;
