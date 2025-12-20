@@ -1,6 +1,7 @@
 import { FinalLine, WgslPreprocessor } from 'amandine';
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 import { Shaders } from '../shaders/shaders';
+import { errorOnce } from '../utils/console';
 import { Annotation, WebGLShaderSource } from '../webgl/shadersource';
 import { ShaderType } from '../webgl/types';
 
@@ -21,7 +22,7 @@ export class ShaderManager {
 			if (source) {
 				this.addSource(type, name, source);
 			} else {
-				console.error('Shader not found : ', name);
+				errorOnce('Shader not found : ' + name);
 			}
 		}
 		const customSource = this.#customShaderList.get(name);
