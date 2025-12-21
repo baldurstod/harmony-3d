@@ -6235,7 +6235,7 @@ declare class Channel {
                           getShaderSource(): string;
                       }
 
-                      declare enum ShaderType {
+                      export declare enum ShaderType {
                           Vertex = 35633,
                           Fragment = 35632,
                           Wgsl = "wgsl"
