@@ -1,6 +1,6 @@
 #ifdef FLAT_SHADING
-	let fdx:vec3f = vec3(dpdx(fragInput.vVertexPositionCameraSpace.x), dpdx(fragInput.vVertexPositionCameraSpace.y), dpdx(fragInput.vVertexPositionCameraSpace.z));
-	let fdy:vec3f = vec3(dpdy(fragInput.vVertexPositionCameraSpace.x), dpdy(fragInput.vVertexPositionCameraSpace.y), dpdy(fragInput.vVertexPositionCameraSpace.z));
+	let fdx:vec3f = dpdx(fragInput.vVertexPositionCameraSpace).xyz;
+	let fdy:vec3f = dpdy(fragInput.vVertexPositionCameraSpace).xyz;
 	let fragmentNormalCameraSpace:vec3f = normalize(cross(fdx, fdy));
 	let fragmentTangentCameraSpace:vec3f = normalize(fdx);
 	let fragmentBitangentCameraSpace:vec3f = normalize(fdy);
