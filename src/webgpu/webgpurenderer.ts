@@ -1,4 +1,5 @@
 import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
+import { TypedArrayNumber } from 'harmony-types';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
@@ -108,7 +109,7 @@ export class WebGPURenderer implements Renderer {
 	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
-		const objectStack = [];
+		const objectStack: Entity[] = [];
 		//scene.pointLights = scene.getChildList(PointLight);
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
@@ -200,11 +201,14 @@ export class WebGPURenderer implements Renderer {
 		const positionAttribute = geometryAttributes.get('aVertexPosition');
 		const normalAttribute = geometryAttributes.get('aVertexNormal');
 		const textureCoordAttribute = geometryAttributes.get('aTextureCoord');
-		if (!indexAttribute || !positionAttribute || !normalAttribute || !textureCoordAttribute) {
+		if (!indexAttribute || !positionAttribute /*|| !normalAttribute || !textureCoordAttribute*/) {
 			return;
 		}
 
 		const indices = indexAttribute._array;
+		if (!indices) {
+			return;
+		}
 		const size = Math.ceil(indices.length / 2) * 4;
 		const indexBuffer = device.createBuffer({
 			label: 'index',
@@ -224,8 +228,11 @@ export class WebGPURenderer implements Renderer {
 		]);
 		*/
 		const vertices = positionAttribute._array;
-		const normals = normalAttribute._array;
-		const textureCoords = textureCoordAttribute._array;
+		if (!vertices) {
+			return;
+		}
+		const normals: TypedArrayNumber | undefined = normalAttribute?._array;
+		const textureCoords = textureCoordAttribute?._array as TypedArrayNumber | undefined;
 
 		const positionBuffer = device.createBuffer({
 			label: 'position',
@@ -233,23 +240,29 @@ export class WebGPURenderer implements Renderer {
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 		});
 
-		device.queue.writeBuffer(positionBuffer, 0, vertices, 0, vertices.length);
+		device.queue.writeBuffer(positionBuffer, 0, vertices as BufferSource, 0, vertices.length);
 
+		const normalsLength = (normals?.length ?? 1);
 		const normalBuffer = device.createBuffer({
 			label: 'normal',
-			size: normals.length * 4/* normal is float32*/,
+			size: normalsLength * 4/* normal is float32*/,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 		});
 
-		device.queue.writeBuffer(normalBuffer, 0, normals, 0, normals.length);
+		if (normals) {
+			device.queue.writeBuffer(normalBuffer, 0, normals as BufferSource, 0, normalsLength);
+		}
 
+		const textureCoordsLength = (textureCoords?.length ?? 1);
 		const textureCoordBuffer = device.createBuffer({
 			label: 'texture coords',
-			size: textureCoords.length * 4/* texture coord is float32*/,
+			size: textureCoordsLength * 4/* texture coord is float32*/,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 		});
 
-		device.queue.writeBuffer(textureCoordBuffer, 0, textureCoords, 0, textureCoords.length);
+		if (textureCoords) {
+			device.queue.writeBuffer(textureCoordBuffer, 0, textureCoords as BufferSource, 0, textureCoordsLength);
+		}
 
 		const SIZE_UNIFORM_MATRIX = 4 * 16;
 		const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
