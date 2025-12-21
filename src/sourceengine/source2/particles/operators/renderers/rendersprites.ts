@@ -202,7 +202,7 @@ export class RenderSprites extends RenderBase {
 			if (this.spriteSheet) {
 				let coords = this.spriteSheet.getFrame(particle.sequence, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
-				if (coords) {
+				if (coords && uvs) {
 					uvs[index++] = coords.uMin;
 					uvs[index++] = coords.vMin;
 					uvs[index++] = coords.uMax;
@@ -215,7 +215,7 @@ export class RenderSprites extends RenderBase {
 
 				coords = this.spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
-				if (coords) {
+				if (coords && uvs2) {
 					uvs2[index2++] = coords.uMin;
 					uvs2[index2++] = coords.vMin;
 					uvs2[index2++] = coords.uMax;

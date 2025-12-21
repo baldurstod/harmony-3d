@@ -855,7 +855,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 				const newAttribute = attribute.clone();
 				mesh.geometry.setAttribute('aVertexPosition', newAttribute);
 				const sourceModelMesh = mesh.properties.getObject('sourceModelMesh') as MeshTest;
-				this.#updateArray(newAttribute._array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
+				this.#updateArray(newAttribute._array as Float32Array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
 			}
 		}
 	}

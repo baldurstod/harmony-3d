@@ -69,6 +69,9 @@ export class SpotLightHelper extends Mesh {
 			this.#range = spotLight.range;
 			this.#angle = spotLight.angle;
 			const verticesArray = this.#vertexPositionAttribute._array;
+			if (!verticesArray) {
+				return;
+			}
 
 			for (let i = 0; i < DIVISIONS; i += 1) {
 				const angle = i * TWO_PI / DIVISIONS;

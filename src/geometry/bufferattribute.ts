@@ -1,3 +1,4 @@
+import { TypedArrayNumber } from 'harmony-types';
 import { VERBOSE } from '../buildoptions';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_ARRAY_BUFFER, GL_BYTE, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_FLOAT, GL_INT, GL_SHORT, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
@@ -24,13 +25,13 @@ export class BufferAttribute {
 	#solidWireframeDirty = true;
 	itemSize: number;
 	dirty: boolean;
-	_array: typeof TypedArrayProto;
+	_array?: TypedArrayNumber;
 	count = 0;
 	_buffer: WebGLBuffer | null = null;
 	#source: any;
 	divisor = 0;
 
-	constructor(array: typeof TypedArrayProto, itemSize: number) {
+	constructor(array: TypedArrayNumber | null, itemSize: number) {
 		this.itemSize = itemSize;
 		if (isNaN(this.itemSize)) {
 			throw new TypeError('Argument itemSize must be an Integer');
@@ -111,7 +112,7 @@ export class BufferAttribute {
 	}
 
 	update(glContext: WebGLAnyRenderingContext) {
-		if (this.dirty) {
+		if (this.dirty && this._array) {
 			if (!this._buffer) {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
 			}
@@ -126,7 +127,7 @@ export class BufferAttribute {
 	}
 
 	updateWireframe(glContext: WebGLAnyRenderingContext) {
-		if (this.#wireframeDirty) {
+		if (this.#wireframeDirty && this._array) {
 			if (this._buffer === undefined) {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
 			}
@@ -137,9 +138,9 @@ export class BufferAttribute {
 			const arr = this._array;
 			let j = 0;
 			for (let i = 0; i < arr.length; i += 3) {
-				a = arr[i + 0];
-				b = arr[i + 1];
-				c = arr[i + 2];
+				a = arr[i + 0]!;
+				b = arr[i + 1]!;
+				c = arr[i + 2]!;
 				//lineArray.push(a, b, b, c, c, a);
 				lineArray[j++] = a;
 				lineArray[j++] = b;

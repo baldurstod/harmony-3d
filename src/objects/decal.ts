@@ -1,13 +1,13 @@
 import { mat4, vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
+import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { stringToVec3 } from '../utils/utils';
 import { Mesh, MeshParameters } from './mesh';
-import { JSONObject } from 'harmony-types';
-import { Entity } from '../entities/entity';
-import { Material } from '../materials/material';
 import { SkeletalMesh } from './skeletalmesh';
 
 const DEFAULT_SIZE = vec3.fromValues(1, 1, 1);
@@ -89,7 +89,7 @@ class DecalGeometry extends BufferGeometry {
 		this.count = indices.length;
 	}
 
-	#generate(mesh: Mesh, projectorMatrix: mat4, size: vec3, indices: number[], vertices: number[], normals: number[], uvs: number[]) {
+	#generate(mesh: Mesh, projectorMatrix: mat4, size: vec3, indices: number[], vertices: number[], normals: number[], uvs: number[]): void {
 		let decalVertices: [vec3, vec3][] = [];
 
 		const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
@@ -104,6 +104,9 @@ class DecalGeometry extends BufferGeometry {
 
 		const indexAttribute = geometry.attributes.get('index')!;
 		const indexArray = indexAttribute._array;
+		if (!indexArray) {
+			return;
+		}
 		let posArray;
 		let normalArray;
 		if (!(mesh as SkeletalMesh).isSkeletalMesh) {
@@ -112,16 +115,19 @@ class DecalGeometry extends BufferGeometry {
 		} else {
 			[posArray, normalArray] = (mesh as SkeletalMesh).getSkinnedVertex();
 		}
+		if (!posArray || !normalArray) {
+			return;
+		}
 
 		for (let i = 0, l = indexAttribute.count; i < l; ++i) {
-			const index = indexArray[i];
-			vertex[0] = posArray[index * 3];
-			vertex[1] = posArray[index * 3 + 1];
-			vertex[2] = posArray[index * 3 + 2];
+			const index = indexArray[i]!;
+			vertex[0] = posArray[index * 3] ?? 0;
+			vertex[1] = posArray[index * 3 + 1] ?? 0;
+			vertex[2] = posArray[index * 3 + 2] ?? 0;
 
-			normal[0] = normalArray[index * 3];
-			normal[1] = normalArray[index * 3 + 1];
-			normal[2] = normalArray[index * 3 + 2];
+			normal[0] = normalArray[index * 3] ?? 0;
+			normal[1] = normalArray[index * 3 + 1] ?? 0;
+			normal[2] = normalArray[index * 3 + 2] ?? 0;
 
 			vec3.transformMat4(vertex, vertex, mesh.worldMatrix);
 			vec3.transformMat4(vertex, vertex, projectorMatrixInverse);

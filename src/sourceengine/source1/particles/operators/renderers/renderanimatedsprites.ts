@@ -91,7 +91,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 				}
 			}
 			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
-			if (coords) {
+			if (coords && uvs) {
 				//coords = coords.m_TextureCoordData[0];
 				uvs[index++] = coords.uMin;
 				uvs[index++] = coords.vMin;

@@ -1,4 +1,3 @@
-import { Annotation as Annotation_2 } from '../webgl/shadersource';
 import { BinaryReader } from 'harmony-binary-reader';
 import { float } from 'harmony-types';
 import { HarmonyMenuItems } from 'harmony-ui';
@@ -20,6 +19,7 @@ import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2a
 import { Source2Particle as Source2Particle_2 } from '../../source2particle';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
+import { TypedArrayNumber } from 'harmony-types';
 import { uint } from 'harmony-types';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
@@ -79,6 +79,11 @@ declare type AddNodeParameters = {
     lenght?: number;
     [key: string]: any;
 };
+
+/**
+ * Init wgsl-preprocessor
+ */
+export declare function addWgslInclude(name: string, source: string): void;
 
 export declare class AgeNoise extends Operator {
     #private;
@@ -204,8 +209,9 @@ declare type AnimationFrameDataTypes = vec3 | quat | number | boolean;
 
 declare interface Annotation {
     type: string;
-    column: number;
     row: number;
+    column: number;
+    length?: number;
     text: string;
 }
 
@@ -318,6 +324,8 @@ export declare enum BlendingFactor {
     OneMinusConstantAlpha = 32772,
     SrcAlphaSaturate = 776
 }
+
+export declare const BlendingFactorWebGPU: Map<BlendingFactor, GPUBlendFactor>;
 
 export declare enum BlendingMode {
     None = 0,
@@ -471,11 +479,11 @@ export declare class BufferAttribute {
     #private;
     itemSize: number;
     dirty: boolean;
-    _array: typeof TypedArrayProto;
+    _array?: TypedArrayNumber;
     count: number;
     _buffer: WebGLBuffer | null;
     divisor: number;
-    constructor(array: typeof TypedArrayProto, itemSize: number);
+    constructor(array: TypedArrayNumber | null, itemSize: number);
     get type(): number;
     set usage(usage: BufferUsage);
     set target(target: GLenum);
@@ -1285,8 +1293,9 @@ declare class Channel {
                  doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
              }
 
-             declare type CreateCheckerTextureParams = TextureParams & {
-                 webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+             declare type CreateCheckerTextureParams = {
+                 width?: number;
+                 height?: number;
                  color?: Color;
                  needCubeMap?: boolean;
              };
@@ -1330,7 +1339,7 @@ declare class Channel {
                  doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              }
 
-             export declare function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | null;
+             export declare function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | GPUTexture | null;
 
              export declare type CreateTextureParams = {
                  dimension?: GPUTextureDimension;
@@ -1959,7 +1968,7 @@ declare class Channel {
                           files?: FileSelectorFile[];
                       }
 
-                      export declare function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): Texture;
+                      export declare function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): void;
 
                       export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): Texture;
 
@@ -2088,9 +2097,9 @@ declare class Channel {
 
                       export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
 
-                      export declare function getIncludeList(): MapIterator<string>;
+                      export declare function getIncludeList(): Set<string>;
 
-                      export declare function getIncludeSource(name: string): string | undefined;
+                      export declare function getIncludeSource(name: string, type: ShaderType): string | undefined;
 
                       export declare function getLoader(name: string): any | undefined;
 
@@ -2689,7 +2698,6 @@ declare class Channel {
                           static currentTick: number;
                           static readonly ready: Promise<boolean>;
                           static glContext: WebGLAnyRenderingContext;
-                          static gpuContext: GPUCanvasContext;
                           static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
@@ -3658,6 +3666,8 @@ declare class Channel {
                           set culling(mode: number);
                           renderFace(renderFace: RenderFace): void;
                           getRenderFace(): RenderFace;
+                          getWebGPUCullMode(): GPUCullMode;
+                          getWebGPUBlending(): GPUBlendState | undefined;
                           setColorMode(colorMode: MaterialColorMode): void;
                           getColorMode(): MaterialColorMode;
                           /**
@@ -6079,7 +6089,7 @@ declare class Channel {
                           doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
                       }
 
-                      export declare function setCustomIncludeSource(name: string, source: string): void;
+                      export declare function setCustomIncludeSource(name: string, source: string, type: ShaderType): void;
 
                       export declare function setFetchFunction(func: FetchFunction): void;
 
@@ -6176,12 +6186,11 @@ declare class Channel {
                       export declare class ShaderEditor extends HTMLElement {
                           #private;
                           initEditor(options?: any): void;
-                          get editorShaderName(): string;
-                          set editorShaderName(shaderName: string);
-                          get editorIncludeName(): string;
-                          set editorIncludeName(includeName: string);
+                          getEditorShaderName(): string;
+                          setEditorShaderName(shaderName: string): void;
+                          getEditorIncludeName(): string;
+                          setEditorIncludeName(includeName: string, force?: boolean): void;
                           recompile(): void;
-                          setAnnotations(shaderName: string): void;
                           set recompileDelay(delay: number);
                           set annotationsDelay(delay: number);
                       }
@@ -6191,13 +6200,8 @@ declare class Channel {
                           static addSource(type: ShaderType, name: string, source: string): void;
                           static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
                           static setCustomSource(type: ShaderType, name: string, source: string): void;
-                          static getCustomSourceAnnotations(name: string): Annotation_2[] | null;
-                          static getIncludeAnnotations(includeName: string): {
-                              type: string;
-                              column: number;
-                              row: number;
-                              text: string;
-                          }[] | undefined;
+                          static getCustomSourceAnnotations(name: string): Annotation[];
+                          static getIncludeAnnotations(includeName: string): Annotation[];
                           static get shaderList(): MapIterator<string>;
                           static resetShadersSource(): void;
                           static set displayCompileError(displayCompileError: boolean);
@@ -6998,6 +7002,7 @@ declare class Channel {
                           isDxtCompressed(): boolean;
                           isSRGB(): boolean;
                           getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
+                          getWebGPUFormat(): GPUTextureFormat;
                       }
 
                       export declare class Source1VtxLoader extends SourceBinaryLoader {
@@ -8625,7 +8630,8 @@ declare class Channel {
                           flipY: boolean;
                           premultiplyAlpha: boolean;
                           dirty: boolean;
-                          texture: WebGLTexture | null;
+                          texture: WebGLTexture | GPUTexture | null;
+                          sampler: GPUSampler | null;
                           width: number;
                           height: number;
                           isTexture: boolean;
@@ -8780,7 +8786,7 @@ declare class Channel {
                           static createTexture(textureParams: CreateTextureParams_2): Texture;
                           static deleteTexture(texture: Texture): void;
                           static createFlatTexture(textureParams: CreateFlatTextureParams): Texture;
-                          static createCheckerTexture(textureParams: CreateCheckerTextureParams): Texture;
+                          static createCheckerTexture(textureParams?: CreateCheckerTextureParams): Texture;
                           static createNoiseTexture(textureParams: CreateNoiseTextureParams): Texture;
                           static createTextureFromImage(textureParams: CreateImageTextureParams): Texture;
                           static fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;
@@ -9279,22 +9285,26 @@ declare class Channel {
                       export declare class WebGLShaderSource {
                           #private;
                           static isWebGL2: boolean;
-                          constructor(type: ShaderType, source: string);
+                          erroneousDefines?: Map<string, string>;
+                          constructor(name: string, type: ShaderType, source: string);
                           setSource(source: string): void;
                           isErroneous(): boolean;
                           getSource(): string;
                           getInclude(includeName: string, compileRow?: number, recursion?: Set<string>, allIncludes?: Set<string>): string[] | undefined | null;
                           getCompileSource(includeCode?: string): string;
-                          getCompileSourceLineNumber(includeCode: string): string;
+                          getCompileSourceWebGPU(defines: Map<string, string>): string;
+                          getCompileSourceLineNumber(compileSource: string): string;
                           setCompileError(error: string, includeCode?: string): void;
+                          setCompilationInfo(compilationInfo: GPUCompilationInfo, defines: Map<string, string>): void;
                           getCompileError(convertRows?: boolean): Annotation[];
                           getIncludeAnnotations(): Annotation[];
                           compileRowToSourceRow(row: number): number;
                           isValid(): boolean;
                           reset(): void;
-                          containsInclude(includeName: string): boolean;
+                          containsInclude(includeName: string, defines?: Map<string, string>): boolean;
                           getType(): ShaderType;
                           getSourceRowToInclude(): Map<number, [string, number]>;
+                          getOriginSource(): string;
                       }
 
                       export declare class WebGLStats {

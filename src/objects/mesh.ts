@@ -1,4 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity, EntityParameters } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Material } from '../materials/material';
@@ -12,7 +13,6 @@ import { Raycaster } from '../raycasting/raycaster';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
-import { HarmonyMenuItem, HarmonyMenuItemsDict } from 'harmony-ui';
 
 const tempVec3 = vec3.create();
 
@@ -133,7 +133,8 @@ export class Mesh extends Entity {
 	}
 
 	exportObj(): ObjDatas {
-		const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
+		//const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
+		const ret: Record<string, Uint8Array | Uint32Array | Float32Array | []> = {};
 		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		const geometry = this.#geometry;
 		for (const objAttribute in attributes) {
@@ -141,7 +142,7 @@ export class Mesh extends Entity {
 			if (geometry?.getAttribute(geometryAttribute)) {
 				const webglAttrib = geometry.getAttribute(geometryAttribute);
 				if (webglAttrib) {
-					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array;
+					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array as Uint8Array | Uint32Array | Float32Array;
 				}
 			} else {
 				if (objAttribute == 'f') {
@@ -164,7 +165,7 @@ export class Mesh extends Entity {
 		return 'Mesh ' + super.toString();
 	}
 
-	getBoundsModelSpace(min = vec3.create(), max = vec3.create()) {
+	getBoundsModelSpace(min = vec3.create(), max = vec3.create()): void {
 		min[0] = Infinity;
 		min[1] = Infinity;
 		min[2] = Infinity;
@@ -173,10 +174,13 @@ export class Mesh extends Entity {
 		max[2] = -Infinity;
 
 		const vertexPosition = this.#geometry.getAttribute('aVertexPosition')?._array;
+		if (!vertexPosition) {
+			return;
+		}
 		for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
-			tempVec3[0] = vertexPosition[i + 0];
-			tempVec3[1] = vertexPosition[i + 1];
-			tempVec3[2] = vertexPosition[i + 2];
+			tempVec3[0] = vertexPosition[i + 0]!;
+			tempVec3[1] = vertexPosition[i + 1]!;
+			tempVec3[2] = vertexPosition[i + 2]!;
 			vec3.min(min, min, tempVec3);
 			vec3.max(max, max, tempVec3);
 		}
@@ -185,7 +189,10 @@ export class Mesh extends Entity {
 
 	getBoundingBox(boundingBox = new BoundingBox()) {
 		boundingBox.reset();
-		boundingBox.setPoints(this.#geometry.getAttribute('aVertexPosition')?._array);
+		const array = this.#geometry.getAttribute('aVertexPosition')?._array;
+		if (array) {
+			boundingBox.setPoints(array as Float32Array);
+		}
 		return boundingBox;
 	}
 
@@ -217,33 +224,41 @@ export class Mesh extends Entity {
 	raycast(raycaster: Raycaster, intersections: Intersection[]) {
 		const geometry = this.#geometry;
 		const indices = geometry?.getAttribute('index')?._array;
+		if (!indices) {
+			return;
+		}
 		const vertices = geometry?.getAttribute('aVertexPosition')?._array;
+		if (!vertices) {
+			return;
+		}
 		const textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
 		let normals = geometry?.getAttribute('aVertexNormal')?._array;
 		const worldMatrix = this.worldMatrix;
 		ray.copyTransform(raycaster.ray, worldMatrix);
 		if (normals) {
 			for (let i = 0, l = indices.length; i < l; i += 3) {
-				let i1 = 3 * indices[i];
-				let i2 = 3 * indices[i + 1];
-				let i3 = 3 * indices[i + 2];
+				let i1 = 3 * indices[i]!;
+				let i2 = 3 * indices[i + 1]!;
+				let i3 = 3 * indices[i + 2]!;
 
-				vec3.set(v1, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
-				vec3.set(v2, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
-				vec3.set(v3, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
+				vec3.set(v1, vertices[i1]!, vertices[i1 + 1]!, vertices[i1 + 2]!);
+				vec3.set(v2, vertices[i2]!, vertices[i2 + 1]!, vertices[i2 + 2]!);
+				vec3.set(v3, vertices[i3]!, vertices[i3 + 1]!, vertices[i3 + 2]!);
 
 				if (ray.intersectTriangle(v1, v2, v3, intersectionPoint)) {
-					vec3.set(n1, normals[i1], normals[i1 + 1], normals[i1 + 2]);
-					vec3.set(n2, normals[i2], normals[i2 + 1], normals[i2 + 2]);
-					vec3.set(n3, normals[i3], normals[i3 + 1], normals[i3 + 2]);
+					vec3.set(n1, normals[i1]!, normals[i1 + 1]!, normals[i1 + 2]!);
+					vec3.set(n2, normals[i2]!, normals[i2 + 1]!, normals[i2 + 2]!);
+					vec3.set(n3, normals[i3]!, normals[i3 + 1]!, normals[i3 + 2]!);
 
 
-					i1 = 2 * indices[i];
-					i2 = 2 * indices[i + 1];
-					i3 = 2 * indices[i + 2];
-					vec2.set(uv1, textureCoords[i1], textureCoords[i1 + 1]);
-					vec2.set(uv2, textureCoords[i2], textureCoords[i2 + 1]);
-					vec2.set(uv3, textureCoords[i3], textureCoords[i3 + 1]);
+					i1 = 2 * indices[i]!;
+					i2 = 2 * indices[i + 1]!;
+					i3 = 2 * indices[i + 2]!;
+					if (textureCoords) {
+						vec2.set(uv1, textureCoords[i1]!, textureCoords[i1 + 1]!);
+						vec2.set(uv2, textureCoords[i2]!, textureCoords[i2 + 1]!);
+						vec2.set(uv3, textureCoords[i3]!, textureCoords[i3 + 1]!);
+					}
 
 					getUV(uv, intersectionPoint, v1, v2, v3, uv1, uv2, uv3);
 					getNormal(intersectionNormal, intersectionPoint, v1, v2, v3, n1, n2, n3);
@@ -264,26 +279,28 @@ export class Mesh extends Entity {
 		} else {
 			normals = Float32Array.from([1, 0, 0]);
 			for (let i = 0, l = indices.length; i < l; i += 3) {
-				let i1 = 3 * indices[i];
-				let i2 = 3 * indices[i + 1];
-				let i3 = 3 * indices[i + 2];
+				let i1 = 3 * indices[i]!;
+				let i2 = 3 * indices[i + 1]!;
+				let i3 = 3 * indices[i + 2]!;
 
-				vec3.set(v1, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
-				vec3.set(v2, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
-				vec3.set(v3, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
+				vec3.set(v1, vertices[i1]!, vertices[i1 + 1]!, vertices[i1 + 2]!);
+				vec3.set(v2, vertices[i2]!, vertices[i2 + 1]!, vertices[i2 + 2]!);
+				vec3.set(v3, vertices[i3]!, vertices[i3 + 1]!, vertices[i3 + 2]!);
 
 				if (ray.intersectTriangle(v1, v2, v3, intersectionPoint)) {
-					vec3.set(n1, normals[0], normals[1], normals[2]);
-					vec3.set(n2, normals[0], normals[1], normals[2]);
-					vec3.set(n3, normals[0], normals[1], normals[2]);
+					vec3.set(n1, normals[0]!, normals[1]!, normals[2]!);
+					vec3.set(n2, normals[0]!, normals[1]!, normals[2]!);
+					vec3.set(n3, normals[0]!, normals[1]!, normals[2]!);
 
 
-					i1 = 2 * indices[i];
-					i2 = 2 * indices[i + 1];
-					i3 = 2 * indices[i + 2];
-					vec2.set(uv1, textureCoords[i1], textureCoords[i1 + 1]);
-					vec2.set(uv2, textureCoords[i2], textureCoords[i2 + 1]);
-					vec2.set(uv3, textureCoords[i3], textureCoords[i3 + 1]);
+					i1 = 2 * indices[i]!;
+					i2 = 2 * indices[i + 1]!;
+					i3 = 2 * indices[i + 2]!;
+					if (textureCoords) {
+						vec2.set(uv1, textureCoords[i1]!, textureCoords[i1 + 1]!);
+						vec2.set(uv2, textureCoords[i2]!, textureCoords[i2 + 1]!);
+						vec2.set(uv3, textureCoords[i3]!, textureCoords[i3 + 1]!);
+					}
 
 					getUV(uv, intersectionPoint, v1, v2, v3, uv1, uv2, uv3);
 					getNormal(intersectionNormal, intersectionPoint, v1, v2, v3, n1, n2, n3);

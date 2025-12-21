@@ -175,12 +175,12 @@ async function createFBXMesh(fbxScene: FBXScene, mesh: Mesh, context: FbxContext
 	let meshDatasBw;
 	if (EXPORT_SKELETON && (mesh as any/*TODO: create a skeleton entity interface*/).skeleton && mesh.geometry) {
 		meshDatas = {
-			f: mesh.geometry.getAttribute('index')?._array,
-			v: mesh.geometry.getAttribute('aVertexPosition')?._array,
-			vn: mesh.geometry.getAttribute('aVertexNormal')?._array,
-			vt: mesh.geometry.getAttribute('aTextureCoord')?._array,
-			bi: mesh.geometry.getAttribute('aBoneIndices')?._array,
-			bw: mesh.geometry.getAttribute('aBoneWeight')?._array,
+			f: mesh.geometry.getAttribute('index')?._array as Uint8Array | Uint32Array,
+			v: mesh.geometry.getAttribute('aVertexPosition')?._array as Float32Array,
+			vn: mesh.geometry.getAttribute('aVertexNormal')?._array as Float32Array,
+			vt: mesh.geometry.getAttribute('aTextureCoord')?._array as Float32Array,
+			bi: mesh.geometry.getAttribute('aBoneIndices')?._array as Float32Array,
+			bw: mesh.geometry.getAttribute('aBoneWeight')?._array as Float32Array,
 		};
 
 		meshDatasBi = meshDatas.bi;

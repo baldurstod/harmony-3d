@@ -56,8 +56,8 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		let index = 0;
 		for (const particle of particleList) {
 			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
-			if (coords) {
-				const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
+			const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
+			if (coords && uvs) {
 				//coords = coords.m_TextureCoordData[0];
 				/*
 				const uMin = coords.m_fLeft_U0;

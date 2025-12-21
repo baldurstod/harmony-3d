@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
+import { Entity } from '../../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute, Uint8BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
@@ -7,7 +8,6 @@ import { LineBasicMaterial } from '../../materials/linebasicmaterial';
 import { MaterialColorMode } from '../../materials/material';
 import { GL_LINES } from '../../webgl/constants';
 import { Mesh, MeshParameters } from '../mesh';
-import { Entity } from '../../entities/entity';
 
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
@@ -128,21 +128,26 @@ export class CameraFrustum extends Mesh {
 		geometry.count = indices.length;
 	}
 
-	update() {
-		if (this.#camera) {
-			let index = 0;
-			const verticesArray = this.#vertexPositionAttribute._array;
-			for (const point of Points) {
-				if (index > 3) {//Skip the base point
-					vec3.copy(tempVec3, point.p)
-					this.#camera.invertProjection(tempVec3);
-					verticesArray.set(tempVec3, index);
-				}
-				index += 3;
-			}
-
-			this.#vertexPositionAttribute.dirty = true;
+	update(): void {
+		if (!this.#camera) {
+			return;
 		}
+		let index = 0;
+		const verticesArray = this.#vertexPositionAttribute._array;
+		if (!verticesArray) {
+			return;
+		}
+		for (const point of Points) {
+			if (index > 3) {//Skip the base point
+				vec3.copy(tempVec3, point.p)
+				this.#camera.invertProjection(tempVec3);
+				verticesArray.set(tempVec3, index);
+			}
+			index += 3;
+		}
+
+		this.#vertexPositionAttribute.dirty = true;
+
 	}
 
 	parentChanged(parent: Entity) {
