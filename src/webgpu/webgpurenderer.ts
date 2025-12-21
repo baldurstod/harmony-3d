@@ -245,7 +245,7 @@ export class WebGPURenderer implements Renderer {
 
 		const textureCoordBuffer = device.createBuffer({
 			label: 'texture coords',
-			size: textureCoords.length * 4/* normal is float32*/,
+			size: textureCoords.length * 4/* texture coord is float32*/,
 			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 		});
 
@@ -261,27 +261,41 @@ export class WebGPURenderer implements Renderer {
 		*/
 		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
 
-		const vertexBuffers: GPUVertexBufferLayout[] = [{
-			attributes: [
-				{
-					shaderLocation: 0, // position
-					offset: 0,
-					format: 'float32x3'
-				},
-				{
-					shaderLocation: 1, // normal
-					offset: 0,
-					format: 'float32x3'
-				},
-				{
-					shaderLocation: 2, // texcoord
-					offset: 0,
-					format: 'float32x2'
-				},
-			],
-			arrayStride: 12,
-			stepMode: 'vertex'
-		}];
+		const vertexBuffers: GPUVertexBufferLayout[] = [
+			{
+				attributes: [
+					{
+						shaderLocation: 0, // position
+						offset: 0,
+						format: 'float32x3'
+					},
+				],
+				arrayStride: 3 * 4,
+				stepMode: 'vertex'
+			},
+			{
+				attributes: [
+					{
+						shaderLocation: 1, // normal
+						offset: 0,
+						format: 'float32x3'
+					},
+				],
+				arrayStride: 3 * 4,
+				stepMode: 'vertex'
+			},
+			{
+				attributes: [
+					{
+						shaderLocation: 2, // texcoord
+						offset: 0,
+						format: 'float32x2'
+					},
+				],
+				arrayStride: 2 * 4,
+				stepMode: 'vertex'
+			},
+		];
 
 		type Binding = { buffer?: GPUBuffer, texture?: GPUTexture, sampler?: GPUSampler };
 
