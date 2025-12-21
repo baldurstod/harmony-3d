@@ -10,6 +10,7 @@ import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_SRGB } from './vtfconstants';
+import { errorOnce } from '../../../utils/console';
 
 export interface VTFMipMap {
 	height: number;
@@ -284,7 +285,7 @@ export class Source1Vtf {
 		WebGPUInternal.device.queue.writeTexture(
 			{ texture: texture.texture as GPUTexture },
 			data as BufferSource,
-			{ bytesPerRow: width * 4 },
+			{ bytesPerRow: width * 4 /*TODO: depends on compression*/},
 			{ width: width, height: height },
 		);
 	}
@@ -458,7 +459,7 @@ return 0;
 			return null;
 		}
 
-		let datas: Uint8ClampedArray;
+		let datas: Uint8ClampedArray<ArrayBuffer>;
 		const mipmapWidth = mipmapDatas.width;
 		const mipmapHeight = mipmapDatas.height;
 		const mipmapFaceDatas = mipmapDatas.frames[frame]?.[face];
@@ -478,7 +479,17 @@ return 0;
 	getWebGPUFormat(): GPUTextureFormat {
 		// TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
 		if (this.isDxtCompressed()) {
-			return 'bc1-rgba-unorm';
+			switch (this.highResImageFormat) {
+				case IMAGE_FORMAT_DXT1:
+					return 'bc1-rgba-unorm';
+				case IMAGE_FORMAT_DXT3:
+					return 'bc2-rgba-unorm';
+				case IMAGE_FORMAT_DXT5:
+					return 'bc3-rgba-unorm';
+				default:
+					errorOnce('WebGPU: unknown vtf format ' + this.highResImageFormat);
+					return 'bc3-rgba-unorm';
+			}
 		} else {
 			return 'rgba8unorm';
 		}
@@ -518,7 +529,7 @@ export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
 // TODO: move this function elsewhere
-export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | ImageFormatBptc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
+export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | ImageFormatBptc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray<ArrayBuffer>> {
 	const uncompressedData = new Uint8ClampedArray(width * height * 4);
 
 	await (Detex as any).decode(format, width, height, datas, uncompressedData);
