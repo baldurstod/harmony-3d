@@ -52,10 +52,10 @@ export class ShaderEditor extends HTMLElement {
 			const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
 			if (selectedOption) {
 				if (selectedOption.getAttribute('data-shader')) {
-					this.editorShaderName = (event.target as HTMLSelectElement).value;
+					this.setEditorShaderName((event.target as HTMLSelectElement).value);
 				}
 				if (selectedOption.getAttribute('data-include')) {
-					this.editorIncludeName = (event.target as HTMLSelectElement).value;
+					this.setEditorIncludeName((event.target as HTMLSelectElement).value);
 				}
 			}
 		});
@@ -141,7 +141,7 @@ export class ShaderEditor extends HTMLElement {
 				parent: shaderGroup
 			}) as HTMLOptionElement;
 
-			if (this.#editMode == EDIT_MODE_SHADER && this.editorShaderName == shaderName) {
+			if (this.#editMode == EDIT_MODE_SHADER && this.getEditorShaderName() == shaderName) {
 				option.selected = true;
 			}
 		}
@@ -157,26 +157,26 @@ export class ShaderEditor extends HTMLElement {
 				parent: includeGroup
 			}) as HTMLOptionElement;
 
-			if (this.#editMode == EDIT_MODE_INCLUDE && this.editorIncludeName == includeName) {
+			if (this.#editMode == EDIT_MODE_INCLUDE && this.getEditorIncludeName() == includeName) {
 				option.selected = true;
 			}
 		}
 
-		if (!this.editorShaderName && !this.editorIncludeName) {
+		if (!this.getEditorShaderName() && !this.getEditorIncludeName()) {
 			const selectedOption = this.#htmlShaderNameSelect!.selectedOptions[0];
 			if (selectedOption) {
 				if (selectedOption.getAttribute('data-shader')) {
-					this.editorShaderName = selectedOption.value;
+					this.setEditorShaderName(selectedOption.value);
 				}
 			}
 		}
 	}
 
-	get editorShaderName() {
+	getEditorShaderName() {
 		return this.#editorShaderName;
 	}
 
-	set editorShaderName(shaderName) {
+	setEditorShaderName(shaderName: string): void {
 		if (!this.#shaderEditor) {
 			return;
 		}
@@ -200,15 +200,15 @@ export class ShaderEditor extends HTMLElement {
 		}
 	}
 
-	get editorIncludeName() {
+	getEditorIncludeName() {
 		return this.#editorIncludeName;
 	}
 
-	set editorIncludeName(includeName: string) {
+	setEditorIncludeName(includeName: string, force = false): void {
 		if (!this.#shaderEditor) {
 			return;
 		}
-		if (includeName && this.#editorIncludeName != includeName) {
+		if (includeName && (this.#editorIncludeName != includeName || force)) {
 			const editSession = this.#getSession(includeName);
 			this.#shaderEditor.setSession(editSession);
 			this.#editorShaderName = '';
@@ -229,8 +229,9 @@ export class ShaderEditor extends HTMLElement {
 	#getSession(name: string): Ace.EditSession {
 		let session = this.#sessions.get(name);
 		if (!session) {
-			session = new (globalThis as any).ace.EditSession('') as Ace.EditSession;
-			session.setMode('ace/mode/glsl');
+			const ace = (globalThis as any).ace;
+			session = new ace.EditSession('', 'ace/mode/glsl') as Ace.EditSession;
+			session.setUndoManager(new ace.UndoManager());
 			session.on('change', () => {
 				clearTimeout(this.#recompileTimeout);
 				this.#recompileTimeout = setTimeout(() => { this.recompile() }, this.#recompileDelay);
@@ -257,9 +258,9 @@ export class ShaderEditor extends HTMLElement {
 
 		if (customSource == '') {
 			if (this.#editMode == EDIT_MODE_SHADER) {
-				this.editorShaderName = this.#editorShaderName;
+				this.setEditorShaderName(this.#editorIncludeName);
 			} else {
-				this.editorIncludeName = this.#editorIncludeName;
+				this.setEditorIncludeName(this.#editorIncludeName, true);
 			}
 		} else {
 			if (this.#editMode == EDIT_MODE_SHADER) {
@@ -293,13 +294,13 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.getEditorShaderName() : this.getEditorIncludeName();
 		this.dispatchEvent(new CustomEvent('save-custom-shader', { detail: { type: type, name: name, source: this.#shaderEditor.getValue() } }));
 	}
 
 	#loadCustomShader() {
 		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.getEditorShaderName() : this.getEditorIncludeName();
 		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('load-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 
@@ -307,7 +308,7 @@ export class ShaderEditor extends HTMLElement {
 
 	#removeCustomShader() {
 		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.getEditorShaderName() : this.getEditorIncludeName();
 		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('remove-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 	}
@@ -405,7 +406,7 @@ export class ShaderEditor extends HTMLElement {
 	};
 
 	#selectToken(token: string) {
-		this.editorIncludeName = token;
+		this.setEditorIncludeName(token);
 	}
 
 	#clearMarkers() {
