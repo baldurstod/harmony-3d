@@ -587,11 +587,11 @@ export class SourceBSP extends World {
 
 			const bufferGeometry = new BufferGeometry();
 
-			const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
-			const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
-			const textureCoord = new Float32BufferAttribute(geometry.coords, 2);
+			const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3, 'position');
+			const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1, 'alpha');
+			const textureCoord = new Float32BufferAttribute(geometry.coords, 2, 'texCoord');
 
-			bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1));
+			bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1, 'index'));
 			bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
 			bufferGeometry.setAttribute('aVertexAlpha', vertexAlpha);
 			bufferGeometry.setAttribute('aTextureCoord', textureCoord);

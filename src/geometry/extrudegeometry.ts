@@ -44,9 +44,9 @@ class ExtrudeGeometry extends BufferGeometry {
 		}
 
 		// build geometry
-		this.setIndex(new Uint32BufferAttribute(indicesArray, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(verticesArray, 3));
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvArray, 2));
+		this.setIndex(new Uint32BufferAttribute(indicesArray, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(verticesArray, 3, 'position'));
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvArray, 2, 'texCoord'));
 		this.count = indicesArray.length;
 
 		this.computeVertexNormals();

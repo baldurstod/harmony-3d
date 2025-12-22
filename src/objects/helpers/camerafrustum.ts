@@ -121,10 +121,10 @@ export class CameraFrustum extends Mesh {
 		}
 
 		const geometry = this.geometry;
-		geometry.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3);
+		geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
 		geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
-		geometry.setAttribute('aVertexColor', new Uint8BufferAttribute(colors, 4));
+		geometry.setAttribute('aVertexColor', new Uint8BufferAttribute(colors, 4, 'color'));
 		geometry.count = indices.length;
 	}
 

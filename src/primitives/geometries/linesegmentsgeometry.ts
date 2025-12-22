@@ -14,9 +14,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 		const indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
 		// build geometry
 
-		this.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(positions, 3));
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
+		this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(positions, 3, 'position'));
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		this.count = indices.length;
 	}
 
@@ -37,9 +37,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 			++instanceCount;
 		}
 
-		const startAttribute = new Float32BufferAttribute(start, 3);
+		const startAttribute = new Float32BufferAttribute(start, 3, 'segmentStart');
 		startAttribute.divisor = 1;
-		const endAttribute = new Float32BufferAttribute(end, 3);
+		const endAttribute = new Float32BufferAttribute(end, 3, 'segmentEnd');
 		endAttribute.divisor = 1;
 
 		this.setAttribute('aSegmentStart', startAttribute);
@@ -73,9 +73,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 			end[i + 2] = z;
 		}
 
-		const startAttribute = new Float32BufferAttribute(start, 3);
+		const startAttribute = new Float32BufferAttribute(start, 3, 'segmentStart');
 		startAttribute.divisor = 1;
-		const endAttribute = new Float32BufferAttribute(end, 3);
+		const endAttribute = new Float32BufferAttribute(end, 3, 'segmentEnd');
 		endAttribute.divisor = 1;
 
 		this.setAttribute('aSegmentStart', startAttribute);

@@ -63,12 +63,12 @@ export class ModelLoader {
 			boneIds.push(...i.m_BoneWeights.bone);
 		}
 
-		const vertexPosition = new Float32BufferAttribute(vertices, 3);
-		const vertexNormal = new Float32BufferAttribute(normals, 3);
-		const vertexTangent = new Float32BufferAttribute(tangents, 4);
-		const textureCoord = new Float32BufferAttribute(uvs, 2);
-		const vertexWeights = new Float32BufferAttribute(boneWeights, 3);
-		const vertexBones = new Float32BufferAttribute(boneIds, 3);
+		const vertexPosition = new Float32BufferAttribute(vertices, 3, 'position');
+		const vertexNormal = new Float32BufferAttribute(normals, 3, 'normal');
+		const vertexTangent = new Float32BufferAttribute(tangents, 4, 'tangent');
+		const textureCoord = new Float32BufferAttribute(uvs, 2, 'texCoord');
+		const vertexWeights = new Float32BufferAttribute(boneWeights, 3, 'boneWeights');
+		const vertexBones = new Float32BufferAttribute(boneIds, 3, 'boneIndices');
 		//let material = new MeshBasicMaterial({map: 'texture'});//removeme
 		//console.info('Vertex array :')
 		//console.info(vertexArray);
@@ -161,7 +161,7 @@ export class ModelLoader {
 							}
 
 							const geometry = new BufferGeometry();
-							geometry.setIndex(new Uint32BufferAttribute(indices, 1));
+							geometry.setIndex(new Uint32BufferAttribute(indices, 1, 'index'));
 							geometry.setAttribute('aVertexPosition', vertexPosition);
 							geometry.setAttribute('aVertexNormal', vertexNormal);
 							geometry.setAttribute('aVertexTangent', vertexTangent);

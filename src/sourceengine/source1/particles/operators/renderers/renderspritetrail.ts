@@ -102,11 +102,11 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			id.push(i, i, i, i);
 		}
 
-		const vertexPosition = new Float32BufferAttribute(vertices, 3);
-		const textureCoord = new Float32BufferAttribute(uvs, 2);
-		const particleId = new Float32BufferAttribute(id, 1);
+		const vertexPosition = new Float32BufferAttribute(vertices, 3, 'position');
+		const textureCoord = new Float32BufferAttribute(uvs, 2, 'texCoord');
+		const particleId = new Float32BufferAttribute(id, 1, 'particleId');
 		const geometry = new BufferGeometry();
-		geometry.setIndex(new Uint32BufferAttribute(indices, 1));
+		geometry.setIndex(new Uint32BufferAttribute(indices, 1, 'index'));
 		geometry.setAttribute('aVertexPosition', vertexPosition);
 		geometry.setAttribute('aTextureCoord', textureCoord);
 		geometry.setAttribute('aParticleId', particleId);

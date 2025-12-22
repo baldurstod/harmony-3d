@@ -72,10 +72,10 @@ export class PlaneBufferGeometry extends BufferGeometry {
 
 		// build geometry
 
-		this.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
-		this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3));
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
+		this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+		this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		this.count = indices.length;
 	}
 }

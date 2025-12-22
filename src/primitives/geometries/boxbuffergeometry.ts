@@ -33,10 +33,10 @@ export class BoxBufferGeometry extends BufferGeometry {
 		this.#buildPlane(0, 1, 2, - 1, - 1, width, height, - depth, widthSegments, heightSegments); // nz
 
 		// build geometry
-		this.setIndex(new Uint16BufferAttribute(this.#indices, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3));
-		this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3));
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2));
+		this.setIndex(new Uint16BufferAttribute(this.#indices, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3, 'position'));
+		this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3, 'normal'));
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2, 'texCoord'));
 		this.count = this.#indices.length;
 	}
 

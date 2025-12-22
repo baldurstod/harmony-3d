@@ -11,10 +11,10 @@ class FullScreenQuadGeometry extends BufferGeometry {
 		const vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
 		const uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
 
-		this.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
-		this.setAttribute('aVertexNormal', new Float32BufferAttribute(vertices, 3));//TODOv3: fix this
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
+		this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+		this.setAttribute('aVertexNormal', new Float32BufferAttribute(vertices, 3, 'normal'));//TODOv3: fix this
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		this.count = indices.length;
 	}
 }

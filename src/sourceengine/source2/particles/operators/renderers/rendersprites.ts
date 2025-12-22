@@ -265,11 +265,11 @@ export class RenderSprites extends RenderBase {
 			id.push(i, i, i, i);
 		}
 		geometry.count = indices.length;
-		geometry.setIndex(new Uint32BufferAttribute(indices, 1));
-		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
-		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
-		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2));
-		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1));
+		geometry.setIndex(new Uint32BufferAttribute(indices, 1, 'index'));
+		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
+		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
 		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 

@@ -30,9 +30,14 @@ export class BufferAttribute {
 	_buffer: WebGLBuffer | null = null;
 	#source: any;
 	divisor = 0;
+	readonly elementSize: number;
+	// TODO: change WebGL attribute names and remove this
+	readonly wgslName: string;
 
-	constructor(array: TypedArrayNumber | null, itemSize: number) {
+	constructor(array: TypedArrayNumber | null, elementSize: number, itemSize: number, wgslName: string) {
 		this.itemSize = itemSize;
+		this.elementSize = elementSize;
+		this.wgslName = wgslName;
 		if (isNaN(this.itemSize)) {
 			throw new TypeError('Argument itemSize must be an Integer');
 		}
@@ -159,7 +164,7 @@ export class BufferAttribute {
 	}
 
 	clone() {
-		return new (this.constructor as typeof BufferAttribute)(this.#source, this.itemSize/*, this._array.byteOffset, this._array.byteLength*/);
+		return new (this.constructor as typeof BufferAttribute)(this.#source, this.elementSize, this.itemSize, this.wgslName/*, this._array.byteOffset, this._array.byteLength*/);
 	}
 
 	setSource(source: any) {
@@ -172,32 +177,32 @@ export class BufferAttribute {
 }
 
 export class Uint8BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
-		super(null, itemSize);
+	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
+		super(null, 1, itemSize, wgslName);
 		this.setSource(array);
 		this.array = new Uint8Array(array);
 	}
 }
 
 export class Uint16BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
-		super(null, itemSize);
+	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
+		super(null, 2, itemSize, wgslName);
 		this.setSource(array);
 		this.array = new Uint16Array(array, offset, length);
 	}
 }
 
 export class Uint32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
-		super(null, itemSize);
+	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
+		super(null, 4, itemSize, wgslName);
 		this.setSource(array);
 		this.array = new Uint32Array(array, offset, length);
 	}
 }
 
 export class Float32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
-		super(null, itemSize);
+	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
+		super(null, 4, itemSize, wgslName);
 		this.setSource(array);
 		this.array = new Float32Array(array, offset, length);
 	}

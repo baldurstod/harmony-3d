@@ -438,22 +438,22 @@ export class Source2ModelLoader {
 					console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
 					continue;
 				}
-				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(meshIndex, bufferIndex), 1, startIndex * 4, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
-				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(meshIndex, bufferIndex), 3);
+				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(meshIndex, bufferIndex), 1, 'index', startIndex * 4, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
+				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(meshIndex, bufferIndex), 3, 'position');
 
 				let vertexNormal, vertexTangent;
 				if (useCompressedNormalTangent) {
 					const [normal, tangent] = vbibBlock.getNormalsTangents(meshIndex, bufferIndex);
-					vertexNormal = new Float32BufferAttribute(normal, 3);
-					vertexTangent = new Float32BufferAttribute(tangent, 4);
+					vertexNormal = new Float32BufferAttribute(normal, 3, 'normal');
+					vertexTangent = new Float32BufferAttribute(tangent, 4, 'tangent');
 				} else {
-					vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(meshIndex, bufferIndex), 4);
-					vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(meshIndex, bufferIndex), 4);
+					vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(meshIndex, bufferIndex), 4, 'normal');
+					vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(meshIndex, bufferIndex), 4, 'tangent');
 
 				}
-				const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(meshIndex, bufferIndex), 2);
-				const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(meshIndex, bufferIndex), 4);
-				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4);
+				const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(meshIndex, bufferIndex), 2, 'texCoord');
+				const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(meshIndex, bufferIndex), 4, 'boneWeights');
+				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4, 'boneIndices');
 
 				const geometry = new BufferGeometry();
 				geometry.properties.setNumber('lodGroupMask', lodGroupMask);

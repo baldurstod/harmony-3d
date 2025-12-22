@@ -622,10 +622,10 @@ function createPlanes(lodMax: number) {
 		}
 
 		const planes = new BufferGeometry();
-		planes.setIndex(new Uint16BufferAttribute(indices, 1));
-		planes.setAttribute('aVertexPosition', new BufferAttribute(position, positionSize));
-		planes.setAttribute('aTextureCoord', new BufferAttribute(uv, uvSize));
-		planes.setAttribute('faceIndex', new BufferAttribute(faceIndex, faceIndexSize));
+		planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		planes.setAttribute('aVertexPosition', new BufferAttribute(position, 4, positionSize, 'position'));
+		planes.setAttribute('aTextureCoord', new BufferAttribute(uv, 4, uvSize, 'texCoord'));
+		planes.setAttribute('faceIndex', new BufferAttribute(faceIndex, 4, faceIndexSize, 'faceIndex'));
 		planes.count = indices.length;
 		lodPlanes.push(planes);
 

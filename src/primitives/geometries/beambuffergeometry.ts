@@ -100,10 +100,10 @@ export class BeamBufferGeometry extends BufferGeometry {
 		}
 
 
-		this.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
-		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
-		this.setAttribute('aVertexColor', new Float32BufferAttribute(colors, 4));
+		this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+		this.setAttribute('aVertexColor', new Float32BufferAttribute(colors, 4, 'color'));
 		//this.setAttribute('aVertexWidth', new Float32BufferAttribute(this.widths, 1));
 		this.count = indices.length;
 	}

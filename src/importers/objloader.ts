@@ -51,10 +51,10 @@ function buildMesh(obj: Obj) {
 	const m = obj.toMesh();
 
 
-	geometry.setIndex(new Uint32BufferAttribute(m.i, 1));
-	geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(m.v, 3));
-	geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(m.n, 3));
-	geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(m.t, 2));
+	geometry.setIndex(new Uint32BufferAttribute(m.i, 1, 'index'));
+	geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(m.v, 3, 'position'));
+	geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(m.n, 3, 'normal'));
+	geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(m.t, 2, 'texCoord'));
 	geometry.count = m.i.length;
 
 	return new Mesh({ geometry: geometry, material: material });

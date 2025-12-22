@@ -51,8 +51,8 @@ export class SpotLightHelper extends Mesh {
 		indices.push(k, 1);
 
 		const geometry = this.geometry;
-		geometry.setIndex(new Uint16BufferAttribute(indices, 1));
-		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3);
+		geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
 		geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
 		geometry.count = indices.length;
 	}
