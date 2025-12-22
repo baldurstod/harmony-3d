@@ -1,4 +1,4 @@
-struct Uniforms {
+struct MatrixUniforms {
 	modelMatrix : mat4x4f,
 	viewMatrix : mat4x4f,
 	modelViewMatrix : mat4x4f,
@@ -7,4 +7,4 @@ struct Uniforms {
 	normalMatrix : mat3x3f,
 }
 
-@group(0) @binding(0) var<uniform> uniforms : Uniforms;
+@group(0) @binding(0) var<uniform> matrixUniforms : MatrixUniforms;

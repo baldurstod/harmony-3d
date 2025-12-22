@@ -10,9 +10,9 @@
 		#define vertexTangentWorldSpace vertexTangentModelSpace.xyz
 	#endif
 #else
-	let vertexPositionWorldSpace: vec4f = uniforms.modelMatrix * vertexPositionModelSpace;
-	let vertexNormalWorldSpace: vec3f = vec4(uniforms.modelMatrix * vertexNormalModelSpace).xyz;
-	let vertexTangentWorldSpace: vec3f = vec4(uniforms.modelMatrix * vertexTangentModelSpace).xyz;
+	let vertexPositionWorldSpace: vec4f = matrixUniforms.modelMatrix * vertexPositionModelSpace;
+	let vertexNormalWorldSpace: vec3f = vec4(matrixUniforms.modelMatrix * vertexNormalModelSpace).xyz;
+	let vertexTangentWorldSpace: vec3f = vec4(matrixUniforms.modelMatrix * vertexTangentModelSpace).xyz;
 #endif
 output.vVertexPositionWorldSpace = vertexPositionWorldSpace;
 output.vVertexNormalWorldSpace = vertexNormalWorldSpace;
