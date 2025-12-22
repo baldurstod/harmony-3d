@@ -20,6 +20,7 @@ import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { Texture } from '../textures/texture';
+import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 
@@ -419,7 +420,23 @@ export class WebGPURenderer implements Renderer {
 							bufferSource,
 						);
 					} else {
-						console.error('unknwon uniform', uniform.name);
+						const materialUniform = material.uniforms[uniform.name];
+						if (materialUniform) {
+							switch (uniform.type.name) {
+								case 'f32':
+									device.queue.writeBuffer(
+										uniformBuffer,
+										0,
+										new Float32Array([materialUniform as number]),
+									);
+									break;
+								default:
+									errorOnce('unknwon uniform type ' + uniform.name);
+									break;
+							}
+						} else {
+							errorOnce('unknwon uniform ' + uniform.name);
+						}
 					}
 					/*
 					const bufferSource = new Uint8Array(uniform.size) as BufferSource;
