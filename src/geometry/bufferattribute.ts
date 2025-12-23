@@ -33,11 +33,13 @@ export class BufferAttribute {
 	readonly elementSize: number;
 	// TODO: change WebGL attribute names and remove this
 	readonly wgslName: string;
+	readonly wgslFormat: GPUVertexFormat;
 
-	constructor(array: TypedArrayNumber | null, elementSize: number, itemSize: number, wgslName: string) {
+	constructor(array: TypedArrayNumber | null, elementSize: number, itemSize: number, wgslName: string, wgslFormat: GPUVertexFormat) {
 		this.itemSize = itemSize;
 		this.elementSize = elementSize;
 		this.wgslName = wgslName;
+		this.wgslFormat = wgslFormat;
 		if (isNaN(this.itemSize)) {
 			throw new TypeError('Argument itemSize must be an Integer');
 		}
@@ -164,7 +166,7 @@ export class BufferAttribute {
 	}
 
 	clone() {
-		return new (this.constructor as typeof BufferAttribute)(this.#source, this.elementSize, this.itemSize, this.wgslName/*, this._array.byteOffset, this._array.byteLength*/);
+		return new (this.constructor as typeof BufferAttribute)(this.#source, this.elementSize, this.itemSize, this.wgslName, this.wgslFormat/*, this._array.byteOffset, this._array.byteLength*/);
 	}
 
 	setSource(source: any) {
@@ -178,7 +180,7 @@ export class BufferAttribute {
 
 export class Uint8BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
-		super(null, 1, itemSize, wgslName);
+		super(null, 1, itemSize, wgslName, getUint8Format(itemSize));
 		this.setSource(array);
 		this.array = new Uint8Array(array);
 	}
@@ -186,7 +188,7 @@ export class Uint8BufferAttribute extends BufferAttribute {//fixme
 
 export class Uint16BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
-		super(null, 2, itemSize, wgslName);
+		super(null, 2, itemSize, wgslName, getUint16Format(itemSize));
 		this.setSource(array);
 		this.array = new Uint16Array(array, offset, length);
 	}
@@ -194,7 +196,7 @@ export class Uint16BufferAttribute extends BufferAttribute {//fixme
 
 export class Uint32BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
-		super(null, 4, itemSize, wgslName);
+		super(null, 4, itemSize, wgslName, getUint32Format(itemSize));
 		this.setSource(array);
 		this.array = new Uint32Array(array, offset, length);
 	}
@@ -202,8 +204,37 @@ export class Uint32BufferAttribute extends BufferAttribute {//fixme
 
 export class Float32BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
-		super(null, 4, itemSize, wgslName);
+		super(null, 4, itemSize, wgslName, getFloat32Format(itemSize));
 		this.setSource(array);
 		this.array = new Float32Array(array, offset, length);
 	}
+}
+
+function getUint8Format(size: number): GPUVertexFormat {
+	return getFormat('uint8', size);
+}
+
+function getUint16Format(size: number): GPUVertexFormat {
+	return getFormat('uint16', size);
+}
+
+function getUint32Format(size: number): GPUVertexFormat {
+	return getFormat('uint32', size);
+}
+
+function getFloat32Format(size: number): GPUVertexFormat {
+	return getFormat('float32', size);
+}
+
+function getFormat(prefix: string, size: number): GPUVertexFormat {
+	switch (size) {
+		case 2:
+			return prefix + 'x2' as GPUVertexFormat;
+		case 3:
+			// Warning; uint8x3 don't exist. Don't use
+			return prefix + 'x3' as GPUVertexFormat;
+		case 4:
+			return prefix + 'x4' as GPUVertexFormat;
+	}
+	return 'uint32';
 }

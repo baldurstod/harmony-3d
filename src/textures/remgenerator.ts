@@ -1,6 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { Camera, CameraProjection } from '../cameras/camera';
-import { BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
+import { BufferAttribute, Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
@@ -623,9 +623,9 @@ function createPlanes(lodMax: number) {
 
 		const planes = new BufferGeometry();
 		planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-		planes.setAttribute('aVertexPosition', new BufferAttribute(position, 4, positionSize, 'position'));
-		planes.setAttribute('aTextureCoord', new BufferAttribute(uv, 4, uvSize, 'texCoord'));
-		planes.setAttribute('faceIndex', new BufferAttribute(faceIndex, 4, faceIndexSize, 'faceIndex'));
+		planes.setAttribute('aVertexPosition', new Float32BufferAttribute(position, positionSize, 'position'));
+		planes.setAttribute('aTextureCoord', new Float32BufferAttribute(uv, uvSize, 'texCoord'));
+		planes.setAttribute('faceIndex', new Float32BufferAttribute(faceIndex, faceIndexSize, 'faceIndex'));
 		planes.count = indices.length;
 		lodPlanes.push(planes);
 

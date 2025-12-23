@@ -33,10 +33,12 @@ const tempViewProjectionMatrix = mat4.create();
 type WgslModule = {
 	module: GPUShaderModule;
 	reflection?: WgslReflect;
+	attributes: Map<string, number>;
 }
 
-
 const lightDirection = vec3.create();
+const vertexEntryPoint = 'vertex_main';
+const fragmentEntryPoint = 'fragment_main';
 
 export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
@@ -275,42 +277,6 @@ export class WebGPURenderer implements Renderer {
 		*/
 		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
 
-		const vertexBuffers: GPUVertexBufferLayout[] = [
-			{
-				attributes: [
-					{
-						shaderLocation: 0, // position
-						offset: 0,
-						format: 'float32x3'
-					},
-				],
-				arrayStride: 3 * 4,
-				stepMode: 'vertex'
-			},
-			{
-				attributes: [
-					{
-						shaderLocation: 1, // normal
-						offset: 0,
-						format: 'float32x3'
-					},
-				],
-				arrayStride: 3 * 4,
-				stepMode: 'vertex'
-			},
-			{
-				attributes: [
-					{
-						shaderLocation: 2, // texcoord
-						offset: 0,
-						format: 'float32x2'
-					},
-				],
-				arrayStride: 2 * 4,
-				stepMode: 'vertex'
-			},
-		];
-
 		type Binding = { buffer?: GPUBuffer, texture?: GPUTexture, sampler?: GPUSampler };
 
 		const groups = new Map2<number, number, Binding>();
@@ -530,15 +496,50 @@ export class WebGPURenderer implements Renderer {
 			},
 		};
 
+		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+
+		passEncoder.setIndexBuffer(indexBuffer, 'uint16');// TODO: this could also be uint32
+		const vertexBuffers: GPUVertexBufferLayout[] = [];
+		for (const [, attribute] of geometryAttributes) {
+			const location = shaderModule.attributes.get(attribute.wgslName);
+			if (location === undefined) {
+				continue;
+			}
+
+			const attributeArray = attribute._array;
+			if (attributeArray) {
+				const attributeBuffer = device.createBuffer({
+					label: attribute.wgslName,
+					size: attributeArray.length * attribute.elementSize,
+					usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+				});
+				device.queue.writeBuffer(attributeBuffer, 0, attributeArray as BufferSource, 0, attributeArray.length);
+				passEncoder.setVertexBuffer(location, attributeBuffer);
+			}
+
+
+			vertexBuffers.push({
+				attributes: [
+					{
+						shaderLocation: location,
+						offset: 0,// TODO: add a var
+						format: attribute.wgslFormat,//'float32x3',
+					},
+				],
+				arrayStride: attribute.elementSize * attribute.itemSize,
+				stepMode: 'vertex',// TODO: set a var for step mode
+			});
+		}
+
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
 			vertex: {
 				module: shaderModule.module,
-				entryPoint: 'vertex_main',
+				entryPoint: vertexEntryPoint,
 				buffers: vertexBuffers
 			},
 			fragment: {
 				module: shaderModule.module,
-				entryPoint: 'fragment_main',
+				entryPoint: fragmentEntryPoint,
 				targets: [{
 					format: WebGPUInternal.format,
 					blend: material.getWebGPUBlending(),
@@ -557,9 +558,6 @@ export class WebGPURenderer implements Renderer {
 		};
 
 		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
-
-		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-		passEncoder.setPipeline(renderPipeline);
 
 		for (const [groupId, group] of groups.getMap()) {
 			const entries: GPUBindGroupEntry[] = [];
@@ -594,12 +592,8 @@ export class WebGPURenderer implements Renderer {
 			passEncoder.setBindGroup(groupId, uniformBindGroup);
 		}
 
-		passEncoder.setIndexBuffer(indexBuffer, 'uint16');
-		passEncoder.setVertexBuffer(0, positionBuffer);
-		passEncoder.setVertexBuffer(1, normalBuffer);
-		passEncoder.setVertexBuffer(2, textureCoordBuffer);
+		passEncoder.setPipeline(renderPipeline);
 		passEncoder.drawIndexed(geometry.count);
-		//passEncoder.draw(3);
 
 		// End the render pass
 		passEncoder.end();
@@ -766,7 +760,26 @@ export class WebGPURenderer implements Renderer {
 			reflection = new WgslReflect(compileSource);
 		} catch (e) { }
 
-		shaderModule = { module, reflection };
+		const attributes = new Map<string, number>();
+		if (reflection) {
+			// Get the attribute location from reflection
+			for (const vertexEntry of reflection.entry.vertex) {
+				if (vertexEntry.name == vertexEntryPoint) {
+					for (const argument of vertexEntry.arguments) {
+						if (!argument.attributes) {
+							continue;
+						}
+						for (const argumentAttribute of argument.attributes) {
+							if (argumentAttribute.name == 'location') {
+								attributes.set(argument.name, Number(argumentAttribute.value));
+							}
+						}
+					}
+				}
+			}
+		}
+
+		shaderModule = { module, reflection, attributes };
 		this.#materialsShaderModule.set(shaderName, key, shaderModule);
 
 		return shaderModule;
@@ -790,14 +803,14 @@ export class WebGPURenderer implements Renderer {
 		defines.set('NUM_SPOT_LIGHT_SHADOWS', String(spotLightShadows));
 		/*
 		return `
-#define USE_SHADOW_MAPPING
-#define NUM_POINT_LIGHTS ${pointLights}
-#define NUM_PBR_LIGHTS ${pointLights}
-#define NUM_SPOT_LIGHTS ${spotLights}
-#define NUM_POINT_LIGHT_SHADOWS ${pointLightShadows}
-#define NUM_SPOT_LIGHT_SHADOWS ${spotLightShadows}
-`
-*/
+	#define USE_SHADOW_MAPPING
+	#define NUM_POINT_LIGHTS ${pointLights}
+	#define NUM_PBR_LIGHTS ${pointLights}
+	#define NUM_SPOT_LIGHTS ${spotLights}
+	#define NUM_POINT_LIGHT_SHADOWS ${pointLightShadows}
+	#define NUM_SPOT_LIGHT_SHADOWS ${spotLightShadows}
+	`
+	*/
 	}
 
 	#unsetLights(defines: Map<string, string>): void {
@@ -818,14 +831,14 @@ export class WebGPURenderer implements Renderer {
 		defines.set('NUM_SPOT_LIGHT_SHADOWS', '0');
 		/*
 		return `
-#undef USE_SHADOW_MAPPING
-#define NUM_POINT_LIGHTS 0
-#define NUM_PBR_LIGHTS 0
-#define NUM_SPOT_LIGHTS 0
-#define NUM_POINT_LIGHT_SHADOWS 0
-#define NUM_SPOT_LIGHT_SHADOWS 0
-`
-*/
+	#undef USE_SHADOW_MAPPING
+	#define NUM_POINT_LIGHTS 0
+	#define NUM_PBR_LIGHTS 0
+	#define NUM_SPOT_LIGHTS 0
+	#define NUM_POINT_LIGHT_SHADOWS 0
+	#define NUM_SPOT_LIGHT_SHADOWS 0
+	`
+	*/
 	}
 }
 
