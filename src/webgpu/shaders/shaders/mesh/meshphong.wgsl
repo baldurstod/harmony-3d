@@ -21,7 +21,7 @@
 fn vertex_main(
 	@location(0) position: vec3f,
 	@location(1) normal: vec3f,
-	@location(2) texcoord: vec2f,
+	@location(2) texCoord: vec2f,
 ) -> VertexOut
 {
 	var output : VertexOut;
@@ -84,6 +84,7 @@ fragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse 
 	#include calculate_fragment_standard
 	#include calculate_fragment_log_depth
 
+	//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);
 
 	#include output_fragment
 	//return fragColor;
