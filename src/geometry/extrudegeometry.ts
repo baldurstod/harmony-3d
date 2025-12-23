@@ -37,6 +37,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 		const indicesArray: number[] = [];
 		const verticesArray: number[] = [];
+		const normalArray: number[] = [];
 		const uvArray: number[] = [];
 
 		for (let i = 0, l = shapes.length; i < l; i++) {
@@ -46,6 +47,7 @@ class ExtrudeGeometry extends BufferGeometry {
 		// build geometry
 		this.setIndex(new Uint32BufferAttribute(indicesArray, 1, 'index'));
 		this.setAttribute('aVertexPosition', new Float32BufferAttribute(verticesArray, 3, 'position'));
+		this.setAttribute('aVertexNormal', new Float32BufferAttribute(normalArray, 3, 'normal'));
 		this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvArray, 2, 'texCoord'));
 		this.count = indicesArray.length;
 
@@ -660,6 +662,7 @@ class ExtrudeGeometry extends BufferGeometry {
 				verticesArray.push(placeholder[index * 3 + 0]!);
 				verticesArray.push(placeholder[index * 3 + 1]!);
 				verticesArray.push(placeholder[index * 3 + 2]!);
+				normalArray.push(1, 0, 0);// TODO: add a proper normal
 			}
 
 
