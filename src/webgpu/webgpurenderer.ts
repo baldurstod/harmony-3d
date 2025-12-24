@@ -545,7 +545,7 @@ export class WebGPURenderer implements Renderer {
 					},
 				],
 				arrayStride: attribute.elementSize * attribute.itemSize,
-				stepMode: 'vertex',// TODO: set a var for step mode
+				stepMode: attribute.divisor === 0 ? 'vertex' : 'instance',
 			});
 		}
 
@@ -611,7 +611,11 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		passEncoder.setPipeline(renderPipeline);
-		passEncoder.drawIndexed(geometry.count);
+		if ((geometry as InstancedBufferGeometry).instanceCount === undefined) {
+			passEncoder.drawIndexed(geometry.count);
+		} else {
+			passEncoder.drawIndexed(geometry.count, (geometry as InstancedBufferGeometry).instanceCount);
+		}
 
 		// End the render pass
 		passEncoder.end();
