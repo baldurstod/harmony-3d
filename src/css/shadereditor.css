@@ -1,3 +1,10 @@
+:host {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	width: 100%;
+}
+
 .ace_link_marker {
 	position: absolute;
 	border-bottom: 3px solid red;

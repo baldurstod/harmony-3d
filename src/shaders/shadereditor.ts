@@ -46,7 +46,7 @@ export class ShaderEditor extends HTMLElement {
 		const aceScript = options.aceUrl ?? ACE_EDITOR_URI;
 		this.#initialized = true;
 
-		this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
+		//this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
 		this.#htmlShaderNameSelect = createElement('select') as HTMLSelectElement;
 		this.#htmlShaderNameSelect.addEventListener('input', (event) => {
 			const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
