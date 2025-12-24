@@ -275,7 +275,10 @@ export class WebGPURenderer implements Renderer {
 			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
 		});
 		*/
-		mat4.mul(tempViewProjectionMatrix, camera.projectionMatrix, camera.cameraMatrix);//TODO: compute this in camera
+		const cameraMatrix = camera.cameraMatrix;
+		const projectionMatrix = camera.projectionMatrix;
+		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
+		mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix);//TODO: compute this in camera
 
 		type Binding = { buffer?: GPUBuffer, texture?: GPUTexture, sampler?: GPUSampler };
 
@@ -290,7 +293,7 @@ export class WebGPURenderer implements Renderer {
 		uniforms.set('meshColor', material.color as BufferSource);
 
 		if (renderLights) {
-			this.#setupLights(renderList, camera, camera.cameraMatrix, uniforms);
+			this.#setupLights(renderList, camera, cameraMatrix, uniforms);
 		}
 
 		if (shaderModule.reflection) {
@@ -314,13 +317,13 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = object.worldMatrix as BufferSource;
 								break;
 							case 'viewMatrix':
-								bufferSource = camera.cameraMatrix as BufferSource;
+								bufferSource = cameraMatrix as BufferSource;
 								break;
 							case 'modelViewMatrix':
 								bufferSource = object._mvMatrix as BufferSource;
 								break;
 							case 'projectionMatrix':
-								bufferSource = camera.projectionMatrix as BufferSource;
+								bufferSource = projectionMatrix as BufferSource;
 								break;
 							case 'viewProjectionMatrix':
 								bufferSource = tempViewProjectionMatrix as BufferSource;
@@ -328,7 +331,7 @@ export class WebGPURenderer implements Renderer {
 							case 'normalMatrix':
 								// In WGSL, mat3x3 actually are mat4x3
 								// TODO: improve this
-								mat3.normalFromMat4(object._normalMatrix, camera.cameraMatrix);//TODO: fixme
+								mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
 								const m = new Float32Array(12);
 								m[0] = object._normalMatrix[0];
 								m[1] = object._normalMatrix[1];
@@ -401,7 +404,22 @@ export class WebGPURenderer implements Renderer {
 									break;
 							}
 						} else {
-							errorOnce('unknwon uniform ' + uniform.name);
+							let bufferSource: BufferSource | null = null;
+							switch (uniform.name) {
+								case 'resolution':
+									bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
+									break;
+								default:
+									errorOnce('unknwon uniform ' + uniform.name);
+							}
+
+							if (bufferSource) {
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									bufferSource,
+								);
+							}
 						}
 					}
 					/*
