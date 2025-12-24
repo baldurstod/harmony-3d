@@ -258,7 +258,7 @@ export class ShaderEditor extends HTMLElement {
 
 		if (customSource == '') {
 			if (this.#editMode == EDIT_MODE_SHADER) {
-				this.setEditorShaderName(this.#editorIncludeName);
+				this.setEditorShaderName(this.#editorShaderName);
 			} else {
 				this.setEditorIncludeName(this.#editorIncludeName, true);
 			}
