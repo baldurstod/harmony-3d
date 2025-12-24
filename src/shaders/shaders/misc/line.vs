@@ -130,7 +130,7 @@ export default `
 
 			gl_Position = clip;
 
-			vec4 mvPosition = ( aVertexPosition.y < 0.5 ) ? start : end; // this is an approximation
+			//vec4 mvPosition = ( aVertexPosition.y < 0.5 ) ? start : end; // this is an approximation
 
 
 		}
