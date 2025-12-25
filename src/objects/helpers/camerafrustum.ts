@@ -112,19 +112,25 @@ export class CameraFrustum extends Mesh {
 
 	#createVertices() {
 		const indices = Lines;
-		const vertices = [];
-		const colors = [];
+		const vertices: number[] = [];
+		const normals: number[] = [];
+		const texCoords: number[] = [];
+		const colors:number[] = [];
 
 		for (const point of Points) {
 			vertices.push(...point.p);
+			normals.push(1, 0, 0);
+			texCoords.push(1, 0, 0);
 			colors.push(...point.c);
 		}
 
-		const geometry = this.geometry;
+		const geometry = this.getGeometry();
 		geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
 		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
 		geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
-		geometry.setAttribute('aVertexColor', new Uint8BufferAttribute(colors, 4, 'color'));
+		geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(texCoords, 2, 'texCoord'));
+		geometry.setAttribute('aVertexColor', new Float32BufferAttribute(colors, 4, 'color'));
 		geometry.count = indices.length;
 	}
 
