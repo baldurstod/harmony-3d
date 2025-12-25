@@ -84,14 +84,14 @@ export class TextureManager {
 		return texture;
 	}
 
-	static createTextureFromImage(textureParams: CreateImageTextureParams) {
+	static async createTextureFromImage(textureParams: CreateImageTextureParams): Promise<Texture> {
 		textureParams.webgpuDescriptor.size = { width: textureParams.image.naturalWidth, height: textureParams.image.naturalHeight }//[image.naturalWidth, image.naturalHeight, 1];
 		const texture = this.createTexture(textureParams as CreateTextureParams);
-		fillTextureWithImage(texture, textureParams.image);
+		await fillTextureWithImage(texture, textureParams.image);
 		return texture;
 	}
 
-	static fillTextureWithImage(texture: Texture, image: HTMLImageElement) {
-		return fillTextureWithImage(texture, image);
+	static async fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void> {
+		return await fillTextureWithImage(texture, image);
 	}
 }

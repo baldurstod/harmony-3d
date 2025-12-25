@@ -215,7 +215,15 @@ export function fillNoiseTexture(texture: Texture, width = 64, height = 64, need
 	return texture;
 }
 
-export function fillTextureWithImage(texture: Texture, image: HTMLImageElement) {
+export async function fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void> {
+	if (Graphics.isWebGPU) {
+		return fillTextureWithImageWebGPU(texture, image);
+	} else {
+		return fillTextureWithImageWebGL(texture, image);
+	}
+}
+
+async function fillTextureWithImageWebGL(texture: Texture, image: HTMLImageElement): Promise<void> {
 	context.bindTexture(GL_TEXTURE_2D, texture.texture);
 	context.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha);
 	context.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, texture.flipY);
@@ -225,4 +233,15 @@ export function fillTextureWithImage(texture: Texture, image: HTMLImageElement) 
 	texture.width = image.width;
 	texture.height = image.height;
 	context.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+}
+
+async function fillTextureWithImageWebGPU(texture: Texture, image: HTMLImageElement): Promise<void> {
+	const source = await createImageBitmap(image, { colorSpaceConversion: 'none' });
+
+	WebGPUInternal.device.queue.copyExternalImageToTexture(
+		{ source, flipY: true },
+		{ texture: texture.texture as GPUTexture },
+		{ width: source.width, height: source.height },
+	);
+	WebGPUInternal.device.queue.submit([]);
 }

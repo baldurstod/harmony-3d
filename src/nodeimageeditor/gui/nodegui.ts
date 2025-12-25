@@ -50,7 +50,7 @@ async function dropFiles(evt: DragEvent, node: Node): Promise<void> {
 			}
 			texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
-			TextureManager.fillTextureWithImage(texture, image);
+			await TextureManager.fillTextureWithImage(texture, image);
 			(node as ApplySticker | TextureLookup).inputTexture = texture;
 			node.invalidate();
 			node.validate();
@@ -91,7 +91,7 @@ async function dropFilesSpecular(evt: DragEvent, node: Node): Promise<void> {
 			}
 			texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
-			TextureManager.fillTextureWithImage(texture, image);
+			await TextureManager.fillTextureWithImage(texture, image);
 			const specular = node.getInput('specular');
 			if (specular) {
 				specular.value = texture;
