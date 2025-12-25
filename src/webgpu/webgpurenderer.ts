@@ -179,6 +179,7 @@ export class WebGPURenderer implements Renderer {
 
 		getDefines(object, defines);
 		getDefines(material, defines);
+
 		if (renderLights) {
 			this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
 			/*
@@ -571,6 +572,7 @@ export class WebGPURenderer implements Renderer {
 				depthWriteEnabled: material.depthMask,
 				depthCompare: material.depthTest ? 'less' : 'always',
 				format: 'depth24plus',
+				depthBias: material.polygonOffset ? -material.polygonOffsetFactor * material.polygonOffsetUnits: 0,
 			},
 			layout: pipelineLayout,
 		};
