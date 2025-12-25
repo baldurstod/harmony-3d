@@ -7,6 +7,7 @@ import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
 import { vec3ToJSON } from '../utils/json';
+import { ortho } from '../math/ortho';
 
 export enum CameraProjection {
 	Perspective = 0,
@@ -111,13 +112,13 @@ export class Camera extends Entity {
 		if (this.#projection == CameraProjection.Perspective) {
 			mat4.perspective(this.#projectionMatrix, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
 		} else if (this.#projection == CameraProjection.Orthographic) {
-			const ortho = this.#orthoZoom;
-			mat4.ortho(this.#projectionMatrix, this.#left / ortho, this.#right / ortho, this.#bottom / ortho, this.#top / ortho, this.#nearPlane, this.#farPlane);
+			const orthoZoom = this.#orthoZoom;
+			ortho(this.#projectionMatrix, this.#left / orthoZoom, this.#right / orthoZoom, this.#bottom / orthoZoom, this.#top / orthoZoom, this.#nearPlane, this.#farPlane);
 		} else {
 			// Mixed perspective / ortho
 			const invOrtho = 1 / this.#orthoZoom;
 			mat4.perspective(proj1, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
-			mat4.ortho(proj2, this.#left * invOrtho, this.#right * invOrtho, this.#bottom * invOrtho, this.#top * invOrtho, this.#nearPlane, this.#farPlane);
+			ortho(proj2, this.#left * invOrtho, this.#right * invOrtho, this.#bottom * invOrtho, this.#top * invOrtho, this.#nearPlane, this.#farPlane);
 
 			mat4.multiplyScalar(this.#projectionMatrix, proj1, 1 - this.#projectionMix);
 			mat4.multiplyScalarAndAdd(this.#projectionMatrix, this.#projectionMatrix, proj2, this.#projectionMix);

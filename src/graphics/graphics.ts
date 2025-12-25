@@ -10,6 +10,7 @@ import { pickList } from '../entities/picklist';
 import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { isNumeric } from '../math/functions';
+import { setClipSpaceWebGPU } from '../math/ortho';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
 import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
@@ -877,6 +878,7 @@ class Graphics {
 			}
 			WebGPUInternal.gpuContext = context;
 			this.isWebGPU = true;
+			setClipSpaceWebGPU();
 			//context.configure(configuration);
 			await this.#configureWebGPU(configuration);
 
