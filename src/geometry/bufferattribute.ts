@@ -166,7 +166,7 @@ export class BufferAttribute {
 	}
 
 	clone() {
-		return new (this.constructor as typeof BufferAttribute)(this.#source, this.elementSize, this.itemSize, this.wgslName, this.wgslFormat/*, this._array.byteOffset, this._array.byteLength*/);
+		return new (this.constructor as typeof Uint8BufferAttribute)(this.#source, this.itemSize, this.wgslName/*, this._array.byteOffset, this._array.byteLength*/);
 	}
 
 	setSource(source: any) {
