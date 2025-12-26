@@ -871,6 +871,13 @@ class Graphics {
 			return;
 		}
 
+		if (canvas.width === 0) {
+			canvas.width = 1;
+		}
+		if (canvas.height === 0) {
+			canvas.height = 1;
+		}
+
 		try {
 			const context = canvas.getContext('webgpu');
 			if (context == null) {
