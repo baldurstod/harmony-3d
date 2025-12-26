@@ -8,9 +8,9 @@ import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '
 import { SpriteSheet } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
+import { errorOnce } from '../../../utils/console';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_SRGB } from './vtfconstants';
-import { errorOnce } from '../../../utils/console';
 
 export interface VTFMipMap {
 	height: number;
@@ -284,10 +284,11 @@ export class Source1Vtf {
 	#fillTextureWebGPU(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
 		WebGPUInternal.device.queue.writeTexture(
 			{ texture: texture.texture as GPUTexture },
-			data as BufferSource,
-			{ bytesPerRow: width * 4 /*TODO: depends on compression*/},
+			this.#getWebGPUData(data) as BufferSource,
+			{ bytesPerRow: this.#getWebGPUBytesPerRow(width) },
 			{ width: width, height: height },
 		);
+		WebGPUInternal.device.queue.submit([]);
 	}
 
 	/**
@@ -492,6 +493,81 @@ return 0;
 			}
 		} else {
 			return 'rgba8unorm';
+		}
+	}
+
+	#getWebGPUBytesPerRow(width: number): number {
+		// TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
+		// TODO: set up a map to do that
+		switch (this.highResImageFormat) {
+			case IMAGE_FORMAT_RGBA16161616F:
+			case IMAGE_FORMAT_RGBA16161616:
+				return width * 8;
+			case IMAGE_FORMAT_RGBA8888:
+			case IMAGE_FORMAT_ABGR8888:
+			case IMAGE_FORMAT_ARGB8888:
+			case IMAGE_FORMAT_BGRA8888:
+			case IMAGE_FORMAT_BGRX8888:
+			case IMAGE_FORMAT_UVWQ8888:
+			case IMAGE_FORMAT_UVLX8888:
+			// The following case are remapped to rgba, rgb doesn't exist in webgpu
+			case IMAGE_FORMAT_RGB888:
+			case IMAGE_FORMAT_BGR888:
+			case IMAGE_FORMAT_RGB888_BLUESCREEN:
+			case IMAGE_FORMAT_BGR888_BLUESCREEN:
+				return width * 4;
+			case IMAGE_FORMAT_BGRX5551:
+				return width * 3;
+			case IMAGE_FORMAT_IA88:
+			case IMAGE_FORMAT_RGB565:
+			case IMAGE_FORMAT_BGR565:
+			case IMAGE_FORMAT_BGRA4444:
+			case IMAGE_FORMAT_BGRA5551:
+			case IMAGE_FORMAT_UV88:
+				return width * 2;
+			case IMAGE_FORMAT_A8:
+			case IMAGE_FORMAT_I8:
+			case IMAGE_FORMAT_P8:
+				return width;
+			case IMAGE_FORMAT_DXT1:
+			case IMAGE_FORMAT_DXT1_ONEBITALPHA:
+				return width * 2;
+			case IMAGE_FORMAT_DXT3:
+				// TODO: check the result
+				return width;
+			case IMAGE_FORMAT_DXT5:
+				// TODO: check the result
+				return width * 4;
+			default:
+				errorOnce('WebGPU: unknown vtf format ' + this.highResImageFormat);
+				return width * 4;
+		}
+	}
+
+	#getWebGPUData(data: Uint8Array | Float32Array): Uint8Array | Float32Array {
+		switch (this.highResImageFormat) {
+			case IMAGE_FORMAT_RGB888:
+			case IMAGE_FORMAT_BGR888:
+			case IMAGE_FORMAT_RGB565:
+			case IMAGE_FORMAT_RGB888_BLUESCREEN:
+			case IMAGE_FORMAT_BGR888_BLUESCREEN:
+				let rgba: Uint8Array | Float32Array;
+				if (data instanceof Uint8Array) {
+					rgba = new Uint8Array(data.length * 4 / 3);
+				} else {
+					rgba = new Float32Array(data.length * 4 / 3);
+				}
+
+				let j = 0;
+				for (let i = 0; i < data.length;) {
+					rgba[j++] = data[i++]!;
+					rgba[j++] = data[i++]!;
+					rgba[j++] = data[i++]!;
+					rgba[j++] = 1.0;
+				}
+				return rgba;
+			default:
+				return data;
 		}
 	}
 }
