@@ -125,7 +125,7 @@ function getDefaultTexture(): Texture {
 					height: 1,
 				},
 				format: 'rgba8unorm',
-				usage: GPUTextureUsage.TEXTURE_BINDING,
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 			},
 			color: new Color(1, 1, 1),
 		});

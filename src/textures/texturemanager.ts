@@ -49,6 +49,8 @@ export class TextureManager {
 		}*/);
 		if (Graphics.isWebGPU) {
 			texture.sampler = WebGPUInternal.device.createSampler();
+			texture.width = textureParams.webgpuDescriptor.size.width;
+			texture.height = textureParams.webgpuDescriptor.size.height;
 		}
 		//TODOv3: init texture parameters
 		//texture.setParameters(Graphics.glContext, target);
