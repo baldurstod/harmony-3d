@@ -26,6 +26,8 @@ export interface VTFResourceEntry {
 
 export const VTF_ENTRY_IMAGE_DATAS = 48;
 
+type CubeMapDatas = [Uint8Array | Float32Array, Uint8Array | Float32Array, Uint8Array | Float32Array, Uint8Array | Float32Array, Uint8Array | Float32Array, Uint8Array | Float32Array];
+
 export class Source1Vtf {
 	repository: string;
 	fileName: string;
@@ -136,6 +138,10 @@ export class Source1Vtf {
 		return false;
 	}
 
+	isCubeMap(): boolean {
+		return (this.flags & TEXTUREFLAGS_ENVMAP) === TEXTUREFLAGS_ENVMAP;
+	}
+
 	/**
 	 * TODO
 	 */
@@ -179,8 +185,8 @@ export class Source1Vtf {
 	}
 
 	fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb = true): void {
-		if (this.flags & TEXTUREFLAGS_ENVMAP) {
-			this.#fillCubeMapTexture(glContext, texture.texture, mipmapLvl, srgb);
+		if (this.isCubeMap()) {
+			this.#fillCubeMapTexture(glContext, texture, mipmapLvl, srgb);
 		} else {
 			this.#fillTexture(glContext, texture, mipmapLvl, frame1, srgb);
 		}
@@ -231,7 +237,7 @@ export class Source1Vtf {
 		const data = mipmap.frames[frame]?.[face];
 		if (data) {
 			if (Graphics.isWebGPU) {
-				this.#fillTextureWebGPU(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
+				this.#fillTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
 			} else {
 				this.#fillTextureWebGL(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
 			}
@@ -281,7 +287,7 @@ export class Source1Vtf {
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#fillTextureWebGPU(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
+	#fillTextureWebGPU(texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
 		WebGPUInternal.device.queue.writeTexture(
 			{ texture: texture.texture as GPUTexture },
 			this.#getWebGPUData(data) as BufferSource,
@@ -291,10 +297,7 @@ export class Source1Vtf {
 		WebGPUInternal.device.queue.submit([]);
 	}
 
-	/**
-	 * TODO
-	 */
-	#fillCubeMapTexture(glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, mipmapLvl: number, srgb: boolean): void {
+	#fillCubeMapTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, srgb: boolean): void {
 		if (mipmapLvl == undefined) {
 			mipmapLvl = this.mipmapCount - 1;
 		} else {
@@ -323,8 +326,8 @@ export class Source1Vtf {
 			return;
 		}
 
-		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
-		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+		//glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
+		//glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
 		const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
 		const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
@@ -338,6 +341,12 @@ export class Source1Vtf {
 		const data5 = mipmap.frames[frame]?.[5];
 
 		if (data0 && data1 && data2 && data3 && data4 && data5) {
+			if (Graphics.isWebGPU) {
+				this.#fillCubeMapTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame] as CubeMapDatas);
+			} else {
+				this.#fillCubeMapTextureWebGL(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame] as CubeMapDatas);
+			}
+			/*
 			if (this.isDxtCompressed()) {
 				const isSRGB = srgb && this.isSRGB();
 				const st3cFormat = vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc;
@@ -356,6 +365,41 @@ export class Source1Vtf {
 				glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), data4);
 				glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), data5);
 			}
+			*/
+		}
+		/*
+		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, clampS ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, clampT ? GL_CLAMP_TO_EDGE : GL_REPEAT);
+		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+		*/
+
+		//this.filled = true;
+	}
+
+	#fillCubeMapTextureWebGL(glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: CubeMapDatas): void {
+
+		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
+		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+
+		if (this.isDxtCompressed()) {
+			const isSRGB = srgb && this.isSRGB();
+			const st3cFormat = vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc;
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, width, height, st3cFormat, data[0], clampS, clampT, isSRGB);
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, width, height, st3cFormat, data[1], clampS, clampT, isSRGB);
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, width, height, st3cFormat, data[2], clampS, clampT, isSRGB);
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, width, height, st3cFormat, data[3], clampS, clampT, isSRGB);
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, width, height, st3cFormat, data[4], clampS, clampT, isSRGB);
+			fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, width, height, st3cFormat, data[5], clampS, clampT, isSRGB);
+		} else {
+			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[0]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[1]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[2]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[3]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[4]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), width, height, 0, this.getFormat(), this.getType(), data[5]);
 		}
 
 		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -365,6 +409,19 @@ export class Source1Vtf {
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 
 		//this.filled = true;
+	}
+
+	#fillCubeMapTextureWebGPU(texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: CubeMapDatas): void {
+		//		#fillTextureWebGPU(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
+		for (let i = 0; i < 6; ++i) {
+			WebGPUInternal.device.queue.writeTexture(
+				{ texture: texture.texture as GPUTexture, origin: [0, 0, i] },
+				this.#getWebGPUData(data[i]!) as BufferSource,
+				{ bytesPerRow: this.#getWebGPUBytesPerRow(width) },
+				{ width: width, height: height },
+			);
+		}
+		WebGPUInternal.device.queue.submit([]);
 	}
 
 	/*
@@ -379,10 +436,10 @@ export class Source1Vtf {
 			/* TODO: check format */
 	/*case IMAGE_FORMAT_DXT1_ONEBITALPHA:
 		return s3tc.COMPRESSED_RGB_S3TC_DXT1_EXT;* /
-}
-return 0;
-}
-*/
+	}
+	return 0;
+	}
+	*/
 
 	getFormat(): number {
 		switch (this.highResImageFormat) {

@@ -173,6 +173,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 				size: {
 					width: size.width,
 					height: size.height,
+					depthOrArrayLayers: vtf.isCubeMap() ? 6 : 1,
 				},
 				format: webGPUFormat,
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
