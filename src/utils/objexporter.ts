@@ -51,6 +51,7 @@ export class ObjExporter {
 			const promise = Graphics.savePictureAsFile(`mat_${meshId}.png`);
 			promise.then((file) => files.add(file));
 			promises.push(promise);
+			await promise;
 
 			++meshId;
 		}
