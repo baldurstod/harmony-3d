@@ -164,8 +164,8 @@ export class ModelLoader {
 							geometry.setIndex(new Uint32BufferAttribute(indices, 1, 'index'));
 							geometry.setAttribute('aVertexPosition', vertexPosition);
 							geometry.setAttribute('aVertexNormal', vertexNormal);
-							geometry.setAttribute('aVertexTangent', vertexTangent);
 							geometry.setAttribute('aTextureCoord', textureCoord);
+							geometry.setAttribute('aVertexTangent', vertexTangent);
 							geometry.setAttribute('aBoneWeight', vertexWeights);
 							geometry.setAttribute('aBoneIndices', vertexBones);
 							geometry.properties.set('materialId', new Property(PropertyType.Number, msh.material));

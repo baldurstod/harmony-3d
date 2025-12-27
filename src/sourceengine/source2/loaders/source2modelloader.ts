@@ -461,8 +461,8 @@ export class Source2ModelLoader {
 				geometry.setIndex(indices);
 				geometry.setAttribute('aVertexPosition', vertexPosition);
 				geometry.setAttribute('aVertexNormal', vertexNormal);
-				geometry.setAttribute('aVertexTangent', vertexTangent);
 				geometry.setAttribute('aTextureCoord', textureCoord);
+				geometry.setAttribute('aVertexTangent', vertexTangent);
 				geometry.setAttribute('aBoneWeight', vertexWeights);
 				geometry.setAttribute('aBoneIndices', vertexBones);
 				geometry.count = indexCount//Number(drawCall.m_nIndexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
