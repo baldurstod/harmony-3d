@@ -214,18 +214,26 @@ export class WebGPURenderer implements Renderer {
 			return;
 		}
 
-		const size = Math.ceil(indices.length / 2) * 4;
-		const indexBuffer = device.createBuffer({
-			label: 'index',
-			//size: sphereMesh.indices.byteLength,
-			size: size,
-			usage: GPUBufferUsage.INDEX,
-			mappedAtCreation: true,
-		});
+		let indexBuffer: GPUBuffer | undefined = indexAttribute.gpuBuffer;
+		if (indexAttribute.dirty || !indexAttribute.gpuBuffer) {
+			const size = Math.ceil(indices.length / 2) * 4;
 
-		new Uint16Array(indexBuffer.getMappedRange()).set(indices);
-		indexBuffer.unmap();
+			if (indexBuffer) {
+				indexBuffer.destroy();
+			}
 
+			indexBuffer = device.createBuffer({
+				label: 'index',
+				//size: sphereMesh.indices.byteLength,
+				size: size,
+				usage: GPUBufferUsage.INDEX,
+				mappedAtCreation: true,
+			});
+
+			new Uint16Array(indexBuffer.getMappedRange()).set(indices);
+			indexBuffer.unmap();
+			indexAttribute.gpuBuffer = indexBuffer;
+		}
 		/*
 		const vertices = new Float32Array([
 			0.0, 0.6, 0, 1, 1, 0, 0, 1,
@@ -527,7 +535,7 @@ export class WebGPURenderer implements Renderer {
 
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
 
-		passEncoder.setIndexBuffer(indexBuffer, 'uint16');// TODO: this could also be uint32
+		passEncoder.setIndexBuffer(indexBuffer!, 'uint16');// TODO: this could also be uint32
 		const vertexBuffers: GPUVertexBufferLayout[] = [];
 		for (const [, attribute] of geometryAttributes) {
 			const location = shaderModule.attributes.get(attribute.wgslName);
@@ -535,16 +543,23 @@ export class WebGPURenderer implements Renderer {
 				continue;
 			}
 
-			const attributeArray = attribute._array;
-			if (attributeArray) {
-				const attributeBuffer = device.createBuffer({
-					label: attribute.wgslName,
-					size: attributeArray.length * attribute.elementSize,
-					usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-				});
-				device.queue.writeBuffer(attributeBuffer, 0, attributeArray as BufferSource, 0, attributeArray.length);
-				passEncoder.setVertexBuffer(location, attributeBuffer);
+			if (attribute.dirty || !attribute.gpuBuffer) {
+				const attributeArray = attribute._array;
+
+				if (attribute.gpuBuffer) {
+					attribute.gpuBuffer.destroy();
+				}
+
+				if (attributeArray) {
+					attribute.gpuBuffer = device.createBuffer({
+						label: attribute.wgslName,
+						size: attributeArray.length * attribute.elementSize,
+						usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+					});
+					device.queue.writeBuffer(attribute.gpuBuffer, 0, attributeArray as BufferSource, 0, attributeArray.length);
+				}
 			}
+			passEncoder.setVertexBuffer(location, attribute.gpuBuffer);
 
 
 			vertexBuffers.push({
@@ -582,7 +597,7 @@ export class WebGPURenderer implements Renderer {
 				depthWriteEnabled: material.depthMask,
 				depthCompare: material.depthTest ? 'less' : 'always',
 				format: 'depth24plus',
-				depthBias: material.polygonOffset ? -material.polygonOffsetFactor * material.polygonOffsetUnits: 0,
+				depthBias: material.polygonOffset ? -material.polygonOffsetFactor * material.polygonOffsetUnits : 0,
 			},
 			layout: pipelineLayout,
 		};

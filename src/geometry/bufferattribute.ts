@@ -34,6 +34,7 @@ export class BufferAttribute {
 	// TODO: change WebGL attribute names and remove this
 	readonly wgslName: string;
 	readonly wgslFormat: GPUVertexFormat;
+	gpuBuffer?: GPUBuffer;
 
 	constructor(array: TypedArrayNumber | null, elementSize: number, itemSize: number, wgslName: string, wgslFormat: GPUVertexFormat) {
 		this.itemSize = itemSize;
