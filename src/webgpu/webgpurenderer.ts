@@ -467,17 +467,25 @@ export class WebGPURenderer implements Renderer {
 			for (const shaderTexture of shaderModule.reflection.textures) {
 				switch (shaderTexture.name) {
 					case 'colorTexture':
-						const texture = (material.uniforms.colorMap as Texture | undefined)?.texture;
+						const texture = (material.uniforms.colorMap as Texture | undefined)?.texture as GPUTexture | undefined;
 						if (texture) {
-							groups.set(shaderTexture.group, shaderTexture.binding, { texture: texture as GPUTexture });
+							groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 						}
 						break;
 					default:
-						// TODO
+						{
+							const texture = (material.uniforms[shaderTexture.name] as Texture | undefined)?.texture as GPUTexture | undefined;
+							if (texture) {
+								groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+							} else {
+								errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+							}
+						}
 						break;
 				}
 			}
 
+			// TODO: set samplers and texture in a single pass ?
 			for (const shaderSampler of shaderModule.reflection.samplers) {
 				switch (shaderSampler.name) {
 					case 'colorSampler':
@@ -487,7 +495,15 @@ export class WebGPURenderer implements Renderer {
 						}
 						break;
 					default:
-						// TODO
+						{
+							const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
+							const sampler = (material.uniforms[name] as Texture | undefined)?.sampler;
+							if (sampler) {
+								groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+							} else {
+								errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
+							}
+						}
 						break;
 				}
 			}
