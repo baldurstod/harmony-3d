@@ -568,6 +568,8 @@ class Graphics {
 			}
 		}
 
+		this.renderBackground();//TODOv3 put in rendering pipeline
+
 		const width = this.#canvas?.width ?? this.#offscreenCanvas?.width ?? 0;
 		const height = this.#canvas?.height ?? this.#offscreenCanvas?.height ?? 0;
 
