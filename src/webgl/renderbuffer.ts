@@ -30,7 +30,7 @@ function renderbufferStorage(renderbuffer: WebGLRenderbuffer, internalFormat: Re
 }
 
 export class Renderbuffer {
-	#renderbuffer: WebGLRenderbuffer;
+	#renderbuffer: WebGLRenderbuffer | null;
 	#internalFormat: RenderBufferInternalFormat;
 	#samples?: GLsizei;
 
@@ -38,19 +38,25 @@ export class Renderbuffer {
 		this.#renderbuffer = Graphics.createRenderbuffer();
 		this.#internalFormat = internalFormat;
 		this.#samples = samples;
-		renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+		if (this.#renderbuffer) {
+			renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+		}
 	}
 
 	resize(width: number, height: number): void {
-		renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+		if (this.#renderbuffer) {
+			renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+		}
 	}
 
-	getRenderbuffer(): WebGLRenderbuffer {
+	getRenderbuffer(): WebGLRenderbuffer | null {
 		return this.#renderbuffer;
 	}
 
 	dispose(): void {
-		Graphics.deleteRenderbuffer(this.#renderbuffer);
+		if (this.#renderbuffer) {
+			Graphics.deleteRenderbuffer(this.#renderbuffer);
+		}
 	}
 
 }

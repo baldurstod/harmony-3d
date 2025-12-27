@@ -253,6 +253,7 @@ class Graphics {
 	static #autoResize = false;
 	static isWebGL = false;
 	static isWebGL2 = false;
+	static isWebGLAny = false;
 	static isWebGPU = false;
 	static autoClear = true;
 	static autoClearColor = false;
@@ -818,6 +819,7 @@ class Graphics {
 				this.glContext = (canvas.getContext('webgl2', contextAttributes) as WebGL2RenderingContext);
 				if (this.glContext instanceof WebGL2RenderingContext) {
 					this.isWebGL2 = true;
+					this.isWebGLAny = true;
 					WebGLShaderSource.isWebGL2 = true;
 					this.setIncludeCode('WEBGL2', '#define WEBGL2');
 				} else {
@@ -827,6 +829,7 @@ class Graphics {
 				this.glContext = (canvas.getContext('webgl', contextAttributes) as WebGLRenderingContext);
 				if (this.glContext instanceof WebGLRenderingContext) {
 					this.isWebGL = true;
+					this.isWebGLAny = true;
 					this.setIncludeCode('WEBGL1', '#define WEBGL1');
 
 					//TODO: put this in a separate function and alert the user in case of failure
@@ -1186,7 +1189,11 @@ class Graphics {
 		return this.#running;
 	}
 
-	static createFramebuffer() {
+	static createFramebuffer(): WebGLFramebuffer | null {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return null;
+		}
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -1202,7 +1209,11 @@ class Graphics {
 		this.glContext!.deleteFramebuffer(frameBuffer);
 	}
 
-	static createRenderbuffer() {
+	static createRenderbuffer(): WebGLRenderbuffer | null {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return null;
+		}
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -1217,6 +1228,10 @@ class Graphics {
 	}
 
 	static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return;
+		}
 		this.glContext!.deleteRenderbuffer(renderBuffer);
 	}
 
@@ -1228,12 +1243,20 @@ class Graphics {
 	*/
 
 	static pushRenderTarget(renderTarget: RenderTarget | null) {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return;
+		}
 		const viewport = this.getViewport(vec4.create());
 		this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
 		this.#setRenderTarget(renderTarget, viewport);
 	}
 
 	static popRenderTarget(): void {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return;
+		}
 		const popResult = this.#renderTargetStack.pop();
 		const target = this.#renderTargetStack[this.#renderTargetStack.length - 1];
 		if (target) {
@@ -1245,7 +1268,11 @@ class Graphics {
 		}
 	}
 
-	static #setRenderTarget(renderTarget: RenderTarget | null, viewport: ReadonlyVec4) {
+	static #setRenderTarget(renderTarget: RenderTarget | null, viewport: ReadonlyVec4): void {
+		if (this.isWebGPU) {
+			// TODO: do WebGPU version
+			return;
+		}
 		if (!renderTarget) {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();

@@ -19,7 +19,7 @@ type FramebufferAttachment = {
 
 export class Framebuffer {
 	#target: FrameBufferTarget;
-	#frameBuffer: WebGLFramebuffer;
+	#frameBuffer: WebGLFramebuffer | null;
 	#width = 1;
 	#height = 1;
 	#attachments = new Map<GLenum, FramebufferAttachment>();
@@ -91,6 +91,10 @@ export class Framebuffer {
 	}
 
 	bind(): void {
+		if (Graphics.isWebGPU) {
+			// TODO: do WebGPU version
+			return;
+		}
 		if (ENABLE_GET_ERROR && DEBUG) {
 			Graphics.cleanupGLError();
 		}
@@ -108,7 +112,9 @@ export class Framebuffer {
 	}
 
 	dispose(): void {
-		Graphics.deleteFramebuffer(this.#frameBuffer);
+		if (this.#frameBuffer) {
+			Graphics.deleteFramebuffer(this.#frameBuffer);
+		}
 		for (const [, attachment] of this.#attachments) {
 			switch (attachment.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:

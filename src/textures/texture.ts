@@ -1,4 +1,5 @@
 import { TESTING } from '../buildoptions';
+import { Graphics } from '../graphics/graphics2';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
@@ -77,28 +78,37 @@ export class Texture {
 	}
 
 	setParameters(glContext: WebGLAnyRenderingContext, target: GLenum) {
-		glContext.bindTexture(target, this.texture);
-		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY);
-		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
-		glContext.texParameteri(target, GL_TEXTURE_MAG_FILTER, this.magFilter);
-		glContext.texParameteri(target, GL_TEXTURE_MIN_FILTER, this.minFilter);
-		glContext.texParameteri(target, GL_TEXTURE_WRAP_S, this.wrapS);
-		glContext.texParameteri(target, GL_TEXTURE_WRAP_T, this.wrapT);
-		glContext.bindTexture(target, null);
+		if (Graphics.isWebGLAny) {
+			glContext.bindTexture(target, this.texture);
+			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY);
+			glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
+			glContext.texParameteri(target, GL_TEXTURE_MAG_FILTER, this.magFilter);
+			glContext.texParameteri(target, GL_TEXTURE_MIN_FILTER, this.minFilter);
+			glContext.texParameteri(target, GL_TEXTURE_WRAP_S, this.wrapS);
+			glContext.texParameteri(target, GL_TEXTURE_WRAP_T, this.wrapT);
+			glContext.bindTexture(target, null);
+		}
+		// TODO: do WebGPU version
 	}
 
 	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level = 0) {
-		glContext.bindTexture(target, this.texture);
-		glContext.texImage2D(target, level, this.internalFormat, width, height, 0, format, type, pixels);
-		glContext.bindTexture(target, null);
-		this.width = width;
-		this.height = height;
+		if (Graphics.isWebGLAny) {
+			glContext.bindTexture(target, this.texture);
+			glContext.texImage2D(target, level, this.internalFormat, width, height, 0, format, type, pixels);
+			glContext.bindTexture(target, null);
+			this.width = width;
+			this.height = height;
+		}
+		// TODO: do WebGPU version
 	}
 
 	generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum) {
-		glContext.bindTexture(target, this.texture);
-		glContext.generateMipmap(target);
-		glContext.bindTexture(target, null);
+		if (Graphics.isWebGLAny) {
+			glContext.bindTexture(target, this.texture);
+			glContext.generateMipmap(target);
+			glContext.bindTexture(target, null);
+		}
+		// TODO: generate mipmaps for webgpu
 	}
 
 	clone() {
