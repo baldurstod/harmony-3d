@@ -19,9 +19,9 @@
 
 @vertex
 fn vertex_main(
-	@location(0) position: vec3f,
-	@location(1) normal: vec3f,
-	@location(2) texCoord: vec2f,
+	@location(x) position: vec3f,
+	@location(x) normal: vec3f,
+	@location(x) texCoord: vec2f,
 ) -> VertexOut
 {
 	var output : VertexOut;

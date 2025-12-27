@@ -347,7 +347,7 @@ export class WebGLShaderSource {
 	#getWebGPUCompileError(convertRows = true): Annotation[] {
 		const errorArray: Annotation[] = [];
 
-		const lineMap = WgslPreprocessor.preprocessWgslLineMap(this.#compileSource, this.erroneousDefines);
+		const lineMap = WgslPreprocessor.preprocessWgslSourceMap(this.#compileSource, this.erroneousDefines);
 
 		if (this.#compilationInfo) {
 			for (const message of this.#compilationInfo.messages) {
