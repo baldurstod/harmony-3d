@@ -1,9 +1,9 @@
 #ifdef SKELETAL_MESH
 	#ifdef HARDWARE_SKINNING
-		mat4 skinMat = accumulateSkinMat();
-		vec4 vertexPositionWorldSpace = skinMat * vertexPositionModelSpace;
-		vec3 vertexNormalWorldSpace = vec3(skinMat * vertexNormalModelSpace).xyz;
-		vec3 vertexTangentWorldSpace = vec3(skinMat * vertexTangentModelSpace).xyz;
+		let skinMat: mat4x4f = accumulateSkinMat(boneWeights, boneIndices);
+		let vertexPositionWorldSpace: vec4f = skinMat * vertexPositionModelSpace;
+		let vertexNormalWorldSpace: vec3f = (skinMat * vertexNormalModelSpace).xyz;
+		let vertexTangentWorldSpace: vec3f = (skinMat * vertexTangentModelSpace).xyz;
 	#else
 		#define vertexPositionWorldSpace vertexPositionModelSpace
 		#define vertexNormalWorldSpace vertexNormalModelSpace.xyz
@@ -21,7 +21,7 @@ output.vVertexNormalWorldSpace = vertexNormalWorldSpace;
 #endif
 
 #ifdef USE_VERTEX_TANGENT
-	let vertexBitangentWorldSpace: vec3f = cross( vertexNormalWorldSpace, vertexTangentWorldSpace) * aVertexTangent.w;
+	let vertexBitangentWorldSpace: vec3f = cross( vertexNormalWorldSpace, vertexTangentWorldSpace) * tangent.w;
 #else
 	//TODO: compute it properly
 	let vertexBitangentWorldSpace: vec3f = cross( vertexNormalWorldSpace, vertexTangentWorldSpace) * -1.0;

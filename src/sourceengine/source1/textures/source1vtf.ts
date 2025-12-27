@@ -344,7 +344,7 @@ export class Source1Vtf {
 			if (Graphics.isWebGPU) {
 				this.#fillCubeMapTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame] as CubeMapDatas);
 			} else {
-				this.#fillCubeMapTextureWebGL(glContext, texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame] as CubeMapDatas);
+				this.#fillCubeMapTextureWebGL(glContext, texture.texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame] as CubeMapDatas);
 			}
 			/*
 			if (this.isDxtCompressed()) {

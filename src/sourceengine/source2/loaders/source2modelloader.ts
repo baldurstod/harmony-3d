@@ -453,7 +453,7 @@ export class Source2ModelLoader {
 				}
 				const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(meshIndex, bufferIndex), 2, 'texCoord');
 				const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(meshIndex, bufferIndex), 4, 'boneWeights');
-				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4, 'boneIndices');
+				const vertexBones = new Uint32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4, 'boneIndices');
 
 				const geometry = new BufferGeometry();
 				geometry.properties.setNumber('lodGroupMask', lodGroupMask);
