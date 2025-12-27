@@ -333,7 +333,7 @@ export class Source1Material extends Material {
 		}
 
 		const lightWarpTexture = vmt['$lightwarptexture'];
-		this.setTexture('lightWarpMap', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
+		this.setTexture('lightWarpTexture', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 		if (vmt['$phong'] == 1) {
 			this.setDefine('USE_PHONG_SHADING');
@@ -617,7 +617,7 @@ export class Source1Material extends Material {
 		}
 
 		const lightWarpTexture = parameters['$lightwarptexture'];
-		this.setTexture('lightWarpMap', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
+		this.setTexture('lightWarpTexture', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 
 		if (variables.get('$selfillum') == 1) {
