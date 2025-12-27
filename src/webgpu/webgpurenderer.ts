@@ -1,5 +1,4 @@
 import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
-import { TypedArrayNumber } from 'harmony-types';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
@@ -233,6 +232,7 @@ export class WebGPURenderer implements Renderer {
 			new Uint16Array(indexBuffer.getMappedRange()).set(indices);
 			indexBuffer.unmap();
 			indexAttribute.gpuBuffer = indexBuffer;
+			indexAttribute.dirty = false;
 		}
 		/*
 		const vertices = new Float32Array([
@@ -396,7 +396,19 @@ export class WebGPURenderer implements Renderer {
 							}
 						}
 					} else {
-						//console.error('unknwon array uniform', uniform.name);
+						switch (uniform.name) {
+							case 'boneMatrix':
+								const bufferSource = object.uniforms[uniform.name];
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									bufferSource,
+								);
+								break;
+							default:
+								errorOnce('unknwon array uniform ' + uniform.name);
+								break;
+						}
 
 					}
 				} else {// uniform is neither a struct nor an array
@@ -557,6 +569,7 @@ export class WebGPURenderer implements Renderer {
 						usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
 					});
 					device.queue.writeBuffer(attribute.gpuBuffer, 0, attributeArray as BufferSource, 0, attributeArray.length);
+					attribute.dirty = false;
 				}
 			}
 			passEncoder.setVertexBuffer(location, attribute.gpuBuffer);

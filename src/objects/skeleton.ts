@@ -18,7 +18,7 @@ export class Skeleton extends Entity {
 	#rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
 	_bones: Bone[] = [];//TODOv3: rename set private
 	_dirty = true;
-	#imgData!: Float32Array;
+	readonly imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
 	#texture!: Texture;
 	lastComputed = 0;
 
@@ -49,11 +49,11 @@ export class Skeleton extends Entity {
 	}
 
 	#createBoneMatrixArray() {
-		this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
-		mat4.identity(this.#imgData);
+		//this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
+		mat4.identity(this.imgData);
 		const index = 0;
 		for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
-			this.#imgData.copyWithin(i * 16, 0, 16);
+			this.imgData.copyWithin(i * 16, 0, 16);
 		}
 	}
 
@@ -79,9 +79,9 @@ export class Skeleton extends Entity {
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (Graphics.isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4/* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
@@ -89,7 +89,7 @@ export class Skeleton extends Entity {
 	setBonesMatrix() {
 		let index = 0;
 		const bones = this._bones;
-		const imgData = this.#imgData;
+		const imgData = this.imgData;
 
 		let pose;
 		if (bones.length == 0) {
