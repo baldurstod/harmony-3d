@@ -1,4 +1,5 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
@@ -7,7 +8,6 @@ import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
-import { JSONObject } from 'harmony-types';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../webgl/constants';
 import { Bone } from './bone';
 
@@ -27,7 +27,10 @@ export class Skeleton extends Entity {
 		//this.bones = Object.create(null);//TODOv3: rename
 
 		this.#createBoneMatrixArray();
-		this.#createBoneMatrixTexture();
+
+		if (!Graphics.isWebGPU) {
+			this.#createBoneMatrixTexture();
+		}
 		this.dirty();
 	}
 
@@ -55,16 +58,16 @@ export class Skeleton extends Entity {
 	}
 
 	#createBoneMatrixTexture() {
-			this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
-				webgpuDescriptor: {
-					size: {
-						width: 4/* matrix cols */,
-						height: MAX_HARDWARE_BONES,
-					},
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.TEXTURE_BINDING,
-				}
-			});
+		this.#texture = TextureManager.createTexture({
+			webgpuDescriptor: {
+				size: {
+					width: 4/* matrix cols */,
+					height: MAX_HARDWARE_BONES,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING,
+			}
+		});
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);//TODOv3: pass param to texture and remove this
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -103,7 +106,9 @@ export class Skeleton extends Entity {
 			}
 		}
 
-		this.#updateBoneMatrixTexture();
+		if (!Graphics.isWebGPU) {
+			this.#updateBoneMatrixTexture();
+		}
 	}
 
 	set position(position) {
