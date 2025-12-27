@@ -29,3 +29,6 @@ addWgslInclude('declare_texture_transform', declare_texture_transform);
 
 import declare_vertex_skinning from './declare_vertex_skinning.wgsl';
 addWgslInclude('declare_vertex_skinning', declare_vertex_skinning);
+
+import declare_vertex_standard_params from './declare_vertex_standard_params.wgsl';
+addWgslInclude('declare_vertex_standard_params', declare_vertex_standard_params);
