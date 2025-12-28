@@ -1,10 +1,10 @@
 #include matrix_uniforms
 
-@group(0) @binding(10) var<uniform> resolution : vec4f;
-@group(0) @binding(11) var<uniform> linewidth : f32;
+@group(0) @binding(x) var<uniform> resolution : vec4f;
+@group(0) @binding(x) var<uniform> linewidth : f32;
 
 #ifdef USE_DASH
-	@group(0) @binding(12) var<uniform> dashScale : f32;
+	@group(0) @binding(x) var<uniform> dashScale : f32;
 	attribute float instanceDistanceStart;
 	attribute float instanceDistanceEnd;
 #endif

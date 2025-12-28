@@ -7,4 +7,4 @@ struct MatrixUniforms {
 	normalMatrix : mat3x3f,
 }
 
-@group(0) @binding(0) var<uniform> matrixUniforms : MatrixUniforms;
+@group(0) @binding(x) var<uniform> matrixUniforms : MatrixUniforms;

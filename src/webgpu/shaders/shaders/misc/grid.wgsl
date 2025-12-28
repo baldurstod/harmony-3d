@@ -1,6 +1,6 @@
 #include matrix_uniforms
 
-@group(0) @binding(1) var<uniform> uSpacing: f32;
+@group(0) @binding(x) var<uniform> uSpacing: f32;
 
 #include declare_fragment_standard
 #include declare_fragment_diffuse
