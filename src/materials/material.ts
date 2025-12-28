@@ -372,7 +372,7 @@ export class Material {
 	}
 
 	setDetailMap(texture: Texture | null) {
-		this.setTexture('detailMap', texture, 'USE_DETAIL_MAP');
+		this.setTexture('detailTexture', texture, 'USE_DETAIL_MAP');
 	}
 
 	setNormalMap(texture: Texture | null) {

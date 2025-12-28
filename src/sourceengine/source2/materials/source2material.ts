@@ -17,8 +17,8 @@ const UNIFORMS = new Map([
 	['g_tColorA', 'g_tColorA'],
 	['g_tColorB', 'g_tColorB'],
 	['g_tColorC', 'g_tColorC'],
-	//['g_tDetail', 'detailMap'],
-	//['g_tDetail2', 'detail2Map'],
+	//['g_tDetail', 'detailTexture'],
+	//['g_tDetail2', 'detail2Texture'],
 	['g_tMasks', 'g_tMasks'],
 	['g_tNormalA', 'g_tNormalA'],
 	['g_tEmissiveB', 'g_tEmissiveB'],
@@ -48,7 +48,7 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
 	['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
 	['g_tDetail', ['detail1Map', 'USE_DETAIL1_MAP']],
-	['g_tDetail2', ['detail2Map', 'USE_DETAIL2_MAP']],
+	['g_tDetail2', ['detail2Texture', 'USE_DETAIL2_MAP']],
 
 	['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
 
@@ -270,7 +270,7 @@ export class Source2Material extends Material {
 
 				let g_tDetail2 = this.getTextureByName('g_tDetail2');
 				if (g_tDetail2) {
-					this.uniforms['detail2Map'] = Source2TextureManager.getTexture(this.repository, g_tDetail2, 0);//TODOv3: rename uniform
+					this.uniforms['detail2Texture'] = Source2TextureManager.getTexture(this.repository, g_tDetail2, 0);//TODOv3: rename uniform
 					this.setDefine('USE_DETAIL2_MAP');//TODOv3: set this automaticaly
 				} else {
 					this.setDefine('USE_DETAIL2_MAP', false);//TODOv3: set this automaticaly

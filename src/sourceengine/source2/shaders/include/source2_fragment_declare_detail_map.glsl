@@ -9,6 +9,6 @@ export default `
 	uniform vec4 g_vDetail2TexCoordScale;
 	uniform vec4 g_vDetail2TexCoordOffset;
 	uniform vec4 g_vDetail2ColorTint;
-	uniform sampler2D detail2Map;
+	uniform sampler2D detail2Texture;
 #endif
 `;

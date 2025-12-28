@@ -119,9 +119,9 @@ uniform vec3 uCamoColor3;
 	c3.s = t3.s*cos(uPatternRotate)-t3.t*sin(uPatternRotate);
 	c3.t = t3.t*cos(uPatternRotate)+t3.s*sin(uPatternRotate);
 
-	vec4 cXY = texture2D(detailMap, c1);
-	vec4 cXZ = texture2D(detailMap, c2);
-	vec4 cYZ = texture2D(detailMap, c3);
+	vec4 cXY = texture2D(detailTexture, c1);
+	vec4 cXZ = texture2D(detailTexture, c2);
+	vec4 cYZ = texture2D(detailTexture, c3);
 
 	color = cXY*mXY + cXZ*mXZ + cYZ*mYZ;
 	return cYZ * (abs(mYZ)+abs(mXZ)) + cXY * mXY;//side good

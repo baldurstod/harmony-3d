@@ -5,6 +5,6 @@ export default `
 #endif
 #ifdef USE_DETAIL2_MAP
 	vec2 detail2Coord = vTextureCoord.xy * g_vDetail2TexCoordOffset.xy + g_vDetail2TexCoordOffset.xy;
-	vec4 detail2Color = g_vDetail2ColorTint * texture2D(detail2Map, detail2Coord);
+	vec4 detail2Color = g_vDetail2ColorTint * texture2D(detail2Texture, detail2Coord);
 #endif
 `;
