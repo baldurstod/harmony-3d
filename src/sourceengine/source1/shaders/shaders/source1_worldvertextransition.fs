@@ -6,7 +6,7 @@ uniform sampler2D color2Map;
 uniform sampler2D blendModulateMap;
 uniform sampler2D lightMap;
 /*uniform sampler2D normalMap;
-uniform samplerCube cubeMap;*/
+uniform samplerCube cubeTexture;*/
 
 uniform vec3 uColor;
 uniform vec3 uEnvMapTint;

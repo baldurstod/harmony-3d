@@ -340,7 +340,7 @@ export class Source1Material extends Material {
 
 			// The $phongexponenttexture is overrided by $phongexponent
 			const phongExponentTexture = vmt['$phongexponenttexture'];
-			this.setTexture('phongExponentMap', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
+			this.setTexture('phongExponentTexture', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
 				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
 			}
@@ -613,7 +613,7 @@ export class Source1Material extends Material {
 		//TODO: remove this
 		const phongExponentTexture = variables.get('$phongexponenttexture');
 		if (phongExponentTexture) {
-			this.setTexture('phongExponentMap', this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
+			this.setTexture('phongExponentTexture', this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
 		}
 
 		const lightWarpTexture = parameters['$lightwarptexture'];

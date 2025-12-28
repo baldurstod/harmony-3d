@@ -380,7 +380,7 @@ export class Material {
 	}
 
 	setCubeMap(texture: Texture | null) {
-		this.setTexture('cubeMap', texture, 'USE_CUBE_MAP');
+		this.setTexture('cubeTexture', texture, 'USE_CUBE_MAP');
 	}
 
 	setAlphaTest(alphaTest: boolean) {

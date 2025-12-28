@@ -158,7 +158,7 @@ void main(void) {
 		float4 fvSpecularExponent = float4( g_flPhongExponent, g_bPhongAlbedoTint, 0.0, 1.0 );
 		#ifdef USE_PHONG_EXPONENT_MAP
 			// override the existing specular exponent values with values from the exponent map
-			fvSpecularExponent.xy = tex2D( phongExponentMap, vTextureCoord.xy ).xy;
+			fvSpecularExponent.xy = tex2D( phongExponentTexture, vTextureCoord.xy ).xy;
 		#endif
 	#endif
 
@@ -216,7 +216,7 @@ void main(void) {
 
 	#ifdef USE_CUBE_MAP
 		float3 vReflect = CalcReflectionVectorUnnormalized( vWorldNormal, vEyeDir );
-		float3 envMapColor = ENV_MAP_SCALE * texCUBE( cubeMap, vReflect ).rgb * uCubeMapTint;
+		float3 envMapColor = ENV_MAP_SCALE * texCUBE( cubeTexture, vReflect ).rgb * uCubeMapTint;
 		// TODO: envmap fresnel
 		#if (DECALSTYLE == 4)
 			envMapColor *= cOut.rgb * linearColor.rgb;
@@ -345,7 +345,7 @@ void main(void) {
 
 		#ifdef USE_CUBE_MAP
 			vReflect.r += flModdedCycle;
-			float3 envMapColorSelect = texCUBE( cubeMap, vReflect ).rgb * HDR_INPUT_MAP_SCALE;
+			float3 envMapColorSelect = texCUBE( cubeTexture, vReflect ).rgb * HDR_INPUT_MAP_SCALE;
 			float3 selectionColor = max( 4.0*envMapColorSelect.rgb, CSTRIKE_BLUE );
 		#else
 			float3 selectionColor = max( 4.0*cOut.rgb, CSTRIKE_BLUE );
@@ -446,7 +446,7 @@ void main(void) {
 
 	/*#if (USE_CUBE_MAP == 1)
 		vReflect = CalcReflectionVectorUnnormalized( vWorldNormal, vEyeDir );
-		envMapColor = texCUBE( cubeMap, vEyeDir ).rgb;
+		envMapColor = texCUBE( cubeTexture, vEyeDir ).rgb;
 		gl_FragColor.rgb = envMapColor;
 		gl_FragColor.a = 1.0;
 	#endif*/

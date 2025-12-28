@@ -1,5 +1,5 @@
 export default `
 #ifdef USE_PHONG_EXPONENT_MAP
-	uniform sampler2D phongExponentMap;
+	uniform sampler2D phongExponentTexture;
 #endif
 `;

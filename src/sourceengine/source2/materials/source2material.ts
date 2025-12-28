@@ -57,7 +57,7 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
 	['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
 
-	['g_tCubeMap', ['cubeMap', 'USE_CUBE_MAP']],
+	['g_tCubeMap', ['cubeTexture', 'USE_CUBE_MAP']],
 
 	['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
 	['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
