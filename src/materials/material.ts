@@ -376,7 +376,7 @@ export class Material {
 	}
 
 	setNormalMap(texture: Texture | null) {
-		this.setTexture('normalMap', texture, 'USE_NORMAL_MAP');
+		this.setTexture('normalTexture', texture, 'USE_NORMAL_MAP');
 	}
 
 	setCubeMap(texture: Texture | null) {

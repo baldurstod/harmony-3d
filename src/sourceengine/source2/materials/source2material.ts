@@ -30,7 +30,7 @@ const UNIFORMS = new Map([
 const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
 	['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
-	['g_tNormal', ['normalMap', 'USE_NORMAL_MAP']],
+	['g_tNormal', ['normalTexture', 'USE_NORMAL_MAP']],
 	['g_tAmbientOcclusion', ['aoMap', 'USE_AO_MAP']],
 	['g_tTintColor', ['tintColorMap', 'USE_TINT_COLOR_MAP']],
 	['g_tSelfIllumFlowWaveform', ['selfIllumFlowWaveformMap', 'USE_SIFW_MAP']],
@@ -59,7 +59,7 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 
 	['g_tCubeMap', ['cubeTexture', 'USE_CUBE_MAP']],
 
-	['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
+	['g_tNormalRoughness', ['normalTexture', 'USE_NORMAL_MAP']],
 	['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
 	['g_tTintMaskRimLightMask', ['tintMaskRimLightMask', 'USE_TINT_MASK_RIM_LIGHT_MASK']],
 	['g_tSelfIllumMask', ['selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP']],

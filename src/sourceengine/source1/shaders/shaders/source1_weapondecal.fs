@@ -167,7 +167,7 @@ void main(void) {
 	float3 vEyeDir = normalize( uCameraPosition - vWorldPos );
 
 	#if ( (DECALSTYLE == 4) || ( DECALSTYLE == 5 ) )// foil emboss uses normal map
-		float4 vNormalTexel = tex2D(normalMap, vTextureCoord.zw * vec2(1.0, -1.0));//I don't know why we have to inverse y axis
+		float4 vNormalTexel = tex2D(normalTexture, vTextureCoord.zw * vec2(1.0, -1.0));//I don't know why we have to inverse y axis
 		float3 vTangentSpaceNormal = 2.0 * vNormalTexel.xyz - 1.0;
 
 		vec3 fragmentNormalWorldSpace = normalize(vVertexNormalWorldSpace.xyz);

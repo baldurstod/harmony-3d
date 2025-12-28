@@ -5,7 +5,7 @@ uniform sampler2D colorMap;
 uniform sampler2D color2Map;
 uniform sampler2D blendModulateMap;
 uniform sampler2D lightMap;
-/*uniform sampler2D normalMap;
+/*uniform sampler2D normalTexture;
 uniform samplerCube cubeTexture;*/
 
 uniform vec3 uColor;

@@ -589,9 +589,9 @@ export class Source1Material extends Material {
 			this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
 		}
 
-		const normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
-		if (normalMap) {
-			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, normalMap, 0));
+		const normalTexture = variables.get('$bumpmap') ?? variables.get('$normalmap');
+		if (normalTexture) {
+			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, normalTexture, 0));
 		} else {
 			this.setNormalMap(null);
 		}
