@@ -483,7 +483,11 @@ export declare class BufferAttribute {
     count: number;
     _buffer: WebGLBuffer | null;
     divisor: number;
-    constructor(array: TypedArrayNumber | null, itemSize: number);
+    readonly elementSize: number;
+    readonly wgslName: string;
+    readonly wgslFormat: GPUVertexFormat;
+    gpuBuffer?: GPUBuffer;
+    constructor(array: TypedArrayNumber | null, elementSize: number, itemSize: number, wgslName: string, wgslFormat: GPUVertexFormat);
     get type(): number;
     set usage(usage: BufferUsage);
     set target(target: GLenum);
@@ -491,7 +495,7 @@ export declare class BufferAttribute {
     setArray(array: typeof TypedArrayProto): void;
     update(glContext: WebGLAnyRenderingContext): void;
     updateWireframe(glContext: WebGLAnyRenderingContext): void;
-    clone(): BufferAttribute;
+    clone(): Uint8BufferAttribute;
     setSource(source: any): void;
     getBuffer(): WebGLBuffer | null;
 }
@@ -1970,11 +1974,13 @@ declare class Channel {
 
                       export declare function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): void;
 
-                      export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): Texture;
+                      export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): void | Texture;
+
+                      export declare function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap: boolean): Texture;
 
                       export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): Texture;
 
-                      export declare function fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;
+                      export declare function fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void>;
 
                       export declare class FirstPersonControl extends CameraControl {
                           #private;
@@ -2032,7 +2038,7 @@ declare class Channel {
                       export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
                       export declare class Float32BufferAttribute extends BufferAttribute {
-                          constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
+                          constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number);
                       }
 
                       declare type float_2 = number;
@@ -2689,6 +2695,7 @@ declare class Channel {
                           #private;
                           static isWebGL: boolean;
                           static isWebGL2: boolean;
+                          static isWebGLAny: boolean;
                           static isWebGPU: boolean;
                           static autoClear: boolean;
                           static autoClearColor: boolean;
@@ -2768,9 +2775,9 @@ declare class Channel {
                           static play(): void;
                           static pause(): void;
                           static isRunning(): boolean;
-                          static createFramebuffer(): WebGLFramebuffer;
+                          static createFramebuffer(): WebGLFramebuffer | null;
                           static deleteFramebuffer(frameBuffer: WebGLFramebuffer): void;
-                          static createRenderbuffer(): WebGLRenderbuffer;
+                          static createRenderbuffer(): WebGLRenderbuffer | null;
                           static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
                           static pushRenderTarget(renderTarget: RenderTarget | null): void;
                           static popRenderTarget(): void;
@@ -3009,6 +3016,8 @@ declare class Channel {
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
                       }
+
+                      export declare function initWebGPUConst(): void;
 
                       declare class Input extends InputOutput {
                           #private;
@@ -4704,6 +4713,8 @@ declare class Channel {
                           doOperate(particle: Source1Particle, elapsedTime: number): void;
                       }
 
+                      export declare let ortho: (out: mat4, left: number, right: number, bottom: number, top: number, near: number, far: number) => mat4;
+
                       export declare class OscillateScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
@@ -5438,7 +5449,7 @@ declare class Channel {
                           #private;
                           constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: GLsizei);
                           resize(width: number, height: number): void;
-                          getRenderbuffer(): WebGLRenderbuffer;
+                          getRenderbuffer(): WebGLRenderbuffer | null;
                           dispose(): void;
                       }
 
@@ -6043,6 +6054,8 @@ declare class Channel {
                           doOperate(particle: Source1Particle, elapsedTime: number): void;
                       }
 
+                      export declare function setClipSpaceWebGPU(): void;
+
                       export declare class SetControlPointFromObjectScale extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
@@ -6301,6 +6314,7 @@ declare class Channel {
                           isSkeleton: boolean;
                           _bones: Bone[];
                           _dirty: boolean;
+                          readonly imgData: Float32Array<ArrayBuffer>;
                           lastComputed: number;
                           constructor(params?: any);
                           dirty(): void;
@@ -6984,6 +6998,7 @@ declare class Channel {
                            * TODO
                            */
                           isHigherThan74(): boolean;
+                          isCubeMap(): boolean;
                           /**
                            * TODO
                            */
@@ -8639,6 +8654,7 @@ declare class Channel {
                           isRenderTargetTexture: boolean;
                           properties: Map<string, any>;
                           readonly defines: Map<string, string>;
+                          isCube: boolean;
                           constructor(textureParams?: TextureParams);
                           setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
                           texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels?: ArrayBufferView | null, level?: number): void;
@@ -8788,8 +8804,8 @@ declare class Channel {
                           static createFlatTexture(textureParams: CreateFlatTextureParams): Texture;
                           static createCheckerTexture(textureParams?: CreateCheckerTextureParams): Texture;
                           static createNoiseTexture(textureParams: CreateNoiseTextureParams): Texture;
-                          static createTextureFromImage(textureParams: CreateImageTextureParams): Texture;
-                          static fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;
+                          static createTextureFromImage(textureParams: CreateImageTextureParams): Promise<Texture>;
+                          static fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void>;
                       }
 
                       export declare enum TextureMapping {
@@ -9009,15 +9025,15 @@ declare class Channel {
                       declare const TypedArrayProto: any;
 
                       export declare class Uint16BufferAttribute extends BufferAttribute {
-                          constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
+                          constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number);
                       }
 
                       export declare class Uint32BufferAttribute extends BufferAttribute {
-                          constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
+                          constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number);
                       }
 
                       export declare class Uint8BufferAttribute extends BufferAttribute {
-                          constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
+                          constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number);
                       }
 
                       declare class Uniform {
