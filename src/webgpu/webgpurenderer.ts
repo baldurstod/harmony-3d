@@ -430,8 +430,15 @@ export class WebGPURenderer implements Renderer {
 										new Float32Array([materialUniform as number]),
 									);
 									break;
+								case 'vec4f':
+									device.queue.writeBuffer(
+										uniformBuffer,
+										0,
+										materialUniform as BufferSource,
+									);
+									break;
 								default:
-									errorOnce('unknwon uniform type ' + uniform.name);
+									errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name}`);
 									break;
 							}
 						} else {
@@ -440,8 +447,30 @@ export class WebGPURenderer implements Renderer {
 								case 'resolution':
 									bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
 									break;
+								case 'cameraPosition':
+									bufferSource = camera.position as BufferSource;
+									break;
 								default:
-									errorOnce('unknwon uniform ' + uniform.name);
+									errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} `);
+									switch (uniform.type.name) {
+										case 'f32':
+											device.queue.writeBuffer(
+												uniformBuffer,
+												0,
+												new Float32Array([0]),// TODO: create a const
+											);
+											break;
+										case 'vec4f':
+											device.queue.writeBuffer(
+												uniformBuffer,
+												0,
+												new Float32Array([0, 0, 0, 0]),// TODO: create a const
+											);
+											break;
+										default:
+											errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name}`);
+											break;
+									}
 							}
 
 							if (bufferSource) {

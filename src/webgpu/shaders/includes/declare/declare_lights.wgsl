@@ -17,8 +17,8 @@
 #define NUM_HEMI_LIGHTS 0
 
 //uniform vec3 lightProbe[ 9 ];
-@group(1) @binding(x) var<uniform> lightProbe: array<vec3f, 9>;
-@group(1) @binding(x) var<uniform> ambientLight: vec3f;
+@group(0) @binding(x) var<uniform> lightProbe: array<vec3f, 9>;
+@group(0) @binding(x) var<uniform> ambientLight: vec3f;
 
 	struct GeometricContext {
 		position: vec3<f32>,
@@ -48,7 +48,7 @@
 
 #if NUM_POINT_LIGHTS > 0
 	//uniform PointLight uPointLights[NUM_POINT_LIGHTS];
-	@group(1) @binding(x) var<uniform> pointLights: array<PointLight, NUM_POINT_LIGHTS>;
+	@group(0) @binding(x) var<uniform> pointLights: array<PointLight, NUM_POINT_LIGHTS>;
 #endif
 
 	fn punctualLightIntensityToIrradianceFactor(lightDistance: f32, cutoffDistance: f32, decayExponent: f32 ) -> f32 {

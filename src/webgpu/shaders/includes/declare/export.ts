@@ -1,16 +1,31 @@
 import { addWgslInclude } from '../../../../shaders/includemanager';
 
+import declare_camera_position from './declare_camera_position.wgsl';
+addWgslInclude('declare_camera_position', declare_camera_position);
+
 import declare_fragment_alpha_test from './declare_fragment_alpha_test.wgsl';
 addWgslInclude('declare_fragment_alpha_test', declare_fragment_alpha_test);
 
 import declare_fragment_color_map from './declare_fragment_color_map.wgsl';
 addWgslInclude('declare_fragment_color_map', declare_fragment_color_map);
 
+import declare_fragment_cube_map from './declare_fragment_cube_map.wgsl';
+addWgslInclude('declare_fragment_cube_map', declare_fragment_cube_map);
+
+import declare_fragment_detail_map from './declare_fragment_detail_map.wgsl';
+addWgslInclude('declare_fragment_detail_map', declare_fragment_detail_map);
+
 import declare_fragment_diffuse from './declare_fragment_diffuse.wgsl';
 addWgslInclude('declare_fragment_diffuse', declare_fragment_diffuse);
 
 import declare_fragment_light_warp from './declare_fragment_light_warp.wgsl';
 addWgslInclude('declare_fragment_light_warp', declare_fragment_light_warp);
+
+import declare_fragment_normal_map from './declare_fragment_normal_map.wgsl';
+addWgslInclude('declare_fragment_normal_map', declare_fragment_normal_map);
+
+import declare_fragment_phong_exponent_map from './declare_fragment_phong_exponent_map.wgsl';
+addWgslInclude('declare_fragment_phong_exponent_map', declare_fragment_phong_exponent_map);
 
 import declare_fragment_standard from './declare_fragment_standard.wgsl';
 addWgslInclude('declare_fragment_standard', declare_fragment_standard);
