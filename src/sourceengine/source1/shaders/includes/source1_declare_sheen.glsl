@@ -1,9 +1,9 @@
 export default `
 #ifdef USE_SHEEN_MAP
-	uniform samplerCube sheenMap;
+	uniform samplerCube sheenTexture;
 #endif
 #ifdef USE_SHEEN_MASK_MAP
-	uniform sampler2D sheenMaskMap;
+	uniform sampler2D sheenMaskTexture;
 #endif
 
 uniform vec4 g_vPackedConst6;

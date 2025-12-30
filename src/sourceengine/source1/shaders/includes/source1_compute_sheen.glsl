@@ -16,13 +16,13 @@ vec3 sheenMapColor = vec3(1.0);
 
 	sheenMaskCoords = (sheenMaskCoords - g_vPackedConst6.zw) / g_vPackedConst6.xy;
 
-	sheenMapColor *= texture2D(sheenMaskMap, sheenMaskCoords).rgb;
+	sheenMapColor *= texture2D(sheenMaskTexture, sheenMaskCoords).rgb;
 #endif
 
 
 	//vec3 sheenMapTint = texture2D(sheenMapMask, (sheenMaskCoord - vec2(sheenMapMaskOffsetX)) / sheenMapMaskScaleX).rgb;
 #ifdef USE_SHEEN_MAP
-	sheenMapColor *= vec4(textureCube(sheenMap, reflectDir)).rgb;
+	sheenMapColor *= vec4(textureCube(sheenTexture, reflectDir)).rgb;
 	sheenMapColor *= g_cCloakColorTint.rgb;
 
 	gl_FragColor.rgb += sheenMapColor * 3.0;

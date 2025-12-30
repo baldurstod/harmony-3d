@@ -89,7 +89,7 @@ void main(void) {
 #endif
 
 #ifdef USE_SHEEN_MAP
-	//gl_FragColor.rgb = texture2D(sheenMaskMap, vTextureCoord).rgb;
+	//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;
 #endif
 
 
