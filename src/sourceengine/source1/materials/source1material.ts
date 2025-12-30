@@ -189,8 +189,17 @@ export class Source1Material extends Material {
 		super(params);
 		this.uniforms['uBlendTintColorOverBase'] = 0;
 		this.uniforms['uDetailBlendFactor'] = 0;
-		this.uniforms['uPhongExponent'] = 0;
-		this.uniforms['uPhongBoost'] = 0;
+		//this.uniforms['uPhongExponent'] = 0;
+		//this.uniforms['uPhongBoost'] = 0;
+		this.uniforms['phongUniforms'] = {
+			phongExponent: 0,
+			phongBoost: 0,
+			phongExponentFactor: 0,
+		};
+		this.uniforms['sheenUniforms'] = {
+			g_vPackedConst6: vec4.create(),
+			g_vPackedConst7: vec4.create(),
+		};
 		this.vmt = vmt;
 		this.repository = repository;
 		this.path = path;

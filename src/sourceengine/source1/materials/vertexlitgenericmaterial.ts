@@ -1,8 +1,9 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
+import { UniformValue } from '../../../webgl/uniform';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
-import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
+import { Source1Material, TextureRole } from './source1material';
 
 export class VertexLitGenericMaterial extends Source1Material {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -67,8 +68,12 @@ export class VertexLitGenericMaterial extends Source1Material {
 		if (parameters['$sheenmapmask']) {
 			this.setTexture('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame), 'USE_SHEEN_MASK_MAP');
 
-			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
-			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
+			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
+			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
 		}
 		if (parameters['$sheenmap']) {
 			this.setTexture('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true), 'USE_SHEEN_MAP');

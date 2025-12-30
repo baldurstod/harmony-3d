@@ -156,9 +156,9 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 	#ifdef USE_PHONG_ALBEDO_TINT
 		material.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);
 	#endif
-	material.specularShininess = texelPhongExponent.r * uPhongExponentFactor;
+	material.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;
 #else
-	material.specularShininess = uPhongBoost * uPhongExponent;
+	material.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;
 #endif
 	material.specularStrength = phongMask;
 #ifdef SOURCE1_SPECULAR_STRENGTH

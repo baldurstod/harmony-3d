@@ -1,5 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
+import { UniformValue } from '../../../webgl/uniform';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
@@ -68,8 +69,12 @@ export class CharacterMaterial extends Source1Material {
 			this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
-			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
-			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
+			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
+			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
 		}
 		if (parameters['$sheenmap']) {
 			this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);

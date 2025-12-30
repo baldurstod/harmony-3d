@@ -4,6 +4,7 @@ import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INT
 
 import { DynamicParams } from '../../../entities/entity';
 import { lerp } from '../../../math/functions';
+import { UniformValue } from '../../../webgl/uniform';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 
@@ -51,8 +52,12 @@ export class WeaponDecalMaterial extends Source1Material {
 			this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
-			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
-			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
+			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
+			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
+			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
 		}
 		if (parameters['$sheenmap']) {
 			this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);

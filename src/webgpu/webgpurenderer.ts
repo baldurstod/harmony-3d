@@ -22,6 +22,7 @@ import { Texture } from '../textures/texture';
 import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
+import { UniformValue } from '../webgl/uniform';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -328,54 +329,75 @@ export class WebGPURenderer implements Renderer {
 
 				const members = uniform.members;
 				if (members) {
-					for (const member of members) {
-						let bufferSource: BufferSource | null = null;
-						uniformBuffer.label = uniform.name + '.' + member.name;
 
-						switch (member.name) {
-							case 'modelMatrix':
-								bufferSource = object.worldMatrix as BufferSource;
-								break;
-							case 'viewMatrix':
-								bufferSource = cameraMatrix as BufferSource;
-								break;
-							case 'modelViewMatrix':
-								bufferSource = object._mvMatrix as BufferSource;
-								break;
-							case 'projectionMatrix':
-								bufferSource = projectionMatrix as BufferSource;
-								break;
-							case 'viewProjectionMatrix':
-								bufferSource = tempViewProjectionMatrix as BufferSource;
-								break;
-							case 'normalMatrix':
-								// In WGSL, mat3x3 actually are mat4x3
-								// TODO: improve this
-								mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
-								const m = new Float32Array(12);
-								m[0] = object._normalMatrix[0];
-								m[1] = object._normalMatrix[1];
-								m[2] = object._normalMatrix[2];
-								m[4] = object._normalMatrix[3];
-								m[5] = object._normalMatrix[4];
-								m[6] = object._normalMatrix[5];
-								m[8] = object._normalMatrix[6];
-								m[9] = object._normalMatrix[7];
-								m[10] = object._normalMatrix[8];
-								bufferSource = m as BufferSource;
-								break;
-							default:
-								console.error('unknwon uniform', uniform.name, member.name);
-							//	bufferSource = new Float32Array(member.size) as BufferSource;
+					const materialUniform = material.uniforms[uniform.name];
+					if (materialUniform) {
+						for (const member of members) {
+							let bufferSource: BufferSource | null = null;
+							uniformBuffer.label = uniform.name + '.' + member.name;
+							const subUniform = (materialUniform as Record<string, UniformValue>)[member.name];
+							if (subUniform !== undefined) {
+								bufferSource = subUniform as BufferSource;
+							} else {
+								errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+							}
 
+							if (bufferSource) {
+								device.queue.writeBuffer(
+									uniformBuffer,
+									member.offset,
+									bufferSource,
+								);
+							}
 						}
+					} else {
+						for (const member of members) {
+							let bufferSource: BufferSource | null = null;
+							uniformBuffer.label = uniform.name + '.' + member.name;
 
-						if (bufferSource) {
-							device.queue.writeBuffer(
-								uniformBuffer,
-								member.offset,
-								bufferSource,
-							);
+							switch (member.name) {
+								case 'modelMatrix':
+									bufferSource = object.worldMatrix as BufferSource;
+									break;
+								case 'viewMatrix':
+									bufferSource = cameraMatrix as BufferSource;
+									break;
+								case 'modelViewMatrix':
+									bufferSource = object._mvMatrix as BufferSource;
+									break;
+								case 'projectionMatrix':
+									bufferSource = projectionMatrix as BufferSource;
+									break;
+								case 'viewProjectionMatrix':
+									bufferSource = tempViewProjectionMatrix as BufferSource;
+									break;
+								case 'normalMatrix':
+									// In WGSL, mat3x3 actually are mat4x3
+									// TODO: improve this
+									mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
+									const m = new Float32Array(12);
+									m[0] = object._normalMatrix[0];
+									m[1] = object._normalMatrix[1];
+									m[2] = object._normalMatrix[2];
+									m[4] = object._normalMatrix[3];
+									m[5] = object._normalMatrix[4];
+									m[6] = object._normalMatrix[5];
+									m[8] = object._normalMatrix[6];
+									m[9] = object._normalMatrix[7];
+									m[10] = object._normalMatrix[8];
+									bufferSource = m as BufferSource;
+									break;
+								default:
+									errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+							}
+
+							if (bufferSource) {
+								device.queue.writeBuffer(
+									uniformBuffer,
+									member.offset,
+									bufferSource,
+								);
+							}
 						}
 					}
 				} else if (uniform.isArray) {
@@ -555,7 +577,7 @@ export class WebGPURenderer implements Renderer {
 
 				if (binding.texture) {
 					entry.texture = {
-						viewDimension:binding.texture.isCube ? 'cube' : '2d',
+						viewDimension: binding.texture.isCube ? 'cube' : '2d',
 					};
 				}
 

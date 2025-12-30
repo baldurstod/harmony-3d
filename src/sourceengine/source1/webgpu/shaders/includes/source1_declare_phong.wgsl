@@ -1,6 +1,10 @@
 //TODO: set a vec3 for these three ?
-@group(0) @binding(x) var<uniform> uPhongExponent: f32;
-@group(0) @binding(x) var<uniform> uPhongBoost: f32;
+struct PhongUniforms {
+	phongExponent : f32,
+	phongBoost : f32,
 #ifdef USE_PHONG_EXPONENT_MAP
-	@group(0) @binding(x) var<uniform> uPhongExponentFactor: f32;
+	phongExponentFactor : f32,
 #endif
+}
+
+@group(0) @binding(x) var<uniform> phongUniforms : PhongUniforms;

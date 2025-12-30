@@ -20,6 +20,7 @@ import { Program } from '../webgl/program';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { Renderer } from './renderer';
 import { RenderList } from './renderlist';
+import { UniformValue } from '../webgl/uniform';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -88,7 +89,7 @@ export class ForwardRenderer implements Renderer {
 		WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
 
 		for (const uniform in material.uniforms) {
-			program.setUniformValue(uniform, material.uniforms[uniform]!);
+			program.setUniformValue(uniform, material.uniforms[uniform] as UniformValue);
 		}
 	}
 

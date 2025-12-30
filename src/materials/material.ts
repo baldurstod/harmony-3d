@@ -53,7 +53,7 @@ export class Material {
 	#alphaTestReference = 0;
 	#users = new Set<any>();
 	#parameters = new Map<string, MateriaParameter>();
-	uniforms: Record<string, UniformValue> = {};// TODO: transform to map ?
+	uniforms: Record<string, UniformValue | Record<string, UniformValue>> = {};// TODO: transform to map ?
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
@@ -254,12 +254,12 @@ export class Material {
 
 		return {
 			color: {
-				srcFactor: BlendingFactorWebGPU.get(this.srcRGB) ??'one',
-				dstFactor: BlendingFactorWebGPU.get(this.dstRGB) ??'one-minus-src-alpha'
+				srcFactor: BlendingFactorWebGPU.get(this.srcRGB) ?? 'one',
+				dstFactor: BlendingFactorWebGPU.get(this.dstRGB) ?? 'one-minus-src-alpha'
 			},
 			alpha: {
-				srcFactor: BlendingFactorWebGPU.get(this.srcAlpha) ??'one',
-				dstFactor: BlendingFactorWebGPU.get(this.dstAlpha) ??'one-minus-src-alpha'
+				srcFactor: BlendingFactorWebGPU.get(this.srcAlpha) ?? 'one',
+				dstFactor: BlendingFactorWebGPU.get(this.dstAlpha) ?? 'one-minus-src-alpha'
 			},
 		};
 	}
@@ -494,7 +494,7 @@ export class Material {
 		return this.#users.size == 0;
 	}
 
-	#disposeUniform(uniform: UniformValue) {
+	#disposeUniform(uniform: UniformValue | Record<string, UniformValue>) {
 		if (Array.isArray(uniform)) {
 			uniform.forEach((subValue) => this.#disposeUniform(subValue));
 		} else {
