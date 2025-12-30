@@ -10,9 +10,9 @@
 struct SheenUniforms {
 	g_vPackedConst6: vec4f,
 	g_vPackedConst7: vec4f,
+	g_cCloakColorTint: vec3f,
 }
 @group(0) @binding(x) var<uniform> sheenUniforms : SheenUniforms;
-@group(0) @binding(x) var<uniform> g_cCloakColorTint: vec3f;
 
 #define g_flSheenMapMaskScaleX sheenUniforms.g_vPackedConst6.x // Default = 1.0f
 #define g_flSheenMapMaskScaleY sheenUniforms.g_vPackedConst6.y // Default = 1.0f

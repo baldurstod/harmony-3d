@@ -22,7 +22,7 @@ var sheenMapColor: vec3f = vec3f(1.0);
 	//vec3 sheenMapTint = textureSample(sheenMapMask, (sheenMaskCoord - vec2(sheenMapMaskOffsetX)) / sheenMapMaskScaleX).rgb;
 #ifdef USE_SHEEN_MAP
 	sheenMapColor *= textureSample(sheenTexture, sheenSampler, reflectDir).rgb;
-	sheenMapColor *= g_cCloakColorTint.rgb;
+	sheenMapColor *= sheenUniforms.g_cCloakColorTint.rgb;
 
 	fragColor = vec4f(fragColor.rgb + sheenMapColor * 3.0, fragColor.a);
 #endif

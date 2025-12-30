@@ -56,6 +56,8 @@ fn vertex_main(
 	#include calculate_vertex_standard
 	#include calculate_vertex_log_depth
 
+	output.vVertexPositionModelSpace = vertexPositionModelSpace;
+
 	return output;
 }
 
@@ -239,7 +241,5 @@ gl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);
 		#endif
 	#endif
 
-
-	fragColor = texelColor;
 	#include output_fragment
 }

@@ -199,6 +199,7 @@ export class Source1Material extends Material {
 		this.uniforms['sheenUniforms'] = {
 			g_vPackedConst6: vec4.create(),
 			g_vPackedConst7: vec4.create(),
+			g_cCloakColorTint: vec3.create(),
 		};
 		this.vmt = vmt;
 		this.repository = repository;

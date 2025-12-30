@@ -83,10 +83,12 @@ export class CharacterMaterial extends Source1Material {
 
 		if (proxyParams['SheenTintColor']) {
 			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
 		} else {
 			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
 				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
+				(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = sheenmaptint;
 			}
 		}
 
