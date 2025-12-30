@@ -422,7 +422,7 @@ export class WebGPURenderer implements Renderer {
 						);
 					} else {
 						const materialUniform = material.uniforms[uniform.name];
-						if (materialUniform) {
+						if (materialUniform !== undefined) {
 							switch (uniform.type.name) {
 								case 'f32':
 									device.queue.writeBuffer(
@@ -439,7 +439,7 @@ export class WebGPURenderer implements Renderer {
 									);
 									break;
 								default:
-									errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name}`);
+									errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 									break;
 							}
 						} else {
@@ -452,7 +452,7 @@ export class WebGPURenderer implements Renderer {
 									bufferSource = camera.position as BufferSource;
 									break;
 								default:
-									errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} `);
+									errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
 									switch (uniform.type.name) {
 										case 'f32':
 											device.queue.writeBuffer(
@@ -469,7 +469,7 @@ export class WebGPURenderer implements Renderer {
 											);
 											break;
 										default:
-											errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name}`);
+											errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 											break;
 									}
 							}

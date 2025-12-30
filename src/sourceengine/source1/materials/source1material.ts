@@ -187,6 +187,10 @@ export class Source1Material extends Material {
 
 	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(params);
+		this.uniforms['uBlendTintColorOverBase'] = 0;
+		this.uniforms['uDetailBlendFactor'] = 0;
+		this.uniforms['uPhongExponent'] = 0;
+		this.uniforms['uPhongBoost'] = 0;
 		this.vmt = vmt;
 		this.repository = repository;
 		this.path = path;
