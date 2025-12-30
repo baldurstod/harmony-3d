@@ -12157,7 +12157,9 @@ class WebGPURenderer {
                     entry.buffer = {};
                 }
                 if (binding.texture) {
-                    entry.texture = {};
+                    entry.texture = {
+                        viewDimension: binding.texture.isCube ? 'cube' : '2d',
+                    };
                 }
                 if (binding.sampler) {
                     entry.sampler = {};
@@ -12295,7 +12297,7 @@ class WebGPURenderer {
                 }
             }
             const uniformBindGroup = device.createBindGroup({
-                label: String(groupId),
+                label: `Binding group: ${groupId}`,
                 layout: renderPipeline.getBindGroupLayout(groupId), // corresponds to @group
                 entries: entries,
             });
@@ -12411,15 +12413,15 @@ class WebGPURenderer {
         }
         WebGPUInternal.device.pushErrorScope('validation');
         const definesSnapshot = new Map(defines);
-        const compileSource = shaderSource.getCompileSourceWebGPU(defines);
+        const source = shaderSource.getCompileSourceWebGPU(defines);
         const module = WebGPUInternal.device.createShaderModule({
-            code: compileSource,
+            code: source,
             label: shaderName,
         });
         WebGPUInternal.device.popErrorScope().then(error => {
             if (error) {
                 const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
-                console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
+                console.warn(m, shaderSource.getCompileSourceLineNumber(source), m);
             }
         });
         module.getCompilationInfo().then(shaderInfo => shaderSource.setCompilationInfo(shaderInfo, definesSnapshot));
@@ -12427,7 +12429,7 @@ class WebGPURenderer {
         WebGPUInternal.device.queue.submit([]);
         let reflection;
         try {
-            reflection = new WgslReflect(compileSource);
+            reflection = new WgslReflect(source);
         }
         catch (e) { }
         const attributes = new Map();
@@ -12448,7 +12450,7 @@ class WebGPURenderer {
                 }
             }
         }
-        shaderModule = { module, reflection, attributes };
+        shaderModule = { module, reflection, attributes, source };
         this.#materialsShaderModule.set(shaderName, key, shaderModule);
         return shaderModule;
     }

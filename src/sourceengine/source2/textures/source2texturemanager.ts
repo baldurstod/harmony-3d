@@ -118,6 +118,7 @@ class Source2TextureManagerClass {
 		const imageFormat = vtexFile.getImageFormat();
 		if (imageData) {
 			if (vtexFile.isCubeTexture()) {
+				texture.isCube = true;
 				this.#initCubeTexture(texture.texture!, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
 			} else {
 				this.#initFlatTexture(texture.texture!, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);

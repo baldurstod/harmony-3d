@@ -186,6 +186,7 @@ export class Source1Vtf {
 
 	fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb = true): void {
 		if (this.isCubeMap()) {
+			texture.isCube = true;
 			this.#fillCubeMapTexture(glContext, texture, mipmapLvl, srgb);
 		} else {
 			this.#fillTexture(glContext, texture, mipmapLvl, frame1, srgb);

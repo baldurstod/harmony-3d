@@ -177,6 +177,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 				},
 				format: webGPUFormat,
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+				textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
 			}
 		});//TODOv3: add params
 		texture.properties.set('vtf', vtf);

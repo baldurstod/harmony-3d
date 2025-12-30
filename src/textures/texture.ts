@@ -42,6 +42,7 @@ export class Texture {
 	isRenderTargetTexture = false;
 	properties = new Map<string, any>();
 	readonly defines = new Map<string, string>();
+	isCube = false;// TODO: remove. Cube maps should be using CubeTexture
 
 	constructor(textureParams: TextureParams = {}) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?

@@ -33,6 +33,7 @@ type WgslModule = {
 	module: GPUShaderModule;
 	reflection?: WgslReflect;
 	attributes: Map<string, number>;
+	source: string;
 }
 
 const lightDirection = vec3.create();
@@ -299,7 +300,7 @@ export class WebGPURenderer implements Renderer {
 		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
 		mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix);//TODO: compute this in camera
 
-		type Binding = { buffer?: GPUBuffer, texture?: GPUTexture, sampler?: GPUSampler };
+		type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler };
 
 		const groups = new Map2<number, number, Binding>();
 
@@ -496,14 +497,14 @@ export class WebGPURenderer implements Renderer {
 			for (const shaderTexture of shaderModule.reflection.textures) {
 				switch (shaderTexture.name) {
 					case 'colorTexture':
-						const texture = (material.uniforms.colorMap as Texture | undefined)?.texture as GPUTexture | undefined;
+						const texture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (texture) {
 							groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 						}
 						break;
 					default:
 						{
-							const texture = (material.uniforms[shaderTexture.name] as Texture | undefined)?.texture as GPUTexture | undefined;
+							const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
 							if (texture) {
 								groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 							} else {
@@ -553,7 +554,9 @@ export class WebGPURenderer implements Renderer {
 				}
 
 				if (binding.texture) {
-					entry.texture = {};
+					entry.texture = {
+						viewDimension:binding.texture.isCube ? 'cube' : '2d',
+					};
 				}
 
 				if (binding.sampler) {
@@ -673,11 +676,22 @@ export class WebGPURenderer implements Renderer {
 						},
 					});
 				}
-				if (uniformBuffer.texture) {
-					entries.push({
-						binding: bindingId,// corresponds to @binding
-						resource: uniformBuffer.texture,
-					});
+
+				const uniformTexture = uniformBuffer.texture;
+				if (uniformTexture) {
+					if (uniformTexture.isCube) {
+						entries.push({
+							binding: bindingId,// corresponds to @binding
+							resource: (uniformTexture.texture as GPUTexture).createView({
+								dimension: 'cube',
+							}),
+						});
+					} else {
+						entries.push({
+							binding: bindingId,// corresponds to @binding
+							resource: uniformTexture.texture as GPUTexture,
+						});
+					}
 				}
 				if (uniformBuffer.sampler) {
 					entries.push({
@@ -688,7 +702,7 @@ export class WebGPURenderer implements Renderer {
 			}
 
 			const uniformBindGroup = device.createBindGroup({
-				label: String(groupId),
+				label: `Binding group: ${groupId}`,
 				layout: renderPipeline.getBindGroupLayout(groupId),// corresponds to @group
 				entries: entries,
 			});
@@ -844,16 +858,16 @@ export class WebGPURenderer implements Renderer {
 
 		WebGPUInternal.device.pushErrorScope('validation');
 		const definesSnapshot = new Map(defines);
-		const compileSource = shaderSource.getCompileSourceWebGPU(defines);
+		const source = shaderSource.getCompileSourceWebGPU(defines);
 		const module = WebGPUInternal.device.createShaderModule({
-			code: compileSource,
+			code: source,
 			label: shaderName,
 		});
 
 		WebGPUInternal.device.popErrorScope().then(error => {
 			if (error) {
 				const m = 'Compile error in ' + shaderName + '. Reason : ' + error.message;
-				console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
+				console.warn(m, shaderSource.getCompileSourceLineNumber(source), m);
 			}
 		});
 
@@ -864,7 +878,7 @@ export class WebGPURenderer implements Renderer {
 
 		let reflection
 		try {
-			reflection = new WgslReflect(compileSource);
+			reflection = new WgslReflect(source);
 		} catch (e) { }
 
 		const attributes = new Map<string, number>();
@@ -886,7 +900,7 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
-		shaderModule = { module, reflection, attributes };
+		shaderModule = { module, reflection, attributes, source };
 		this.#materialsShaderModule.set(shaderName, key, shaderModule);
 
 		return shaderModule;
