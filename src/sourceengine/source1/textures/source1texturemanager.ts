@@ -118,6 +118,13 @@ class Source1TextureManagerClass {
 		return (this.#texturesList.get(repository, path) as AnimatedTexture)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
 	}
 
+	async getInternalTexture(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true): Promise<Texture | null> {
+		frame = Math.floor(frame);
+		path = cleanupPath(path);
+
+		return this.#texturesList.get(repository, path)?.getFrame(frame) ?? null;
+	}
+
 	#getInternalTextureName() {
 		return 'source1texturemanager_' + (++internalTextureId);
 	}

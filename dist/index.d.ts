@@ -3636,7 +3636,7 @@ declare class Channel {
                           #private;
                           id: string;
                           name: string;
-                          uniforms: Record<string, UniformValue>;
+                          uniforms: Record<string, UniformValue | Record<string, UniformValue>>;
                           defines: Record<string, any>;
                           parameters: MaterialParams;
                           depthTest: boolean;
@@ -6927,6 +6927,7 @@ declare class Channel {
                           getTexture(repository: string, path: string, needCubeMap?: boolean, srgb?: boolean): AnimatedTexture | null;
                           getVtf(repository: string, path: string): Promise<Source1Vtf | null>;
                           getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
+                          getInternalTexture(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
                           addInternalTexture(repository: string, path?: string, texture?: AnimatedTexture): {
                               name: string;
                               texture: AnimatedTexture;
