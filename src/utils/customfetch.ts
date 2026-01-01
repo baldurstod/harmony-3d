@@ -2,7 +2,7 @@ type FetchFunction = (resource: string | URL | Request, options?: RequestInit) =
 
 let fetchFunction: FetchFunction | null = null;
 
-export function setFetchFunction(func: FetchFunction) {
+export function setFetchFunction(func: FetchFunction): void {
 	fetchFunction = func;
 }
 

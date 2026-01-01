@@ -412,11 +412,11 @@ export class WebGLShaderSource {
 		if (this.#type == ShaderType.Wgsl) {
 			return this.#containsIncludeWgsl(includeName, defines);
 		} else {
-			return this.#containsIncludeGlsl(includeName, defines);
+			return this.#containsIncludeGlsl(includeName);
 		}
 	}
 
-	#containsIncludeGlsl(includeName: string, defines?: Map<string, string>): boolean {
+	#containsIncludeGlsl(includeName: string): boolean {
 		return this.#includes.has(includeName);
 	}
 
@@ -432,7 +432,7 @@ export class WebGLShaderSource {
 		return new Map(this.#sourceRowToInclude);
 	}
 
-	getOriginSource() {
+	getOriginSource(): string {
 		return this.#compileSource;
 	}
 	/*

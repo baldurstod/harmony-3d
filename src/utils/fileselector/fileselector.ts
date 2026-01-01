@@ -1,7 +1,7 @@
 import { createElement } from 'harmony-ui';
+import { FileSelectorFile } from './file';
 import { FileSelectorDirectory } from './fileselectordirectory';
 import { defineFileSelectorTile, HTMLFileSelectorTileElement } from './fileselectortile';
-import { FileSelectorFile } from './file';
 
 export { FileSelectorDirectory } from './fileselectordirectory';
 
@@ -27,7 +27,7 @@ export class FileSelector extends HTMLElement {
 		const htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
 
 		const treeViewId = 'display_tree_view';
-		const htmlTreeView = createElement('input', {
+		createElement('input', {
 			parent: htmlDisplayPropertiesSpan,
 			type: 'checkbox',
 			id: treeViewId,
@@ -36,11 +36,11 @@ export class FileSelector extends HTMLElement {
 				change: () => this.tileView = !this.#tileView
 			}
 		});
-		const htmlDisplayPropertiesLabel = createElement('label', { i18n: '#display_tree_view', parent: htmlDisplayPropertiesSpan, htmlFor: treeViewId });
+		createElement('label', { i18n: '#display_tree_view', parent: htmlDisplayPropertiesSpan, htmlFor: treeViewId });
 
 		const htmlFilter = createElement('div', { class: 'file-selector-filter', parent: this.#header });
 
-		const htmlFilterName = createElement('input', {
+		createElement('input', {
 			parent: htmlFilter,
 			events: {
 				input: (event: Event) => {
@@ -52,7 +52,7 @@ export class FileSelector extends HTMLElement {
 		});
 	}
 
-	fileSelected(file: FileSelectorFile) {
+	fileSelected(file: FileSelectorFile): void {
 		this.dispatchEvent(new CustomEvent('fileSelected', { detail: { file: file } }));
 	}
 
@@ -68,12 +68,12 @@ export class FileSelector extends HTMLElement {
 		this.#updateHtml();
 	}
 
-	connectedCallback() {
+	connectedCallback(): void {
 		this.append(this.#header, this.#content);
 		this.#updateHtml();
 	}
 
-	#getFileList(root: FileSelectorFile) {
+	#getFileList(root: FileSelectorFile): FileSelectorFile[] {
 		const list = [];
 		const stack = [root];
 		root.path = '';
@@ -105,7 +105,7 @@ export class FileSelector extends HTMLElement {
 		return list;
 	}
 
-	refreshFilter() {
+	refreshFilter(): void {
 		if (this.#tileView) {
 			for (const tile of this.#htmlTiles) {
 				tile.visible = this.#matchFilter(tile.file);
@@ -117,7 +117,7 @@ export class FileSelector extends HTMLElement {
 		}
 	}
 
-	#sortItems() {
+	#sortItems(): void {
 		if (this.#tileView) {
 			this.#htmlTiles.sort(
 				(a, b) => {
@@ -146,7 +146,7 @@ export class FileSelector extends HTMLElement {
 		return ret;
 	}
 
-	#updateHtml() {
+	#updateHtml(): void {
 		if (this.#initialized) {
 			return;
 		}
@@ -188,7 +188,7 @@ export class FileSelector extends HTMLElement {
 		this.#initialized = true;
 	}
 
-	get filter() {
+	get filter(): { name: string } {
 		return this.#filter;
 	}
 }

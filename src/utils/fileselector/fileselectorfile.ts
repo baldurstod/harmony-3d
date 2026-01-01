@@ -8,14 +8,14 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 
 	constructor() {
 		super();
-		this.addEventListener('click', (event) => {
+		this.addEventListener('click', () => {
 			if (this.#selector && this.#file) {
 				this.#selector.fileSelected(this.#file);
 			}
 		});
 	}
 
-	setFile(file: FileSelectorFile) {
+	setFile(file: FileSelectorFile): void {
 		this.#file = file;
 		this.#updateHtml();
 	}
@@ -24,7 +24,7 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 		this.#selector = selector;
 	}
 
-	connectedCallback() {
+	connectedCallback(): void {
 		this.#updateHtml();
 	}
 
@@ -35,7 +35,7 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 		}
 	}
 
-	#updateHtml() {
+	#updateHtml(): void {
 		if (this.#file) {
 			this.innerText = this.#file.name;
 		}
@@ -52,13 +52,13 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 		return visible;
 	}
 
-	get file() {
+	get file(): FileSelectorFile | undefined {
 		return this.#file;
 	}
 }
 
 let definedFile = false;
-export function defineFileSelectorFile() {
+export function defineFileSelectorFile(): void {
 	if (window.customElements && !definedFile) {
 		customElements.define('file-selector-file', HTMLFileSelectorFileElement);
 		definedFile = true;

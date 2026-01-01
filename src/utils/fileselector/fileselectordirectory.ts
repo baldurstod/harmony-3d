@@ -1,7 +1,7 @@
 import { createElement, display, hide, show } from 'harmony-ui';
-import { defineFileSelectorFile, HTMLFileSelectorFileElement } from './fileselectorfile';
 import { FileSelectorFile } from './file';
 import { FileSelector } from './fileselector';
+import { defineFileSelectorFile, HTMLFileSelectorFileElement } from './fileselectorfile';
 
 export class FileSelectorDirectory extends HTMLElement {
 	#initialized = false;
@@ -33,7 +33,7 @@ export class FileSelectorDirectory extends HTMLElement {
 		this.#content = createElement('div', { class: 'file-selector-directory-content' });
 	}
 
-	#childExpanded(child: FileSelectorDirectory) {
+	#childExpanded(child: FileSelectorDirectory): void {
 		for (const enumeratedChild of this.#content.children) {
 			if (enumeratedChild.tagName == 'FILE-SELECTOR-DIRECTORY' && enumeratedChild != child) {
 				(enumeratedChild as FileSelectorDirectory).collapse();
@@ -41,17 +41,17 @@ export class FileSelectorDirectory extends HTMLElement {
 		}
 	}
 
-	expand() {
+	expand(): void {
 		this.#expanded = true;
 		this.#updateHtml();
 	}
 
-	collapse() {
+	collapse(): void {
 		this.#expanded = false;
 		hide(this.#content);
 	}
 
-	setFile(file: FileSelectorFile) {
+	setFile(file: FileSelectorFile): void {
 		this.#file = file;
 		this.#initialized = false;
 		this.#updateHtml();
@@ -61,11 +61,11 @@ export class FileSelectorDirectory extends HTMLElement {
 		this.#selector = selector;
 	}
 
-	get file() {
+	get file(): FileSelectorFile | undefined {
 		return this.#file;
 	}
 
-	connectedCallback() {
+	connectedCallback(): void {
 		this.append(this.#header, this.#content);
 		this.#updateHtml();
 	}
@@ -78,7 +78,7 @@ export class FileSelectorDirectory extends HTMLElement {
 		}
 	}
 
-	sort() {
+	sort(): void {
 		this.#childs.sort(
 			(a: HTMLElement, b: HTMLElement): number => {
 				const aIsDir = a.tagName == 'FILE-SELECTOR-DIRECTORY';
@@ -129,7 +129,7 @@ export class FileSelectorDirectory extends HTMLElement {
 		return visible;
 	}
 
-	#matchFilter(file: FileSelectorFile) {
+	#matchFilter(file: FileSelectorFile): boolean {
 		if (file.files) {
 			for (const child of file.files) {
 				if (this.#matchFilter(child)) {
@@ -143,7 +143,7 @@ export class FileSelectorDirectory extends HTMLElement {
 		return false;
 	}
 
-	#updateHtml() {
+	#updateHtml(): void {
 		defineFileSelectorFile();
 		if (this.#file && !this.#initialized) {
 			this.#name = this.#file.name.replace(/\/$/g, '');//remove trailing /

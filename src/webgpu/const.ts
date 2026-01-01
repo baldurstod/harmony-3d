@@ -1,5 +1,5 @@
 // TODO: remove when WebGPU is a baseline feature
-export function initWebGPUConst() {
+export function initWebGPUConst(): void {
 	if (!window.GPUTextureUsage) {
 		window.GPUTextureUsage = {
 			'COPY_SRC': 1,
