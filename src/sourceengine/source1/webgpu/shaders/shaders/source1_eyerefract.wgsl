@@ -127,7 +127,7 @@ fn vertex_main(
 	output.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );
 	output.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );
 
-	let vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - cameraPosition);
+	let vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);
 	output.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);
 	//vTangentViewVector.xyz = vWorldViewVector;
 	//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;

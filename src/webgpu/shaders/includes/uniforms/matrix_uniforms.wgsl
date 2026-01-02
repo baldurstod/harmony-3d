@@ -5,6 +5,7 @@ struct MatrixUniforms {
 	projectionMatrix : mat4x4f,
 	viewProjectionMatrix : mat4x4f,
 	normalMatrix : mat3x3f,
+	cameraPosition: vec3f,
 }
 
 @group(0) @binding(x) var<uniform> matrixUniforms : MatrixUniforms;

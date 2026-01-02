@@ -387,8 +387,11 @@ export class WebGPURenderer implements Renderer {
 									m[10] = object._normalMatrix[8];
 									bufferSource = m as BufferSource;
 									break;
+								case 'cameraPosition':
+									bufferSource = camera.position as BufferSource;
+									break;
 								default:
-									errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+									errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 							}
 
 							if (bufferSource) {
@@ -598,6 +601,7 @@ export class WebGPURenderer implements Renderer {
 
 
 		const pipelineLayout = device.createPipelineLayout({
+			label: material.getShaderSource(),
 			bindGroupLayouts: bindGroupLayouts,
 		});
 

@@ -3,7 +3,6 @@
 #include declare_vertex_detail_uv
 #include declare_vertex_skinning
 
-#include declare_camera_position
 #include declare_fragment_standard
 #include declare_fragment_color_map
 #include declare_fragment_detail_map

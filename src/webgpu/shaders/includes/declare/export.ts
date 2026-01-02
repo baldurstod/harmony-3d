@@ -1,8 +1,5 @@
 import { addWgslInclude } from '../../../../shaders/includemanager';
 
-import declare_camera_position from './declare_camera_position.wgsl';
-addWgslInclude('declare_camera_position', declare_camera_position);
-
 import declare_fragment_alpha_test from './declare_fragment_alpha_test.wgsl';
 addWgslInclude('declare_fragment_alpha_test', declare_fragment_alpha_test);
 
