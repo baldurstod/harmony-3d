@@ -1,10 +1,6 @@
-//@group(0) @binding(x) var<uniform> test0: f32;
-//@group(0) @binding(x) var<uniform> test1: f32;
-//@group(0) @binding(x) var<uniform> test2: f32;
-//@group(0) @binding(x) var<uniform> test3: f32;
-
 #include matrix_uniforms
 #include declare_texture_transform
+#include declare_vertex_detail_uv
 #include declare_vertex_skinning
 
 #include declare_camera_position

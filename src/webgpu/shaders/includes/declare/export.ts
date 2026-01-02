@@ -42,6 +42,9 @@ addWgslInclude('declare_shadow_mapping', declare_shadow_mapping);
 import declare_texture_transform from './declare_texture_transform.wgsl';
 addWgslInclude('declare_texture_transform', declare_texture_transform);
 
+import declare_vertex_detail_uv from './declare_vertex_detail_uv.wgsl';
+addWgslInclude('declare_vertex_detail_uv', declare_vertex_detail_uv);
+
 import declare_vertex_skinning from './declare_vertex_skinning.wgsl';
 addWgslInclude('declare_vertex_skinning', declare_vertex_skinning);
 

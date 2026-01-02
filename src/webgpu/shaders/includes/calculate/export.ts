@@ -51,6 +51,9 @@ addWgslInclude('calculate_vertex', calculate_vertex);
 import calculate_vertex_color from './calculate_vertex_color.wgsl';
 addWgslInclude('calculate_vertex_color', calculate_vertex_color);
 
+import calculate_vertex_detail_uv from './calculate_vertex_detail_uv.wgsl';
+addWgslInclude('calculate_vertex_detail_uv', calculate_vertex_detail_uv);
+
 import calculate_vertex_log_depth from './calculate_vertex_log_depth.wgsl';
 addWgslInclude('calculate_vertex_log_depth', calculate_vertex_log_depth);
 
