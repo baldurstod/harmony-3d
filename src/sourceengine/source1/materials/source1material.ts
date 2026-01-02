@@ -116,7 +116,7 @@ function initDefaultParameters(defaultParameters: VmtParameters, parameters: Vmt
 }
 
 let defaultTexture: Texture;
-function getDefaultTexture(): Texture {
+export function getDefaultTexture(): Texture {
 	if (!defaultTexture) {
 		defaultTexture = TextureManager.createFlatTexture({
 			webgpuDescriptor: {

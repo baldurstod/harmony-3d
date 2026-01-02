@@ -13,4 +13,4 @@ let vertexPositionModelSpace: vec4f = vec4(position, 1.0);
 #endif
 
 output.vVertexNormalModelSpace = vertexNormalModelSpace;
-output.vVertexTangentModelSpace = vertexTangentModelSpace;
+//output.vVertexTangentModelSpace = vertexTangentModelSpace;

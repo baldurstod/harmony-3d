@@ -47,11 +47,19 @@ export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTex
 	return texture;
 }
 
-export function deleteTexture(texture: WebGLTexture | null) {
-	if (texture) {
+export function deleteTexture(texture: WebGLTexture | GPUTexture | null) {
+	if (!texture) {
+		return;
+	}
+
+	if (Graphics.isWebGLAny) {
+		// WebGL
 		context.deleteTexture(texture);
 		textures.delete(texture);
 		TextureFactoryEventTarget.dispatchEvent(new CustomEvent<TextureEvent>('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+	} else {
+		// WebGPU
+		(texture as GPUTexture).destroy();
 	}
 }
 

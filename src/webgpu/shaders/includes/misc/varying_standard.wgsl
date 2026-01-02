@@ -9,7 +9,7 @@ struct VertexOut {
 	@location(y) vVertexNormalWorldSpace: vec3f,
 	@location(y) vVertexNormalCameraSpace: vec3f,
 
-	@location(y) vVertexTangentModelSpace: vec4f,
+	//@location(y) vVertexTangentModelSpace: vec4f,
 	@location(y) vVertexTangentWorldSpace: vec3f,
 	@location(y) vVertexTangentCameraSpace: vec3f,
 

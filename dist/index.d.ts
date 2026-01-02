@@ -1544,7 +1544,7 @@ declare class Channel {
 
                   export declare function degToRad(deg: number): number;
 
-                  export declare function deleteTexture(texture: WebGLTexture | null): void;
+                  export declare function deleteTexture(texture: WebGLTexture | GPUTexture | null): void;
 
                   export declare class Detex {
                       #private;
@@ -1917,6 +1917,7 @@ declare class Channel {
                       export declare class EyeRefractMaterial extends Source1Material {
                           #private;
                           useSrgb: boolean;
+                          constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
                           init(): void;
                           afterProcessProxies(): void;
                           beforeRender(camera: Camera): void;

@@ -3,7 +3,7 @@ import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
 import { TextureManager } from '../../../textures/texturemanager';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
-import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
+import { getDefaultTexture, Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
 const tempVec3 = vec3.create();
 
@@ -16,6 +16,16 @@ export class EyeRefractMaterial extends Source1Material {
 	#irisProjectionU = vec4.create();
 	#irisProjectionV = vec4.create();
 	useSrgb = false;
+
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
+		super(repository, path, vmt, params);
+
+		this.setTexture('corneaTexture', getDefaultTexture());
+
+		this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
+		this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
+		this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
+	}
 
 	init(): void {
 		if (this.#initialized) {
@@ -40,7 +50,7 @@ export class EyeRefractMaterial extends Source1Material {
 			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
 		}
 		if (parameters['$corneatexture']) {
-			this.setTexture('corneaTexture', this.getTexture(TextureRole.Cornea, this.repository, parameters['$corneatexture'], 0));
+			this.setTexture('corneaTexture', this.getTexture(TextureRole.Cornea, this.repository, parameters['$corneatexture'], 0) ?? getDefaultTexture());
 		}
 
 		/*

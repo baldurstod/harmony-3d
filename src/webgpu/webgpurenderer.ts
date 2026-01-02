@@ -453,6 +453,7 @@ export class WebGPURenderer implements Renderer {
 										new Float32Array([materialUniform as number]),
 									);
 									break;
+								case 'mat4x4f':
 								case 'vec2f':
 								case 'vec3f':
 								case 'vec4f':
