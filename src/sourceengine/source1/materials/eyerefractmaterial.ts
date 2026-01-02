@@ -40,7 +40,7 @@ export class EyeRefractMaterial extends Source1Material {
 			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
 		}
 		if (parameters['$corneatexture']) {
-			this.setTexture('corneaMap', this.getTexture(TextureRole.Cornea, this.repository, parameters['$corneatexture'], 0));
+			this.setTexture('corneaTexture', this.getTexture(TextureRole.Cornea, this.repository, parameters['$corneatexture'], 0));
 		}
 
 		/*

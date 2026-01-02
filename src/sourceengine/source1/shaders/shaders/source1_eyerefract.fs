@@ -7,7 +7,7 @@ uniform vec3 phongfresnelranges;
 #include declare_fragment_color_map
 #include declare_fragment_alpha_test
 
-uniform sampler2D corneaMap;
+uniform sampler2D corneaTexture;
 
 /*const vec4 g_vIrisProjectionU = vec4(0, 1, 0, 0);
 const vec4 g_vIrisProjectionV = vec4(0, 0, 1, 0);*/
@@ -56,7 +56,7 @@ void main(void) {
 	vCorneaUv.y = dot( uIrisProjectionV, vec4( vWorldPosition, 1.0 ) );
 	vec2 vSphereUv = ( vCorneaUv.xy * 0.5 ) + 0.25;
 
-	vec4 corneaColor = texture2D(corneaMap, mod(vCorneaUv, 1.0));
+	vec4 corneaColor = texture2D(corneaTexture, mod(vCorneaUv, 1.0));
 	float fIrisOffset = corneaColor.b;
 
 	vec2 vParallaxVector = ( vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - vTangentViewVector.z ); // Note: 0.25 is a magic number
