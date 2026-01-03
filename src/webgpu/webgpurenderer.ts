@@ -183,12 +183,6 @@ export class WebGPURenderer implements Renderer {
 
 		if (renderLights) {
 			this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
-			/*
-			if (!object.receiveShadow) {
-				//Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-				includeCode += '#undef USE_SHADOW_MAPPING';
-			}
-			*/
 		} else {
 			this.#unsetLights(defines);
 		}
@@ -203,9 +197,6 @@ export class WebGPURenderer implements Renderer {
 
 		const geometryAttributes = geometry.attributes;
 		const indexAttribute = geometryAttributes.get('index');
-		//const positionAttribute = geometryAttributes.get('aVertexPosition');
-		//const normalAttribute = geometryAttributes.get('aVertexNormal');
-		//const textureCoordAttribute = geometryAttributes.get('aTextureCoord');
 		if (!indexAttribute) {
 			return;
 		}
@@ -225,7 +216,6 @@ export class WebGPURenderer implements Renderer {
 
 			indexBuffer = device.createBuffer({
 				label: 'index',
-				//size: sphereMesh.indices.byteLength,
 				size: size,
 				usage: GPUBufferUsage.INDEX,
 				mappedAtCreation: true,
@@ -236,66 +226,7 @@ export class WebGPURenderer implements Renderer {
 			indexAttribute.gpuBuffer = indexBuffer;
 			indexAttribute.dirty = false;
 		}
-		/*
-		const vertices = new Float32Array([
-			0.0, 0.6, 0, 1, 1, 0, 0, 1,
-			-0.5, -0.6, 0, 1, 0, 1, 0, 1,
-			0.5, -0.6, 0, 1, 0, 0, 1, 1
-		]);
-		*/
-		//const vertices = positionAttribute._array;
-		/*
-		if (!vertices) {
-			return;
-		}
-		*/
-		//const normals: TypedArrayNumber | undefined = normalAttribute?._array;
-		//const textureCoords = textureCoordAttribute?._array as TypedArrayNumber | undefined;
 
-		/*
-		const positionBuffer = device.createBuffer({
-			label: 'position',
-			size: vertices.length * 4/* position is float32* /,
-			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-		});
-
-		device.queue.writeBuffer(positionBuffer, 0, vertices as BufferSource, 0, vertices.length);
-		*/
-
-		/*
-		const normalsLength = (normals?.length ?? 1);
-		const normalBuffer = device.createBuffer({
-			label: 'normal',
-			size: normalsLength * 4/* normal is float32* /,
-			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-		});
-
-		if (normals) {
-			device.queue.writeBuffer(normalBuffer, 0, normals as BufferSource, 0, normalsLength);
-		}
-		*/
-
-		/*
-		const textureCoordsLength = (textureCoords?.length ?? 1);
-		const textureCoordBuffer = device.createBuffer({
-			label: 'texture coords',
-			size: textureCoordsLength * 4/* texture coord is float32* /,
-			usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-		});
-
-		if (textureCoords) {
-			device.queue.writeBuffer(textureCoordBuffer, 0, textureCoords as BufferSource, 0, textureCoordsLength);
-		}
-		*/
-
-		//const SIZE_UNIFORM_MATRIX = 4 * 16;
-		//const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
-		/*
-		const uniformBuffer = device.createBuffer({
-			size: uniformBufferSize,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-		});
-		*/
 		const cameraMatrix = camera.cameraMatrix;
 		const projectionMatrix = camera.projectionMatrix;
 		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
@@ -511,14 +442,6 @@ export class WebGPURenderer implements Renderer {
 							}
 						}
 					}
-					/*
-					const bufferSource = new Uint8Array(uniform.size) as BufferSource;
-					device.queue.writeBuffer(
-						uniformBuffer,
-						0,
-						bufferSource,
-					);
-					*/
 				}
 			}
 
