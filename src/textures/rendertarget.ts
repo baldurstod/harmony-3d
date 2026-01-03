@@ -32,7 +32,8 @@ export class RenderTarget {
 		} else {
 			this.#texture = TextureManager.createTexture({
 				webgpuDescriptor: {
-					format: WebGPUInternal.format,
+					//format: 'rgba8unorm',//WebGPUInternal.format,
+					format: 'rgba8unorm',//WebGPUInternal.format,
 					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 					size: { width, height },
 				},
@@ -117,7 +118,7 @@ export class RenderTarget {
 				(this.#texture.texture as GPUTexture | null)?.destroy();
 				this.#texture.texture = createTexture({
 					// TODO: mutualize descriptor
-					format: navigator.gpu.getPreferredCanvasFormat(),
+					format: this.#texture.gpuFormat,
 					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 					size: { width, height },
 				});

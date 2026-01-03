@@ -1,6 +1,6 @@
 import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
-import { StructInfo, WgslReflect } from 'wgsl_reflect';
+import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -37,7 +37,7 @@ type WgslModule = {
 	source: string;
 }
 
-type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture };
+type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture, access?: GPUStorageTextureAccess };
 
 const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
@@ -539,11 +539,13 @@ export class WebGPURenderer implements Renderer {
 
 		let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
 
+		let pipelineColorFormat = WebGPUInternal.format;
 		const renderTarget = context.renderContext.renderTarget;
 		if (renderTarget) {
 			const gpuTexture = renderTarget.getTexture().texture as GPUTexture | null;
 			if (gpuTexture) {
 				view = gpuTexture.createView();
+				pipelineColorFormat = gpuTexture.format;
 			}
 		}
 
@@ -615,7 +617,7 @@ export class WebGPURenderer implements Renderer {
 				module: shaderModule.module,
 				entryPoint: fragmentEntryPoint,
 				targets: [{
-					format: WebGPUInternal.format,
+					format: pipelineColorFormat,
 					blend: material.getWebGPUBlending(),
 				}]
 			},
@@ -1019,6 +1021,7 @@ export class WebGPURenderer implements Renderer {
 					entry.storageTexture = {
 						viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
 						format: binding.storageTexture.gpuFormat,
+						access: binding.access,
 					};
 				}
 
@@ -1343,11 +1346,26 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		for (const shaderTexture of shaderModule.reflection.storage) {
+			let access: GPUStorageTextureAccess = 'read-only';
+			switch ((shaderTexture.type as TemplateInfo).access) {
+				case 'read':
+					break;
+				case 'write':
+					access = 'write-only';
+					break;
+				case 'read_write':
+					access = 'read-write';
+					break;
+				default:
+					errorOnce(`Unknown storage texture access type ${(shaderTexture.type as TemplateInfo).access}`);
+					break;
+			}
+
 			switch (shaderTexture.name) {
 				case 'colorTexture':
 					const storageTexture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
 					if (storageTexture) {
-						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
 					}
 					break;
 				case 'outTexture':
@@ -1355,14 +1373,14 @@ export class WebGPURenderer implements Renderer {
 					if (outTexture) {
 						const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
 						storageTexture.texture = outTexture;
-						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
 					}
 					break;
 				default:
 					{
 						const storageTexture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
-							groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+							groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
 						} else {
 							errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}

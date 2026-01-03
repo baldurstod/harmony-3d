@@ -6886,7 +6886,8 @@ class RenderTarget {
         else {
             this.#texture = TextureManager.createTexture({
                 webgpuDescriptor: {
-                    format: WebGPUInternal.format,
+                    //format: 'rgba8unorm',//WebGPUInternal.format,
+                    format: 'rgba8unorm', //WebGPUInternal.format,
                     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
                     size: { width, height },
                 },
@@ -6956,7 +6957,7 @@ class RenderTarget {
                 this.#texture.texture?.destroy();
                 this.#texture.texture = createTexture({
                     // TODO: mutualize descriptor
-                    format: navigator.gpu.getPreferredCanvasFormat(),
+                    format: this.#texture.gpuFormat,
                     usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
                     size: { width, height },
                 });
@@ -12240,11 +12241,13 @@ class WebGPURenderer {
         });
         const commandEncoder = device.createCommandEncoder();
         let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
+        let pipelineColorFormat = WebGPUInternal.format;
         const renderTarget = context.renderContext.renderTarget;
         if (renderTarget) {
             const gpuTexture = renderTarget.getTexture().texture;
             if (gpuTexture) {
                 view = gpuTexture.createView();
+                pipelineColorFormat = gpuTexture.format;
             }
         }
         const renderPassDescriptor = {
@@ -12307,7 +12310,7 @@ class WebGPURenderer {
                 module: shaderModule.module,
                 entryPoint: fragmentEntryPoint,
                 targets: [{
-                        format: WebGPUInternal.format,
+                        format: pipelineColorFormat,
                         blend: material.getWebGPUBlending(),
                     }]
             },
@@ -12638,6 +12641,7 @@ class WebGPURenderer {
                     entry.storageTexture = {
                         viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
                         format: binding.storageTexture.gpuFormat,
+                        access: binding.access,
                     };
                 }
                 entries.push(entry);
@@ -12909,11 +12913,25 @@ class WebGPURenderer {
             }
         }
         for (const shaderTexture of shaderModule.reflection.storage) {
+            let access = 'read-only';
+            switch (shaderTexture.type.access) {
+                case 'read':
+                    break;
+                case 'write':
+                    access = 'write-only';
+                    break;
+                case 'read_write':
+                    access = 'read-write';
+                    break;
+                default:
+                    errorOnce(`Unknown storage texture access type ${shaderTexture.type.access}`);
+                    break;
+            }
             switch (shaderTexture.name) {
                 case 'colorTexture':
                     const storageTexture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
                     if (storageTexture) {
-                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
                     }
                     break;
                 case 'outTexture':
@@ -12921,14 +12939,14 @@ class WebGPURenderer {
                     if (outTexture) {
                         const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
                         storageTexture.texture = outTexture;
-                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
                     }
                     break;
                 default:
                     {
                         const storageTexture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
                         if (storageTexture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                            groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
                         }
                         else {
                             errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -75705,7 +75723,7 @@ var line = "#include matrix_uniforms\n\n@group(0) @binding(x) var<uniform> resol
 Shaders['grid.wgsl'] = grid;
 Shaders['line.wgsl'] = line;
 
-var pixelate = "/*\n#define USE_COLOR_MAP// why ?\n\n#include declare_fragment_standard\n//#include declare_fragment_color_map\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n#include postprocessing_vertex\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tfragColor = vec4(1.0);\n\tfragColor = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\n\t#include output_fragment\n}\n*/\n\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)  {\n\tlet size = textureDimensions(outTexture);\n\tlet center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t// The distance from the center of the texture\n\tlet dist = distance(vec2f(pos), center);\n\n\t// Compute stripes based on the distance\n\tlet stripe = dist / 32.0 % 2.0;\n\tlet red = vec4f(1, 0, 0, 1);\n\tlet cyan = vec4f(0, 1, 1, 1);\n\tlet color = select(red, cyan, stripe < 1.0);\n\n\t// Write the color to the texture\n\tvar v = textureLoad(colorTexture, pos);\n\ttextureStore(outTexture, pos, color);\n}\n";
+var pixelate = "/*\n#define USE_COLOR_MAP// why ?\n\n#include declare_fragment_standard\n//#include declare_fragment_color_map\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n#include postprocessing_vertex\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tfragColor = vec4(1.0);\n\tfragColor = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\n\t#include output_fragment\n}\n*/\n\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)  {\n\tlet size = textureDimensions(outTexture);\n\tlet center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t// The distance from the center of the texture\n\tlet dist = distance(vec2f(pos), center);\n\n\t// Compute stripes based on the distance\n\tlet stripe = dist / 32.0 % 2.0;\n\tlet red = vec4f(1, 0, 0, 1);\n\tlet cyan = vec4f(0, 1, 1, 1);\n\tlet color = select(red, cyan, stripe < 1.0);\n\n\t// Write the color to the texture\n\tvar v = textureLoad(colorTexture, pos);\n\ttextureStore(outTexture, pos, color);\n}\n";
 
 Shaders['pixelate.wgsl'] = pixelate;
 
