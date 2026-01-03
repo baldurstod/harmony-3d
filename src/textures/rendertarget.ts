@@ -5,7 +5,9 @@ import { GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_DEPTH_C
 import { Framebuffer } from '../webgl/framebuffer';
 import { Renderbuffer } from '../webgl/renderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
+import { createTexture } from './texturefactory';
 import { TextureManager } from './texturemanager';
+import { WebGPUInternal } from '../graphics/webgpuinternal';
 
 export class RenderTarget {
 	#width = 0;
@@ -30,8 +32,8 @@ export class RenderTarget {
 		} else {
 			this.#texture = TextureManager.createTexture({
 				webgpuDescriptor: {
-					format: 'rgba8unorm',
-					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+					format: WebGPUInternal.format,
+					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 					size: { width, height },
 				},
 				internalFormat: params.internalFormat,
@@ -108,9 +110,22 @@ export class RenderTarget {
 	}
 
 	resize(width: number, height: number) {
+		if (Graphics.isWebGLAny) {
+			this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+		} else {
+			if (this.#width != width || this.#height != height) {
+				(this.#texture.texture as GPUTexture | null)?.destroy();
+				this.#texture.texture = createTexture({
+					// TODO: mutualize descriptor
+					format: navigator.gpu.getPreferredCanvasFormat(),
+					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+					size: { width, height },
+				});
+			}
+		}
+
 		this.#width = width;
 		this.#height = height;
-		this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
 		//TODOv3: stencil / depth buffer
 		if (this.#depthRenderbuffer) {
 			this.#depthRenderbuffer.resize(width, height);

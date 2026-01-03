@@ -612,6 +612,10 @@ class Graphics {
 		}
 	}
 
+	static compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
+		this.#forwardRenderer!.compute(material, workgroupCountX, workgroupCountY, workgroupCountZ);
+	}
+
 	static renderMultiCanvas(delta: number, context: RenderContext = {}) {
 		// TODO: mutualize with the method render()
 		for (const [_, canvas] of this.#canvases) {
@@ -793,11 +797,11 @@ class Graphics {
 
 	static async #initContext(graphicOptions: GraphicsInitOptions = {}) {
 		if (graphicOptions.type == ContextType.WebGPU) {
-			await this.#initWebGPUContext(graphicOptions.webGPU);
 			this.#forwardRenderer = new WebGPURenderer();
+			await this.#initWebGPUContext(graphicOptions.webGPU);
 		} else {
-			this.#initWebGLContext(graphicOptions.webGL);
 			this.#forwardRenderer = new ForwardRenderer();
+			this.#initWebGLContext(graphicOptions.webGL);
 
 			WebGLRenderingState.setGraphics();
 		}
@@ -906,19 +910,32 @@ class Graphics {
 			return false;
 		}
 
+		const hasBGRA8unormStorage = adapter.features.has('bgra8unorm-storage');
+
 		if (!configuration.device) {
+			const requiredFeatures: Iterable<GPUFeatureName> = ['texture-compression-bc'];
+
+			if (hasBGRA8unormStorage) {
+				(requiredFeatures as string[]).push('bgra8unorm-storage');
+			}
+
 			configuration.device = await adapter.requestDevice({
-				requiredFeatures: ['texture-compression-bc'],
+				requiredFeatures,
 			});
 		}
+
 		if (!configuration.format) {
-			configuration.format = navigator.gpu.getPreferredCanvasFormat();
+			configuration.format = hasBGRA8unormStorage ? navigator.gpu.getPreferredCanvasFormat() : 'rgba8unorm';
 		}
+
+		this.#forwardRenderer.setDefine('PRESENTATION_FORMAT', configuration.format);
 
 		WebGPUInternal.config = configuration as GPUCanvasConfiguration;
 		WebGPUInternal.adapter = adapter;
 		WebGPUInternal.device = configuration.device;
 		WebGPUInternal.format = configuration.format;
+
+		configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING;
 
 		WebGPUInternal.gpuContext.configure(configuration as GPUCanvasConfiguration);
 
@@ -1245,20 +1262,12 @@ class Graphics {
 	*/
 
 	static pushRenderTarget(renderTarget: RenderTarget | null) {
-		if (this.isWebGPU) {
-			// TODO: do WebGPU version
-			return;
-		}
 		const viewport = this.getViewport(vec4.create());
 		this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
 		this.#setRenderTarget(renderTarget, viewport);
 	}
 
 	static popRenderTarget(): void {
-		if (this.isWebGPU) {
-			// TODO: do WebGPU version
-			return;
-		}
 		const popResult = this.#renderTargetStack.pop();
 		const target = this.#renderTargetStack[this.#renderTargetStack.length - 1];
 		if (target) {

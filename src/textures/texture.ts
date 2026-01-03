@@ -1,9 +1,10 @@
 import { TESTING } from '../buildoptions';
 import { Graphics } from '../graphics/graphics2';
 import { WebGLAnyRenderingContext } from '../types';
+import { errorOnce } from '../utils/console';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
-import { deleteTexture } from './texturefactory';
+import { deleteTexture, HarmonyGPUTextureDescriptor } from './texturefactory';
 
 export type TextureParams = {
 	[key: string]: unknown;
@@ -12,6 +13,7 @@ export type TextureParams = {
 	flipY?: boolean;
 	premultiplyAlpha?: boolean;
 	colorSpace?: ColorSpace;
+	gpuFormat: GPUTextureFormat;
 };
 
 export class Texture {
@@ -43,8 +45,10 @@ export class Texture {
 	properties = new Map<string, any>();
 	readonly defines = new Map<string, string>();
 	isCube = false;// TODO: remove. Cube maps should be using CubeTexture
+	gpuFormat: GPUTextureFormat;
+	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
 
-	constructor(textureParams: TextureParams = {}) {
+	constructor(textureParams: TextureParams = {gpuFormat:'rgba8unorm'}) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
 		this.image = textureParams.image;
 
@@ -64,6 +68,8 @@ export class Texture {
 		this.flipY = textureParams.flipY ?? false;
 		this.premultiplyAlpha = textureParams.premultiplyAlpha ?? false;
 		this.#colorSpace = textureParams.colorSpace ?? ColorSpace.None;
+
+		this.gpuFormat = textureParams.gpuFormat;
 
 		this.dirty = true;//removeme ?
 
@@ -88,10 +94,22 @@ export class Texture {
 			glContext.texParameteri(target, GL_TEXTURE_WRAP_S, this.wrapS);
 			glContext.texParameteri(target, GL_TEXTURE_WRAP_T, this.wrapT);
 			glContext.bindTexture(target, null);
+		} else {
+			errorOnce('TODO: Code setParameters for webgpu');
 		}
-		// TODO: do WebGPU version
 	}
 
+	/**
+	 * Change the pixel content of the texture.
+	 * @param glContext WebGL context, if relevant.
+	 * @param target Texture target, in WebGL context.
+	 * @param width Texture width.
+	 * @param height Texture height.
+	 * @param format Texture format for WebGL context.
+	 * @param type Texture type for WebGL context.
+	 * @param pixels Texture content.
+	 * @param level Texture lod
+	 */
 	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level = 0) {
 		if (Graphics.isWebGLAny) {
 			glContext.bindTexture(target, this.texture);
@@ -99,8 +117,9 @@ export class Texture {
 			glContext.bindTexture(target, null);
 			this.width = width;
 			this.height = height;
+		} else {
+			throw new Error('This function can\'t be used in a WebGPU context');
 		}
-		// TODO: do WebGPU version
 	}
 
 	generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum) {
@@ -108,8 +127,9 @@ export class Texture {
 			glContext.bindTexture(target, this.texture);
 			glContext.generateMipmap(target);
 			glContext.bindTexture(target, null);
+		} else {
+			errorOnce('TODO: Code generateMipmap for webgpu');
 		}
-		// TODO: generate mipmaps for webgpu
 	}
 
 	clone() {
@@ -133,6 +153,8 @@ export class Texture {
 		this.generateMipmaps = other.generateMipmaps;
 		this.flipY = other.flipY;
 		this.premultiplyAlpha = other.premultiplyAlpha;
+
+		this.gpuFormat = other.gpuFormat;
 
 		this.dirty = true;//removeme ?
 	}

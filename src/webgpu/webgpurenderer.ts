@@ -37,7 +37,7 @@ type WgslModule = {
 	source: string;
 }
 
-type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler };
+type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture };
 
 const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
@@ -532,7 +532,7 @@ export class WebGPURenderer implements Renderer {
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
-			bindGroupLayouts: this.#getBindGroupLayouts(groups),
+			bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
 		});
 
 		const commandEncoder = device.createCommandEncoder();
@@ -634,6 +634,7 @@ export class WebGPURenderer implements Renderer {
 
 		const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
 
+		/*
 		for (const [groupId, group] of groups.getMap()) {
 			const entries: GPUBindGroupEntry[] = [];
 			for (const [bindingId, uniformBuffer] of group) {
@@ -677,6 +678,9 @@ export class WebGPURenderer implements Renderer {
 			});
 			passEncoder.setBindGroup(groupId, uniformBindGroup);
 		}
+		*/
+
+		this.#createBindGroups(groups, renderPipeline, passEncoder);
 
 		passEncoder.setPipeline(renderPipeline);
 		if ((geometry as InstancedBufferGeometry).instanceCount === undefined) {
@@ -939,7 +943,7 @@ export class WebGPURenderer implements Renderer {
 		this.#defines.delete(define);
 	}
 
-	compute(material: Material): void {
+	compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
 		getDefines(material, defines);
 
@@ -951,9 +955,11 @@ export class WebGPURenderer implements Renderer {
 
 		const groups = new Map2<number, number, Binding>();
 
+		this.#populateBindGroups(shaderModule, groups, material, null, null, null, null)
+
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
-			bindGroupLayouts: this.#getBindGroupLayouts(groups),
+			bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
 		});
 
 		const pipelineDescriptor: GPUComputePipelineDescriptor = {
@@ -966,10 +972,23 @@ export class WebGPURenderer implements Renderer {
 
 		const computePipeline = device.createComputePipeline(pipelineDescriptor);
 
+		const encoder = device.createCommandEncoder({ label: 'compute encoder' });
+		const pass = encoder.beginComputePass({});
+
+		pass.setPipeline(computePipeline);
+		//pass.setBindGroup(0, bindGroup);
+
+		this.#createBindGroups(groups, computePipeline, pass);
+		pass.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
+		pass.end();
+
+		const commandBuffer = encoder.finish();
+		device.queue.submit([commandBuffer]);
+
 
 	}
 
-	#getBindGroupLayouts(groups: Map2<number, number, Binding>): GPUBindGroupLayout[] {
+	#getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boolean): GPUBindGroupLayout[] {
 		const device = WebGPUInternal.device;
 
 		const bindGroupLayouts: GPUBindGroupLayout[] = [];
@@ -978,7 +997,7 @@ export class WebGPURenderer implements Renderer {
 			for (const [bindingId, binding] of group) {
 				const entry: GPUBindGroupLayoutEntry = {
 					binding: bindingId,// corresponds to @binding
-					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
+					visibility: compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
 					//buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
 				}
 
@@ -996,10 +1015,18 @@ export class WebGPURenderer implements Renderer {
 					entry.sampler = {};
 				}
 
+				if (binding.storageTexture) {
+					entry.storageTexture = {
+						viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
+						format: binding.storageTexture.gpuFormat,
+					};
+				}
+
 				entries.push(entry);
 			}
 
 			bindGroupLayouts.push(device.createBindGroupLayout({
+				label: `group ${groupId}`,
 				entries: entries,
 			}))
 		}
@@ -1007,13 +1034,61 @@ export class WebGPURenderer implements Renderer {
 		return bindGroupLayouts;
 	}
 
-	#populateBindGroups(shaderModule: WgslModule, groups: Map2<number, number, Binding>, material: Material, object: Mesh, camera: Camera, uniforms: Map<string, BufferSource>, context: InternalRenderContext): void {
+	#createBindGroups(groups: Map2<number, number, Binding>, pipeline: GPUComputePipeline | GPURenderPipeline, encoder: GPUComputePassEncoder | GPURenderPassEncoder): void {
+		const device = WebGPUInternal.device;
+
+		for (const [groupId, group] of groups.getMap()) {
+			const entries: GPUBindGroupEntry[] = [];
+			for (const [bindingId, uniformBuffer] of group) {
+				if (uniformBuffer.buffer) {
+					entries.push({
+						binding: bindingId,// corresponds to @binding
+						resource: {
+							buffer: uniformBuffer.buffer,
+						},
+					});
+				}
+
+				const uniformTexture = uniformBuffer.texture ?? uniformBuffer.storageTexture;
+				if (uniformTexture) {
+					if (uniformTexture.isCube) {
+						entries.push({
+							binding: bindingId,// corresponds to @binding
+							resource: (uniformTexture.texture as GPUTexture).createView({
+								dimension: 'cube',
+							}),
+						});
+					} else {
+						entries.push({
+							binding: bindingId,// corresponds to @binding
+							resource: uniformTexture.texture as GPUTexture,
+						});
+					}
+				}
+				if (uniformBuffer.sampler) {
+					entries.push({
+						binding: bindingId,// corresponds to @binding
+						resource: uniformBuffer.sampler,
+					});
+				}
+			}
+
+			const uniformBindGroup = device.createBindGroup({
+				label: `Binding group: ${groupId}`,
+				layout: pipeline.getBindGroupLayout(groupId),// corresponds to @group
+				entries: entries,
+			});
+			encoder.setBindGroup(groupId, uniformBindGroup);
+		}
+	}
+
+	#populateBindGroups(shaderModule: WgslModule, groups: Map2<number, number, Binding>, material: Material, object: Mesh | null, camera: Camera | null, uniforms: Map<string, BufferSource> | null, context: InternalRenderContext | null): void {
 		if (!shaderModule.reflection) {
 			return;
 		}
 
-		const cameraMatrix = camera.cameraMatrix;
-		const projectionMatrix = camera.projectionMatrix;
+		const cameraMatrix = camera?.cameraMatrix;
+		const projectionMatrix = camera?.projectionMatrix;
 
 		const device = WebGPUInternal.device;
 
@@ -1056,13 +1131,13 @@ export class WebGPURenderer implements Renderer {
 
 						switch (member.name) {
 							case 'modelMatrix':
-								bufferSource = object.worldMatrix as BufferSource;
+								bufferSource = object?.worldMatrix as BufferSource;
 								break;
 							case 'viewMatrix':
 								bufferSource = cameraMatrix as BufferSource;
 								break;
 							case 'modelViewMatrix':
-								bufferSource = object._mvMatrix as BufferSource;
+								bufferSource = object?._mvMatrix as BufferSource;
 								break;
 							case 'projectionMatrix':
 								bufferSource = projectionMatrix as BufferSource;
@@ -1073,21 +1148,23 @@ export class WebGPURenderer implements Renderer {
 							case 'normalMatrix':
 								// In WGSL, mat3x3 actually are mat4x3
 								// TODO: improve this
-								mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
-								const m = new Float32Array(12);
-								m[0] = object._normalMatrix[0];
-								m[1] = object._normalMatrix[1];
-								m[2] = object._normalMatrix[2];
-								m[4] = object._normalMatrix[3];
-								m[5] = object._normalMatrix[4];
-								m[6] = object._normalMatrix[5];
-								m[8] = object._normalMatrix[6];
-								m[9] = object._normalMatrix[7];
-								m[10] = object._normalMatrix[8];
-								bufferSource = m as BufferSource;
+								if (object && cameraMatrix) {
+									mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
+									const m = new Float32Array(12);
+									m[0] = object._normalMatrix[0];
+									m[1] = object._normalMatrix[1];
+									m[2] = object._normalMatrix[2];
+									m[4] = object._normalMatrix[3];
+									m[5] = object._normalMatrix[4];
+									m[6] = object._normalMatrix[5];
+									m[8] = object._normalMatrix[6];
+									m[9] = object._normalMatrix[7];
+									m[10] = object._normalMatrix[8];
+									bufferSource = m as BufferSource;
+								}
 								break;
 							case 'cameraPosition':
-								bufferSource = camera.position as BufferSource;
+								bufferSource = camera?.position as BufferSource;
 								break;
 							default:
 								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -1108,7 +1185,7 @@ export class WebGPURenderer implements Renderer {
 					const structSize = (uniform.format as StructInfo).size;
 					for (const member of members) {
 						for (let i = 0; i < uniform.count; i++) {
-							const bufferSource = uniforms.get(`${uniform.name}[${i}].${member.name}`);
+							const bufferSource = uniforms?.get(`${uniform.name}[${i}].${member.name}`);
 							if (!bufferSource) {
 								continue
 							}
@@ -1123,7 +1200,7 @@ export class WebGPURenderer implements Renderer {
 				} else {
 					switch (uniform.name) {
 						case 'boneMatrix':
-							const bufferSource = object.uniforms[uniform.name];
+							const bufferSource = object?.uniforms[uniform.name];
 							device.queue.writeBuffer(
 								uniformBuffer,
 								0,
@@ -1137,7 +1214,7 @@ export class WebGPURenderer implements Renderer {
 
 				}
 			} else {// uniform is neither a struct nor an array
-				const bufferSource = uniforms.get(uniform.name);
+				const bufferSource = uniforms?.get(uniform.name);
 				if (bufferSource) {
 					device.queue.writeBuffer(
 						uniformBuffer,
@@ -1173,10 +1250,10 @@ export class WebGPURenderer implements Renderer {
 						let bufferSource: BufferSource | null = null;
 						switch (uniform.name) {
 							case 'resolution':
-								bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
+								bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
 								break;
 							case 'cameraPosition':
-								bufferSource = camera.position as BufferSource;
+								bufferSource = camera?.position as BufferSource;
 								break;
 							default:
 								errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
@@ -1221,6 +1298,14 @@ export class WebGPURenderer implements Renderer {
 						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 					}
 					break;
+				case 'outTexture':
+					const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
+					if (outTexture) {
+						const texture = new Texture({ gpuFormat: WebGPUInternal.format });
+						texture.texture = outTexture;
+						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+					}
+					break;
 				default:
 					{
 						const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
@@ -1251,6 +1336,35 @@ export class WebGPURenderer implements Renderer {
 							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
 						} else {
 							errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
+						}
+					}
+					break;
+			}
+		}
+
+		for (const shaderTexture of shaderModule.reflection.storage) {
+			switch (shaderTexture.name) {
+				case 'colorTexture':
+					const storageTexture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
+					if (storageTexture) {
+						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+					}
+					break;
+				case 'outTexture':
+					const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
+					if (outTexture) {
+						const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
+						storageTexture.texture = outTexture;
+						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+					}
+					break;
+				default:
+					{
+						const storageTexture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
+						if (storageTexture) {
+							groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+						} else {
+							errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}
 					}
 					break;

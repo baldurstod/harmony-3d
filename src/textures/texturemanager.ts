@@ -4,7 +4,7 @@ import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { createTexture, deleteTexture, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, HarmonyGPUTextureDescriptor, HarmonyGPUTextureDescriptorOptionalSize } from '../textures/texturefactory';
 import { Texture, TextureParams } from './texture';
 
-export type CreateTextureParams = TextureParams & {
+export type CreateTextureParams = Omit<TextureParams, 'format'> & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptor;
 	needCubeMap?: boolean;
 };
@@ -21,14 +21,9 @@ export type CreateCheckerTextureParams = {
 	needCubeMap?: boolean;
 };
 
-export type CreateNoiseTextureParams = TextureParams & {
-	webgpuDescriptor: HarmonyGPUTextureDescriptor;
-	needCubeMap?: boolean;
-	//width: number; // TODO: fix, redundant with webgpuDescriptor.size
-	//height: number;// TODO: fix, redundant with webgpuDescriptor.size
-};
+export type CreateNoiseTextureParams = CreateTextureParams;
 
-export type CreateImageTextureParams = TextureParams & {
+export type CreateImageTextureParams = Omit<TextureParams, 'format'> & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
 	image: HTMLImageElement;
 };
@@ -41,7 +36,8 @@ export class TextureManager {
 	}
 
 	static createTexture(textureParams: CreateTextureParams) {
-		const texture = new Texture(textureParams);
+		const texture = new Texture({ ...textureParams, ...{ gpuFormat: textureParams.webgpuDescriptor.format } });
+		texture.gpuFormat = textureParams.webgpuDescriptor.format;
 		texture.texture = createTexture(textureParams.webgpuDescriptor /*?? {
 			size: [1],
 			format: 'rgba8unorm',
@@ -75,7 +71,7 @@ export class TextureManager {
 			format: 'rgba8unorm',
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 		}
-		const texture = this.createTexture({ webgpuDescriptor: descriptor });
+		const texture = this.createTexture({ webgpuDescriptor: descriptor, gpuFormat: descriptor.format });
 		fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
 		return texture;
 	}

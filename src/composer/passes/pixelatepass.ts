@@ -35,9 +35,12 @@ export class PixelatePass extends Pass {
 
 	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
-
-		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene!, this.camera!, 0, context);
-		Graphics.popRenderTarget();
+		if (Graphics.isWebGLAny) {
+			Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+			Graphics.render(this.scene!, this.camera!, 0, context);
+			Graphics.popRenderTarget();
+		} else {
+			Graphics.compute(this.#material, context.width!, context.height);
+		}
 	}
 }

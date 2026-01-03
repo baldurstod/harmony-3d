@@ -6343,19 +6343,6 @@ class Renderbuffer {
     }
 }
 
-class Color {
-    r = 1;
-    g = 1;
-    b = 1;
-    a = 1;
-    constructor(r, g, b, a) {
-        this.r = r ?? 1;
-        this.g = g ?? 1;
-        this.b = b ?? 1;
-        this.a = a ?? 1;
-    }
-}
-
 class WebGPUInternal {
     static gpuContext;
     static config;
@@ -6647,6 +6634,19 @@ async function fillTextureWithImageWebGPU(texture, image) {
     WebGPUInternal.device.queue.submit([]);
 }
 
+class Color {
+    r = 1;
+    g = 1;
+    b = 1;
+    a = 1;
+    constructor(r, g, b, a) {
+        this.r = r ?? 1;
+        this.g = g ?? 1;
+        this.b = b ?? 1;
+        this.a = a ?? 1;
+    }
+}
+
 class Texture {
     mapping = TextureMapping.UvMapping;
     #users = new Set();
@@ -6676,7 +6676,9 @@ class Texture {
     properties = new Map();
     defines = new Map();
     isCube = false; // TODO: remove. Cube maps should be using CubeTexture
-    constructor(textureParams = {}) {
+    gpuFormat;
+    //readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
+    constructor(textureParams = { gpuFormat: 'rgba8unorm' }) {
         //this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
         this.image = textureParams.image;
         this.internalFormat = textureParams.internalFormat || GL_RGBA;
@@ -6690,6 +6692,7 @@ class Texture {
         this.flipY = textureParams.flipY ?? false;
         this.premultiplyAlpha = textureParams.premultiplyAlpha ?? false;
         this.#colorSpace = textureParams.colorSpace ?? ColorSpace.None;
+        this.gpuFormat = textureParams.gpuFormat;
         this.dirty = true; //removeme ?
         //this.texture = TextureManager.createTexture();
         //this.setParameters();
@@ -6710,8 +6713,21 @@ class Texture {
             glContext.texParameteri(target, GL_TEXTURE_WRAP_T, this.wrapT);
             glContext.bindTexture(target, null);
         }
-        // TODO: do WebGPU version
+        else {
+            errorOnce('TODO: Code setParameters for webgpu');
+        }
     }
+    /**
+     * Change the pixel content of the texture.
+     * @param glContext WebGL context, if relevant.
+     * @param target Texture target, in WebGL context.
+     * @param width Texture width.
+     * @param height Texture height.
+     * @param format Texture format for WebGL context.
+     * @param type Texture type for WebGL context.
+     * @param pixels Texture content.
+     * @param level Texture lod
+     */
     texImage2D(glContext, target, width, height, format, type, pixels = null, level = 0) {
         if (Graphics$1.isWebGLAny) {
             glContext.bindTexture(target, this.texture);
@@ -6720,7 +6736,9 @@ class Texture {
             this.width = width;
             this.height = height;
         }
-        // TODO: do WebGPU version
+        else {
+            throw new Error('This function can\'t be used in a WebGPU context');
+        }
     }
     generateMipmap(glContext, target) {
         if (Graphics$1.isWebGLAny) {
@@ -6728,7 +6746,9 @@ class Texture {
             glContext.generateMipmap(target);
             glContext.bindTexture(target, null);
         }
-        // TODO: generate mipmaps for webgpu
+        else {
+            errorOnce('TODO: Code generateMipmap for webgpu');
+        }
     }
     clone() {
         return new Texture().copy(this);
@@ -6745,6 +6765,7 @@ class Texture {
         this.generateMipmaps = other.generateMipmaps;
         this.flipY = other.flipY;
         this.premultiplyAlpha = other.premultiplyAlpha;
+        this.gpuFormat = other.gpuFormat;
         this.dirty = true; //removeme ?
     }
     setAlphaBits(bits) {
@@ -6791,7 +6812,8 @@ class TextureManager {
         this.#texturesList.set(path, texture);
     }
     static createTexture(textureParams) {
-        const texture = new Texture(textureParams);
+        const texture = new Texture({ ...textureParams, ...{ gpuFormat: textureParams.webgpuDescriptor.format } });
+        texture.gpuFormat = textureParams.webgpuDescriptor.format;
         texture.texture = createTexture(textureParams.webgpuDescriptor /*?? {
             size: [1],
             format: 'rgba8unorm',
@@ -6822,7 +6844,7 @@ class TextureManager {
             format: 'rgba8unorm',
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
         };
-        const texture = this.createTexture({ webgpuDescriptor: descriptor });
+        const texture = this.createTexture({ webgpuDescriptor: descriptor, gpuFormat: descriptor.format });
         fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
         return texture;
     }
@@ -6864,8 +6886,8 @@ class RenderTarget {
         else {
             this.#texture = TextureManager.createTexture({
                 webgpuDescriptor: {
-                    format: 'rgba8unorm',
-                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+                    format: WebGPUInternal.format,
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
                     size: { width, height },
                 },
                 internalFormat: params.internalFormat,
@@ -6926,9 +6948,22 @@ class RenderTarget {
         Graphics$1.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
     }
     resize(width, height) {
+        if (Graphics$1.isWebGLAny) {
+            this.#texture.texImage2D(Graphics$1.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+        }
+        else {
+            if (this.#width != width || this.#height != height) {
+                this.#texture.texture?.destroy();
+                this.#texture.texture = createTexture({
+                    // TODO: mutualize descriptor
+                    format: navigator.gpu.getPreferredCanvasFormat(),
+                    usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+                    size: { width, height },
+                });
+            }
+        }
         this.#width = width;
         this.#height = height;
-        this.#texture.texImage2D(Graphics$1.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
         //TODOv3: stencil / depth buffer
         if (this.#depthRenderbuffer) {
             this.#depthRenderbuffer.resize(width, height);
@@ -7121,9 +7156,14 @@ class PixelatePass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics$1.render(this.scene, this.camera, 0, context);
-        Graphics$1.popRenderTarget();
+        if (Graphics$1.isWebGLAny) {
+            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics$1.render(this.scene, this.camera, 0, context);
+            Graphics$1.popRenderTarget();
+        }
+        else {
+            Graphics$1.compute(this.#material, context.width, context.height);
+        }
     }
 }
 
@@ -7135,7 +7175,9 @@ class RenderPass extends Pass {
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        const renderTarget = renderToScreen ? null : writeBuffer;
+        Graphics$1.pushRenderTarget(renderTarget);
+        context.renderTarget = renderTarget;
         Graphics$1.render(this.scene, this.camera, delta, context);
         Graphics$1.popRenderTarget();
     }
@@ -11342,6 +11384,7 @@ class ForwardRenderer {
     #globalIncludeCode = '';
     #toneMapping = ToneMapping.None;
     #toneMappingExposure = 1.;
+    #defines = new Map();
     constructor() {
         this.#glContext = Graphics$1.glContext;
     }
@@ -11717,6 +11760,15 @@ class ForwardRenderer {
     clearColor(clearColor) {
         WebGLRenderingState.clearColor(clearColor);
     }
+    setDefine(define, value = '') {
+        this.#defines.set(define, value);
+    }
+    removeDefine(define) {
+        this.#defines.delete(define);
+    }
+    compute() {
+        errorOnce('compute unavailable for webgl');
+    }
 }
 function getDefinesAsString(meshOrMaterial) {
     const defines = [];
@@ -11738,6 +11790,7 @@ const tempViewProjectionMatrix = mat4.create();
 vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
+const computeEntryPoint = 'compute_main';
 class WebGPURenderer {
     #renderList = new RenderList();
     #shadowMap = new ShadowMap();
@@ -11745,6 +11798,7 @@ class WebGPURenderer {
     #materialsShaderModule = new Map2();
     #toneMapping = ToneMapping.None;
     #toneMappingExposure = 1.;
+    #defines = new Map();
     render(scene, camera, delta, context) {
         const renderList = this.#renderList;
         renderList.reset();
@@ -11850,17 +11904,11 @@ class WebGPURenderer {
             }
         }
         material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
-        const defines = new Map();
+        const defines = new Map(this.#defines); // TODO: don't create one each time
         getDefines(object, defines);
         getDefines(material, defines);
         if (renderLights) {
             this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows, defines);
-            /*
-            if (!object.receiveShadow) {
-                //Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-                includeCode += '#undef USE_SHADOW_MAPPING';
-            }
-            */
         }
         else {
             this.#unsetLights(defines);
@@ -11872,9 +11920,6 @@ class WebGPURenderer {
         const device = WebGPUInternal.device;
         const geometryAttributes = geometry.attributes;
         const indexAttribute = geometryAttributes.get('index');
-        //const positionAttribute = geometryAttributes.get('aVertexPosition');
-        //const normalAttribute = geometryAttributes.get('aVertexNormal');
-        //const textureCoordAttribute = geometryAttributes.get('aTextureCoord');
         if (!indexAttribute) {
             return;
         }
@@ -11890,7 +11935,6 @@ class WebGPURenderer {
             }
             indexBuffer = device.createBuffer({
                 label: 'index',
-                //size: sphereMesh.indices.byteLength,
                 size: size,
                 usage: GPUBufferUsage.INDEX,
                 mappedAtCreation: true,
@@ -11900,62 +11944,6 @@ class WebGPURenderer {
             indexAttribute.gpuBuffer = indexBuffer;
             indexAttribute.dirty = false;
         }
-        /*
-        const vertices = new Float32Array([
-            0.0, 0.6, 0, 1, 1, 0, 0, 1,
-            -0.5, -0.6, 0, 1, 0, 1, 0, 1,
-            0.5, -0.6, 0, 1, 0, 0, 1, 1
-        ]);
-        */
-        //const vertices = positionAttribute._array;
-        /*
-        if (!vertices) {
-            return;
-        }
-        */
-        //const normals: TypedArrayNumber | undefined = normalAttribute?._array;
-        //const textureCoords = textureCoordAttribute?._array as TypedArrayNumber | undefined;
-        /*
-        const positionBuffer = device.createBuffer({
-            label: 'position',
-            size: vertices.length * 4/* position is float32* /,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        });
-
-        device.queue.writeBuffer(positionBuffer, 0, vertices as BufferSource, 0, vertices.length);
-        */
-        /*
-        const normalsLength = (normals?.length ?? 1);
-        const normalBuffer = device.createBuffer({
-            label: 'normal',
-            size: normalsLength * 4/* normal is float32* /,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        });
-
-        if (normals) {
-            device.queue.writeBuffer(normalBuffer, 0, normals as BufferSource, 0, normalsLength);
-        }
-        */
-        /*
-        const textureCoordsLength = (textureCoords?.length ?? 1);
-        const textureCoordBuffer = device.createBuffer({
-            label: 'texture coords',
-            size: textureCoordsLength * 4/* texture coord is float32* /,
-            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-        });
-
-        if (textureCoords) {
-            device.queue.writeBuffer(textureCoordBuffer, 0, textureCoords as BufferSource, 0, textureCoordsLength);
-        }
-        */
-        //const SIZE_UNIFORM_MATRIX = 4 * 16;
-        //const uniformBufferSize = SIZE_UNIFORM_MATRIX * 6; // 4x4 matrix
-        /*
-        const uniformBuffer = device.createBuffer({
-            size: uniformBufferSize,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        });
-        */
         const cameraMatrix = camera.cameraMatrix;
         const projectionMatrix = camera.projectionMatrix;
         mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
@@ -11969,6 +11957,8 @@ class WebGPURenderer {
         if (renderLights) {
             this.#setupLights(renderList, camera, cameraMatrix, uniforms);
         }
+        this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context);
+        /*
         if (shaderModule.reflection) {
             for (const uniform of shaderModule.reflection.uniforms) {
                 const uniformBuffer = device.createBuffer({
@@ -11976,50 +11966,57 @@ class WebGPURenderer {
                     size: uniform.size,
                     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
                 });
+
                 groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
+
                 const members = uniform.members;
                 if (members) {
+
                     const materialUniform = material.uniforms[uniform.name];
                     if (materialUniform) {
                         for (const member of members) {
-                            let bufferSource = null;
+                            let bufferSource: BufferSource | null = null;
                             uniformBuffer.label = uniform.name + '.' + member.name;
-                            const subUniform = materialUniform[member.name];
+                            const subUniform = (materialUniform as Record<string, UniformValue>)[member.name];
                             if (subUniform !== undefined) {
-                                bufferSource = subUniform;
-                            }
-                            else {
+                                bufferSource = subUniform as BufferSource;
+                            } else {
                                 errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
                             }
+
                             if (bufferSource) {
-                                device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                                device.queue.writeBuffer(
+                                    uniformBuffer,
+                                    member.offset,
+                                    bufferSource,
+                                );
                             }
                         }
-                    }
-                    else {
+                    } else {
                         for (const member of members) {
-                            let bufferSource = null;
+                            let bufferSource: BufferSource | null = null;
                             uniformBuffer.label = uniform.name + '.' + member.name;
+
                             switch (member.name) {
                                 case 'modelMatrix':
-                                    bufferSource = object.worldMatrix;
+                                    bufferSource = object.worldMatrix as BufferSource;
                                     break;
                                 case 'viewMatrix':
-                                    bufferSource = cameraMatrix;
+                                    bufferSource = cameraMatrix as BufferSource;
                                     break;
                                 case 'modelViewMatrix':
-                                    bufferSource = object._mvMatrix;
+                                    bufferSource = object._mvMatrix as BufferSource;
                                     break;
                                 case 'projectionMatrix':
-                                    bufferSource = projectionMatrix;
+                                    bufferSource = projectionMatrix as BufferSource;
                                     break;
                                 case 'viewProjectionMatrix':
-                                    bufferSource = tempViewProjectionMatrix;
+                                    bufferSource = tempViewProjectionMatrix as BufferSource;
                                     break;
                                 case 'normalMatrix':
                                     // In WGSL, mat3x3 actually are mat4x3
                                     // TODO: improve this
-                                    mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
+                                    mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
                                     const m = new Float32Array(12);
                                     m[0] = object._normalMatrix[0];
                                     m[1] = object._normalMatrix[1];
@@ -12030,133 +12027,161 @@ class WebGPURenderer {
                                     m[8] = object._normalMatrix[6];
                                     m[9] = object._normalMatrix[7];
                                     m[10] = object._normalMatrix[8];
-                                    bufferSource = m;
+                                    bufferSource = m as BufferSource;
                                     break;
                                 case 'cameraPosition':
-                                    bufferSource = camera.position;
+                                    bufferSource = camera.position as BufferSource;
                                     break;
                                 default:
                                     errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                             }
+
                             if (bufferSource) {
-                                device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                                device.queue.writeBuffer(
+                                    uniformBuffer,
+                                    member.offset,
+                                    bufferSource,
+                                );
                             }
                         }
                     }
-                }
-                else if (uniform.isArray) {
-                    const members = uniform.format.members;
+                } else if (uniform.isArray) {
+                    const members = (uniform.format as StructInfo).members;
                     if (members) {
-                        const structSize = uniform.format.size;
+                        const structSize = (uniform.format as StructInfo).size;
                         for (const member of members) {
                             for (let i = 0; i < uniform.count; i++) {
                                 const bufferSource = uniforms.get(`${uniform.name}[${i}].${member.name}`);
                                 if (!bufferSource) {
-                                    continue;
+                                    continue
                                 }
-                                device.queue.writeBuffer(uniformBuffer, member.offset + structSize * i, bufferSource);
+
+                                device.queue.writeBuffer(
+                                    uniformBuffer,
+                                    member.offset + structSize * i,
+                                    bufferSource,
+                                );
                             }
                         }
-                    }
-                    else {
+                    } else {
                         switch (uniform.name) {
                             case 'boneMatrix':
                                 const bufferSource = object.uniforms[uniform.name];
-                                device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                                device.queue.writeBuffer(
+                                    uniformBuffer,
+                                    0,
+                                    bufferSource,
+                                );
                                 break;
                             default:
                                 errorOnce('unknwon array uniform ' + uniform.name);
                                 break;
                         }
+
                     }
-                }
-                else { // uniform is neither a struct nor an array
+                } else {// uniform is neither a struct nor an array
                     const bufferSource = uniforms.get(uniform.name);
                     if (bufferSource) {
-                        device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
-                    }
-                    else {
+                        device.queue.writeBuffer(
+                            uniformBuffer,
+                            0,
+                            bufferSource,
+                        );
+                    } else {
                         const materialUniform = material.uniforms[uniform.name];
                         if (materialUniform !== undefined) {
                             switch (uniform.type.name) {
                                 case 'f32':
-                                    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
+                                    device.queue.writeBuffer(
+                                        uniformBuffer,
+                                        0,
+                                        new Float32Array([materialUniform as number]),
+                                    );
                                     break;
                                 case 'mat4x4f':
                                 case 'vec2f':
                                 case 'vec3f':
                                 case 'vec4f':
-                                    device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
+                                    device.queue.writeBuffer(
+                                        uniformBuffer,
+                                        0,
+                                        materialUniform as BufferSource,
+                                    );
                                     break;
                                 default:
                                     errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                                     break;
                             }
-                        }
-                        else {
-                            let bufferSource = null;
+                        } else {
+                            let bufferSource: BufferSource | null = null;
                             switch (uniform.name) {
                                 case 'resolution':
-                                    bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]); // TODO: create float32 once and update it only on resolution change
+                                    bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
                                     break;
                                 case 'cameraPosition':
-                                    bufferSource = camera.position;
+                                    bufferSource = camera.position as BufferSource;
                                     break;
                                 default:
                                     errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
                                     switch (uniform.type.name) {
                                         case 'f32':
-                                            device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0]));
+                                            device.queue.writeBuffer(
+                                                uniformBuffer,
+                                                0,
+                                                new Float32Array([0]),// TODO: create a const
+                                            );
                                             break;
                                         case 'vec4f':
-                                            device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0]));
+                                            device.queue.writeBuffer(
+                                                uniformBuffer,
+                                                0,
+                                                new Float32Array([0, 0, 0, 0]),// TODO: create a const
+                                            );
                                             break;
                                         default:
                                             errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                                             break;
                                     }
                             }
+
                             if (bufferSource) {
-                                device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                                device.queue.writeBuffer(
+                                    uniformBuffer,
+                                    0,
+                                    bufferSource,
+                                );
                             }
                         }
                     }
-                    /*
-                    const bufferSource = new Uint8Array(uniform.size) as BufferSource;
-                    device.queue.writeBuffer(
-                        uniformBuffer,
-                        0,
-                        bufferSource,
-                    );
-                    */
                 }
             }
+
             for (const shaderTexture of shaderModule.reflection.textures) {
                 switch (shaderTexture.name) {
                     case 'colorTexture':
-                        const texture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
+                        const texture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
                         if (texture) {
                             groups.set(shaderTexture.group, shaderTexture.binding, { texture });
                         }
                         break;
                     default:
                         {
-                            const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
+                            const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
                             if (texture) {
                                 groups.set(shaderTexture.group, shaderTexture.binding, { texture });
-                            }
-                            else {
+                            } else {
                                 errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
                             }
                         }
                         break;
                 }
             }
+
             // TODO: set samplers and texture in a single pass ?
             for (const shaderSampler of shaderModule.reflection.samplers) {
                 switch (shaderSampler.name) {
                     case 'colorSampler':
-                        const sampler = material.uniforms.colorMap?.sampler;
+                        const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
                         if (sampler) {
                             groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
                         }
@@ -12164,11 +12189,10 @@ class WebGPURenderer {
                     default:
                         {
                             const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
-                            const sampler = material.uniforms[name]?.sampler;
+                            const sampler = (material.uniforms[name] as Texture | undefined)?.sampler;
                             if (sampler) {
                                 groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                            }
-                            else {
+                            } else {
                                 errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
                             }
                         }
@@ -12176,43 +12200,59 @@ class WebGPURenderer {
                 }
             }
         }
-        const bindGroupLayouts = [];
+        */
+        /*
+        const bindGroupLayouts: GPUBindGroupLayout[] = [];
         for (const [groupId, group] of groups.getMap()) {
-            const entries = [];
+            const entries: GPUBindGroupLayoutEntry[] = [];
             for (const [bindingId, binding] of group) {
-                const entry = {
-                    binding: bindingId, // corresponds to @binding
-                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // TODO: set appropriate visibility
+                const entry: GPUBindGroupLayoutEntry = {
+                    binding: bindingId,// corresponds to @binding
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
                     //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
-                };
+                }
+
                 if (binding.buffer) {
                     entry.buffer = {};
                 }
+
                 if (binding.texture) {
                     entry.texture = {
                         viewDimension: binding.texture.isCube ? 'cube' : '2d',
                     };
                 }
+
                 if (binding.sampler) {
                     entry.sampler = {};
                 }
+
                 entries.push(entry);
             }
+
             bindGroupLayouts.push(device.createBindGroupLayout({
                 entries: entries,
-            }));
+            }))
         }
+        */
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
-            bindGroupLayouts: bindGroupLayouts,
+            bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
         });
         const commandEncoder = device.createCommandEncoder();
+        let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
+        const renderTarget = context.renderContext.renderTarget;
+        if (renderTarget) {
+            const gpuTexture = renderTarget.getTexture().texture;
+            if (gpuTexture) {
+                view = gpuTexture.createView();
+            }
+        }
         const renderPassDescriptor = {
             colorAttachments: [{
                     //clearValue: clearColor,//TODO
                     loadOp: 'load',
                     storeOp: 'store',
-                    view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
+                    view,
                 }],
             depthStencilAttachment: {
                 view: WebGPUInternal.depthTexture.createView(),
@@ -12284,48 +12324,52 @@ class WebGPURenderer {
             layout: pipelineLayout,
         };
         const renderPipeline = device.createRenderPipeline(pipelineDescriptor);
+        /*
         for (const [groupId, group] of groups.getMap()) {
-            const entries = [];
+            const entries: GPUBindGroupEntry[] = [];
             for (const [bindingId, uniformBuffer] of group) {
                 if (uniformBuffer.buffer) {
                     entries.push({
-                        binding: bindingId, // corresponds to @binding
+                        binding: bindingId,// corresponds to @binding
                         resource: {
                             buffer: uniformBuffer.buffer,
                         },
                     });
                 }
+
                 const uniformTexture = uniformBuffer.texture;
                 if (uniformTexture) {
                     if (uniformTexture.isCube) {
                         entries.push({
-                            binding: bindingId, // corresponds to @binding
-                            resource: uniformTexture.texture.createView({
+                            binding: bindingId,// corresponds to @binding
+                            resource: (uniformTexture.texture as GPUTexture).createView({
                                 dimension: 'cube',
                             }),
                         });
-                    }
-                    else {
+                    } else {
                         entries.push({
-                            binding: bindingId, // corresponds to @binding
-                            resource: uniformTexture.texture,
+                            binding: bindingId,// corresponds to @binding
+                            resource: uniformTexture.texture as GPUTexture,
                         });
                     }
                 }
                 if (uniformBuffer.sampler) {
                     entries.push({
-                        binding: bindingId, // corresponds to @binding
+                        binding: bindingId,// corresponds to @binding
                         resource: uniformBuffer.sampler,
                     });
                 }
             }
+
             const uniformBindGroup = device.createBindGroup({
                 label: `Binding group: ${groupId}`,
-                layout: renderPipeline.getBindGroupLayout(groupId), // corresponds to @group
+                layout: renderPipeline.getBindGroupLayout(groupId),// corresponds to @group
                 entries: entries,
             });
             passEncoder.setBindGroup(groupId, uniformBindGroup);
         }
+        */
+        this.#createBindGroups(groups, renderPipeline, passEncoder);
         passEncoder.setPipeline(renderPipeline);
         if (geometry.instanceCount === undefined) {
             passEncoder.drawIndexed(geometry.count);
@@ -12529,6 +12573,370 @@ class WebGPURenderer {
     #define NUM_SPOT_LIGHT_SHADOWS 0
     `
     */
+    }
+    setDefine(define, value = '') {
+        this.#defines.set(define, value);
+    }
+    removeDefine(define) {
+        this.#defines.delete(define);
+    }
+    compute(material, workgroupCountX, workgroupCountY, workgroupCountZ) {
+        const defines = new Map(this.#defines); // TODO: don't create one each time
+        getDefines(material, defines);
+        const shaderModule = this.#getShaderModule(material, defines);
+        if (!shaderModule) {
+            return;
+        }
+        const device = WebGPUInternal.device;
+        const groups = new Map2();
+        this.#populateBindGroups(shaderModule, groups, material, null, null, null, null);
+        const pipelineLayout = device.createPipelineLayout({
+            label: material.getShaderSource(),
+            bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
+        });
+        const pipelineDescriptor = {
+            compute: {
+                module: shaderModule.module,
+                entryPoint: computeEntryPoint,
+            },
+            layout: pipelineLayout,
+        };
+        const computePipeline = device.createComputePipeline(pipelineDescriptor);
+        const encoder = device.createCommandEncoder({ label: 'compute encoder' });
+        const pass = encoder.beginComputePass({});
+        pass.setPipeline(computePipeline);
+        //pass.setBindGroup(0, bindGroup);
+        this.#createBindGroups(groups, computePipeline, pass);
+        pass.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
+        pass.end();
+        const commandBuffer = encoder.finish();
+        device.queue.submit([commandBuffer]);
+    }
+    #getBindGroupLayouts(groups, compute) {
+        const device = WebGPUInternal.device;
+        const bindGroupLayouts = [];
+        for (const [groupId, group] of groups.getMap()) {
+            const entries = [];
+            for (const [bindingId, binding] of group) {
+                const entry = {
+                    binding: bindingId, // corresponds to @binding
+                    visibility: compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // TODO: set appropriate visibility
+                    //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
+                };
+                if (binding.buffer) {
+                    entry.buffer = {};
+                }
+                if (binding.texture) {
+                    entry.texture = {
+                        viewDimension: binding.texture.isCube ? 'cube' : '2d',
+                    };
+                }
+                if (binding.sampler) {
+                    entry.sampler = {};
+                }
+                if (binding.storageTexture) {
+                    entry.storageTexture = {
+                        viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
+                        format: binding.storageTexture.gpuFormat,
+                    };
+                }
+                entries.push(entry);
+            }
+            bindGroupLayouts.push(device.createBindGroupLayout({
+                label: `group ${groupId}`,
+                entries: entries,
+            }));
+        }
+        return bindGroupLayouts;
+    }
+    #createBindGroups(groups, pipeline, encoder) {
+        const device = WebGPUInternal.device;
+        for (const [groupId, group] of groups.getMap()) {
+            const entries = [];
+            for (const [bindingId, uniformBuffer] of group) {
+                if (uniformBuffer.buffer) {
+                    entries.push({
+                        binding: bindingId, // corresponds to @binding
+                        resource: {
+                            buffer: uniformBuffer.buffer,
+                        },
+                    });
+                }
+                const uniformTexture = uniformBuffer.texture ?? uniformBuffer.storageTexture;
+                if (uniformTexture) {
+                    if (uniformTexture.isCube) {
+                        entries.push({
+                            binding: bindingId, // corresponds to @binding
+                            resource: uniformTexture.texture.createView({
+                                dimension: 'cube',
+                            }),
+                        });
+                    }
+                    else {
+                        entries.push({
+                            binding: bindingId, // corresponds to @binding
+                            resource: uniformTexture.texture,
+                        });
+                    }
+                }
+                if (uniformBuffer.sampler) {
+                    entries.push({
+                        binding: bindingId, // corresponds to @binding
+                        resource: uniformBuffer.sampler,
+                    });
+                }
+            }
+            const uniformBindGroup = device.createBindGroup({
+                label: `Binding group: ${groupId}`,
+                layout: pipeline.getBindGroupLayout(groupId), // corresponds to @group
+                entries: entries,
+            });
+            encoder.setBindGroup(groupId, uniformBindGroup);
+        }
+    }
+    #populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context) {
+        if (!shaderModule.reflection) {
+            return;
+        }
+        const cameraMatrix = camera?.cameraMatrix;
+        const projectionMatrix = camera?.projectionMatrix;
+        const device = WebGPUInternal.device;
+        for (const uniform of shaderModule.reflection.uniforms) {
+            const uniformBuffer = device.createBuffer({
+                label: uniform.name,
+                size: uniform.size,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            });
+            groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
+            const members = uniform.members;
+            if (members) {
+                const materialUniform = material.uniforms[uniform.name];
+                if (materialUniform) {
+                    for (const member of members) {
+                        let bufferSource = null;
+                        uniformBuffer.label = uniform.name + '.' + member.name;
+                        const subUniform = materialUniform[member.name];
+                        if (subUniform !== undefined) {
+                            bufferSource = subUniform;
+                        }
+                        else {
+                            errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                        if (bufferSource) {
+                            device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                        }
+                    }
+                }
+                else {
+                    for (const member of members) {
+                        let bufferSource = null;
+                        uniformBuffer.label = uniform.name + '.' + member.name;
+                        switch (member.name) {
+                            case 'modelMatrix':
+                                bufferSource = object?.worldMatrix;
+                                break;
+                            case 'viewMatrix':
+                                bufferSource = cameraMatrix;
+                                break;
+                            case 'modelViewMatrix':
+                                bufferSource = object?._mvMatrix;
+                                break;
+                            case 'projectionMatrix':
+                                bufferSource = projectionMatrix;
+                                break;
+                            case 'viewProjectionMatrix':
+                                bufferSource = tempViewProjectionMatrix;
+                                break;
+                            case 'normalMatrix':
+                                // In WGSL, mat3x3 actually are mat4x3
+                                // TODO: improve this
+                                if (object && cameraMatrix) {
+                                    mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
+                                    const m = new Float32Array(12);
+                                    m[0] = object._normalMatrix[0];
+                                    m[1] = object._normalMatrix[1];
+                                    m[2] = object._normalMatrix[2];
+                                    m[4] = object._normalMatrix[3];
+                                    m[5] = object._normalMatrix[4];
+                                    m[6] = object._normalMatrix[5];
+                                    m[8] = object._normalMatrix[6];
+                                    m[9] = object._normalMatrix[7];
+                                    m[10] = object._normalMatrix[8];
+                                    bufferSource = m;
+                                }
+                                break;
+                            case 'cameraPosition':
+                                bufferSource = camera?.position;
+                                break;
+                            default:
+                                errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                        if (bufferSource) {
+                            device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                        }
+                    }
+                }
+            }
+            else if (uniform.isArray) {
+                const members = uniform.format.members;
+                if (members) {
+                    const structSize = uniform.format.size;
+                    for (const member of members) {
+                        for (let i = 0; i < uniform.count; i++) {
+                            const bufferSource = uniforms?.get(`${uniform.name}[${i}].${member.name}`);
+                            if (!bufferSource) {
+                                continue;
+                            }
+                            device.queue.writeBuffer(uniformBuffer, member.offset + structSize * i, bufferSource);
+                        }
+                    }
+                }
+                else {
+                    switch (uniform.name) {
+                        case 'boneMatrix':
+                            const bufferSource = object?.uniforms[uniform.name];
+                            device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                            break;
+                        default:
+                            errorOnce('unknwon array uniform ' + uniform.name);
+                            break;
+                    }
+                }
+            }
+            else { // uniform is neither a struct nor an array
+                const bufferSource = uniforms?.get(uniform.name);
+                if (bufferSource) {
+                    device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                }
+                else {
+                    const materialUniform = material.uniforms[uniform.name];
+                    if (materialUniform !== undefined) {
+                        switch (uniform.type.name) {
+                            case 'f32':
+                                device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
+                                break;
+                            case 'mat4x4f':
+                            case 'vec2f':
+                            case 'vec3f':
+                            case 'vec4f':
+                                device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
+                                break;
+                            default:
+                                errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                                break;
+                        }
+                    }
+                    else {
+                        let bufferSource = null;
+                        switch (uniform.name) {
+                            case 'resolution':
+                                bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
+                                break;
+                            case 'cameraPosition':
+                                bufferSource = camera?.position;
+                                break;
+                            default:
+                                errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
+                                switch (uniform.type.name) {
+                                    case 'f32':
+                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0]));
+                                        break;
+                                    case 'vec4f':
+                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0]));
+                                        break;
+                                    default:
+                                        errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                                        break;
+                                }
+                        }
+                        if (bufferSource) {
+                            device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                        }
+                    }
+                }
+            }
+        }
+        for (const shaderTexture of shaderModule.reflection.textures) {
+            switch (shaderTexture.name) {
+                case 'colorTexture':
+                    const texture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
+                    if (texture) {
+                        groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                    }
+                    break;
+                case 'outTexture':
+                    const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
+                    if (outTexture) {
+                        const texture = new Texture({ gpuFormat: WebGPUInternal.format });
+                        texture.texture = outTexture;
+                        groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                    }
+                    break;
+                default:
+                    {
+                        const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
+                        if (texture) {
+                            groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                        }
+                        else {
+                            errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                    }
+                    break;
+            }
+        }
+        // TODO: set samplers and texture in a single pass ?
+        for (const shaderSampler of shaderModule.reflection.samplers) {
+            switch (shaderSampler.name) {
+                case 'colorSampler':
+                    const sampler = material.uniforms.colorMap?.sampler;
+                    if (sampler) {
+                        groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+                    }
+                    break;
+                default:
+                    {
+                        const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
+                        const sampler = material.uniforms[name]?.sampler;
+                        if (sampler) {
+                            groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+                        }
+                        else {
+                            errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                    }
+                    break;
+            }
+        }
+        for (const shaderTexture of shaderModule.reflection.storage) {
+            switch (shaderTexture.name) {
+                case 'colorTexture':
+                    const storageTexture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
+                    if (storageTexture) {
+                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                    }
+                    break;
+                case 'outTexture':
+                    const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
+                    if (outTexture) {
+                        const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
+                        storageTexture.texture = outTexture;
+                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                    }
+                    break;
+                default:
+                    {
+                        const storageTexture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
+                        if (storageTexture) {
+                            groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture });
+                        }
+                        else {
+                            errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                    }
+                    break;
+            }
+        }
     }
 }
 function getDefines(meshOrMaterial, defines) {
@@ -12993,6 +13401,9 @@ class Graphics {
             this.#bipmapContext.transferFromImageBitmap(bitmap);
         }
     }
+    static compute(material, workgroupCountX, workgroupCountY, workgroupCountZ) {
+        this.#forwardRenderer.compute(material, workgroupCountX, workgroupCountY, workgroupCountZ);
+    }
     static renderMultiCanvas(delta, context = {}) {
         // TODO: mutualize with the method render()
         for (const [_, canvas] of this.#canvases) {
@@ -13133,12 +13544,12 @@ class Graphics {
     }
     static async #initContext(graphicOptions = {}) {
         if (graphicOptions.type == ContextType.WebGPU) {
-            await this.#initWebGPUContext(graphicOptions.webGPU);
             this.#forwardRenderer = new WebGPURenderer();
+            await this.#initWebGPUContext(graphicOptions.webGPU);
         }
         else {
-            this.#initWebGLContext(graphicOptions.webGL);
             this.#forwardRenderer = new ForwardRenderer();
+            this.#initWebGLContext(graphicOptions.webGL);
             WebGLRenderingState.setGraphics();
         }
     }
@@ -13234,18 +13645,25 @@ class Graphics {
         if (!adapter) {
             return false;
         }
+        const hasBGRA8unormStorage = adapter.features.has('bgra8unorm-storage');
         if (!configuration.device) {
+            const requiredFeatures = ['texture-compression-bc'];
+            if (hasBGRA8unormStorage) {
+                requiredFeatures.push('bgra8unorm-storage');
+            }
             configuration.device = await adapter.requestDevice({
-                requiredFeatures: ['texture-compression-bc'],
+                requiredFeatures,
             });
         }
         if (!configuration.format) {
-            configuration.format = navigator.gpu.getPreferredCanvasFormat();
+            configuration.format = hasBGRA8unormStorage ? navigator.gpu.getPreferredCanvasFormat() : 'rgba8unorm';
         }
+        this.#forwardRenderer.setDefine('PRESENTATION_FORMAT', configuration.format);
         WebGPUInternal.config = configuration;
         WebGPUInternal.adapter = adapter;
         WebGPUInternal.device = configuration.device;
         WebGPUInternal.format = configuration.format;
+        configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING;
         WebGPUInternal.gpuContext.configure(configuration);
         WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
             //size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
@@ -13511,19 +13929,11 @@ class Graphics {
     }
     */
     static pushRenderTarget(renderTarget) {
-        if (this.isWebGPU) {
-            // TODO: do WebGPU version
-            return;
-        }
         const viewport = this.getViewport(vec4.create());
         this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
         this.#setRenderTarget(renderTarget, viewport);
     }
     static popRenderTarget() {
-        if (this.isWebGPU) {
-            // TODO: do WebGPU version
-            return;
-        }
         const popResult = this.#renderTargetStack.pop();
         const target = this.#renderTargetStack[this.#renderTargetStack.length - 1];
         if (target) {
@@ -32732,7 +33142,7 @@ vec3 vec3_transformQuat (vec3 a, vec4 q) {
 Includes['mat4_from_quat'] = mat4_from_quat;
 Includes['vec3_transform_quat'] = vec3_transform_quat;
 
-var postprocessing_vertex = `
+var postprocessing_vertex$1 = `
 #include declare_attributes
 #include declare_matrix_uniforms
 
@@ -32745,7 +33155,7 @@ void main(void) {
 }
 `;
 
-Includes['postprocessing_vertex'] = postprocessing_vertex;
+Includes['postprocessing_vertex'] = postprocessing_vertex$1;
 
 var sample_color_texture = `
 #ifdef USE_COLOR_TEXTURE
@@ -75273,6 +75683,10 @@ addWgslInclude('math_defines', math_defines);
 addWgslInclude('output_fragment', output_fragment);
 addWgslInclude('varying_standard', varying_standard);
 
+var postprocessing_vertex = "#include matrix_uniforms\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_projection\n\n\treturn output;\n}\n";
+
+addWgslInclude('postprocessing_vertex', postprocessing_vertex);
+
 var matrix_uniforms = "struct MatrixUniforms {\n\tmodelMatrix : mat4x4f,\n\tviewMatrix : mat4x4f,\n\tmodelViewMatrix : mat4x4f,\n\tprojectionMatrix : mat4x4f,\n\tviewProjectionMatrix : mat4x4f,\n\tnormalMatrix : mat3x3f,\n\tcameraPosition: vec3f,\n}\n\n@group(0) @binding(x) var<uniform> matrixUniforms : MatrixUniforms;\n";
 
 addWgslInclude('matrix_uniforms', matrix_uniforms);
@@ -75290,6 +75704,10 @@ var line = "#include matrix_uniforms\n\n@group(0) @binding(x) var<uniform> resol
 
 Shaders['grid.wgsl'] = grid;
 Shaders['line.wgsl'] = line;
+
+var pixelate = "/*\n#define USE_COLOR_MAP// why ?\n\n#include declare_fragment_standard\n//#include declare_fragment_color_map\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n#include postprocessing_vertex\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tfragColor = vec4(1.0);\n\tfragColor = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\n\t#include output_fragment\n}\n*/\n\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)  {\n\tlet size = textureDimensions(outTexture);\n\tlet center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t// The distance from the center of the texture\n\tlet dist = distance(vec2f(pos), center);\n\n\t// Compute stripes based on the distance\n\tlet stripe = dist / 32.0 % 2.0;\n\tlet red = vec4f(1, 0, 0, 1);\n\tlet cyan = vec4f(0, 1, 1, 1);\n\tlet color = select(red, cyan, stripe < 1.0);\n\n\t// Write the color to the texture\n\tvar v = textureLoad(colorTexture, pos);\n\ttextureStore(outTexture, pos, color);\n}\n";
+
+Shaders['pixelate.wgsl'] = pixelate;
 
 // TODO: remove when WebGPU is a baseline feature
 function initWebGPUConst() {

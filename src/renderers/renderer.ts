@@ -4,6 +4,7 @@ import { InternalRenderContext } from '../interfaces/rendercontext';
 import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { RenderList } from './renderlist';
+import { Material } from '../materials/material';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -23,6 +24,11 @@ export interface Renderer {
 	getToneMappingExposure: () => number;
 
 	clearColor: (clearColor: vec4) => void
+
+	setDefine: (define: string, value: string) => void;
+	removeDefine: (define: string, value: string) => void;
+
+	compute: (material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
 	/*
 
 		clearColor(clearColor: vec4) {

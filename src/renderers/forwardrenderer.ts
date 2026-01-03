@@ -21,6 +21,7 @@ import { WebGLRenderingState } from '../webgl/renderingstate';
 import { Renderer } from './renderer';
 import { RenderList } from './renderlist';
 import { UniformValue } from '../webgl/uniform';
+import { errorOnce } from '../utils/console';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -33,6 +34,7 @@ export class ForwardRenderer implements Renderer {
 	#globalIncludeCode = '';
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
+	#defines = new Map<string, string>();
 
 	constructor() {
 		this.#glContext = Graphics.glContext;
@@ -469,6 +471,18 @@ export class ForwardRenderer implements Renderer {
 
 	clearColor(clearColor: vec4) {
 		WebGLRenderingState.clearColor(clearColor);
+	}
+
+	setDefine(define: string, value = ''): void {
+		this.#defines.set(define, value);
+	}
+
+	removeDefine(define: string): void {
+		this.#defines.delete(define);
+	}
+
+	compute(): void {
+		errorOnce('compute unavailable for webgl');
 	}
 }
 

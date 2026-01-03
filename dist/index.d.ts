@@ -1315,15 +1315,12 @@ declare class Channel {
                  doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              }
 
-             declare type CreateImageTextureParams = TextureParams & {
+             declare type CreateImageTextureParams = Omit<TextureParams, 'format'> & {
                  webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
                  image: HTMLImageElement;
              };
 
-             declare type CreateNoiseTextureParams = TextureParams & {
-                 webgpuDescriptor: HarmonyGPUTextureDescriptor;
-                 needCubeMap?: boolean;
-             };
+             declare type CreateNoiseTextureParams = CreateTextureParams_2;
 
              export declare class CreateOnModel extends Operator {
                  #private;
@@ -1349,7 +1346,7 @@ declare class Channel {
                  dimension?: GPUTextureDimension;
              };
 
-             declare type CreateTextureParams_2 = TextureParams & {
+             declare type CreateTextureParams_2 = Omit<TextureParams, 'format'> & {
                  webgpuDescriptor: HarmonyGPUTextureDescriptor;
                  needCubeMap?: boolean;
              };
@@ -2719,6 +2716,7 @@ declare class Channel {
                           static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
+                          static compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
                           /**
                            * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
@@ -5500,6 +5498,7 @@ declare class Channel {
                           transferBitmap?: boolean;
                           /** Force rendering even when the canvas is not visible. Default to false. */
                           forceRendering?: boolean;
+                          renderTarget?: RenderTarget | null;
                       }
 
                       export declare class RenderDeferredLight extends RenderBase {
@@ -5522,6 +5521,9 @@ declare class Channel {
                           setToneMappingExposure: (exposure: number) => void;
                           getToneMappingExposure: () => number;
                           clearColor: (clearColor: vec4) => void;
+                          setDefine: (define: string, value: string) => void;
+                          removeDefine: (define: string, value: string) => void;
+                          compute: (material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
                       }
 
                       export declare enum RenderFace {
@@ -8657,8 +8659,20 @@ declare class Channel {
                           properties: Map<string, any>;
                           readonly defines: Map<string, string>;
                           isCube: boolean;
+                          gpuFormat: GPUTextureFormat;
                           constructor(textureParams?: TextureParams);
                           setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
+                          /**
+                           * Change the pixel content of the texture.
+                           * @param glContext WebGL context, if relevant.
+                           * @param target Texture target, in WebGL context.
+                           * @param width Texture width.
+                           * @param height Texture height.
+                           * @param format Texture format for WebGL context.
+                           * @param type Texture type for WebGL context.
+                           * @param pixels Texture content.
+                           * @param level Texture lod
+                           */
                           texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels?: ArrayBufferView | null, level?: number): void;
                           generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum): void;
                           clone(): void;
@@ -8822,6 +8836,7 @@ declare class Channel {
                           flipY?: boolean;
                           premultiplyAlpha?: boolean;
                           colorSpace?: ColorSpace;
+                          gpuFormat: GPUTextureFormat;
                       };
 
                       declare enum TextureRole {
