@@ -37,9 +37,12 @@ type WgslModule = {
 	source: string;
 }
 
+type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler };
+
 const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
+const computeEntryPoint = 'compute_main';
 
 export class WebGPURenderer implements Renderer {
 	#renderList = new RenderList();
@@ -48,6 +51,7 @@ export class WebGPURenderer implements Renderer {
 	#materialsShaderModule = new Map2<string, string, WgslModule>();
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
+	#defines = new Map<string, string>();
 
 	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = this.#renderList;
@@ -176,7 +180,7 @@ export class WebGPURenderer implements Renderer {
 
 		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
 
-		const defines = new Map<string, string>();
+		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
 
 		getDefines(object, defines);
 		getDefines(material, defines);
@@ -232,8 +236,6 @@ export class WebGPURenderer implements Renderer {
 		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
 		mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix);//TODO: compute this in camera
 
-		type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler };
-
 		const groups = new Map2<number, number, Binding>();
 
 		if (renderLights) {
@@ -248,6 +250,8 @@ export class WebGPURenderer implements Renderer {
 			this.#setupLights(renderList, camera, cameraMatrix, uniforms);
 		}
 
+		this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context)
+		/*
 		if (shaderModule.reflection) {
 			for (const uniform of shaderModule.reflection.uniforms) {
 				const uniformBuffer = device.createBuffer({
@@ -489,7 +493,9 @@ export class WebGPURenderer implements Renderer {
 				}
 			}
 		}
+		*/
 
+		/*
 		const bindGroupLayouts: GPUBindGroupLayout[] = [];
 		for (const [groupId, group] of groups.getMap()) {
 			const entries: GPUBindGroupLayoutEntry[] = [];
@@ -521,21 +527,32 @@ export class WebGPURenderer implements Renderer {
 				entries: entries,
 			}))
 		}
+		*/
 
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
-			bindGroupLayouts: bindGroupLayouts,
+			bindGroupLayouts: this.#getBindGroupLayouts(groups),
 		});
 
 		const commandEncoder = device.createCommandEncoder();
+
+		let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
+
+		const renderTarget = context.renderContext.renderTarget;
+		if (renderTarget) {
+			const gpuTexture = renderTarget.getTexture().texture as GPUTexture | null;
+			if (gpuTexture) {
+				view = gpuTexture.createView();
+			}
+		}
 
 		const renderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: [{
 				//clearValue: clearColor,//TODO
 				loadOp: 'load',
 				storeOp: 'store',
-				view: WebGPUInternal.gpuContext.getCurrentTexture().createView()
+				view,
 			}],
 			depthStencilAttachment: {
 				view: WebGPUInternal.depthTexture.createView(),
@@ -913,7 +930,335 @@ export class WebGPURenderer implements Renderer {
 	`
 	*/
 	}
+
+	setDefine(define: string, value = ''): void {
+		this.#defines.set(define, value);
+	}
+
+	removeDefine(define: string): void {
+		this.#defines.delete(define);
+	}
+
+	compute(material: Material): void {
+		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
+		getDefines(material, defines);
+
+		const shaderModule = this.#getShaderModule(material, defines);
+		if (!shaderModule) {
+			return;
+		}
+		const device = WebGPUInternal.device;
+
+		const groups = new Map2<number, number, Binding>();
+
+		const pipelineLayout = device.createPipelineLayout({
+			label: material.getShaderSource(),
+			bindGroupLayouts: this.#getBindGroupLayouts(groups),
+		});
+
+		const pipelineDescriptor: GPUComputePipelineDescriptor = {
+			compute: {
+				module: shaderModule.module,
+				entryPoint: computeEntryPoint,
+			},
+			layout: pipelineLayout,
+		};
+
+		const computePipeline = device.createComputePipeline(pipelineDescriptor);
+
+
+	}
+
+	#getBindGroupLayouts(groups: Map2<number, number, Binding>): GPUBindGroupLayout[] {
+		const device = WebGPUInternal.device;
+
+		const bindGroupLayouts: GPUBindGroupLayout[] = [];
+		for (const [groupId, group] of groups.getMap()) {
+			const entries: GPUBindGroupLayoutEntry[] = [];
+			for (const [bindingId, binding] of group) {
+				const entry: GPUBindGroupLayoutEntry = {
+					binding: bindingId,// corresponds to @binding
+					visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
+					//buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
+				}
+
+				if (binding.buffer) {
+					entry.buffer = {};
+				}
+
+				if (binding.texture) {
+					entry.texture = {
+						viewDimension: binding.texture.isCube ? 'cube' : '2d',
+					};
+				}
+
+				if (binding.sampler) {
+					entry.sampler = {};
+				}
+
+				entries.push(entry);
+			}
+
+			bindGroupLayouts.push(device.createBindGroupLayout({
+				entries: entries,
+			}))
+		}
+
+		return bindGroupLayouts;
+	}
+
+	#populateBindGroups(shaderModule: WgslModule, groups: Map2<number, number, Binding>, material: Material, object: Mesh, camera: Camera, uniforms: Map<string, BufferSource>, context: InternalRenderContext): void {
+		if (!shaderModule.reflection) {
+			return;
+		}
+
+		const cameraMatrix = camera.cameraMatrix;
+		const projectionMatrix = camera.projectionMatrix;
+
+		const device = WebGPUInternal.device;
+
+		for (const uniform of shaderModule.reflection.uniforms) {
+			const uniformBuffer = device.createBuffer({
+				label: uniform.name,
+				size: uniform.size,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+			});
+
+			groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
+
+			const members = uniform.members;
+			if (members) {
+
+				const materialUniform = material.uniforms[uniform.name];
+				if (materialUniform) {
+					for (const member of members) {
+						let bufferSource: BufferSource | null = null;
+						uniformBuffer.label = uniform.name + '.' + member.name;
+						const subUniform = (materialUniform as Record<string, UniformValue>)[member.name];
+						if (subUniform !== undefined) {
+							bufferSource = subUniform as BufferSource;
+						} else {
+							errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+						}
+
+						if (bufferSource) {
+							device.queue.writeBuffer(
+								uniformBuffer,
+								member.offset,
+								bufferSource,
+							);
+						}
+					}
+				} else {
+					for (const member of members) {
+						let bufferSource: BufferSource | null = null;
+						uniformBuffer.label = uniform.name + '.' + member.name;
+
+						switch (member.name) {
+							case 'modelMatrix':
+								bufferSource = object.worldMatrix as BufferSource;
+								break;
+							case 'viewMatrix':
+								bufferSource = cameraMatrix as BufferSource;
+								break;
+							case 'modelViewMatrix':
+								bufferSource = object._mvMatrix as BufferSource;
+								break;
+							case 'projectionMatrix':
+								bufferSource = projectionMatrix as BufferSource;
+								break;
+							case 'viewProjectionMatrix':
+								bufferSource = tempViewProjectionMatrix as BufferSource;
+								break;
+							case 'normalMatrix':
+								// In WGSL, mat3x3 actually are mat4x3
+								// TODO: improve this
+								mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
+								const m = new Float32Array(12);
+								m[0] = object._normalMatrix[0];
+								m[1] = object._normalMatrix[1];
+								m[2] = object._normalMatrix[2];
+								m[4] = object._normalMatrix[3];
+								m[5] = object._normalMatrix[4];
+								m[6] = object._normalMatrix[5];
+								m[8] = object._normalMatrix[6];
+								m[9] = object._normalMatrix[7];
+								m[10] = object._normalMatrix[8];
+								bufferSource = m as BufferSource;
+								break;
+							case 'cameraPosition':
+								bufferSource = camera.position as BufferSource;
+								break;
+							default:
+								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+						}
+
+						if (bufferSource) {
+							device.queue.writeBuffer(
+								uniformBuffer,
+								member.offset,
+								bufferSource,
+							);
+						}
+					}
+				}
+			} else if (uniform.isArray) {
+				const members = (uniform.format as StructInfo).members;
+				if (members) {
+					const structSize = (uniform.format as StructInfo).size;
+					for (const member of members) {
+						for (let i = 0; i < uniform.count; i++) {
+							const bufferSource = uniforms.get(`${uniform.name}[${i}].${member.name}`);
+							if (!bufferSource) {
+								continue
+							}
+
+							device.queue.writeBuffer(
+								uniformBuffer,
+								member.offset + structSize * i,
+								bufferSource,
+							);
+						}
+					}
+				} else {
+					switch (uniform.name) {
+						case 'boneMatrix':
+							const bufferSource = object.uniforms[uniform.name];
+							device.queue.writeBuffer(
+								uniformBuffer,
+								0,
+								bufferSource,
+							);
+							break;
+						default:
+							errorOnce('unknwon array uniform ' + uniform.name);
+							break;
+					}
+
+				}
+			} else {// uniform is neither a struct nor an array
+				const bufferSource = uniforms.get(uniform.name);
+				if (bufferSource) {
+					device.queue.writeBuffer(
+						uniformBuffer,
+						0,
+						bufferSource,
+					);
+				} else {
+					const materialUniform = material.uniforms[uniform.name];
+					if (materialUniform !== undefined) {
+						switch (uniform.type.name) {
+							case 'f32':
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									new Float32Array([materialUniform as number]),
+								);
+								break;
+							case 'mat4x4f':
+							case 'vec2f':
+							case 'vec3f':
+							case 'vec4f':
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									materialUniform as BufferSource,
+								);
+								break;
+							default:
+								errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+								break;
+						}
+					} else {
+						let bufferSource: BufferSource | null = null;
+						switch (uniform.name) {
+							case 'resolution':
+								bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
+								break;
+							case 'cameraPosition':
+								bufferSource = camera.position as BufferSource;
+								break;
+							default:
+								errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
+								switch (uniform.type.name) {
+									case 'f32':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0]),// TODO: create a const
+										);
+										break;
+									case 'vec4f':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0, 0, 0, 0]),// TODO: create a const
+										);
+										break;
+									default:
+										errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+										break;
+								}
+						}
+
+						if (bufferSource) {
+							device.queue.writeBuffer(
+								uniformBuffer,
+								0,
+								bufferSource,
+							);
+						}
+					}
+				}
+			}
+		}
+
+		for (const shaderTexture of shaderModule.reflection.textures) {
+			switch (shaderTexture.name) {
+				case 'colorTexture':
+					const texture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
+					if (texture) {
+						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+					}
+					break;
+				default:
+					{
+						const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
+						if (texture) {
+							groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+						} else {
+							errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+						}
+					}
+					break;
+			}
+		}
+
+		// TODO: set samplers and texture in a single pass ?
+		for (const shaderSampler of shaderModule.reflection.samplers) {
+			switch (shaderSampler.name) {
+				case 'colorSampler':
+					const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
+					if (sampler) {
+						groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+					}
+					break;
+				default:
+					{
+						const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
+						const sampler = (material.uniforms[name] as Texture | undefined)?.sampler;
+						if (sampler) {
+							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+						} else {
+							errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
+						}
+					}
+					break;
+			}
+		}
+	}
 }
+
 
 export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string, string>): void {
 	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
