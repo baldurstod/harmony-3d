@@ -490,6 +490,7 @@ class AudioMixer {
 
 class BackGround {
     render(renderer, camera, context) {
+        return { clearColor: false };
     }
     dispose() {
     }
@@ -510,6 +511,10 @@ class ColorBackground extends BackGround {
     render(renderer, camera) {
         renderer.clearColor(this.#color);
         renderer.clear(true, false, false);
+        return {
+            clearColor: true,
+            clearValue: { r: this.#color[0], g: this.#color[1], b: this.#color[2], a: this.#color[3], },
+        };
     }
     setColor(color) {
         vec4.copy(this.#color, color);
@@ -5586,6 +5591,9 @@ class CubeBackground extends BackGround {
     render(renderer, camera, context) {
         this.#box.setPosition(camera.getPosition(tempVec3$u));
         renderer.render(this.#scene, camera, 0, context);
+        return {
+            clearColor: false,
+        };
     }
     setTexture(texture) {
         this.#material.setTexture('uCubeTexture', texture);
@@ -7168,7 +7176,7 @@ class PixelatePass extends Pass {
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = getCurrentTexture();
+            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             Graphics$1.compute(this.#material, context, context.width, context.height);
         }
     }
@@ -11821,14 +11829,15 @@ class WebGPURenderer {
         }
         this.#prepareRenderList(renderList, scene, camera, delta, context);
         //this.#shadowMap.render(this, renderList, camera, context);
+        let backGroundIssue = { clearColor: false };
         if (scene.background) {
-            scene.background.render(this, camera, context);
+            backGroundIssue = scene.background.render(this, camera, context);
         }
-        this.#renderRenderList(renderList, camera, true, context);
+        this.#renderRenderList(renderList, camera, true, context, backGroundIssue.clearColor, backGroundIssue.clearValue);
         ++this.#frame;
     }
     renderShadowMap(renderList, camera, renderLights, context, lightPos) {
-        this.#renderRenderList(renderList, camera, renderLights, context, lightPos);
+        this.#renderRenderList(renderList, camera, renderLights, context, false, undefined, lightPos);
     }
     invalidateShaders() {
         this.#materialsShaderModule.clear();
@@ -11883,19 +11892,21 @@ class WebGPURenderer {
         }
         renderList.finish();
     }
-    #renderRenderList(renderList, camera, renderLights, context, lightPos) {
+    #renderRenderList(renderList, camera, renderLights, context, clearColor, clearValue, lightPos) {
         let clearDepth = true;
         for (const child of renderList.opaqueList) {
-            this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
+            this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
             clearDepth = false;
+            clearColor = false;
         }
         if (renderLights) {
             for (const child of renderList.transparentList) {
-                this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
+                this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+                clearColor = false;
             }
         }
     }
-    #renderObject(context, renderList, object, camera, geometry, material, clearDepth, renderLights = true, lightPos) {
+    #renderObject(context, renderList, object, camera, geometry, material, clearColor, clearDepth, clearValue, renderLights = true, lightPos) {
         if (!object.isRenderable) {
             return;
         }
@@ -12258,8 +12269,8 @@ class WebGPURenderer {
         }
         const renderPassDescriptor = {
             colorAttachments: [{
-                    //clearValue: clearColor,//TODO
-                    loadOp: 'load',
+                    clearValue,
+                    loadOp: clearColor ? 'clear' : 'load',
                     storeOp: 'store',
                     view,
                 }],
@@ -12874,16 +12885,6 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { texture });
                     }
                     break;
-                /*
-                case 'outTexture':
-                    const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
-                    if (outTexture) {
-                        const texture = new Texture({ gpuFormat: WebGPUInternal.format });
-                        texture.texture = outTexture;
-                        groups.set(shaderTexture.group, shaderTexture.binding, { texture });
-                    }
-                    break;
-                */
                 default:
                     {
                         const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
@@ -12942,16 +12943,6 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
                     }
                     break;
-                /*
-                case 'outTexture':
-                    const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
-                    if (outTexture) {
-                        const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
-                        storageTexture.texture = outTexture;
-                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
-                    }
-                    break;
-                */
                 default:
                     {
                         const storageTexture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;

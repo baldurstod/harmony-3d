@@ -23,6 +23,7 @@ import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
+import { BackGroundIssue } from '../backgrounds/background';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -72,16 +73,17 @@ export class WebGPURenderer implements Renderer {
 		this.#prepareRenderList(renderList, scene, camera, delta, context);
 
 		//this.#shadowMap.render(this, renderList, camera, context);
+		let backGroundIssue: BackGroundIssue = { clearColor: false };
 		if (scene.background) {
-			scene.background.render(this, camera, context);
+			backGroundIssue = scene.background.render(this, camera, context);
 		}
 
-		this.#renderRenderList(renderList, camera, true, context);
+		this.#renderRenderList(renderList, camera, true, context, backGroundIssue.clearColor, backGroundIssue.clearValue);
 		++this.#frame;
 	}
 
 	renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
-		this.#renderRenderList(renderList, camera, renderLights, context, lightPos);
+		this.#renderRenderList(renderList, camera, renderLights, context, false, undefined, lightPos);
 	}
 
 	invalidateShaders(): void {
@@ -148,21 +150,23 @@ export class WebGPURenderer implements Renderer {
 		renderList.finish();
 	}
 
-	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
+	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, clearColor: boolean, clearValue?: GPUColorDict, lightPos?: vec3): void {
 		let clearDepth = true;
 		for (const child of renderList.opaqueList) {
-			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
+			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
 			clearDepth = false;
+			clearColor = false;
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearDepth, renderLights, lightPos);
+				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+				clearColor = false;
 			}
 		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearDepth: boolean, renderLights = true, lightPos?: vec3): void {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true, lightPos?: vec3): void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -551,8 +555,8 @@ export class WebGPURenderer implements Renderer {
 
 		const renderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: [{
-				//clearValue: clearColor,//TODO
-				loadOp: 'load',
+				clearValue,
+				loadOp: clearColor ? 'clear' : 'load',
 				storeOp: 'store',
 				view,
 			}],

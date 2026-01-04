@@ -255,10 +255,15 @@ export declare class AudioMixer {
 }
 
 export declare class BackGround {
-    render(renderer: Renderer, camera: Camera, context: InternalRenderContext): void;
+    render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundIssue;
     dispose(): void;
     is(s: string): boolean;
 }
+
+declare type BackGroundIssue = {
+    clearColor: boolean;
+    clearValue?: GPUColorDict;
+};
 
 export declare interface BaseProperties {
     color: vec4;
@@ -1101,7 +1106,7 @@ declare class Channel {
              export declare class ColorBackground extends BackGround {
                  #private;
                  constructor(params?: ColorBackgroundParameters);
-                 render(renderer: Renderer, camera: Camera): void;
+                 render(renderer: Renderer, camera: Camera): BackGroundIssue;
                  setColor(color: vec4): void;
                  getColor(out?: vec4): void;
                  dispose(): void;
@@ -1377,7 +1382,7 @@ declare class Channel {
              export declare class CubeBackground extends BackGround {
                  #private;
                  constructor(params?: any);
-                 render(renderer: Renderer, camera: Camera, context: InternalRenderContext): void;
+                 render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundIssue;
                  setTexture(texture: Texture): void;
                  dispose(): void;
                  is(s: string): boolean;

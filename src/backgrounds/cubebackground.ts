@@ -8,7 +8,7 @@ import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
 import { TextureMapping } from '../textures/constants';
 import { Texture } from '../textures/texture';
-import { BackGround } from './background';
+import { BackGround, BackGroundIssue } from './background';
 
 const tempVec3 = vec3.create();
 
@@ -31,9 +31,12 @@ export class CubeBackground extends BackGround {
 		}
 	}
 
-	render(renderer: Renderer, camera: Camera, context: InternalRenderContext) {
+	render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundIssue {
 		this.#box.setPosition(camera.getPosition(tempVec3))
 		renderer.render(this.#scene, camera, 0, context);
+		return {
+			clearColor: false,
+		}
 	}
 
 	setTexture(texture: Texture) {
