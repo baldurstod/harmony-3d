@@ -34,7 +34,7 @@ fn computeSquarePixel(pos: vec2u) {
 	var sampleUv: vec2f = cellId / uHorizontalTiles;
 	sampleUv.x *= sizef.y / sizef.x;
 
-	var v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * sizef));
+	var v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 
@@ -60,7 +60,7 @@ fn computeDiamondPixel(pos: vec2u) {
 	var sampleUv: vec2f = cellId / uHorizontalTiles;
 	sampleUv.x *= resolution.y / resolution.x;
 
-	var v = textureLoad(colorTexture, min(vec2u((sampleUv + 0.5) * resolution.xy), vec2u(resolution.xy - vec2(1.0))));// TODO: improve textureLoad clamp
+	var v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * resolution.xy), vec2u(0), vec2u(resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 
@@ -123,17 +123,18 @@ fn computeRoundPixel2(pos: vec2u) {
 	if (fract( dot(floor(U),vec2(.5)) ) < .5)
 	{
 		//fragColor = T(0,0);
-		var v = textureLoad(colorTexture, pos);
+		var v = textureLoad(colorTexture, vec2i(uv2 * resolution.xy));
 		textureStore(outTexture, pos, v);
 		return;
 	}
 
 	// neighbors
 	let pix: mat4x4f = mat4x4f(
-		textureLoad( colorTexture, vec2u(uv2 + vec2(0, div.y))),
-		textureLoad( colorTexture, vec2u(uv2 + vec2(div.x, 0))),
-		textureLoad( colorTexture, vec2u(uv2 + vec2(0, -div.y))),
-		textureLoad( colorTexture, vec2u(uv2 + vec2(-div.x, 0))));
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
+	);
 
 	//where is the biggest contrast ?
 	let comp: i32 = i32 ( abs( lum(pix[0]) - lum(pix[2]) )
@@ -162,10 +163,10 @@ fn computeHexagonPixel(pos: vec2u) {
 	let uv: vec2f = (vec2f(pos) - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;
 	let unit: f32 = 2.0 * uHorizontalTiles / resolution.y;
 
-	let rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)
+	const rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
-	let a: vec2f = (uv % rep) - hrep;
-	let b: vec2f = ((uv - hrep) % rep) - hrep;
+	let a: vec2f = mymod(uv , rep) - hrep;
+	let b: vec2f = mymod((uv - hrep) , rep) - hrep;
 	let hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;
 	let cellId: vec2f = uv - hexUv;
 
@@ -224,7 +225,7 @@ fn computeVoronoiPixel(pos: vec2u) {
 	uv = uv * pixelating+0.5;
 
 	//fragColor = textureLoad(colorTexture, uv);
-	var v = textureLoad(colorTexture, vec2u(uv));
+	var v = textureLoad(colorTexture, clamp(vec2i(uv * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 
 }
@@ -241,15 +242,13 @@ fn computeTrianglePixel(pos: vec2u) {
 	}
 	uv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);
 
-	let v: vec4f = textureLoad(colorTexture, clamp(vec2i(uv * pixelating + 0.5), vec2i(0), vec2i(1)));
+	let v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 
 #ifndef PIXEL_STYLE
 	#define PIXEL_STYLE 0
 #endif
-
-#define PIXEL_STYLE 2
 
 @compute @workgroup_size(1) fn compute_main(
 	@builtin(global_invocation_id) id : vec3u
