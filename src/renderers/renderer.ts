@@ -1,10 +1,10 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { InternalRenderContext } from '../interfaces/rendercontext';
+import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { RenderList } from './renderlist';
-import { Material } from '../materials/material';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -28,7 +28,7 @@ export interface Renderer {
 	setDefine: (define: string, value: string) => void;
 	removeDefine: (define: string, value: string) => void;
 
-	compute: (material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
+	compute: (material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
 	/*
 
 		clearColor(clearColor: vec4) {

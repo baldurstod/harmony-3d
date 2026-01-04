@@ -2716,7 +2716,7 @@ declare class Channel {
                           static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-                          static compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void;
+                          static compute(material: Material, context: RenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
                           /**
                            * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
@@ -5523,7 +5523,7 @@ declare class Channel {
                           clearColor: (clearColor: vec4) => void;
                           setDefine: (define: string, value: string) => void;
                           removeDefine: (define: string, value: string) => void;
-                          compute: (material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
+                          compute: (material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
                       }
 
                       export declare enum RenderFace {

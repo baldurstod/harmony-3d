@@ -9,7 +9,7 @@ import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
-import { InternalRenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
@@ -945,7 +945,7 @@ export class WebGPURenderer implements Renderer {
 		this.#defines.delete(define);
 	}
 
-	compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
+	compute(material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
 		getDefines(material, defines);
 
@@ -957,7 +957,7 @@ export class WebGPURenderer implements Renderer {
 
 		const groups = new Map2<number, number, Binding>();
 
-		this.#populateBindGroups(shaderModule, groups, material, null, null, null, null)
+		this.#populateBindGroups(shaderModule, groups, material, null, null, null, context);
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),

@@ -40,7 +40,7 @@ export class PixelatePass extends Pass {
 			Graphics.render(this.scene!, this.camera!, 0, context);
 			Graphics.popRenderTarget();
 		} else {
-			Graphics.compute(this.#material, context.width!, context.height);
+			Graphics.compute(this.#material, context, context.width!, context.height);
 		}
 	}
 }

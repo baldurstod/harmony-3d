@@ -7163,7 +7163,7 @@ class PixelatePass extends Pass {
             Graphics$1.popRenderTarget();
         }
         else {
-            Graphics$1.compute(this.#material, context.width, context.height);
+            Graphics$1.compute(this.#material, context, context.width, context.height);
         }
     }
 }
@@ -12583,7 +12583,7 @@ class WebGPURenderer {
     removeDefine(define) {
         this.#defines.delete(define);
     }
-    compute(material, workgroupCountX, workgroupCountY, workgroupCountZ) {
+    compute(material, context, workgroupCountX, workgroupCountY, workgroupCountZ) {
         const defines = new Map(this.#defines); // TODO: don't create one each time
         getDefines(material, defines);
         const shaderModule = this.#getShaderModule(material, defines);
@@ -12592,7 +12592,7 @@ class WebGPURenderer {
         }
         const device = WebGPUInternal.device;
         const groups = new Map2();
-        this.#populateBindGroups(shaderModule, groups, material, null, null, null, null);
+        this.#populateBindGroups(shaderModule, groups, material, null, null, null, context);
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
@@ -13419,8 +13419,8 @@ class Graphics {
             this.#bipmapContext.transferFromImageBitmap(bitmap);
         }
     }
-    static compute(material, workgroupCountX, workgroupCountY, workgroupCountZ) {
-        this.#forwardRenderer.compute(material, workgroupCountX, workgroupCountY, workgroupCountZ);
+    static compute(material, context, workgroupCountX, workgroupCountY, workgroupCountZ) {
+        this.#forwardRenderer.compute(material, { renderContext: context, width: context.width, height: context.height }, workgroupCountX, workgroupCountY, workgroupCountZ);
     }
     static renderMultiCanvas(delta, context = {}) {
         // TODO: mutualize with the method render()
@@ -13566,8 +13566,8 @@ class Graphics {
             await this.#initWebGPUContext(graphicOptions.webGPU);
         }
         else {
-            this.#forwardRenderer = new ForwardRenderer();
             this.#initWebGLContext(graphicOptions.webGL);
+            this.#forwardRenderer = new ForwardRenderer();
             WebGLRenderingState.setGraphics();
         }
     }
@@ -13681,7 +13681,7 @@ class Graphics {
         WebGPUInternal.adapter = adapter;
         WebGPUInternal.device = configuration.device;
         WebGPUInternal.format = configuration.format;
-        configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING;
+        configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT;
         WebGPUInternal.gpuContext.configure(configuration);
         WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
             //size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
@@ -75723,7 +75723,7 @@ var line = "#include matrix_uniforms\n\n@group(0) @binding(x) var<uniform> resol
 Shaders['grid.wgsl'] = grid;
 Shaders['line.wgsl'] = line;
 
-var pixelate = "/*\n#define USE_COLOR_MAP// why ?\n\n#include declare_fragment_standard\n//#include declare_fragment_color_map\n@group(0) @binding(x) var colorTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n#include postprocessing_vertex\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tfragColor = vec4(1.0);\n\tfragColor = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\n\t#include output_fragment\n}\n*/\n\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)  {\n\tlet size = textureDimensions(outTexture);\n\tlet center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t// The distance from the center of the texture\n\tlet dist = distance(vec2f(pos), center);\n\n\t// Compute stripes based on the distance\n\tlet stripe = dist / 32.0 % 2.0;\n\tlet red = vec4f(1, 0, 0, 1);\n\tlet cyan = vec4f(0, 1, 1, 1);\n\tlet color = select(red, cyan, stripe < 1.0);\n\n\t// Write the color to the texture\n\tvar v = textureLoad(colorTexture, pos);\n\ttextureStore(outTexture, pos, color);\n}\n";
+var pixelate = "@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> uHorizontalTiles: f32;\n\n\nfn computeSquarePixel(pos: vec2u) {\n\tlet sizef: vec2f = vec2f(resolution.xy);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);\n\n\tlet xy: vec2f = floor(vec2f(pos) / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (vec2f(pos) - 0.5 * sizef.xy) / sizef.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / sizef.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = uv % rep - hrep;\n\tlet b: vec2f = (uv - hrep) % rep - hrep;\n\tlet hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2u = vec2u(cellId / uHorizontalTiles);\n\tsampleUv.x *= u32(sizef.y / sizef.x);\n\n\tvar v = textureLoad(colorTexture, vec2u(xy * sizef));\n\ttextureStore(outTexture, pos, vec4f(xy, 0.0, 1.0));\n\ttextureStore(outTexture, pos, v);\n}\n\n#ifndef PIXEL_STYLE\n\t#define PIXEL_STYLE 0\n#endif\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n/*\n\tlet size = textureDimensions(outTexture);\n\tlet center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t// The distance from the center of the texture\n\tlet dist = distance(vec2f(pos), center);\n\n\t// Compute stripes based on the distance\n\tlet stripe = dist / 32.0 % 2.0;\n\tlet red = vec4f(1, 0, 0, 1);\n\tlet cyan = vec4f(0, 1, 1, 1);\n\tlet color = select(red, cyan, stripe < 1.0);\n\n\t// Write the color to the texture\n\tvar v = textureLoad(colorTexture, pos);\n\ttextureStore(outTexture, pos, color);\n\n*/\n\n\tlet size = textureDimensions(outTexture);\n\t//let center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t#if (PIXEL_STYLE == 0)\n\t\tcomputeSquarePixel(pos);\n\t#elif (PIXEL_STYLE == 1)\n\t\tcomputeDiamondPixel(gl_FragColor, gl_FragCoord.xy);\n\t#elif (PIXEL_STYLE == 2)\n\t\tcomputeRoundPixel1(gl_FragColor, gl_FragCoord.xy);\n\t#elif (PIXEL_STYLE == 3)\n\t\tcomputeRoundPixel2(gl_FragColor, gl_FragCoord.xy);\n\t#elif (PIXEL_STYLE == 4)\n\t\tcomputeHexagonPixel(gl_FragColor, gl_FragCoord.xy);\n\t#elif (PIXEL_STYLE == 5)\n\t\tcomputeVoronoiPixel(gl_FragColor, gl_FragCoord.xy);\n\t#elif (PIXEL_STYLE == 6)\n\t\tcomputeTrianglePixel(gl_FragColor, gl_FragCoord.xy);\n\t#endif\n\n}\n";
 
 Shaders['pixelate.wgsl'] = pixelate;
 

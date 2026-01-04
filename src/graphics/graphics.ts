@@ -612,8 +612,8 @@ class Graphics {
 		}
 	}
 
-	static compute(material: Material, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
-		this.#forwardRenderer!.compute(material, workgroupCountX, workgroupCountY, workgroupCountZ);
+	static compute(material: Material, context: RenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
+		this.#forwardRenderer!.compute(material, { renderContext: context, width: context.width!, height: context.height! }, workgroupCountX, workgroupCountY, workgroupCountZ);
 	}
 
 	static renderMultiCanvas(delta: number, context: RenderContext = {}) {
@@ -800,8 +800,8 @@ class Graphics {
 			this.#forwardRenderer = new WebGPURenderer();
 			await this.#initWebGPUContext(graphicOptions.webGPU);
 		} else {
-			this.#forwardRenderer = new ForwardRenderer();
 			this.#initWebGLContext(graphicOptions.webGL);
+			this.#forwardRenderer = new ForwardRenderer();
 
 			WebGLRenderingState.setGraphics();
 		}
@@ -935,7 +935,7 @@ class Graphics {
 		WebGPUInternal.device = configuration.device;
 		WebGPUInternal.format = configuration.format;
 
-		configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING;
+		configuration.usage = GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT;
 
 		WebGPUInternal.gpuContext.configure(configuration as GPUCanvasConfiguration);
 
