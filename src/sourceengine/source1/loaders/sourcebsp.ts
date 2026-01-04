@@ -29,6 +29,7 @@ export type FuncBrush = {
 type BspGeometry = {
 	lastIndice: number,
 	vertices: number[],
+	normals: number[],
 	indices: number[],
 	coords: number[],
 	alphas: number[],
@@ -221,6 +222,7 @@ export class SourceBSP extends World {
 			buffer = {
 				lastIndice: 0,
 				vertices: [], indices: [], coords: [], alphas: [],
+				normals: [],
 				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
 			};//TODOv3
 			this.#geometries[texName] = buffer;
@@ -258,6 +260,7 @@ export class SourceBSP extends World {
 					buffer.vertices.push(vertice2[0] + position[0]);
 					buffer.vertices.push(vertice2[1] + position[1]);
 					buffer.vertices.push(vertice2[2] + position[2]);
+					buffer.normals.push();
 				} else {
 					buffer.vertices.push(vertice1[0]);//TODOv3: optimize
 					buffer.vertices.push(vertice1[1]);
@@ -266,6 +269,8 @@ export class SourceBSP extends World {
 					buffer.vertices.push(vertice2[1]);
 					buffer.vertices.push(vertice2[2]);
 				}
+
+				buffer.normals.push(1, 0, 0, 1, 0, 0);
 
 				buffer.coords.push((vertice1[0] * textureVecsU[0] + vertice1[1] * textureVecsU[1] + vertice1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
 				buffer.coords.push((vertice1[0] * textureVecsV[0] + vertice1[1] * textureVecsV[1] + vertice1[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
@@ -322,6 +327,7 @@ export class SourceBSP extends World {
 			buffer = {
 				lastIndice: 0,
 				vertices: [], indices: [], coords: [], alphas: [],
+				normals: [],
 				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
 			};//TODOv3
 			this.#geometries[texName] = buffer;
@@ -463,6 +469,8 @@ export class SourceBSP extends World {
 					buffer.vertices.push(v3[0], v3[1], v3[2]);//TODOv3: optimize
 					buffer.vertices.push(v4[0], v4[1], v4[2]);//TODOv3: optimize
 
+					buffer.normals.push(1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0);
+
 					buffer.alphas.push(v1[3] / 255.0, v2[3] / 255.0, v3[3] / 255.0, v4[3] / 255.0);
 
 					buffer.coords.push((v1[0] * textureVecsU[0] + v1[1] * textureVecsU[1] + v1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
@@ -588,11 +596,13 @@ export class SourceBSP extends World {
 			const bufferGeometry = new BufferGeometry();
 
 			const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3, 'position');
+			const vertexNormal = new Float32BufferAttribute(geometry.vertices, 3, 'normal');
 			const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1, 'alpha');
 			const textureCoord = new Float32BufferAttribute(geometry.coords, 2, 'texCoord');
 
 			bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1, 'index'));
 			bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
+			bufferGeometry.setAttribute('aVertexNormal', vertexNormal);
 			bufferGeometry.setAttribute('aVertexAlpha', vertexAlpha);
 			bufferGeometry.setAttribute('aTextureCoord', textureCoord);
 
