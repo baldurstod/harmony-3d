@@ -27,18 +27,18 @@
 
 	#if NUM_SPOT_LIGHT_SHADOWS > 0
 		for ( var i = 0; i < NUM_SPOT_LIGHT_SHADOWS; i ++ ) {
-			computeSpotLightIrradiance(uSpotLights[i], geometry, directLight);
+			computeSpotLightIrradiance(spotLights[i], geometry, &directLight);
 			#ifdef USE_SHADOW_MAPPING
 				spotLightShadow = uSpotLightShadows[ i ];
 				directLight.color *= getShadow( uSpotShadowMap[ i ], spotLightShadow.mapSize, /*spotLightShadow.shadowBias*/0.0, /*spotLightShadow.shadowRadius*/0.0, vSpotShadowCoord[ i ] );
 			#endif
-			RE_Direct( directLight, geometry, material, reflectedLight );
+			RE_Direct( directLight, geometry, material, &reflectedLight );
 		}
 	#endif
 
 	for ( var i = NUM_SPOT_LIGHT_SHADOWS; i < NUM_SPOT_LIGHTS; i ++ ) {
-		computeSpotLightIrradiance(uSpotLights[i], geometry, directLight);
-		RE_Direct( directLight, geometry, material, reflectedLight );
+		computeSpotLightIrradiance(spotLights[i], geometry, &directLight);
+		RE_Direct( directLight, geometry, material, &reflectedLight );
 	}
 #endif
 

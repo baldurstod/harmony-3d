@@ -188,7 +188,7 @@ let diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffu
 
 #ifdef USE_CUBE_MAP
 	#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)
-		gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a;
+		fragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);
 	#else
 		//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;
 		fragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);

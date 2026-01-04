@@ -156,23 +156,23 @@ fn getAmbientLightIrradiance( ambientLightColor: vec3f ) -> vec3f{
 
 #if NUM_SPOT_LIGHTS > 0
 	struct SpotLight {
-		vec3 position;
-		vec3 direction;
-		vec3 color;
-		float range;
-		float innerAngleCos;
-		float outerAngleCos;
+		position: vec3f,
+		direction: vec3f,
+		color: vec3f,
+		range: f32,
+		innerAngleCos: f32,
+		outerAngleCos: f32,
 	};
-	uniform SpotLight uSpotLights[NUM_SPOT_LIGHTS];
+	@group(0) @binding(x) var<uniform> spotLights: array<SpotLight, NUM_SPOT_LIGHTS>;
 
-	void computeSpotLightIrradiance(const SpotLight spotLight, const GeometricContext geometry, out IncidentLight directLight) {
-		vec3 lightVector = spotLight.position - geometry.position;
+	fn computeSpotLightIrradiance(spotLight: SpotLight, geometry: GeometricContext, directLight: ptr<function, IncidentLight>) {
+		let lightVector: vec3f = spotLight.position - geometry.position;
 		directLight.direction = normalize(lightVector);
-		float lightDistance = length(lightVector);
-		float angleCos = dot( directLight.direction, spotLight.direction );
+		let lightDistance: f32 = length(lightVector);
+		let angleCos: f32 = dot( directLight.direction, spotLight.direction );
 
 		if (angleCos > spotLight.outerAngleCos ) {
-			float spotEffect = smoothstep( spotLight.outerAngleCos, spotLight.innerAngleCos, angleCos );
+			let spotEffect: f32 = smoothstep( spotLight.outerAngleCos, spotLight.innerAngleCos, angleCos );
 			directLight.color = spotLight.color;
 			directLight.color *= spotEffect;
 			directLight.color *= punctualLightIntensityToIrradianceFactor( lightDistance, spotLight.range, 1.0/*spotLight.decay*/);
