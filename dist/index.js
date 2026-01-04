@@ -6805,6 +6805,11 @@ class Texture {
         }
     }
 }
+function getCurrentTexture() {
+    const texture = new Texture({ gpuFormat: WebGPUInternal.format });
+    texture.texture = WebGPUInternal.gpuContext.getCurrentTexture();
+    return texture;
+}
 
 class TextureManager {
     static #texturesList = new Map();
@@ -7163,6 +7168,7 @@ class PixelatePass extends Pass {
             Graphics$1.popRenderTarget();
         }
         else {
+            this.#material.uniforms['outTexture'] = getCurrentTexture();
             Graphics$1.compute(this.#material, context, context.width, context.height);
         }
     }
@@ -12868,6 +12874,7 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { texture });
                     }
                     break;
+                /*
                 case 'outTexture':
                     const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
                     if (outTexture) {
@@ -12876,6 +12883,7 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { texture });
                     }
                     break;
+                */
                 default:
                     {
                         const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
@@ -12934,6 +12942,7 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
                     }
                     break;
+                /*
                 case 'outTexture':
                     const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
                     if (outTexture) {
@@ -12942,6 +12951,7 @@ class WebGPURenderer {
                         groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
                     }
                     break;
+                */
                 default:
                     {
                         const storageTexture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;

@@ -5,6 +5,7 @@ import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
 import { Scene } from '../../scenes/scene';
 import { RenderTarget } from '../../textures/rendertarget';
+import { getCurrentTexture } from '../../textures/texture';
 import { Pass } from '../pass';
 
 export class PixelatePass extends Pass {
@@ -40,6 +41,7 @@ export class PixelatePass extends Pass {
 			Graphics.render(this.scene!, this.camera!, 0, context);
 			Graphics.popRenderTarget();
 		} else {
+			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();;
 			Graphics.compute(this.#material, context, context.width!, context.height);
 		}
 	}

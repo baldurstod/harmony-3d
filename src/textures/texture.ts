@@ -1,10 +1,11 @@
 import { TESTING } from '../buildoptions';
 import { Graphics } from '../graphics/graphics2';
+import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { WebGLAnyRenderingContext } from '../types';
 import { errorOnce } from '../utils/console';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
-import { deleteTexture, HarmonyGPUTextureDescriptor } from './texturefactory';
+import { deleteTexture } from './texturefactory';
 
 export type TextureParams = {
 	[key: string]: unknown;
@@ -48,7 +49,7 @@ export class Texture {
 	gpuFormat: GPUTextureFormat;
 	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
 
-	constructor(textureParams: TextureParams = {gpuFormat:'rgba8unorm'}) {
+	constructor(textureParams: TextureParams = { gpuFormat: 'rgba8unorm' }) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
 		this.image = textureParams.image;
 
@@ -208,4 +209,10 @@ export class Texture {
 			deleteTexture(this.texture);
 		}
 	}
+}
+
+export function getCurrentTexture(): Texture {
+	const texture = new Texture({ gpuFormat: WebGPUInternal.format });
+	texture.texture = WebGPUInternal.gpuContext.getCurrentTexture();
+	return texture;
 }

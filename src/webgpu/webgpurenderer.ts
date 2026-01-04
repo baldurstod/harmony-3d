@@ -9,7 +9,7 @@ import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
-import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
@@ -1301,14 +1301,6 @@ export class WebGPURenderer implements Renderer {
 						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 					}
 					break;
-				case 'outTexture':
-					const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
-					if (outTexture) {
-						const texture = new Texture({ gpuFormat: WebGPUInternal.format });
-						texture.texture = outTexture;
-						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
-					}
-					break;
 				default:
 					{
 						const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
@@ -1366,14 +1358,6 @@ export class WebGPURenderer implements Renderer {
 					const storageTexture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
 					if (storageTexture) {
 						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
-					}
-					break;
-				case 'outTexture':
-					const outTexture = WebGPUInternal.gpuContext.getCurrentTexture();
-					if (outTexture) {
-						const storageTexture = new Texture({ gpuFormat: WebGPUInternal.format });
-						storageTexture.texture = outTexture;
-						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
 					}
 					break;
 				default:
