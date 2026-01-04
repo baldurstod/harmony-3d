@@ -612,6 +612,7 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		const pipelineDescriptor: GPURenderPipelineDescriptor = {
+			label: object.name,
 			vertex: {
 				module: shaderModule.module,
 				entryPoint: vertexEntryPoint,
@@ -1270,6 +1271,27 @@ export class WebGPURenderer implements Renderer {
 											uniformBuffer,
 											0,
 											new Float32Array([0]),// TODO: create a const
+										);
+										break;
+									case 'mat4x4f':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]),// TODO: create a const
+										);
+										break;
+									case 'vec2f':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0, 0]),// TODO: create a const
+										);
+										break;
+									case 'vec3f':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0, 0, 0]),// TODO: create a const
 										);
 										break;
 									case 'vec4f':
