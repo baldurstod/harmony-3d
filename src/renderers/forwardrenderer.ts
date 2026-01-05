@@ -271,6 +271,8 @@ export class ForwardRenderer implements Renderer {
 			if (USE_STATS) {
 				WebGLStats.drawElements(object.renderMode, geometry.count);
 			}
+		}else {
+			errorOnce(`WebGL program is invalid: ${material.getShaderSource()}`);
 		}
 	}
 

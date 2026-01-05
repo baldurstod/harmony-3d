@@ -16,17 +16,16 @@ export class ShaderManager {
 	}
 
 	static getShaderSource(type: ShaderType, name: string, invalidCustomShaders = false): WebGLShaderSource | undefined {
-		const shader = this.#shaderList.get(name);
-		if (shader === undefined) {
+		if (this.#shaderList.get(name) === undefined) {
 			const source = Shaders[name];
 			if (source) {
 				this.addSource(type, name, source);
 			} else {
-				errorOnce('Shader not found : ' + name);
+				errorOnce('Shader not found: ' + name);
 			}
 		}
 		const customSource = this.#customShaderList.get(name);
-		const source = shader;
+		const source = this.#shaderList.get(name);
 		return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
 	}
 

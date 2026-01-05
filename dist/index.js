@@ -1343,18 +1343,17 @@ class ShaderManager {
         ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
     }
     static getShaderSource(type, name, invalidCustomShaders = false) {
-        const shader = this.#shaderList.get(name);
-        if (shader === undefined) {
+        if (this.#shaderList.get(name) === undefined) {
             const source = Shaders[name];
             if (source) {
                 this.addSource(type, name, source);
             }
             else {
-                errorOnce('Shader not found : ' + name);
+                errorOnce('Shader not found: ' + name);
             }
         }
         const customSource = this.#customShaderList.get(name);
-        const source = shader;
+        const source = this.#shaderList.get(name);
         return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
     }
     static setCustomSource(type, name, source) {
@@ -11597,6 +11596,9 @@ class ForwardRenderer {
                     Graphics$1.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
                 }
             }
+        }
+        else {
+            errorOnce(`WebGL program is invalid: ${material.getShaderSource()}`);
         }
     }
     #setupLights(renderList, camera, program, viewMatrix) {
