@@ -29,11 +29,11 @@ export class TimelineObserver extends StaticEventTarget {
 		}
 	*/
 
-	static propertyAdded(element: TimelineElement, propertyName: string, type: TimelinePropertyType, value: any) {
+	static propertyAdded(element: TimelineElement, propertyName: string, type: TimelinePropertyType, value: any): void {
 		this.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
 	}
 
-	static propertyChanged(element: TimelineElement, propertyName: string, oldValue: any, newValue: any) {
+	static propertyChanged(element: TimelineElement, propertyName: string, oldValue: any, newValue: any): void {
 		this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
 	}
 }

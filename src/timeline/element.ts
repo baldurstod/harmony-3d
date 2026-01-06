@@ -31,7 +31,7 @@ export class TimelineElement {
 		this.addProperty('name', TimelinePropertyType.String, name);
 	}
 
-	setName(name: string) {
+	setName(name: string): void {
 		this.setPropertyValue('name', name);
 	}
 
@@ -47,7 +47,7 @@ export class TimelineElement {
 		return property;
 	}
 
-	setPropertyValue(name: string, value: any) {
+	setPropertyValue(name: string, value: any): void {
 		const property = this.#properties.get(name);
 		if (property) {
 			const oldValue = property.getValue();

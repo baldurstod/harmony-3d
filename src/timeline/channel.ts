@@ -9,12 +9,12 @@ export class TimelineChannel extends TimelineElement {
 		super(name);
 	}
 
-	addClip(clip: TimelineClip) {
+	addClip(clip: TimelineClip): TimelineClip {
 		this.#clips.add(clip);
 		return clip;
 	}
 
-	getClips() {
+	getClips(): TimelineClip[] {
 		return [...this.#clips];
 	}
 }

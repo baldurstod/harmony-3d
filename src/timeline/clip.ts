@@ -11,7 +11,7 @@ export class TimelineClip extends TimelineElement {
 		this.addProperty('end', TimelinePropertyType.Time, endTime);
 	}
 
-	setStartTime(start: number) {
+	setStartTime(start: number): void {
 		this.setPropertyValue('start', start);
 	}
 
@@ -19,7 +19,7 @@ export class TimelineClip extends TimelineElement {
 		return this.getPropertyValue('start');
 	}
 
-	setEndTime(end: number) {
+	setEndTime(end: number): void {
 		this.setPropertyValue('end', end);
 	}
 

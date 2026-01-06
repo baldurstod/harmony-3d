@@ -31,11 +31,11 @@ export type CreateImageTextureParams = Omit<TextureParams, 'format'> & {
 export class TextureManager {
 	static #texturesList = new Map<string, Texture>();
 
-	static setTexture(path: string, texture: Texture) {
+	static setTexture(path: string, texture: Texture): void {
 		this.#texturesList.set(path, texture);
 	}
 
-	static createTexture(textureParams: CreateTextureParams) {
+	static createTexture(textureParams: CreateTextureParams): Texture {
 		const texture = new Texture({ ...textureParams, ...{ gpuFormat: textureParams.webgpuDescriptor.format } });
 		texture.gpuFormat = textureParams.webgpuDescriptor.format;
 		texture.texture = createTexture(textureParams.webgpuDescriptor /*?? {
@@ -53,17 +53,17 @@ export class TextureManager {
 		return texture;
 	}
 
-	static deleteTexture(texture: Texture) {
+	static deleteTexture(texture: Texture): void {
 		deleteTexture(texture.texture);
 	}
 
-	static createFlatTexture(textureParams: CreateFlatTextureParams/*, color: Color = new Color(1, 0, 1), needCubeMap = false*/) {
+	static createFlatTexture(textureParams: CreateFlatTextureParams/*, color: Color = new Color(1, 0, 1), needCubeMap = false*/): Texture {
 		const texture = this.createTexture(textureParams);
 		fillFlatTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.needCubeMap ?? false);
 		return texture;
 	}
 
-	static createCheckerTexture(textureParams: CreateCheckerTextureParams = {}/*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
+	static createCheckerTexture(textureParams: CreateCheckerTextureParams = {}/*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/): Texture {
 		const width = textureParams.width ?? 64;
 		const height = textureParams.height ?? 64;
 		const descriptor: HarmonyGPUTextureDescriptor = {
@@ -76,7 +76,7 @@ export class TextureManager {
 		return texture;
 	}
 
-	static createNoiseTexture(textureParams: CreateNoiseTextureParams/*, width: number, height: number, needCubeMap = false*/) {
+	static createNoiseTexture(textureParams: CreateNoiseTextureParams/*, width: number, height: number, needCubeMap = false*/): Texture {
 		const texture = this.createTexture(textureParams);
 		fillNoiseTexture(texture, textureParams.webgpuDescriptor.size.width, textureParams.webgpuDescriptor.size.height, textureParams.needCubeMap);
 		return texture;

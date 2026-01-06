@@ -18,7 +18,7 @@ export class TimelineProperty {
 		this.#value = value;
 	}
 
-	setValue(value: any) {
+	setValue(value: any): void {
 		this.#value = value;
 	}
 

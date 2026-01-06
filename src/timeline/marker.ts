@@ -8,7 +8,7 @@ export class TimelineMarker extends TimelineElement {
 		this.addProperty('time', TimelinePropertyType.Float, name);
 	}
 
-	setTime(time: number) {
+	setTime(time: number): void {
 		this.setPropertyValue('time', time);
 	}
 
