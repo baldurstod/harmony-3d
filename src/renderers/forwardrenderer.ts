@@ -14,14 +14,14 @@ import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLAnyRenderingContext } from '../types';
+import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_ELEMENT_ARRAY_BUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_LINES, GL_SCISSOR_TEST, GL_UNSIGNED_INT } from '../webgl/constants';
 import { Program } from '../webgl/program';
 import { WebGLRenderingState } from '../webgl/renderingstate';
+import { UniformValue } from '../webgl/uniform';
 import { Renderer } from './renderer';
 import { RenderList } from './renderlist';
-import { UniformValue } from '../webgl/uniform';
-import { errorOnce } from '../utils/console';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -271,7 +271,7 @@ export class ForwardRenderer implements Renderer {
 			if (USE_STATS) {
 				WebGLStats.drawElements(object.renderMode, geometry.count);
 			}
-		}else {
+		} else {
 			errorOnce(`WebGL program is invalid: ${material.getShaderSource()}`);
 		}
 	}

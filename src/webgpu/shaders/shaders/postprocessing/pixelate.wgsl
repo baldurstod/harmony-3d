@@ -1,6 +1,8 @@
+#include common_uniforms
+
 @group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;
 @group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;
-@group(0) @binding(x) var<uniform> resolution : vec4f;
+//@group(0) @binding(x) var<uniform> resolution : vec4f;
 @group(0) @binding(x) var<uniform> uHorizontalTiles: f32;
 
 fn mymod(x: vec2f, y: vec2f) -> vec2f {

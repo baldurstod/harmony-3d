@@ -1,6 +1,7 @@
 import { Millisecond } from 'harmony-types';
 import { StaticEventTarget } from 'harmony-utils';
 import { Entity } from '../entities/entity';
+import { RenderContext } from '../interfaces/rendercontext';
 
 export enum GraphicsEvent {
 	MouseMove = 'mousemove',
@@ -22,6 +23,7 @@ export interface GraphicTickEvent {
 	delta: number,
 	time: Millisecond,
 	speed: number,
+	context: RenderContext,
 }
 
 export interface GraphicMouseEventData {
@@ -52,8 +54,8 @@ export interface GraphicKeyboardEventData {
 export class GraphicsEvents extends StaticEventTarget {
 	static readonly isGraphicsEvents: true = true;
 
-	static tick(delta: number, time: Millisecond, speed: number) {
-		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+	static tick(delta: number, time: Millisecond, speed: number, context: RenderContext) {
+		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta, time, speed, context} }));
 	}
 
 	static resize(width: number, height: number) {

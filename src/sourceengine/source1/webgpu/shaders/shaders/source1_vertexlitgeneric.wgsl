@@ -1,4 +1,5 @@
 #include matrix_uniforms
+#include common_uniforms
 #include declare_texture_transform
 #include declare_vertex_detail_uv
 #include declare_vertex_skinning

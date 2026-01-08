@@ -1,6 +1,7 @@
 #include matrix_uniforms
+#include common_uniforms
 
-@group(0) @binding(x) var<uniform> resolution : vec4f;
+//@group(0) @binding(x) var<uniform> resolution : vec4f;
 @group(0) @binding(x) var<uniform> linewidth : f32;
 
 #ifdef USE_DASH
@@ -71,7 +72,7 @@ fn vertex_main(
 	output.vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
 #endif
 
-	let aspect: f32 = resolution.x / resolution.y;
+	let aspect: f32 = commonUniforms.resolution.x / commonUniforms.resolution.y;
 	output.vUv = texCoord;
 
 	// camera space
@@ -173,5 +174,6 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 	}
 	fragColor = vec4( diffuseColor.rgb, diffuseColor.a );
 
+	#include calculate_fragment_standard
 	#include output_fragment
 }

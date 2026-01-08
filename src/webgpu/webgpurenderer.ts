@@ -1,6 +1,7 @@
-import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
+import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
+import { BackGroundIssue } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -23,13 +24,14 @@ import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
-import { BackGroundIssue } from '../backgrounds/background';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
 const clearError = once(() => console.error('TODO clear'));
 
 const tempViewProjectionMatrix = mat4.create();
+
+const pickBufferSize = 8;
 
 type WgslModule = {
 	module: GPUShaderModule;
@@ -38,7 +40,7 @@ type WgslModule = {
 	source: string;
 }
 
-type Binding = { buffer?: GPUBuffer, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture, access?: GPUStorageTextureAccess };
+type Binding = { buffer?: GPUBuffer, bufferType?: GPUBufferBindingType, storageBuffera?: GPUBuffer, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture, access?: GPUStorageTextureAccess, visibility?: GPUShaderStageFlags };
 
 const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
@@ -53,6 +55,10 @@ export class WebGPURenderer implements Renderer {
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
 	#defines = new Map<string, string>();
+	readonly #defaultPickingColor = vec3.create();
+	//readonly #pointerPosition = vec2.create();
+	#pickedPrimitive?: GPUBuffer;
+	readonly #identityVec2 = vec2.create();
 
 	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = this.#renderList;
@@ -182,9 +188,15 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
+		const pick = context.renderContext.pick;
+
 		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
 
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
+
+		if (pick) {
+			defines.set('PICKING_MODE', '');
+		}
 
 		getDefines(object, defines);
 		getDefines(material, defines);
@@ -262,6 +274,10 @@ export class WebGPURenderer implements Renderer {
 		});
 
 		const commandEncoder = device.createCommandEncoder();
+
+		if (pick && this.#pickedPrimitive) {
+			commandEncoder.clearBuffer(this.#pickedPrimitive);
+		}
 
 		let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
 
@@ -421,8 +437,32 @@ export class WebGPURenderer implements Renderer {
 		// End the render pass
 		passEncoder.end();
 
+
+		let stagingBuffer: GPUBuffer;
+		if (pick && this.#pickedPrimitive) {
+			stagingBuffer = device.createBuffer({
+				size: pickBufferSize,
+				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+			});
+			commandEncoder.copyBufferToBuffer(
+				this.#pickedPrimitive,
+				stagingBuffer,
+			);
+		}
+
 		// 10: End frame by passing array of command buffers to command queue for execution
 		device.queue.submit([commandEncoder.finish()]);
+
+		stagingBuffer!?.mapAsync(
+			GPUMapMode.READ,
+			0, // Offset
+			pickBufferSize,
+		).then(() => {
+			const copyArrayBuffer = stagingBuffer.getMappedRange(0, pickBufferSize);
+			const data = copyArrayBuffer.slice();
+			stagingBuffer.unmap();
+			console.log(new Float32Array(data));
+		});
 
 		if (USE_STATS) {
 			WebGLStats.drawElements(object.renderMode, geometry.count);
@@ -664,6 +704,14 @@ export class WebGPURenderer implements Renderer {
 	*/
 	}
 
+	/*
+	setPointerPosition(x: uint, y: uint): void {
+		// TODO: implement
+		this.#pointerPosition[0] = x;
+		this.#pointerPosition[1] = y;
+	}
+	*/
+
 	setDefine(define: string, value = ''): void {
 		this.#defines.set(define, value);
 	}
@@ -726,12 +774,12 @@ export class WebGPURenderer implements Renderer {
 			for (const [bindingId, binding] of group) {
 				const entry: GPUBindGroupLayoutEntry = {
 					binding: bindingId,// corresponds to @binding
-					visibility: compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
+					visibility: binding.visibility ?? (compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT),// TODO: set appropriate visibility
 					//buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
 				}
 
 				if (binding.buffer) {
-					entry.buffer = {};
+					entry.buffer = { type: binding.bufferType ?? 'uniform' };
 				}
 
 				if (binding.texture) {
@@ -758,7 +806,7 @@ export class WebGPURenderer implements Renderer {
 			bindGroupLayouts.push(device.createBindGroupLayout({
 				label: `group ${groupId}`,
 				entries: entries,
-			}))
+			}));
 		}
 
 		return bindGroupLayouts;
@@ -823,10 +871,16 @@ export class WebGPURenderer implements Renderer {
 		const device = WebGPUInternal.device;
 
 		for (const uniform of shaderModule.reflection.uniforms) {
-			const uniformBuffer = device.createBuffer({
+			/*
+			let additionalUsage: GPUFlagsConstant = 0;
+			if (uniform.name == 'commonUniforms') {// TODO: improve that
+				additionalUsage = GPUBufferUsage.STORAGE;
+			}
+			*/
+			const uniformBuffer = device.createBuffer({// TODO: don't recreate buffers each time
 				label: uniform.name,
 				size: uniform.size,
-				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST/* | additionalUsage*/,
 			});
 
 			groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
@@ -895,6 +949,20 @@ export class WebGPURenderer implements Renderer {
 								break;
 							case 'cameraPosition':
 								bufferSource = camera?.position as BufferSource;
+								break;
+							case 'resolution':
+								bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
+								break;
+							case 'time':
+								bufferSource = new Float32Array([Graphics.getTime(), Graphics.currentTick, 0, 0]) as BufferSource;// TODO: create float32 once and update it once evry frame
+								break;
+							/*
+							case 'pickingColor':
+								bufferSource = new Float32Array(object?.pickingColor ?? this.#defaultPickingColor) as BufferSource;// TODO: create float32 once and update it once evry frame
+								break;
+							*/
+							case 'pointerCoord':
+								bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2) as BufferSource;
 								break;
 							default:
 								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -979,9 +1047,6 @@ export class WebGPURenderer implements Renderer {
 					} else {
 						let bufferSource: BufferSource | null = null;
 						switch (uniform.name) {
-							case 'resolution':
-								bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
-								break;
 							case 'cameraPosition':
 								bufferSource = camera?.position as BufferSource;
 								break;
@@ -999,7 +1064,7 @@ export class WebGPURenderer implements Renderer {
 										device.queue.writeBuffer(
 											uniformBuffer,
 											0,
-											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ]),// TODO: create a const
+											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]),// TODO: create a const
 										);
 										break;
 									case 'vec2f':
@@ -1085,9 +1150,9 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
-		for (const shaderTexture of shaderModule.reflection.storage) {
+		for (const storage of shaderModule.reflection.storage) {
 			let access: GPUStorageTextureAccess = 'read-only';
-			switch ((shaderTexture.type as TemplateInfo).access) {
+			switch ((storage.type as TemplateInfo).access ?? storage.access) {
 				case 'read':
 					break;
 				case 'write':
@@ -1097,24 +1162,37 @@ export class WebGPURenderer implements Renderer {
 					access = 'read-write';
 					break;
 				default:
-					errorOnce(`Unknown storage texture access type ${(shaderTexture.type as TemplateInfo).access}`);
+					errorOnce(`Unknown storage access type ${(storage.type as TemplateInfo).access}`);
 					break;
 			}
 
-			switch (shaderTexture.name) {
+			switch (storage.name) {
 				case 'colorTexture':
 					const storageTexture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
 					if (storageTexture) {
-						groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
+						groups.set(storage.group, storage.binding, { storageTexture, access: access });
 					}
+					break;
+				case 'pickedPrimitive':
+					const buffer = this.#pickedPrimitive ?? device.createBuffer({// TODO: don't recreate buffers each time
+						label: storage.name,
+						size: storage.size,
+						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+					});
+
+					if (!this.#pickedPrimitive) {
+						this.#pickedPrimitive = buffer;
+					}
+
+					groups.set(storage.group, storage.binding, { buffer, bufferType: 'storage', access: access, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
 					break;
 				default:
 					{
-						const storageTexture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
+						const storageTexture = (material.uniforms[storage.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
-							groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
+							groups.set(storage.group, storage.binding, { storageTexture, access });
 						} else {
-							errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+							errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}
 					}
 					break;

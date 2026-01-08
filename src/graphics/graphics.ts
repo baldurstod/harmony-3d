@@ -470,16 +470,18 @@ class Graphics {
 		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
 	}
 
-	static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number) {
-		this.setIncludeCode('pickingMode', '#define PICKING_MODE');
+	static pickEntity(canvas: HTMLCanvasElement, x: number, y: number) {
+		this.setIncludeCode('pickingMode', '#define PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 		this.#allowTransfertBitmap = false;
-		GraphicsEvents.tick(0, performance.now(), 0);
+		GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
 		this.#allowTransfertBitmap = true;
-		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
+		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 
 		const gl = this.glContext;
 		const pixels = new Uint8Array(4);
-		this.glContext?.readPixels(x, htmlCanvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		if (this.isWebGLAny) {
+			this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		}
 
 		const pickedEntityIndex = (pixels[0]! << 16) + (pixels[1]! << 8) + (pixels[2]!);
 		return pickList.get(pickedEntityIndex) ?? null;
@@ -787,7 +789,7 @@ class Graphics {
 		const delta = (tick - this.#lastTick) * this.speed * 0.001;
 		if (this.#running) {
 			++this.currentTick;
-			GraphicsEvents.tick(delta, tick, this.speed);
+			GraphicsEvents.tick(delta, tick, this.speed, {});
 		}
 		this.#lastTick = tick;
 		if (FULL_PATATE && TESTING) {

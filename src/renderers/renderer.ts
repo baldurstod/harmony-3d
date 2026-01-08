@@ -25,8 +25,8 @@ export interface Renderer {
 
 	clearColor: (clearColor: vec4) => void
 
-	setDefine: (define: string, value: string) => void;
-	removeDefine: (define: string, value: string) => void;
+	setDefine: (define: string, value?: string) => void;
+	removeDefine: (define: string) => void;
 
 	compute: (material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
 	/*

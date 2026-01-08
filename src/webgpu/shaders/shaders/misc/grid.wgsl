@@ -1,4 +1,5 @@
 #include matrix_uniforms
+#include common_uniforms
 
 @group(0) @binding(x) var<uniform> uSpacing: f32;
 
@@ -59,6 +60,6 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 
 	//fragColor = diffuseColor;
 
-	//#include calculate_fragment_standard
+	#include calculate_fragment_standard
 	#include output_fragment
 }
