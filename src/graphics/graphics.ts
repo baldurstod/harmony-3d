@@ -470,30 +470,41 @@ class Graphics {
 		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
 	}
 
-	static pickEntity(canvas: HTMLCanvasElement, x: number, y: number) {
-		this.setIncludeCode('pickingMode', '#define PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
-		this.#allowTransfertBitmap = false;
-		GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
-		this.#allowTransfertBitmap = true;
-		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
-
-		const gl = this.glContext;
-		const pixels = new Uint8Array(4);
+	static async pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null> {
 		if (this.isWebGLAny) {
-			this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-		}
+			const gl = this.glContext;
+			this.setIncludeCode('pickingMode', '#define PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
+			this.#allowTransfertBitmap = false;
+			GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
+			this.#allowTransfertBitmap = true;
+			this.setIncludeCode('pickingMode', '#undef PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 
-		const pickedEntityIndex = (pixels[0]! << 16) + (pixels[1]! << 8) + (pixels[2]!);
-		return pickList.get(pickedEntityIndex) ?? null;
+			const pixels = new Uint8Array(4);
+			this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+			const pickedEntityIndex = (pixels[0]! << 16) + (pixels[1]! << 8) + (pixels[2]!);
+			return pickList.get(pickedEntityIndex) ?? null;
+		} else {
+			let pickingResolve: (value: Entity | null) => void;
+			const p = new Promise<Entity | null>((resolve) => {
+				pickingResolve = resolve;
+			});
+			GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve! } });
+
+			return p;
+		}
 	}
 
-	static #mouseDown(event: MouseEvent) {
+	static #mouseDown(event: MouseEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		htmlCanvas.focus();
 		const x = event.offsetX;
 		const y = event.offsetY;
-		this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
-		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		//this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
+		this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
+			this.#pickedEntity = pickedEntity;
+			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
+			GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		});
 	}
 
 	static #mouseMove(event: MouseEvent) {

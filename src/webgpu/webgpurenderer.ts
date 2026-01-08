@@ -158,21 +158,46 @@ export class WebGPURenderer implements Renderer {
 
 	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, clearColor: boolean, clearValue?: GPUColorDict, lightPos?: vec3): void {
 		let clearDepth = true;
+		let pickPromises: Promise<[Mesh, number] | null>[] = [];
+
 		for (const child of renderList.opaqueList) {
-			this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+			const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+			if (pickPromise) {
+				pickPromises.push(pickPromise);
+			}
 			clearDepth = false;
 			clearColor = false;
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+				const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+				if (pickPromise) {
+					pickPromises.push(pickPromise);
+				}
 				clearColor = false;
 			}
 		}
+
+		if (pickPromises.length) {
+			Promise.allSettled(pickPromises).then(async () => {
+				let min = Infinity;
+				let closest: Mesh | null = null;
+				for (const pickPromise of pickPromises) {
+					await pickPromise.then((value: [Mesh, number] | null) => {
+						if (value && value[1] < min) {
+							min = value[1];
+							closest = value[0];
+						}
+					});
+				}
+
+				context.renderContext.pick?.resolve?.(closest);
+			});
+		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true, lightPos?: vec3): void {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true, lightPos?: vec3): Promise<[Mesh, number] | null> | void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -453,19 +478,30 @@ export class WebGPURenderer implements Renderer {
 		// 10: End frame by passing array of command buffers to command queue for execution
 		device.queue.submit([commandEncoder.finish()]);
 
-		stagingBuffer!?.mapAsync(
-			GPUMapMode.READ,
-			0, // Offset
-			pickBufferSize,
-		).then(() => {
-			const copyArrayBuffer = stagingBuffer.getMappedRange(0, pickBufferSize);
-			const data = copyArrayBuffer.slice();
-			stagingBuffer.unmap();
-			console.log(new Float32Array(data));
-		});
-
 		if (USE_STATS) {
 			WebGLStats.drawElements(object.renderMode, geometry.count);
+		}
+
+		if (stagingBuffer!) {
+			const promise = new Promise<[Mesh, number] | null>((resolve) => {
+				stagingBuffer.mapAsync(
+					GPUMapMode.READ,
+					0, // Offset
+					pickBufferSize,
+				).then(() => {
+					const copyArrayBuffer = stagingBuffer.getMappedRange(0, pickBufferSize);
+					const data = copyArrayBuffer.slice();
+					stagingBuffer.destroy();
+					const result = new Float32Array(data);
+					if (result[0]) {
+						resolve([object, new Float32Array(data)[1]!]);
+					} else {
+						resolve(null);
+					}
+				});
+			});
+
+			return promise;
 		}
 	}
 

@@ -1,4 +1,5 @@
 import { vec2 } from "gl-matrix";
+import { Entity } from "../entities/entity";
 import { RenderTarget } from "../textures/rendertarget";
 
 export interface RenderContext {
@@ -13,6 +14,8 @@ export interface RenderContext {
 	pick?: {
 		canvas: HTMLCanvasElement,
 		position: vec2,
+		/** For WebGPU context. Picking is done asynchronously */
+		resolve?: (value: Entity | null) => void,
 	}
 
 	/*
