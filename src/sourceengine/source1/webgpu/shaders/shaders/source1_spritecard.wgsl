@@ -20,11 +20,17 @@
 
 @vertex
 fn vertex_main(
-	@location(0) position: vec3f,
-	@location(1) normal: vec3f,
-	@location(2) texCoord: vec2f,
+	@location(x) position: vec3f,
+#ifdef HAS_NORMALS
+	@location(x) normal: vec3f,
+#endif
+	@location(x) texCoord: vec2f,
 ) -> VertexOut
 {
+#ifndef HAS_NORMALS
+	let normal: vec3f = vec3(1., 0., 0.);
+#endif
+
 	var output : VertexOut;
 
 	#include calculate_vertex_uv

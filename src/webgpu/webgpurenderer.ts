@@ -215,6 +215,12 @@ export class WebGPURenderer implements Renderer {
 			}
 		}
 
+		const geometryAttributes = geometry.attributes;
+		const indexAttribute = geometryAttributes.get('index');
+		if (!indexAttribute) {
+			return;
+		}
+
 		const pick = context.renderContext.pick;
 
 		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
@@ -223,6 +229,10 @@ export class WebGPURenderer implements Renderer {
 
 		if (pick) {
 			defines.set('PICKING_MODE', '');
+		}
+
+		if (geometryAttributes.has('aVertexNormal')) {
+			defines.set('HAS_NORMALS', '');
 		}
 
 		getDefines(object, defines);
@@ -240,13 +250,6 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		const device = WebGPUInternal.device;
-
-
-		const geometryAttributes = geometry.attributes;
-		const indexAttribute = geometryAttributes.get('index');
-		if (!indexAttribute) {
-			return;
-		}
 
 		const indices = indexAttribute._array;
 		if (!indices) {
