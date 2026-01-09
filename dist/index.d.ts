@@ -2688,6 +2688,14 @@ declare class Channel {
                           y: number;
                           width: number;
                           height: number;
+                          mouseEvent: MouseEvent;
+                      }
+
+                      export declare interface GraphicPickEvent {
+                          x: number;
+                          y: number;
+                          width: number;
+                          height: number;
                           entity: Entity | null;
                           mouseEvent: MouseEvent;
                       }
@@ -2718,7 +2726,7 @@ declare class Channel {
                           static getCanvas(name: string): CanvasAttributes | null;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
-                          static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number): Entity | null;
+                          static pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null>;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
                           static compute(material: Material, context: RenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void;
@@ -2809,6 +2817,7 @@ declare class Channel {
                           MouseDblClick = "mousedblclick",
                           Wheel = "wheel",
                           Resize = "resize",
+                          Pick = "pick",
                           Tick = "tick",
                           KeyDown = "keydown",
                           KeyUp = "keyup",
@@ -2819,14 +2828,15 @@ declare class Channel {
 
                       export declare class GraphicsEvents extends StaticEventTarget {
                           static readonly isGraphicsEvents: true;
-                          static tick(delta: number, time: Millisecond, speed: number): void;
+                          static tick(delta: number, time: Millisecond, speed: number, context: RenderContext): void;
+                          static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static resize(width: number, height: number): void;
-                          static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static mouseDblClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-                          static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
+                          static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
+                          static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
+                          static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
+                          static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
+                          static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
+                          static wheel(x: number, y: number, wheelEvent: WheelEvent): void;
                           static keyDown(keyboardEvent: KeyboardEvent): void;
                           static keyUp(keyboardEvent: KeyboardEvent): void;
                           static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
@@ -2859,17 +2869,16 @@ declare class Channel {
                           delta: number;
                           time: Millisecond;
                           speed: number;
+                          context: RenderContext;
                       }
 
                       export declare interface GraphicTouchEventData {
-                          entity: Entity | null;
                           touchEvent: TouchEvent;
                       }
 
                       export declare interface GraphicWheelEventData {
                           x: number;
                           y: number;
-                          entity: Entity | null;
                           wheelEvent: WheelEvent;
                       }
 
@@ -3126,7 +3135,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4152,7 +4161,8 @@ declare class Channel {
                           #private;
                           renderMode: number;
                           isRenderable: boolean;
-                          uniforms: Record<string, any>;
+                          readonly uniforms: Record<string, any>;
+                          readonly storage: Record<string, StorageValue>;
                           defines: any;
                           isMesh: boolean;
                           constructor(params: MeshParameters);
@@ -4175,6 +4185,9 @@ declare class Channel {
                           getUniform(name: string): any;
                           setUniform(name: string, uniform: UniformValue): void;
                           deleteUniform(name: string): void;
+                          getStorage(name: string): StorageValue | undefined;
+                          setStorage(name: string, uniform: StorageValue): void;
+                          deleteStorage(name: string): void;
                           setDefine(define: string, value?: string | number): void;
                           removeDefine(define: string): void;
                           exportObj(): ObjDatas;
@@ -5504,6 +5517,12 @@ declare class Channel {
                           /** Force rendering even when the canvas is not visible. Default to false. */
                           forceRendering?: boolean;
                           renderTarget?: RenderTarget | null;
+                          pick?: {
+                              canvas: HTMLCanvasElement;
+                              position: vec2;
+                              /** For WebGPU context. Picking is done asynchronously */
+                              resolve?: (value: Entity | null) => void;
+                          };
                       }
 
                       export declare class RenderDeferredLight extends RenderBase {
@@ -5526,8 +5545,8 @@ declare class Channel {
                           setToneMappingExposure: (exposure: number) => void;
                           getToneMappingExposure: () => number;
                           clearColor: (clearColor: vec4) => void;
-                          setDefine: (define: string, value: string) => void;
-                          removeDefine: (define: string, value: string) => void;
+                          setDefine: (define: string, value?: string) => void;
+                          removeDefine: (define: string) => void;
                           compute: (material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
                       }
 
@@ -8582,6 +8601,8 @@ declare class Channel {
                           init(): void;
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
                       }
+
+                      export declare type StorageValue = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array;
 
                       export declare function stringToQuat(s: string, q?: quat): quat;
 

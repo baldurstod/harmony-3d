@@ -1,5 +1,4 @@
 import { quat, vec3 } from 'gl-matrix';
-
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics2';
@@ -150,8 +149,9 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.#createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.#texture!);
+		if (Graphics.isWebGLAny) {
+			this.#createParticlesTexture();
+		}
 
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
@@ -180,6 +180,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 
 	#createParticlesArray() {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
 	#createParticlesTexture() {
@@ -199,6 +200,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
+		this.mesh!.setUniform('uParticles', this.#texture);
 	}
 
 	#updateParticlesTexture() {
@@ -252,7 +254,9 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 			index += 8;
 		}
 
-		this.#updateParticlesTexture();
+		if (Graphics.isWebGLAny) {
+			this.#updateParticlesTexture();
+		}
 	}
 
 	dispose() {

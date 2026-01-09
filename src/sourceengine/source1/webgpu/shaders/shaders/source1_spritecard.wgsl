@@ -2,36 +2,89 @@
 #include common_uniforms
 #include declare_texture_transform
 #include declare_vertex_skinning
+#include source_declare_particle
+#include source1_declare_gamma_functions
 
 #include declare_fragment_standard
 #include declare_fragment_diffuse
 #include declare_fragment_color_map
 #include declare_fragment_alpha_test
 
+@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;
+
 #include declare_lights
 //#include declare_shadow_mapping
 #include declare_log_depth
 
-/*struct VertexOut {
+struct VertexOut {
 	@builtin(position) position : vec4f,
+
+	@location(y) vVertexPositionModelSpace: vec4f,
+	@location(y) vVertexPositionWorldSpace: vec4f,
+	@location(y) vVertexPositionCameraSpace: vec4f,
+
+	@location(y) vVertexNormalModelSpace: vec4f,
+	@location(y) vVertexNormalWorldSpace: vec3f,
+	@location(y) vVertexNormalCameraSpace: vec3f,
+
+	//@location(y) vVertexTangentModelSpace: vec4f,
+	@location(y) vVertexTangentWorldSpace: vec3f,
+	@location(y) vVertexTangentCameraSpace: vec3f,
+
+	@location(y) vVertexBitangentWorldSpace: vec3f,
+	@location(y) vVertexBitangentCameraSpace: vec3f,
+
+	@location(y) vTextureCoord: vec4f,
+	@location(y) vTexture2Coord: vec4f,
+
+	#ifdef USE_VERTEX_COLOR
+		@location(y) vVertexColor: vec4f,
+	#endif
+
+	#ifdef WRITE_DEPTH_TO_COLOR
+		@location(y) vPosition: vec4f,
+	#endif
+	#ifdef USE_LOG_DEPTH
+		@location(y) vFragDepth: f32,
+	#endif
+	#ifdef USE_DETAIL_MAP
+		@location(y) vDetailTextureCoord: vec4f,
+	#endif
+	@location(y) vColor: vec4f,
 }
-*/
-#include varying_standard
 
 @vertex
 fn vertex_main(
 	@location(x) position: vec3f,
 #ifdef HAS_NORMALS
+	// TODO: should we even have normals in this shader ?
 	@location(x) normal: vec3f,
 #endif
 	@location(x) texCoord: vec2f,
+#ifdef HARDWARE_PARTICLES
+	@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32
+#endif
+#ifdef USE_VERTEX_COLOR
+	@location(x) color: vec4f,
+#endif
 ) -> VertexOut
 {
 #ifndef HAS_NORMALS
+	// TODO: should we even have normals in this shader ?
 	let normal: vec3f = vec3(1., 0., 0.);
 #endif
 
 	var output : VertexOut;
+#ifdef HARDWARE_PARTICLES
+	#define SOURCE1_PARTICLES
+	#include source1_calculate_particle_position
+	output.vColor = GammaToLinearVec4(p.color);
+#else
+	#ifdef USE_VERTEX_COLOR
+		vColor = aVertexColor;
+	#else
+		vColor = vec4(1.0);
+	#endif
 
 	#include calculate_vertex_uv
 	#include calculate_vertex
@@ -41,6 +94,7 @@ fn vertex_main(
 	#include calculate_vertex_shadow_mapping
 	#include calculate_vertex_standard
 	#include calculate_vertex_log_depth
+#endif
 
 	return output;
 }
@@ -48,52 +102,22 @@ fn vertex_main(
 @fragment
 fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 {
-	var fragDepth: f32;
-	#include calculate_fragment_diffuse
-	#include calculate_fragment_color_map
-#ifdef USE_COLOR_MAP
-	diffuseColor *= texelColor;
-#endif
-	#include calculate_fragment_alpha_test
-	#include calculate_fragment_normal
-
-	/* TEST SHADING BEGIN*/
-	#include calculate_lights_setup_vars
-
-
 	var fragColor: vec4f;
+	var fragDepth: f32;
 
-	var material = BlinnPhongMaterial();
-	material.diffuseColor = diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;
-	material.specularColor = vec3(1.0);//specular;
-	material.specularShininess = 5.0;//shininess;
-	material.specularStrength = 1.0;//specularStrength;
-
-#include calculate_fragment_lights
-
-/* TEST SHADING END*/
-
-#include calculate_fragment_render_mode
-/* TEST SHADING BEGIN*/
-fragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);
-//fragColor.a = diffuseColor.a;
-/* TEST SHADING END*/
-
-
-	#ifdef SKIP_LIGHTING
-		fragColor = diffuseColor;
+	#include calculate_fragment_color_map
+	#include calculate_fragment_alpha_test
+	fragColor = texelColor;
+	fragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);
+	#ifdef ADD_SELF
+		fragColor.a *= vColor.a;
+		fragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);
+		fragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * vColor.a * fragColor.rgb, fragColor.a);
+		fragColor = vec4(fragColor.rgb * vColor.rgb * vColor.a, fragColor.a);
 	#else
-		fragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);
+		fragColor *= fragInput.vColor;
 	#endif
-	//fragColor.a = diffuseColor.a;
-
 
 	#include calculate_fragment_standard
-	#include calculate_fragment_log_depth
-
-	//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);
-
-	fragColor = texelColor;
-
 	#include output_fragment
 }

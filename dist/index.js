@@ -3833,7 +3833,7 @@ function getFormat(prefix, size) {
         case 4:
             return prefix + 'x4';
     }
-    return 'uint32';
+    return prefix;
 }
 
 class BufferGeometry {
@@ -4970,6 +4970,7 @@ class Mesh extends Entity {
     renderMode = GL_TRIANGLES;
     isRenderable = true;
     uniforms = {};
+    storage = {};
     defines = Object.create(null);
     isMesh = true;
     constructor(params) {
@@ -5033,6 +5034,15 @@ class Mesh extends Entity {
     }
     deleteUniform(name) {
         delete this.uniforms[name];
+    }
+    getStorage(name) {
+        return this.storage[name];
+    }
+    setStorage(name, uniform) {
+        this.storage[name] = uniform;
+    }
+    deleteStorage(name) {
+        delete this.storage[name];
     }
     setDefine(define, value = '') {
         this.defines[define] = value;
@@ -7415,6 +7425,7 @@ var GraphicsEvent;
     GraphicsEvent["MouseDblClick"] = "mousedblclick";
     GraphicsEvent["Wheel"] = "wheel";
     GraphicsEvent["Resize"] = "resize";
+    GraphicsEvent["Pick"] = "pick";
     GraphicsEvent["Tick"] = "tick";
     GraphicsEvent["KeyDown"] = "keydown";
     GraphicsEvent["KeyUp"] = "keyup";
@@ -7424,29 +7435,32 @@ var GraphicsEvent;
 })(GraphicsEvent || (GraphicsEvent = {}));
 class GraphicsEvents extends StaticEventTarget {
     static isGraphicsEvents = true;
-    static tick(delta, time, speed) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+    static tick(delta, time, speed, context) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta, time, speed, context } }));
+    }
+    static pick(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Pick, { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } }));
     }
     static resize(width, height) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
     }
-    static mouseMove(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseMove(x, y, width, height, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
     }
-    static mouseDown(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseDown(x, y, width, height, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
     }
-    static mouseUp(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseUp(x, y, width, height, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
     }
-    static mouseClick(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseClick(x, y, width, height, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
     }
-    static mouseDblClick(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    static mouseDblClick(x, y, width, height, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
     }
-    static wheel(x, y, pickedEntity, wheelEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+    static wheel(x, y, wheelEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, wheelEvent: wheelEvent } }));
     }
     static keyDown(keyboardEvent) {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
@@ -7455,13 +7469,13 @@ class GraphicsEvents extends StaticEventTarget {
         this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
     }
     static touchStart(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { touchEvent: touchEvent } }));
     }
     static touchMove(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { touchEvent: touchEvent } }));
     }
     static touchCancel(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { touchEvent: touchEvent } }));
     }
 }
 
@@ -8420,9 +8434,11 @@ class OrbitControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
+        /*
         if (event.detail.entity?.getLayer() ?? 0 > 0) {
             return;
         }
+        */
         // Prevent the browser from scrolling.
         event.preventDefault();
         const mouseEvent = event.detail.mouseEvent;
@@ -9570,7 +9586,7 @@ class Manipulator extends Entity {
         this.enableZ = true;
         this.forEach((entity) => entity.setupPickingId());
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize(this.root?.activeCamera));
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event) => {
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
             const detail = event.detail;
             if (this.#entityAxis.has(detail.entity)) {
                 this.#axis = this.#entityAxis.get(detail.entity);
@@ -9591,32 +9607,25 @@ class Manipulator extends Entity {
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
             const detail = event.detail;
-            if (!detail.entity?.isVisible()) {
-                return;
-            }
             if (this.#axis == ManipulatorAxis.None) {
                 return;
             }
-            if (this.#entityAxis.has(detail.entity)) {
-                switch (this.#mode) {
-                    case ManipulatorMode.Translation:
-                        this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
-                        break;
-                    case ManipulatorMode.Rotation:
-                        this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
-                        break;
-                    case ManipulatorMode.Scale:
-                        this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
-                        break;
-                }
+            switch (this.#mode) {
+                case ManipulatorMode.Translation:
+                    this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
+                    break;
+                case ManipulatorMode.Rotation:
+                    this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
+                    break;
+                case ManipulatorMode.Scale:
+                    this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
+                    break;
             }
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
-            if (this.#entityAxis.has(event.detail.entity)) {
-                Graphics$1.dragging = false;
-                this.#setAxisSelected(false);
-                this.#axis = ManipulatorAxis.None;
-            }
+            Graphics$1.dragging = false;
+            this.#setAxisSelected(false);
+            this.#axis = ManipulatorAxis.None;
         });
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, () => this.size *= 1.1);
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, () => this.size *= 0.9);
@@ -11800,10 +11809,14 @@ function getDefinesAsString(meshOrMaterial) {
     return defines.join('\n') + '\n';
 }
 
+const MAX_PARTICLES_IN_A_SYSTEM = 5000;
+const TEXTURE_WIDTH = 8;
+
 // remove these when unused
 const clearColorError = once$1(() => console.error('TODO clearColor'));
 const clearError = once$1(() => console.error('TODO clear'));
 const tempViewProjectionMatrix = mat4.create();
+const pickBufferSize = 8;
 vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
@@ -11816,6 +11829,10 @@ class WebGPURenderer {
     #toneMapping = ToneMapping.None;
     #toneMappingExposure = 1.;
     #defines = new Map();
+    #defaultPickingColor = vec3.create();
+    //readonly #pointerPosition = vec2.create();
+    #pickedPrimitive;
+    #identityVec2 = vec2.create();
     render(scene, camera, delta, context) {
         const renderList = this.#renderList;
         renderList.reset();
@@ -11896,16 +11913,41 @@ class WebGPURenderer {
     }
     #renderRenderList(renderList, camera, renderLights, context, clearColor, clearValue, lightPos) {
         let clearDepth = true;
+        let pickPromises = [];
         for (const child of renderList.opaqueList) {
-            this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+            const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+            if (pickPromise) {
+                pickPromises.push(pickPromise);
+            }
             clearDepth = false;
             clearColor = false;
         }
         if (renderLights) {
             for (const child of renderList.transparentList) {
-                this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+                const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+                if (pickPromise) {
+                    pickPromises.push(pickPromise);
+                }
                 clearColor = false;
             }
+        }
+        if (pickPromises.length) {
+            Promise.allSettled(pickPromises).then(async () => {
+                let min = Infinity;
+                let closest = null;
+                for (const pickPromise of pickPromises) {
+                    await pickPromise.then((value) => {
+                        if (value && value[1] < min) {
+                            min = value[1];
+                            closest = value[0];
+                        }
+                    });
+                }
+                context.renderContext.pick?.resolve?.(closest);
+            });
+        }
+        else {
+            context.renderContext.pick?.resolve?.(null);
         }
     }
     #renderObject(context, renderList, object, camera, geometry, material, clearColor, clearDepth, clearValue, renderLights = true, lightPos) {
@@ -11923,8 +11965,21 @@ class WebGPURenderer {
                 return;
             }
         }
+        const geometryAttributes = geometry.attributes;
+        const indexAttribute = geometryAttributes.get('index');
+        if (!indexAttribute) {
+            return;
+        }
+        const pick = context.renderContext.pick;
         material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
         const defines = new Map(this.#defines); // TODO: don't create one each time
+        defines.set('MAX_PARTICLES_IN_A_SYSTEM', String(MAX_PARTICLES_IN_A_SYSTEM));
+        if (pick) {
+            defines.set('PICKING_MODE', '');
+        }
+        if (geometryAttributes.has('aVertexNormal')) {
+            defines.set('HAS_NORMALS', '');
+        }
         getDefines(object, defines);
         getDefines(material, defines);
         if (renderLights) {
@@ -11938,11 +11993,6 @@ class WebGPURenderer {
             return;
         }
         const device = WebGPUInternal.device;
-        const geometryAttributes = geometry.attributes;
-        const indexAttribute = geometryAttributes.get('index');
-        if (!indexAttribute) {
-            return;
-        }
         const indices = indexAttribute._array;
         if (!indices) {
             return;
@@ -11978,287 +12028,14 @@ class WebGPURenderer {
             this.#setupLights(renderList, camera, cameraMatrix, uniforms);
         }
         this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context);
-        /*
-        if (shaderModule.reflection) {
-            for (const uniform of shaderModule.reflection.uniforms) {
-                const uniformBuffer = device.createBuffer({
-                    label: uniform.name,
-                    size: uniform.size,
-                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-                });
-
-                groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
-
-                const members = uniform.members;
-                if (members) {
-
-                    const materialUniform = material.uniforms[uniform.name];
-                    if (materialUniform) {
-                        for (const member of members) {
-                            let bufferSource: BufferSource | null = null;
-                            uniformBuffer.label = uniform.name + '.' + member.name;
-                            const subUniform = (materialUniform as Record<string, UniformValue>)[member.name];
-                            if (subUniform !== undefined) {
-                                bufferSource = subUniform as BufferSource;
-                            } else {
-                                errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
-                            }
-
-                            if (bufferSource) {
-                                device.queue.writeBuffer(
-                                    uniformBuffer,
-                                    member.offset,
-                                    bufferSource,
-                                );
-                            }
-                        }
-                    } else {
-                        for (const member of members) {
-                            let bufferSource: BufferSource | null = null;
-                            uniformBuffer.label = uniform.name + '.' + member.name;
-
-                            switch (member.name) {
-                                case 'modelMatrix':
-                                    bufferSource = object.worldMatrix as BufferSource;
-                                    break;
-                                case 'viewMatrix':
-                                    bufferSource = cameraMatrix as BufferSource;
-                                    break;
-                                case 'modelViewMatrix':
-                                    bufferSource = object._mvMatrix as BufferSource;
-                                    break;
-                                case 'projectionMatrix':
-                                    bufferSource = projectionMatrix as BufferSource;
-                                    break;
-                                case 'viewProjectionMatrix':
-                                    bufferSource = tempViewProjectionMatrix as BufferSource;
-                                    break;
-                                case 'normalMatrix':
-                                    // In WGSL, mat3x3 actually are mat4x3
-                                    // TODO: improve this
-                                    mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
-                                    const m = new Float32Array(12);
-                                    m[0] = object._normalMatrix[0];
-                                    m[1] = object._normalMatrix[1];
-                                    m[2] = object._normalMatrix[2];
-                                    m[4] = object._normalMatrix[3];
-                                    m[5] = object._normalMatrix[4];
-                                    m[6] = object._normalMatrix[5];
-                                    m[8] = object._normalMatrix[6];
-                                    m[9] = object._normalMatrix[7];
-                                    m[10] = object._normalMatrix[8];
-                                    bufferSource = m as BufferSource;
-                                    break;
-                                case 'cameraPosition':
-                                    bufferSource = camera.position as BufferSource;
-                                    break;
-                                default:
-                                    errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                            }
-
-                            if (bufferSource) {
-                                device.queue.writeBuffer(
-                                    uniformBuffer,
-                                    member.offset,
-                                    bufferSource,
-                                );
-                            }
-                        }
-                    }
-                } else if (uniform.isArray) {
-                    const members = (uniform.format as StructInfo).members;
-                    if (members) {
-                        const structSize = (uniform.format as StructInfo).size;
-                        for (const member of members) {
-                            for (let i = 0; i < uniform.count; i++) {
-                                const bufferSource = uniforms.get(`${uniform.name}[${i}].${member.name}`);
-                                if (!bufferSource) {
-                                    continue
-                                }
-
-                                device.queue.writeBuffer(
-                                    uniformBuffer,
-                                    member.offset + structSize * i,
-                                    bufferSource,
-                                );
-                            }
-                        }
-                    } else {
-                        switch (uniform.name) {
-                            case 'boneMatrix':
-                                const bufferSource = object.uniforms[uniform.name];
-                                device.queue.writeBuffer(
-                                    uniformBuffer,
-                                    0,
-                                    bufferSource,
-                                );
-                                break;
-                            default:
-                                errorOnce('unknwon array uniform ' + uniform.name);
-                                break;
-                        }
-
-                    }
-                } else {// uniform is neither a struct nor an array
-                    const bufferSource = uniforms.get(uniform.name);
-                    if (bufferSource) {
-                        device.queue.writeBuffer(
-                            uniformBuffer,
-                            0,
-                            bufferSource,
-                        );
-                    } else {
-                        const materialUniform = material.uniforms[uniform.name];
-                        if (materialUniform !== undefined) {
-                            switch (uniform.type.name) {
-                                case 'f32':
-                                    device.queue.writeBuffer(
-                                        uniformBuffer,
-                                        0,
-                                        new Float32Array([materialUniform as number]),
-                                    );
-                                    break;
-                                case 'mat4x4f':
-                                case 'vec2f':
-                                case 'vec3f':
-                                case 'vec4f':
-                                    device.queue.writeBuffer(
-                                        uniformBuffer,
-                                        0,
-                                        materialUniform as BufferSource,
-                                    );
-                                    break;
-                                default:
-                                    errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                                    break;
-                            }
-                        } else {
-                            let bufferSource: BufferSource | null = null;
-                            switch (uniform.name) {
-                                case 'resolution':
-                                    bufferSource = new Float32Array([context.width, context.height, camera.aspectRatio, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
-                                    break;
-                                case 'cameraPosition':
-                                    bufferSource = camera.position as BufferSource;
-                                    break;
-                                default:
-                                    errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
-                                    switch (uniform.type.name) {
-                                        case 'f32':
-                                            device.queue.writeBuffer(
-                                                uniformBuffer,
-                                                0,
-                                                new Float32Array([0]),// TODO: create a const
-                                            );
-                                            break;
-                                        case 'vec4f':
-                                            device.queue.writeBuffer(
-                                                uniformBuffer,
-                                                0,
-                                                new Float32Array([0, 0, 0, 0]),// TODO: create a const
-                                            );
-                                            break;
-                                        default:
-                                            errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                                            break;
-                                    }
-                            }
-
-                            if (bufferSource) {
-                                device.queue.writeBuffer(
-                                    uniformBuffer,
-                                    0,
-                                    bufferSource,
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (const shaderTexture of shaderModule.reflection.textures) {
-                switch (shaderTexture.name) {
-                    case 'colorTexture':
-                        const texture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
-                        if (texture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { texture });
-                        }
-                        break;
-                    default:
-                        {
-                            const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
-                            if (texture) {
-                                groups.set(shaderTexture.group, shaderTexture.binding, { texture });
-                            } else {
-                                errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
-                            }
-                        }
-                        break;
-                }
-            }
-
-            // TODO: set samplers and texture in a single pass ?
-            for (const shaderSampler of shaderModule.reflection.samplers) {
-                switch (shaderSampler.name) {
-                    case 'colorSampler':
-                        const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
-                        if (sampler) {
-                            groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                        }
-                        break;
-                    default:
-                        {
-                            const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
-                            const sampler = (material.uniforms[name] as Texture | undefined)?.sampler;
-                            if (sampler) {
-                                groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                            } else {
-                                errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-        */
-        /*
-        const bindGroupLayouts: GPUBindGroupLayout[] = [];
-        for (const [groupId, group] of groups.getMap()) {
-            const entries: GPUBindGroupLayoutEntry[] = [];
-            for (const [bindingId, binding] of group) {
-                const entry: GPUBindGroupLayoutEntry = {
-                    binding: bindingId,// corresponds to @binding
-                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,// TODO: set appropriate visibility
-                    //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
-                }
-
-                if (binding.buffer) {
-                    entry.buffer = {};
-                }
-
-                if (binding.texture) {
-                    entry.texture = {
-                        viewDimension: binding.texture.isCube ? 'cube' : '2d',
-                    };
-                }
-
-                if (binding.sampler) {
-                    entry.sampler = {};
-                }
-
-                entries.push(entry);
-            }
-
-            bindGroupLayouts.push(device.createBindGroupLayout({
-                entries: entries,
-            }))
-        }
-        */
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
         });
         const commandEncoder = device.createCommandEncoder();
+        if (pick && this.#pickedPrimitive) {
+            commandEncoder.clearBuffer(this.#pickedPrimitive);
+        }
         let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
         let pipelineColorFormat = WebGPUInternal.format;
         const renderTarget = context.renderContext.renderTarget;
@@ -12402,8 +12179,34 @@ class WebGPURenderer {
         }
         // End the render pass
         passEncoder.end();
+        let stagingBuffer;
+        if (pick && this.#pickedPrimitive) {
+            stagingBuffer = device.createBuffer({
+                size: pickBufferSize,
+                usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+            });
+            commandEncoder.copyBufferToBuffer(this.#pickedPrimitive, stagingBuffer);
+        }
         // 10: End frame by passing array of command buffers to command queue for execution
         device.queue.submit([commandEncoder.finish()]);
+        if (stagingBuffer) {
+            const promise = new Promise((resolve) => {
+                stagingBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
+                pickBufferSize).then(() => {
+                    const copyArrayBuffer = stagingBuffer.getMappedRange(0, pickBufferSize);
+                    const data = copyArrayBuffer.slice();
+                    stagingBuffer.destroy();
+                    const result = new Float32Array(data);
+                    if (result[0]) {
+                        resolve([object, new Float32Array(data)[1]]);
+                    }
+                    else {
+                        resolve(null);
+                    }
+                });
+            });
+            return promise;
+        }
     }
     #setupLights(renderList, camera, viewMatrix, uniforms) {
         //const uniforms = new Map<string, any>();
@@ -12597,6 +12400,13 @@ class WebGPURenderer {
     `
     */
     }
+    /*
+    setPointerPosition(x: uint, y: uint): void {
+        // TODO: implement
+        this.#pointerPosition[0] = x;
+        this.#pointerPosition[1] = y;
+    }
+    */
     setDefine(define, value = '') {
         this.#defines.set(define, value);
     }
@@ -12643,11 +12453,11 @@ class WebGPURenderer {
             for (const [bindingId, binding] of group) {
                 const entry = {
                     binding: bindingId, // corresponds to @binding
-                    visibility: compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT, // TODO: set appropriate visibility
+                    visibility: binding.visibility ?? (compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT), // TODO: set appropriate visibility
                     //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
                 };
                 if (binding.buffer) {
-                    entry.buffer = {};
+                    entry.buffer = { type: binding.bufferType ?? 'uniform' };
                 }
                 if (binding.texture) {
                     entry.texture = {
@@ -12726,15 +12536,21 @@ class WebGPURenderer {
         const projectionMatrix = camera?.projectionMatrix;
         const device = WebGPUInternal.device;
         for (const uniform of shaderModule.reflection.uniforms) {
+            /*
+            let additionalUsage: GPUFlagsConstant = 0;
+            if (uniform.name == 'commonUniforms') {// TODO: improve that
+                additionalUsage = GPUBufferUsage.STORAGE;
+            }
+            */
             const uniformBuffer = device.createBuffer({
                 label: uniform.name,
                 size: uniform.size,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST /* | additionalUsage*/,
             });
             groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
             const members = uniform.members;
             if (members) {
-                const materialUniform = material.uniforms[uniform.name];
+                const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
                 if (materialUniform) {
                     for (const member of members) {
                         let bufferSource = null;
@@ -12792,6 +12608,23 @@ class WebGPURenderer {
                             case 'cameraPosition':
                                 bufferSource = camera?.position;
                                 break;
+                            case 'resolution':
+                                bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
+                                break;
+                            case 'time':
+                                bufferSource = new Float32Array([Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]); // TODO: create float32 once and update it once evry frame
+                                break;
+                            /*
+                            case 'pickingColor':
+                                bufferSource = new Float32Array(object?.pickingColor ?? this.#defaultPickingColor) as BufferSource;// TODO: create float32 once and update it once evry frame
+                                break;
+                            */
+                            case 'pointerCoord':
+                                bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2);
+                                break;
+                            case 'boneMatrix':
+                                bufferSource = object?.uniforms[member.name];
+                                break;
                             default:
                                 errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                         }
@@ -12833,7 +12666,7 @@ class WebGPURenderer {
                     device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
                 }
                 else {
-                    const materialUniform = material.uniforms[uniform.name];
+                    const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
                     if (materialUniform !== undefined) {
                         switch (uniform.type.name) {
                             case 'f32':
@@ -12853,9 +12686,6 @@ class WebGPURenderer {
                     else {
                         let bufferSource = null;
                         switch (uniform.name) {
-                            case 'resolution':
-                                bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
-                                break;
                             case 'cameraPosition':
                                 bufferSource = camera?.position;
                                 break;
@@ -12933,10 +12763,12 @@ class WebGPURenderer {
                     break;
             }
         }
-        for (const shaderTexture of shaderModule.reflection.storage) {
+        for (const storage of shaderModule.reflection.storage) {
             let access = 'read-only';
-            switch (shaderTexture.type.access) {
+            let bufferType = 'storage';
+            switch (storage.type.access ?? storage.access) {
                 case 'read':
+                    bufferType = 'read-only-storage';
                     break;
                 case 'write':
                     access = 'write-only';
@@ -12945,24 +12777,50 @@ class WebGPURenderer {
                     access = 'read-write';
                     break;
                 default:
-                    errorOnce(`Unknown storage texture access type ${shaderTexture.type.access}`);
+                    errorOnce(`Unknown storage access type ${storage.type.access}`);
                     break;
             }
-            switch (shaderTexture.name) {
+            switch (storage.name) {
                 case 'colorTexture':
                     const storageTexture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
                     if (storageTexture) {
-                        groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access: access });
+                        groups.set(storage.group, storage.binding, { storageTexture, access });
                     }
+                    break;
+                case 'pickedPrimitive':
+                    const buffer = this.#pickedPrimitive ?? device.createBuffer({
+                        label: storage.name,
+                        size: storage.size,
+                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                    });
+                    if (!this.#pickedPrimitive) {
+                        this.#pickedPrimitive = buffer;
+                    }
+                    groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
                     break;
                 default:
                     {
-                        const storageTexture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
+                        const storageTexture = material.uniforms[storage.name]; //?.texture as GPUTexture | undefined;
                         if (storageTexture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { storageTexture, access });
+                            groups.set(storage.group, storage.binding, { storageTexture, access });
                         }
                         else {
-                            errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+                            const storageBuffer = object?.getStorage(storage.name);
+                            if (storageBuffer) {
+                                const buffer = device.createBuffer({
+                                    label: storage.name,
+                                    size: storage.size,
+                                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                    mappedAtCreation: true,
+                                });
+                                new Float32Array(buffer.getMappedRange()).set(storageBuffer); // TODO: determinate the buffer type
+                                buffer.unmap();
+                                //groups.set(storage.group, storage.binding, { storageTexture, access });
+                                groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
+                            }
+                            else {
+                                errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
+                            }
                         }
                     }
                     break;
@@ -13317,54 +13175,69 @@ class Graphics {
         canvas.removeEventListener('touchmove', this.#touchMoveFunc);
         canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
     }
-    static pickEntity(htmlCanvas, x, y) {
-        this.setIncludeCode('pickingMode', '#define PICKING_MODE');
-        this.#allowTransfertBitmap = false;
-        GraphicsEvents.tick(0, performance.now(), 0);
-        this.#allowTransfertBitmap = true;
-        this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
-        this.glContext;
-        const pixels = new Uint8Array(4);
-        this.glContext?.readPixels(x, htmlCanvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
-        return pickList.get(pickedEntityIndex) ?? null;
+    static async pickEntity(canvas, x, y) {
+        if (this.isWebGLAny) {
+            this.glContext;
+            this.setIncludeCode('pickingMode', '#define PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
+            this.#allowTransfertBitmap = false;
+            GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
+            this.#allowTransfertBitmap = true;
+            this.setIncludeCode('pickingMode', '#undef PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
+            const pixels = new Uint8Array(4);
+            this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
+            return pickList.get(pickedEntityIndex) ?? null;
+        }
+        else {
+            let pickingResolve;
+            const p = new Promise((resolve) => {
+                pickingResolve = resolve;
+            });
+            GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve } });
+            return p;
+        }
     }
     static #mouseDown(event) {
         const htmlCanvas = event.target;
         htmlCanvas.focus();
         const x = event.offsetX;
         const y = event.offsetY;
-        this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
-        GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        //this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
+        this.pickEntity(htmlCanvas, x, y).then((pickedEntity) => {
+            this.#pickedEntity = pickedEntity;
+            // Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
+            GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        });
+        GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event);
     }
     static #mouseMove(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event);
     }
     static #mouseUp(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event);
     }
     static #mouseClick(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
     }
     static #mouseDblClick(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
     }
     static #wheel(event) {
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
+        GraphicsEvents.wheel(x, y, event);
         this.#pickedEntity = null;
         event.preventDefault();
     }
@@ -13569,7 +13442,7 @@ class Graphics {
         const delta = (tick - this.#lastTick) * this.speed * 0.001;
         if (this.#running) {
             ++this.currentTick;
-            GraphicsEvents.tick(delta, tick, this.speed);
+            GraphicsEvents.tick(delta, tick, this.speed, {});
         }
         this.#lastTick = tick;
     }
@@ -31026,7 +30899,7 @@ class SceneExplorer {
         }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseClick, (event) => {
+        GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event) => {
             if (Graphics$1.dragging || this.#skeletonHelper.isVisible()) {
                 return;
             }
@@ -32722,7 +32595,7 @@ float pow3( const in float x ) { return x*x*x; }
 float pow4( const in float x ) { float x2 = x*x; return x2*x2; }
 `;
 
-var common_uniforms = `
+var common_uniforms$1 = `
 uniform vec4 uTime;
 #define TIME uTime.x
 #define FRAME uTime.y
@@ -32859,7 +32732,7 @@ var precision = `
 
 Includes['common_defines'] = common_defines;
 Includes['common_functions'] = common_functions;
-Includes['common_uniforms'] = common_uniforms;
+Includes['common_uniforms'] = common_uniforms$1;
 Includes['depth_packing'] = depth_packing;
 Includes['header_fragment'] = header_fragment;
 Includes['header_vertex'] = header_vertex;
@@ -33055,7 +32928,7 @@ float luminance(vec4 color) {
 }
 `;
 
-var rotation_matrix = `
+var rotation_matrix$1 = `
 mat4 rotationMatrix(vec3 axis, float angle){
 	axis = normalize(axis);
 	float s = sin(angle);
@@ -33070,7 +32943,7 @@ mat4 rotationMatrix(vec3 axis, float angle){
 `;
 
 Includes['luminance'] = luminance$1;
-Includes['rotation_matrix'] = rotation_matrix;
+Includes['rotation_matrix'] = rotation_matrix$1;
 
 var mat4_from_quat = `
 #pragma once
@@ -35301,7 +35174,7 @@ function ParticleRandomVec3(vec, id, offset1, offset2, offset3) {
     return vec;
 }
 
-var source_declare_particle = `
+var source_declare_particle$1 = `
 #pragma once
 
 #include mat4_from_quat
@@ -35361,7 +35234,11 @@ var source_declare_particle = `
 #endif
 `;
 
-Includes['source_declare_particle'] = source_declare_particle;
+Includes['source_declare_particle'] = source_declare_particle$1;
+
+var source_declare_particle = "#pragma once\n\n#include mat4_from_quat\n#include rotation_matrix\n\n#ifdef HARDWARE_PARTICLES\n\tstruct Particle {\n\t\tcenter: vec3f,\n\t\tcolor: vec4f,\n\t\tradius: f32,\n\t\troll: f32,\n\t\tyaw: f32,\n\t\tvecDelta: vec4f,\n\t\tnormal: vec3f,\n\t};\n\t//uniform sampler2D uParticles;\n\n\t@group(0) @binding(x) var<storage, read> particles: array<array<vec4f, 8>, MAX_PARTICLES_IN_A_SYSTEM>;\n\t@group(0) @binding(x) var<uniform> uMaxParticles: f32;\n\t@group(0) @binding(x) var<uniform> uVisibilityCameraDepthBias: f32;\n\t@group(0) @binding(x) var<uniform> uOrientationControlPoint: vec4f;\n\n\t#include source1_declare_particle_position\n\t#include vec3_transform_quat\n\n\tfn getParticle(particleId: u32) -> Particle {\n\t\tvar particle: Particle;\n\n\t\tparticle.center = particles[particleId][0].xyz;\n\t\tparticle.color = particles[particleId][1];\n\t\tlet rrya: vec4f = particles[particleId][2];\n\t\tparticle.vecDelta = particles[particleId][3];\n\t\tparticle.normal = particles[particleId][4].xyz;\n\t\tlet renderScreenVelocityRotate: vec4f = particles[particleId][5];\n\n\t\tparticle.color.a = clamp(particle.color.a, 0., 1.);\n\t\tparticle.radius = rrya.r;\n\n\t\tif (renderScreenVelocityRotate.x == 0.0) {\n\t\t\tparticle.roll = rrya.b;\n\t\t} else {\n\t\t\tparticle.roll = atan2(particle.vecDelta.y, particle.vecDelta.x) + renderScreenVelocityRotate.z - 1.57;\n\t\t}\n\n\t\tparticle.yaw = rrya.a;\n\t\treturn particle;\n\t}\n#endif\n";
+
+addWgslInclude('source_declare_particle', source_declare_particle);
 
 /*
 Copyright (c) 2011 Juan Mellado
@@ -38022,9 +37899,9 @@ class Source1VvdLoader extends SourceBinaryLoader {
             vertex.m_BoneWeights.weight[i] = reader.getFloat32();
         }
         for (let i = 0; i < MAX_NUM_BONES_PER_VERT; ++i) {
-            vertex.m_BoneWeights.bone[i] = reader.getInt8();
+            vertex.m_BoneWeights.bone[i] = reader.getUint8();
         }
-        vertex.m_BoneWeights.numbones = reader.getInt8();
+        vertex.m_BoneWeights.numbones = reader.getUint8();
         vertex.m_vecPosition = reader.getVector3();
         vertex.m_vecNormal = reader.getVector3();
         vertex.m_vecTexCoord = reader.getVector2();
@@ -52547,9 +52424,7 @@ class SpriteCardMaterial extends Source1Material {
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
-        if (vmt['$color']) {
-            this.useSrgb = false;
-        }
+        if (vmt['$color']) ;
         // Disable back face culling
         this.renderFace(RenderFace.Both);
         this.colorMask[3] = 0.0;
@@ -56561,9 +56436,6 @@ class SetControlPointToParticlesCenter extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(SetControlPointToParticlesCenter);
 
-const MAX_PARTICLES_IN_A_SYSTEM = 5000;
-const TEXTURE_WIDTH = 8;
-
 const tempQuat$3 = quat.create();
 const IDENTITY_QUAT = quat.create();
 const vecDelta = vec3.create();
@@ -56691,8 +56563,9 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.#texture);
+        if (Graphics$1.isWebGLAny) {
+            this.#createParticlesTexture();
+        }
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
         this.#orientationType = this.getParameter('orientation_type') ?? 0;
@@ -56718,6 +56591,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
     }
     #createParticlesArray() {
         this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+        this.mesh.setStorage('particles', this.#imgData);
     }
     #createParticlesTexture() {
         this.#texture = TextureManager.createTexture({
@@ -56736,6 +56610,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
+        this.mesh.setUniform('uParticles', this.#texture);
     }
     #updateParticlesTexture() {
         const gl = Graphics$1.glContext;
@@ -56784,7 +56659,9 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
             // free for now
             index += 8;
         }
-        this.#updateParticlesTexture();
+        if (Graphics$1.isWebGLAny) {
+            this.#updateParticlesTexture();
+        }
     }
     dispose() {
         this.mesh?.dispose();
@@ -57498,7 +57375,7 @@ vec3 sheenMapColor = vec3(1.0);
 #endif
 `;
 
-var source1_declare_gamma_functions = `
+var source1_declare_gamma_functions$1 = `
 #ifndef SKIP_GAMMA_TO_LINEAR
 	float GammaToLinear(const float gamma) {
 		return pow(gamma, 2.2);
@@ -57522,7 +57399,7 @@ var source1_declare_gamma_functions = `
 #endif
 `;
 
-var source1_declare_particle_position = `
+var source1_declare_particle_position$1 = `
 vec4 vec4_transformQuat(vec4 a, vec4 q) {
 	vec4 ret;
 	float qx = q.x;
@@ -57766,8 +57643,8 @@ Includes['source1_colormap_alpha'] = source1_colormap_alpha;
 Includes['source1_compute_particle_position'] = source1_compute_particle_position;
 Includes['source1_compute_selfillum'] = source1_compute_selfillum;
 Includes['source1_compute_sheen'] = source1_compute_sheen;
-Includes['source1_declare_gamma_functions'] = source1_declare_gamma_functions;
-Includes['source1_declare_particle_position'] = source1_declare_particle_position;
+Includes['source1_declare_gamma_functions'] = source1_declare_gamma_functions$1;
+Includes['source1_declare_particle_position'] = source1_declare_particle_position$1;
 Includes['source1_declare_phong'] = source1_declare_phong$1;
 Includes['source1_declare_selfillum'] = source1_declare_selfillum;
 Includes['source1_declare_sheen'] = source1_declare_sheen$1;
@@ -59181,7 +59058,7 @@ void main(void) {
 	#include source1_compute_particle_position
 	vColor = p.color;
 	vColor = GammaToLinear(p.color);
-	vColor = p.color;
+	//vColor = p.color;
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;
@@ -59252,7 +59129,7 @@ void main(void) {
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
 	vColor = GammaToLinear(p.color);
-	vColor = p.color;
+	//vColor = p.color;
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;
@@ -59313,6 +59190,7 @@ uniform float uFaceCamera;
 uniform vec3 uCameraPosition;
 
 #include source_declare_particle
+#include source1_declare_gamma_functions
 
 #include source1_varying_unlit_generic
 
@@ -59320,7 +59198,7 @@ void main(void) {
 #ifdef HARDWARE_PARTICLES
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
-	vColor = p.color;
+	vColor = GammaToLinear(p.color);
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;
@@ -60362,13 +60240,22 @@ Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
 Shaders['source1_worldvertextransition.fs'] = source1_worldvertextransition_fs;
 Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
 
+var source1_calculate_particle_position = "var q: vec4f;\nvar a: vec3f;\n#ifndef PARTICLE_ORIENTATION\n\t#define PARTICLE_ORIENTATION 3\n#endif\n#ifndef USE_PARTICLE_YAW\n\t#define USE_PARTICLE_YAW 1\n#endif\n\n#define PARTICLE_ORIENTATION_SCREEN_ALIGNED 0\n#define PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED 1\n#define PARTICLE_ORIENTATION_WORLD_Z_ALIGNED 2\n#define PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL 3\n#define PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL 4\n#define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5\n\n\tlet p: Particle = getParticle(u32(particleId));\n\toutput.vTextureCoord = vec4f(texCoord, output.vTextureCoord.zw);\n\toutput.vColor = p.color;\n\n\t//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);\n\tlet test: vec4f = vec4(position, 1.0) * p.radius * rotationMatrix(vec3(0.0, .0, 1.0), -p.roll * 1.0);\n\tlet vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);\n\t//vertexPositionModelSpace *= rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 100.0);\n\n\tvar vertexPositionCameraSpace: vec4f;// = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\n\n#ifdef RENDER_SPRITE_TRAIL\n\tvec3 vecDelta = p.vecDelta.xyz;\n\t//vecDelta = vec3(1.0, 1.0, 0.0);\n\tvec3 aVertexPosition2;\n\n\ta = cross(vec3(1.0, 0.0, 0.0), vecDelta);\n\tq.xyz = a;\n\tq.w = 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta);\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w, 0.0, p.radius), normalize(q));\n\n\tvertexPositionModelSpace = vec4(p.center + aVertexPosition2 + vecDelta * p.vecDelta.w * 0.0, 1.0);\n\n\n\tvec3 test2 = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));\n\ttest2 = normalize(test2);\n\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w * 0.5, p.radius * 0.5, 0.0), normalize(q));\n\tvec3 eyeDir = p.center - uCameraPosition;\n\tq.xyz = vecDelta;\n\tq.w = 1.0 + dot(eyeDir, a);\n\n#endif\n\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_ALIGNED\n#ifdef RENDER_SPRITE_TRAIL\n\t//A + dot(AP,AB) / dot(AB,AB) * AB\n\tvec3 A =  p.center;\n\tvec3 B =  A + vecDelta;\n\tvec3 P =  uCameraPosition;\n\tvec3 AP = P-A;\n\tvec3 AB = B-A;\n\n\tvec3 projPoint = A + dot(AP,AB) / dot(AB,AB) * AB;\n\n\n\tvec3 vDirToBeam = normalize(projPoint - uCameraPosition);\n\tvec3 vTangentY = normalize(cross(vDirToBeam, vecDelta));\n\tvTangentY = test2;\n\tvertexPositionModelSpace = vec4(aVertexPosition2 + vecDelta * p.vecDelta.w * 0.5, 1.0);\n\n\n\tA = -vDirToBeam;\n\tB = normalize(vecDelta);\n\tmat3 M  = mat3(\n1.0-B.x*B.x,-B.y*B.x,-B.z*B.x,\n-B.x*B.y,1.0-B.y*B.y,-B.z*B.y,\n-B.x*B.z,-B.y*B.z,1.0-B.z*B.z\n\t    );\n\tvec3 C = M * A;//B * (A * B / length(B)) / length(B);\n\n\tq.xyz = cross(vTangentY, C);\n\tq.w = 1.0 + dot(vTangentY, C);\n\tvertexPositionModelSpace = vec4_transformQuat(vertexPositionModelSpace, normalize(q));\n\tvertexPositionModelSpace.xyz += p.center;\n\n\n\t//vertexPositionModelSpace.xyz = vertexPositionModelSpace.xyz + vTangentY * p.radius * 0.5;\n\n\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#else\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\n#endif\n#else\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_WORLD_Z_ALIGNED\n\tmat4 yawMatrix = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\n\t#ifdef IS_SPRITE_CARD_MATERIAL\n\t\tmat4 rollMatrix = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);\n\t#else\n\t\tmat4 rollMatrix = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);\n\t#endif\n\tmat4 lookAt;\n\n\tmat4 cpMat = mat4FromQuat(uOrientationControlPoint);\n\n\t#if USE_PARTICLE_YAW == 1\n\t\tlookAt = cpMat * yawMatrix * rollMatrix;\n\t#else\n\t\tlookAt = cpMat * rollMatrix;\n\t#endif\n\n\t#ifndef IS_SPRITE_CARD_MATERIAL\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(vec2(1.0, -1.0) * position.xy * p.radius, 0.0, 0.0)));\n\t#else\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0)));\n\t#endif\n#endif\n\n#ifdef SOURCE1_PARTICLES\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\t\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\t\tlookAt = lookAt * lookAt2;\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\t#endif\n#else //SOURCE2\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tvec3 particleNormal = normalize(p.normal);//not sure we have to normalize\n\t\tmat4 lookAt = rotationMatrix(particleNormal, p.roll);\n\t\tvec4 pos;\n\n\t\tvec3 vTrialVector = vec3( 0.0, 0.0, 1.0 );\n\t\tif ( abs( particleNormal.z ) > 0.9 )\n\t\t{\n\t\t\tvTrialVector = float3( 1, 0, 0 );\n\t\t}\n\t\tvec3 up = normalize( cross( particleNormal, vTrialVector ) );\n\t\tvec3 right = cross( particleNormal, up );\n\n\t    pos.xyz = position.x * p.radius * right;\n\t    pos.xyz += position.y * p.radius * up;\n\t\tpos = lookAt * pos;\n\t\tpos += vec4(p.center, 1.0);\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * pos);\n\t#endif\n#endif\n";
+
 var source1_calculate_sheen = "var sheenMapColor: vec3f = vec3f(1.0);\n\n#ifdef USE_SHEEN_MASK_MAP\n\tvar sheenMaskCoords: vec2f = vec2f(0.0);\n\tif (g_flSheenDirection == 0.0) {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.z;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.y;\n\t} else if (g_flSheenDirection == 1.0) {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.z;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.x;\n\t} else {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.y;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.x;\n\t}\n\n\tsheenMaskCoords = (sheenMaskCoords - sheenUniforms.g_vPackedConst6.zw) / sheenUniforms.g_vPackedConst6.xy;\n\n\tsheenMapColor *= textureSample(sheenMaskTexture, sheenMaskSampler, sheenMaskCoords).rgb;\n#endif\n\n\n\t//vec3 sheenMapTint = textureSample(sheenMapMask, (sheenMaskCoord - vec2(sheenMapMaskOffsetX)) / sheenMapMaskScaleX).rgb;\n#ifdef USE_SHEEN_MAP\n\tsheenMapColor *= textureSample(sheenTexture, sheenSampler, reflectDir).rgb;\n\tsheenMapColor *= sheenUniforms.g_cCloakColorTint.rgb;\n\n\tfragColor = vec4f(fragColor.rgb + sheenMapColor * 3.0, fragColor.a);\n#endif\n\n\n#ifdef USE_SHEEN_MASK_MAP\n\t//albedo = abs(vec3(sheenMaskCoords.xy, 0.0));\n#endif\n";
+
+var source1_declare_gamma_functions = "#ifndef SKIP_GAMMA_TO_LINEAR\n\tfn GammaToLinearFloat(gamma: f32) -> f32 {\n\t\treturn pow(gamma, 2.2);\n\t}\n\tfn GammaToLinearVec3(gamma: vec3f) -> vec3f {\n\t\treturn pow(gamma, vec3f(2.2));\n\t}\n\tfn GammaToLinearVec4(gamma: vec4f) -> vec4f {\n\t\treturn vec4(pow(gamma.rgb, vec3f(2.2)), gamma.a);\n\t}\n#else\n\tfn GammaToLinearFloat(gamma: f32) -> f32 {\n\t\treturn gamma;\n\t}\n\tfn GammaToLinearVec3(gamma: vec3f) -> vec3f {\n\t\treturn gamma;\n\t}\n\tfn GammaToLinearVec4(const vec4 gamma) -> vec4f {\n\t\treturn gamma;\n\t}\n#endif\n";
+
+var source1_declare_particle_position = "fn vec4_transformQuat(a: vec4f, q: vec4f) -> vec4f {\n\tvar ret: vec4f;\n\tlet qx: f32 = q.x;\n\tlet qy: f32 = q.y;\n\tlet qz: f32 = q.z;\n\tlet qw: f32 = q.w;\n\n\tlet x: f32 = a.x;\n\tlet y: f32 = a.y;\n\tlet z: f32 = a.z;\n\n\t// calculate quat * vec\n\tlet ix: f32 = qw * x + qy * z - qz * y;\n\tlet iy: f32 = qw * y + qz * x - qx * z;\n\tlet iz: f32 = qw * z + qx * y - qy * x;\n\tlet iw: f32 = -qx * x - qy * y - qz * z;\n\n\t// calculate result * inverse quat\n\tret.x = ix * qw + iw * -qx + iy * -qz - iz * -qy;\n\tret.y = iy * qw + iw * -qy + iz * -qx - ix * -qz;\n\tret.z = iz * qw + iw * -qz + ix * -qy - iy * -qx;\n\tret.w = a.w;\n\treturn ret;\n}\n";
 
 var source1_declare_phong = "//TODO: set a vec3 for these three ?\nstruct PhongUniforms {\n\tphongExponent : f32,\n\tphongBoost : f32,\n#ifdef USE_PHONG_EXPONENT_MAP\n\tphongExponentFactor : f32,\n#endif\n}\n\n@group(0) @binding(x) var<uniform> phongUniforms : PhongUniforms;\n";
 
 var source1_declare_sheen = "#ifdef USE_SHEEN_MAP\n\t@group(0) @binding(x) var sheenTexture: texture_cube<f32>;\n\t@group(0) @binding(x) var sheenSampler: sampler;\n#endif\n#ifdef USE_SHEEN_MASK_MAP\n\t@group(0) @binding(x) var sheenMaskTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var sheenMaskSampler: sampler;\n#endif\n\nstruct SheenUniforms {\n\tg_vPackedConst6: vec4f,\n\tg_vPackedConst7: vec4f,\n\tg_cCloakColorTint: vec3f,\n}\n@group(0) @binding(x) var<uniform> sheenUniforms : SheenUniforms;\n\n#define g_flSheenMapMaskScaleX sheenUniforms.g_vPackedConst6.x // Default = 1.0f\n#define g_flSheenMapMaskScaleY sheenUniforms.g_vPackedConst6.y // Default = 1.0f\n#define g_flSheenMapMaskOffsetX sheenUniforms.g_vPackedConst6.z // Default = 0.0f\n#define g_flSheenMapMaskOffsetY sheenUniforms.g_vPackedConst6.w // Default = 0.0f\n\n#define g_flSheenDirection\t\tsheenUniforms.g_vPackedConst7.x // 0,1,2 -> XYZ\n#define g_flEffectIndex\t\t\tsheenUniforms.g_vPackedConst7.y // W\n";
 
+addWgslInclude('source1_calculate_particle_position', source1_calculate_particle_position);
 addWgslInclude('source1_calculate_sheen', source1_calculate_sheen);
+addWgslInclude('source1_declare_gamma_functions', source1_declare_gamma_functions);
+addWgslInclude('source1_declare_particle_position', source1_declare_particle_position);
 addWgslInclude('source1_declare_phong', source1_declare_phong);
 addWgslInclude('source1_declare_sheen', source1_declare_sheen);
 
@@ -60376,9 +60263,9 @@ var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_tra
 
 var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
 
-var source1_spritecard = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n/*struct VertexOut {\n\t@builtin(position) position : vec4f,\n}\n*/\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(0) position: vec3f,\n\t@location(1) normal: vec3f,\n\t@location(2) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\t#include calculate_fragment_alpha_test\n\t#include calculate_fragment_normal\n\n\t/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\tvar fragColor: vec4f;\n\n\tvar material = BlinnPhongMaterial();\n\tmaterial.diffuseColor = diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n#include calculate_fragment_render_mode\n/* TEST SHADING BEGIN*/\nfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n//fragColor.a = diffuseColor.a;\n/* TEST SHADING END*/\n\n\n\t#ifdef SKIP_LIGHTING\n\t\tfragColor = diffuseColor;\n\t#else\n\t\tfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n\t#endif\n\t//fragColor.a = diffuseColor.a;\n\n\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);\n\n\tfragColor = texelColor;\n\n\t#include output_fragment\n}\n";
+var source1_spritecard = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n#ifndef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\tlet normal: vec3f = vec3(1., 0., 0.);\n#endif\n\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\tvColor = aVertexColor;\n\t#else\n\t\tvColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * vColor.rgb * vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
-var source1_vertexlitgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nlet diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\n//gl_FragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
+var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nlet diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\n//gl_FragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
 Shaders['source1_eyerefract.wgsl'] = source1_eyerefract;
 Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
@@ -75592,6 +75479,20 @@ class RenderTargetViewer {
     }
 }
 
+// TODO: remove when WebGPU is a baseline feature
+function initWebGPUConst() {
+    if (!window.GPUTextureUsage) {
+        window.GPUTextureUsage = {
+            'COPY_SRC': 1,
+            'COPY_DST': 2,
+            'TEXTURE_BINDING': 4,
+            'STORAGE_BINDING': 8,
+            'RENDER_ATTACHMENT': 16
+        };
+    }
+}
+initWebGPUConst();
+
 var calculate_fragment_alpha_test = "#ifndef EXPORT_TEXTURES\n\t#ifdef ALPHA_TEST\n\t\tif (diffuseColor.a < uAlphaTestReference) {\n\t\t\tdiscard;\n\t\t}\n\t#endif\n#endif\n";
 
 var calculate_fragment_color_map = "#ifdef USE_COLOR_MAP\n\tvar<function> texelColor: vec4<f32> = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n#else\n\tvar<function> texelColor: vec4<f32> = vec4(1.0);\n#endif\n";
@@ -75614,7 +75515,7 @@ var calculate_fragment_normal = "#ifdef FLAT_SHADING\n\tlet fdx:vec3f = dpdx(fra
 
 var calculate_fragment_phong_exponent_map = "#ifdef USE_PHONG_EXPONENT_MAP\n\tlet texelPhongExponent: vec4f = textureSample(phongExponentTexture, phongExponentSampler, fragInput.vTextureCoord.xy);\n#endif\n";
 
-var calculate_fragment_standard = "#include calculate_fragment_depth\n#include calculate_silhouette_color\n#ifdef PICKING_MODE\n\tgl_FragColor = vec4(uPickingColor, 1.0);\n#endif\n#ifdef WRITE_DEPTH_TO_COLOR\n\t#ifdef IS_POINT_LIGHT\n\t\tfloat dist = length( vVertexPositionWorldSpace.xyz - uLightPosition );\n\t\tdist = ( dist - uLightNear ) / ( uLightFar - uLightNear );\n\t\tgl_FragColor = PackDepth32(saturate(dist));\n\t#else\n\t\tgl_FragColor = PackDepth32(0.5 * vPosition.z / vPosition.w + 0.5);\n\t#endif\n#endif\n#ifdef RENDER_HIGHLIGHT\n\t#ifdef HIGHLIGHT\n\t\tgl_FragColor.rgb *= 1.5;\n\t#endif\n#endif\n#ifdef UNPACK_DEPTH_COLOR\n\tgl_FragColor = vec4(vec3(1.0 - UnpackDepth32(texelColor)), 1.0);\n#endif\n#ifdef DESATURATE\n\tfloat luminance = 0.2126 * gl_FragColor.r + 0.7152 * gl_FragColor.g + 0.0722 * gl_FragColor.b * 0.0;\n\tgl_FragColor = vec4(vec3(luminance), gl_FragColor.a);\n#endif\n#if defined(TONE_MAPPING) && TONE_MAPPING > 0\n\tgl_FragColor.rgb = ToneMapping(gl_FragColor.rgb);\n#endif\n";
+var calculate_fragment_standard = "#include calculate_fragment_depth\n#include calculate_silhouette_color\n#ifdef PICKING_MODE\n\tif (length(fragInput.position.xy - commonUniforms.pointerCoord) < 1.)  {\n\t\tpickedPrimitive.x = 1.0;\n\t\tpickedPrimitive.y = fragDepth;\n\t}\n#endif\n#ifdef WRITE_DEPTH_TO_COLOR\n\t#ifdef IS_POINT_LIGHT\n\t\tfloat dist = length( vVertexPositionWorldSpace.xyz - uLightPosition );\n\t\tdist = ( dist - uLightNear ) / ( uLightFar - uLightNear );\n\t\tfragColor = PackDepth32(saturate(dist));\n\t#else\n\t\tfragColor = PackDepth32(0.5 * vPosition.z / vPosition.w + 0.5);\n\t#endif\n#endif\n#ifdef RENDER_HIGHLIGHT\n\t#ifdef HIGHLIGHT\n\t\tfragColor = vec4(fragColor.rgb * 1.5, fragColor.a);\n\t#endif\n#endif\n#ifdef UNPACK_DEPTH_COLOR\n\tfragColor = vec4(vec3(1.0 - UnpackDepth32(texelColor)), 1.0);\n#endif\n#ifdef DESATURATE\n\tfloat luminance = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b * 0.0;\n\tfragColor = vec4(vec3(luminance), fragColor.a);\n#endif\n#if defined(TONE_MAPPING) && TONE_MAPPING > 0\n\tfragColor = vec4(ToneMapping(fragColor.rgb), fragColor.a);\n#endif\n";
 
 var calculate_lights_setup_vars = "\tvar directLight = IncidentLight();\n\n\tvar reflectedLight = ReflectedLight( vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ), vec3( 0.0 ) );\n\n\tvar geometry = GeometricContext();\n\tgeometry.position = fragInput.vVertexPositionCameraSpace.xyz;\n\tgeometry.normal = fragmentNormalCameraSpace;\n\tgeometry.viewDir = normalize(-fragInput.vVertexPositionCameraSpace.xyz);\n\t//TODO: check geometry.worldNormal\n\tgeometry.worldNormal = normalize(fragInput.vVertexNormalWorldSpace);\n\tgeometry.worldNormal = normalize(fragmentNormalCameraSpace);\n";
 
@@ -75690,7 +75591,7 @@ var declare_texture_transform = "\n#ifdef USE_TEXTURE_TRANSFORM\n\t@group(0) @bi
 
 var declare_vertex_detail_uv = "#ifdef USE_DETAIL_TEXTURE_TRANSFORM\n\t@group(0) @binding(x) var<uniform> uDetailTextureTransform: mat4x4f;\n#endif\n";
 
-var declare_vertex_skinning = "#ifdef HARDWARE_SKINNING\n\t#ifdef SKELETAL_MESH\n\n\t\t@group(0) @binding(x) var<uniform> boneMatrix: array<mat4x4f, MAX_HARDWARE_BONES>;\n\n\t\tfn accumulateSkinMat(boneWeights: vec3f, boneIndices: vec3<u32>) -> mat4x4f {\n\t\t\tvar result: mat4x4f;\n\t\t\tresult =\t\tboneWeights.x * boneMatrix[boneIndices.x];\n\t\t\tresult = result + boneWeights.y * boneMatrix[boneIndices.y];\n\t\t\tresult = result + boneWeights.z * boneMatrix[boneIndices.z];\n\t\t\treturn result;\n\t\t}\n\t#endif\n#endif\n";
+var declare_vertex_skinning = "#ifdef HARDWARE_SKINNING\n\t#ifdef SKELETAL_MESH\n\n\t\t//@group(0) @binding(x) var<uniform> boneMatrix: array<mat4x4f, MAX_HARDWARE_BONES>;\n\n\t\tfn accumulateSkinMat(boneWeights: vec3f, boneIndices: vec3<u32>) -> mat4x4f {\n\t\t\tvar result: mat4x4f;\n\t\t\tresult =\t\tboneWeights.x * matrixUniforms.boneMatrix[boneIndices.x];\n\t\t\tresult = result + boneWeights.y * matrixUniforms.boneMatrix[boneIndices.y];\n\t\t\tresult = result + boneWeights.z * matrixUniforms.boneMatrix[boneIndices.z];\n\t\t\treturn result;\n\t\t}\n\t#endif\n#endif\n";
 
 var declare_vertex_standard_params = "\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n#ifdef USE_VERTEX_TANGENT\n\t@location(x) tangent: vec4f,\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n#ifdef USE_TEXTURE_COORD_2\n\t@location(x) texCoord: vec2f,\n#endif\n#if defined(SKELETAL_MESH) && defined(HARDWARE_SKINNING)\n\t@location(x) boneWeights: vec3f,\n\t@location(x) boneIndices: vec3<u32>,\n#endif\n";
 
@@ -75711,6 +75612,10 @@ addWgslInclude('declare_vertex_detail_uv', declare_vertex_detail_uv);
 addWgslInclude('declare_vertex_skinning', declare_vertex_skinning);
 addWgslInclude('declare_vertex_standard_params', declare_vertex_standard_params);
 
+var rotation_matrix = "fn rotationMatrix(axis: vec3f, angle: f32) -> mat4x4f{\r\n\tlet a: vec3f = normalize(axis);\r\n\tlet s: f32 = sin(angle);\r\n\tlet c: f32 = cos(angle);\r\n\tlet oc: f32 = 1.0 - c;\r\n\r\n\treturn mat4x4f(oc * a.x * a.x + c,\t\t\toc * a.x * a.y - a.z * s,\toc * a.z * a.x + a.y * s,\t0.0,\r\n\t\t\t\toc * a.x * a.y + a.z * s,\toc * a.y * a.y + c,\t\t\toc * a.y * a.z - a.x * s,\t0.0,\r\n\t\t\t\toc * a.z * a.x - a.y * s,\toc * a.y * a.z + a.x * s,\toc * a.z * a.z + c,\t\t\t0.0,\r\n\t\t\t\t0.0,\t\t\t\t\t\t\t\t0.0,\t\t\t\t\t\t\t\t0.0,\t\t\t\t\t\t\t\t1.0);\r\n}\r\n";
+
+addWgslInclude('rotation_matrix', rotation_matrix);
+
 var luminance = "fn luminance(color: vec3f) -> f32 {\n\treturn dot(color, vec3f(0.299, 0.587, 0.114));\n}\n";
 
 var math_defines = "#pragma once\n\n#define PI 3.141592653589793\n#define RECIPROCAL_PI 0.3183098861837907\n#define RECIPROCAL_TAU 0.15915494309189535\n#define HALF_PI 1.5707963267948966\n#define TWO_PI 6.283185307179586\n#define TAU TWO_PI\n#define EPSILON 0.000001\n";
@@ -75728,40 +75633,29 @@ var postprocessing_vertex = "#include matrix_uniforms\n#include varying_standard
 
 addWgslInclude('postprocessing_vertex', postprocessing_vertex);
 
-var matrix_uniforms = "struct MatrixUniforms {\n\tmodelMatrix : mat4x4f,\n\tviewMatrix : mat4x4f,\n\tmodelViewMatrix : mat4x4f,\n\tprojectionMatrix : mat4x4f,\n\tviewProjectionMatrix : mat4x4f,\n\tnormalMatrix : mat3x3f,\n\tcameraPosition: vec3f,\n}\n\n@group(0) @binding(x) var<uniform> matrixUniforms : MatrixUniforms;\n";
+var common_uniforms = "struct CommonUniforms {\n\ttime : vec4f,\n\tresolution: vec4f,\n\tpointerCoord: vec2f,\n\t//pickingColor: vec3f,\n\t//pickedPrimitive : vec3f,\n}\n\n@group(0) @binding(x) var<uniform> commonUniforms: CommonUniforms;\n#ifdef PICKING_MODE\n\t@group(0) @binding(x) var<storage, read_write> pickedPrimitive: vec2f;\n#endif\n\n#define TIME commonUniforms.time.x\n#define FRAME commonUniforms.time.y\n";
 
+var matrix_uniforms = "struct MatrixUniforms {\n\tmodelMatrix : mat4x4f,\n\tviewMatrix : mat4x4f,\n\tmodelViewMatrix : mat4x4f,\n\tprojectionMatrix : mat4x4f,\n\tviewProjectionMatrix : mat4x4f,\n\tnormalMatrix : mat3x3f,\n\tcameraPosition: vec3f,\n#if defined(HARDWARE_SKINNING) && defined(SKELETAL_MESH)\n\tboneMatrix: array<mat4x4f, MAX_HARDWARE_BONES>,\n#endif\n}\n\n@group(0) @binding(x) var<uniform> matrixUniforms : MatrixUniforms;\n";
+
+addWgslInclude('common_uniforms', common_uniforms);
 addWgslInclude('matrix_uniforms', matrix_uniforms);
 
-var meshbasic = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n#ifdef USE_VERTEX_TANGENT\n\t@location(x) tangent: vec4f,\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n#if defined(SKELETAL_MESH) && defined(HARDWARE_SKINNING)\n\t@location(x) boneWeights: vec3f,\n\t@location(x) boneIndices: vec3<u32>,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\tfragColor = diffuseColor;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n\t//return FragmentOutput(fragColor, fragDepth);\n}\n";
+var meshbasic = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n#ifdef USE_VERTEX_TANGENT\n\t@location(x) tangent: vec4f,\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n#if defined(SKELETAL_MESH) && defined(HARDWARE_SKINNING)\n\t@location(x) boneWeights: vec3f,\n\t@location(x) boneIndices: vec3<u32>,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\tfragColor = diffuseColor;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n\t//return FragmentOutput(fragColor, fragDepth);\n}\n";
 
-var meshphong = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n/*struct VertexOut {\n\t@builtin(position) position : vec4f,\n}\n*/\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\t#include calculate_fragment_alpha_test\n\t#include calculate_fragment_normal\n\n\t/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\tvar fragColor: vec4f;\n\n\tvar material = BlinnPhongMaterial();\n\tmaterial.diffuseColor = diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n#include calculate_fragment_render_mode\n/* TEST SHADING BEGIN*/\nfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n//fragColor.a = diffuseColor.a;\n/* TEST SHADING END*/\n\n\n\t#ifdef SKIP_LIGHTING\n\t\tfragColor = diffuseColor;\n\t#else\n\t\tfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n\t#endif\n\t//fragColor.a = diffuseColor.a;\n\n\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);\n\n\t#include output_fragment\n\t//return fragColor;\n\t//return vec4f( abs(normalize(pointLights[0].range)), fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vVertexNormalModelSpace.xyz)),fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vTextureCoord.xy)),0.0, fragColor.a);\n\t//return vec4f( normalize(fragInput.position.xyz), fragColor.a);\n\t//return vec4f(ambientLight, fragColor.a);\n\t//return fragData.color;\n\t//return vec4<f32>(1.0, 1.0, 1.0, 1.0);\n}\n";
+var meshphong = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n/*struct VertexOut {\n\t@builtin(position) position : vec4f,\n}\n*/\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\t#include calculate_fragment_alpha_test\n\t#include calculate_fragment_normal\n\n\t/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\tvar fragColor: vec4f;\n\n\tvar material = BlinnPhongMaterial();\n\tmaterial.diffuseColor = diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n#include calculate_fragment_render_mode\n/* TEST SHADING BEGIN*/\nfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n//fragColor.a = diffuseColor.a;\n/* TEST SHADING END*/\n\n\n\t#ifdef SKIP_LIGHTING\n\t\tfragColor = diffuseColor;\n\t#else\n\t\tfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n\t#endif\n\t//fragColor.a = diffuseColor.a;\n\n\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);\n\n\t#include output_fragment\n\t//return fragColor;\n\t//return vec4f( abs(normalize(pointLights[0].range)), fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vVertexNormalModelSpace.xyz)),fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vTextureCoord.xy)),0.0, fragColor.a);\n\t//return vec4f( normalize(fragInput.position.xyz), fragColor.a);\n\t//return vec4f(ambientLight, fragColor.a);\n\t//return fragData.color;\n\t//return vec4<f32>(1.0, 1.0, 1.0, 1.0);\n}\n";
 
 Shaders['meshbasic.wgsl'] = meshbasic;
 Shaders['meshphong.wgsl'] = meshphong;
 
-var grid = "#include matrix_uniforms\n\n@group(0) @binding(x) var<uniform> uSpacing: f32;\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(0) position: vec3f,\n\t@location(1) normal: vec3f,\n\t@location(2) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tlet halfSpacing: f32 = uSpacing * 0.5;\n\tlet radSpacing: f32 = TWO_PI / uSpacing;\n\n\tvar xLines: vec4f = saturate(mix(vec4(0.0), vec4(1.0), cos(fragInput.vVertexPositionWorldSpace.y * radSpacing) * 100.0 - 99.0));\n\tvar yLines: vec4f = saturate(mix(vec4(0.0), vec4(1.0), cos(fragInput.vVertexPositionWorldSpace.x * radSpacing) * 100.0 - 99.0));\n\n\n\tif (abs(fragInput.vVertexPositionWorldSpace.y) < halfSpacing) {\n\t\txLines.g = 0.0;\n\t\txLines.b = 0.0;\n\t}\n\tif (abs(fragInput.vVertexPositionWorldSpace.x) < halfSpacing) {\n\t\tyLines.r = 0.0;\n\t\tyLines.b = 0.0;\n\t}\n\n\tfragColor = xLines + yLines;\n\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\n\t//fragColor = diffuseColor;\n\n\t//#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
+var grid = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var<uniform> uSpacing: f32;\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(0) position: vec3f,\n\t@location(1) normal: vec3f,\n\t@location(2) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\tlet halfSpacing: f32 = uSpacing * 0.5;\n\tlet radSpacing: f32 = TWO_PI / uSpacing;\n\n\tvar xLines: vec4f = saturate(mix(vec4(0.0), vec4(1.0), cos(fragInput.vVertexPositionWorldSpace.y * radSpacing) * 100.0 - 99.0));\n\tvar yLines: vec4f = saturate(mix(vec4(0.0), vec4(1.0), cos(fragInput.vVertexPositionWorldSpace.x * radSpacing) * 100.0 - 99.0));\n\n\n\tif (abs(fragInput.vVertexPositionWorldSpace.y) < halfSpacing) {\n\t\txLines.g = 0.0;\n\t\txLines.b = 0.0;\n\t}\n\tif (abs(fragInput.vVertexPositionWorldSpace.x) < halfSpacing) {\n\t\tyLines.r = 0.0;\n\t\tyLines.b = 0.0;\n\t}\n\n\tfragColor = xLines + yLines;\n\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\n\t//fragColor = diffuseColor;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
-var line = "#include matrix_uniforms\n\n@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> linewidth : f32;\n\n#ifdef USE_DASH\n\t@group(0) @binding(x) var<uniform> dashScale : f32;\n\tattribute float instanceDistanceStart;\n\tattribute float instanceDistanceEnd;\n#endif\n\nfn trimSegment( start: vec4f, end: vec4f ) -> vec4f {\n\n\t// trim end segment so it terminates between the camera plane and the near plane\n\n\t// conservative estimate of the near plane\n\tlet a: f32 = matrixUniforms.projectionMatrix[ 2 ][ 2 ]; // 3nd entry in 3th column\n\tlet b: f32 = matrixUniforms.projectionMatrix[ 3 ][ 2 ]; // 3nd entry in 4th column\n\tlet nearEstimate: f32 = - 0.5 * b / a;\n\n\tlet alpha: f32 = ( nearEstimate - start.z ) / ( end.z - start.z );\n\n\treturn vec4f(mix( start.xyz, end.xyz, alpha ), end.a);\n}\n\n\n\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(0) vUv: vec2f,\n#ifdef USE_DASH\n\t@location(1) vLineDistance: f32,\n#endif\n}\n\n@vertex\nfn vertex_main(\n\t@location(0) position: vec3f,\n\t@location(1) texCoord: vec2f,\n\t@location(2) segmentStart: vec3f,\n\t@location(3) segmentEnd: vec3f,\n#ifdef USE_COLOR\n\t@location(4) instanceColorStart: vec3f,\n\t@location(5) instanceColorEnd: vec3f,\n#endif\n#ifdef USE_DASH\n\t@location(6) instanceDistanceStart: vec3f,\n\t@location(7) instanceDistanceEnd: vec3f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n#ifdef USE_COLOR\n\tvColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;\n#endif\n\n#ifdef USE_DASH\n\toutput.vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;\n#endif\n\n\tlet aspect: f32 = resolution.x / resolution.y;\n\toutput.vUv = texCoord;\n\n\t// camera space\n\tvar start: vec4f = matrixUniforms.modelViewMatrix * vec4( segmentStart, 1.0 );\n\tvar end: vec4f = matrixUniforms.modelViewMatrix * vec4( segmentEnd, 1.0 );\n\n\t// special case for perspective projection, and segments that terminate either in, or behind, the camera plane\n\t// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space\n\t// but we need to perform ndc-space calculations in the shader, so we must address this issue directly\n\t// perhaps there is a more elegant solution -- WestLangley\n\n\tlet perspective: bool = ( matrixUniforms.projectionMatrix[ 2 ][ 3 ] == - 1.0 ); // 4th entry in the 3rd column\n\n\tif ( perspective ) {\n\t\tif ( start.z < 0.0 && end.z >= 0.0 ) {\n\t\t\tend = trimSegment( start, end );\n\t\t} else if ( end.z < 0.0 && start.z >= 0.0 ) {\n\t\t\tstart = trimSegment( end, start );\n\t\t}\n\t}\n\n\t// clip space\n\tlet clipStart: vec4f = matrixUniforms.projectionMatrix * start;\n\tlet clipEnd: vec4f = matrixUniforms.projectionMatrix * end;\n\n\t// ndc space\n\tlet ndcStart: vec2f = clipStart.xy / clipStart.w;\n\tlet ndcEnd: vec2f = clipEnd.xy / clipEnd.w;\n\n\t// direction\n\tvar dir: vec2f = ndcEnd - ndcStart;\n\n\t// account for clip-space aspect ratio\n\tdir.x *= aspect;\n\tdir = normalize( dir );\n\n\t// perpendicular to dir\n\tvar offset: vec2f = vec2( dir.y, - dir.x );\n\n\t// undo aspect ratio adjustment\n\tdir.x /= aspect;\n\toffset.x /= aspect;\n\n\t// sign flip\n\tif ( position.x < 0.0 ) {\n\t\toffset *= - 1.0;\n\t}\n\n\t// endcaps\n\tif ( position.y < 0.0 ) {\n\t\toffset += - dir;\n\t} else if ( position.y > 1.0 ) {\n\t\toffset += dir;\n\t}\n\n\t// adjust for linewidth\n\toffset *= linewidth;\n\n\t// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...\n\toffset /= resolution.y;\n\n\t// select end\n\tvar clip: vec4f = select(clipEnd, clipStart, position.y < 0.5);//( position.y < 0.5 ) ? clipStart : clipEnd;\n\n\t// back to clip space\n\toffset *= clip.w;\n\n\tclip.x += offset.x;\n\tclip.y += offset.y;\n\n\toutput.position = clip;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\t#include calculate_fragment_diffuse\n#ifdef USE_DASH\n\tif ( fragInput.vUv.y < - 1.0 || fragInput.vUv.y > 1.0 ) {\n\t\tdiscard; // discard endcaps\n\t}\n\tif ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) {\n\t\tdiscard; // todo - FIX\n\t}\n#endif\n\n\tif ( abs( fragInput.vUv.y ) > 1.0 ) {\n\t\tlet a: f32 = fragInput.vUv.x;\n\t\tlet b: f32 = select(fragInput.vUv.y + 1.0, fragInput.vUv.y - 1.0, fragInput.vUv.y > 0.0);//( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;\n\t\tlet len2: f32 = a * a + b * b;\n\t\tif ( len2 > 1.0 ) {\n\t\t\tdiscard;\n\t\t}\n\t}\n\tfragColor = vec4( diffuseColor.rgb, diffuseColor.a );\n\n\t#include output_fragment\n}\n";
+var line = "#include matrix_uniforms\n#include common_uniforms\n\n//@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> linewidth : f32;\n\n#ifdef USE_DASH\n\t@group(0) @binding(x) var<uniform> dashScale : f32;\n\tattribute float instanceDistanceStart;\n\tattribute float instanceDistanceEnd;\n#endif\n\nfn trimSegment( start: vec4f, end: vec4f ) -> vec4f {\n\n\t// trim end segment so it terminates between the camera plane and the near plane\n\n\t// conservative estimate of the near plane\n\tlet a: f32 = matrixUniforms.projectionMatrix[ 2 ][ 2 ]; // 3nd entry in 3th column\n\tlet b: f32 = matrixUniforms.projectionMatrix[ 3 ][ 2 ]; // 3nd entry in 4th column\n\tlet nearEstimate: f32 = - 0.5 * b / a;\n\n\tlet alpha: f32 = ( nearEstimate - start.z ) / ( end.z - start.z );\n\n\treturn vec4f(mix( start.xyz, end.xyz, alpha ), end.a);\n}\n\n\n\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(0) vUv: vec2f,\n#ifdef USE_DASH\n\t@location(1) vLineDistance: f32,\n#endif\n}\n\n@vertex\nfn vertex_main(\n\t@location(0) position: vec3f,\n\t@location(1) texCoord: vec2f,\n\t@location(2) segmentStart: vec3f,\n\t@location(3) segmentEnd: vec3f,\n#ifdef USE_COLOR\n\t@location(4) instanceColorStart: vec3f,\n\t@location(5) instanceColorEnd: vec3f,\n#endif\n#ifdef USE_DASH\n\t@location(6) instanceDistanceStart: vec3f,\n\t@location(7) instanceDistanceEnd: vec3f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n#ifdef USE_COLOR\n\tvColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;\n#endif\n\n#ifdef USE_DASH\n\toutput.vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;\n#endif\n\n\tlet aspect: f32 = commonUniforms.resolution.x / commonUniforms.resolution.y;\n\toutput.vUv = texCoord;\n\n\t// camera space\n\tvar start: vec4f = matrixUniforms.modelViewMatrix * vec4( segmentStart, 1.0 );\n\tvar end: vec4f = matrixUniforms.modelViewMatrix * vec4( segmentEnd, 1.0 );\n\n\t// special case for perspective projection, and segments that terminate either in, or behind, the camera plane\n\t// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space\n\t// but we need to perform ndc-space calculations in the shader, so we must address this issue directly\n\t// perhaps there is a more elegant solution -- WestLangley\n\n\tlet perspective: bool = ( matrixUniforms.projectionMatrix[ 2 ][ 3 ] == - 1.0 ); // 4th entry in the 3rd column\n\n\tif ( perspective ) {\n\t\tif ( start.z < 0.0 && end.z >= 0.0 ) {\n\t\t\tend = trimSegment( start, end );\n\t\t} else if ( end.z < 0.0 && start.z >= 0.0 ) {\n\t\t\tstart = trimSegment( end, start );\n\t\t}\n\t}\n\n\t// clip space\n\tlet clipStart: vec4f = matrixUniforms.projectionMatrix * start;\n\tlet clipEnd: vec4f = matrixUniforms.projectionMatrix * end;\n\n\t// ndc space\n\tlet ndcStart: vec2f = clipStart.xy / clipStart.w;\n\tlet ndcEnd: vec2f = clipEnd.xy / clipEnd.w;\n\n\t// direction\n\tvar dir: vec2f = ndcEnd - ndcStart;\n\n\t// account for clip-space aspect ratio\n\tdir.x *= aspect;\n\tdir = normalize( dir );\n\n\t// perpendicular to dir\n\tvar offset: vec2f = vec2( dir.y, - dir.x );\n\n\t// undo aspect ratio adjustment\n\tdir.x /= aspect;\n\toffset.x /= aspect;\n\n\t// sign flip\n\tif ( position.x < 0.0 ) {\n\t\toffset *= - 1.0;\n\t}\n\n\t// endcaps\n\tif ( position.y < 0.0 ) {\n\t\toffset += - dir;\n\t} else if ( position.y > 1.0 ) {\n\t\toffset += dir;\n\t}\n\n\t// adjust for linewidth\n\toffset *= linewidth;\n\n\t// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...\n\toffset /= commonUniforms.resolution.y;\n\n\t// select end\n\tvar clip: vec4f = select(clipEnd, clipStart, position.y < 0.5);//( position.y < 0.5 ) ? clipStart : clipEnd;\n\n\t// back to clip space\n\toffset *= clip.w;\n\n\tclip.x += offset.x;\n\tclip.y += offset.y;\n\n\toutput.position = clip;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\t#include calculate_fragment_diffuse\n#ifdef USE_DASH\n\tif ( fragInput.vUv.y < - 1.0 || fragInput.vUv.y > 1.0 ) {\n\t\tdiscard; // discard endcaps\n\t}\n\tif ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) {\n\t\tdiscard; // todo - FIX\n\t}\n#endif\n\n\tif ( abs( fragInput.vUv.y ) > 1.0 ) {\n\t\tlet a: f32 = fragInput.vUv.x;\n\t\tlet b: f32 = select(fragInput.vUv.y + 1.0, fragInput.vUv.y - 1.0, fragInput.vUv.y > 0.0);//( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;\n\t\tlet len2: f32 = a * a + b * b;\n\t\tif ( len2 > 1.0 ) {\n\t\t\tdiscard;\n\t\t}\n\t}\n\tfragColor = vec4( diffuseColor.rgb, diffuseColor.a );\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
 Shaders['grid.wgsl'] = grid;
 Shaders['line.wgsl'] = line;
 
-var pixelate = "@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> uHorizontalTiles: f32;\n\nfn mymod(x: vec2f, y: vec2f) -> vec2f {\n\treturn x - y * floor(x / y);\n}\n\nfn lum(pix: vec4f) -> f32 {\n\treturn dot( pix, vec4(.3,.59,.11,0));\n}\n\n\nfn computeSquarePixel(pos: vec2u) {\n\tlet sizef: vec2f = vec2f(resolution.xy);\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * sizef.xy) / sizef.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / sizef.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep , rep) - hrep;\n\tlet hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= sizef.y / sizef.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n\nfn computeDiamondPixel(pos: vec2u) {\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / resolution.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / resolution.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep,  rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= resolution.y / resolution.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * resolution.xy), vec2u(0), vec2u(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn computeRoundPixel1(pos: vec2u) {\n\tlet div: vec2f = vec2(uHorizontalTiles) * resolution.xy / resolution.y;\n\n\n\tlet uv: vec2f = vec2f(pos)/resolution.xy;\n\tlet uv2: vec2f = floor(uv*div)/div;\n\n\tlet diff: vec2f = (uv-uv2)*div;\n\n\tvar pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * resolution.xy));\n\n\tif ( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0) > 0.25) {\n\n\t\tvar pmax: vec4f;\n\t\tvar pmin: vec4f;\n\t\tvar v2: vec2f  = 1.0 / div;\n\n\t\tif (diff.x<0.5) { v2.x = -v2.x; }\n\t\tif (diff.y<0.5) { v2.y = -v2.y; }\n\n\t\tlet p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * resolution.xy));\n\t\tlet p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * resolution.xy));\n\t\tlet p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * resolution.xy));\n\n\t\tif ( lum(p1) > lum(p2) ) {\n\t\t\tpmax = p1;\n\t\t\tpmin = p2;\n\t\t} else {\n\t\t\tpmax = p2;\n\t\t\tpmin = p1;\n\t\t}\n\n\t\tif ( lum(p3) < lum(pmin) ) {\n\t\t\tpmin = p3;\n\t\t}\n\n\t\tif ( lum(pix) > lum(pmax) ) {\n\t\t\tpix = pmax;\n\t\t} else if ( lum(pmin) > lum(pix) ) {\n\t\t\tpix = pmin;\n\t\t}\n\t}\n\n\ttextureStore(outTexture, pos, pix);\n\t//textureStore(outTexture, pos, vec4f(vec2f(diff), 0.0, 1.0));\n\t//textureStore(outTexture, pos, vec4f( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0), 0.0, 0.0, 1.0));\n}\n\nfn computeRoundPixel2(pos: vec2u) {\n\tlet pixelSize: f32 = resolution.y / uHorizontalTiles;\n\tlet U: vec2f = vec2f(pos) / pixelSize;\n\tlet div: vec2f = pixelSize / resolution.xy;\n\tlet uv2: vec2f = floor(U)*div;\n\tlet diff: vec2f = fract(U);\n\n\t//checkerboard pattern : half of the pixels are not changed\n\tif (fract( dot(floor(U),vec2(.5)) ) < .5)\n\t{\n\t\t//fragColor = T(0,0);\n\t\tvar v = textureLoad(colorTexture, vec2i(uv2 * resolution.xy));\n\t\ttextureStore(outTexture, pos, v);\n\t\treturn;\n\t}\n\n\t// neighbors\n\tlet pix: mat4x4f = mat4x4f(\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t);\n\n\t//where is the biggest contrast ?\n\tlet comp: i32 = i32 ( abs( lum(pix[0]) - lum(pix[2]) )\n\t> abs( lum(pix[1]) - lum(pix[3]) ) );\n\tlet d: vec2f = abs(diff-.5) - vec2(f32(1-comp),f32(comp)); // offset = 0,1 or 1,0\n\tlet v: vec2i = vec2i( vec2(3.5,2.5) - diff*2. );\n\n\t/*\n\tfragColor = dot(d,d) < .5\n\t? pix[ v[comp] ]\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t: mix( pix[comp+2], pix[comp] , diff[1-comp] ); // a gradient in between\n\t*/\n\ttextureStore(outTexture, pos, select(\n\t\tmix( pix[comp+2], pix[comp] , diff[1-comp]), // a gradient in between\n\t\tpix[ v[comp] ],\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t\tdot(d,d) < .5\n\t\t));\n}\n\nfn hexDist(p: vec2f) -> f32 {\n\tlet edgeDist: f32 = dot(abs(p), normalize(vec2(1.0, 1.73)));\n\treturn max(edgeDist, abs(p.x));\n}\n\nfn computeHexagonPixel(pos: vec2u) {\n\tlet uv: vec2f = (vec2f(pos) - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;\n\tlet unit: f32 = 2.0 * uHorizontalTiles / resolution.y;\n\n\tconst rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod((uv - hrep) , rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= resolution.y / resolution.x;\n\t//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy)).rgb, vec3(1.0 / 3.0));\n\t//fragColor = vec4(1.0);//vec4(smoothstep(unit, 0.0, hexDist(hexUv) - brightness * 0.5));\n\t//fragColor.rgb *=textureLoad(colorTexture, sampleUv + 0.5).rgb;\n\tvar v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn hash2( p: vec2f ) -> vec2f {\n\treturn fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);\n}\n\nfn computeVoronoiPixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / resolution.xy;\n\n\tlet pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));\n\n\tuv = (uv-0.5)/pixelating;\n\n\tlet n: vec2f = floor(uv);\n\tlet f: vec2f = fract(uv);\n\n\t//----------------------------------\n\t// regular voronoi from Inigo Quilez,\n\t// https://www.shadertoy.com/view/ldl3W8\n\t//----------------------------------\n\tvar mg: vec2f;\n\tvar mr: vec2f;\n\n\t// best distance\n\tvar md: f32 = 8.0;\n\t// best delta vector\n\tvar mv: vec2f;\n\tfor(var j: i32=-1;j<=1;j++) {\n\t\tfor(var i: i32=-1;i<=1;i++) {\n\t\t\tlet g: vec2f = vec2(f32(i),f32(j));\n\t\t\tlet o: vec2f = hash2(n + g);\n\t\t\t#ifdef ANIMATE_VORONOI\n\t\t\to = 0.5 + 0.5*sin(iTime + 6.2831*o);\n\t\t\t#endif\n\t\t\tlet r: vec2f = g + o - f;\n\t\t\tlet d: f32 = dot(r,r);\n\t\t\tif(d < md) {\n\t\t\t\tmd = d;\n\t\t\t\tmv = r;\n\t\t\t}\n\t\t}\n\t}\n\n\tuv += mv;\n\n\tuv = uv * pixelating+0.5;\n\n\t//fragColor = textureLoad(colorTexture, uv);\n\tvar v = textureLoad(colorTexture, clamp(vec2i(uv * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n\n}\nfn computeTrianglePixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / resolution.xy;\n\n\tlet pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;\n\n\tuv = (uv - 0.5) / pixelating;\n\tvar uvTriangleSpace: vec2f = mat2x2f(1.0, 1.0, 0.6, -0.6) * uv;\n\tuvTriangleSpace = fract(uvTriangleSpace);\n\tif(uvTriangleSpace.x > uvTriangleSpace.y) {\n\t\tuvTriangleSpace.x -= 0.5;\n\t}\n\tuv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);\n\n\tlet v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n#ifndef PIXEL_STYLE\n\t#define PIXEL_STYLE 0\n#endif\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet size = textureDimensions(outTexture);\n\t//let center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t#if (PIXEL_STYLE == 0)\n\t\tcomputeSquarePixel(pos);\n\t#elif (PIXEL_STYLE == 1)\n\t\tcomputeDiamondPixel(pos);\n\t#elif (PIXEL_STYLE == 2)\n\t\tcomputeRoundPixel1(pos);\n\t#elif (PIXEL_STYLE == 3)\n\t\tcomputeRoundPixel2(pos);\n\t#elif (PIXEL_STYLE == 4)\n\t\tcomputeHexagonPixel(pos);\n\t#elif (PIXEL_STYLE == 5)\n\t\tcomputeVoronoiPixel(pos);\n\t#elif (PIXEL_STYLE == 6)\n\t\tcomputeTrianglePixel(pos);\n\t#endif\n\n}\n";
+var pixelate = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;\n//@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> uHorizontalTiles: f32;\n\nfn mymod(x: vec2f, y: vec2f) -> vec2f {\n\treturn x - y * floor(x / y);\n}\n\nfn lum(pix: vec4f) -> f32 {\n\treturn dot( pix, vec4(.3,.59,.11,0));\n}\n\n\nfn computeSquarePixel(pos: vec2u) {\n\tlet sizef: vec2f = vec2f(resolution.xy);\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * sizef.xy) / sizef.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / sizef.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep , rep) - hrep;\n\tlet hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= sizef.y / sizef.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n\nfn computeDiamondPixel(pos: vec2u) {\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / resolution.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / resolution.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep,  rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= resolution.y / resolution.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * resolution.xy), vec2u(0), vec2u(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn computeRoundPixel1(pos: vec2u) {\n\tlet div: vec2f = vec2(uHorizontalTiles) * resolution.xy / resolution.y;\n\n\n\tlet uv: vec2f = vec2f(pos)/resolution.xy;\n\tlet uv2: vec2f = floor(uv*div)/div;\n\n\tlet diff: vec2f = (uv-uv2)*div;\n\n\tvar pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * resolution.xy));\n\n\tif ( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0) > 0.25) {\n\n\t\tvar pmax: vec4f;\n\t\tvar pmin: vec4f;\n\t\tvar v2: vec2f  = 1.0 / div;\n\n\t\tif (diff.x<0.5) { v2.x = -v2.x; }\n\t\tif (diff.y<0.5) { v2.y = -v2.y; }\n\n\t\tlet p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * resolution.xy));\n\t\tlet p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * resolution.xy));\n\t\tlet p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * resolution.xy));\n\n\t\tif ( lum(p1) > lum(p2) ) {\n\t\t\tpmax = p1;\n\t\t\tpmin = p2;\n\t\t} else {\n\t\t\tpmax = p2;\n\t\t\tpmin = p1;\n\t\t}\n\n\t\tif ( lum(p3) < lum(pmin) ) {\n\t\t\tpmin = p3;\n\t\t}\n\n\t\tif ( lum(pix) > lum(pmax) ) {\n\t\t\tpix = pmax;\n\t\t} else if ( lum(pmin) > lum(pix) ) {\n\t\t\tpix = pmin;\n\t\t}\n\t}\n\n\ttextureStore(outTexture, pos, pix);\n\t//textureStore(outTexture, pos, vec4f(vec2f(diff), 0.0, 1.0));\n\t//textureStore(outTexture, pos, vec4f( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0), 0.0, 0.0, 1.0));\n}\n\nfn computeRoundPixel2(pos: vec2u) {\n\tlet pixelSize: f32 = resolution.y / uHorizontalTiles;\n\tlet U: vec2f = vec2f(pos) / pixelSize;\n\tlet div: vec2f = pixelSize / resolution.xy;\n\tlet uv2: vec2f = floor(U)*div;\n\tlet diff: vec2f = fract(U);\n\n\t//checkerboard pattern : half of the pixels are not changed\n\tif (fract( dot(floor(U),vec2(.5)) ) < .5)\n\t{\n\t\t//fragColor = T(0,0);\n\t\tvar v = textureLoad(colorTexture, vec2i(uv2 * resolution.xy));\n\t\ttextureStore(outTexture, pos, v);\n\t\treturn;\n\t}\n\n\t// neighbors\n\tlet pix: mat4x4f = mat4x4f(\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),\n\t);\n\n\t//where is the biggest contrast ?\n\tlet comp: i32 = i32 ( abs( lum(pix[0]) - lum(pix[2]) )\n\t> abs( lum(pix[1]) - lum(pix[3]) ) );\n\tlet d: vec2f = abs(diff-.5) - vec2(f32(1-comp),f32(comp)); // offset = 0,1 or 1,0\n\tlet v: vec2i = vec2i( vec2(3.5,2.5) - diff*2. );\n\n\t/*\n\tfragColor = dot(d,d) < .5\n\t? pix[ v[comp] ]\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t: mix( pix[comp+2], pix[comp] , diff[1-comp] ); // a gradient in between\n\t*/\n\ttextureStore(outTexture, pos, select(\n\t\tmix( pix[comp+2], pix[comp] , diff[1-comp]), // a gradient in between\n\t\tpix[ v[comp] ],\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t\tdot(d,d) < .5\n\t\t));\n}\n\nfn hexDist(p: vec2f) -> f32 {\n\tlet edgeDist: f32 = dot(abs(p), normalize(vec2(1.0, 1.73)));\n\treturn max(edgeDist, abs(p.x));\n}\n\nfn computeHexagonPixel(pos: vec2u) {\n\tlet uv: vec2f = (vec2f(pos) - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;\n\tlet unit: f32 = 2.0 * uHorizontalTiles / resolution.y;\n\n\tconst rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod((uv - hrep) , rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= resolution.y / resolution.x;\n\t//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy)).rgb, vec3(1.0 / 3.0));\n\t//fragColor = vec4(1.0);//vec4(smoothstep(unit, 0.0, hexDist(hexUv) - brightness * 0.5));\n\t//fragColor.rgb *=textureLoad(colorTexture, sampleUv + 0.5).rgb;\n\tvar v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn hash2( p: vec2f ) -> vec2f {\n\treturn fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);\n}\n\nfn computeVoronoiPixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / resolution.xy;\n\n\tlet pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));\n\n\tuv = (uv-0.5)/pixelating;\n\n\tlet n: vec2f = floor(uv);\n\tlet f: vec2f = fract(uv);\n\n\t//----------------------------------\n\t// regular voronoi from Inigo Quilez,\n\t// https://www.shadertoy.com/view/ldl3W8\n\t//----------------------------------\n\tvar mg: vec2f;\n\tvar mr: vec2f;\n\n\t// best distance\n\tvar md: f32 = 8.0;\n\t// best delta vector\n\tvar mv: vec2f;\n\tfor(var j: i32=-1;j<=1;j++) {\n\t\tfor(var i: i32=-1;i<=1;i++) {\n\t\t\tlet g: vec2f = vec2(f32(i),f32(j));\n\t\t\tlet o: vec2f = hash2(n + g);\n\t\t\t#ifdef ANIMATE_VORONOI\n\t\t\to = 0.5 + 0.5*sin(iTime + 6.2831*o);\n\t\t\t#endif\n\t\t\tlet r: vec2f = g + o - f;\n\t\t\tlet d: f32 = dot(r,r);\n\t\t\tif(d < md) {\n\t\t\t\tmd = d;\n\t\t\t\tmv = r;\n\t\t\t}\n\t\t}\n\t}\n\n\tuv += mv;\n\n\tuv = uv * pixelating+0.5;\n\n\t//fragColor = textureLoad(colorTexture, uv);\n\tvar v = textureLoad(colorTexture, clamp(vec2i(uv * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n\n}\nfn computeTrianglePixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / resolution.xy;\n\n\tlet pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;\n\n\tuv = (uv - 0.5) / pixelating;\n\tvar uvTriangleSpace: vec2f = mat2x2f(1.0, 1.0, 0.6, -0.6) * uv;\n\tuvTriangleSpace = fract(uvTriangleSpace);\n\tif(uvTriangleSpace.x > uvTriangleSpace.y) {\n\t\tuvTriangleSpace.x -= 0.5;\n\t}\n\tuv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);\n\n\tlet v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n#ifndef PIXEL_STYLE\n\t#define PIXEL_STYLE 0\n#endif\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet size = textureDimensions(outTexture);\n\t//let center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t#if (PIXEL_STYLE == 0)\n\t\tcomputeSquarePixel(pos);\n\t#elif (PIXEL_STYLE == 1)\n\t\tcomputeDiamondPixel(pos);\n\t#elif (PIXEL_STYLE == 2)\n\t\tcomputeRoundPixel1(pos);\n\t#elif (PIXEL_STYLE == 3)\n\t\tcomputeRoundPixel2(pos);\n\t#elif (PIXEL_STYLE == 4)\n\t\tcomputeHexagonPixel(pos);\n\t#elif (PIXEL_STYLE == 5)\n\t\tcomputeVoronoiPixel(pos);\n\t#elif (PIXEL_STYLE == 6)\n\t\tcomputeTrianglePixel(pos);\n\t#endif\n\n}\n";
 
 Shaders['pixelate.wgsl'] = pixelate;
-
-// TODO: remove when WebGPU is a baseline feature
-function initWebGPUConst() {
-    if (!window.GPUTextureUsage) {
-        window.GPUTextureUsage = {
-            'COPY_SRC': 1,
-            'COPY_DST': 2,
-            'TEXTURE_BINDING': 4,
-            'STORAGE_BINDING': 8,
-            'RENDER_ATTACHMENT': 16
-        };
-    }
-}
-initWebGPUConst();
 
 export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
