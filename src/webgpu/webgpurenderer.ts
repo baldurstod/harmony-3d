@@ -1000,6 +1000,9 @@ export class WebGPURenderer implements Renderer {
 							case 'pointerCoord':
 								bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2) as BufferSource;
 								break;
+							case 'boneMatrix':
+								bufferSource = object?.uniforms[member.name];
+								break;
 							default:
 								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}
