@@ -132,7 +132,7 @@ fn vertex_main(
 	offset *= linewidth;
 
 	// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
-	offset /= resolution.y;
+	offset /= commonUniforms.resolution.y;
 
 	// select end
 	var clip: vec4f = select(clipEnd, clipStart, position.y < 0.5);//( position.y < 0.5 ) ? clipStart : clipEnd;
