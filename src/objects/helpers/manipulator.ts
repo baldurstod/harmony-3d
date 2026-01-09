@@ -3,7 +3,7 @@ import { ShortcutHandler } from 'harmony-browser-utils';
 import { Camera } from '../../cameras/camera';
 import { EngineEntityAttributes, Entity, EntityParameters, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics2';
-import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { GraphicMouseEventData, GraphicPickEvent, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { RenderFace } from '../../materials/constants';
 import { LineMaterial } from '../../materials/linematerial';
 import { MATERIAL_BLENDING_NORMAL } from '../../materials/material';
@@ -161,8 +161,8 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => {
-			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+			const detail = (event as CustomEvent<GraphicPickEvent>).detail;
 			if (this.#entityAxis.has(detail.entity!)) {
 				this.#axis = this.#entityAxis.get(detail.entity!)!;
 				switch (this.#mode) {
@@ -182,33 +182,26 @@ export class Manipulator extends Entity {
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => {
 			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
-			if (!detail.entity?.isVisible()) {
-				return;
-			}
 			if (this.#axis == ManipulatorAxis.None) {
 				return;
 			}
 
-			if (this.#entityAxis.has(detail.entity)) {
-				switch (this.#mode) {
-					case ManipulatorMode.Translation:
-						this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
-						break;
-					case ManipulatorMode.Rotation:
-						this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
-						break;
-					case ManipulatorMode.Scale:
-						this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
-						break;
-				}
+			switch (this.#mode) {
+				case ManipulatorMode.Translation:
+					this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
+					break;
+				case ManipulatorMode.Rotation:
+					this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
+					break;
+				case ManipulatorMode.Scale:
+					this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
+					break;
 			}
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => {
-			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity!)) {
-				Graphics.dragging = false;
-				this.#setAxisSelected(false);
-				this.#axis = ManipulatorAxis.None;
-			}
+			Graphics.dragging = false;
+			this.#setAxisSelected(false);
+			this.#axis = ManipulatorAxis.None;
 		});
 
 		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, () => this.size *= 1.1);

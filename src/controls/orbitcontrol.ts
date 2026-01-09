@@ -716,9 +716,11 @@ export class OrbitControl extends CameraControl {
 			return;
 		}
 
+		/*
 		if (event.detail.entity?.getLayer() ?? 0 > 0) {
 			return;
 		}
+		*/
 
 		// Prevent the browser from scrolling.
 		event.preventDefault();

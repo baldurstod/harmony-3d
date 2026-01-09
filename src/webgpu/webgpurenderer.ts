@@ -194,6 +194,8 @@ export class WebGPURenderer implements Renderer {
 
 				context.renderContext.pick?.resolve?.(closest);
 			});
+		} else {
+			context.renderContext.pick?.resolve?.(null);
 		}
 	}
 

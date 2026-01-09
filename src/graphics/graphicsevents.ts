@@ -11,6 +11,7 @@ export enum GraphicsEvent {
 	MouseDblClick = 'mousedblclick',
 	Wheel = 'wheel',
 	Resize = 'resize',
+	Pick = 'pick',
 	Tick = 'tick',
 	KeyDown = 'keydown',
 	KeyUp = 'keyup',
@@ -26,7 +27,7 @@ export interface GraphicTickEvent {
 	context: RenderContext,
 }
 
-export interface GraphicMouseEventData {
+export interface GraphicPickEvent {
 	x: number,
 	y: number,
 	width: number,
@@ -35,15 +36,21 @@ export interface GraphicMouseEventData {
 	mouseEvent: MouseEvent,
 }
 
+export interface GraphicMouseEventData {
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+	mouseEvent: MouseEvent,
+}
+
 export interface GraphicWheelEventData {
 	x: number,
 	y: number,
-	entity: Entity | null,
 	wheelEvent: WheelEvent,
 }
 
 export interface GraphicTouchEventData {
-	entity: Entity | null,
 	touchEvent: TouchEvent,
 }
 
@@ -55,35 +62,39 @@ export class GraphicsEvents extends StaticEventTarget {
 	static readonly isGraphicsEvents: true = true;
 
 	static tick(delta: number, time: Millisecond, speed: number, context: RenderContext) {
-		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta, time, speed, context} }));
+		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta, time, speed, context } }));
+	}
+
+	static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicPickEvent>(GraphicsEvent.Pick, { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } }));
 	}
 
 	static resize(width: number, height: number) {
 		this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
 	}
 
-	static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseDblClick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
 	}
 
-	static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+	static wheel(x: number, y: number, wheelEvent: WheelEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x: x, y: y, wheelEvent: wheelEvent } }));
 	}
 
 	static keyDown(keyboardEvent: KeyboardEvent) {
@@ -95,14 +106,14 @@ export class GraphicsEvents extends StaticEventTarget {
 	}
 
 	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchStart, { detail: { touchEvent: touchEvent } }));
 	}
 
 	static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchMove, { detail: { touchEvent: touchEvent } }));
 	}
 
 	static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchCancel, { detail: { touchEvent: touchEvent } }));
 	}
 }

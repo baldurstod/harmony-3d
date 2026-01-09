@@ -503,42 +503,43 @@ class Graphics {
 		this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
 			this.#pickedEntity = pickedEntity;
 			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
-			GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+			GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 		});
+		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event);
 	}
 
 	static #mouseMove(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event);
 	}
 
 	static #mouseUp(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event);
 	}
 
 	static #mouseClick(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
 	}
 
 	static #mouseDblClick(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
 	}
 
 	static #wheel(event: WheelEvent) {
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
+		GraphicsEvents.wheel(x, y, event);
 		this.#pickedEntity = null;
 		event.preventDefault();
 	}
