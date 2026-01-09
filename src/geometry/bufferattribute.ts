@@ -237,5 +237,5 @@ function getFormat(prefix: string, size: number): GPUVertexFormat {
 		case 4:
 			return prefix + 'x4' as GPUVertexFormat;
 	}
-	return 'uint32';
+	return prefix as GPUVertexFormat;
 }
