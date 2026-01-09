@@ -5,9 +5,14 @@ attribute float aParticleId;
 #include declare_attributes
 
 #include declare_matrix_uniforms
+#include declare_vertex_uv
+#include declare_vertex_skinning
 
 //uniform float uFaceCamera;
 uniform vec3 uCameraPosition;
+
+uniform mat4 uTexture2Transform;
+
 
 #include source_declare_particle
 
