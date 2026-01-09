@@ -71,9 +71,9 @@ export class Source1VvdLoader extends SourceBinaryLoader {
 			vertex.m_BoneWeights.weight[i] = reader.getFloat32();
 		}
 		for (let i = 0; i < MAX_NUM_BONES_PER_VERT; ++i) {
-			vertex.m_BoneWeights.bone[i] = reader.getInt8();
+			vertex.m_BoneWeights.bone[i] = reader.getUint8();
 		}
-		vertex.m_BoneWeights.numbones = reader.getInt8();
+		vertex.m_BoneWeights.numbones = reader.getUint8();
 
 		vertex.m_vecPosition = reader.getVector3();
 		vertex.m_vecNormal = reader.getVector3();
