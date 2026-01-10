@@ -16,13 +16,13 @@ fn vec3_transformQuat(a: vec3f, q: vec4f) -> vec3f {
 	let y: f32 = a.y;
 	let z: f32 = a.z;
 
-	let uvx: f32 = qy * z - qz * y;
-	let uvy: f32 = qz * x - qx * z;
-	let uvz: f32 = qx * y - qy * x;
+	var uvx: f32 = qy * z - qz * y;
+	var uvy: f32 = qz * x - qx * z;
+	var uvz: f32 = qx * y - qy * x;
 
-	let uuvx: f32 = qy * uvz - qz * uvy;
-	let uuvy: f32 = qz * uvx - qx * uvz;
-	let uuvz: f32 = qx * uvy - qy * uvx;
+	var uuvx: f32 = qy * uvz - qz * uvy;
+	var uuvy: f32 = qz * uvx - qx * uvz;
+	var uuvz: f32 = qx * uvy - qy * uvx;
 
 	let w2: f32 = qw * 2.0;
 	uvx *= w2;
