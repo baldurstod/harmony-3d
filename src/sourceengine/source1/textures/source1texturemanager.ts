@@ -185,6 +185,13 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 				format: webGPUFormat,
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 				textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
+			},
+			webgpuSamplerDescriptor: {
+				addressModeU: vtf.getAddressModeU(),
+				addressModeV: vtf.getAddressModeU(),
+				minFilter: 'linear',
+				magFilter: 'linear',
+				// TODO: added min / mag filter
 			}
 		});//TODOv3: add params
 		texture.properties.set('vtf', vtf);

@@ -1353,6 +1353,7 @@ declare class Channel {
 
              declare type CreateTextureParams_2 = Omit<TextureParams, 'format'> & {
                  webgpuDescriptor: HarmonyGPUTextureDescriptor;
+                 webgpuSamplerDescriptor?: GPUSamplerDescriptor;
                  needCubeMap?: boolean;
              };
 
@@ -7046,6 +7047,8 @@ declare class Channel {
                           isSRGB(): boolean;
                           getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
                           getWebGPUFormat(): GPUTextureFormat;
+                          getAddressModeU(): GPUAddressMode;
+                          getAddressModeV(): GPUAddressMode;
                       }
 
                       export declare class Source1VtxLoader extends SourceBinaryLoader {

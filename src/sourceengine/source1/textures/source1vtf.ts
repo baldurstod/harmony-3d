@@ -229,8 +229,8 @@ export class Source1Vtf {
 		//glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 		//glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
 
-		const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
-		const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+		const clampS = this.#getClampS();//(this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+		const clampT = this.#getClampT();//(this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
 
 		texture.width = mipmap.width;
 		texture.height = mipmap.height;
@@ -330,8 +330,8 @@ export class Source1Vtf {
 		//glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		//glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
-		const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
-		const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+		const clampS = this.#getClampS();//(this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+		const clampT = this.#getClampT();//(this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
 
 
 		const data0 = mipmap.frames[frame]?.[0];
@@ -627,6 +627,22 @@ export class Source1Vtf {
 			default:
 				return data;
 		}
+	}
+
+	#getClampS(): boolean {
+		return (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+	}
+
+	#getClampT(): boolean {
+		return (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+	}
+
+	getAddressModeU(): GPUAddressMode {
+		return this.#getClampS() ? 'clamp-to-edge' : 'repeat';
+	}
+
+	getAddressModeV(): GPUAddressMode {
+		return this.#getClampT() ? 'clamp-to-edge' : 'repeat';
 	}
 }
 

@@ -6842,7 +6842,7 @@ class TextureManager {
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         }*/);
         if (Graphics$1.isWebGPU) {
-            texture.sampler = WebGPUInternal.device.createSampler();
+            texture.sampler = WebGPUInternal.device.createSampler(textureParams.webgpuSamplerDescriptor);
             texture.width = textureParams.webgpuDescriptor.size.width;
             texture.height = textureParams.webgpuDescriptor.size.height;
         }
@@ -23512,8 +23512,8 @@ class Source1Vtf {
         //const webGLTexture = texture.texture;
         //glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         //glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
-        const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
-        const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+        const clampS = this.#getClampS(); //(this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+        const clampT = this.#getClampT(); //(this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         texture.width = mipmap.width;
         texture.height = mipmap.height;
         const data = mipmap.frames[frame]?.[face];
@@ -23597,8 +23597,8 @@ class Source1Vtf {
         }
         //glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         //glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
-        const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+        const clampS = this.#getClampS(); //(this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+        const clampT = this.#getClampT(); //(this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         const data0 = mipmap.frames[frame]?.[0];
         const data1 = mipmap.frames[frame]?.[1];
         const data2 = mipmap.frames[frame]?.[2];
@@ -23868,6 +23868,18 @@ class Source1Vtf {
             default:
                 return data;
         }
+    }
+    #getClampS() {
+        return (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+    }
+    #getClampT() {
+        return (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
+    }
+    getAddressModeU() {
+        return this.#getClampS() ? 'clamp-to-edge' : 'repeat';
+    }
+    getAddressModeV() {
+        return this.#getClampT() ? 'clamp-to-edge' : 'repeat';
     }
 }
 const IMAGE_FORMAT_RGBA8888 = 0;
@@ -50218,6 +50230,13 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
                 format: webGPUFormat,
                 usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
                 textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
+            },
+            webgpuSamplerDescriptor: {
+                addressModeU: vtf.getAddressModeU(),
+                addressModeV: vtf.getAddressModeU(),
+                minFilter: 'linear',
+                magFilter: 'linear',
+                // TODO: added min / mag filter
             }
         }); //TODOv3: add params
         texture.properties.set('vtf', vtf);

@@ -6,6 +6,7 @@ import { Texture, TextureParams } from './texture';
 
 export type CreateTextureParams = Omit<TextureParams, 'format'> & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptor;
+	webgpuSamplerDescriptor?: GPUSamplerDescriptor;
 	needCubeMap?: boolean;
 };
 
@@ -44,7 +45,7 @@ export class TextureManager {
 			usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
 		}*/);
 		if (Graphics.isWebGPU) {
-			texture.sampler = WebGPUInternal.device.createSampler();
+			texture.sampler = WebGPUInternal.device.createSampler(textureParams.webgpuSamplerDescriptor);
 			texture.width = textureParams.webgpuDescriptor.size.width;
 			texture.height = textureParams.webgpuDescriptor.size.height;
 		}
