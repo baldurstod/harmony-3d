@@ -535,22 +535,25 @@ export class Source1Vtf {
 		return new ImageData(datas, mipmapWidth, mipmapHeight);
 	}
 
-	getWebGPUFormat(): GPUTextureFormat {
+	getWebGPUFormat(allowSrgb: boolean): GPUTextureFormat {
 		// TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
+
+		const srgb = allowSrgb && this.isSRGB();
+
 		if (this.isDxtCompressed()) {
 			switch (this.highResImageFormat) {
 				case IMAGE_FORMAT_DXT1:
-					return 'bc1-rgba-unorm';
+					return srgb ? 'bc1-rgba-unorm-srgb' : 'bc1-rgba-unorm';
 				case IMAGE_FORMAT_DXT3:
-					return 'bc2-rgba-unorm';
+					return srgb ? 'bc2-rgba-unorm-srgb' : 'bc2-rgba-unorm';
 				case IMAGE_FORMAT_DXT5:
-					return 'bc3-rgba-unorm';
+					return srgb ? 'bc3-rgba-unorm-srgb' : 'bc3-rgba-unorm';
 				default:
 					errorOnce('WebGPU: unknown vtf format ' + this.highResImageFormat);
 					return 'bc3-rgba-unorm';
 			}
 		} else {
-			return 'rgba8unorm';
+			return srgb ? 'rgba8unorm-srgb' : 'rgba8unorm';
 		}
 	}
 

@@ -173,7 +173,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 		return;
 	}
 
-	const webGPUFormat = vtf.getWebGPUFormat();
+	const webGPUFormat = vtf.getWebGPUFormat(srgb);
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
 		const texture = TextureManager.createTexture({
 			webgpuDescriptor: {
