@@ -266,7 +266,7 @@ export class Source1Material extends Material {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, this.useSrgb ?? true));
+			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, this.useSrgb ?? true) ?? getDefaultTexture());
 		} else {
 			this.setColorMap(getDefaultTexture());
 		}
@@ -598,7 +598,7 @@ export class Source1Material extends Material {
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
 			const texture = this.getTexture(TextureRole.Color, this.repository, baseTexture, parameters['$frame'] ?? variables.get('$frame') ?? 0);
-			this.setColorMap(texture);
+			this.setColorMap(texture ?? getDefaultTexture());
 			// Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
 			this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
 		}

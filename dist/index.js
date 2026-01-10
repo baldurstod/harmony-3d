@@ -50661,7 +50661,7 @@ class Source1Material extends Material {
         }
         const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
-            this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, this.useSrgb ?? true));
+            this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, this.useSrgb ?? true) ?? getDefaultTexture());
         }
         else {
             this.setColorMap(getDefaultTexture());
@@ -50941,7 +50941,7 @@ class Source1Material extends Material {
         const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
             const texture = this.getTexture(TextureRole.Color, this.repository, baseTexture, parameters['$frame'] ?? variables.get('$frame') ?? 0);
-            this.setColorMap(texture);
+            this.setColorMap(texture ?? getDefaultTexture());
             // Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
             this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
         }
@@ -52612,10 +52612,10 @@ class UnlitTwoTextureMaterial extends Source1Material {
         this.#initialized = true;
         super.init();
         if (vmt['$texture2']) {
-            this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, vmt['$texture2'], vmt['$frame2'] ?? 0));
+            this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, vmt['$texture2'], vmt['$frame2'] ?? 0) ?? getDefaultTexture());
         }
         else {
-            this.setColor2Map(TextureManager.createCheckerTexture());
+            this.setColor2Map(getDefaultTexture());
         }
         this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         if (vmt['$additive'] == 1) {
@@ -52643,7 +52643,7 @@ class UnlitTwoTextureMaterial extends Source1Material {
         }
         {
             if (parameters['$texture2']) {
-                this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, parameters['$texture2'], parameters['$frame2'] ?? variables.get('$frame2') ?? 0));
+                this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, parameters['$texture2'], parameters['$frame2'] ?? variables.get('$frame2') ?? 0) ?? getDefaultTexture());
             }
         }
     }
