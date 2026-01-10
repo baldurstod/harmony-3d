@@ -329,7 +329,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 						face.push(str2abBGRA(s));
 						break;
 					case IMAGE_FORMAT_DXT1:
-						entrySize = Math.max(mipmapWidth * mipmapHeight * 0.5, 8); // 0.5 byte per pixel
+						entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4) * 0.5; // 0.5 byte per pixel
 						face.push(str2ab(reader, startingByte, entrySize));
 						startingByte += entrySize;
 						reader.skip(entrySize);
@@ -452,5 +452,5 @@ function str2abABGR(reader: BinaryReader, start: number, length: number): Uint8A
 		arr[i + 1] = arr[i + 2]!;
 		arr[i + 2] = temp;
 	}
-	return arr;
+	return arr as Uint8Array<ArrayBuffer>;
 }

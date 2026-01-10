@@ -137,7 +137,7 @@ function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: numbe
 	let entrySize = 0;
 	switch (imageFormat) {
 		case VtexImageFormat.Dxt1:
-			entrySize = Math.max(mipmapWidth * mipmapHeight * 0.5, 8); // 0.5 byte per pixel
+			entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4) * 0.5; // 0.5 byte per pixel
 			break;
 		case VtexImageFormat.Dxt5:
 			entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4); // 1 byte per pixel
