@@ -42,12 +42,6 @@ addWgslInclude('calculate_lights_setup_vars', calculate_lights_setup_vars);
 import calculate_silhouette_color from './calculate_silhouette_color.wgsl';
 addWgslInclude('calculate_silhouette_color', calculate_silhouette_color);
 
-import calculate_vertex_uv from './calculate_vertex_uv.wgsl';
-addWgslInclude('calculate_vertex_uv', calculate_vertex_uv);
-
-import calculate_vertex from './calculate_vertex.wgsl';
-addWgslInclude('calculate_vertex', calculate_vertex);
-
 import calculate_vertex_color from './calculate_vertex_color.wgsl';
 addWgslInclude('calculate_vertex_color', calculate_vertex_color);
 
@@ -68,3 +62,12 @@ addWgslInclude('calculate_vertex_skinning', calculate_vertex_skinning);
 
 import calculate_vertex_standard from './calculate_vertex_standard.wgsl';
 addWgslInclude('calculate_vertex_standard', calculate_vertex_standard);
+
+import calculate_vertex_uv from './calculate_vertex_uv.wgsl';
+addWgslInclude('calculate_vertex_uv', calculate_vertex_uv);
+
+import calculate_vertex_uv2 from './calculate_vertex_uv2.wgsl';
+addWgslInclude('calculate_vertex_uv2', calculate_vertex_uv2);
+
+import calculate_vertex from './calculate_vertex.wgsl';
+addWgslInclude('calculate_vertex', calculate_vertex);

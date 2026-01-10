@@ -9,5 +9,8 @@ Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
 import source1_spritecard from './source1_spritecard.wgsl';
 Shaders['source1_spritecard.wgsl'] = source1_spritecard;
 
+import source1_unlittwotexture from './source1_unlittwotexture.wgsl';
+Shaders['source1_unlittwotexture.wgsl'] = source1_unlittwotexture;
+
 import source1_vertexlitgeneric from './source1_vertexlitgeneric.wgsl';
 Shaders['source1_vertexlitgeneric.wgsl'] = source1_vertexlitgeneric;

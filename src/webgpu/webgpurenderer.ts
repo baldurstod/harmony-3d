@@ -1160,6 +1160,14 @@ export class WebGPURenderer implements Renderer {
 						groups.set(shaderTexture.group, shaderTexture.binding, { texture });
 					}
 					break;
+				case 'color2Texture':
+					{
+						const texture = (material.uniforms.color2Map as Texture | undefined);//?.texture as GPUTexture | undefined;
+						if (texture) {
+							groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+						}
+					}
+					break;
 				default:
 					{
 						const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
@@ -1180,6 +1188,14 @@ export class WebGPURenderer implements Renderer {
 					const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
 					if (sampler) {
 						groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+					}
+					break;
+				case 'color2Sampler':
+					{
+						const sampler = (material.uniforms.color2Map as Texture | undefined)?.sampler;
+						if (sampler) {
+							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+						}
 					}
 					break;
 				default:

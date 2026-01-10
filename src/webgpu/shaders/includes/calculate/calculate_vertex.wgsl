@@ -1,4 +1,7 @@
 let vertexPositionModelSpace: vec4f = vec4(position, 1.0);
+#ifndef HAS_NORMALS
+	let normal: vec3f = vec3(1., 0., 0.);
+#endif
 #ifdef REVERSE_CULLING
 	let vertexNormalModelSpace: vec4f = vec4(-normal, 0.0);
 #else
