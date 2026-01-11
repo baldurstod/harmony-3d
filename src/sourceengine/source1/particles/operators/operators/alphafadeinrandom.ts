@@ -1,3 +1,5 @@
+import { clamp } from '../../../../../math/functions';
+import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -19,28 +21,27 @@ export class AlphaFadeInRandom extends Source1ParticleOperator {
 	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const proportional = this.getParameter('proportional 0/1');
 
-		const fade_in_time_min = this.getParameter('fade in time min');
-		const fade_in_time_max = this.getParameter('fade in time max');
-		const m_flFadeInTimeExp = this.getParameter('fade in time exponent');
-
+		const fadeInTimeMin = this.getParameter('fade in time min') as number;
+		const fadeInTimeMax = this.getParameter('fade in time max') as number;
+		const m_flFadeInTimeExp = this.getParameter('fade in time exponent') as number;
 
 		//const fade_in_time = (fade_in_time_max - fade_in_time_min) * Math.random() + fade_in_time_min;
-		const fade_in_time = (fade_in_time_max - fade_in_time_min) * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeInTimeExp) + fade_in_time_min;
+		const fadeTimeWidth = fadeInTimeMax - fadeInTimeMin;
+		const fadeInTime = fadeTimeWidth * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeInTimeExp) + fadeInTimeMin;
 
-		let time;
+		let lifeTime;
 		if (proportional == 1 && particle.timeToLive) {
-			time = particle.currentTime / particle.timeToLive;
+			lifeTime = clamp(particle.currentTime / particle.timeToLive, 0, 1);
 		} else {
-			time = particle.currentTime;
+			lifeTime = particle.currentTime;
 		}
 
 		let d, d2
-		if (time < fade_in_time) {
-			d = fade_in_time;
-			if (d != 0) {
-				d2 = particle.startAlpha;
-				particle.alpha = d2 / d * (time);
-			}
+		if (lifeTime < fadeInTime) {
+			particle.alpha = SimpleSplineRemapValWithDeltasClamped(
+				lifeTime, 0,
+				fadeInTime, 1 / fadeInTime,
+				0, particle.startAlpha);
 		}
 	}
 }
