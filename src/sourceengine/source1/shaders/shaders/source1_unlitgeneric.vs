@@ -19,8 +19,11 @@ void main(void) {
 #ifdef HARDWARE_PARTICLES
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
-	vColor = p.color;
-	vColor = GammaToLinear(p.color);
+	#ifdef ADDITIVE
+		vColor = GammaToLinear(p.color);
+	#else
+		vColor = p.color;
+	#endif
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;

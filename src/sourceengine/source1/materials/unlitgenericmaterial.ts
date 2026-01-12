@@ -9,6 +9,7 @@ export class UnlitGenericMaterial extends Source1Material {
 
 	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(repository, path, vmt, params);
+		//this.useSrgb = false;
 
 		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
 		this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
@@ -25,6 +26,7 @@ export class UnlitGenericMaterial extends Source1Material {
 		if (vmt['$additive'] == 1) {
 			//this.setBlending('additive');
 			this.setBlending(MATERIAL_BLENDING_ADDITIVE);
+			this.setDefine('ADDITIVE');
 		}
 	}
 
