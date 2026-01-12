@@ -11,6 +11,7 @@ uniform float uFaceCamera;
 uniform vec3 uCameraPosition;
 
 #include source_declare_particle
+#include source1_declare_gamma_functions
 
 #include source1_varying_unlit_generic
 
@@ -19,6 +20,7 @@ void main(void) {
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
 	vColor = p.color;
+	vColor = GammaToLinear(p.color);
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;

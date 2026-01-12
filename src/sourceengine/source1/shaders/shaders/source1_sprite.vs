@@ -21,7 +21,7 @@ void main(void) {
 	#include source1_compute_particle_position
 	vColor = p.color;
 	vColor = GammaToLinear(p.color);
-	vColor = p.color;
+	//vColor = p.color;
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;

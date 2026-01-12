@@ -294,7 +294,7 @@ export class Source1Material extends Material {
 			//TODOv3 activate proper define in shader
 			//also add vertexcolor
 		}
-		if (vmt['$translucent'] == 1) {
+		if (translucent || vmt['$translucent'] == 1) {
 			this.setBlending(MATERIAL_BLENDING_NORMAL);
 			this.setDefine('IS_TRANSLUCENT');
 			translucent = true;

@@ -170,7 +170,7 @@ export class Material {
 					this.blend = false;
 					break;
 				case BlendingMode.Normal:
-					this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+					this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 					break;
 				case BlendingMode.Additive:
 					this.setTransparency(GL_SRC_ALPHA, GL_ONE);

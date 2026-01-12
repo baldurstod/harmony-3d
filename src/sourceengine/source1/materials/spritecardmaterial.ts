@@ -1,5 +1,5 @@
-import { RenderFace } from '../../../materials/constants';
-import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { BlendingMode, RenderFace } from '../../../materials/constants';
+import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA } from '../../../webgl/constants';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, Source1MaterialParams, Source1MaterialVmt } from './source1material';
 
@@ -32,12 +32,11 @@ export class SpriteCardMaterial extends Source1Material {
 			this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		} else {
 			if (vmt['$additive'] == 1) {
-				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
+				this.setBlending(BlendingMode.Additive);
 			} else {
-				this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				this.setBlending(BlendingMode.Normal);
 			}
 		}
-
 
 		// this material always has blending
 		//this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
