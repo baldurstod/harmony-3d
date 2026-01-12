@@ -451,6 +451,7 @@ class Graphics {
 		canvas.addEventListener('touchstart', this.#touchStartFunc);
 		canvas.addEventListener('touchmove', this.#touchMoveFunc);
 		canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+		canvas.addEventListener('contextmenu', (event: Event) => event?.preventDefault());
 		if (!canvas.hasAttribute('tabindex')) {
 			canvas.setAttribute('tabindex', "1");
 		}
