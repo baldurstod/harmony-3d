@@ -1978,11 +1978,11 @@ declare class Channel {
 
                       export declare function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): void;
 
-                      export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): void | Texture;
+                      export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): void;
 
-                      export declare function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap: boolean): Texture;
+                      export declare function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap: boolean): void;
 
-                      export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): Texture;
+                      export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): void;
 
                       export declare function fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void>;
 
@@ -7046,7 +7046,7 @@ declare class Channel {
                           isDxtCompressed(): boolean;
                           isSRGB(): boolean;
                           getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
-                          getWebGPUFormat(): GPUTextureFormat;
+                          getWebGPUFormat(allowSrgb: boolean): GPUTextureFormat;
                           getAddressModeU(): GPUAddressMode;
                           getAddressModeV(): GPUAddressMode;
                       }

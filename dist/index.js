@@ -6512,7 +6512,6 @@ function fillFlatTextureWebGL(texture, color, needCubeMap) {
             context$1.bindTexture(GL_TEXTURE_2D, null);
         }
     }
-    return texture;
 }
 /*
 export function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean) {
@@ -6624,17 +6623,16 @@ function fillNoiseTexture(texture, width = 64, height = 64, needCubeMap = false)
             context$1.bindTexture(GL_TEXTURE_2D, null);
         }
     }
-    return texture;
 }
 async function fillTextureWithImage(texture, image) {
     if (Graphics$1.isWebGPU) {
-        return fillTextureWithImageWebGPU(texture, image);
+        await fillTextureWithImageWebGPU(texture, image);
     }
     else {
-        return fillTextureWithImageWebGL(texture, image);
+        fillTextureWithImageWebGL(texture, image);
     }
 }
-async function fillTextureWithImageWebGL(texture, image) {
+function fillTextureWithImageWebGL(texture, image) {
     context$1.bindTexture(GL_TEXTURE_2D, texture.texture);
     context$1.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha);
     context$1.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, texture.flipY);
@@ -10943,9 +10941,24 @@ class ShadowMap {
                 }
             }
         }
-        blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
-        scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
+        if (blendCapability) {
+            WebGLRenderingState.enable(GL_BLEND);
+        }
+        else {
+            WebGLRenderingState.disable(GL_BLEND);
+        }
+        if (scissorCapability) {
+            WebGLRenderingState.enable(GL_SCISSOR_TEST);
+        }
+        else {
+            WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        }
+        if (depthCapability) {
+            WebGLRenderingState.enable(GL_DEPTH_TEST);
+        }
+        else {
+            WebGLRenderingState.disable(GL_DEPTH_TEST);
+        }
         WebGLRenderingState.clearColor(a$7);
         Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
     }
@@ -13174,6 +13187,7 @@ class Graphics {
         canvas.addEventListener('touchstart', this.#touchStartFunc);
         canvas.addEventListener('touchmove', this.#touchMoveFunc);
         canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+        canvas.addEventListener('contextmenu', (event) => event?.preventDefault());
         if (!canvas.hasAttribute('tabindex')) {
             canvas.setAttribute('tabindex', "1");
         }
@@ -23777,23 +23791,24 @@ class Source1Vtf {
         }
         return new ImageData(datas, mipmapWidth, mipmapHeight);
     }
-    getWebGPUFormat() {
+    getWebGPUFormat(allowSrgb) {
         // TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
+        const srgb = allowSrgb && this.isSRGB();
         if (this.isDxtCompressed()) {
             switch (this.highResImageFormat) {
                 case IMAGE_FORMAT_DXT1:
-                    return 'bc1-rgba-unorm';
+                    return srgb ? 'bc1-rgba-unorm-srgb' : 'bc1-rgba-unorm';
                 case IMAGE_FORMAT_DXT3:
-                    return 'bc2-rgba-unorm';
+                    return srgb ? 'bc2-rgba-unorm-srgb' : 'bc2-rgba-unorm';
                 case IMAGE_FORMAT_DXT5:
-                    return 'bc3-rgba-unorm';
+                    return srgb ? 'bc3-rgba-unorm-srgb' : 'bc3-rgba-unorm';
                 default:
                     errorOnce('WebGPU: unknown vtf format ' + this.highResImageFormat);
                     return 'bc3-rgba-unorm';
             }
         }
         else {
-            return 'rgba8unorm';
+            return srgb ? 'rgba8unorm-srgb' : 'rgba8unorm';
         }
     }
     #getWebGPUBytesPerRow(width) {
@@ -26889,7 +26904,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
     let entrySize = 0;
     switch (imageFormat) {
         case VtexImageFormat.Dxt1:
-            entrySize = Math.max(mipmapWidth * mipmapHeight * 0.5, 8); // 0.5 byte per pixel
+            entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4) * 0.5; // 0.5 byte per pixel
             break;
         case VtexImageFormat.Dxt5:
             entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4); // 1 byte per pixel
@@ -49981,7 +49996,7 @@ for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
                         face.push(str2abBGRA(s));
                         break;
                     case IMAGE_FORMAT_DXT1:
-                        entrySize = Math.max(mipmapWidth * mipmapHeight * 0.5, 8); // 0.5 byte per pixel
+                        entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4) * 0.5; // 0.5 byte per pixel
                         face.push(str2ab(reader, startingByte, entrySize));
                         startingByte += entrySize;
                         reader.skip(entrySize);
@@ -50218,7 +50233,7 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     if (!size) {
         return;
     }
-    const webGPUFormat = vtf.getWebGPUFormat();
+    const webGPUFormat = vtf.getWebGPUFormat(srgb);
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
         const texture = TextureManager.createTexture({
             webgpuDescriptor: {
@@ -50704,7 +50719,7 @@ class Source1Material extends Material {
             //TODOv3 activate proper define in shader
             //also add vertexcolor
         }
-        if (vmt['$translucent'] == 1) {
+        if (translucent || vmt['$translucent'] == 1) {
             this.setBlending(MATERIAL_BLENDING_NORMAL);
             this.setDefine('IS_TRANSLUCENT');
             translucent = true;
@@ -52459,7 +52474,9 @@ class SpriteCardMaterial extends Source1Material {
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
-        if (vmt['$color']) ;
+        if (vmt['$color']) {
+            this.useSrgb = false;
+        }
         // Disable back face culling
         this.renderFace(RenderFace.Both);
         this.colorMask[3] = 0.0;
@@ -52479,10 +52496,10 @@ class SpriteCardMaterial extends Source1Material {
         }
         else {
             if (vmt['$additive'] == 1) {
-                this.setTransparency(GL_SRC_ALPHA, GL_ONE);
+                this.setBlending(BlendingMode.Additive);
             }
             else {
-                this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                this.setBlending(BlendingMode.Normal);
             }
         }
         // this material always has blending
@@ -52595,6 +52612,7 @@ class UnlitGenericMaterial extends Source1Material {
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
+        //this.useSrgb = false;
         this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
         this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
     }
@@ -52608,6 +52626,7 @@ class UnlitGenericMaterial extends Source1Material {
         if (vmt['$additive'] == 1) {
             //this.setBlending('additive');
             this.setBlending(MATERIAL_BLENDING_ADDITIVE);
+            this.setDefine('ADDITIVE');
         }
     }
     clone() {
@@ -55268,25 +55287,21 @@ class AlphaFadeInRandom extends Source1ParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const proportional = this.getParameter('proportional 0/1');
-        const fade_in_time_min = this.getParameter('fade in time min');
-        const fade_in_time_max = this.getParameter('fade in time max');
+        const fadeInTimeMin = this.getParameter('fade in time min');
+        const fadeInTimeMax = this.getParameter('fade in time max');
         const m_flFadeInTimeExp = this.getParameter('fade in time exponent');
         //const fade_in_time = (fade_in_time_max - fade_in_time_min) * Math.random() + fade_in_time_min;
-        const fade_in_time = (fade_in_time_max - fade_in_time_min) * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeInTimeExp) + fade_in_time_min;
-        let time;
+        const fadeTimeWidth = fadeInTimeMax - fadeInTimeMin;
+        const fadeInTime = fadeTimeWidth * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeInTimeExp) + fadeInTimeMin;
+        let lifeTime;
         if (proportional == 1 && particle.timeToLive) {
-            time = particle.currentTime / particle.timeToLive;
+            lifeTime = clamp$1(particle.currentTime / particle.timeToLive, 0, 1);
         }
         else {
-            time = particle.currentTime;
+            lifeTime = particle.currentTime;
         }
-        let d, d2;
-        if (time < fade_in_time) {
-            d = fade_in_time;
-            if (d != 0) {
-                d2 = particle.startAlpha;
-                particle.alpha = d2 / d * (time);
-            }
+        if (lifeTime < fadeInTime) {
+            particle.alpha = SimpleSplineRemapValWithDeltasClamped(lifeTime, 0, fadeInTime, 1 / fadeInTime, 0, particle.startAlpha);
         }
     }
 }
@@ -55300,42 +55315,40 @@ class AlphaFadeOutRandom extends Source1ParticleOperator {
         this.addParam('fade out time max', PARAM_TYPE_FLOAT, 0.25);
         this.addParam('fade out time exponent', PARAM_TYPE_FLOAT, 1);
         this.addParam('proportional 0/1', PARAM_TYPE_BOOL, 1);
+        this.addParam('ease in and out', PARAM_TYPE_BOOL, 1);
         this.addParam('fade bias', PARAM_TYPE_FLOAT, 0.5); //Neutral bias
     }
     doOperate(particle, elapsedTime) {
         const proportional = this.getParameter('proportional 0/1');
-        const fade_out_time_min = this.getParameter('fade out time min');
-        const fade_out_time_max = this.getParameter('fade out time max');
-        this.getParameter('fade bias');
-        const m_flFadeOutTimeExp = this.getParameter('fade in time exponent');
-        const fade_out_time = (fade_out_time_max - fade_out_time_min) * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeOutTimeExp) + fade_out_time_min;
-        let time;
-        let start_fade_out_time;
+        const fadeOutTimeMin = this.getParameter('fade out time min');
+        const fadeOutTimeMax = this.getParameter('fade out time max');
+        const easeInAndOut = this.getParameter('ease in and out');
+        //const fadeBias = this.getParameter('fade bias');
+        const m_flFadeOutTimeExp = this.getParameter('fade out time exponent');
+        let fadeOutTime = (fadeOutTimeMax - fadeOutTimeMin) * Math.pow(ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset), m_flFadeOutTimeExp) + fadeOutTimeMin;
+        let lifeTime;
         let lifeSpan;
         if (proportional == 1) {
-            time = particle.currentTime / particle.timeToLive;
-            start_fade_out_time = 1 - fade_out_time;
-            lifeSpan = 1 - time;
+            lifeTime = particle.currentTime / particle.timeToLive;
+            fadeOutTime = 1 - fadeOutTime;
+            lifeSpan = 1 - fadeOutTime;
         }
         else {
-            time = particle.currentTime;
-            start_fade_out_time = particle.timeToLive - fade_out_time;
-            lifeSpan = particle.timeToLive - time;
+            lifeTime = particle.currentTime;
+            fadeOutTime = particle.timeToLive - fadeOutTime;
+            lifeSpan = particle.timeToLive - fadeOutTime;
         }
-        let alpha = 0;
-        switch (true) {
-            case time > start_fade_out_time:
-                const d = fade_out_time;
-                if (d != 0) {
-                    const d2 = particle.startAlpha;
-                    alpha = d2 * (lifeSpan);
-                }
-                break;
-            default:
-                alpha = particle.startAlpha;
-                break;
+        if (lifeTime > fadeOutTime) {
+            if (easeInAndOut) {
+                const newAlpha = SimpleSplineRemapValWithDeltasClamped(lifeTime, fadeOutTime, lifeSpan, 1 / lifeSpan, particle.startAlpha, 0 - particle.startAlpha);
+                particle.alpha = Math.max(0, newAlpha);
+            }
+            else {
+                const fl4Frac = 1 - clamp$1((particle.currentTime - fadeOutTime) / lifeSpan, 0, 1);
+                // TODO: add bias
+                particle.alpha = particle.startAlpha * fl4Frac;
+            }
         }
-        particle.alpha = alpha;
     }
 }
 Source1ParticleOperators.registerOperator(AlphaFadeOutRandom);
@@ -59233,7 +59246,11 @@ void main(void) {
 #ifdef HARDWARE_PARTICLES
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
-	vColor = GammaToLinear(p.color);
+	#ifdef ADDITIVE
+		vColor = GammaToLinear(p.color);
+	#else
+		vColor = p.color;
+	#endif
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;
@@ -59298,7 +59315,7 @@ void main(void) {
 	#define SOURCE1_PARTICLES
 	#include source1_compute_particle_position
 	vColor = GammaToLinear(p.color);
-	vColor = p.color;
+	//vColor = p.color;
 #else
 	#ifdef USE_VERTEX_COLOR
 		vColor = aVertexColor;
@@ -60303,9 +60320,9 @@ var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_tra
 
 var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
 
-var source1_spritecard = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * vColor.rgb * vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
+var source1_spritecard = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= fragInput.vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * fragInput.vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * fragInput.vColor.rgb * fragInput.vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
-var source1_unlittwotexture = "#define USE_COLOR_2_MAP\n\n#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t#include declare_vertex_standard_params\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n) -> VertexOut\n{\n#ifndef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\tlet normal: vec3f = vec3(1., 0., 0.);\n#endif\n\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_uv2\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\n\t/*\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * vColor.rgb * vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\t*/\n\tfragColor = texelColor * texelColor.a * texel2Color * texel2Color.a;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
+var source1_unlittwotexture = "#define USE_COLOR_2_MAP\n\n#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t#include declare_vertex_standard_params\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n) -> VertexOut\n{\n#ifndef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\tlet normal: vec3f = vec3(1., 0., 0.);\n#endif\n\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_uv2\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\n\tfragColor = texelColor * texelColor.a * texel2Color * texel2Color.a;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
 var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nlet diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\n//gl_FragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
@@ -75664,7 +75681,7 @@ addWgslInclude('rotation_matrix', rotation_matrix);
 
 var mat4_from_quat = "#pragma once\n/**\n * Calculates a 4x4 matrix from the given quaternion\n *\n * @param {ReadonlyQuat} q Quaternion to create matrix from\n *\n * @returns {mat4} out\n */\n\nfn mat4FromQuat(q: vec4f) -> mat4x4f {\n\tlet x: f32 = q.x;\n\tlet y: f32 = q.y;\n\tlet z: f32 = q.z;\n\tlet w: f32 = q.w;\n\n\tlet x2: f32 = x + x;\n\tlet y2: f32 = y + y;\n\tlet z2: f32 = z + z;\n\tlet xx: f32 = x * x2;\n\tlet yx: f32 = y * x2;\n\tlet yy: f32 = y * y2;\n\tlet zx: f32 = z * x2;\n\tlet zy: f32 = z * y2;\n\tlet zz: f32 = z * z2;\n\tlet wx: f32 = w * x2;\n\tlet wy: f32 = w * y2;\n\tlet wz: f32 = w * z2;\n\n\treturn mat4x4f(1. - yy - zz, yx + wz, zx - wy, 0., yx - wz, 1. - xx - zz, zy + wx, 0., zx + wy, zy - wx, 1. - xx - yy, 0., 0., 0., 0., 1.,);\n}\n";
 
-var vec3_transform_quat = "/**\n * Transforms the vec4 with a quat\n *\n * @param {vec4} out the receiving vector\n * @param {vec4} a the vector to transform\n * @param {quat} q quaternion to transform with\n * @returns {vec4} out\n */\nfn vec3_transformQuat(a: vec3f, q: vec4f) -> vec3f {\n\tlet qx: f32 = q.x;\n\tlet qy: f32 = q.y;\n\tlet qz: f32 = q.z;\n\tlet qw: f32 = q.w;\n\n\tlet x: f32 = a.x;\n\tlet y: f32 = a.y;\n\tlet z: f32 = a.z;\n\n\tlet uvx: f32 = qy * z - qz * y;\n\tlet uvy: f32 = qz * x - qx * z;\n\tlet uvz: f32 = qx * y - qy * x;\n\n\tlet uuvx: f32 = qy * uvz - qz * uvy;\n\tlet uuvy: f32 = qz * uvx - qx * uvz;\n\tlet uuvz: f32 = qx * uvy - qy * uvx;\n\n\tlet w2: f32 = qw * 2.0;\n\tuvx *= w2;\n\tuvy *= w2;\n\tuvz *= w2;\n\n\tuuvx *= 2.0;\n\tuuvy *= 2.0;\n\tuuvz *= 2.0;\n\n\treturn vec3f(x + uvx + uuvx, y + uvy + uuvy, z + uvz + uuvz);\n}\n";
+var vec3_transform_quat = "/**\n * Transforms the vec4 with a quat\n *\n * @param {vec4} out the receiving vector\n * @param {vec4} a the vector to transform\n * @param {quat} q quaternion to transform with\n * @returns {vec4} out\n */\nfn vec3_transformQuat(a: vec3f, q: vec4f) -> vec3f {\n\tlet qx: f32 = q.x;\n\tlet qy: f32 = q.y;\n\tlet qz: f32 = q.z;\n\tlet qw: f32 = q.w;\n\n\tlet x: f32 = a.x;\n\tlet y: f32 = a.y;\n\tlet z: f32 = a.z;\n\n\tvar uvx: f32 = qy * z - qz * y;\n\tvar uvy: f32 = qz * x - qx * z;\n\tvar uvz: f32 = qx * y - qy * x;\n\n\tvar uuvx: f32 = qy * uvz - qz * uvy;\n\tvar uuvy: f32 = qz * uvx - qx * uvz;\n\tvar uuvz: f32 = qx * uvy - qy * uvx;\n\n\tlet w2: f32 = qw * 2.0;\n\tuvx *= w2;\n\tuvy *= w2;\n\tuvz *= w2;\n\n\tuuvx *= 2.0;\n\tuuvy *= 2.0;\n\tuuvz *= 2.0;\n\n\treturn vec3f(x + uvx + uuvx, y + uvy + uuvy, z + uvz + uuvz);\n}\n";
 
 addWgslInclude('mat4_from_quat', mat4_from_quat);
 addWgslInclude('vec3_transform_quat', vec3_transform_quat);
