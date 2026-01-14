@@ -13,7 +13,7 @@ let context: WebGLAnyRenderingContext;
 
 export const TextureFactoryEventTarget = new EventTarget();
 
-export function setTextureFactoryContext(c: WebGLAnyRenderingContext) {
+export function setTextureFactoryContext(c: WebGLAnyRenderingContext): void {
 	context = c;
 }
 
@@ -47,7 +47,7 @@ export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTex
 	return texture;
 }
 
-export function deleteTexture(texture: WebGLTexture | GPUTexture | null) {
+export function deleteTexture(texture: WebGLTexture | GPUTexture | null): void {
 	if (!texture) {
 		return;
 	}
@@ -63,7 +63,7 @@ export function deleteTexture(texture: WebGLTexture | GPUTexture | null) {
 	}
 }
 
-export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTexture
+export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): void {//TODOv3: mutualize with fillCheckerTexture
 	if (Graphics.isWebGPU) {
 		return fillFlatTextureWebGPU(texture, color, needCubeMap);
 	} else {
@@ -71,7 +71,7 @@ export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boo
 	}
 }
 
-export function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTextureWebGL
+export function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap: boolean): void {//TODOv3: mutualize with fillCheckerTextureWebGL
 	const width = 64;
 	const height = 64;
 	if (texture) {
@@ -113,7 +113,6 @@ export function fillFlatTextureWebGL(texture: Texture, color: Color, needCubeMap
 			context.bindTexture(GL_TEXTURE_2D, null);
 		}
 	}
-	return texture;
 }
 
 /*
@@ -126,7 +125,7 @@ export function fillCheckerTexture(texture: Texture, color: Color, width: number
 }
 */
 
-export function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean) {
+export function fillCheckerTexture(texture: Texture, color: Color, width: number, height: number, needCubeMap: boolean): void {
 	/*
 	const byteArray = new Uint8Array(width * height * 3);
 	let pixelIndex = 0;
@@ -193,7 +192,7 @@ function fillCheckerTextureWebGL(/*byteArray: Uint8Array, */texture: Texture, co
 	}
 }
 
-export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap = false) {//TODO: do a proper noise
+export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap = false): void {//TODO: do a proper noise
 	if (texture) {
 		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
@@ -228,18 +227,17 @@ export function fillNoiseTexture(texture: Texture, width = 64, height = 64, need
 			context.bindTexture(GL_TEXTURE_2D, null);
 		}
 	}
-	return texture;
 }
 
 export async function fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void> {
 	if (Graphics.isWebGPU) {
-		return fillTextureWithImageWebGPU(texture, image);
+		await fillTextureWithImageWebGPU(texture, image);
 	} else {
-		return fillTextureWithImageWebGL(texture, image);
+		fillTextureWithImageWebGL(texture, image);
 	}
 }
 
-async function fillTextureWithImageWebGL(texture: Texture, image: HTMLImageElement): Promise<void> {
+function fillTextureWithImageWebGL(texture: Texture, image: HTMLImageElement): void {
 	context.bindTexture(GL_TEXTURE_2D, texture.texture);
 	context.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha);
 	context.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, texture.flipY);

@@ -17,7 +17,7 @@ const viewPort = vec4.create();
 
 export class ShadowMap {
 
-	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: InternalRenderContext) {
+	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: InternalRenderContext): void {
 		const lights = renderList.lights;
 
 		const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
@@ -62,9 +62,25 @@ export class ShadowMap {
 			}
 		}
 
-		blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
-		scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
-		depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
+		if (blendCapability) {
+			WebGLRenderingState.enable(GL_BLEND);
+		} else {
+			WebGLRenderingState.disable(GL_BLEND);
+		}
+
+		if (scissorCapability) {
+			WebGLRenderingState.enable(GL_SCISSOR_TEST);
+		} else {
+			WebGLRenderingState.disable(GL_SCISSOR_TEST);
+		}
+
+		if (depthCapability) {
+			WebGLRenderingState.enable(GL_DEPTH_TEST);
+		} else {
+			WebGLRenderingState.disable(GL_DEPTH_TEST);
+		}
+
+
 		WebGLRenderingState.clearColor(a);
 		Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
 	}

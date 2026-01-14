@@ -85,7 +85,7 @@ export class Texture {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);*/
 	}
 
-	setParameters(glContext: WebGLAnyRenderingContext, target: GLenum) {
+	setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void {
 		if (Graphics.isWebGLAny) {
 			glContext.bindTexture(target, this.texture);
 			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY);
@@ -111,7 +111,7 @@ export class Texture {
 	 * @param pixels Texture content.
 	 * @param level Texture lod
 	 */
-	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level = 0) {
+	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level = 0): void {
 		if (Graphics.isWebGLAny) {
 			glContext.bindTexture(target, this.texture);
 			glContext.texImage2D(target, level, this.internalFormat, width, height, 0, format, type, pixels);
@@ -123,7 +123,7 @@ export class Texture {
 		}
 	}
 
-	generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum) {
+	generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum): void {
 		if (Graphics.isWebGLAny) {
 			glContext.bindTexture(target, this.texture);
 			glContext.generateMipmap(target);
@@ -133,11 +133,11 @@ export class Texture {
 		}
 	}
 
-	clone() {
+	clone(): void {
 		return new Texture().copy(this);
 	}
 
-	copy(other: Texture) {
+	copy(other: Texture): void {
 		this.image = other.image;
 
 		this.#alphaBits = other.#alphaBits;
@@ -160,23 +160,23 @@ export class Texture {
 		this.dirty = true;//removeme ?
 	}
 
-	setAlphaBits(bits: number) {
+	setAlphaBits(bits: number): void {
 		this.#alphaBits = bits;
 	}
 
-	getAlphaBits() {
+	getAlphaBits(): number {
 		return this.#alphaBits;
 	}
 
-	hasAlphaChannel() {
+	hasAlphaChannel(): boolean {
 		return this.#alphaBits > 0;
 	}
 
-	getWidth() {
+	getWidth(): number {
 		return this.width;
 	}
 
-	getHeight() {
+	getHeight(): number {
 		return this.height;
 	}
 
@@ -184,24 +184,24 @@ export class Texture {
 		return type === 'Texture';
 	}
 
-	addUser(user: any) {
+	addUser(user: any): void {
 		this.#users.add(user);
 	}
 
-	removeUser(user: any) {
+	removeUser(user: any): void {
 		this.#users.delete(user);
 		this.dispose();
 	}
 
-	hasNoUser() {
+	hasNoUser(): boolean {
 		return this.#users.size == 0;
 	}
 
-	hasOnlyUser(user: any) {
+	hasOnlyUser(user: any): boolean {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
-	dispose() {
+	dispose():void {
 		if (this.hasNoUser()) {
 			if (TESTING) {
 				console.info('Texture has no more users, deleting', this);
