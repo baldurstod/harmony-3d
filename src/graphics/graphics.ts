@@ -1113,14 +1113,13 @@ class Graphics {
 	}
 
 	static #updateSize() {
-		if (!this.#canvas) {
-			return;
+		if (this.#canvas) {
+			this.#canvas.width = this.#width * this.#pixelRatio;
+			this.#canvas.height = this.#height * this.#pixelRatio;
 		}
-		this.#canvas.width = this.#width * this.#pixelRatio;
-		this.#canvas.height = this.#height * this.#pixelRatio;
 		if (this.#offscreenCanvas) {
-			this.#offscreenCanvas!.width = this.#canvas.width;
-			this.#offscreenCanvas!.height = this.#canvas.height;
+			this.#offscreenCanvas.width = this.#width * this.#pixelRatio;
+			this.#offscreenCanvas.height = this.#height * this.#pixelRatio;
 		}
 
 		//this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
