@@ -22,7 +22,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	static functionName = 'render_sprite_trail';
 	#texture?: Texture;
 	geometry?: BufferGeometry;
-	imgData?: Float32Array;
+	#imgData?: Float32Array;
 
 	constructor(system: Source1ParticleSystem) {
 		super(system);
@@ -86,9 +86,13 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 
 	initRenderer() {
+		const geometry = new BufferGeometry();
+		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
 		const maxParticles = Graphics.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
 		this.createParticlesArray(maxParticles);
-		this.#createParticlesTexture();
+		if (Graphics.isWebGLAny) {
+			this.#createParticlesTexture();
+		}
 		const vertices = [];
 		const uvs = [];
 		const indices = [];
@@ -105,7 +109,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		const vertexPosition = new Float32BufferAttribute(vertices, 3, 'position');
 		const textureCoord = new Float32BufferAttribute(uvs, 2, 'texCoord');
 		const particleId = new Float32BufferAttribute(id, 1, 'particleId');
-		const geometry = new BufferGeometry();
 		geometry.setIndex(new Uint32BufferAttribute(indices, 1, 'index'));
 		geometry.setAttribute('aVertexPosition', vertexPosition);
 		geometry.setAttribute('aTextureCoord', textureCoord);
@@ -113,11 +116,10 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 
 		geometry.count = indices.length;
 
-		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.mesh.setUniform('uParticles', this.#texture!);
+		//this.mesh.setUniform('uParticles', this.#texture!);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
@@ -127,7 +129,8 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 
 	createParticlesArray(maxParticles: number) {
-		this.imgData = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
+		this.#imgData = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
+		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
 	#createParticlesTexture() {
@@ -218,7 +221,9 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			index += 16;
 		}
 
-		this.#updateParticlesTexture(maxParticles, a);
+		if (Graphics.isWebGLAny) {
+			this.#updateParticlesTexture(maxParticles, a);
+		}
 	}
 
 	/*

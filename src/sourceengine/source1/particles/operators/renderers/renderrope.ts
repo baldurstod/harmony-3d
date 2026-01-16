@@ -22,7 +22,7 @@ export class RenderRope extends Source1ParticleOperator {
 	#maxParticles = 0;
 	#texture?: Texture;
 	geometry?: BeamBufferGeometry;
-	imgData?: Float32Array;
+	#imgData?: Float32Array;
 
 	constructor(system: Source1ParticleSystem) {
 		super(system);
@@ -84,8 +84,10 @@ export class RenderRope extends Source1ParticleOperator {
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('IS_ROPE');
 		this.mesh.setDefine('USE_VERTEX_COLOR');
-		this.#createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.#texture!);
+		if (Graphics.isWebGLAny) {
+			this.#createParticlesTexture();
+		}
+		//this.mesh.setUniform('uParticles', this.#texture!);
 
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
@@ -112,7 +114,8 @@ export class RenderRope extends Source1ParticleOperator {
 	}
 
 	#createParticlesArray() {
-		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
 	#createParticlesTexture() {
@@ -139,15 +142,15 @@ export class RenderRope extends Source1ParticleOperator {
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
 		if (Graphics.isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
 	#setupParticlesTexture(particleList: Source1Particle[]) {
-		const a = this.imgData!;
+		const a = this.#imgData!;
 
 		let index = 0;
 		for (const particle of particleList) {//TODOv3
@@ -174,7 +177,9 @@ export class RenderRope extends Source1ParticleOperator {
 			index += 16;
 		}
 
-		this.#updateParticlesTexture();
+		if (Graphics.isWebGLAny) {
+			this.#updateParticlesTexture();
+		}
 	}
 
 	dispose() {
