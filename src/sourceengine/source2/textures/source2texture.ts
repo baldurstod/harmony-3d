@@ -194,7 +194,7 @@ export class Source2Texture extends Source2File {
 			decodeNormals(datas);
 		}
 
-		return new ImageData(datas as ImageDataArray, imageWidth, imageHeight);
+		return new ImageData(datas as Uint8ClampedArray<ArrayBuffer>, imageWidth, imageHeight);
 	}
 
 	setCodec(codec: TextureCodec): void {

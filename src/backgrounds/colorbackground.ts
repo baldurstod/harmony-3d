@@ -1,7 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { Renderer } from '../renderers/renderer';
-import { BackGround, BackGroundIssue } from './background';
+import { BackGround, BackGroundResult } from './background';
 
 const tempVec3 = vec3.create();
 
@@ -20,7 +20,7 @@ export class ColorBackground extends BackGround {
 		}
 	}
 
-	render(renderer: Renderer, camera: Camera): BackGroundIssue {
+	render(renderer: Renderer, camera: Camera): BackGroundResult {
 		renderer.clearColor(this.#color);
 		renderer.clear(true, false, false);
 		return {

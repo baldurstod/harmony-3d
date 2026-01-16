@@ -1,7 +1,7 @@
 import { mat3, mat4, vec2, vec3 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
-import { BackGroundIssue } from '../backgrounds/background';
+import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -80,12 +80,12 @@ export class WebGPURenderer implements Renderer {
 		this.#prepareRenderList(renderList, scene, camera, delta, context);
 
 		//this.#shadowMap.render(this, renderList, camera, context);
-		let backGroundIssue: BackGroundIssue = { clearColor: false };
+		let backGroundResult: BackGroundResult = { clearColor: false };
 		if (scene.background) {
-			backGroundIssue = scene.background.render(this, camera, context);
+			backGroundResult = scene.background.render(this, camera, context);
 		}
 
-		this.#renderRenderList(renderList, camera, true, context, backGroundIssue.clearColor, backGroundIssue.clearValue);
+		this.#renderRenderList(renderList, camera, true, context, backGroundResult.clearColor, backGroundResult.clearValue);
 		++this.#frame;
 	}
 
