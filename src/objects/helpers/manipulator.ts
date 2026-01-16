@@ -161,7 +161,7 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+		GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event: Event) => {
 			const detail = (event as CustomEvent<GraphicPickEvent>).detail;
 			if (this.#entityAxis.has(detail.entity!)) {
 				this.#axis = this.#entityAxis.get(detail.entity!)!;

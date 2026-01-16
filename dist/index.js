@@ -8471,6 +8471,7 @@ class OrbitControl extends CameraControl {
     }
     #onMouseMove(event) {
         if (this.enabled === false) {
+            document.exitPointerLock();
             return;
         }
         event.preventDefault();
@@ -8495,9 +8496,6 @@ class OrbitControl extends CameraControl {
     #onMouseUp(event) {
         // In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
         setTimeout(() => document.exitPointerLock(), 100);
-        if (this.enabled === false) {
-            return;
-        }
         this.#state = STATE.NONE;
     }
     #onMouseWheel(event) {
@@ -9584,7 +9582,7 @@ class Manipulator extends Entity {
         this.enableZ = true;
         this.forEach((entity) => entity.setupPickingId());
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize(this.root?.activeCamera));
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
+        GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event) => {
             const detail = event.detail;
             if (this.#entityAxis.has(detail.entity)) {
                 this.#axis = this.#entityAxis.get(detail.entity);

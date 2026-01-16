@@ -763,6 +763,7 @@ export class OrbitControl extends CameraControl {
 
 	#onMouseMove(event: CustomEvent<GraphicMouseEventData>) {
 		if (this.enabled === false) {
+			document.exitPointerLock();
 			return;
 		}
 
@@ -786,11 +787,6 @@ export class OrbitControl extends CameraControl {
 	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
 		// In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
 		setTimeout(() => document.exitPointerLock(), 100);
-
-		if (this.enabled === false) {
-			return;
-		}
-
 		this.#state = STATE.NONE;
 	}
 
