@@ -8,7 +8,6 @@ import { Source1ParticleSystem } from './source1particlesystem';
 export class Source1ParticleControler {
 	static #loadManifestPromises: Record<string, Promise<boolean>> = {};
 	static speed = 1.0;
-	static visible?: boolean = true;
 	static #systemList: Record<string, Source1ParticleSystem> = {};//TODOv3: make map
 	static #activeSystemList = new Map<string, Source1ParticleSystem>();
 	static #pcfList: Record<string, SourcePCF> = {};
@@ -249,9 +248,5 @@ export class Source1ParticleControler {
 			repoList.push({ name: repoName, files: pcfList });
 		}
 		return { name: '', path: '', files: repoList };
-	}
-
-	static set renderSystems(renderSystems: boolean) {
-		this.visible = renderSystems ? undefined : false;
 	}
 }

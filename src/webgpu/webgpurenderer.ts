@@ -9,6 +9,7 @@ import { SceneNode } from '../entities/scenenode';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
+import { renderParticles } from '../graphics/render';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
@@ -18,6 +19,7 @@ import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';
 import { Scene } from '../scenes/scene';
 import { MAX_PARTICLES_IN_A_SYSTEM } from '../sourceengine/common/particles/constants';
+import { Source1ParticleSystem } from '../sourceengine/export';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { Texture } from '../textures/texture';
@@ -132,6 +134,11 @@ export class WebGPURenderer implements Renderer {
 
 		while (currentObject) {
 			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
+				currentObject = objectStack.shift();
+				continue;
+			}
+
+			if ((currentObject as Source1ParticleSystem).isParticleSystem && !renderParticles) {
 				currentObject = objectStack.shift();
 				continue;
 			}

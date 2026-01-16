@@ -51,7 +51,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		const maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.setVisible(Source1ParticleControler.visible);
 
 		let index = 0;
 		for (const particle of particleList) {

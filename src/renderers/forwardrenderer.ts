@@ -6,11 +6,13 @@ import { SceneNode } from '../entities/scenenode';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
+import { renderParticles } from '../graphics/render';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
+import { Source1ParticleSystem } from '../sourceengine/export';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLAnyRenderingContext } from '../types';
@@ -119,6 +121,11 @@ export class ForwardRenderer implements Renderer {
 
 		while (currentObject) {
 			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
+				currentObject = objectStack.shift();
+				continue;
+			}
+
+			if ((currentObject as Source1ParticleSystem).isParticleSystem && !renderParticles) {
 				currentObject = objectStack.shift();
 				continue;
 			}
