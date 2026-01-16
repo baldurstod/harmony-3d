@@ -9,7 +9,7 @@ export class CubeTexture extends Texture {
 		this.setImages(parameters.images);
 	}
 
-	setImages(images?: HTMLImageElement[]) {
+	setImages(images?: HTMLImageElement[]): void {
 		if (!images) {
 			return
 		}

@@ -1,6 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { Camera, CameraProjection } from '../cameras/camera';
-import { BufferAttribute, Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
@@ -86,7 +86,7 @@ export class RemGenerator {
 	}
 		*/
 
-	fromScene(scene: Scene, sigma = 0, near = 0.1, far = 100) {
+	fromScene(scene: Scene, sigma = 0, near = 0.1, far = 100): RenderTarget {
 		/*
 				_oldTarget = this.#renderer.getRenderTarget();
 				_oldActiveCubeFace = this.#renderer.getActiveCubeFace();
@@ -94,7 +94,7 @@ export class RemGenerator {
 				*/
 
 		this.#setSize(256);
-		const size = 256;
+		//const size = 256;
 
 		const cubeUVRenderTarget = this.#allocateTargets();
 		cubeUVRenderTarget.setDepthBuffer(true);
@@ -119,7 +119,7 @@ export class RemGenerator {
 	 * or HDR. The ideal input image size is 1k (1024 x 512),
 	 * as this matches best with the 256 x 256 cubemap output.
 	 */
-	fromEquirectangular(equirectangular: Texture, renderTarget?: RenderTarget) {
+	fromEquirectangular(equirectangular: Texture, renderTarget?: RenderTarget): RenderTarget {
 		if (!this.#equirectMaterial) {
 			this.#equirectMaterial = getEquirectMaterial();
 		}
@@ -132,7 +132,7 @@ export class RemGenerator {
 	 * or HDR. The ideal input cube size is 256 x 256,
 	 * as this matches best with the 256 x 256 cubemap output.
 	 */
-	fromCubemap(cubemap: CubeTexture, renderTarget?: RenderTarget) {
+	fromCubemap(cubemap: CubeTexture, renderTarget?: RenderTarget): RenderTarget {
 		if (!this.#cubemapMaterial) {
 			this.#cubemapMaterial = getCubemapMaterial();
 		}
@@ -144,12 +144,12 @@ export class RemGenerator {
 	 * Pre-compiles the cubemap shader. You can get faster start-up by invoking this method during
 	 * your texture's network fetch for increased concurrency.
 	 */
-	compileCubemapShader() {
+	compileCubemapShader(): void {
 
 		if (this.#cubemapMaterial === null) {
 
 			this.#cubemapMaterial = getCubemapMaterial();
-			this.#compileMaterial(this.#cubemapMaterial);
+			//this.#compileMaterial(this.#cubemapMaterial);
 
 		}
 
@@ -159,12 +159,12 @@ export class RemGenerator {
 	 * Pre-compiles the equirectangular shader. You can get faster start-up by invoking this method during
 	 * your texture's network fetch for increased concurrency.
 	 */
-	compileEquirectangularShader() {
+	compileEquirectangularShader(): void {
 
 		if (this.#equirectMaterial === null) {
 
 			this.#equirectMaterial = getEquirectMaterial();
-			this.#compileMaterial(this.#equirectMaterial);
+			//this.#compileMaterial(this.#equirectMaterial);
 
 		}
 
@@ -175,7 +175,7 @@ export class RemGenerator {
 	 * so you should not need more than one PMREMGenerator object. If you do, calling dispose() on
 	 * one of them will cause any others to also become unusable.
 	 */
-	dispose() {
+	dispose(): void {
 		this.#dispose();
 		this.#cubemapMaterial?.dispose();
 		this.#equirectMaterial?.dispose();
@@ -183,13 +183,13 @@ export class RemGenerator {
 
 	// private interface
 
-	#setSize(cubeSize: number) {
+	#setSize(cubeSize: number): void {
 		this.#lodMax = Math.floor(Math.log2(cubeSize));
 		this.#cubeSize = Math.pow(2, this.#lodMax);
 	}
 
 
-	#dispose() {
+	#dispose(): void {
 		if (this.#blurMaterial) {
 			this.#blurMaterial.removeUser(this);
 		}
@@ -204,7 +204,7 @@ export class RemGenerator {
 		this.#lodPlanes = [];
 	}
 
-	#cleanup(outputTarget: RenderTarget) {
+	#cleanup(outputTarget: RenderTarget): void {
 
 		//this.#renderer.setRenderTarget(_oldTarget, _oldActiveCubeFace, _oldActiveMipmapLevel);
 		//Graphics.pushRenderTarget();
@@ -213,7 +213,7 @@ export class RemGenerator {
 
 	}
 
-	#fromTexture(texture: AnyTexture, renderTarget?: RenderTarget) {
+	#fromTexture(texture: AnyTexture, renderTarget?: RenderTarget): RenderTarget {
 		let size: number;
 		if (texture.is('CubeTexture')) {
 			size = texture.getWidth();
@@ -237,7 +237,7 @@ export class RemGenerator {
 
 	}
 
-	#allocateTargets() {
+	#allocateTargets(): RenderTarget {
 
 		const width = 3 * Math.max(this.#cubeSize, 16 * 7);
 		const height = 4 * this.#cubeSize;
@@ -277,13 +277,14 @@ export class RemGenerator {
 
 	}
 
-	#compileMaterial(material: Material) {
+	/*
+	#compileMaterial(material: Material): void {
 		const tmpMesh = new Mesh({ geometry: this.#lodPlanes[0], material: material });
 		//this.#renderer.compile(tmpMesh, flatCamera);
-
 	}
+	*/
 
-	#sceneToCubeUV(scene: Scene, near: number, far: number, cubeUVRenderTarget: RenderTarget) {
+	#sceneToCubeUV(scene: Scene, near: number, far: number, cubeUVRenderTarget: RenderTarget): void {
 
 		const fov = 90;
 		const aspect = 1;
@@ -371,7 +372,7 @@ export class RemGenerator {
 
 	}
 
-	#textureToCubeUV(texture: Texture, cubeUVRenderTarget: RenderTarget) {
+	#textureToCubeUV(texture: Texture, cubeUVRenderTarget: RenderTarget): void {
 
 		const renderer = this.#renderer;
 
@@ -410,9 +411,9 @@ export class RemGenerator {
 
 	}
 
-	#applyPMREM(cubeUVRenderTarget: RenderTarget) {
+	#applyPMREM(cubeUVRenderTarget: RenderTarget): void {
 
-		const renderer = this.#renderer;
+		//const renderer = this.#renderer;
 		const autoClear = Graphics.autoClear;
 		Graphics.autoClear = false;
 
@@ -437,7 +438,7 @@ export class RemGenerator {
 	 * the poles) to approximate the orthogonally-separable blur. It is least
 	 * accurate at the poles, but still does a decent job.
 	 */
-	#blur(cubeUVRenderTarget: RenderTarget, lodIn: number, lodOut: number, sigma: number, poleAxis?: vec3) {
+	#blur(cubeUVRenderTarget: RenderTarget, lodIn: number, lodOut: number, sigma: number, poleAxis?: vec3): void {
 		if (!this.#pingPongRenderTarget) {
 			return;
 		}
@@ -462,7 +463,7 @@ export class RemGenerator {
 
 	}
 
-	#halfBlur(targetIn: RenderTarget, targetOut: RenderTarget, lodIn: number, lodOut: number, sigmaRadians: number, direction: string, poleAxis?: vec3) {
+	#halfBlur(targetIn: RenderTarget, targetOut: RenderTarget, lodIn: number, lodOut: number, sigmaRadians: number, direction: string, poleAxis?: vec3): void {
 		const renderer = this.#renderer;
 		if (!this.#blurMaterial) {
 			return;
@@ -550,8 +551,7 @@ export class RemGenerator {
 
 
 
-function createPlanes(lodMax: number) {
-
+function createPlanes(lodMax: number): { lodPlanes: BufferGeometry[]; sizeLods: number[]; sigmas: number[]; } {
 	const lodPlanes: BufferGeometry[] = [];
 	const sizeLods: number[] = [];
 	const sigmas: number[] = [];
@@ -641,7 +641,7 @@ function createPlanes(lodMax: number) {
 
 }
 
-function createRenderTarget(params: any) {
+function createRenderTarget(params: any): RenderTarget {
 	const cubeUVRenderTarget = new RenderTarget(params);
 	const renderTargetTexture = cubeUVRenderTarget.getTexture();
 	renderTargetTexture.mapping = TextureMapping.CubeUvMapping;
@@ -652,7 +652,7 @@ function createRenderTarget(params: any) {
 
 }
 
-function getBlurShader(lodMax: number, width: number, height: number) {
+function getBlurShader(lodMax: number, width: number, height: number): ShaderMaterial {
 
 	const weights = new Float32Array(MAX_SAMPLES);
 	const poleAxis = vec3.fromValues(0, 1, 0);
@@ -862,7 +862,7 @@ function getBlurShader(lodMax: number, width: number, height: number) {
 
 }
 
-function getEquirectMaterial() {
+function getEquirectMaterial(): ShaderMaterial {
 
 	return new ShaderMaterial({
 
@@ -917,7 +917,7 @@ function getEquirectMaterial() {
 
 }
 
-function getCubemapMaterial() {
+function getCubemapMaterial(): ShaderMaterial {
 
 	return new ShaderMaterial({
 
@@ -956,7 +956,7 @@ function getCubemapMaterial() {
 
 }
 
-function getCommonVertexShader() {
+function getCommonVertexShader(): string {
 
 	return /* glsl */`
 

@@ -76,29 +76,31 @@ class Source2TextureManagerClass {
 
 		if (!this.#texturesList.has(fullPath)) {
 			const animatedTexture = new AnimatedTexture();
-			const promise = new Promise<AnimatedTexture>(async resolve => {
-				const vtex = await this.getVtex(repository, path);
-				animatedTexture.properties.set('vtex', vtex);
-				//const texture = TextureManager.createTexture();//TODOv3: add params
-				const texture = TextureManager.createTexture({
-					webgpuDescriptor: {
-						size: {
-							width: vtex?.getWidth()  ?? 1,
-							height: vtex?.getHeight()  ?? 1,
-						},
-						format: 'rgba8unorm',
-						usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-					}
-				});//TODOv3: add params
+			const promise = new Promise<AnimatedTexture>(resolve => {
+				(async (): Promise<void> => {
+					const vtex = await this.getVtex(repository, path);
+					animatedTexture.properties.set('vtex', vtex);
+					//const texture = TextureManager.createTexture();//TODOv3: add params
+					const texture = TextureManager.createTexture({
+						webgpuDescriptor: {
+							size: {
+								width: vtex?.getWidth() ?? 1,
+								height: vtex?.getHeight() ?? 1,
+							},
+							format: 'rgba8unorm',
+							usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+						}
+					});//TODOv3: add params
 
-				if (vtex) {
-					this.#initTexture(texture, vtex);
-					if (vtex.spriteSheet) {
-						animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
+					if (vtex) {
+						this.#initTexture(texture, vtex);
+						if (vtex.spriteSheet) {
+							animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
+						}
 					}
-				}
-				animatedTexture.addFrame(0, texture);
-				resolve(animatedTexture);
+					animatedTexture.addFrame(0, texture);
+					resolve(animatedTexture);
+				})();
 			});
 			this.#loadingTexturesList.set(fullPath, promise);
 			await promise;
@@ -109,11 +111,11 @@ class Source2TextureManagerClass {
 		return this.#texturesList.get(fullPath)!;
 	}
 
-	setTexture(path: string, texture: AnimatedTexture) {
+	setTexture(path: string, texture: AnimatedTexture): void {
 		this.#texturesList.set(path, texture);
 	}
 
-	#initTexture(texture: Texture, vtexFile: Source2Texture) {
+	#initTexture(texture: Texture, vtexFile: Source2Texture): void {
 		const imageData = (vtexFile.blocks.DATA as Source2VtexBlock).imageData;
 		const imageFormat = vtexFile.getImageFormat();
 		if (imageData) {
@@ -136,7 +138,7 @@ class Source2TextureManagerClass {
 		}
 	}
 
-	#initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]) {
+	#initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]): void {
 		const glContext = Graphics.glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (formatCompression(imageFormat)) {
@@ -157,11 +159,11 @@ class Source2TextureManagerClass {
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 				break;
 			case TextureCompressionMethod.Bptc:
-				throw 'TODO';
+				throw new Error('TODO');
 				this.#fillTextureBptc(texture, width, height, imageData[0]);
 				break;
 			case TextureCompressionMethod.Rgtc:
-				throw 'TODO';
+				throw new Error('TODO');
 				this.#fillTextureRgtc(texture, width, height, imageData[0]);
 				break;
 			default:
@@ -209,7 +211,7 @@ class Source2TextureManagerClass {
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum) {
+	fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void {
 		const gl = Graphics.glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
@@ -229,7 +231,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum) {
+	fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void {
 		const gl = Graphics.glContext;
 		const s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
@@ -272,7 +274,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
+	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
 		const gl = Graphics.glContext;
 		const bptc = this.EXT_texture_compression_bptc;
 
@@ -306,7 +308,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
+	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
 		const gl = Graphics.glContext;
 		const rgtc = this.EXT_texture_compression_rgtc;
 
@@ -337,7 +339,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#cleanup() {
+	#cleanup(): void {
 		for (const [texturePath, texture] of this.#texturesList) {
 			if (texture.hasOnlyUser(this)) {
 				texture.removeUser(this);

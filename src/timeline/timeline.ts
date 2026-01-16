@@ -11,7 +11,7 @@ export class Timeline extends TimelineElement {
 
 	}
 
-	setParent(element: TimelineElement): void {
+	setParent(/*element: TimelineElement*/): void {
 		return;
 	}
 
@@ -19,11 +19,11 @@ export class Timeline extends TimelineElement {
 		return this.#root;
 	}
 
-	addChild(child: TimelineElement) {
+	addChild(child: TimelineElement): TimelineElement {
 		return this.#root.addChild(child);
 	}
 
-	getChilds() {
+	getChilds(): TimelineElement[] {
 		return this.#root.getChilds();
 	}
 }

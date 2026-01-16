@@ -7,7 +7,6 @@ import { Renderbuffer } from '../webgl/renderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { createTexture } from './texturefactory';
 import { TextureManager } from './texturemanager';
-import { WebGPUInternal } from '../graphics/webgpuinternal';
 
 export class RenderTarget {
 	#width = 0;
@@ -57,7 +56,7 @@ export class RenderTarget {
 		this.#create(width, height);
 	}
 
-	#create(width: number, height: number) {
+	#create(width: number, height: number): void {
 		this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this.#texture);
 		this.#createDepthBuffer(width, height);
 		if (this.#stencilBuffer) {///TODOv3
@@ -66,51 +65,51 @@ export class RenderTarget {
 		this.resize(width, height)
 	}
 
-	#createDepthBuffer(width: number, height: number) {
+	#createDepthBuffer(width: number, height: number): void {
 		if (this.#depthBuffer && !this.#depthRenderbuffer) {//TODOv3 DEPTH_STENCIL
 			this.#depthRenderbuffer = new Renderbuffer(GL_DEPTH_COMPONENT16, width, height);
 			this.#frameBuffer.addRenderbuffer(GL_DEPTH_ATTACHMENT, this.#depthRenderbuffer);
 		}
 	}
 
-	setDepthBuffer(depthBuffer: boolean) {
+	setDepthBuffer(depthBuffer: boolean): void {
 		this.#depthBuffer = depthBuffer;
 		this.#createDepthBuffer(this.#width, this.#height);
 	}
 
-	setScissorTest(scissorTest: boolean) {
+	setScissorTest(scissorTest: boolean): void {
 		this.#scissorTest = scissorTest;
 	}
 
-	getWidth() {
+	getWidth(): number {
 		return this.#width;
 	}
 
-	getHeight() {
+	getHeight(): number {
 		return this.#height;
 	}
 
-	getTexture() {
+	getTexture(): AnyTexture {
 		return this.#texture;
 	}
 
 	/**
 	 * @deprecated Please use `getTexture` instead.
 	 */
-	get texture() {
-		throw 'deprecated, use getTexture()';
+	get texture(): void {
+		throw new Error('deprecated, use getTexture()');
 	}
 
-	bind() {
+	bind(): void {
 		this.#frameBuffer.bind();
 		Graphics.setViewport(this.#viewport);
 	}
 
-	unbind() {
+	unbind(): void {
 		Graphics.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
 	}
 
-	resize(width: number, height: number) {
+	resize(width: number, height: number): void {
 		if (Graphics.isWebGLAny) {
 			this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
 		} else {
@@ -134,12 +133,12 @@ export class RenderTarget {
 		this.setViewport(0, 0, width, height);
 	}
 
-	setViewport(x: number, y: number, width: number, height: number) {
+	setViewport(x: number, y: number, width: number, height: number): void {
 		vec4.set(this.#viewport, x, y, width, height);
 		vec4.set(this.#scissor, x, y, width, height);
 	}
 
-	clone() {
+	clone(): RenderTarget {
 		const dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
 
 		//dest.texture = this.#texture.clone();
@@ -147,7 +146,7 @@ export class RenderTarget {
 		return dest;
 	}
 
-	dispose() {
+	dispose(): void {
 		this.#texture.removeUser(this);
 		this.#frameBuffer.dispose();
 	}

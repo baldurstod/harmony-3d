@@ -3,17 +3,17 @@ import { Texture } from './texture';
 export class AnimatedTexture extends Texture {
 	frames: Texture[] = [];
 
-	addFrame(frame: number, texture: Texture) {
+	addFrame(frame: number, texture: Texture): void {
 		this.frames[frame] = texture;
 		texture.addUser(this);
 	}
 
-	getFrame(frame: number) {
+	getFrame(frame: number): Texture | undefined {
 		frame = Math.floor(frame) % this.frames.length;
 		return this.frames[frame];//TODOv3 handle missing textures
 	}
 
-	hasOnlyUser(user: any) {
+	hasOnlyUser(user: any): boolean {
 		if (!super.hasOnlyUser(user)) {
 			return false;
 		}
@@ -26,7 +26,7 @@ export class AnimatedTexture extends Texture {
 		return true;
 	}
 
-	dispose() {
+	dispose(): void {
 		if (this.hasNoUser()) {
 			// Check if frames have other users
 			for (const frame of this.frames) {

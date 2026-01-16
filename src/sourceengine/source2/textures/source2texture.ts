@@ -26,6 +26,7 @@ export enum VtexImageFormat {
 }
 
 export enum TextureCodec {
+	Unknown = 0,
 	YCoCg = 1,
 	NormalizeNormals = 2,
 }
@@ -34,7 +35,7 @@ export class Source2Texture extends Source2File {
 	#vtexImageFormat: VtexImageFormat = VtexImageFormat.Unknown;// original image format
 	#compressionMethod = TextureCompressionMethod.Uncompressed;// TODO: remove
 	#imageFormat = ImageFormat.Unknown;
-	#codecs: number = 0;
+	#codecs = 0;
 	spriteSheet: SpriteSheet | null = null;
 
 	constructor(repository: string, path: string) {
@@ -68,9 +69,9 @@ export class Source2Texture extends Source2File {
 		}
 
 		switch (this.#vtexImageFormat) {
-			case 1://TODO DXT1
+			case VtexImageFormat.Dxt1:
 				return 1;
-			case 2://TODO DXT5
+			case VtexImageFormat.Dxt5:
 				return 5;
 		}
 		return 0;
@@ -82,7 +83,7 @@ export class Source2Texture extends Source2File {
 			return false;
 		}
 
-		return this.#vtexImageFormat <= 2;//DXT1 or DXT5
+		return this.#vtexImageFormat <= VtexImageFormat.Dxt5;//DXT1 or DXT5
 	}
 
 	isCubeTexture(): boolean {
@@ -153,7 +154,7 @@ export class Source2Texture extends Source2File {
 		return this.#imageFormat;
 	}
 
-	async getImageData(mipmap?: number, frame = 0, face = 0): Promise<ImageData | null> {
+	async getImageData(/*mipmap?: number, frame = 0, face = 0*/): Promise<ImageData | null> {
 		const imageData = (this.blocks.DATA as Source2VtexBlock).imageData[0];
 		const imageWidth = (this.blocks.DATA as Source2VtexBlock).width;
 		const imageHeight = (this.blocks.DATA as Source2VtexBlock).height;
@@ -193,7 +194,7 @@ export class Source2Texture extends Source2File {
 			decodeNormals(datas);
 		}
 
-		return new ImageData(datas, imageWidth, imageHeight);
+		return new ImageData(datas as ImageDataArray, imageWidth, imageHeight);
 	}
 
 	setCodec(codec: TextureCodec): void {
@@ -201,11 +202,11 @@ export class Source2Texture extends Source2File {
 	}
 
 	decodeYCoCg(): boolean {
-		return (this.#codecs & TextureCodec.YCoCg) == TextureCodec.YCoCg;
+		return ((this.#codecs & TextureCodec.YCoCg) as TextureCodec) == TextureCodec.YCoCg;
 	}
 
 	decodeNormalizeNormals(): boolean {
-		return (this.#codecs & TextureCodec.NormalizeNormals) == TextureCodec.NormalizeNormals;
+		return (this.#codecs & TextureCodec.NormalizeNormals) as TextureCodec == TextureCodec.NormalizeNormals;
 	}
 
 	setSpecialDependency(compilerIdentifier: string, string: string): void {

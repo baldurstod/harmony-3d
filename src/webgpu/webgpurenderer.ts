@@ -1,4 +1,4 @@
-import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
+import { mat3, mat4, vec2, vec3 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundIssue } from '../backgrounds/background';
@@ -43,7 +43,7 @@ type WgslModule = {
 
 type Binding = { buffer?: GPUBuffer, bufferType?: GPUBufferBindingType, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture, access?: GPUStorageTextureAccess, visibility?: GPUShaderStageFlags };
 
-const lightDirection = vec3.create();
+//const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
 const computeEntryPoint = 'compute_main';
@@ -89,19 +89,19 @@ export class WebGPURenderer implements Renderer {
 		++this.#frame;
 	}
 
-	renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
-		this.#renderRenderList(renderList, camera, renderLights, context, false, undefined, lightPos);
+	renderShadowMap(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext/*, lightPos?: vec3*/): void {
+		this.#renderRenderList(renderList, camera, renderLights, context, false, undefined/*, lightPos*/);
 	}
 
 	invalidateShaders(): void {
 		this.#materialsShaderModule.clear();
 	}
 
-	clear(color: boolean, depth: boolean, stencil: boolean): void {
+	clear(/*color: boolean, depth: boolean, stencil: boolean*/): void {
 		clearError();
 	}
 
-	clearColor(clearColor: vec4): void {
+	clearColor(/*clearColor: vec4*/): void {
 		clearColorError();
 	}
 
@@ -157,12 +157,12 @@ export class WebGPURenderer implements Renderer {
 		renderList.finish();
 	}
 
-	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, clearColor: boolean, clearValue?: GPUColorDict, lightPos?: vec3): void {
+	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, clearColor: boolean, clearValue?: GPUColorDict/*, lightPos?: vec3*/): void {
 		let clearDepth = true;
-		let pickPromises: Promise<[Mesh, number] | null>[] = [];
+		const pickPromises: Promise<[Mesh, number] | null>[] = [];
 
 		for (const child of renderList.opaqueList) {
-			const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+			const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
 			if (pickPromise) {
 				pickPromises.push(pickPromise);
 			}
@@ -172,7 +172,7 @@ export class WebGPURenderer implements Renderer {
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights, lightPos);
+				const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
 				if (pickPromise) {
 					pickPromises.push(pickPromise);
 				}
@@ -200,7 +200,7 @@ export class WebGPURenderer implements Renderer {
 		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true, lightPos?: vec3): Promise<[Mesh, number] | null> | void {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true/*, lightPos?: vec3*/): Promise<[Mesh, number] | null> | void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -290,7 +290,7 @@ export class WebGPURenderer implements Renderer {
 			material.beforeRender(camera);
 		}
 
-		let uniforms = new Map<string, BufferSource>();
+		const uniforms = new Map<string, BufferSource>();
 
 		uniforms.set('meshColor', material.color as BufferSource);
 
@@ -518,12 +518,12 @@ export class WebGPURenderer implements Renderer {
 		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		const colorIntensity = vec3.create();//TODO: do not create a vec3
 		const pointLights = renderList.pointLights;//scene.getChildList(PointLight);
-		const spotLights = renderList.spotLights;
+		//const spotLights = renderList.spotLights;
 
 		let shadow;
 		let pointLightId = 0;
-		const pointShadowMap = [];
-		const pointShadowMatrix = [];
+		//const pointShadowMap = [];
+		//const pointShadowMatrix = [];
 
 		for (const pointLight of pointLights) {
 			if (pointLight.isVisible()) {
@@ -564,9 +564,9 @@ export class WebGPURenderer implements Renderer {
 		//program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
 
 
-		let spotLightId = 0;
-		const spotShadowMap = [];
-		const spotShadowMatrix = [];
+		//let spotLightId = 0;
+		//const spotShadowMap = [];
+		//const spotShadowMatrix = [];
 		/*
 		for (const spotLight of spotLights) {
 			if (spotLight.isVisible()) {
@@ -664,7 +664,9 @@ export class WebGPURenderer implements Renderer {
 		let reflection
 		try {
 			reflection = new WgslReflect(source);
-		} catch (e) { }
+		} catch (e) {
+			errorOnce(`failed to reflect wgsl shader ${shaderName} ${e as string}`);
+		}
 
 		const attributes = new Map<string, number>();
 		if (reflection) {
@@ -991,7 +993,7 @@ export class WebGPURenderer implements Renderer {
 								}
 								break;
 							case 'cameraPosition':
-								bufferSource = camera?.position as BufferSource;
+								bufferSource = camera?.getPosition() as BufferSource;
 								break;
 							case 'resolution':
 								bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]) as BufferSource;// TODO: create float32 once and update it only on resolution change
@@ -1094,7 +1096,7 @@ export class WebGPURenderer implements Renderer {
 						let bufferSource: BufferSource | null = null;
 						switch (uniform.name) {
 							case 'cameraPosition':
-								bufferSource = camera?.position as BufferSource;
+								bufferSource = camera?.getPosition() as BufferSource;
 								break;
 							default:
 								errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
