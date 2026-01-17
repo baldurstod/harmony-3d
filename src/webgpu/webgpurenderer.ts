@@ -479,7 +479,7 @@ export class WebGPURenderer implements Renderer {
 
 		let stagingBuffer: GPUBuffer;
 		if (pick && this.#pickedPrimitive) {
-			stagingBuffer = device.createBuffer({
+			stagingBuffer = device.createBuffer({// TODO: destroy buffer
 				size: pickBufferSize,
 				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 			});
@@ -1267,19 +1267,26 @@ export class WebGPURenderer implements Renderer {
 						} else {
 							const storageBuffer = object?.getStorage(storage.name);
 							if (storageBuffer) {
-								const buffer = device.createBuffer({// TODO: don't recreate buffers each time
-									label: storage.name,
-									size: storage.size,
-									usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
-									mappedAtCreation: true,
-								});
+								//storageBuffer.buffer?.destroy();
 
-								new Float32Array(buffer.getMappedRange()).set(storageBuffer);// TODO: determinate the buffer type
-								buffer.unmap();
+								if (!storageBuffer.buffer) {
+									storageBuffer.buffer = device.createBuffer({
+										label: storage.name,
+										size: storage.size,
+										usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+										//mappedAtCreation: true,
+									});
+								}
+
+
+								device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length);
+
+								//new Float32Array(storageBuffer.buffer.getMappedRange()).set(storageBuffer.value);// TODO: determinate the buffer type
+								//storageBuffer.buffer.unmap();
 
 
 								//groups.set(storage.group, storage.binding, { storageTexture, access });
-								groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
+								groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
 							} else {
 								errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
 							}

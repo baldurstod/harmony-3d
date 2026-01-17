@@ -13,7 +13,7 @@ import { Raycaster } from '../raycasting/raycaster';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
-import { StorageValue } from '../webgpu/storage';
+import { StorageBuffer, StorageValue } from '../webgpu/storage';
 
 const tempVec3 = vec3.create();
 
@@ -48,7 +48,7 @@ export class Mesh extends Entity {
 	renderMode = GL_TRIANGLES;
 	isRenderable = true;
 	readonly uniforms: Record<string, any> = {};
-	readonly storage: Record<string, StorageValue> = {};
+	readonly storage: Record<string, StorageBuffer> = {};
 	defines = Object.create(null);
 	isMesh = true;
 
@@ -126,16 +126,20 @@ export class Mesh extends Entity {
 		delete this.uniforms[name];
 	}
 
-	getStorage(name: string): StorageValue | undefined {
+	getStorage(name: string): StorageBuffer | undefined {
 		return this.storage[name];
 	}
 
-	setStorage(name: string, uniform: StorageValue) {
-		this.storage[name] = uniform;
+	setStorage(name: string, value: StorageValue): void {
+		this.storage[name] = { value };
 	}
 
-	deleteStorage(name: string) {
-		delete this.storage[name];
+	deleteStorage(name: string): void {
+		const sto = this.storage[name];
+		if (sto) {
+			sto.buffer?.destroy();
+			sto.buffer = null;
+		}
 	}
 
 	setDefine(define: string, value: string | number = '') {
