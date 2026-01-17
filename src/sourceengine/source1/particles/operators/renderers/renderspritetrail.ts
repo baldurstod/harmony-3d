@@ -118,7 +118,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		//this.mesh.setUniform('uParticles', this.#texture!);
+		this.mesh.setUniform('uParticles', this.#texture!);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
@@ -176,7 +176,8 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 					*/
 
 
-		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
+		//const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
+		const a = this.#imgData!;
 		let index = 0;
 
 		const len = 0;

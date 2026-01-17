@@ -20,34 +20,32 @@ var a: vec3f;
 
 	//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);
 	let test: vec4f = vec4(position, 1.0) * p.radius * rotationMatrix(vec3(0.0, .0, 1.0), -p.roll * 1.0);
-	let vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);
+	var vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);
 	//vertexPositionModelSpace *= rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 100.0);
 
 	var vertexPositionCameraSpace: vec4f;// = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;
 
 
 #ifdef RENDER_SPRITE_TRAIL
-	vec3 vecDelta = p.vecDelta.xyz;
+	let vecDelta: vec3f = p.vecDelta.xyz;
 	//vecDelta = vec3(1.0, 1.0, 0.0);
-	vec3 aVertexPosition2;
+	var aVertexPosition2: vec3f;
 
 	a = cross(vec3(1.0, 0.0, 0.0), vecDelta);
-	q.xyz = a;
-	q.w = 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta);
+	q = vec4(a, 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta));
 
 	aVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w, 0.0, p.radius), normalize(q));
 
 	vertexPositionModelSpace = vec4(p.center + aVertexPosition2 + vecDelta * p.vecDelta.w * 0.0, 1.0);
 
 
-	vec3 test2 = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));
+	var test2: vec3f = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));
 	test2 = normalize(test2);
 
 
 	aVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w * 0.5, p.radius * 0.5, 0.0), normalize(q));
-	vec3 eyeDir = p.center - uCameraPosition;
-	q.xyz = vecDelta;
-	q.w = 1.0 + dot(eyeDir, a);
+	let eyeDir: vec3f = p.center - matrixUniforms.cameraPosition;
+	q = vec4(vecDelta, 1.0 + dot(eyeDir, a));
 
 #endif
 
@@ -55,34 +53,33 @@ var a: vec3f;
 #if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_ALIGNED
 #ifdef RENDER_SPRITE_TRAIL
 	//A + dot(AP,AB) / dot(AB,AB) * AB
-	vec3 A =  p.center;
-	vec3 B =  A + vecDelta;
-	vec3 P =  uCameraPosition;
-	vec3 AP = P-A;
-	vec3 AB = B-A;
+	var A: vec3f =  p.center;
+	var B: vec3f =  A + vecDelta;
+	let P: vec3f =  matrixUniforms.cameraPosition;
+	let AP: vec3f = P-A;
+	let AB: vec3f = B-A;
 
-	vec3 projPoint = A + dot(AP,AB) / dot(AB,AB) * AB;
+	let projPoint: vec3f = A + dot(AP,AB) / dot(AB,AB) * AB;
 
 
-	vec3 vDirToBeam = normalize(projPoint - uCameraPosition);
-	vec3 vTangentY = normalize(cross(vDirToBeam, vecDelta));
+	let vDirToBeam: vec3f = normalize(projPoint - matrixUniforms.cameraPosition);
+	var vTangentY: vec3f = normalize(cross(vDirToBeam, vecDelta));
 	vTangentY = test2;
 	vertexPositionModelSpace = vec4(aVertexPosition2 + vecDelta * p.vecDelta.w * 0.5, 1.0);
 
 
 	A = -vDirToBeam;
 	B = normalize(vecDelta);
-	mat3 M  = mat3(
+	let M: mat3x3f  = mat3x3f(
 1.0-B.x*B.x,-B.y*B.x,-B.z*B.x,
 -B.x*B.y,1.0-B.y*B.y,-B.z*B.y,
 -B.x*B.z,-B.y*B.z,1.0-B.z*B.z
 	    );
-	vec3 C = M * A;//B * (A * B / length(B)) / length(B);
+	let C: vec3f = M * A;//B * (A * B / length(B)) / length(B);
 
-	q.xyz = cross(vTangentY, C);
-	q.w = 1.0 + dot(vTangentY, C);
+	q = vec4(cross(vTangentY, C),1.0 + dot(vTangentY, C));
 	vertexPositionModelSpace = vec4_transformQuat(vertexPositionModelSpace, normalize(q));
-	vertexPositionModelSpace.xyz += p.center;
+	vertexPositionModelSpace = vec4(vertexPositionModelSpace.xyz + p.center, vertexPositionModelSpace.w);
 
 
 	//vertexPositionModelSpace.xyz = vertexPositionModelSpace.xyz + vTangentY * p.radius * 0.5;

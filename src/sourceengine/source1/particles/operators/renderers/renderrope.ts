@@ -87,7 +87,7 @@ export class RenderRope extends Source1ParticleOperator {
 		if (Graphics.isWebGLAny) {
 			this.#createParticlesTexture();
 		}
-		//this.mesh.setUniform('uParticles', this.#texture!);
+		this.mesh.setUniform('uParticles', this.#texture!);
 
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
