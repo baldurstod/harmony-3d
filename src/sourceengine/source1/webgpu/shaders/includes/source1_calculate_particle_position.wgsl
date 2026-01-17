@@ -122,16 +122,16 @@ var a: vec3f;
 #endif
 
 #if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_WORLD_Z_ALIGNED
-	mat4 yawMatrix = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);
+	let yawMatrix: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);
 
 	#ifdef IS_SPRITE_CARD_MATERIAL
-		mat4 rollMatrix = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);
+		let rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);
 	#else
-		mat4 rollMatrix = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);
+		let rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);
 	#endif
-	mat4 lookAt;
+	var lookAt: mat4x4f;
 
-	mat4 cpMat = mat4FromQuat(uOrientationControlPoint);
+	let cpMat: mat4x4f = mat4FromQuat(uOrientationControlPoint);
 
 	#if USE_PARTICLE_YAW == 1
 		lookAt = cpMat * yawMatrix * rollMatrix;

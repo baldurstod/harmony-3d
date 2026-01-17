@@ -1,5 +1,3 @@
-#define USE_COLOR_2_MAP
-
 #include matrix_uniforms
 #include common_uniforms
 #include declare_texture_transform
@@ -12,6 +10,7 @@
 #include declare_fragment_color_map
 #include declare_fragment_alpha_test
 
+@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;
 @group(0) @binding(x) var<uniform> uAddSelf: f32;
 
 #include declare_lights
@@ -57,17 +56,20 @@ struct VertexOut {
 
 @vertex
 fn vertex_main(
-	#include declare_vertex_standard_params
+	@location(x) position: vec3f,
+#ifdef HAS_NORMALS
+	// TODO: should we even have normals in this shader ?
+	@location(x) normal: vec3f,
+#endif
+	@location(x) texCoord: vec2f,
 #ifdef HARDWARE_PARTICLES
 	@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32
 #endif
+#ifdef USE_VERTEX_COLOR
+	@location(x) color: vec4f,
+#endif
 ) -> VertexOut
 {
-#ifndef HAS_NORMALS
-	// TODO: should we even have normals in this shader ?
-	let normal: vec3f = vec3(1., 0., 0.);
-#endif
-
 	var output : VertexOut;
 #ifdef HARDWARE_PARTICLES
 	#define SOURCE1_PARTICLES
@@ -75,13 +77,12 @@ fn vertex_main(
 	output.vColor = GammaToLinearVec4(p.color);
 #else
 	#ifdef USE_VERTEX_COLOR
-		output.vColor = aVertexColor;
+		output.vColor = color;
 	#else
 		output.vColor = vec4(1.0);
 	#endif
 
 	#include calculate_vertex_uv
-	#include calculate_vertex_uv2
 	#include calculate_vertex
 	#include calculate_vertex_skinning
 	#include calculate_vertex_projection
@@ -102,7 +103,11 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 
 	#include calculate_fragment_color_map
 
-	fragColor = texelColor * texelColor.a * texel2Color * texel2Color.a;
+	#if defined(USE_VERTEX_COLOR) || defined(HARDWARE_PARTICLES)
+		fragColor = texelColor * fragInput.vColor;
+	#else
+		fragColor = texelColor;
+	#endif
 
 	#include calculate_fragment_standard
 	#include output_fragment
