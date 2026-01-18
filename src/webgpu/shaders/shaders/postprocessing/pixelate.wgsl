@@ -1,7 +1,7 @@
 #include common_uniforms
 
 @group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;
-@group(0) @binding(x) var outTexture: texture_storage_2d<PRESENTATION_FORMAT, write>;
+@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;
 //@group(0) @binding(x) var<uniform> resolution : vec4f;
 @group(0) @binding(x) var<uniform> uHorizontalTiles: f32;
 
@@ -15,7 +15,7 @@ fn lum(pix: vec4f) -> f32 {
 
 
 fn computeSquarePixel(pos: vec2u) {
-	let sizef: vec2f = vec2f(resolution.xy);
+	let sizef: vec2f = vec2f(commonUniforms.resolution.xy);
 	let posf: vec2f = vec2f(pos);
 
 	let pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);
@@ -36,7 +36,7 @@ fn computeSquarePixel(pos: vec2u) {
 	var sampleUv: vec2f = cellId / uHorizontalTiles;
 	sampleUv.x *= sizef.y / sizef.x;
 
-	var v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
+	var v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 
@@ -44,13 +44,13 @@ fn computeSquarePixel(pos: vec2u) {
 fn computeDiamondPixel(pos: vec2u) {
 	let posf: vec2f = vec2f(pos);
 
-	let pixelWH: vec2f = vec2(uHorizontalTiles / resolution.xy);
+	let pixelWH: vec2f = vec2(uHorizontalTiles / commonUniforms.resolution.xy);
 
 	let xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;
 
-	let uv: vec2f = (posf - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;
+	let uv: vec2f = (posf - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;
 
-	let unit: f32 = 2.0 * uHorizontalTiles / resolution.y;
+	let unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;
 
 	let rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
@@ -60,22 +60,22 @@ fn computeDiamondPixel(pos: vec2u) {
 	let cellId: vec2f = uv - hexUv;
 
 	var sampleUv: vec2f = cellId / uHorizontalTiles;
-	sampleUv.x *= resolution.y / resolution.x;
+	sampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;
 
-	var v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * resolution.xy), vec2u(0), vec2u(resolution.xy - vec2(1.0))));
+	var v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2u(0), vec2u(commonUniforms.resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 
 fn computeRoundPixel1(pos: vec2u) {
-	let div: vec2f = vec2(uHorizontalTiles) * resolution.xy / resolution.y;
+	let div: vec2f = vec2(uHorizontalTiles) * commonUniforms.resolution.xy / commonUniforms.resolution.y;
 
 
-	let uv: vec2f = vec2f(pos)/resolution.xy;
+	let uv: vec2f = vec2f(pos)/commonUniforms.resolution.xy;
 	let uv2: vec2f = floor(uv*div)/div;
 
 	let diff: vec2f = (uv-uv2)*div;
 
-	var pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * resolution.xy));
+	var pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * commonUniforms.resolution.xy));
 
 	if ( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0) > 0.25) {
 
@@ -86,9 +86,9 @@ fn computeRoundPixel1(pos: vec2u) {
 		if (diff.x<0.5) { v2.x = -v2.x; }
 		if (diff.y<0.5) { v2.y = -v2.y; }
 
-		let p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * resolution.xy));
-		let p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * resolution.xy));
-		let p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * resolution.xy));
+		let p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * commonUniforms.resolution.xy));
+		let p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * commonUniforms.resolution.xy));
+		let p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * commonUniforms.resolution.xy));
 
 		if ( lum(p1) > lum(p2) ) {
 			pmax = p1;
@@ -115,9 +115,9 @@ fn computeRoundPixel1(pos: vec2u) {
 }
 
 fn computeRoundPixel2(pos: vec2u) {
-	let pixelSize: f32 = resolution.y / uHorizontalTiles;
+	let pixelSize: f32 = commonUniforms.resolution.y / uHorizontalTiles;
 	let U: vec2f = vec2f(pos) / pixelSize;
-	let div: vec2f = pixelSize / resolution.xy;
+	let div: vec2f = pixelSize / commonUniforms.resolution.xy;
 	let uv2: vec2f = floor(U)*div;
 	let diff: vec2f = fract(U);
 
@@ -125,17 +125,17 @@ fn computeRoundPixel2(pos: vec2u) {
 	if (fract( dot(floor(U),vec2(.5)) ) < .5)
 	{
 		//fragColor = T(0,0);
-		var v = textureLoad(colorTexture, vec2i(uv2 * resolution.xy));
+		var v = textureLoad(colorTexture, vec2i(uv2 * commonUniforms.resolution.xy));
 		textureStore(outTexture, pos, v);
 		return;
 	}
 
 	// neighbors
 	let pix: mat4x4f = mat4x4f(
-		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
-		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
-		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
-		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),
+		textureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),
 	);
 
 	//where is the biggest contrast ?
@@ -162,8 +162,8 @@ fn hexDist(p: vec2f) -> f32 {
 }
 
 fn computeHexagonPixel(pos: vec2u) {
-	let uv: vec2f = (vec2f(pos) - 0.5 * resolution.xy) / resolution.y * uHorizontalTiles;
-	let unit: f32 = 2.0 * uHorizontalTiles / resolution.y;
+	let uv: vec2f = (vec2f(pos) - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;
+	let unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;
 
 	const rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
@@ -173,11 +173,11 @@ fn computeHexagonPixel(pos: vec2u) {
 	let cellId: vec2f = uv - hexUv;
 
 	var sampleUv: vec2f = cellId / uHorizontalTiles;
-	sampleUv.x *= resolution.y / resolution.x;
-	//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy)).rgb, vec3(1.0 / 3.0));
+	sampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;
+	//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy)).rgb, vec3(1.0 / 3.0));
 	//fragColor = vec4(1.0);//vec4(smoothstep(unit, 0.0, hexDist(hexUv) - brightness * 0.5));
 	//fragColor.rgb *=textureLoad(colorTexture, sampleUv + 0.5).rgb;
-	var v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * resolution.xy));
+	var v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy));
 	textureStore(outTexture, pos, v);
 }
 
@@ -186,9 +186,9 @@ fn hash2( p: vec2f ) -> vec2f {
 }
 
 fn computeVoronoiPixel(pos: vec2u) {
-	var uv: vec2f = vec2f(pos) / resolution.xy;
+	var uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;
 
-	let pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));
+	let pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));
 
 	uv = (uv-0.5)/pixelating;
 
@@ -227,14 +227,14 @@ fn computeVoronoiPixel(pos: vec2u) {
 	uv = uv * pixelating+0.5;
 
 	//fragColor = textureLoad(colorTexture, uv);
-	var v = textureLoad(colorTexture, clamp(vec2i(uv * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
+	var v = textureLoad(colorTexture, clamp(vec2i(uv * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 
 }
 fn computeTrianglePixel(pos: vec2u) {
-	var uv: vec2f = vec2f(pos) / resolution.xy;
+	var uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;
 
-	let pixelating: vec2f = resolution.yx / resolution.y / uHorizontalTiles;
+	let pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;
 
 	uv = (uv - 0.5) / pixelating;
 	var uvTriangleSpace: vec2f = mat2x2f(1.0, 1.0, 0.6, -0.6) * uv;
@@ -244,7 +244,7 @@ fn computeTrianglePixel(pos: vec2u) {
 	}
 	uv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);
 
-	let v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * resolution.xy), vec2i(0), vec2i(resolution.xy - vec2(1.0))));
+	let v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));
 	textureStore(outTexture, pos, v);
 }
 

@@ -3,6 +3,7 @@ import { Graphics } from '../graphics/graphics2';
 import { RenderContext } from '../interfaces/rendercontext';
 import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
+import { WebGPUInternal } from '../graphics/webgpuinternal';
 
 const tempVec2 = vec2.create();
 
@@ -26,7 +27,14 @@ export class Composer {
 			await Graphics.ready;
 			if (!renderTarget) {
 				const rendererSize = Graphics.getSize();
-				renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
+				renderTarget = new RenderTarget({
+					width: rendererSize[0],
+					height: rendererSize[1],
+					depthBuffer: true,
+					stencilBuffer: true,
+					webgpuTextureFormat: 'rgba8unorm',
+					webgpuUsage: GPUTextureUsage.STORAGE_BINDING,
+				});
 				this.#setRenderTarget(renderTarget);
 			}
 		})();

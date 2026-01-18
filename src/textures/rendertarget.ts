@@ -10,7 +10,8 @@ import { TextureManager } from './texturemanager';
 
 export type CreateRenderTargetParams = {
 	texture?: AnyTexture,
-	webgpuFormat?: GPUTextureFormat,
+	webgpuTextureFormat?: GPUTextureFormat,
+	webgpuUsage?: GPUTextureUsageFlags,
 	width?: number;
 	height?: number;
 	internalFormat?: any;
@@ -34,6 +35,7 @@ export class RenderTarget {
 	#depthBuffer: boolean;
 	#stencilBuffer: boolean;
 	#depthTexture: boolean;
+	#params: CreateRenderTargetParams;
 
 	constructor(params: CreateRenderTargetParams = {}/*width, height, options = {}/*depth, stencil, texture*/) {
 		const width = params.width ?? 1;
@@ -44,9 +46,8 @@ export class RenderTarget {
 		} else {
 			this.#texture = TextureManager.createTexture({
 				webgpuDescriptor: {
-					//format: 'rgba8unorm',//WebGPUInternal.format,
-					format: 'rgba8unorm',//WebGPUInternal.format,
-					usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+					format: params.webgpuTextureFormat ?? 'rgba8unorm',
+					usage: params.webgpuUsage ?? GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 					size: { width, height },
 				},
 				internalFormat: params.internalFormat,
@@ -67,6 +68,8 @@ export class RenderTarget {
 		this.#depthTexture = params.depthTexture ?? false;
 
 		this.#create(width, height);
+
+		this.#params = { ...params };
 	}
 
 	#create(width: number, height: number): void {
@@ -152,7 +155,14 @@ export class RenderTarget {
 	}
 
 	clone(): RenderTarget {
-		const dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
+		const dest = new RenderTarget({
+			width: this.#width,
+			height: this.#height,
+			depthBuffer: this.#depthBuffer,
+			stencilBuffer: this.#stencilBuffer,
+			webgpuTextureFormat: this.#params.webgpuTextureFormat,
+			webgpuUsage: this.#params.webgpuUsage,
+		});
 
 		//dest.texture = this.#texture.clone();
 

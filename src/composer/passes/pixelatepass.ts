@@ -1,5 +1,6 @@
 import { Camera } from '../../cameras/camera';
 import { Graphics } from '../../graphics/graphics2';
+import { WebGPUInternal } from '../../graphics/webgpuinternal';
 import { RenderContext } from '../../interfaces/rendercontext';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
@@ -41,7 +42,8 @@ export class PixelatePass extends Pass {
 			Graphics.render(this.scene!, this.camera!, 0, context);
 			Graphics.popRenderTarget();
 		} else {
-			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();;
+			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
 			Graphics.compute(this.#material, context, context.width!, context.height);
 		}
 	}
