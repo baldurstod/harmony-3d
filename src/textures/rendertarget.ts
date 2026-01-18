@@ -8,6 +8,19 @@ import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { createTexture } from './texturefactory';
 import { TextureManager } from './texturemanager';
 
+export type CreateRenderTargetParams = {
+	texture?: AnyTexture,
+	webgpuFormat?: GPUTextureFormat,
+	width?: number;
+	height?: number;
+	internalFormat?: any;
+	format?: any;
+	type?: any;
+	depthBuffer?: boolean;
+	stencilBuffer?: boolean;
+	depthTexture?: boolean;
+};
+
 export class RenderTarget {
 	#width = 0;
 	#height = 0;
@@ -22,7 +35,7 @@ export class RenderTarget {
 	#stencilBuffer: boolean;
 	#depthTexture: boolean;
 
-	constructor(params: any = {}/*width, height, options = {}/*depth, stencil, texture*/) {
+	constructor(params: CreateRenderTargetParams = {}/*width, height, options = {}/*depth, stencil, texture*/) {
 		const width = params.width ?? 1;
 		const height = params.height ?? 1;
 
