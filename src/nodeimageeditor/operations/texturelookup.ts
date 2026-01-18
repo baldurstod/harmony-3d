@@ -4,7 +4,7 @@ import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
 import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
-import { Node } from '../node';
+import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
@@ -46,7 +46,7 @@ export class TextureLookup extends Node {
 		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
-	async operate(context: any = {}) {
+	async operate(context: NodeContext = {}) {
 		if (!this.material) {
 			return;
 		}

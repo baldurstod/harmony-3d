@@ -3,7 +3,7 @@ import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';
-import { Node } from '../node';
+import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
@@ -44,7 +44,7 @@ export class ApplySticker extends Node {
 		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
 
-	async operate(context: any = {}) {
+	async operate(context: NodeContext = {}) {
 		if (!this.material) {
 			return;
 		}

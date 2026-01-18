@@ -41,6 +41,10 @@ export type NodeEvent = {
 	value?: NodeParam;
 }
 
+export type NodeContext = {
+	previewSize?: number;
+}
+
 export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	#hasPreview = false;
 	readonly id = generateRandomUUID();
@@ -85,7 +89,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.outputs.get(outputId);
 	}
 
-	async operate(context: any = {}) {
+	async operate(context: NodeContext = {}) {
 		throw 'This function must be overriden';
 	}
 
@@ -172,7 +176,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		await this.validate();
 	}
 
-	async redraw(context: any = {}) {
+	async redraw(context: NodeContext = {}) {
 		await this.operate(context);
 		this.#redrawState = DrawState.Valid;
 	}
@@ -251,7 +255,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.dispatchEvent(new CustomEvent<NodeEvent>(NodeEventType.Any, { detail: { eventName: eventName } }));
 	}
 
-	updatePreview(context: any = {}) {
+	updatePreview(context: NodeContext = {}) {
 		const previewSize = context.previewSize ?? this.previewSize;
 		const renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
 		if (this.#previewRenderTarget) {

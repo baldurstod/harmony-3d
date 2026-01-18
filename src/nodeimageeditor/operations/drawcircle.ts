@@ -3,7 +3,7 @@ import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_COLOR, IO_TYPE_FLOAT, IO_TYPE_TEXTURE_2D, IO_TYPE_VEC2 } from '../inputoutput';
-import { Node } from '../node';
+import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { registerOperation } from '../operations';
@@ -27,7 +27,7 @@ export class DrawCircle extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate(context: any = {}) {
+	async operate(context: NodeContext = {}) {
 		if (!this.material) {
 			return;
 		}
