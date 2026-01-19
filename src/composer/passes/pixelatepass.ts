@@ -12,7 +12,7 @@ import { Pass } from '../pass';
 export class PixelatePass extends Pass {
 	#horizontalTiles = 0;
 	#pixelStyle = 0;
-	#material;
+	#material: ShaderMaterial;
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
