@@ -8,3 +8,6 @@ Shaders['palette.wgsl'] = palette;
 
 import pixelate from './pixelate.wgsl';
 Shaders['pixelate.wgsl'] = pixelate;
+
+import saturate from './saturate.wgsl';
+Shaders['saturate.wgsl'] = saturate;

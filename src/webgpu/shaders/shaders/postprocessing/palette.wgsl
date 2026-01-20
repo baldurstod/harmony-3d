@@ -38,8 +38,9 @@ const threshold: mat4x4f = mat4x4f(0., 8., 2., 10.,
 fn applyPalette(lum: f32) -> vec4f
 {
 	let l: f32 = floor(lum * f32(colors));
-	return palette[i32(lum)];
+	return palette[i32(l)];
 }
+
 @compute @workgroup_size(1) fn compute_main(
 	@builtin(global_invocation_id) id : vec3u
 	)
