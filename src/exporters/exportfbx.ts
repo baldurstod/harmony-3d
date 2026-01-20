@@ -341,53 +341,45 @@ function exportBone(fbxScene: FBXScene, bone: Bone, context: FbxContext, exporte
 	// Export this very bone
 	const exportedBones = context.exportedBones;
 	let fbxBone: FBXNode | undefined = exportedBones.get(bone);
-	if (fbxBone) {
-		// do nothing
-	} else {
+	if (!fbxBone) {
+		fbxBone = fbxManager.createObject('FBXNode', bone.name) as FBXNode;
+
+		const angles = vec3.create();
+		const transformedQuat = quat.create();
+		const transformedVec = vec3.create();
+
 		if (boneParentSkeletonBone) {
-			fbxBone = exportedBones.get(boneParentSkeletonBone);
-		}
-		if (fbxBone) {
-			exportedBones.set(bone, fbxBone);
-		} else {
-			fbxBone = fbxManager.createObject('FBXNode', bone.name) as FBXNode;
-
-			const angles = vec3.create();
-			const transformedQuat = quat.create();
-			const transformedVec = vec3.create();
-
-			if (boneParentSkeletonBone) {
-				if ((boneParent as Skeleton).isSkeleton) {
-					fbxBone.localTranslation.value = vec3.transformQuat(transformedVec, boneParentSkeletonBone.worldPos, ROTATE_Z);
-					quat.mul(transformedQuat, ROTATE_Z, boneParentSkeletonBone.worldQuat);
-					quatToEulerDeg(angles, transformedQuat);
-				} else {
-					fbxBone.localTranslation.value = boneParentSkeletonBone.position;
-					quatToEulerDeg(angles, boneParentSkeletonBone.quaternion);
-				}
+			if ((boneParent as Skeleton).isSkeleton) {
+				fbxBone.localTranslation.value = vec3.transformQuat(transformedVec, boneParentSkeletonBone.worldPos, ROTATE_Z);
+				quat.mul(transformedQuat, ROTATE_Z, boneParentSkeletonBone.worldQuat);
+				quatToEulerDeg(angles, transformedQuat);
 			} else {
-				if ((boneParent as Skeleton).isSkeleton) {
-					fbxBone.localTranslation.value = vec3.transformQuat(transformedVec, bone.worldPos, ROTATE_Z);
-					quat.mul(transformedQuat, ROTATE_Z, bone.worldQuat);
-					quatToEulerDeg(angles, transformedQuat);
-				} else {
-					fbxBone.localTranslation.value = bone.position;
-					quatToEulerDeg(angles, bone.quaternion);
-				}
+				fbxBone.localTranslation.value = boneParentSkeletonBone.position;
+				quatToEulerDeg(angles, boneParentSkeletonBone.quaternion);
 			}
-
-			meshPose.add(fbxBone, bone.boneMat, true);
-
-			fbxBone.localRotation.value = angles;
-
-
-			const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB) as FBXSkeleton;
-			fbxBone.nodeAttribute = fbxLimb;
-
-			fbxBone.parent = (boneParent && exportedBones.get(boneParent)) ?? fbxScene.rootNode;
-
-			exportedBones.set(bone, fbxBone);
+		} else {
+			if ((boneParent as Skeleton).isSkeleton) {
+				fbxBone.localTranslation.value = vec3.transformQuat(transformedVec, bone.worldPos, ROTATE_Z);
+				quat.mul(transformedQuat, ROTATE_Z, bone.worldQuat);
+				quatToEulerDeg(angles, transformedQuat);
+			} else {
+				fbxBone.localTranslation.value = bone.position;
+				quatToEulerDeg(angles, bone.quaternion);
+			}
 		}
+
+		meshPose.add(fbxBone, bone.boneMat, true);
+
+		fbxBone.localRotation.value = angles;
+
+
+		const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB) as FBXSkeleton;
+		fbxBone.nodeAttribute = fbxLimb;
+
+		fbxBone.parent = (boneParent && exportedBones.get(boneParent)) ?? fbxScene.rootNode;
+
+		exportedBones.set(bone, fbxBone);
+
 	}
 
 

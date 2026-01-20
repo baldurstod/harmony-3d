@@ -221,7 +221,7 @@ export declare class ApplySticker extends Node_2 {
     #private;
     inputTexture: Texture | null;
     constructor(editor: NodeImageEditor, params?: any);
-    operate(context?: any): Promise<void>;
+    operate(context?: NodeContext): Promise<void>;
     get title(): string;
     toString(tabs?: string): Promise<string>;
     dispose(): void;
@@ -255,12 +255,12 @@ export declare class AudioMixer {
 }
 
 export declare class BackGround {
-    render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundIssue;
+    render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundResult;
     dispose(): void;
     is(s: string): boolean;
 }
 
-declare type BackGroundIssue = {
+declare type BackGroundResult = {
     clearColor: boolean;
     clearValue?: GPUColorDict;
 };
@@ -1106,7 +1106,7 @@ declare class Channel {
              export declare class ColorBackground extends BackGround {
                  #private;
                  constructor(params?: ColorBackgroundParameters);
-                 render(renderer: Renderer, camera: Camera): BackGroundIssue;
+                 render(renderer: Renderer, camera: Camera): BackGroundResult;
                  setColor(color: vec4): void;
                  getColor(out?: vec4): void;
                  dispose(): void;
@@ -1146,7 +1146,7 @@ declare class Channel {
              export declare class CombineAdd extends Node_2 {
                  #private;
                  constructor(editor: NodeImageEditor, params?: any);
-                 operate(context?: any): Promise<void>;
+                 operate(context?: NodeContext): Promise<void>;
                  get title(): string;
                  dispose(): void;
              }
@@ -1154,7 +1154,7 @@ declare class Channel {
              export declare class CombineLerp extends Node_2 {
                  #private;
                  constructor(editor: NodeImageEditor, params?: any);
-                 operate(context?: any): Promise<void>;
+                 operate(context?: NodeContext): Promise<void>;
                  get title(): string;
                  dispose(): void;
              }
@@ -1339,6 +1339,20 @@ declare class Channel {
                  doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              }
 
+             declare type CreateRenderTargetParams = {
+                 texture?: AnyTexture;
+                 webgpuTextureFormat?: GPUTextureFormat;
+                 webgpuUsage?: GPUTextureUsageFlags;
+                 width?: number;
+                 height?: number;
+                 internalFormat?: any;
+                 format?: any;
+                 type?: any;
+                 depthBuffer?: boolean;
+                 stencilBuffer?: boolean;
+                 depthTexture?: boolean;
+             };
+
              export declare class CreateSequentialPath extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
@@ -1383,7 +1397,7 @@ declare class Channel {
              export declare class CubeBackground extends BackGround {
                  #private;
                  constructor(params?: any);
-                 render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundIssue;
+                 render(renderer: Renderer, camera: Camera, context: InternalRenderContext): BackGroundResult;
                  setTexture(texture: Texture): void;
                  dispose(): void;
                  is(s: string): boolean;
@@ -1588,7 +1602,7 @@ declare class Channel {
                   export declare class DrawCircle extends Node_2 {
                       #private;
                       constructor(editor: NodeImageEditor, params?: any);
-                      operate(context?: any): Promise<void>;
+                      operate(context?: NodeContext): Promise<void>;
                       get title(): string;
                       dispose(): void;
                   }
@@ -4163,7 +4177,7 @@ declare class Channel {
                           renderMode: number;
                           isRenderable: boolean;
                           readonly uniforms: Record<string, any>;
-                          readonly storage: Record<string, StorageValue>;
+                          readonly storage: Record<string, StorageBuffer>;
                           defines: any;
                           isMesh: boolean;
                           constructor(params: MeshParameters);
@@ -4186,8 +4200,8 @@ declare class Channel {
                           getUniform(name: string): any;
                           setUniform(name: string, uniform: UniformValue): void;
                           deleteUniform(name: string): void;
-                          getStorage(name: string): StorageValue | undefined;
-                          setStorage(name: string, uniform: StorageValue): void;
+                          getStorage(name: string): StorageBuffer | undefined;
+                          setStorage(name: string, value: StorageValue): void;
                           deleteStorage(name: string): void;
                           setDefine(define: string, value?: string | number): void;
                           removeDefine(define: string): void;
@@ -4411,7 +4425,7 @@ declare class Channel {
                       export declare class Multiply extends Node_2 {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: any): Promise<void>;
+                          operate(context?: NodeContext): Promise<void>;
                           get title(): string;
                           dispose(): void;
                       }
@@ -4432,7 +4446,7 @@ declare class Channel {
                           addOutput(outputId: string, outputType: number): Output;
                           getInput(inputId: string): Input | undefined;
                           getOutput(outputId: string): Output | undefined;
-                          operate(context?: any): Promise<void>;
+                          operate(context?: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
                           getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
@@ -4443,7 +4457,7 @@ declare class Channel {
                           invalidate(): void;
                           validate(): Promise<void>;
                           revalidate(): Promise<void>;
-                          redraw(context?: any): Promise<void>;
+                          redraw(context?: NodeContext): Promise<void>;
                           getInputCount(): number;
                           getType(): void;
                           ready(): Promise<boolean>;
@@ -4451,7 +4465,7 @@ declare class Channel {
                           hasSuccessor(): boolean;
                           successorsLength(): number;
                           get title(): string;
-                          updatePreview(context?: any): void;
+                          updatePreview(context?: NodeContext): void;
                           savePicture(filename?: string): Promise<void>;
                           saveVTF(filename?: string): Promise<void>;
                           toString(tabs?: string): Promise<string>;
@@ -4460,6 +4474,10 @@ declare class Channel {
                           get hasPreview(): boolean;
                       }
                       export { Node_2 as Node }
+
+                      declare type NodeContext = {
+                          previewSize?: number;
+                      };
 
                       declare type NodeEvent = {
                           eventName?: string;
@@ -4795,6 +4813,7 @@ declare class Channel {
                       }
 
                       export declare class PalettePass extends Pass {
+                          #private;
                           constructor(camera: Camera);
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
@@ -5580,6 +5599,8 @@ declare class Channel {
                           dispose(): void;
                       }
 
+                      export declare let renderParticles: boolean;
+
                       export declare class RenderPass extends Pass {
                           constructor(scene: Scene, camera: Camera);
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
@@ -5589,7 +5610,6 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           geometry?: BeamBufferGeometry;
-                          imgData?: Float32Array;
                           constructor(system: Source1ParticleSystem);
                           updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
                           set maxParticles(maxParticles: number);
@@ -5639,7 +5659,6 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           geometry?: BufferGeometry;
-                          imgData?: Float32Array;
                           constructor(system: Source1ParticleSystem);
                           updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
                           initRenderer(): void;
@@ -5649,7 +5668,7 @@ declare class Channel {
 
                       export declare class RenderTarget {
                           #private;
-                          constructor(params?: any);
+                          constructor(params?: CreateRenderTargetParams);
                           setDepthBuffer(depthBuffer: boolean): void;
                           setScissorTest(scissorTest: boolean): void;
                           getWidth(): number;
@@ -6026,7 +6045,7 @@ declare class Channel {
                       export declare class Select extends Node_2 {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: any): Promise<void>;
+                          operate(context?: NodeContext): Promise<void>;
                           get title(): string;
                           toString(tabs?: string): Promise<string>;
                           dispose(): void;
@@ -6163,6 +6182,8 @@ declare class Channel {
                           doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
                           isPreEmission(): boolean;
                       }
+
+                      export declare function setRenderParticles(render: boolean): void;
 
                       export declare class SetRigidAttachment extends Operator {
                           #private;
@@ -6715,7 +6736,6 @@ declare class Channel {
                       export declare class Source1ParticleControler {
                           #private;
                           static speed: number;
-                          static visible?: boolean;
                           static fixedTime?: number;
                           static setParticleConstructor(ps: typeof Source1ParticleSystem): void;
                           /**
@@ -6756,7 +6776,6 @@ declare class Channel {
                           static setInactive(system: Source1ParticleSystem): void;
                           static setSpeed(s: number): void;
                           static getSystemList(): Promise<FileSelectorFile>;
-                          static set renderSystems(renderSystems: boolean);
                       }
 
                       declare class Source1ParticleOperator {
@@ -7821,7 +7840,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#192@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -7855,7 +7874,7 @@ declare class Channel {
                           setImageFormat(imageFormat: VtexImageFormat): void;
                           getVtexImageFormat(): VtexImageFormat;
                           getImageFormat(): ImageFormat;
-                          getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
+                          getImageData(): Promise<ImageData | null>;
                           setCodec(codec: TextureCodec): void;
                           decodeYCoCg(): boolean;
                           decodeNormalizeNormals(): boolean;
@@ -8605,6 +8624,11 @@ declare class Channel {
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
                       }
 
+                      export declare type StorageBuffer = {
+                          value: StorageValue;
+                          buffer?: GPUBuffer | null;
+                      };
+
                       export declare type StorageValue = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array;
 
                       export declare function stringToQuat(s: string, q?: quat): quat;
@@ -8752,6 +8776,7 @@ declare class Channel {
                       export declare const TEXTURE_FORMAT_UNKNOWN = 0;
 
                       declare enum TextureCodec {
+                          Unknown = 0,
                           YCoCg = 1,
                           NormalizeNormals = 2
                       }
@@ -8835,7 +8860,7 @@ declare class Channel {
                           #private;
                           inputTexture: Texture | null;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: any): Promise<void>;
+                          operate(context?: NodeContext): Promise<void>;
                           get title(): string;
                           toString(tabs?: string): Promise<string>;
                           dispose(): void;
@@ -8947,7 +8972,7 @@ declare class Channel {
                           type: TimelineElementType.Timeline;
                           name: string;
                           constructor(name?: string);
-                          setParent(element: TimelineElement): void;
+                          setParent(): void;
                           getRoot(): TimelineGroup;
                           addChild(child: TimelineElement): TimelineElement;
                           getChilds(): TimelineElement[];
