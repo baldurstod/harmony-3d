@@ -29,16 +29,17 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		return vpcf;
 	}
 
-	async getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>) {
+	async getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem | null> {
 		vpcfPath = vpcfPath.replace(/\.vpcf_c/, '').replace(/\.vpcf/, '');
 		vpcfPath = vpcfPath + '.vpcf_c';
 		const vpcf = await this.#getVpcf(repository, vpcfPath);
 		if (vpcf) {
-			return getLoader('Source2ParticleLoader').getSystem(repository, vpcf, snapshotModifiers);
+			return (getLoader('Source2ParticleLoader') as typeof Source2ParticleLoader).getSystem(repository, vpcf, snapshotModifiers);
 		}
+		return null;
 	}
 
-	stepSystems(elapsedTime: number) {
+	stepSystems(elapsedTime: number): void {
 		if (elapsedTime) {
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
@@ -50,15 +51,15 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		}
 	}
 
-	setActive(system: Source2ParticleSystem) {
+	setActive(system: Source2ParticleSystem): void {
 		this.activeSystemList.add(system);
 	}
 
-	setInactive(system: Source2ParticleSystem) {
+	setInactive(system: Source2ParticleSystem): void {
 		this.activeSystemList.delete(system);
 	}
 
-	renderSystems(render: boolean) {
+	renderSystems(render: boolean): void {
 		this.visible = render ? undefined : false;
 	}
 
@@ -76,13 +77,13 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		return { name: '', path: '', files: repoList };
 	}
 
-	async loadManifests(...repositories: string[]) {
+	loadManifests(...repositories: string[]): void {
 		for (const repository of repositories) {
 			this.#fileList[repository] = undefined;
 		}
 	}
 
-	async #loadManifest(repositoryName: string) {
+	async #loadManifest(repositoryName: string): Promise<void> {
 
 		//const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
 		const response = await Repositories.getFileAsJson(repositoryName, 'particles_manifest.json');//TODO const
@@ -98,7 +99,6 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 			this.#fileList[repositoryName] = json.files;
 		}
 	}
-
 }
 
 export const Source2ParticleManager = new Source2ParticleManagerClass();

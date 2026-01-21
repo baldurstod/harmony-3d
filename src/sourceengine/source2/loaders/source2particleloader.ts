@@ -3,12 +3,12 @@ import { LOG, TESTING, VERBOSE } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Operator } from '../particles/operators/operator';
+import { OperatorParam } from '../particles/operators/operatorparam';
 import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
 import { ControlPointConfiguration, ControlPointConfigurationDriver, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES, SOURCE2_DEFAULT_RADIUS, Source2ParticleSystem } from '../particles/source2particlesystem';
 import { Source2File } from './source2file';
 import { Source2FileLoader } from './source2fileloader';
-import { OperatorParam } from '../particles/operators/operatorparam';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
@@ -156,8 +156,8 @@ async function initChildren(repository: string, systemArray: Source2ParticleSyst
 				if (m_ChildRef) {
 					const p = new Promise<boolean>(async resolve => {
 						const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
-						system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
 						if (system) {
+							system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
 							system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
 							system.startAfterDelay = m_flDelay;
 							systemArray[childIndex] = system;

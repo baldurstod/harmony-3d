@@ -5,7 +5,7 @@ const messagePerOperator = new Set<string>();
 
 const Source2ParticleOperators = new Map<string, typeof Operator>;
 
-export function RegisterSource2ParticleOperator(operatorName: string, operator: typeof Operator) {
+export function RegisterSource2ParticleOperator(operatorName: string, operator: typeof Operator): void {
 	Source2ParticleOperators.set(operatorName, operator);
 }
 

@@ -102,26 +102,26 @@ export class Source2Particle {
 			SetAttributeToConstant(PARTICLE_ATTRIBUTE_YAW, 0);*/
 	}
 
-	step(elapsedTime: number) {
+	step(elapsedTime: number): void {
 		this.currentTime += elapsedTime;
 		if (this.timeToLive) {
 			this.proportionOfLife = this.currentTime / this.timeToLive;
 		}
 	}
 
-	start() {
+	start(): void {
 		this.isAlive = true;
 		this.currentTime = 0;
 		this.proportionOfLife = 0;
 		this.trail = [];
 	}
 
-	die() {
+	die(): void {
 		this.isAlive = false;
 		this.modelName = '';
 	}
 
-	reset(id: number) {
+	reset(id: number): void {
 		this.id = id;
 		//this.firstRender = true;
 		this.currentTime = 0;
@@ -164,11 +164,11 @@ export class Source2Particle {
 		//mat4.identity(this.cpPreviousTransform);
 	}
 
-	setInitialField(field: number/*TODO: create a field enum*/, value: any, mulInitial = false) {
+	setInitialField(field: number/*TODO: create a field enum*/, value: any, mulInitial = false): void {
 		this.setField(field, value, mulInitial, true);
 	}
 
-	setField(field = 0, value: any, mulInitial = false, setInitial = false, additive = false) {
+	setField(field = 0, value: any, mulInitial = false, setInitial = false, additive = false): void {
 		// TODO: create setScalarfield / setvectorfield
 		if (isNaN(field)) { return; }
 		//console.log('Field ' + field + ' ' + value);
@@ -295,8 +295,7 @@ export class Source2Particle {
 				break;
 			default:
 				if (WARN) {
-					throw 'Unknown field ' + field;
-					console.warn('Unknown field ' + field);
+					throw new Error('Unknown field ' + String(field));
 				}
 		}
 	}
@@ -388,7 +387,7 @@ export class Source2Particle {
 					Source2Particle.consolePitch = true;
 				}
 				break;
-				//TODO: add missing fields
+			//TODO: add missing fields
 			default:
 				if (WARN) {
 					console.warn('Unknown field ' + field);
@@ -397,7 +396,7 @@ export class Source2Particle {
 		return 0;
 	}
 
-	getVectorField(out: vec3, field = 0, initial = false): vec3 {
+	getVectorField(out: vec3, field = 0/*, initial = false*/): vec3 {
 		switch (field) {
 			case PARTICLE_FIELD_POSITION:
 				vec3.copy(out, this.position);
@@ -420,7 +419,7 @@ export class Source2Particle {
 			case PARTICLE_FIELD_GLOW_RGB:
 				vec3.copy(out, this.glowRGB);
 				break;
-				//TODO: add missing fields
+			//TODO: add missing fields
 			default:
 				if (WARN) {
 					console.warn('Unknown field ' + field);
@@ -432,7 +431,7 @@ export class Source2Particle {
 	/**
 	 * @deprecated Please use getScalarField instead.
 	 */
-	getField(field = 0, initial = false) {
+	getField(field = 0, initial = false): number | vec3 | vec4 {
 		// TODO: create getScalarField / getVectorField
 
 		switch (field) {
@@ -511,7 +510,7 @@ export class Source2Particle {
 	/**
 	* TODO
 	*/
-	setInitialSequence(sequence: number) {
+	setInitialSequence(sequence: number): void {
 		this.sequence = sequence;
 		this.initialSequence = sequence;
 	}
@@ -519,21 +518,21 @@ export class Source2Particle {
 	/**
 	* TODO
 	*/
-	setInitialRadius(radius: number) {
+	setInitialRadius(radius: number): void {
 		this.radius = radius;
 		this.initialRadius = radius;
 	}
 	/**
 	* TODO
 	*/
-	setInitialTTL(timeToLive: number) {
+	setInitialTTL(timeToLive: number): void {
 		this.timeToLive = timeToLive;
 		this.initialTimeToLive = timeToLive;
 	}
 	/**
 	* TODO
 	*/
-	setInitialColor(color: vec4) {
+	setInitialColor(color: vec4): void {
 		this.color = color;
 		this.initialColor = color;
 	}
@@ -541,7 +540,7 @@ export class Source2Particle {
 	* Set particle initial rotation roll.
 	* @param {Number} roll Initial rotation roll.
 	*/
-	setInitialRoll(roll: number) {
+	setInitialRoll(roll: number): void {
 		this.rotationRoll = roll;
 		this.initialRoll = roll;
 	}
@@ -552,7 +551,7 @@ export class Source2Particle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getWorldPos(worldPos = vec3.create()) {
+	getWorldPos(worldPos = vec3.create()): vec3 {
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		//vec3.transformQuat(worldPos, this.position, quat.create());
 
@@ -570,7 +569,7 @@ export class Source2Particle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getLocalPos(worldPos = vec3.create()) {
+	getLocalPos(worldPos = vec3.create()): vec3 {
 		//worldPos = worldPos || vec3.create();
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		vec3.transformQuat(worldPos, this.position, quat.create());
