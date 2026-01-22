@@ -640,9 +640,11 @@ function initEntitySubmenu() {
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
 								const sys = await Source2ParticleManager.getSystem(repository, systemPath);
-								sys.name = systemName[systemName.length - 1];
-								sys.start();
-								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
+								if (sys) {
+									sys.name = systemName[systemName.length - 1]!;
+									sys.start();
+									(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
+								}
 							});
 						}
 					},
