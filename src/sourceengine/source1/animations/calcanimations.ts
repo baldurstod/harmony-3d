@@ -1,12 +1,15 @@
-import { quat, vec3, vec4 } from 'gl-matrix';
+import { mat4, quat, vec3, vec4 } from 'gl-matrix';
+import { float, int } from 'harmony-types';
 import { FLT_EPSILON } from '../../../math/constants';
 import { clamp, quatFromEulerRad, SimpleSpline } from '../../../math/functions';
 import { QuaternionIdentityBlend } from '../../../math/quaternion';
+import { MAXSTUDIOBONES } from '../constants/bones';
 import { Source1ModelInstance } from '../export';
 import { BONE_FIXED_ALIGNMENT, MdlBone } from '../loaders/mdlbone';
 import { MdlStudioAnim, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
 import { MdlStudioSeqDesc, STUDIO_AL_LOCAL, STUDIO_AL_NOBLEND, STUDIO_AL_POSE, STUDIO_AL_SPLINE, STUDIO_AL_XFADE } from '../loaders/mdlstudioseqdesc';
-import { MdlStudioAnimDesc, SourceMdl } from '../loaders/sourcemdl';
+import { MdlStudioAnimDesc, SourceMdl, StudioCompressedIkError, StudioLocalHierarchy } from '../loaders/sourcemdl';
+import { AngleQuaternion } from '../maps/mapentity';
 
 /**
  * Update buffers vertice count.
@@ -150,7 +153,7 @@ const SOURCE_MODEL_MAX_BONES = 256;
 function InitPose(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneMask: number): void {
 	if (pStudioHdr.pLinearBones === undefined) {
 		for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
-			if (true || pStudioHdr.boneFlags(i) & boneMask) {
+			if (true/*TODO: remove this*/ || pStudioHdr.boneFlags(i) & boneMask) {
 				const pbone = pStudioHdr.getBone(i);
 				pos[i] = pos[i] || vec3.create();//removeme
 				q[i] = q[i] || quat.create();//removeme
@@ -545,31 +548,23 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 	*/
 
 	//console.error(animdesc.numlocalhierarchy);
-	/*
-	if (false && animdesc.numlocalhierarchy) {//TODOv2
-		const boneToWorld = mat4.create();//TODOv2
-		let boneComputed;
 
-		for (let i = 0; i < animdesc.numlocalhierarchy; ++i) {
-			const pHierarchy = animdesc.pHierarchy(i);
+	if (animdesc.localHierarchy.length) {
+		const boneToWorld = allocBoneToWorld();//TODOv2
+		let boneComputed: CBoneBitList = new Map();
 
-			if (!pHierarchy) {
-				break;
-			}
-			/*
+		for (const pHierarchy of animdesc.localHierarchy) {
+			//const pHierarchy = animdesc.pHierarchy(i);
 
-			if (pStudioHdr.boneFlags(pHierarchy.iBone) & boneMask) {
-				if (pStudioHdr.boneFlags(pHierarchy.iNewParent) & boneMask) {
-					CalcLocalHierarchyAnimation(pStudioHdr, boneToWorld, boneComputed, pos, q, pbone, pHierarchy, pHierarchy.iBone, pHierarchy.iNewParent, cycle, iFrame, s, boneMask);
+			if (true/*TODO: remove this*/ || pStudioHdr.boneFlags(pHierarchy.bone) & boneMask) {
+				if (true/*TODO: remove this*/ || pStudioHdr.boneFlags(pHierarchy.newParent) & boneMask) {
+					calcLocalHierarchyAnimation(pStudioHdr, boneToWorld, boneComputed, pos, q, /*pbone, */pHierarchy, pHierarchy.bone, pHierarchy.newParent, cycle, iFrame, s, boneMask);
 				}
 			}
-				* /
-
 		}
 
 		//g_MatrixPool.Free(boneToWorld);TODOv2
 	}
-	*/
 }
 
 //-----------------------------------------------------------------------------
@@ -1655,22 +1650,23 @@ function ScaleBones(
 //-----------------------------------------------------------------------------
 // Purpose: translate animations done in a non-standard parent space
 //-----------------------------------------------------------------------------
-/*
-function CalcLocalHierarchyAnimation(
-	pStudioHdr,//const CStudioHdr * pStudioHdr,
-	boneToWorld: mat4,//matrix3x4_t * boneToWorld,
-	boneComputed,//CBoneBitList & boneComputed,
-	pos,//Vector * pos,
-	q,//Quaternion * q,
+
+type CBoneBitList = Map<int, boolean>;
+function calcLocalHierarchyAnimation(
+	pStudioHdr: SourceMdl,//const CStudioHdr * pStudioHdr,
+	boneToWorld: mat4[],//matrix3x4_t * boneToWorld,
+	boneComputed: CBoneBitList,//CBoneBitList & boneComputed,
+	pos: vec3[],//Vector * pos,
+	q: quat[],//Quaternion * q,
 	//const mstudioanimdesc_t &animdesc,
-	pbone,//const mstudiobone_t * pbone,
-	pHierarchy,//mstudiolocalhierarchy_t * pHierarchy,
-	iBone: number,//int iBone,
-	iNewParent: number,//int iNewParent,
-	cycle: number,//float cycle,
-	iFrame: number,//int iFrame,
-	flFraq: number,//float flFraq,
-	boneMask: number,//int boneMask
+	//pbone: MdlBone,//const mstudiobone_t * pbone,
+	pHierarchy: StudioLocalHierarchy,//mstudiolocalhierarchy_t * pHierarchy,
+	iBone: int,//int iBone,
+	iNewParent: int,//int iNewParent,
+	cycle: float,//float cycle,
+	iFrame: int,//int iFrame,
+	flFraq: int,//float flFraq,
+	boneMask: int,//int boneMask
 ): void {
 
 	let localPos = vec3.create();//Vector localPos;
@@ -1685,79 +1681,73 @@ function CalcLocalHierarchyAnimation(
 	let weight = 1;
 
 	// check to see if there's a ramp on the influence
-	if (pHierarchy -> tail - pHierarchy -> peak < 1.0f  )
-	{
-		float index = cycle;
+	if (pHierarchy.tail - pHierarchy.peak < 1.0) {
+		let index: float = cycle;
 
-		if (pHierarchy -> end > 1.0f && index < pHierarchy -> start)
-		index += 1.0f;
-
-		if (index < pHierarchy -> start)
-			return;
-		if (index >= pHierarchy -> end)
-			return;
-
-		if (index < pHierarchy -> peak && pHierarchy -> start != pHierarchy -> peak) {
-			weight = (index - pHierarchy -> start) / (pHierarchy -> peak - pHierarchy -> start);
+		if (pHierarchy.end > 1.0 && index < pHierarchy.start) {
+			index += 1.0;
 		}
-		else if (index > pHierarchy -> tail && pHierarchy -> end != pHierarchy -> tail) {
-			weight = (pHierarchy -> end - index) / (pHierarchy -> end - pHierarchy -> tail);
+
+		if (index < pHierarchy.start) {
+			return;
+		}
+		if (index >= pHierarchy.end) {
+			return;
+		}
+
+		if (index < pHierarchy.peak && pHierarchy.start != pHierarchy.peak) {
+			weight = (index - pHierarchy.start) / (pHierarchy.peak - pHierarchy.start);
+		} else if (index > pHierarchy.tail && pHierarchy.end != pHierarchy.tail) {
+			weight = (pHierarchy.end - index) / (pHierarchy.end - pHierarchy.tail);
 		}
 
 		weight = SimpleSpline(weight);
 	}
 
-	CalcDecompressedAnimation(pHierarchy -> pLocalAnim(), iFrame - pHierarchy -> iStart, flFraq, localPos, localQ);
+	calcDecompressedAnimation(pHierarchy.localAnim, iFrame - pHierarchy.iStart, flFraq, localPos, localQ);
 
-	BuildBoneChain(pStudioHdr, rootXform, pos, q, iBone, boneToWorld, boneComputed);
+	buildBoneChain(pStudioHdr, rootXform, pos, q, iBone, boneToWorld, boneComputed);
 
-	matrix3x4_t localXform;
-	AngleMatrix(localQ, localPos, localXform);
+	const localXform = mat4.fromRotationTranslation(mat4.create(), localQ, localPos);
+	//AngleMatrix(localQ, localPos, localXform);
 
 	if (iNewParent != -1) {
-		BuildBoneChain(pStudioHdr, rootXform, pos, q, iNewParent, boneToWorld, boneComputed);
-		ConcatTransforms(boneToWorld[iNewParent], localXform, boneToWorld[iBone]);
+		buildBoneChain(pStudioHdr, rootXform, pos, q, iNewParent, boneToWorld, boneComputed);
+		concatTransforms(boneToWorld[iNewParent]!, localXform, boneToWorld[iBone]!);
 	}
 	else {
 		boneToWorld[iBone] = localXform;
 	}
 
 	// back solve
-	Vector p1;
-	Quaternion q1;
-	int n = pbone[iBone].parent;
+	const p1 = vec3.create();
+	const q1 = quat.create();
+	const n: int = pStudioHdr.bones[iBone]?.parentBone ?? -1;
 	if (n == -1) {
-		if (weight == 1.0f)
-		{
-			MatrixAngles(boneToWorld[iBone], q[iBone], pos[iBone]);
-		}
-		else
-		{
-			MatrixAngles(boneToWorld[iBone], q1, p1);
-			QuaternionSlerp(q[iBone], q1, weight, q[iBone]);
-			pos[iBone] = Lerp(weight, p1, pos[iBone]);
+		if (weight == 1.0) {
+			matrixAngles(boneToWorld[iBone]!, q[iBone]!, pos[iBone]!);
+		} else {
+			matrixAngles(boneToWorld[iBone]!, q1, p1);
+			QuaternionSlerp(q[iBone]!, q1, weight, q[iBone]!);
+			vec3.lerp(pos[iBone]!, p1, pos[iBone]!, weight);//pos[iBone] = Lerp(weight, p1, pos[iBone]);
 		}
 	}
 	else {
-		matrix3x4_t worldToBone;
-		MatrixInvert(boneToWorld[n], worldToBone);
+		const worldToBone = mat4.create();
+		//MatrixInvert(boneToWorld[n], worldToBone);
+		mat4.invert(worldToBone, boneToWorld[n]!);
 
-		matrix3x4_t local;
-		ConcatTransforms(worldToBone, boneToWorld[iBone], local);
-		if (weight == 1.0f)
-		{
-			MatrixAngles(local, q[iBone], pos[iBone]);
-		}
-		else
-		{
-			MatrixAngles(local, q1, p1);
-			QuaternionSlerp(q[iBone], q1, weight, q[iBone]);
-			pos[iBone] = Lerp(weight, p1, pos[iBone]);
+		const local = mat4.create();
+		concatTransforms(worldToBone, boneToWorld[iBone]!, local);
+		if (weight == 1.0) {
+			matrixAngles(local, q[iBone]!, pos[iBone]!);
+		} else {
+			matrixAngles(local, q1, p1);
+			QuaternionSlerp(q[iBone]!, q1, weight, q[iBone]!);
+			vec3.lerp(pos[iBone]!, p1, pos[iBone]!, weight);//pos[iBone] = Lerp(weight, p1, pos[iBone]);
 		}
 	}
 }
-	*/
-
 
 
 //-----------------------------------------------------------------------------
@@ -1871,3 +1861,157 @@ function WorldSpaceSlerp(
 	g_MatrixPool.Free(targetBoneToWorld);
 }
 */
+
+function calcDecompressedAnimation(compressed: StudioCompressedIkError, iFrame: int, fraq: float, pos: vec3, q: quat): void {
+	if (fraq > 0.0001) {
+		const p1 = vec3.create();
+		const p2 = vec3.create();
+		//ExtractAnimValue(iFrame, compressed.#values[0], compressed.#scale[0], p1[0], p2[0]);
+		//ExtractAnimValue(iFrame, compressed.#values[1], compressed.#scale[1], p1[1], p2[1]);
+		//ExtractAnimValue(iFrame, compressed.#values[2], compressed.#scale[2], p1[2], p2[2]);
+		for (let i = 0; i < 3; i++) {
+			[p1[i], p2[i]] = compressed.getValues(iFrame, i as 0 | 1 | 2);
+		}
+		vec3.lerp(pos, p1, p2, fraq);
+
+		const q1 = quat.create();
+		const q2 = quat.create();
+		const angle1 = vec3.create();
+		const angle2 = vec3.create();
+		//ExtractAnimValue(iFrame, compressed.#values[3], compressed.#scale[3], angle1[0], angle2[0]);
+		//ExtractAnimValue(iFrame, compressed.#values[4], compressed.#scale[4], angle1[1], angle2[1]);
+		//ExtractAnimValue(iFrame, compressed.#values[5], compressed.#scale[5], angle1[2], angle2[2]);
+		for (let i = 0; i < 3; i++) {
+			[q1[i], q2[i]] = compressed.getValues(iFrame, i + 3 as 3 | 4 | 5);
+		}
+
+		if (angle1[0] != angle2[0] || angle1[1] != angle2[1] || angle1[2] != angle2[2]) {
+			AngleQuaternion(angle1, q1);
+			AngleQuaternion(angle2, q2);
+			QuaternionBlend(q1, q2, fraq, q);
+		}
+		else {
+			AngleQuaternion(angle1, q);
+		}
+	} else {
+		//ExtractAnimValue(iFrame, compressed.#values[0], compressed.#scale[0], pos[0]);
+		//ExtractAnimValue(iFrame, compressed.#values[1], compressed.#scale[1], pos[1]);
+		//ExtractAnimValue(iFrame, compressed.#values[2], compressed.#scale[2], pos[2]);
+		for (let i = 0; i < 3; i++) {
+			pos[i] = compressed.getValue(iFrame, i as 0 | 1 | 2);
+		}
+
+		const angle = vec3.create();
+		//ExtractAnimValue(iFrame, compressed.#values[3], compressed.#scale[3], angle[0]);
+		//ExtractAnimValue(iFrame, compressed.#values[4], compressed.#scale[4], angle[1]);
+		//ExtractAnimValue(iFrame, compressed.#values[5], compressed.#scale[5], angle[2]);
+
+		AngleQuaternion(angle, q);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: build boneToWorld transforms for a specific bone
+//-----------------------------------------------------------------------------
+function buildBoneChain(
+	pStudioHdr: SourceMdl,
+	rootxform: mat4,
+	pos: vec3[],
+	q: quat[],
+	iBone: int,
+	pBoneToWorld: mat4[],
+	boneComputed: CBoneBitList): void {
+	if (boneComputed.get(iBone)) {
+		return;
+	}
+
+	const bonematrix = mat4.create();
+	//QuaternionMatrix(q[iBone], pos[iBone], bonematrix);
+	mat4.fromRotationTranslation(bonematrix, q[iBone], pos[iBone]!);
+
+	const parent: int = pStudioHdr.bones[iBone]?.parentBone ?? -1;
+	if (parent == -1) {
+		concatTransforms(rootxform, bonematrix, pBoneToWorld[iBone]!);
+	}
+	else {
+		// evil recursive!!!
+		buildBoneChain(pStudioHdr, rootxform, pos, q, parent, pBoneToWorld, boneComputed);
+		concatTransforms(pBoneToWorld[parent]!, bonematrix, pBoneToWorld[iBone]!);
+	}
+	boneComputed.set(iBone, true);
+}
+
+
+
+function concatTransforms(in1: mat4, in2: mat4, out: mat4): void {
+	//fltx4 lastMask = * (fltx4 *)(& g_SIMD_ComponentMask[3]);
+	const rowA0: vec4 = vec4.fromValues(in1[0], in1[4], in1[8], in1[12]);
+	const rowA1: vec4 = vec4.fromValues(in1[1], in1[5], in1[9], in1[13]);
+	const rowA2: vec4 = vec4.fromValues(in1[2], in1[6], in1[10], in1[14]);
+
+	const rowB0: vec4 = vec4.fromValues(in2[0], in2[4], in2[8], in2[12]);//fltx4 rowB0 = LoadUnalignedSIMD(in2.m_flMatVal[0]);
+	const rowB1: vec4 = vec4.fromValues(in2[1], in2[5], in2[9], in2[13]);//fltx4 rowB1 = LoadUnalignedSIMD(in2.m_flMatVal[1]);
+	const rowB2: vec4 = vec4.fromValues(in2[2], in2[6], in2[10], in2[14]);//fltx4 rowB2 = LoadUnalignedSIMD(in2.m_flMatVal[2]);
+
+	// now we have the rows of m0 and the columns of m1
+	// first output row
+	let A0: vec4 = vec4.fromValues(rowA0[0], rowA0[0], rowA0[0], rowA0[0]);
+	let A1: vec4 = vec4.fromValues(rowA0[1], rowA0[1], rowA0[1], rowA0[1]);
+	let A2: vec4 = vec4.fromValues(rowA0[2], rowA0[2], rowA0[2], rowA0[2]);
+	const mul00: vec4 = vec4.mul(vec4.create(), A0, rowB0);
+	const mul01: vec4 = vec4.mul(vec4.create(), A1, rowB1);
+	const mul02: vec4 = vec4.mul(vec4.create(), A2, rowB2);
+	const out0: vec4 = vec4.add(vec4.create(), vec4.add(vec4.create(), mul00, mul01), mul02);
+
+	// second output row
+	A0 = vec4.fromValues(rowA1[0], rowA1[0], rowA1[0], rowA1[0]);//SplatXSIMD(rowA1);
+	A1 = vec4.fromValues(rowA1[1], rowA1[1], rowA1[1], rowA1[1]);//SplatYSIMD(rowA1);
+	A2 = vec4.fromValues(rowA1[2], rowA1[2], rowA1[2], rowA1[2]);//SplatZSIMD(rowA1);
+	const mul10: vec4 = vec4.mul(vec4.create(), A0, rowB0);
+	const mul11: vec4 = vec4.mul(vec4.create(), A1, rowB1);
+	const mul12: vec4 = vec4.mul(vec4.create(), A2, rowB2);
+	const out1: vec4 = vec4.add(vec4.create(), vec4.add(vec4.create(), mul10, mul11), mul12);//AddSIMD(mul10, AddSIMD(mul11, mul12));
+
+	// third output row
+	A0 = vec4.fromValues(rowA2[0], rowA2[0], rowA2[0], rowA2[0]);//SplatXSIMD(rowA2);
+	A1 = vec4.fromValues(rowA2[1], rowA2[1], rowA2[1], rowA2[1]);//SplatYSIMD(rowA2);
+	A2 = vec4.fromValues(rowA2[2], rowA2[2], rowA2[2], rowA2[2]);//SplatZSIMD(rowA2);
+	const mul20: vec4 = vec4.mul(vec4.create(), A0, rowB0);
+	const mul21: vec4 = vec4.mul(vec4.create(), A1, rowB1);
+	const mul22: vec4 = vec4.mul(vec4.create(), A2, rowB2);
+	const out2: vec4 = vec4.add(vec4.create(), vec4.add(vec4.create(), mul20, mul21), mul22);
+
+	// add in translation vector
+	//A0 = AndSIMD(rowA0, lastMask);
+	//A1 = AndSIMD(rowA1, lastMask);
+	//A2 = AndSIMD(rowA2, lastMask);
+	out0[3] += rowA0[3];//AddSIMD(out0, A0);
+	out1[3] += rowA1[3];//AddSIMD(out1, A1);
+	out2[3] += rowA2[3];//AddSIMD(out2, A2);
+
+	// write to output
+	//StoreUnalignedSIMD(out.m_flMatVal[0], out0);
+	//StoreUnalignedSIMD(out.m_flMatVal[1], out1);
+	//StoreUnalignedSIMD(out.m_flMatVal[2], out2);
+	mat4.set(out,
+		out0[0], out1[0], out2[0], 0,
+		out0[1], out1[1], out2[1], 0,
+		out0[2], out1[2], out2[2], 0,
+		out0[3], out1[3], out2[3], 1,
+	)
+}
+
+function matrixAngles(mat: mat4, q: quat, position: vec3): void {
+	mat4.getRotation(q, mat);
+	mat4.getTranslation(position, mat);
+}
+
+const boneToWorld: mat4[] = [];
+function allocBoneToWorld(): mat4[] {
+	if (boneToWorld.length == 0) {
+		for (let i = 0; i < MAXSTUDIOBONES; i++) {
+			boneToWorld.push(mat4.create());
+		}
+	}
+	return boneToWorld;
+}

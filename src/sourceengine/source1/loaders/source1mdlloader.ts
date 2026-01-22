@@ -1,5 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
+import { float, int16, int32, uint8 } from 'harmony-types';
 import { DEBUG, LOG, TESTING } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
@@ -9,7 +10,7 @@ import { MAX_NUM_LODS } from './constants';
 import { MdlBone } from './mdlbone';
 import { MdlStudioAnim, MdlStudioAnimValuePtr, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim';
 import { MdlStudioAutoLayer, MdlStudioEvent, MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlAttachment, MdlBodyPart, MdlStudioAnimDesc, MdlStudioFlexOp, MdlStudioFlexRule, MdlStudioModelGroup, MdlStudioPoseParam, MdlTexture, SourceMdl, SourceMdlHeader } from './sourcemdl';
+import { MdlAttachment, MdlBodyPart, MdlStudioAnimDesc, MdlStudioFlexOp, MdlStudioFlexRule, MdlStudioModelGroup, MdlStudioPoseParam, MdlTexture, SourceMdl, SourceMdlHeader, STUDIO_LOCAL_HIERARCHY_STRUCT_SIZE, StudioAnimValue, StudioCompressedIkError, StudioLocalHierarchy } from './sourcemdl';
 
 const BODYPART_STRUCT_SIZE = 16;
 const MODEL_VERTEX_DATA_STRUCT_SIZE = 8;// Size in bytes of mstudio_modelvertexdata_t
@@ -657,8 +658,8 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		const ikruleOffset = reader.getInt32();
 		const animblockikruleOffset = reader.getInt32();
 
-		animDesc.numlocalhierarchy = reader.getInt32();
-		const localhierarchyOffset = reader.getInt32();
+		const numLocalHierarchy = reader.getInt32();
+		const localHierarchyOffset = reader.getInt32() + startOffset;
 
 		animDesc.sectionOffset = reader.getInt32();
 		animDesc.sectionframes = reader.getInt32();
@@ -686,9 +687,40 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 			}
 		}
 		*/
+		this.#parseLocalhierarchies(reader, animDesc, numLocalHierarchy, localHierarchyOffset);
 
 		animDesc.name = reader.getNullString(nameOffset);
 		return animDesc;
+	}
+
+	#parseLocalhierarchies(reader: BinaryReader, animDesc: MdlStudioAnimDesc, numLocalHierarchy: number, localHierarchyOffset: number): void {
+		if (animDesc.animblock) {
+			throw new Error('code this parseLocalhierarchies');
+		}
+
+		for (let i = 0; i < numLocalHierarchy; ++i) {
+			const hierarchy = this.#parseLocalHierarchy(reader, localHierarchyOffset + i * STUDIO_LOCAL_HIERARCHY_STRUCT_SIZE);
+			animDesc.localHierarchy.push(hierarchy);
+		}
+	}
+
+	#parseLocalHierarchy(reader: BinaryReader, startOffset: number): StudioLocalHierarchy {
+		const hierarchy: StudioLocalHierarchy = {
+			bone: reader.getInt32(startOffset),
+			newParent: reader.getInt32(),
+
+			start: reader.getFloat32(),
+			peak: reader.getFloat32(),
+			tail: reader.getFloat32(),
+			end: reader.getFloat32(),
+
+			iStart: reader.getInt32(),
+			localAnim: parseCompressedIkError(reader, startOffset + reader.getInt32()),
+		};
+
+		console.info(hierarchy);
+
+		return hierarchy;
 	}
 
 	#parseSequences(reader: BinaryReader, mdl: SourceMdl) {
@@ -716,8 +748,8 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		sequence.eventindex = reader.getInt32();
 
 		// Bounding box
-		reader.getVector3(undefined, undefined, sequence.bbmin as Float32Array);
-		reader.getVector3(undefined, undefined, sequence.bbmax as Float32Array);
+		reader.getVector3(undefined, undefined, sequence.bbmin as Float32Array<ArrayBuffer>);
+		reader.getVector3(undefined, undefined, sequence.bbmax as Float32Array<ArrayBuffer>);
 
 		sequence.numblends = reader.getInt32();
 
@@ -829,6 +861,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 		return sequence;
 	}
+
 	#parseStudioEvent(reader: BinaryReader, mdl: SourceMdl, startOffset: number) { // mstudioevent_t
 		reader.seek(startOffset);
 
@@ -1199,4 +1232,35 @@ function parsePoseParameter(reader: BinaryReader, startOffset: number): MdlStudi
 	reader.seek(nameOffset);
 	poseParameter.name = reader.getNullString();
 	return poseParameter;
+}
+
+function parseCompressedIkError(reader: BinaryReader, offset: number): StudioCompressedIkError {
+	reader.seek(offset);
+	const scale: [float, float, float, float, float, float,] = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(),];
+	const offsets: [int16, int16, int16, int16, int16, int16,] = [reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(),];
+	const localAnimIndex: int32 = reader.getInt32();
+	const values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,] = [null, null, null, null, null, null,];
+
+	for (let i = 0; i < 6; ++i) {
+		if (offsets[i] != 0) {
+			const value: int16 = reader.getInt16(offset + offsets[i]!);
+			const valid: uint8 = reader.getInt8(offset + offsets[i]!);// it's an union, read again the same byte
+			const total: uint8 = reader.getInt8();
+			values[i] = {
+				value,
+				valid,
+				total,
+			};
+		}
+	}
+
+	const compressedIkError = new StudioCompressedIkError(
+		reader,
+		offset,
+		scale,
+		offsets,
+		values,
+	);
+
+	return compressedIkError;
 }

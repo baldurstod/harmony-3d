@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
+import { float, int, int16, int32, int8 } from 'harmony-types';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { Source1ModelInstance } from '../export';
@@ -68,20 +69,23 @@ export class MdlStudioAnimDesc {//removeme
 	animIndex = 0;
 	numikrules = 0;
 	animblockikruleOffset = 0;
-	numlocalhierarchy = 0;
-	localhierarchyOffset = 0;
 	sectionOffset = 0;
 	sectionframes = 0;
 	zeroframespan = 0;
 	zeroframecount = 0;
 	zeroframeOffset = 0;
 	readonly frames: never[] = [];
+	readonly localHierarchy: StudioLocalHierarchy[] = [];
 
 	pAnim(frameIndex: number/*, flStall TODOv2*/): MdlStudioAnim[] | null {
 		if (this.mdl) {
 			return this.mdl.loader._parseAnimSection(this.mdl.reader, this, frameIndex);
 		}
 		return null;
+	}
+
+	pHierarchy(i: int32): StudioLocalHierarchy | null {
+		return this.localHierarchy[i] ?? null;
 	}
 
 	pZeroFrameData(): null {//TODOv2:rename
@@ -865,4 +869,156 @@ export class MdlBodyPart {//TODO: turn to type
 	name!: string;
 	base!: number;
 	models!: ModelTest[];
+}
+
+export const STUDIO_LOCAL_HIERARCHY_STRUCT_SIZE = 48;
+
+export type StudioLocalHierarchy = {// mstudiolocalhierarchy_t
+	bone: int32;
+	newParent: int32;
+
+	start: float;
+	peak: float;
+	tail: float;
+	end: float;
+
+	iStart: int32;// first frame
+	//localAnimIndex: int32;
+	localAnim: StudioCompressedIkError;
+
+	// + 16 unused bytes
+
+	/*	struct mstudiolocalhierarchy_t
+	{
+		DECLARE_BYTESWAP_DATADESC();
+		int			iBone;			// bone being adjusted
+		int			iNewParent;		// the bones new parent
+
+		float		start;			// beginning of influence
+		float		peak;			// start of full influence
+		float		tail;			// end of full influence
+		float		end;			// end of all influence
+
+		int			iStart;			// first frame
+
+		int			localanimindex;
+		inline mstudiocompressedikerror_t *pLocalAnim() const { return (mstudiocompressedikerror_t *)(((byte *)this) + localanimindex); };
+
+		int			unused[4];
+	};
+
+	*/
+}
+
+export class StudioCompressedIkError {// mstudiocompressedikerror_t
+	#reader: BinaryReader;
+	#offset: number;
+	#scale: [float, float, float, float, float, float,];
+	#offsets: [int16, int16, int16, int16, int16, int16,];
+	#values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,];
+
+	constructor(
+		reader: BinaryReader,
+		offset: number,
+		scale: [float, float, float, float, float, float,],
+		offsets: [int16, int16, int16, int16, int16, int16,],
+		values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,],
+	) {
+		this.#reader = reader;
+		this.#offset = offset;
+		this.#scale = scale;
+		this.#offsets = offsets;
+		this.#values = values;
+	}
+
+	getValues(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): [number, number] {
+		const reader = this.#reader;
+		reader.seek(this.#offset + this.#offsets[index]);
+		let valid = 0;
+		let total = 0;
+		let value;
+		let k = frame;
+		let count = 0;
+		const scale = this.#scale[index];
+
+		do {
+			count++;
+			if (count > 1) {
+				const nextOffset = reader.tell() + valid * 2;
+
+				/*if (!mdl.hasChunk(nextOffset, 2)) {//TODOv3
+					return 0;
+				}*/
+				reader.seek(nextOffset);
+			}
+			k -= total;
+			valid = reader.getInt8();
+			total = reader.getInt8();
+		} while ((total <= k) && count < 30)//TODO: change 30
+
+		if (k >= valid) {
+			k = valid - 1;
+		}
+
+		const nextOffset = reader.tell() + k * 2;
+		reader.seek(nextOffset);
+
+		return [reader.getInt16() * scale, reader.getInt16() * scale];
+	}
+
+	getValue(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): number {
+		const reader = this.#reader;
+		reader.seek(this.#offset)
+		let valid = 0;
+		let total = 0;
+		let value;
+		let k = frame;
+		let count = 0;
+		const scale = this.#scale[index];
+
+		do {
+			count++;
+			if (count > 1) {
+				const nextOffset = reader.tell() + valid * 2;
+
+				/*if (!mdl.hasChunk(nextOffset, 2)) {//TODOv3
+					return 0;
+				}*/
+				reader.seek(nextOffset);
+			}
+			k -= total;
+			valid = reader.getInt8();
+			total = reader.getInt8();
+		} while ((total <= k) && count < 30)//TODO: change 30
+
+		if (k >= valid) {
+			k = valid - 1;
+		}
+
+		const nextOffset = reader.tell() + k * 2;
+		reader.seek(nextOffset);
+
+		return reader.getInt16() * scale;
+	}
+}
+/*
+export type AnimationStream = { // s_animationstream_t
+	numError: number;
+	pError?: StreamData;
+
+	scale: [number, number, number, number, number, number,];
+	numAnim: [number, number, number, number, number, number,];
+	anim: [StudioAnimValue, StudioAnimValue, StudioAnimValue, StudioAnimValue, StudioAnimValue, StudioAnimValue,];
+}
+
+export type StreamData = { // s_streamdata_t
+	pos: vec3;
+	q: quat;
+}
+
+*/
+export type StudioAnimValue = { // mstudioanimvalue_t
+	value: int16;
+	valid: int8;
+	total: int8;
 }
