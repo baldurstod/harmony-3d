@@ -1,4 +1,4 @@
-import { Includes } from '../../shaders/includes';
+import { Includes } from '../../../../shaders/includes';
 
 import nodeimageeditor_declare_functions from './declare_functions.glsl';
 Includes['nodeimageeditor_declare_functions'] = nodeimageeditor_declare_functions;
