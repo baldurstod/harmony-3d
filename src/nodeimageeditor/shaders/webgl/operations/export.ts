@@ -1,4 +1,4 @@
-import { Shaders } from '../../../shaders/shaders';
+import { Shaders } from '../../../../shaders/shaders';
 
 import applysticker_fs from './applysticker.fs';
 import applysticker_vs from './applysticker.vs';
