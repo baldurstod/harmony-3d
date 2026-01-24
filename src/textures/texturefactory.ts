@@ -29,10 +29,12 @@ export type CreateTextureParams = {
 //export type HarmonyGPUTextureDescriptorOptionalSize = GPUTextureDescriptor;
 export type HarmonyGPUTextureDescriptorOptionalSize = Omit<GPUTextureDescriptor, 'size'> & {
 	size?: RequiredBy<GPUExtent3DDict, 'height'>;
+	visibility?: number;
 }
 
 export type HarmonyGPUTextureDescriptor = Omit<GPUTextureDescriptor, 'size'> & {
 	size: RequiredBy<GPUExtent3DDict, 'height'>;
+	visibility?: number;
 }
 
 export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | GPUTexture | null {

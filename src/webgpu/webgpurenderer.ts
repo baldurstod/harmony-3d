@@ -43,7 +43,15 @@ type WgslModule = {
 	source: string;
 }
 
-type Binding = { buffer?: GPUBuffer, bufferType?: GPUBufferBindingType, texture?: Texture, sampler?: GPUSampler, storageTexture?: Texture, access?: GPUStorageTextureAccess, visibility?: GPUShaderStageFlags };
+type Binding = {
+	buffer?: GPUBuffer,
+	bufferType?: GPUBufferBindingType,
+	texture?: Texture,
+	sampler?: GPUSampler,
+	storageTexture?: Texture,
+	access?: GPUStorageTextureAccess,
+	visibility?: GPUShaderStageFlags
+};
 
 //const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
@@ -813,8 +821,6 @@ export class WebGPURenderer implements Renderer {
 
 		const commandBuffer = encoder.finish();
 		device.queue.submit([commandBuffer]);
-
-
 	}
 
 	#getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boolean): GPUBindGroupLayout[] {
@@ -1263,7 +1269,7 @@ export class WebGPURenderer implements Renderer {
 					{
 						const storageTexture = (material.uniforms[storage.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
-							groups.set(storage.group, storage.binding, { storageTexture, access });
+							groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility });
 						} else {
 							const storageBuffer = object?.getStorage(storage.name);
 							if (storageBuffer) {

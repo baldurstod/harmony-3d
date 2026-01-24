@@ -15,6 +15,7 @@ export type TextureParams = {
 	premultiplyAlpha?: boolean;
 	colorSpace?: ColorSpace;
 	gpuFormat: GPUTextureFormat;
+	gpuVisibility?: number;
 };
 
 export class Texture {
@@ -47,9 +48,10 @@ export class Texture {
 	readonly defines = new Map<string, string>();
 	isCube = false;// TODO: remove. Cube maps should be using CubeTexture
 	gpuFormat: GPUTextureFormat;
+	gpuVisibility?: number;
 	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
 
-	constructor(textureParams: TextureParams = { gpuFormat: 'rgba8unorm' }) {
+	constructor(textureParams: TextureParams = { gpuFormat: 'rgba8unorm', gpuVisibility: GPUShaderStage.COMPUTE | GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT }) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
 		this.image = textureParams.image;
 
@@ -71,6 +73,7 @@ export class Texture {
 		this.#colorSpace = textureParams.colorSpace ?? ColorSpace.None;
 
 		this.gpuFormat = textureParams.gpuFormat;
+		this.gpuVisibility = textureParams.gpuVisibility;
 
 		this.dirty = true;//removeme ?
 
@@ -201,7 +204,7 @@ export class Texture {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
-	dispose():void {
+	dispose(): void {
 		if (this.hasNoUser()) {
 			if (TESTING) {
 				console.info('Texture has no more users, deleting', this);
@@ -212,7 +215,7 @@ export class Texture {
 }
 
 export function getCurrentTexture(): Texture {
-	const texture = new Texture({ gpuFormat: WebGPUInternal.format });
+	const texture = new Texture({ gpuFormat: WebGPUInternal.format, gpuVisibility: GPUShaderStage.FRAGMENT/*TODO: check visibility for the canvas texture*/ });
 	texture.texture = WebGPUInternal.gpuContext.getCurrentTexture();
 	return texture;
 }

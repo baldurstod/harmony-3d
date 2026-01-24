@@ -7,6 +7,7 @@ import { Texture, TextureParams } from './texture';
 export type CreateTextureParams = Omit<TextureParams, 'format'> & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptor;
 	webgpuSamplerDescriptor?: GPUSamplerDescriptor;
+	//gpuVisibility: number;
 	needCubeMap?: boolean;
 };
 
@@ -37,7 +38,7 @@ export class TextureManager {
 	}
 
 	static createTexture(textureParams: CreateTextureParams): Texture {
-		const texture = new Texture({ ...textureParams, ...{ gpuFormat: textureParams.webgpuDescriptor.format } });
+		const texture = new Texture({ ...textureParams, ...{ gpuFormat: textureParams.webgpuDescriptor.format, gpuVisibility: textureParams.webgpuDescriptor.visibility } });
 		texture.gpuFormat = textureParams.webgpuDescriptor.format;
 		texture.texture = createTexture(textureParams.webgpuDescriptor /*?? {
 			size: [1],
