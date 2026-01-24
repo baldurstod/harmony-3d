@@ -1,4 +1,3 @@
-export { ProxyManager } from './proxymanager';
 export { Add } from './add';
 export { AnimatedTextureProxy } from './animatedtexture';
 export { AnimatedWeaponSheen } from './animatedweaponsheen';
@@ -19,6 +18,7 @@ export { LessOrEqualProxy } from './lessorequalproxy';
 export { LinearRamp } from './linearramp';
 export { ModelGlowColor } from './modelglowcolor';
 export { Multiply as Source1Multiply } from './multiply';
+export { ProxyManager } from './proxymanager';
 export { SelectFirstIfNonZero } from './selectfirstifnonzero';
 export { Sine } from './sine';
 export { SpyInvis } from './spyinvis';

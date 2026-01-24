@@ -1,3 +1,4 @@
+export { AnimatedTexture } from './animatedtexture';
 export * from './constants';
 export { CubeTexture } from './cubetexture';
 export { Detex } from './detex';

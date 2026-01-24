@@ -50,9 +50,6 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 	}
 
 	addNode(operationName: string, params: AddNodeParameters = {}): Node | null {
-		if (!operationName) {
-			return null;
-		}
 		const node = getOperation(operationName, this, params);
 		if (node) {
 			//this.textureSize = params.textureSize ?? this.textureSize;

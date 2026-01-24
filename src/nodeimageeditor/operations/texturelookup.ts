@@ -2,7 +2,8 @@ import { mat3, vec2, vec4 } from 'gl-matrix';
 import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
-import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
+import { TextureManager } from '../../textures/texturemanager';
+import { GL_LINEAR, GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
@@ -16,6 +17,7 @@ export class TextureLookup extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
 	inputTexture: Texture | null = null;
+	#outputTexture?: Texture;
 
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
@@ -46,7 +48,15 @@ export class TextureLookup extends Node {
 		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
-	async operate(context: NodeContext = {}) {
+	async operate(context: NodeContext = {}): Promise<void> {
+		if (Graphics.isWebGLAny) {
+			await this.#operateWebGL(context);
+		} else {
+			await this.#operateWebGPU(context);
+		}
+	}
+
+	async #operateWebGL(context: NodeContext): Promise<void> {
 		if (!this.material) {
 			return;
 		}
@@ -77,6 +87,45 @@ export class TextureLookup extends Node {
 		if (output) {
 			output._value = this.#renderTarget.getTexture();
 			output._pixelArray = pixelArray;
+		}
+	}
+
+	async #operateWebGPU(context: NodeContext): Promise<void> {
+		if (!this.material) {
+			return;
+		}
+		this.material.setTexture('inputTexture', this.inputTexture);
+		this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+		this.material.setDefine('INPUT_FORMAT', this.inputTexture?.gpuFormat);
+
+		const texTransform = mat3.create();
+		mat3.rotate(texTransform, texTransform, this.getValue('rotation') as number);
+		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u') as number, this.getValue('scale v') as number));
+		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u') as number, this.getValue('translate v') as number));
+		this.material.uniforms['transformTexCoord0'] = texTransform;
+
+		if (!this.#outputTexture) {
+			this.#outputTexture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					size: {
+						width: this.#textureSize,
+						height: this.#textureSize,
+					},
+					format: 'rgba8unorm',
+					visibility: GPUShaderStage.FRAGMENT,
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+				},
+				minFilter: GL_LINEAR,
+			});
+		}
+
+		this.material.uniforms['outTexture'] = this.#outputTexture;
+
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
+
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#outputTexture;
 		}
 	}
 
