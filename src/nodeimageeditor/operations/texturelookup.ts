@@ -26,7 +26,7 @@ export class TextureLookup extends Node {
 		this.material = new NodeImageEditorMaterial({ shaderName: 'texturelookup' });
 		this.material.setDefine('TRANSFORM_TEX_COORD');
 		this.material.addUser(this);
-		this.#textureSize = params.textureSize;
+		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 
 		/*this.params.adjustBlack = 0;
 		this.params.adjustWhite = 1.0;
@@ -96,7 +96,6 @@ export class TextureLookup extends Node {
 		}
 		this.material.setTexture('inputTexture', this.inputTexture);
 		this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
-		this.material.setDefine('INPUT_FORMAT', this.inputTexture?.gpuFormat);
 
 		const texTransform = mat3.create();
 		mat3.rotate(texTransform, texTransform, this.getValue('rotation') as number);
@@ -112,7 +111,7 @@ export class TextureLookup extends Node {
 						height: this.#textureSize,
 					},
 					format: 'rgba8unorm',
-					visibility: GPUShaderStage.FRAGMENT,
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
 					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
 				},
 				minFilter: GL_LINEAR,
