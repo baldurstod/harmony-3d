@@ -1057,20 +1057,16 @@ export class WebGPURenderer implements Renderer {
 						}
 					}
 				} else {
-					switch (uniform.name) {
-						case 'boneMatrix':
-							const bufferSource = object?.uniforms[uniform.name];
-							device.queue.writeBuffer(
-								uniformBuffer,
-								0,
-								bufferSource,
-							);
-							break;
-						default:
-							errorOnce('unknwon array uniform ' + uniform.name);
-							break;
+					const arrayUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+					if (arrayUniform !== undefined) {
+						device.queue.writeBuffer(
+							uniformBuffer,
+							0,
+							arrayUniform,
+						);
+					} else {
+						errorOnce('unknwon array uniform ' + uniform.name);
 					}
-
 				}
 			} else {// uniform is neither a struct nor an array
 				const bufferSource = uniforms?.get(uniform.name);
