@@ -1,5 +1,8 @@
 import { Shaders } from '../../../../shaders/shaders';
 
+import combinelerp from './combinelerp.wgsl';
+Shaders['combine_lerp.wgsl'] = combinelerp;
+
 import multiply from './multiply.wgsl';
 Shaders['multiply.wgsl'] = multiply;
 
