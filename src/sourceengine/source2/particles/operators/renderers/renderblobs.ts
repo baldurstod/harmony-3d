@@ -50,10 +50,10 @@ export class RenderBlobs extends RenderBase {
 		particleSystem.addChild(this.#metaballs);
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
 		this.#metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
 		const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
-		const m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
+		//const m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
 
 		const balls = [];
 

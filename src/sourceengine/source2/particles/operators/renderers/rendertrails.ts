@@ -20,7 +20,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { RenderBase } from './renderbase';
 
-const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
+//const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
@@ -37,7 +37,7 @@ const DEFAULT_LENGTH_SCALE = 1;// TODO: check default value
 const DEFAULT_MAX_PARTICLES = 1000;// TODO: check default value
 const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
 const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
-const DEFAULT_RADIUS_HEAD_TAPER = 1;// TODO: check default value
+//const DEFAULT_RADIUS_HEAD_TAPER = 1;// TODO: check default value
 
 export class RenderTrails extends RenderBase {
 	#geometry: BufferGeometry = new BufferGeometry();
@@ -117,21 +117,21 @@ export class RenderTrails extends RenderBase {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode: string) {
-		this.material!.removeDefine('USE_TEXTURE_COORD_2');
+	setSequenceCombineMode(sequenceCombineMode: string): void {
+		this.material.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
-				this.material!.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
-				this.material!.setDefine('USE_TEXTURE_COORD_2');
+				this.material.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
+				this.material.setDefine('USE_TEXTURE_COORD_2');
 				break;
 			default:
 				console.error('Unknown sequenceCombineMode ', sequenceCombineMode);
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
 		// TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
-		const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
+		//const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.#animationRate;//this.getParameter('animation rate');
@@ -144,12 +144,12 @@ export class RenderTrails extends RenderBase {
 		this.mesh!.setVisible(Source2ParticleManager.visible);
 
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
-		this.material!.setUniform('uFinalTextureScale', tempVec2);
+		this.material.setUniform('uFinalTextureScale', tempVec2);
 
-		const uvs = geometry.attributes.get('aTextureCoord')!._array;
-		const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
-		let index = 0;
-		let index2 = 0;
+		//const uvs = geometry.attributes.get('aTextureCoord')!._array;
+		//const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
+		//let index = 0;
+		//let index2 = 0;
 		for (const particle of particleList) {
 			const sequence = particle.sequence;
 			let flAgeScale;
@@ -160,7 +160,7 @@ export class RenderTrails extends RenderBase {
 				flAgeScale = rate * SEQUENCE_SAMPLE_COUNT;
 				if (useAnimRate) {
 					particle.frame += elapsedTime * rate;
-					const frameSpan = this.material!.getFrameSpan(sequence);
+					const frameSpan = this.material.getFrameSpan(sequence);
 					if (frameSpan !== null) {
 						flAgeScale = flAgeScale / frameSpan;
 					}
@@ -207,8 +207,8 @@ export class RenderTrails extends RenderBase {
 				}
 				*/
 			} else {
-				index += 8;
-				index2 += 8;
+				//index += 8;
+				//index2 += 8;
 			}
 			geometry.attributes.get('aTextureCoord')!.dirty = true;
 			geometry.attributes.get('aTextureCoord2')!.dirty = true;
@@ -221,7 +221,7 @@ export class RenderTrails extends RenderBase {
 		this.#initBuffers();
 	}
 
-	#initBuffers() {
+	#initBuffers(): void {
 		const geometry = this.#geometry;
 		const vertices = [];
 		const uvs = [];
@@ -242,26 +242,26 @@ export class RenderTrails extends RenderBase {
 		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
-		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1,  'particleId'));
+		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
 		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem) {
+	initRenderer(particleSystem: Source2ParticleSystem): void {
 		this.mesh!.serializable = false;
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
-		this.mesh!.setUniform('uParticles', this.#texture!);
+		this.mesh!.setUniform('uParticles', this.#texture);
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
 	}
 
-	#createParticlesArray() {
+	#createParticlesArray(): void {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	#createParticlesTexture() {
+	#createParticlesTexture(): void {
 		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
 			webgpuDescriptor: {
 				size: {
@@ -279,7 +279,7 @@ export class RenderTrails extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	updateParticlesTexture() {
+	updateParticlesTexture(): void {
 		const gl = Graphics.glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
@@ -291,12 +291,12 @@ export class RenderTrails extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number, elapsedTime: number) {
+	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number, elapsedTime: number): void {
 		const a = this.#imgData!;
 		const m_flMaxLength = this.#maxLength;
 		const m_flMinLength = this.#minLength;
 		const m_flLengthFadeInTime = this.#lengthFadeInTime;
-		const rate = this.getParameter('animation rate') ?? 30;
+		//const rate = this.getParameter('animation rate') ?? 30;
 		const fit = this.getParameter('animation_fit_lifetime') ?? 0;
 
 		if (fit) {
@@ -361,7 +361,7 @@ export class RenderTrails extends RenderBase {
 		this.updateParticlesTexture();
 	}
 
-	init() {
+	init(): void {
 		if (this.setDefaultTexture) {
 			this.setTexture(DEFAULT_PARTICLE_TEXTURE);
 		}

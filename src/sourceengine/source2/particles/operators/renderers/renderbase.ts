@@ -18,7 +18,7 @@ export class RenderBase extends Operator {
 		this.material.repository = system.repository;
 	}
 
-	setMaterial(material: Source2SpriteCard) {
+	setMaterial(material: Source2SpriteCard): void {
 		this.material = material;
 	}
 
@@ -71,7 +71,7 @@ export class RenderBase extends Operator {
 		}
 	}
 
-	#setOutputBlendMode(outputBlendMode: string) {
+	#setOutputBlendMode(outputBlendMode: string): void {
 		let blendMode = 0;
 		switch (outputBlendMode) {
 			case 'PARTICLE_OUTPUT_BLEND_MODE_ADD':
@@ -98,7 +98,7 @@ export class RenderBase extends Operator {
 		this.material?.setOutputBlendMode(blendMode);
 	}
 
-	async setTexture(texturePath: string) {
+	async setTexture(texturePath: string): Promise<void> {
 		this.setDefaultTexture = false;
 		this.material.setTexturePath(texturePath);
 		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);

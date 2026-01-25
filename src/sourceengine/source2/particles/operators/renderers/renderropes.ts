@@ -1,4 +1,4 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics2';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
@@ -18,14 +18,14 @@ import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { RenderBase } from './renderbase';
 
 
-const renderRopesTempVec4 = vec4.create();
+//const renderRopesTempVec4 = vec4.create();
 
-const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
+//const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
-const SEQUENCE_SAMPLE_COUNT = 1;//TODO
+//const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 const DEFAULT_WORLD_SIZE = 10;// TODO: check default value
 const DEFAULT_SCROLL_RATE = 10;// TODO: check default value
-const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
+//const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
 const DEFAULT_DEPTH_BIAS = 1;// TODO: check default value
 const DEFAULT_FEATHERING_MODE = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
 const DEFAULT_FEATHERING_MAX_DIST = 1;// TODO: check default value
@@ -110,7 +110,7 @@ export class RenderRopes extends RenderBase {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode: string) {
+	setSequenceCombineMode(sequenceCombineMode: string): void {
 		this.material?.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
@@ -122,22 +122,22 @@ export class RenderRopes extends RenderBase {
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {//TODOv3
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
-		const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
-		const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
+		//const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
+		//const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		this.#textureScroll += elapsedTime * this.#textureVScrollRate;
-		const subdivCount = this.getParameter('subdivision_count') ?? 3;
+		//const subdivCount = this.getParameter('subdivision_count') ?? 3;
 
 		const geometry = this.#geometry;
-		const vertices = [];
-		const indices = [];
-		const id = [];
+		//const vertices = [];
+		//const indices = [];
+		//const id = [];
 
 		const segments = [];
 
-		let particle;
+		//let particle;
 		let ropeLength = 0.0;
 		let previousSegment = null;
 		const textureVWorldSize = 1 / this.#textureVWorldSize;
@@ -162,25 +162,25 @@ export class RenderRopes extends RenderBase {
 		this.#createParticlesArray();
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem) {
+	initRenderer(particleSystem: Source2ParticleSystem): void {
 		if (this.mesh) {
 			this.mesh.serializable = false;
 			this.mesh.hideInExplorer = true;
 			this.mesh.setDefine('IS_ROPE');
 			this.mesh.setDefine('USE_VERTEX_COLOR');
 			this.#createParticlesTexture();
-			this.mesh.setUniform('uParticles', this.#texture!);
+			this.mesh.setUniform('uParticles', this.#texture);
 		}
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
 	}
 
-	#createParticlesArray() {
+	#createParticlesArray(): void {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	#createParticlesTexture() {
+	#createParticlesTexture(): void {
 		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
 			webgpuDescriptor: {
 				size: {
@@ -198,7 +198,7 @@ export class RenderRopes extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	updateParticlesTexture() {
+	updateParticlesTexture(): void {
 		const gl = Graphics.glContext;
 
 		if (!this.#imgData || !this.#texture) {
@@ -214,7 +214,7 @@ export class RenderRopes extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number) {
+	#setupParticlesTexture(particleList: Source2Particle[]/*, maxParticles: number*/): void {
 		const a = this.#imgData;
 
 		if (!a) {
@@ -252,7 +252,7 @@ export class RenderRopes extends RenderBase {
 		this.updateParticlesTexture();
 	}
 
-	init() {
+	init(): void {
 		if (this.setDefaultTexture) {
 			this.setTexture(DEFAULT_PARTICLE_TEXTURE);
 		}

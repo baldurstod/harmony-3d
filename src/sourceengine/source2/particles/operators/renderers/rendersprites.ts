@@ -1,4 +1,3 @@
-import { vec3, vec4 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics2';
@@ -19,9 +18,9 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { RenderBase } from './renderbase';
 
-const renderSpritesTempVec4 = vec4.create();
+//const renderSpritesTempVec4 = vec4.create();
 
-const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
+//const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 const DEFAULT_MAX_SIZE = 5000;
@@ -33,7 +32,7 @@ const DEFAULT_END_FADE_SIZE = 1;// TODO: check default value
 const DEFAULT_FEATHERING_MODE = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
 const DEFAULT_FEATHERING_MAX_DIST = 1;// TODO: check default value
 const DEFAULT_DEPTH_BIAS = 1;// TODO: check default value
-const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
+//const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
 const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
 const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
 const DEFAULT_ANIMATION_TYPE = 'ANIMATION_TYPE_FIT_LIFETIME';// TODO: check default value
@@ -149,7 +148,7 @@ export class RenderSprites extends RenderBase {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode: string/*TODO: create enum*/) {
+	setSequenceCombineMode(sequenceCombineMode: string/*TODO: create enum*/): void {
 		this.material.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
@@ -164,7 +163,7 @@ export class RenderSprites extends RenderBase {
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode, m_bGammaCorrectVertexColors
 		// TODO: do refraction ex: particles/units/heroes/hero_arc_warden/arc_warden_bracer_hand.vpcf_c
-		const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
+		//const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.#animationRate;//this.getParameter('animation rate');
@@ -248,7 +247,7 @@ export class RenderSprites extends RenderBase {
 		this.setMaxParticles(maxParticles);
 	}
 
-	#initBuffers() {
+	#initBuffers(): void {
 		const geometry = this.geometry;
 		const vertices = [];
 		const uvs = [];
@@ -273,7 +272,7 @@ export class RenderSprites extends RenderBase {
 		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem) {
+	initRenderer(particleSystem: Source2ParticleSystem): void {
 		this.mesh!.serializable = false;
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
@@ -284,11 +283,11 @@ export class RenderSprites extends RenderBase {
 		particleSystem.addChild(this.mesh);
 	}
 
-	#createParticlesArray() {
+	#createParticlesArray(): void {
 		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	#initParticlesTexture() {
+	#initParticlesTexture(): void {
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -296,7 +295,7 @@ export class RenderSprites extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	updateParticlesTexture() {
+	updateParticlesTexture(): void {
 		const gl = Graphics.glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
@@ -344,7 +343,7 @@ export class RenderSprites extends RenderBase {
 		this.updateParticlesTexture();
 	}
 
-	init() {
+	init(): void {
 		if (this.setDefaultTexture) {
 			this.setTexture(DEFAULT_PARTICLE_TEXTURE);
 		}

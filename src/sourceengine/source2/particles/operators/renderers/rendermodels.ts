@@ -55,10 +55,7 @@ export class RenderModels extends Operator {
 		}
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem): void {
-	}
-
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
 		const activity = particleSystem.getAttribute('activity');
 
 		for (let i = 0, l = particleList.length; i < l; ++i) {
@@ -146,10 +143,10 @@ export class RenderModels extends Operator {
 		}*/
 
 		if (model) {
-			model.position = particle.position;
+			model.setPosition(particle.position);
 			const radius = particle.radius;
 			model.scale = vec3.set(tempVec3, radius, radius, radius);
-			model.quaternion = particle.quaternion;
+			model.setOrientation(particle.quaternion);
 			model.playSequence(activityName, activityModifiers);
 			if (particle.color[3] == 0) { //TODO: add an actual rendering tint / alpha on models
 				model.setVisible(false);
