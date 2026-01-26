@@ -1,4 +1,4 @@
-import { mat3, mat4, vec2, vec3 } from 'gl-matrix';
+import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
 import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
@@ -13,8 +13,9 @@ import { renderParticles } from '../graphics/render';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
-import { Material } from '../materials/material';
+import { Material, MaterialColorMode } from '../materials/material';
 import { Mesh } from '../objects/mesh';
+import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';
 import { Scene } from '../scenes/scene';
@@ -92,13 +93,14 @@ export class WebGPURenderer implements Renderer {
 			});
 		}
 
-		this.#prepareRenderList(renderList, scene, camera, delta, context);
 
 		//this.#shadowMap.render(this, renderList, camera, context);
 		let backGroundResult: BackGroundResult = { clearColor: false };
 		if (scene.background) {
 			backGroundResult = scene.background.render(this, camera, context);
 		}
+
+		this.#prepareRenderList(renderList, scene, camera, delta, context, backGroundResult.clearValue);
 
 		this.#renderRenderList(renderList, camera, true, context, backGroundResult.clearColor, backGroundResult.clearValue);
 		++this.#frame;
@@ -138,7 +140,7 @@ export class WebGPURenderer implements Renderer {
 		return this.#toneMappingExposure;
 	}
 
-	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
+	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext, clearValue: GPUColorDict | undefined): void {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
 		const objectStack: Entity[] = [];
@@ -174,6 +176,16 @@ export class WebGPURenderer implements Renderer {
 			}
 			currentObject = objectStack.shift();
 		}
+
+		if (clearValue && context.viewport) {
+			const fullScreenQuad = new FullScreenQuad();
+			const material = fullScreenQuad.getMaterial();
+			material.setDefine('ALWAYS_BEHIND');
+			material.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
+			material.setColorMode(MaterialColorMode.PerMesh);
+			renderList.addObject(fullScreenQuad);
+		}
+
 		renderList.finish();
 	}
 
@@ -346,7 +358,8 @@ export class WebGPURenderer implements Renderer {
 		const renderPassDescriptor: GPURenderPassDescriptor = {
 			colorAttachments: [{
 				clearValue,
-				loadOp: clearColor ? 'clear' : 'load',
+				// Notice: clear ignore scissor test
+				loadOp: (clearColor && !context.viewport) ? 'clear' : 'load',
 				storeOp: 'store',
 				view,
 			}],
@@ -359,6 +372,19 @@ export class WebGPURenderer implements Renderer {
 		};
 
 		const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+		if (context.viewport) {
+			const viewport = context.viewport;
+			const width = context?.width ?? 0;
+			const height = context?.height ?? 0;
+
+			const x = Math.round(viewport.x * width);
+			const y = Math.round(viewport.y * height);
+			const w = Math.round((viewport.x + viewport.width) * width) - x;
+			const h = Math.round((viewport.y + viewport.height) * height) - y;
+
+			passEncoder.setViewport(x, y, w, h, viewport.minDepth, viewport.maxDepth);
+			passEncoder.setScissorRect(x, y, w, h);
+		}
 
 		passEncoder.setIndexBuffer(indexBuffer!, 'uint16');// TODO: this could also be uint32
 		const vertexBuffers: GPUVertexBufferLayout[] = [];

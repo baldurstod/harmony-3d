@@ -1,6 +1,7 @@
-import { vec2 } from "gl-matrix";
-import { Entity } from "../entities/entity";
-import { RenderTarget } from "../textures/rendertarget";
+import { vec2, vec4 } from 'gl-matrix';
+import { Entity } from '../entities/entity';
+import { RenderTarget } from '../textures/rendertarget';
+import { Viewport } from '../graphics/viewport';
 
 export interface RenderContext {
 	DisableToolRendering?: boolean;
@@ -31,4 +32,5 @@ export interface InternalRenderContext {
 	renderContext: RenderContext;
 	width: number;
 	height: number;
+	viewport?: Viewport;
 }

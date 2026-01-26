@@ -3112,6 +3112,7 @@ declare class Channel {
                           renderContext: RenderContext;
                           width: number;
                           height: number;
+                          viewport?: Viewport;
                       }
 
                       export declare class InterpolateRadius extends Operator {
@@ -9223,16 +9224,24 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
+                      /**
+                       * Represents the viewport used during the rasterization stage. All values are normalized.
+                       * x, y, width and height will automaticaly be converted to pixel values before rendering.
+                       */
                       export declare class Viewport {
-                          x: number;
-                          y: number;
-                          width: number;
-                          height: number;
+                          readonly x: number;
+                          readonly y: number;
+                          readonly width: number;
+                          readonly height: number;
+                          readonly minDepth: number;
+                          readonly maxDepth: number;
                           constructor(params?: {
                               x?: number;
                               y?: number;
                               width?: number;
                               height?: number;
+                              minDepth?: number;
+                              maxDepth?: number;
                           });
                       }
 

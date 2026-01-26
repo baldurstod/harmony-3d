@@ -11933,12 +11933,12 @@ class WebGPURenderer {
                 usage: GPUTextureUsage.RENDER_ATTACHMENT,
             });
         }
-        this.#prepareRenderList(renderList, scene, camera, delta, context);
         //this.#shadowMap.render(this, renderList, camera, context);
         let backGroundResult = { clearColor: false };
         if (scene.background) {
             backGroundResult = scene.background.render(this, camera, context);
         }
+        this.#prepareRenderList(renderList, scene, camera, delta, context, backGroundResult.clearValue);
         this.#renderRenderList(renderList, camera, true, context, backGroundResult.clearColor, backGroundResult.clearValue);
         ++this.#frame;
     }
@@ -11968,7 +11968,7 @@ class WebGPURenderer {
     getToneMappingExposure() {
         return this.#toneMappingExposure;
     }
-    #prepareRenderList(renderList, scene, camera, delta, context) {
+    #prepareRenderList(renderList, scene, camera, delta, context, clearValue) {
         renderList.reset();
         let currentObject = scene;
         const objectStack = [];
@@ -11999,6 +11999,14 @@ class WebGPURenderer {
                 currentObject.update(scene, camera, delta);
             }
             currentObject = objectStack.shift();
+        }
+        if (clearValue && context.viewport) {
+            const fullScreenQuad = new FullScreenQuad();
+            const material = fullScreenQuad.getMaterial();
+            material.setDefine('ALWAYS_BEHIND');
+            material.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
+            material.setColorMode(MaterialColorMode.PerMesh);
+            renderList.addObject(fullScreenQuad);
         }
         renderList.finish();
     }
@@ -12140,7 +12148,8 @@ class WebGPURenderer {
         const renderPassDescriptor = {
             colorAttachments: [{
                     clearValue,
-                    loadOp: clearColor ? 'clear' : 'load',
+                    // Notice: clear ignore scissor test
+                    loadOp: (clearColor && !context.viewport) ? 'clear' : 'load',
                     storeOp: 'store',
                     view,
                 }],
@@ -12152,6 +12161,17 @@ class WebGPURenderer {
             },
         };
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        if (context.viewport) {
+            const viewport = context.viewport;
+            const width = context?.width ?? 0;
+            const height = context?.height ?? 0;
+            const x = Math.round(viewport.x * width);
+            const y = Math.round(viewport.y * height);
+            const w = Math.round((viewport.x + viewport.width) * width) - x;
+            const h = Math.round((viewport.y + viewport.height) * height) - y;
+            passEncoder.setViewport(x, y, w, h, viewport.minDepth, viewport.maxDepth);
+            passEncoder.setScissorRect(x, y, w, h);
+        }
         passEncoder.setIndexBuffer(indexBuffer, 'uint16'); // TODO: this could also be uint32
         const vertexBuffers = [];
         for (const [, attribute] of geometryAttributes) {
@@ -12992,16 +13012,25 @@ function getDefines(meshOrMaterial, defines) {
     }
 }
 
+/**
+ * Represents the viewport used during the rasterization stage. All values are normalized.
+ * x, y, width and height will automaticaly be converted to pixel values before rendering.
+ */
 class Viewport {
     x;
     y;
     width;
     height;
+    minDepth;
+    maxDepth;
     constructor(params = {}) {
+        // TODO: check params
         this.x = params.x ?? 0;
         this.y = params.y ?? 0;
         this.width = params.width ?? 1;
         this.height = params.height ?? 1;
+        this.minDepth = params.minDepth ?? 0;
+        this.maxDepth = params.maxDepth ?? 1;
     }
 }
 
@@ -13128,12 +13157,7 @@ class CanvasAttributes {
         return this.layouts.get(name) ?? null;
     }
 }
-const defaultViewport = {
-    x: 0,
-    y: 0,
-    width: 1,
-    height: 1,
-};
+const defaultViewport = new Viewport();
 class Graphics {
     static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
     static #viewport = vec4.create();
@@ -13513,14 +13537,15 @@ class Graphics {
             if (canvasScene.enabled === false) {
                 continue;
             }
-            const canvasViewport = canvasScene.viewport ?? defaultViewport;
-            const x = Math.round(canvasViewport.x * canvas.canvas.width);
-            const y = Math.round(canvasViewport.y * canvas.canvas.height);
-            w = Math.round((canvasViewport.x + canvasViewport.width) * canvas.canvas.width) - x;
-            h = Math.round((canvasViewport.y + canvasViewport.height) * canvas.canvas.height) - y;
-            const viewport = vec4.fromValues(x, y, w, h);
-            this.setViewport(viewport);
-            this.setScissor(viewport);
+            const viewport = canvasScene.viewport ?? defaultViewport;
+            // TODO: put that in the renderer (webgl only)
+            const x = Math.round(viewport.x * canvas.canvas.width);
+            const y = Math.round(viewport.y * canvas.canvas.height);
+            w = Math.round((viewport.x + viewport.width) * canvas.canvas.width) - x;
+            h = Math.round((viewport.y + viewport.height) * canvas.canvas.height) - y;
+            const vp = vec4.fromValues(x, y, w, h);
+            this.setViewport(vp);
+            this.setScissor(vp);
             this.enableScissorTest();
             if (canvasScene.clearColor || canvasScene.clearDepth || canvasScene.clearStencil) {
                 this.#forwardRenderer.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
@@ -13541,7 +13566,7 @@ class Graphics {
                     camera.top = h;
                     camera.aspectRatio = w / h;
                 }
-                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport });
             }
             // TODO: set in the previous state
             this.disableScissorTest();

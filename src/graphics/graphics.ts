@@ -238,12 +238,7 @@ type RenderTargetEntry = {
 	viewport: ReadonlyVec4;
 }
 
-const defaultViewport = {
-	x: 0,
-	y: 0,
-	width: 1,
-	height: 1,
-}
+const defaultViewport = new Viewport();
 
 class Graphics {
 	static #pixelRatio = /*window.devicePixelRatio ?? */1.0;
@@ -690,15 +685,16 @@ class Graphics {
 				continue;
 			}
 
-			const canvasViewport = canvasScene.viewport ?? defaultViewport;
+			const viewport = canvasScene.viewport ?? defaultViewport;
 
-			const x = Math.round(canvasViewport.x * canvas.canvas.width);
-			const y = Math.round(canvasViewport.y * canvas.canvas.height);
-			w = Math.round((canvasViewport.x + canvasViewport.width) * canvas.canvas.width) - x;
-			h = Math.round((canvasViewport.y + canvasViewport.height) * canvas.canvas.height) - y;
-			const viewport = vec4.fromValues(x, y, w, h);
-			this.setViewport(viewport);
-			this.setScissor(viewport);
+			// TODO: put that in the renderer (webgl only)
+			const x = Math.round(viewport.x * canvas.canvas.width);
+			const y = Math.round(viewport.y * canvas.canvas.height);
+			w = Math.round((viewport.x + viewport.width) * canvas.canvas.width) - x;
+			h = Math.round((viewport.y + viewport.height) * canvas.canvas.height) - y;
+			const vp = vec4.fromValues(x, y, w, h);
+			this.setViewport(vp);
+			this.setScissor(vp);
 			this.enableScissorTest();
 
 			if (canvasScene.clearColor || canvasScene.clearDepth || canvasScene.clearStencil) {
@@ -722,7 +718,7 @@ class Graphics {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
+				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport });
 			}
 
 			// TODO: set in the previous state
