@@ -47,10 +47,15 @@ type Binding = {
 	buffer?: GPUBuffer,
 	bufferType?: GPUBufferBindingType,
 	texture?: Texture,
+	textureArray?: (Texture | undefined)[],
 	sampler?: GPUSampler,
 	storageTexture?: Texture,
+	storageTextureArray?: (Texture | undefined)[],
 	access?: GPUStorageTextureAccess,
-	visibility?: GPUShaderStageFlags
+	visibility?: GPUShaderStageFlags,
+	// for Textures
+	viewDimension?: GPUTextureViewDimension,
+	format?: GPUTextureFormat,
 };
 
 //const lightDirection = vec3.create();
@@ -846,6 +851,12 @@ export class WebGPURenderer implements Renderer {
 					};
 				}
 
+				if (binding.textureArray) {
+					entry.texture = {
+						viewDimension: binding.viewDimension,
+					};
+				}
+
 				if (binding.sampler) {
 					entry.sampler = {};
 				}
@@ -854,6 +865,14 @@ export class WebGPURenderer implements Renderer {
 					entry.storageTexture = {
 						viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
 						format: binding.storageTexture.gpuFormat,
+						access: binding.access,
+					};
+				}
+
+				if (binding.storageTextureArray) {
+					entry.storageTexture = {
+						viewDimension: binding.viewDimension,
+						format: binding.format!,
 						access: binding.access,
 					};
 				}
@@ -900,7 +919,18 @@ export class WebGPURenderer implements Renderer {
 							resource: uniformTexture.texture as GPUTexture,
 						});
 					}
+				} else {
+					const uniformTextureArray = uniformBuffer.textureArray ?? uniformBuffer.storageTextureArray;
+					if (uniformTextureArray) {
+						entries.push({
+							binding: bindingId,// corresponds to @binding
+							resource: (uniformTextureArray[0]!.texture as GPUTexture).createView({
+								dimension: '2d-array',
+							}),
+						});
+					}
 				}
+
 				if (uniformBuffer.sampler) {
 					entries.push({
 						binding: bindingId,// corresponds to @binding
@@ -1263,9 +1293,28 @@ export class WebGPURenderer implements Renderer {
 					break;
 				default:
 					{
-						const storageTexture = (material.uniforms[storage.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
+						const storageTexture = (material.uniforms[storage.name] as (Texture | undefined)[] | Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
-							groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility });
+							if (Array.isArray(storageTexture)) {
+
+								let isCube = false;
+								let visibility: GPUShaderStageFlags | undefined = undefined;
+								let format: GPUTextureFormat = 'rgba8unorm';
+
+								for (const texture of storageTexture) {
+									// TODO: find a better way to do this
+									if (texture) {
+										isCube = texture.isCube;
+										format = texture.gpuFormat;
+										visibility = texture.gpuVisibility;
+										break;
+									}
+								}
+
+								groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture, access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
+							} else {
+								groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility });
+							}
 						} else {
 							const storageBuffer = object?.getStorage(storage.name);
 							if (storageBuffer) {
