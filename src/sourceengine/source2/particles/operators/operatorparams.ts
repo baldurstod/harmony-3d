@@ -1,5 +1,5 @@
-import { vec3 } from "gl-matrix";
-import { Source2ParticleEndCapState, Source2ParticleScalarField, Source2ParticleSelection, Source2ParticleTintBlendMode, Source2PinBreakType } from "../enums";
+import { vec3 } from 'gl-matrix';
+import { Source2ParticleEndCapState, Source2ParticleScalarField, Source2ParticleSelection, Source2ParticleTintBlendMode, Source2PinBreakType } from '../enums';
 
 export const OPERATOR_PARAM_DISABLE_OPERATOR = 'm_bDisableOperator';
 

@@ -3,7 +3,6 @@ import { Node } from './node';
 
 export class Output extends InputOutput {
 	#successors = new Set<InputOutput>();
-	#pixelArray?: Uint8Array;
 
 	get value() {
 		return this.getValue();
@@ -16,24 +15,6 @@ export class Output extends InputOutput {
 				resolve(this._value);
 			} else {
 				resolve(this._value);
-			}
-		}
-		);
-		return valuePromise;
-	}
-
-	get pixelArray() {
-		return this.getPixelArray();
-	}
-
-	getPixelArray(): Promise<Uint8Array | null> {
-		const valuePromise = new Promise<Uint8Array | null>(async resolve => {
-			await this.node.validate();
-			if (this.type == InputOutputType.Texture2D) {
-				resolve(this.#pixelArray ?? null);
-			} else {
-				//TODO: this should resolve to something else
-				resolve(this.#pixelArray ?? null);
 			}
 		}
 		);
@@ -96,6 +77,5 @@ export class Output extends InputOutput {
 	}
 
 	dispose() {
-		this.#pixelArray = undefined;
 	}
 }

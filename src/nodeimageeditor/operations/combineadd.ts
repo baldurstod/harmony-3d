@@ -1,7 +1,6 @@
 import { DEBUG } from '../../buildoptions';
 import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
-import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
@@ -57,17 +56,13 @@ export class CombineAdd extends Node {
 		Graphics.pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 
-		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-		Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		Graphics.popRenderTarget();
-
 
 		this.updatePreview(context);
 
 		const output = this.getOutput('output');
 		if (output) {
 			output._value = this.#renderTarget.getTexture();
-			output._pixelArray = pixelArray;
 		}
 		if (DEBUG) {
 			console.error('CombineAdd end operate');
