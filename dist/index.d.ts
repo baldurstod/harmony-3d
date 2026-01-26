@@ -3,6 +3,9 @@ import { float } from 'harmony-types';
 import { HarmonyMenuItems } from 'harmony-ui';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { int } from 'harmony-types';
+import { int16 } from 'harmony-types';
+import { int32 } from 'harmony-types';
+import { int8 } from 'harmony-types';
 import { JSONObject } from 'harmony-types';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
@@ -133,7 +136,7 @@ export declare interface Animated {
     setAnimation: (id: number, name: string, weight: number) => void;
 }
 
-declare class AnimatedTexture extends Texture {
+export declare class AnimatedTexture extends Texture {
     frames: Texture[];
     addFrame(frame: number, texture: Texture): void;
     getFrame(frame: number): Texture | undefined;
@@ -1390,6 +1393,7 @@ declare class Channel {
              }
 
              export declare class CrosshatchPass extends Pass {
+                 #private;
                  constructor(camera: Camera);
                  render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
              }
@@ -2939,10 +2943,12 @@ declare class Channel {
 
                       export declare type HarmonyGPUTextureDescriptor = Omit<GPUTextureDescriptor, 'size'> & {
                           size: RequiredBy<GPUExtent3DDict, 'height'>;
+                          visibility?: number;
                       };
 
                       export declare type HarmonyGPUTextureDescriptorOptionalSize = Omit<GPUTextureDescriptor, 'size'> & {
                           size?: RequiredBy<GPUExtent3DDict, 'height'>;
+                          visibility?: number;
                       };
 
                       declare interface HasHitBoxes {
@@ -3951,15 +3957,15 @@ declare class Channel {
                           animIndex: number;
                           numikrules: number;
                           animblockikruleOffset: number;
-                          numlocalhierarchy: number;
-                          localhierarchyOffset: number;
                           sectionOffset: number;
                           sectionframes: number;
                           zeroframespan: number;
                           zeroframecount: number;
                           zeroframeOffset: number;
                           readonly frames: never[];
+                          readonly localHierarchy: StudioLocalHierarchy[];
                           pAnim(frameIndex: number): MdlStudioAnim[] | null;
+                          pHierarchy(i: int32): StudioLocalHierarchy | null;
                           pZeroFrameData(): null;
                       }
 
@@ -4625,6 +4631,7 @@ declare class Channel {
                       }
 
                       export declare class OldMoviePass extends Pass {
+                          #private;
                           constructor(camera: Camera);
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
@@ -5479,7 +5486,7 @@ declare class Channel {
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           initRenderer(particleSystem: Source2ParticleSystem): void;
-                          updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
+                          updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]): void;
                       }
 
                       export declare class Renderbuffer {
@@ -5548,8 +5555,6 @@ declare class Channel {
                       export declare class RenderDeferredLight extends RenderBase {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          initRenderer(particleSystem: Source2ParticleSystem): void;
-                          updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
                       }
 
                       declare interface Renderer {
@@ -5594,8 +5599,7 @@ declare class Channel {
                       export declare class RenderModels extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          initRenderer(particleSystem: Source2ParticleSystem): void;
-                          updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
+                          updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]): void;
                           dispose(): void;
                       }
 
@@ -6405,6 +6409,7 @@ declare class Channel {
                       };
 
                       export declare class SketchPass extends Pass {
+                          #private;
                           constructor(camera: Camera);
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
@@ -7607,11 +7612,11 @@ declare class Channel {
                            * TODO
                            */
                           getScalarField(field?: number, initial?: boolean): number;
-                          getVectorField(out: vec3, field?: number, initial?: boolean): vec3;
+                          getVectorField(out: vec3, field?: number): vec3;
                           /**
                            * @deprecated Please use getScalarField instead.
                            */
-                          getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+                          getField(field?: number, initial?: boolean): number | vec3 | vec4;
                           /**
                            * TODO
                            */
@@ -7660,13 +7665,13 @@ declare class Channel {
                           activeSystemList: Set<Source2ParticleSystem>;
                           visible?: boolean;
                           constructor();
-                          getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>): Promise<any>;
+                          getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem | null>;
                           stepSystems(elapsedTime: number): void;
                           setActive(system: Source2ParticleSystem): void;
                           setInactive(system: Source2ParticleSystem): void;
                           renderSystems(render: boolean): void;
                           getSystemList(): Promise<FileSelectorFile>;
-                          loadManifests(...repositories: string[]): Promise<void>;
+                          loadManifests(...repositories: string[]): void;
                       }
 
                       export declare class Source2ParticlePathParams {
@@ -7739,7 +7744,7 @@ declare class Channel {
                           start(): void;
                           stop(): void;
                           stopChildren(): void;
-                          do(action: string, params?: any): void;
+                          do(action: string): void;
                           reset(): void;
                           step(elapsedTime: number): void;
                           createParticle(emitterIndex: number, creationTime: number, elapsedTime: number): Source2Particle | undefined;
@@ -7759,17 +7764,7 @@ declare class Channel {
                           getParentModel(): Entity | null;
                           getParticle(index?: number): Source2Particle | undefined;
                           dispose(): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Source2ParticleSystem_1: null;
-                              startStop: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              reset: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
                       }
 
@@ -7840,7 +7835,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#192@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#193@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -8635,6 +8630,30 @@ declare class Channel {
 
                       export declare function stringToVec3(s: string, v?: vec3): vec3;
 
+                      declare type StudioAnimValue = {
+                          value: int16;
+                          valid: int8;
+                          total: int8;
+                      };
+
+                      declare class StudioCompressedIkError {
+                          #private;
+                          constructor(reader: BinaryReader, offset: number, scale: [float, float, float, float, float, float], offsets: [int16, int16, int16, int16, int16, int16], values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null]);
+                          getValues(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): [number, number];
+                          getValue(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): number;
+                      }
+
+                      declare type StudioLocalHierarchy = {
+                          bone: int32;
+                          newParent: int32;
+                          start: float;
+                          peak: float;
+                          tail: float;
+                          end: float;
+                          iStart: int32;
+                          localAnim: StudioCompressedIkError;
+                      };
+
                       export declare class Target extends Entity {
                           static constructFromJSON(json: any): Promise<Target>;
                           static getEntityName(): string;
@@ -8713,6 +8732,7 @@ declare class Channel {
                           readonly defines: Map<string, string>;
                           isCube: boolean;
                           gpuFormat: GPUTextureFormat;
+                          gpuVisibility?: number;
                           constructor(textureParams?: TextureParams);
                           setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
                           /**
@@ -8891,6 +8911,7 @@ declare class Channel {
                           premultiplyAlpha?: boolean;
                           colorSpace?: ColorSpace;
                           gpuFormat: GPUTextureFormat;
+                          gpuVisibility?: number;
                       };
 
                       declare enum TextureRole {
