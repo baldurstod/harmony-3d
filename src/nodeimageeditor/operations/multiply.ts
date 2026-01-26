@@ -59,7 +59,7 @@ export class Multiply extends Node {
 		//this.material.uniforms['uInput1'] = await this.getInput('input1').value;
 
 		if (!this.#renderTarget) {
-			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
+			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
 		}
 
 		Graphics.pushRenderTarget(this.#renderTarget);

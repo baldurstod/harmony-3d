@@ -81,7 +81,7 @@ export class ApplySticker extends Node {
 		//this.material.uniforms['uInput'] = this.inputTexture;
 
 		if (!this.#renderTarget) {
-			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
+			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
 		}
 		Graphics.pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material, this.#textureSize, this.#textureSize);
