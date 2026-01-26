@@ -97,7 +97,7 @@ export class Multiply extends Node {
 
 			//this.material.setTexture(`inputTexture${i}`, texture);
 			if (texture) {
-				this.material.uniforms[`inputTexture${inputCount}`] = texture;
+				this.material.uniforms[`input${inputCount}Texture`] = texture;
 				++inputCount;
 
 			}
@@ -114,7 +114,7 @@ export class Multiply extends Node {
 						height: this.#textureSize,
 					},
 					format: 'rgba8unorm',
-					visibility: GPUShaderStage.COMPUTE,
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
 					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
 				},
 				minFilter: GL_LINEAR,
@@ -124,7 +124,8 @@ export class Multiply extends Node {
 		this.material.uniforms['outTexture'] = this.#outputTexture;
 		this.material.setDefine('INPUT_COUNT', String(inputCount));
 
-		Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 
 		const output = this.getOutput('output');
 		if (output) {
