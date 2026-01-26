@@ -224,7 +224,7 @@ export declare class ApplySticker extends Node_2 {
     #private;
     inputTexture: Texture | null;
     constructor(editor: NodeImageEditor, params?: any);
-    operate(context?: NodeContext): Promise<void>;
+    operate(context: NodeContext): Promise<void>;
     get title(): string;
     toString(tabs?: string): Promise<string>;
     dispose(): void;
@@ -1149,7 +1149,7 @@ declare class Channel {
              export declare class CombineAdd extends Node_2 {
                  #private;
                  constructor(editor: NodeImageEditor, params?: any);
-                 operate(context?: NodeContext): Promise<void>;
+                 operate(context: NodeContext): Promise<void>;
                  get title(): string;
                  dispose(): void;
              }
@@ -1157,7 +1157,7 @@ declare class Channel {
              export declare class CombineLerp extends Node_2 {
                  #private;
                  constructor(editor: NodeImageEditor, params?: any);
-                 operate(context?: NodeContext): Promise<void>;
+                 operate(context: NodeContext): Promise<void>;
                  get title(): string;
                  dispose(): void;
              }
@@ -1606,7 +1606,7 @@ declare class Channel {
                   export declare class DrawCircle extends Node_2 {
                       #private;
                       constructor(editor: NodeImageEditor, params?: any);
-                      operate(context?: NodeContext): Promise<void>;
+                      operate(context: NodeContext): Promise<void>;
                       get title(): string;
                       dispose(): void;
                   }
@@ -3056,13 +3056,12 @@ declare class Channel {
                       declare class Input extends InputOutput {
                           #private;
                           constructor(node: Node_2, id: string, type: InputOutputType, size?: number);
-                          set value(value: any);
-                          get value(): any;
+                          setValue(value: any): void;
                           setPredecessor(predecessor: Output): void;
                           getPredecessor(): Output | undefined;
                           hasPredecessor(): boolean;
                           getType(): void | null;
-                          getValue(): Promise<unknown> | null;
+                          getValue(context: NodeContext): Promise<any | null>;
                           isValid(startingPoint: Node_2): boolean;
                           toString(tabs?: string): Promise<string>;
                       }
@@ -3073,7 +3072,6 @@ declare class Channel {
                           type: InputOutputType;
                           size: number;
                           _value?: any | any[];
-                          _pixelArray?: Uint8Array<ArrayBuffer>;
                           constructor(node: Node_2, id: string, type: InputOutputType, size?: number);
                       }
 
@@ -4432,7 +4430,7 @@ declare class Channel {
                       export declare class Multiply extends Node_2 {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: NodeContext): Promise<void>;
+                          operate(context: NodeContext): Promise<void>;
                           get title(): string;
                           dispose(): void;
                       }
@@ -4446,14 +4444,13 @@ declare class Channel {
                           readonly params: Map<string, NodeParam>;
                           readonly previewPic: HTMLImageElement;
                           previewSize: number;
-                          autoRedraw: boolean;
                           protected material?: Material;
                           constructor(editor: NodeImageEditor, params?: any);
                           addInput(inputId: string, inputType: number, size?: number): Input;
                           addOutput(outputId: string, outputType: number): Output;
                           getInput(inputId: string): Input | undefined;
                           getOutput(outputId: string): Output | undefined;
-                          operate(context?: NodeContext): Promise<void>;
+                          operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
                           getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
@@ -4462,9 +4459,9 @@ declare class Channel {
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
                           getParams(): Map<string, NodeParam>;
                           invalidate(): void;
-                          validate(): Promise<void>;
-                          revalidate(): Promise<void>;
-                          redraw(context?: NodeContext): Promise<void>;
+                          validate(context: NodeContext): Promise<void>;
+                          revalidate(context: NodeContext): Promise<void>;
+                          redraw(context: NodeContext): Promise<void>;
                           getInputCount(): number;
                           getType(): void;
                           ready(): Promise<boolean>;
@@ -4484,6 +4481,7 @@ declare class Channel {
 
                       declare type NodeContext = {
                           previewSize?: number;
+                          updatePreview?: boolean;
                       };
 
                       declare type NodeEvent = {
@@ -4791,10 +4789,7 @@ declare class Channel {
 
                       declare class Output extends InputOutput {
                           #private;
-                          get value(): Promise<unknown>;
-                          getValue(): Promise<unknown>;
-                          get pixelArray(): Promise<Uint8Array<ArrayBufferLike> | null>;
-                          getPixelArray(): Promise<Uint8Array | null>;
+                          getValue(context: NodeContext): Promise<unknown>;
                           addSuccessor(successor: InputOutput): void;
                           removeSuccessor(successor: InputOutput): void;
                           hasSuccessor(): boolean;
@@ -6050,7 +6045,7 @@ declare class Channel {
                       export declare class Select extends Node_2 {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: NodeContext): Promise<void>;
+                          operate(context: NodeContext): Promise<void>;
                           get title(): string;
                           toString(tabs?: string): Promise<string>;
                           dispose(): void;
@@ -8881,7 +8876,7 @@ declare class Channel {
                           #private;
                           inputTexture: Texture | null;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: NodeContext): Promise<void>;
+                          operate(context: NodeContext): Promise<void>;
                           get title(): string;
                           toString(tabs?: string): Promise<string>;
                           dispose(): void;

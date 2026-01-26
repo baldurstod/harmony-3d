@@ -32,7 +32,7 @@ export class CombineLerp extends Node {
 		this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
 	}
 
-	async operate(context: NodeContext = {}): Promise<void> {
+	async operate(context: NodeContext): Promise<void> {
 		if (Graphics.isWebGLAny) {
 			await this.#operateWebGL(context);
 		} else {
@@ -40,13 +40,13 @@ export class CombineLerp extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext = {}) {
+	async #operateWebGL(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
-		this.material.setTexture('uInput0', await this.getInput('input0')?.value);
-		this.material.setTexture('uInput1', await this.getInput('input1')?.value);
-		this.material.setTexture('uInputWeight', await this.getInput('weight')?.value);
+		this.material.setTexture('uInput0', await this.getInput('input0')?.getValue(context));
+		this.material.setTexture('uInput1', await this.getInput('input1')?.getValue(context));
+		this.material.setTexture('uInputWeight', await this.getInput('weight')?.getValue(context));
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -72,9 +72,9 @@ export class CombineLerp extends Node {
 			return;
 		}
 
-		this.material.setTexture('input0', await this.getInput('input0')?.value);
-		this.material.setTexture('input1', await this.getInput('input1')?.value);
-		this.material.setTexture('inputWeight', await this.getInput('weight')?.value);
+		this.material.setTexture('input0', await this.getInput('input0')?.getValue(context));
+		this.material.setTexture('input1', await this.getInput('input1')?.getValue(context));
+		this.material.setTexture('inputWeight', await this.getInput('weight')?.getValue(context));
 
 		if (!this.#outputTexture) {
 			this.#outputTexture = TextureManager.createTexture({

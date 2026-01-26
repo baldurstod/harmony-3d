@@ -30,7 +30,7 @@ export class Multiply extends Node {
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 
-	async operate(context: NodeContext = {}): Promise<void> {
+	async operate(context: NodeContext): Promise<void> {
 		if (Graphics.isWebGLAny) {
 			await this.#operateWebGL(context);
 		} else {
@@ -38,7 +38,7 @@ export class Multiply extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext = {}) {
+	async #operateWebGL(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
@@ -48,8 +48,8 @@ export class Multiply extends Node {
 		for (let i = 0; i < 8; ++i) {
 			//let inputName = 'uInput' + i;
 			//this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-			const texture = await this.getInput('input' + i)?.value;
-			textureArray.push(texture);
+			const texture: Texture | null = await this.getInput('input' + i)?.getValue(context);
+			textureArray.push(texture!);
 			usedArray.push(texture != undefined);
 		}
 
@@ -91,7 +91,7 @@ export class Multiply extends Node {
 		//const usedArray = new Uint32Array(8);
 		let inputCount = 0;
 		for (let i = 0; i < 8; ++i) {
-			const texture = await this.getInput('input' + i)?.value;
+			const texture = await this.getInput('input' + i)?.getValue(context);
 			//textureArray.push(texture);
 			//usedArray[i] = texture != undefined ? 1 : 0;//.push(texture != undefined);
 

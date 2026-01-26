@@ -53,7 +53,7 @@ async function dropFiles(evt: DragEvent, node: Node): Promise<void> {
 			await TextureManager.fillTextureWithImage(texture, image);
 			(node as ApplySticker | TextureLookup).inputTexture = texture;
 			node.invalidate();
-			node.validate();
+			node.validate({ updatePreview: true });
 		}
 	}
 }
@@ -94,10 +94,10 @@ async function dropFilesSpecular(evt: DragEvent, node: Node): Promise<void> {
 			await TextureManager.fillTextureWithImage(texture, image);
 			const specular = node.getInput('specular');
 			if (specular) {
-				specular.value = texture;
+				specular.setValue(texture);
 			}
 			//node.invalidate();
-			node.validate();
+			node.validate({ updatePreview: true });
 		}
 	}
 }
@@ -582,7 +582,7 @@ export class NodeGui {
 		}
 
 		node.setParam(param.name, value, index);
-		node.revalidate();
+		node.revalidate({ updatePreview: true });
 	}
 
 	#createIo(io: Input | Output): HTMLElement {
@@ -667,7 +667,7 @@ export class NodeGui {
 		node.setParam('top right', newTopRight);
 
 		this.#updateManipulator();
-		node.revalidate();
+		node.revalidate({ updatePreview: true });
 
 		/*
 

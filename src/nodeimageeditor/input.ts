@@ -1,16 +1,17 @@
 import { InputOutput, InputOutputType } from './inputoutput';
-import { Node } from './node';
+import { Node, NodeContext } from './node';
 import { Output } from './output';
 
 //const isUndefined = (element) => element == undefined;
 
 export class Input extends InputOutput {
 	#predecessor?: Output;
+
 	constructor(node: Node, id: string, type: InputOutputType, size = 1) {
 		super(node, id, type, size);
 	}
 
-	set value(value: any) {
+	setValue(value: any) {
 		//TODO: check the value type
 		this._value = value;
 		this.node.invalidate();
@@ -28,13 +29,6 @@ export class Input extends InputOutput {
 		this._value[index] = value;
 		this.node.invalidate();
 	}*/
-
-	get value() {
-		if (this.#predecessor) {
-			return this.#predecessor.value;
-		}
-		return Promise.resolve(this._value);
-	}
 
 	setPredecessor(predecessor: Output) {
 		if (predecessor) {
@@ -78,9 +72,9 @@ export class Input extends InputOutput {
 		return null;
 	}
 
-	getValue() {
+	async getValue(context: NodeContext): Promise<any | null> {
 		if (this.#predecessor) {
-			return this.#predecessor.getValue();
+			return this.#predecessor.getValue(context);
 		}
 		return null;
 	}

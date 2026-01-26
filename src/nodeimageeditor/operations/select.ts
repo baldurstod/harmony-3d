@@ -29,7 +29,7 @@ export class Select extends Node {
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 
-	async operate(context: NodeContext = {}): Promise<void> {
+	async operate(context: NodeContext): Promise<void> {
 		if (Graphics.isWebGLAny) {
 			await this.#operateWebGL(context);
 		} else {
@@ -37,15 +37,15 @@ export class Select extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext = {}) {
+	async #operateWebGL(context: NodeContext) {
 		if (false && DEBUG) {
 			console.log('Select operate');
 		}
 		if (!this.material) {
 			return;
 		}
-		this.material.setTexture('uInputTexture', await this.getInput('input')?.value);
-		this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.value;
+		this.material.setTexture('uInputTexture', await this.getInput('input')?.getValue(context));
+		this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.getValue(context);
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -70,8 +70,8 @@ export class Select extends Node {
 		if (!this.material) {
 			return;
 		}
-		this.material.setTexture('inputTexture', await this.getInput('input')?.value);
-		this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.value);
+		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
+		this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.getValue(context));
 
 		if (!this.#outputTexture) {
 			this.#outputTexture = TextureManager.createTexture({
@@ -114,7 +114,7 @@ export class Select extends Node {
 			}
 		}
 
-		const selectvalues = await this.getInput('selectvalues')?.value;
+		const selectvalues = await this.getInput('selectvalues')?.getValue({});
 		const a = [];
 		for (const v of selectvalues) {
 			if (v) {

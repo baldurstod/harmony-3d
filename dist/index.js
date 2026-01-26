@@ -16774,7 +16774,6 @@ class InputOutput {
     type;
     size;
     _value;
-    _pixelArray;
     constructor(node, id, type, size = 1) {
         this.node = node;
         this.id = id;
@@ -16795,7 +16794,7 @@ class Input extends InputOutput {
     constructor(node, id, type, size = 1) {
         super(node, id, type, size);
     }
-    set value(value) {
+    setValue(value) {
         //TODO: check the value type
         this._value = value;
         this.node.invalidate();
@@ -16813,12 +16812,6 @@ class Input extends InputOutput {
         this._value[index] = value;
         this.node.invalidate();
     }*/
-    get value() {
-        if (this.#predecessor) {
-            return this.#predecessor.value;
-        }
-        return Promise.resolve(this._value);
-    }
     setPredecessor(predecessor) {
         if (predecessor) {
             predecessor.addSuccessor(this);
@@ -16854,9 +16847,9 @@ class Input extends InputOutput {
         }
         return null;
     }
-    getValue() {
+    async getValue(context) {
         if (this.#predecessor) {
-            return this.#predecessor.getValue();
+            return this.#predecessor.getValue(context);
         }
         return null;
     }
@@ -16882,34 +16875,14 @@ class Input extends InputOutput {
 
 class Output extends InputOutput {
     #successors = new Set();
-    #pixelArray;
-    get value() {
-        return this.getValue();
-    }
-    getValue() {
+    getValue(context) {
         const valuePromise = new Promise(async (resolve) => {
-            await this.node.validate();
+            await this.node.validate(context);
             if (this.type == IO_TYPE_TEXTURE_2D) {
                 resolve(this._value);
             }
             else {
                 resolve(this._value);
-            }
-        });
-        return valuePromise;
-    }
-    get pixelArray() {
-        return this.getPixelArray();
-    }
-    getPixelArray() {
-        const valuePromise = new Promise(async (resolve) => {
-            await this.node.validate();
-            if (this.type == InputOutputType.Texture2D) {
-                resolve(this.#pixelArray ?? null);
-            }
-            else {
-                //TODO: this should resolve to something else
-                resolve(this.#pixelArray ?? null);
             }
         });
         return valuePromise;
@@ -16961,7 +16934,6 @@ class Output extends InputOutput {
         return await this.node.toString(tabs);
     }
     dispose() {
-        this.#pixelArray = undefined;
     }
 }
 
@@ -16987,7 +16959,6 @@ class Node extends MyEventTarget {
     previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
     previewSize = PREVIEW_PICTURE_SIZE;
     #previewRenderTarget;
-    autoRedraw = false;
     #redrawState = DrawState.Invalid;
     //#operation;
     material;
@@ -17015,7 +16986,7 @@ class Node extends MyEventTarget {
     getOutput(outputId) {
         return this.outputs.get(outputId);
     }
-    async operate(context = {}) {
+    async operate(context) {
         throw 'This function must be overriden';
     }
     addParam(param) {
@@ -17078,21 +17049,18 @@ class Node extends MyEventTarget {
                 output.invalidate();
             }
         }
-        if (this.autoRedraw) {
-            this.redraw();
-        }
     }
-    async validate() {
+    async validate(context) {
         if (this.#redrawState == DrawState.Invalid) {
-            await this.operate();
+            await this.operate(context);
             this.#redrawState = DrawState.Valid;
         }
     }
-    async revalidate() {
+    async revalidate(context) {
         this.invalidate();
-        await this.validate();
+        await this.validate(context);
     }
-    async redraw(context = {}) {
+    async redraw(context) {
         await this.operate(context);
         this.#redrawState = DrawState.Valid;
     }
@@ -17164,6 +17132,9 @@ class Node extends MyEventTarget {
         this.dispatchEvent(new CustomEvent(NodeEventType.Any, { detail: { eventName: eventName } }));
     }
     updatePreview(context = {}) {
+        if (!context.updatePreview) {
+            return;
+        }
         const previewSize = context.previewSize ?? this.previewSize;
         const renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
         if (this.#previewRenderTarget) {
@@ -17309,14 +17280,14 @@ class ApplySticker extends Node {
         this.addParam(new NodeParam('path', NodeParamType.String, ''));
         this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (!this.material) {
             return;
         }
         this.params;
         this.material.setTexture('uSticker', this.inputTexture);
-        this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.value);
-        this.material.setTexture('uInput', await this.getInput('input')?.value);
+        this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
+        this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
         this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
         const texTransform = mat3.create();
         ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
@@ -17434,7 +17405,7 @@ class TextureLookup extends Node {
         this.addParam(new NodeParam('scale v', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('path', NodeParamType.String, ''));
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (Graphics$1.isWebGLAny) {
             await this.#operateWebGL(context);
         }
@@ -17459,14 +17430,11 @@ class TextureLookup extends Node {
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
-            output._pixelArray = pixelArray;
         }
     }
     async #operateWebGPU(context) {
@@ -17559,7 +17527,7 @@ async function dropFiles(evt, node) {
             await TextureManager.fillTextureWithImage(texture, image);
             node.inputTexture = texture;
             node.invalidate();
-            node.validate();
+            node.validate({ updatePreview: true });
         }
     }
 }
@@ -17595,10 +17563,10 @@ async function dropFilesSpecular(evt, node) {
             await TextureManager.fillTextureWithImage(texture, image);
             const specular = node.getInput('specular');
             if (specular) {
-                specular.value = texture;
+                specular.setValue(texture);
             }
             //node.invalidate();
-            node.validate();
+            node.validate({ updatePreview: true });
         }
     }
 }
@@ -18033,7 +18001,7 @@ class NodeGui {
             this.#updateManipulator();
         }
         node.setParam(param.name, value, index);
-        node.revalidate();
+        node.revalidate({ updatePreview: true });
     }
     #createIo(io) {
         const html = createElement('div', { class: 'node-image-editor-node-io' });
@@ -18099,7 +18067,7 @@ class NodeGui {
         node.setParam('bottom left', newBottomLeft);
         node.setParam('top right', newTopRight);
         this.#updateManipulator();
-        node.revalidate();
+        node.revalidate({ updatePreview: true });
         /*
 
         this.#htmlRectSelector.set({
@@ -18428,15 +18396,15 @@ class DrawCircle extends Node {
         this.material.addUser(this);
         this.#textureSize = params.textureSize;
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (!this.material) {
             return;
         }
-        const center = await this.getInput('center')?.value;
-        const radius = await this.getInput('radius')?.value;
-        const borderColor = await this.getInput('bordercolor')?.value;
-        const fillColor = await this.getInput('fillcolor')?.value;
-        const border = await this.getInput('border')?.value;
+        const center = await this.getInput('center')?.getValue(context);
+        const radius = await this.getInput('radius')?.getValue(context);
+        const borderColor = await this.getInput('bordercolor')?.getValue(context);
+        const fillColor = await this.getInput('fillcolor')?.getValue(context);
+        const border = await this.getInput('border')?.getValue(context);
         const perimeter = this.getOutput('perimeter');
         if (perimeter) {
             perimeter._value = Math.PI * radius * 2;
@@ -18455,13 +18423,10 @@ class DrawCircle extends Node {
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
-            output._pixelArray = pixelArray;
         }
     }
     get title() {
@@ -18494,7 +18459,7 @@ class CombineAdd extends Node {
         this.material.addUser(this);
         this.#textureSize = params.textureSize;
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (!this.material) {
             return;
         }
@@ -18511,7 +18476,7 @@ class CombineAdd extends Node {
         //this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
         const textureArray = [];
         for (let i = 0; i < 8; ++i) {
-            textureArray.push(await this.getInput('input' + i)?.value);
+            textureArray.push(await this.getInput('input' + i)?.getValue(context));
         }
         this.material.setTextureArray('uInput[0]', textureArray);
         if (!this.#renderTarget) {
@@ -18519,14 +18484,11 @@ class CombineAdd extends Node {
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
-            output._pixelArray = pixelArray;
         }
     }
     get title() {
@@ -18562,7 +18524,7 @@ class CombineLerp extends Node {
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (Graphics$1.isWebGLAny) {
             await this.#operateWebGL(context);
         }
@@ -18570,35 +18532,32 @@ class CombineLerp extends Node {
             await this.#operateWebGPU(context);
         }
     }
-    async #operateWebGL(context = {}) {
+    async #operateWebGL(context) {
         if (!this.material) {
             return;
         }
-        this.material.setTexture('uInput0', await this.getInput('input0')?.value);
-        this.material.setTexture('uInput1', await this.getInput('input1')?.value);
-        this.material.setTexture('uInputWeight', await this.getInput('weight')?.value);
+        this.material.setTexture('uInput0', await this.getInput('input0')?.getValue(context));
+        this.material.setTexture('uInput1', await this.getInput('input1')?.getValue(context));
+        this.material.setTexture('uInputWeight', await this.getInput('weight')?.getValue(context));
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
-            output._pixelArray = pixelArray;
         }
     }
     async #operateWebGPU(context) {
         if (!this.material) {
             return;
         }
-        this.material.setTexture('input0', await this.getInput('input0')?.value);
-        this.material.setTexture('input1', await this.getInput('input1')?.value);
-        this.material.setTexture('inputWeight', await this.getInput('weight')?.value);
+        this.material.setTexture('input0', await this.getInput('input0')?.getValue(context));
+        this.material.setTexture('input1', await this.getInput('input1')?.getValue(context));
+        this.material.setTexture('inputWeight', await this.getInput('weight')?.getValue(context));
         if (!this.#outputTexture) {
             this.#outputTexture = TextureManager.createTexture({
                 webgpuDescriptor: {
@@ -18651,7 +18610,7 @@ let Multiply$1 = class Multiply extends Node {
         this.material.addUser(this);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (Graphics$1.isWebGLAny) {
             await this.#operateWebGL(context);
         }
@@ -18659,7 +18618,7 @@ let Multiply$1 = class Multiply extends Node {
             await this.#operateWebGPU(context);
         }
     }
-    async #operateWebGL(context = {}) {
+    async #operateWebGL(context) {
         if (!this.material) {
             return;
         }
@@ -18668,7 +18627,7 @@ let Multiply$1 = class Multiply extends Node {
         for (let i = 0; i < 8; ++i) {
             //let inputName = 'uInput' + i;
             //this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-            const texture = await this.getInput('input' + i)?.value;
+            const texture = await this.getInput('input' + i)?.getValue(context);
             textureArray.push(texture);
             usedArray.push(texture != undefined);
         }
@@ -18698,7 +18657,7 @@ let Multiply$1 = class Multiply extends Node {
         //const usedArray = new Uint32Array(8);
         let inputCount = 0;
         for (let i = 0; i < 8; ++i) {
-            const texture = await this.getInput('input' + i)?.value;
+            const texture = await this.getInput('input' + i)?.getValue(context);
             //textureArray.push(texture);
             //usedArray[i] = texture != undefined ? 1 : 0;//.push(texture != undefined);
             //this.material.setTexture(`inputTexture${i}`, texture);
@@ -18762,7 +18721,7 @@ class Select extends Node {
         this.material.addUser(this);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
-    async operate(context = {}) {
+    async operate(context) {
         if (Graphics$1.isWebGLAny) {
             await this.#operateWebGL(context);
         }
@@ -18770,33 +18729,30 @@ class Select extends Node {
             await this.#operateWebGPU(context);
         }
     }
-    async #operateWebGL(context = {}) {
+    async #operateWebGL(context) {
         if (!this.material) {
             return;
         }
-        this.material.setTexture('uInputTexture', await this.getInput('input')?.value);
-        this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.value;
+        this.material.setTexture('uInputTexture', await this.getInput('input')?.getValue(context));
+        this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.getValue(context);
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
         Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
-            output._pixelArray = pixelArray;
         }
     }
     async #operateWebGPU(context) {
         if (!this.material) {
             return;
         }
-        this.material.setTexture('inputTexture', await this.getInput('input')?.value);
-        this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.value);
+        this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
+        this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.getValue(context));
         if (!this.#outputTexture) {
             this.#outputTexture = TextureManager.createTexture({
                 webgpuDescriptor: {
@@ -18831,7 +18787,7 @@ class Select extends Node {
                 ret.push(await input.toString(tabs1));
             }
         }
-        const selectvalues = await this.getInput('selectvalues')?.value;
+        const selectvalues = await this.getInput('selectvalues')?.getValue({});
         const a = [];
         for (const v of selectvalues) {
             if (v) {

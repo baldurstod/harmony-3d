@@ -26,15 +26,15 @@ export class DrawCircle extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate(context: NodeContext = {}) {
+	async operate(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
-		const center = await this.getInput('center')?.value;
-		const radius = await this.getInput('radius')?.value;
-		const borderColor = await this.getInput('bordercolor')?.value;
-		const fillColor = await this.getInput('fillcolor')?.value;
-		const border = await this.getInput('border')?.value;
+		const center = await this.getInput('center')?.getValue(context);
+		const radius = await this.getInput('radius')?.getValue(context);
+		const borderColor = await this.getInput('bordercolor')?.getValue(context);
+		const fillColor = await this.getInput('fillcolor')?.getValue(context);
+		const border = await this.getInput('border')?.getValue(context);
 
 		const perimeter = this.getOutput('perimeter');
 		if (perimeter) {

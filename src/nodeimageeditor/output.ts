@@ -1,16 +1,12 @@
-import { InputOutput, InputOutputType, IO_TYPE_TEXTURE_2D } from './inputoutput';
-import { Node } from './node';
+import { InputOutput, IO_TYPE_TEXTURE_2D } from './inputoutput';
+import { Node, NodeContext } from './node';
 
 export class Output extends InputOutput {
 	#successors = new Set<InputOutput>();
 
-	get value() {
-		return this.getValue();
-	}
-
-	getValue() {
+	getValue(context: NodeContext) {
 		const valuePromise = new Promise(async resolve => {
-			await this.node.validate();
+			await this.node.validate(context);
 			if (this.type == IO_TYPE_TEXTURE_2D) {
 				resolve(this._value);
 			} else {

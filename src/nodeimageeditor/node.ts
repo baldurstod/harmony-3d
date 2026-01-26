@@ -43,6 +43,7 @@ export type NodeEvent = {
 
 export type NodeContext = {
 	previewSize?: number;
+	updatePreview?: boolean;
 }
 
 export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
@@ -55,7 +56,6 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	readonly previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	previewSize: number = PREVIEW_PICTURE_SIZE;
 	#previewRenderTarget?: RenderTarget;
-	autoRedraw = false;
 	#redrawState: DrawState = DrawState.Invalid;
 	//#operation;
 	protected material?: Material;
@@ -89,7 +89,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.outputs.get(outputId);
 	}
 
-	async operate(context: NodeContext = {}) {
+	async operate(context: NodeContext) {
 		throw 'This function must be overriden';
 	}
 
@@ -159,24 +159,21 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 				output.invalidate();
 			}
 		}
-		if (this.autoRedraw) {
-			this.redraw();
-		}
 	}
 
-	async validate() {
+	async validate(context: NodeContext) {
 		if (this.#redrawState == DrawState.Invalid) {
-			await this.operate();
+			await this.operate(context);
 			this.#redrawState = DrawState.Valid
 		}
 	}
 
-	async revalidate(): Promise<void> {
+	async revalidate(context: NodeContext): Promise<void> {
 		this.invalidate();
-		await this.validate();
+		await this.validate(context);
 	}
 
-	async redraw(context: NodeContext = {}) {
+	async redraw(context: NodeContext) {
 		await this.operate(context);
 		this.#redrawState = DrawState.Valid;
 	}
@@ -256,6 +253,9 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	}
 
 	updatePreview(context: NodeContext = {}) {
+		if (!context.updatePreview) {
+			return;
+		}
 		const previewSize = context.previewSize ?? this.previewSize;
 		const renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
 		if (this.#previewRenderTarget) {

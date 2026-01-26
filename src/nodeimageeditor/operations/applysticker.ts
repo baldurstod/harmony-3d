@@ -44,14 +44,14 @@ export class ApplySticker extends Node {
 		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
 
-	async operate(context: NodeContext = {}) {
+	async operate(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
 		const params = this.params;
 		this.material.setTexture('uSticker', this.inputTexture);
-		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.value);
-		this.material.setTexture('uInput', await this.getInput('input')?.value);
+		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
+		this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
 		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
 
 		const texTransform = mat3.create();

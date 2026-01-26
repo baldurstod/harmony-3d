@@ -48,7 +48,7 @@ export class TextureLookup extends Node {
 		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
-	async operate(context: NodeContext = {}): Promise<void> {
+	async operate(context: NodeContext): Promise<void> {
 		if (Graphics.isWebGLAny) {
 			await this.#operateWebGL(context);
 		} else {

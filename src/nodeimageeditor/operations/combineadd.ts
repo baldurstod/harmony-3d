@@ -1,6 +1,7 @@
 import { DEBUG } from '../../buildoptions';
 import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
+import { Texture } from '../../textures/texture';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
@@ -25,7 +26,7 @@ export class CombineAdd extends Node {
 	}
 
 
-	async operate(context: NodeContext = {}) {
+	async operate(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
@@ -44,9 +45,9 @@ export class CombineAdd extends Node {
 
 		//this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
 
-		const textureArray = [];
+		const textureArray: Texture[] = [];
 		for (let i = 0; i < 8; ++i) {
-			textureArray.push(await this.getInput('input' + i)?.value);
+			textureArray.push(await this.getInput('input' + i)?.getValue(context));
 		}
 		this.material.setTextureArray('uInput[0]', textureArray);
 
