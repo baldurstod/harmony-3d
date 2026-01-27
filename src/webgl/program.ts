@@ -133,7 +133,7 @@ export class Program {
 		if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
 			const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
 			const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
-			console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
+			console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
 
 			ShaderManager.setCompileError(shaderName, shaderInfoLog as string);
 
