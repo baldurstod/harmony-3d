@@ -2,6 +2,8 @@ import { mat3, vec2, vec4 } from 'gl-matrix';
 import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
+import { TextureManager } from '../../textures/texturemanager';
+import { GL_LINEAR } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';
 import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
@@ -16,6 +18,8 @@ export class ApplySticker extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
 	inputTexture: Texture | null = null;
+	#outputTexture?: Texture;
+
 
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
@@ -30,7 +34,7 @@ export class ApplySticker extends Node {
 		this.material.setDefine('TRANSFORM_TEX_COORD');
 		this.material.setDefine('NEED_TWO_TEX_COORDS');
 		this.material.addUser(this);
-		this.#textureSize = params.textureSize;
+		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 
 		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
 		this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
@@ -44,7 +48,15 @@ export class ApplySticker extends Node {
 		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
 
-	async operate(context: NodeContext) {
+	async operate(context: NodeContext): Promise<void> {
+		if (Graphics.isWebGLAny) {
+			await this.#operateWebGL(context);
+		} else {
+			await this.#operateWebGPU(context);
+		}
+	}
+
+	async #operateWebGL(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
@@ -98,6 +110,47 @@ export class ApplySticker extends Node {
 			output._value = this.#renderTarget.getTexture();
 		}
 		//this.getOutput('output')._pixelArray = pixelArray;
+	}
+
+	async #operateWebGPU(context: NodeContext): Promise<void> {
+		if (!this.material) {
+			return;
+		}
+
+		const params = this.params;
+		this.material.setTexture('stickerTexture', this.inputTexture);
+		this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
+		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
+		this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+
+		const texTransform = mat3.create();
+		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left') as vec2, this.getValue('top left') as vec2, this.getValue('top right') as vec2);
+		this.material.uniforms['transformTexCoord0'] = texTransform;
+
+		if (!this.#outputTexture) {
+			this.#outputTexture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					size: {
+						width: this.#textureSize,
+						height: this.#textureSize,
+					},
+					format: 'rgba8unorm',
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+				},
+				minFilter: GL_LINEAR,
+			});
+		}
+
+		this.material.uniforms['outTexture'] = this.#outputTexture;
+
+		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
+
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#outputTexture;
+		}
 	}
 
 	get title() {

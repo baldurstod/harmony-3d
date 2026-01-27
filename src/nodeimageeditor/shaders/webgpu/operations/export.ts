@@ -1,5 +1,8 @@
 import { Shaders } from '../../../../shaders/shaders';
 
+import applysticker from './applysticker.wgsl';
+Shaders['applysticker.wgsl'] = applysticker;
+
 import combinelerp from './combinelerp.wgsl';
 Shaders['combine_lerp.wgsl'] = combinelerp;
 
