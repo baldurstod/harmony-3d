@@ -7,7 +7,7 @@
 		#endif
 	#else
 		#ifdef USE_SELF_ILLUM_MASK_MAP
-			let selfIllumMask: vec3f = textureSample(uSelfIllumMaskTexture, uSelfIllumMaskSampler, vTextureCoord.xy).rgb;
+			let selfIllumMask: vec3f = textureSample(uSelfIllumMaskTexture, uSelfIllumMaskSampler, fragInput.vTextureCoord.xy).rgb;
 		#else
 			let selfIllumMask: vec3f = texelColor.aaa;
 		#endif

@@ -178,7 +178,7 @@ var diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffu
 #else
 	fragColor = vec4(diffuse, fragColor.a);
 #endif
-//gl_FragColor.a = alpha;
+fragColor.a = alpha;
 
 //gl_FragColor.rgb = vec3(phongMask);
 /* TEST SHADING END*/
