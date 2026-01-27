@@ -188,7 +188,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 			},
 			webgpuSamplerDescriptor: {
 				addressModeU: vtf.getAddressModeU(),
-				addressModeV: vtf.getAddressModeU(),
+				addressModeV: vtf.getAddressModeV(),
 				minFilter: 'linear',
 				magFilter: 'linear',
 				// TODO: added min / mag filter

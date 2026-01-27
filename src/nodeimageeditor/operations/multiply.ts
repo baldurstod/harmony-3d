@@ -99,9 +99,7 @@ export class Multiply extends Node {
 			if (texture) {
 				this.material.uniforms[`input${inputCount}Texture`] = texture;
 				++inputCount;
-
 			}
-
 		}
 
 		//this.material.uniforms['used'] = new Int32Array(usedArray);

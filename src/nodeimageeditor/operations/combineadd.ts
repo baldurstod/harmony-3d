@@ -2,6 +2,8 @@ import { DEBUG } from '../../buildoptions';
 import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
+import { TextureManager } from '../../textures/texturemanager';
+import { GL_LINEAR } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node, NodeContext } from '../node';
 import { NodeImageEditor } from '../nodeimageeditor';
@@ -11,6 +13,8 @@ import { registerOperation } from '../operations';
 export class CombineAdd extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
+	#outputTexture?: Texture;
+
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
 		this.hasPreview = true;
@@ -22,11 +26,18 @@ export class CombineAdd extends Node {
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
 		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add' });
 		this.material.addUser(this);
-		this.#textureSize = params.textureSize;
+		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 
+	async operate(context: NodeContext): Promise<void> {
+		if (Graphics.isWebGLAny) {
+			await this.#operateWebGL(context);
+		} else {
+			await this.#operateWebGPU(context);
+		}
+	}
 
-	async operate(context: NodeContext) {
+	async #operateWebGL(context: NodeContext) {
 		if (!this.material) {
 			return;
 		}
@@ -69,6 +80,48 @@ export class CombineAdd extends Node {
 			console.error('CombineAdd end operate');
 		}
 	}
+
+	async #operateWebGPU(context: NodeContext): Promise<void> {
+		if (!this.material) {
+			return;
+		}
+
+		let inputCount = 0;
+		for (let i = 0; i < 8; ++i) {
+			const texture = await this.getInput('input' + i)?.getValue(context);
+			if (texture) {
+				this.material.uniforms[`input${inputCount}Texture`] = texture;
+				++inputCount;
+			}
+		}
+
+		if (!this.#outputTexture) {
+			this.#outputTexture = TextureManager.createTexture({
+				webgpuDescriptor: {
+					size: {
+						width: this.#textureSize,
+						height: this.#textureSize,
+					},
+					format: 'rgba8unorm',
+					visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+					usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+				},
+				minFilter: GL_LINEAR,
+			});
+		}
+
+		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setDefine('INPUT_COUNT', String(inputCount));
+
+		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+		this.editor.render(this.material, this.#textureSize, this.#textureSize);
+
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#outputTexture;
+		}
+	}
+
 
 	get title() {
 		return 'combine add';
