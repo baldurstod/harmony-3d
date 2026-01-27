@@ -642,7 +642,7 @@ export class Source1Material extends Material {
 
 			const selfIllumMask = variables.get('$selfillummask');
 			if (selfIllumMask) {
-				this.setTexture('uSelfIllumMaskTexture', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0));
+				this.setTexture('uSelfIllumMaskTexture', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0), 'USE_SELF_ILLUM_MASK_MAP');
 			}
 		}
 
