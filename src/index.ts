@@ -1,3 +1,6 @@
+// NOTICE: keep this line first
+export * from './webgpu/const';
+
 export * from './algorithm/export';
 export * from './audio/export';
 export * from './backgrounds/export';
