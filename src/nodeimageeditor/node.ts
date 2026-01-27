@@ -287,7 +287,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	}
 
 	async savePicture(filename: string = 'texture.png'): Promise<void> {
-		await this.redraw({ previewSize: 2048 });
+		await this.redraw({ previewSize: 2048, updatePreview: true });
 
 		const image = this.previewPic;
 
@@ -308,15 +308,14 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	}
 
 	async saveVTF(filename: string = 'texture.vtf') {
-		if (!this.#pixelArray) {
-			return;
-		}
 		const vtfFile = new VTFFile(2048, 2048);
 		vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
-		await this.redraw({ previewSize: 2048 });
+		await this.redraw({ previewSize: 2048, updatePreview: true });
 
-		vtfFile.setImageData(this.#pixelArray);
-		VTFWriter.writeAndSave(vtfFile, filename);
+		if (this.#pixelArray) {
+			vtfFile.setImageData(this.#pixelArray);
+			VTFWriter.writeAndSave(vtfFile, filename);
+		}
 		this.previewPic.width = PREVIEW_PICTURE_SIZE;
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
 	}
