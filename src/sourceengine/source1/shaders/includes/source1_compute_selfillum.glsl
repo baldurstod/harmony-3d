@@ -1,5 +1,5 @@
 export default `
-#if defined(USE_SELF_ILLUM) && COLOR_MAP_ALPHA_BITS > 0
+#if defined(USE_SELF_ILLUM)/* && COLOR_MAP_ALPHA_BITS > 0*/
 	#ifdef USE_SELF_ILLUM_ENVMAPMASK_ALPHA
 		#ifdef USE_CUBE_MAP
 			vec3 selfIllumComponent = uSelfIllumTint * albedo;
