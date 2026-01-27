@@ -3,7 +3,7 @@ export default `
 	uniform vec3 uSelfIllumTint;
 
 	#ifdef USE_SELF_ILLUM_MASK_MAP
-		uniform sampler2D uSelfIllumMaskMap;
+		uniform sampler2D uSelfIllumMaskTexture;
 	#endif
 
 	#ifndef SKIP_SELF_ILLUM_FRESNEL

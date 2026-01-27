@@ -398,7 +398,7 @@ export class Source1Material extends Material {
 			}
 
 			const selfIllumMask = variables.get('$selfillummask');
-			this.setTexture('uSelfIllumMaskMap', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
+			this.setTexture('uSelfIllumMaskTexture', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
 
 
 			if (variables.get('$selfillumfresnel') == 1) {
@@ -642,7 +642,7 @@ export class Source1Material extends Material {
 
 			const selfIllumMask = variables.get('$selfillummask');
 			if (selfIllumMask) {
-				this.setTexture('uSelfIllumMaskMap', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0));
+				this.setTexture('uSelfIllumMaskTexture', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0));
 			}
 		}
 

@@ -169,7 +169,7 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 
 /* TEST SHADING BEGIN*/
 
-let diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+var diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
 #include source1_calculate_selfillum
 
 

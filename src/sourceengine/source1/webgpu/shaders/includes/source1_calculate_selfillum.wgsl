@@ -1,23 +1,22 @@
-export default `
-#if defined(USE_SELF_ILLUM)/* && COLOR_MAP_ALPHA_BITS > 0*/
+#if defined(USE_SELF_ILLUM)// && COLOR_MAP_ALPHA_BITS > 0
 	#ifdef USE_SELF_ILLUM_ENVMAPMASK_ALPHA
 		#ifdef USE_CUBE_MAP
-			vec3 selfIllumComponent = uSelfIllumTint * albedo;
-			float Adj_Alpha = 1. * cubeMapColor.a;
+			let selfIllumComponent: vec3f = uSelfIllumTint * albedo;
+			let Adj_Alpha:f 32 = 1. * cubeMapColor.a;
 			diffuse = max(0., 1. - Adj_Alpha) * diffuse + Adj_Alpha * selfIllumComponent;
 		#endif
 	#else
 		#ifdef USE_SELF_ILLUM_MASK_MAP
-			vec3 selfIllumMask = texture2D(uSelfIllumMaskTexture, vTextureCoord.xy).rgb;
+			let selfIllumMask: vec3f = textureSample(uSelfIllumMaskTexture, uSelfIllumMaskSampler, vTextureCoord.xy).rgb;
 		#else
-			vec3 selfIllumMask = texelColor.aaa;
+			let selfIllumMask: vec3f = texelColor.aaa;
 		#endif
 
 		#if !defined(SKIP_SELF_ILLUM_FRESNEL) && defined(USE_SELF_ILLUM_FRESNEL)
-			vec3 worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ = normalize(uCameraPosition - vVertexPositionWorldSpace.xyz);
-			vec3 vVertexNormal = normalize(vVertexNormalWorldSpace.xyz);
+			let worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ: vec3f = normalize(uCameraPosition - vVertexPositionWorldSpace.xyz);
+			let vVertexNormal: vec3f = normalize(vVertexNormalWorldSpace.xyz);
 
-			float flSelfIllumFresnel = (
+			let flSelfIllumFresnel: f32 = (
 										pow(
 											saturate(
 												dot(vVertexNormal, normalize(worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ))
@@ -30,4 +29,3 @@ export default `
 		#endif
 	#endif
 #endif
-`;
