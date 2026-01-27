@@ -6,6 +6,10 @@
 
 @group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;
 
+#ifdef TRANSFORM_TEX_COORD
+	@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;
+#endif
+
 struct VertexOut {
 	@builtin(position) position : vec4f,
 	@location(y) vTextureCoord: vec2f,
@@ -27,6 +31,6 @@ fn vertex_main(
 @fragment
 fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 {
-	textureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), textureSample(inputTexture, inputSampler, fragInput.vTextureCoord));
+	textureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), textureSample(inputTexture, inputSampler, vec3(transformTexCoord0 * vec3(fragInput.vTextureCoord, 1.0)).xy) );
 	return FragmentOutput(vec4(1.0));
 }

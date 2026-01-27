@@ -1143,6 +1143,19 @@ export class WebGPURenderer implements Renderer {
 									new Float32Array([materialUniform as number]),
 								);
 								break;
+							case 'mat3x3f':
+								// In WGSL, mat3x3 actually are mat4x3
+								const m = new Float32Array([
+									materialUniform[0], materialUniform[1], materialUniform[2], 0,
+									materialUniform[3], materialUniform[4], materialUniform[5], 0,
+									materialUniform[6], materialUniform[7], materialUniform[8], 0,
+								]);
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									m as BufferSource,
+								);
+								break;
 							case 'mat4x4f':
 							case 'vec2f':
 							case 'vec3f':
@@ -1171,6 +1184,13 @@ export class WebGPURenderer implements Renderer {
 											uniformBuffer,
 											0,
 											new Float32Array([0]),// TODO: create a const
+										);
+										break;
+									case 'mat3x3f':
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0,]),// TODO: create a const
 										);
 										break;
 									case 'mat4x4f':
