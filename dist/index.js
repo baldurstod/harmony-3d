@@ -14,6 +14,17 @@ import { MeshoptDecoder } from 'meshoptimizer';
 import { decode } from 'fast-png';
 import { murmurhash2_32_gc } from 'murmurhash';
 
+// TODO: remove when WebGPU is a baseline feature
+function initWebGPUConst() {
+    if (!window.GPUTextureUsage) {
+        window.GPUTextureUsage = {};
+    }
+    if (!window.GPUShaderStage) {
+        window.GPUShaderStage = {};
+    }
+}
+initWebGPUConst();
+
 // From http://paulbourke.net/geometry/polygonise/
 class TRIANGLE {
     p = [vec3.create(), vec3.create(), vec3.create()];
@@ -11407,7 +11418,7 @@ class Program {
         if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
             const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
             const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
-            console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
+            console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
             ShaderManager.setCompileError(shaderName, shaderInfoLog);
             shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
             return false;
@@ -12813,6 +12824,15 @@ class WebGPURenderer {
                             case 'f32':
                                 device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
                                 break;
+                            case 'mat3x3f':
+                                // In WGSL, mat3x3 actually are mat4x3
+                                const m = new Float32Array([
+                                    materialUniform[0], materialUniform[1], materialUniform[2], 0,
+                                    materialUniform[3], materialUniform[4], materialUniform[5], 0,
+                                    materialUniform[6], materialUniform[7], materialUniform[8], 0,
+                                ]);
+                                device.queue.writeBuffer(uniformBuffer, 0, m);
+                                break;
                             case 'mat4x4f':
                             case 'vec2f':
                             case 'vec3f':
@@ -12835,6 +12855,9 @@ class WebGPURenderer {
                                 switch (uniform.type.name) {
                                     case 'f32':
                                         device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0]));
+                                        break;
+                                    case 'mat3x3f':
+                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0,]));
                                         break;
                                     case 'mat4x4f':
                                         device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]));
@@ -17162,7 +17185,7 @@ class Node extends MyEventTarget {
         Graphics$1.popRenderTarget();
     }
     async savePicture(filename = 'texture.png') {
-        await this.redraw({ previewSize: 2048 });
+        await this.redraw({ previewSize: 2048, updatePreview: true });
         const image = this.previewPic;
         const canvas = createElement('canvas', { width: image.width, height: image.height });
         const ctx = canvas.getContext('2d');
@@ -17180,14 +17203,13 @@ class Node extends MyEventTarget {
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
     async saveVTF(filename = 'texture.vtf') {
-        if (!this.#pixelArray) {
-            return;
-        }
         const vtfFile = new VTFFile(2048, 2048);
         vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
-        await this.redraw({ previewSize: 2048 });
-        vtfFile.setImageData(this.#pixelArray);
-        VTFWriter.writeAndSave(vtfFile, filename);
+        await this.redraw({ previewSize: 2048, updatePreview: true });
+        if (this.#pixelArray) {
+            vtfFile.setImageData(this.#pixelArray);
+            VTFWriter.writeAndSave(vtfFile, filename);
+        }
         this.previewPic.width = PREVIEW_PICTURE_SIZE;
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
@@ -17259,6 +17281,7 @@ class ApplySticker extends Node {
     #renderTarget;
     #textureSize;
     inputTexture = null;
+    #outputTexture;
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -17270,7 +17293,7 @@ class ApplySticker extends Node {
         this.material.setDefine('TRANSFORM_TEX_COORD');
         this.material.setDefine('NEED_TWO_TEX_COORDS');
         this.material.addUser(this);
-        this.#textureSize = params.textureSize;
+        this.#textureSize = params.textureSize ?? this.editor.textureSize;
         this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
@@ -17281,6 +17304,14 @@ class ApplySticker extends Node {
         this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
     }
     async operate(context) {
+        if (Graphics$1.isWebGLAny) {
+            await this.#operateWebGL(context);
+        }
+        else {
+            await this.#operateWebGPU(context);
+        }
+    }
+    async #operateWebGL(context) {
         if (!this.material) {
             return;
         }
@@ -17326,6 +17357,40 @@ class ApplySticker extends Node {
             output._value = this.#renderTarget.getTexture();
         }
         //this.getOutput('output')._pixelArray = pixelArray;
+    }
+    async #operateWebGPU(context) {
+        if (!this.material) {
+            return;
+        }
+        this.params;
+        this.material.setTexture('stickerTexture', this.inputTexture);
+        this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
+        this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
+        this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+        const texTransform = mat3.create();
+        ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
+        this.material.uniforms['transformTexCoord0'] = texTransform;
+        if (!this.#outputTexture) {
+            this.#outputTexture = TextureManager.createTexture({
+                webgpuDescriptor: {
+                    size: {
+                        width: this.#textureSize,
+                        height: this.#textureSize,
+                    },
+                    format: 'rgba8unorm',
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+                },
+                minFilter: GL_LINEAR,
+            });
+        }
+        this.material.uniforms['outTexture'] = this.#outputTexture;
+        //Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#outputTexture;
+        }
     }
     get title() {
         return 'apply sticker';
@@ -18447,6 +18512,7 @@ registerOperation('draw_circle', DrawCircle);
 class CombineAdd extends Node {
     #renderTarget;
     #textureSize;
+    #outputTexture;
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -18457,9 +18523,17 @@ class CombineAdd extends Node {
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
         this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add' });
         this.material.addUser(this);
-        this.#textureSize = params.textureSize;
+        this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
+        if (Graphics$1.isWebGLAny) {
+            await this.#operateWebGL(context);
+        }
+        else {
+            await this.#operateWebGPU(context);
+        }
+    }
+    async #operateWebGL(context) {
         if (!this.material) {
             return;
         }
@@ -18489,6 +18563,41 @@ class CombineAdd extends Node {
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
+        }
+    }
+    async #operateWebGPU(context) {
+        if (!this.material) {
+            return;
+        }
+        let inputCount = 0;
+        for (let i = 0; i < 8; ++i) {
+            const texture = await this.getInput('input' + i)?.getValue(context);
+            if (texture) {
+                this.material.uniforms[`input${inputCount}Texture`] = texture;
+                ++inputCount;
+            }
+        }
+        if (!this.#outputTexture) {
+            this.#outputTexture = TextureManager.createTexture({
+                webgpuDescriptor: {
+                    size: {
+                        width: this.#textureSize,
+                        height: this.#textureSize,
+                    },
+                    format: 'rgba8unorm',
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE,
+                    usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.STORAGE_BINDING,
+                },
+                minFilter: GL_LINEAR,
+            });
+        }
+        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setDefine('INPUT_COUNT', String(inputCount));
+        //Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+        this.editor.render(this.material, this.#textureSize, this.#textureSize);
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#outputTexture;
         }
     }
     get title() {
@@ -19177,15 +19286,21 @@ var imageeditor_vs = `
 Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
 
+var applysticker = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n@group(0) @binding(x) var stickerTexture: texture_2d<f32>;\n@group(0) @binding(x) var stickerSampler: sampler;\n#ifdef USE_STICKER_SPECULAR\n\t@group(0) @binding(x) var stickerSpecularTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var stickerSpecularSampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec4f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), vec4f(texCoord.xy, vec3(transformTexCoord0 * vec3(texCoord.xy, 1.0)).xy));\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tlet inputColor: vec4f = textureSample(inputTexture, inputSampler, fragInput.vTextureCoord.xy);\n\tlet stickerColor: vec4f = textureSample(stickerTexture, stickerSampler, fragInput.vTextureCoord.zw);\n#ifdef USE_STICKER_SPECULAR\n\tlet specularColor: vec4f = textureSample(stickerSpecularTexture, stickerSpecularSampler, fragInput.vTextureCoord.zw);\n#else\n\tlet specularColor: vec4f = vec4(1.);\n#endif\n\tlet color: vec4f = vec4((1.0 - stickerColor.a) * inputColor.xyz + stickerColor.a * stickerColor.xyz,\n\t\t\t\t\t\t(1.0 - stickerColor.a) * inputColor.a + stickerColor.a * specularColor.r);\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord.xy * commonUniforms.resolution.xy), color);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
+
 var combinelerp = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var input0: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var input1: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var inputWeight: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color1: vec4f = textureLoad(input0, id.xy);\n\tlet color2: vec4f = textureLoad(input1, id.xy);\n\tlet color3: vec4f = textureLoad(inputWeight, id.xy);\n\n\ttextureStore(outTexture, id.xy, mix(color1, color2, color3.rrrr));\n}\n";
+
+var combineadd = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n// Note: at the time of writing, texture arrays does not exist in webgpu\n#if INPUT_COUNT > 0\n\t@group(0) @binding(x) var input0Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input0Sampler: sampler;\n#endif\n#if INPUT_COUNT > 1\n\t@group(0) @binding(x) var input1Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input1Sampler: sampler;\n#endif\n#if INPUT_COUNT > 2\n\t@group(0) @binding(x) var input2Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input2Sampler: sampler;\n#endif\n#if INPUT_COUNT > 3\n\t@group(0) @binding(x) var input3Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input3Sampler: sampler;\n#endif\n#if INPUT_COUNT > 4\n\t@group(0) @binding(x) var input4Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input4Sampler: sampler;\n#endif\n#if INPUT_COUNT > 5\n\t@group(0) @binding(x) var input5Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input5Sampler: sampler;\n#endif\n#if INPUT_COUNT > 6\n\t@group(0) @binding(x) var input6Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input6Sampler: sampler;\n#endif\n#if INPUT_COUNT > 7\n\t@group(0) @binding(x) var input7Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input7Sampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n//@group(0) @binding(x) var<uniform> used: array<i32, INPUT_COUNT>;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar out: vec4f = vec4(0.0);\n\tfor (var i: i32 = 0; i < INPUT_COUNT; i++) {\n\t\t//if (used[i] > 0)\n\t\t{\n\t\t\tswitch i {\n#if INPUT_COUNT > 0\n\t\t\t\tcase 0: {\n\t\t\t\t\tout += textureSample(input0Texture, input0Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 1\n\t\t\t\tcase 1: {\n\t\t\t\t\tout += textureSample(input1Texture, input1Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 2\n\t\t\t\tcase 2: {\n\t\t\t\t\tout += textureSample(input2Texture, input2Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 3\n\t\t\t\tcase 3: {\n\t\t\t\t\tout += textureSample(input3Texture, input3Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 4\n\t\t\t\tcase 4: {\n\t\t\t\t\tout += textureSample(input4Texture, input4Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 5\n\t\t\t\tcase 5: {\n\t\t\t\t\tout += textureSample(input5Texture, input5Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 6\n\t\t\t\tcase 6: {\n\t\t\t\t\tout += textureSample(input6Texture, input6Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 7\n\t\t\t\tcase 7: {\n\t\t\t\t\tout += textureSample(input7Texture, input7Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n\t\t\t\tdefault: {\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), out);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
 var multiply$1 = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n// Note: at the time of writing, texture arrays does not exist in webgpu\n#if INPUT_COUNT > 0\n\t@group(0) @binding(x) var input0Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input0Sampler: sampler;\n#endif\n#if INPUT_COUNT > 1\n\t@group(0) @binding(x) var input1Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input1Sampler: sampler;\n#endif\n#if INPUT_COUNT > 2\n\t@group(0) @binding(x) var input2Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input2Sampler: sampler;\n#endif\n#if INPUT_COUNT > 3\n\t@group(0) @binding(x) var input3Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input3Sampler: sampler;\n#endif\n#if INPUT_COUNT > 4\n\t@group(0) @binding(x) var input4Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input4Sampler: sampler;\n#endif\n#if INPUT_COUNT > 5\n\t@group(0) @binding(x) var input5Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input5Sampler: sampler;\n#endif\n#if INPUT_COUNT > 6\n\t@group(0) @binding(x) var input6Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input6Sampler: sampler;\n#endif\n#if INPUT_COUNT > 7\n\t@group(0) @binding(x) var input7Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input7Sampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n//@group(0) @binding(x) var<uniform> used: array<i32, INPUT_COUNT>;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar out: vec4f = vec4(1.0);\n\tfor (var i: i32 = 0; i < INPUT_COUNT; i++) {\n\t\t//if (used[i] > 0)\n\t\t{\n\t\t\tswitch i {\n#if INPUT_COUNT > 0\n\t\t\t\tcase 0: {\n\t\t\t\t\tout *= textureSample(input0Texture, input0Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 1\n\t\t\t\tcase 1: {\n\t\t\t\t\tout *= textureSample(input1Texture, input1Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 2\n\t\t\t\tcase 2: {\n\t\t\t\t\tout *= textureSample(input2Texture, input2Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 3\n\t\t\t\tcase 3: {\n\t\t\t\t\tout *= textureSample(input3Texture, input3Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 4\n\t\t\t\tcase 4: {\n\t\t\t\t\tout *= textureSample(input4Texture, input4Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 5\n\t\t\t\tcase 5: {\n\t\t\t\t\tout *= textureSample(input5Texture, input5Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 6\n\t\t\t\tcase 6: {\n\t\t\t\t\tout *= textureSample(input6Texture, input6Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 7\n\t\t\t\tcase 7: {\n\t\t\t\t\tout *= textureSample(input7Texture, input7Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n\t\t\t\tdefault: {\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), out);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
 var select = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n@group(0) @binding(x) var<uniform> select: array<f32, MAX_SELECTORS>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color: vec4f = textureLoad(inputTexture, id.xy);\n\n\tvar out: vec4f = vec4(0.0);\n\tfor (var i: i32 = 0; i < MAX_SELECTORS; i++) {\n\t\tif (select[i] > 0.0) {\n\t\t\tif (abs(color.r * 255.0 - select[i]) < 8.0) {\n\t\t\t\tout = vec4(1.0);\n\t\t\t}\n\t\t}\n\t}\n\n\ttextureStore(outTexture, id.xy, out);\n}\n";
 
-var texturelookup = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), textureSample(inputTexture, inputSampler, fragInput.vTextureCoord));\n\treturn FragmentOutput(vec4(1.0));\n}\n";
+var texturelookup = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), textureSample(inputTexture, inputSampler, vec3(transformTexCoord0 * vec3(fragInput.vTextureCoord, 1.0)).xy) );\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
+Shaders['applysticker.wgsl'] = applysticker;
 Shaders['combine_lerp.wgsl'] = combinelerp;
+Shaders['combine_add.wgsl'] = combineadd;
 Shaders['multiply.wgsl'] = multiply$1;
 Shaders['select.wgsl'] = select;
 Shaders['texturelookup.wgsl'] = texturelookup;
@@ -50742,7 +50857,7 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
             },
             webgpuSamplerDescriptor: {
                 addressModeU: vtf.getAddressModeU(),
-                addressModeV: vtf.getAddressModeU(),
+                addressModeV: vtf.getAddressModeV(),
                 minFilter: 'linear',
                 magFilter: 'linear',
                 // TODO: added min / mag filter
@@ -51304,7 +51419,7 @@ class Source1Material extends Material {
                 this.uniforms['uSelfIllumTint'] = vec3.fromValues(1.0, 1.0, 1.0);
             }
             const selfIllumMask = variables.get('$selfillummask');
-            this.setTexture('uSelfIllumMaskMap', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
+            this.setTexture('uSelfIllumMaskTexture', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
             if (variables.get('$selfillumfresnel') == 1) {
                 this.setDefine('USE_SELF_ILLUM_FRESNEL');
                 const selfIllumFresnelMinMaxExp = variables.get('$selfillumfresnelminmaxexp') ?? vec3.fromValues(0.0, 1.0, 1.0);
@@ -51506,7 +51621,7 @@ class Source1Material extends Material {
             }
             const selfIllumMask = variables.get('$selfillummask');
             if (selfIllumMask) {
-                this.setTexture('uSelfIllumMaskMap', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0));
+                this.setTexture('uSelfIllumMaskTexture', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0), 'USE_SELF_ILLUM_MASK_MAP');
             }
         }
         const detailTexture = variables.get('$detail');
@@ -54679,7 +54794,8 @@ class PositionOnModelRandom extends Source1ParticleOperator {
     doInit(particle, elapsedTime) {
         const controlPointNumber = this.getParameter('control_point_number');
         const forceInModel = this.getParameter('force to be inside model');
-        if (forceInModel > 5) {
+        if (forceInModel > 15) {
+            errorOnce(`forceInModel > 15 ${forceInModel}`);
             particle.die();
             return;
         }
@@ -57857,7 +57973,7 @@ vec3 a;
 `;
 
 var source1_compute_selfillum = `
-#if defined(USE_SELF_ILLUM) && COLOR_MAP_ALPHA_BITS > 0
+#if defined(USE_SELF_ILLUM)/* && COLOR_MAP_ALPHA_BITS > 0*/
 	#ifdef USE_SELF_ILLUM_ENVMAPMASK_ALPHA
 		#ifdef USE_CUBE_MAP
 			vec3 selfIllumComponent = uSelfIllumTint * albedo;
@@ -57866,7 +57982,7 @@ var source1_compute_selfillum = `
 		#endif
 	#else
 		#ifdef USE_SELF_ILLUM_MASK_MAP
-			vec3 selfIllumMask = texture2D(uSelfIllumMaskMap, vTextureCoord.xy).rgb;
+			vec3 selfIllumMask = texture2D(uSelfIllumMaskTexture, vTextureCoord.xy).rgb;
 		#else
 			vec3 selfIllumMask = texelColor.aaa;
 		#endif
@@ -57984,12 +58100,12 @@ uniform float uPhongExponentFactor;
 uniform float uPhongBoost;
 `;
 
-var source1_declare_selfillum = `
+var source1_declare_selfillum$1 = `
 #ifdef USE_SELF_ILLUM
 	uniform vec3 uSelfIllumTint;
 
 	#ifdef USE_SELF_ILLUM_MASK_MAP
-		uniform sampler2D uSelfIllumMaskMap;
+		uniform sampler2D uSelfIllumMaskTexture;
 	#endif
 
 	#ifndef SKIP_SELF_ILLUM_FRESNEL
@@ -58197,7 +58313,7 @@ Includes['source1_compute_sheen'] = source1_compute_sheen;
 Includes['source1_declare_gamma_functions'] = source1_declare_gamma_functions$1;
 Includes['source1_declare_particle_position'] = source1_declare_particle_position$1;
 Includes['source1_declare_phong'] = source1_declare_phong$1;
-Includes['source1_declare_selfillum'] = source1_declare_selfillum;
+Includes['source1_declare_selfillum'] = source1_declare_selfillum$1;
 Includes['source1_declare_sheen'] = source1_declare_sheen$1;
 Includes['source1_final_output_const'] = source1_final_output_const;
 Includes['source1_fragment_common'] = source1_fragment_common;
@@ -60802,6 +60918,8 @@ Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
 
 var source1_calculate_particle_position = "var q: vec4f;\nvar a: vec3f;\n#ifndef PARTICLE_ORIENTATION\n\t#define PARTICLE_ORIENTATION 3\n#endif\n#ifndef USE_PARTICLE_YAW\n\t#define USE_PARTICLE_YAW 1\n#endif\n\n#define PARTICLE_ORIENTATION_SCREEN_ALIGNED 0\n#define PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED 1\n#define PARTICLE_ORIENTATION_WORLD_Z_ALIGNED 2\n#define PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL 3\n#define PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL 4\n#define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5\n\n\tlet p: Particle = getParticle(u32(particleId));\n\toutput.vTextureCoord = vec4f(texCoord, output.vTextureCoord.zw);\n\toutput.vColor = p.color;\n\n\t//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);\n\tlet test: vec4f = vec4(position, 1.0) * p.radius * rotationMatrix(vec3(0.0, .0, 1.0), -p.roll * 1.0);\n\tvar vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);\n\t//vertexPositionModelSpace *= rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 100.0);\n\n\tvar vertexPositionCameraSpace: vec4f;// = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\n\n#ifdef RENDER_SPRITE_TRAIL\n\tlet vecDelta: vec3f = p.vecDelta.xyz;\n\t//vecDelta = vec3(1.0, 1.0, 0.0);\n\tvar aVertexPosition2: vec3f;\n\n\ta = cross(vec3(1.0, 0.0, 0.0), vecDelta);\n\tq = vec4(a, 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta));\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w, 0.0, p.radius), normalize(q));\n\n\tvertexPositionModelSpace = vec4(p.center + aVertexPosition2 + vecDelta * p.vecDelta.w * 0.0, 1.0);\n\n\n\tvar test2: vec3f = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));\n\ttest2 = normalize(test2);\n\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w * 0.5, p.radius * 0.5, 0.0), normalize(q));\n\tlet eyeDir: vec3f = p.center - matrixUniforms.cameraPosition;\n\tq = vec4(vecDelta, 1.0 + dot(eyeDir, a));\n\n#endif\n\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_ALIGNED\n#ifdef RENDER_SPRITE_TRAIL\n\t//A + dot(AP,AB) / dot(AB,AB) * AB\n\tvar A: vec3f =  p.center;\n\tvar B: vec3f =  A + vecDelta;\n\tlet P: vec3f =  matrixUniforms.cameraPosition;\n\tlet AP: vec3f = P-A;\n\tlet AB: vec3f = B-A;\n\n\tlet projPoint: vec3f = A + dot(AP,AB) / dot(AB,AB) * AB;\n\n\n\tlet vDirToBeam: vec3f = normalize(projPoint - matrixUniforms.cameraPosition);\n\tvar vTangentY: vec3f = normalize(cross(vDirToBeam, vecDelta));\n\tvTangentY = test2;\n\tvertexPositionModelSpace = vec4(aVertexPosition2 + vecDelta * p.vecDelta.w * 0.5, 1.0);\n\n\n\tA = -vDirToBeam;\n\tB = normalize(vecDelta);\n\tlet M: mat3x3f  = mat3x3f(\n1.0-B.x*B.x,-B.y*B.x,-B.z*B.x,\n-B.x*B.y,1.0-B.y*B.y,-B.z*B.y,\n-B.x*B.z,-B.y*B.z,1.0-B.z*B.z\n\t    );\n\tlet C: vec3f = M * A;//B * (A * B / length(B)) / length(B);\n\n\tq = vec4(cross(vTangentY, C),1.0 + dot(vTangentY, C));\n\tvertexPositionModelSpace = vec4_transformQuat(vertexPositionModelSpace, normalize(q));\n\tvertexPositionModelSpace = vec4(vertexPositionModelSpace.xyz + p.center, vertexPositionModelSpace.w);\n\n\n\t//vertexPositionModelSpace.xyz = vertexPositionModelSpace.xyz + vTangentY * p.radius * 0.5;\n\n\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#else\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\n#endif\n#else\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_WORLD_Z_ALIGNED\n\tlet yawMatrix: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\n\t#ifdef IS_SPRITE_CARD_MATERIAL\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);\n\t#else\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);\n\t#endif\n\tvar lookAt: mat4x4f;\n\n\tlet cpMat: mat4x4f = mat4FromQuat(uOrientationControlPoint);\n\n\t#if USE_PARTICLE_YAW == 1\n\t\tlookAt = cpMat * yawMatrix * rollMatrix;\n\t#else\n\t\tlookAt = cpMat * rollMatrix;\n\t#endif\n\n\t#ifndef IS_SPRITE_CARD_MATERIAL\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(vec2(1.0, -1.0) * position.xy * p.radius, 0.0, 0.0)));\n\t#else\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0)));\n\t#endif\n#endif\n\n#ifdef SOURCE1_PARTICLES\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\t\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\t\tlookAt = lookAt * lookAt2;\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\t#endif\n#else //SOURCE2\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tvec3 particleNormal = normalize(p.normal);//not sure we have to normalize\n\t\tmat4 lookAt = rotationMatrix(particleNormal, p.roll);\n\t\tvec4 pos;\n\n\t\tvec3 vTrialVector = vec3( 0.0, 0.0, 1.0 );\n\t\tif ( abs( particleNormal.z ) > 0.9 )\n\t\t{\n\t\t\tvTrialVector = float3( 1, 0, 0 );\n\t\t}\n\t\tvec3 up = normalize( cross( particleNormal, vTrialVector ) );\n\t\tvec3 right = cross( particleNormal, up );\n\n\t    pos.xyz = position.x * p.radius * right;\n\t    pos.xyz += position.y * p.radius * up;\n\t\tpos = lookAt * pos;\n\t\tpos += vec4(p.center, 1.0);\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * pos);\n\t#endif\n#endif\n";
 
+var source1_calculate_selfillum = "#if defined(USE_SELF_ILLUM)// && COLOR_MAP_ALPHA_BITS > 0\n\t#ifdef USE_SELF_ILLUM_ENVMAPMASK_ALPHA\n\t\t#ifdef USE_CUBE_MAP\n\t\t\tlet selfIllumComponent: vec3f = uSelfIllumTint * albedo;\n\t\t\tlet Adj_Alpha:f 32 = 1. * cubeMapColor.a;\n\t\t\tdiffuse = max(0., 1. - Adj_Alpha) * diffuse + Adj_Alpha * selfIllumComponent;\n\t\t#endif\n\t#else\n\t\t#ifdef USE_SELF_ILLUM_MASK_MAP\n\t\t\tlet selfIllumMask: vec3f = textureSample(uSelfIllumMaskTexture, uSelfIllumMaskSampler, fragInput.vTextureCoord.xy).rgb;\n\t\t#else\n\t\t\tlet selfIllumMask: vec3f = texelColor.aaa;\n\t\t#endif\n\n\t\t#if !defined(SKIP_SELF_ILLUM_FRESNEL) && defined(USE_SELF_ILLUM_FRESNEL)\n\t\t\tlet worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ: vec3f = normalize(uCameraPosition - vVertexPositionWorldSpace.xyz);\n\t\t\tlet vVertexNormal: vec3f = normalize(vVertexNormalWorldSpace.xyz);\n\n\t\t\tlet flSelfIllumFresnel: f32 = (\n\t\t\t\t\t\t\t\t\t\tpow(\n\t\t\t\t\t\t\t\t\t\t\tsaturate(\n\t\t\t\t\t\t\t\t\t\t\t\tdot(vVertexNormal, normalize(worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ))\n\t\t\t\t\t\t\t\t\t\t\t), uSelfIllumScaleBiasExpBrightness.z\n\t\t\t\t\t\t\t\t\t\t) * uSelfIllumScaleBiasExpBrightness.x) + uSelfIllumScaleBiasExpBrightness.y;\n\t\t\tdiffuse = mix(diffuse, albedo * uSelfIllumTint * uSelfIllumScaleBiasExpBrightness.w, selfIllumMask * saturate(flSelfIllumFresnel));\n\t\t#else\n\t\t\t// Not sure why I need to multiply by g_DiffuseModulation.rgb, but it works better\n\t\t\tdiffuse = mix(diffuse, albedo * uSelfIllumTint * g_DiffuseModulation.rgb, selfIllumMask);\n\t\t#endif\n\t#endif\n#endif\n";
+
 var source1_calculate_sheen = "var sheenMapColor: vec3f = vec3f(1.0);\n\n#ifdef USE_SHEEN_MASK_MAP\n\tvar sheenMaskCoords: vec2f = vec2f(0.0);\n\tif (g_flSheenDirection == 0.0) {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.z;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.y;\n\t} else if (g_flSheenDirection == 1.0) {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.z;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.x;\n\t} else {\n\t\tsheenMaskCoords.x = fragInput.vVertexPositionModelSpace.y;\n\t\tsheenMaskCoords.y = fragInput.vVertexPositionModelSpace.x;\n\t}\n\n\tsheenMaskCoords = (sheenMaskCoords - sheenUniforms.g_vPackedConst6.zw) / sheenUniforms.g_vPackedConst6.xy;\n\n\tsheenMapColor *= textureSample(sheenMaskTexture, sheenMaskSampler, sheenMaskCoords).rgb;\n#endif\n\n\n\t//vec3 sheenMapTint = textureSample(sheenMapMask, (sheenMaskCoord - vec2(sheenMapMaskOffsetX)) / sheenMapMaskScaleX).rgb;\n#ifdef USE_SHEEN_MAP\n\tsheenMapColor *= textureSample(sheenTexture, sheenSampler, reflectDir).rgb;\n\tsheenMapColor *= sheenUniforms.g_cCloakColorTint.rgb;\n\n\tfragColor = vec4f(fragColor.rgb + sheenMapColor * 3.0, fragColor.a);\n#endif\n\n\n#ifdef USE_SHEEN_MASK_MAP\n\t//albedo = abs(vec3(sheenMaskCoords.xy, 0.0));\n#endif\n";
 
 var source1_declare_gamma_functions = "#ifndef SKIP_GAMMA_TO_LINEAR\n\tfn GammaToLinearFloat(gamma: f32) -> f32 {\n\t\treturn pow(gamma, 2.2);\n\t}\n\tfn GammaToLinearVec3(gamma: vec3f) -> vec3f {\n\t\treturn pow(gamma, vec3f(2.2));\n\t}\n\tfn GammaToLinearVec4(gamma: vec4f) -> vec4f {\n\t\treturn vec4(pow(gamma.rgb, vec3f(2.2)), gamma.a);\n\t}\n#else\n\tfn GammaToLinearFloat(gamma: f32) -> f32 {\n\t\treturn gamma;\n\t}\n\tfn GammaToLinearVec3(gamma: vec3f) -> vec3f {\n\t\treturn gamma;\n\t}\n\tfn GammaToLinearVec4(const vec4 gamma) -> vec4f {\n\t\treturn gamma;\n\t}\n#endif\n";
@@ -60810,13 +60928,17 @@ var source1_declare_particle_position = "fn vec4_transformQuat(a: vec4f, q: vec4
 
 var source1_declare_phong = "//TODO: set a vec3 for these three ?\nstruct PhongUniforms {\n\tphongExponent : f32,\n\tphongBoost : f32,\n#ifdef USE_PHONG_EXPONENT_MAP\n\tphongExponentFactor : f32,\n#endif\n}\n\n@group(0) @binding(x) var<uniform> phongUniforms : PhongUniforms;\n";
 
+var source1_declare_selfillum = "#ifdef USE_SELF_ILLUM\n\t@group(0) @binding(x) var<uniform> uSelfIllumTint: vec3f;\n\n\t#ifdef USE_SELF_ILLUM_MASK_MAP\n\t\t@group(0) @binding(x) var uSelfIllumMaskTexture: texture_2d<f32>;\n\t\t@group(0) @binding(x) var uSelfIllumMaskSampler: sampler;\n\t#endif\n\n\t#ifndef SKIP_SELF_ILLUM_FRESNEL\n\t\t#ifdef USE_SELF_ILLUM_FRESNEL\n\t\t\t@group(0) @binding(x) var<uniform> uSelfIllumScaleBiasExpBrightness: vec4f;\n\t\t#endif\n\t#endif\n#endif\n";
+
 var source1_declare_sheen = "#ifdef USE_SHEEN_MAP\n\t@group(0) @binding(x) var sheenTexture: texture_cube<f32>;\n\t@group(0) @binding(x) var sheenSampler: sampler;\n#endif\n#ifdef USE_SHEEN_MASK_MAP\n\t@group(0) @binding(x) var sheenMaskTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var sheenMaskSampler: sampler;\n#endif\n\nstruct SheenUniforms {\n\tg_vPackedConst6: vec4f,\n\tg_vPackedConst7: vec4f,\n\tg_cCloakColorTint: vec3f,\n}\n@group(0) @binding(x) var<uniform> sheenUniforms : SheenUniforms;\n\n#define g_flSheenMapMaskScaleX sheenUniforms.g_vPackedConst6.x // Default = 1.0f\n#define g_flSheenMapMaskScaleY sheenUniforms.g_vPackedConst6.y // Default = 1.0f\n#define g_flSheenMapMaskOffsetX sheenUniforms.g_vPackedConst6.z // Default = 0.0f\n#define g_flSheenMapMaskOffsetY sheenUniforms.g_vPackedConst6.w // Default = 0.0f\n\n#define g_flSheenDirection\t\tsheenUniforms.g_vPackedConst7.x // 0,1,2 -> XYZ\n#define g_flEffectIndex\t\t\tsheenUniforms.g_vPackedConst7.y // W\n";
 
 addWgslInclude('source1_calculate_particle_position', source1_calculate_particle_position);
+addWgslInclude('source1_calculate_selfillum', source1_calculate_selfillum);
 addWgslInclude('source1_calculate_sheen', source1_calculate_sheen);
 addWgslInclude('source1_declare_gamma_functions', source1_declare_gamma_functions);
 addWgslInclude('source1_declare_particle_position', source1_declare_particle_position);
 addWgslInclude('source1_declare_phong', source1_declare_phong);
+addWgslInclude('source1_declare_selfillum', source1_declare_selfillum);
 addWgslInclude('source1_declare_sheen', source1_declare_sheen);
 
 var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_camera_position\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_selfillum\n\n#include declare_lights\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n@group(0) @binding(x) var<uniform> uEyeOrigin: vec3f;\n@group(0) @binding(x) var<uniform> uIrisProjectionU: vec4f;\n@group(0) @binding(x) var<uniform> uIrisProjectionV: vec4f;\n\n@group(0) @binding(x) var corneaTexture: texture_2d<f32>;\n@group(0) @binding(x) var corneaSampler: sampler;\n\n/*#include varying_standard**/\n/*\nstruct EyeRefractOut {\n\tstdOut: VertexOut,\n\n\t//vWorldPosition_ProjPosZ: vec4f,\n\tvTangentViewVector: vec3f,\n\tvWorldNormal: vec3f,\n\tvWorldTangent: vec3f,\n\tvWorldBinormal: vec3f,\n}\n*/\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\n\t@location(y) vWorldPosition_ProjPosZ: vec3f,\n\t@location(y) vTangentViewVector: vec3f,\n\t@location(y) vWorldNormal: vec3f,\n\t@location(y) vWorldTangent: vec3f,\n\t@location(y) vWorldBinormal: vec3f,\n}\n\n\n#define g_flEyeballRadius\t5.51\n#define g_flParallaxStrength 0.25\n\nfn Vec3WorldToTangent( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\tvar vTangentVector: vec3f;\n\tvTangentVector.x = dot( iWorldVector.xyz, iWorldTangent.xyz );\n\tvTangentVector.y = dot( iWorldVector.xyz, iWorldBinormal.xyz );\n\tvTangentVector.z = dot( iWorldVector.xyz, iWorldNormal.xyz );\n\treturn vTangentVector; // Return without normalizing\n}\nfn Vec3WorldToTangentNormalized( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\treturn normalize( Vec3WorldToTangent( iWorldVector, iWorldNormal, iWorldTangent, iWorldBinormal ) );\n}\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output: VertexOut =  VertexOut();\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\n/********************************************/\n\toutput.vWorldPosition_ProjPosZ = vertexPositionWorldSpace.xyz;\n\n\tlet cViewProj: mat4x4f = matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix;\n\tlet vProjPos: vec4f = cViewProj * vertexPositionWorldSpace;//mul( vec4( vertexPositionWorldSpace, 1.0 ), cViewProj );\n\t//o.projPos = vProjPos;\n\t//vProjPos.z = dot(vertexPositionWorldSpace, cViewProjZ );\n\t//o.vWorldPosition_ProjPosZ.w = vProjPos.z;\n\n\tlet vEyeSocketUpVector: vec3f = normalize( -uIrisProjectionV.xyz );\n\tlet vEyeSocketLeftVector: vec3f = normalize( -uIrisProjectionU.xyz );\n\n\t//vEyeSocketUpVector = -vec3(0.0, 1.0, 0.0);\n\t//vEyeSocketLeftVector = -vec3(0.0, 0.0, 1.0);\n\n\toutput.vWorldNormal = normalize( vertexPositionWorldSpace.xyz - uEyeOrigin.xyz );\n\toutput.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );\n\toutput.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );\n\n\tlet vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);\n\toutput.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);\n\t//vTangentViewVector.xyz = vWorldViewVector;\n\t//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;\n\t//vTangentViewVector.xyz = vWorldBinormal;\n\n/********************************************/\n\n\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tfragColor = vec4f(1.0);\n\tfragColor = vec4f(abs(fragInput.vTangentViewVector), 1.0);\n\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t//#include compute_fragment_color_map_mod1\n\n\t#ifdef USE_COLOR_MAP\n\t\tvar texelColor: vec4f = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\t\tdiffuseColor *= texelColor;\n\t#endif\n\t#include compute_fragment_alpha_test\n\t\t//texelColor.a = 1.0;\n\t\t//fragColor = texelColor;\n#ifndef IS_TRANSLUCENT\n\tfragColor.a = 1.0;\n#endif\n\t//fragColor = vec4(vTextureCoord/2.0, 0.0, 1.0);\n\n\n\n/********************************************/\n\t//let vWorldPosition: vec3f = fragInput.vWorldPosition_ProjPosZ.xyz;\n\tvar vCorneaUv: vec2f; // Note: Cornea texture is a cropped version of the iris texture\n\tvCorneaUv.x = dot( uIrisProjectionU, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tvCorneaUv.y = dot( uIrisProjectionV, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tlet vSphereUv: vec2f = ( vCorneaUv.xy * 0.5 ) + 0.25;\n\n\tlet corneaColor: vec4f = textureSample(corneaTexture, corneaSampler, vCorneaUv);\n\tlet fIrisOffset: f32 = corneaColor.b;\n\n\tvar vParallaxVector: vec2f = ( fragInput.vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - fragInput.vTangentViewVector.z ); // Note: 0.25 is a magic number\n\tvParallaxVector = ( fragInput.vTangentViewVector.xy* g_flParallaxStrength) / ( 1.0 - fragInput.vTangentViewVector.z );\n\tvParallaxVector.x = -vParallaxVector.x; //Need to flip x...not sure why.\n\tvParallaxVector = vec2(0.0);\n\n\tlet vIrisUv: vec2f = vSphereUv.xy - vParallaxVector.xy;\n#ifdef USE_COLOR_MAP\n\tvar cIrisColor: vec4f = textureSample(colorTexture, colorSampler, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );\n#else\n\tvar cIrisColor: vec4f = vec4(1.0);\n#endif\n\t//cIrisColor = pow(cIrisColor, vec4(1./2.2));\n\tcIrisColor.a = 1.0;\n\tfragColor = cIrisColor;\n/********************************************/\n\t#include compute_fragment_standard\n\n#ifdef SKIP_PROJECTION\n#ifdef USE_COLOR_MAP\n\tfragColor = texture2D(colorTexture, mod(vTextureCoord.xy, 1.0));\n#else\n\tvec4 fragColor = vec4(1.0);\n#endif\n\tfragColor.a = 1.;\n#endif\n\t#include compute_fragment_render_mode\n\n\n\n\n\t#include output_fragment\n}\n";
@@ -60831,7 +60953,7 @@ var source1_unlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n
 
 var source1_unlittwotexture = "#define USE_COLOR_2_MAP\n\n#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t#include declare_vertex_standard_params\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n) -> VertexOut\n{\n#ifndef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\tlet normal: vec3f = vec3(1., 0., 0.);\n#endif\n\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_uv2\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\n\tfragColor = texelColor * texelColor.a * texel2Color * texel2Color.a;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
-var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nlet diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\n//gl_FragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
+var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
 Shaders['source1_eyerefract.wgsl'] = source1_eyerefract;
 Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
@@ -76048,20 +76170,6 @@ class RenderTargetViewer {
         return s == 'RenderTargetViewer';
     }
 }
-
-// TODO: remove when WebGPU is a baseline feature
-function initWebGPUConst() {
-    if (!window.GPUTextureUsage) {
-        window.GPUTextureUsage = {
-            'COPY_SRC': 1,
-            'COPY_DST': 2,
-            'TEXTURE_BINDING': 4,
-            'STORAGE_BINDING': 8,
-            'RENDER_ATTACHMENT': 16
-        };
-    }
-}
-initWebGPUConst();
 
 var calculate_fragment_alpha_test = "#ifndef EXPORT_TEXTURES\n\t#ifdef ALPHA_TEST\n\t\tif (diffuseColor.a < uAlphaTestReference) {\n\t\t\tdiscard;\n\t\t}\n\t#endif\n#endif\n";
 

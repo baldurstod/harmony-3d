@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { RandomPointOnModel } from '../../../../../interfaces/randompointonmodel';
+import { errorOnce } from '../../../../../utils/console';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
@@ -29,7 +30,8 @@ export class PositionOnModelRandom extends Source1ParticleOperator {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const forceInModel = this.getParameter('force to be inside model');
 
-		if (forceInModel > 5) {
+		if (forceInModel > 15) {
+			errorOnce(`forceInModel > 15 ${forceInModel}`);
 			particle.die();
 			return;
 		}
