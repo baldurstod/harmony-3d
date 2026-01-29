@@ -1,6 +1,6 @@
 {
 	"name": "harmony-3d",
-	"version": "0.34.4",
+	"version": "0.34.5",
 	"description": "3D viewer",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -23,7 +23,7 @@
 		"harmony-ui": "github:baldurstod/harmony-ui",
 		"harmony-utils": "github:baldurstod/harmony-utils",
 		"harmony-vpk": "github:baldurstod/harmony-vpk",
-		"meshoptimizer": "^0.21.0",
+		"meshoptimizer": "^1.0.1",
 		"murmurhash": "github:baldurstod/murmurhash",
 		"wgsl_reflect": "^1.2.3"
 	},

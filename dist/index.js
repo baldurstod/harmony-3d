@@ -19146,7 +19146,7 @@ Shaders['select.vs'] = select_vs;
 Shaders['texturelookup.fs'] = texturelookup_fs;
 Shaders['texturelookup.vs'] = texturelookup_vs;
 
-var nodeimageeditor_declare_functions = `
+var nodeimageeditor_declare_functions$1 = `
 #define SKIP_SRGB_ENC_DEC
 
 float4 invlerp( float x, float y, float4 r )
@@ -19265,7 +19265,7 @@ void main(void) {
 }
 `;
 
-Includes['nodeimageeditor_declare_functions'] = nodeimageeditor_declare_functions;
+Includes['nodeimageeditor_declare_functions'] = nodeimageeditor_declare_functions$1;
 Includes['nodeimageeditor_imageeditor_vs'] = nodeimageeditor_imageeditor_vs;
 
 var imageeditor_fs = `
@@ -19286,6 +19286,10 @@ var imageeditor_vs = `
 Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
 
+var nodeimageeditor_declare_functions = "#define SKIP_SRGB_ENC_DEC\n\nfn invlerp( x: f32, y: f32, r: vec4f ) -> vec4f {\n\treturn ( r - x ) / ( y - x );\n}\n\nfn convertLinearTosRGB( lin: vec4f ) -> vec4f {\n\t#ifdef SKIP_SRGB_ENC_DEC\n\t\treturn lin;\n\t#else\n\t\tlet col_lin: vec3f = lin.xyz;\n\t\tvar col_srgb: vec3f;\n\t\tfor (int i = 0; i < 3; ++i)\n\t\t{\n\t\t\tif ( col_lin[i] <= 0.0031308 )\n\t\t\t\tcol_srgb[i] = 12.92 * col_lin[i];\n\t\t\telse\n\t\t\t\tcol_srgb[i] = 1.055 * pow( col_lin[i], 1.0 / 2.4 ) - 0.055;\n\t\t}\n\n\t\treturn vec4f( col_srgb.xyz, lin.a );\n\t#endif\n}\n\nfn convertsRGBToLinear( srgb: vec4f ) -> vec4f {\n\t#ifdef SKIP_SRGB_ENC_DEC\n\t\treturn srgb;\n\t#else\n\t\tlet col_lin: vec3f = srgb.xyz;\n\t\tvar col_srgb: vec3f;\n\n\t\tfor (int i = 0; i < 3; ++i)\n\t\t{\n\t\t\tif ( col_srgb[i] <= 0.04045 )\n\t\t\t\tcol_lin[i] = col_srgb[i] / 12.92;\n\t\t\telse\n\t\t\t\tcol_lin[i] = pow( ( col_srgb[i] + 0.055 ) / 1.055, 2.4 );\n\t\t}\n\n\t\treturn vec4f( col_lin.xyz, srgb.a );\n\t#endif\n}\n\n// Uses photoshop math to perform level adjustment.\n// Note: Photoshop does this math in sRGB space, even though that is mathematically wrong.\n// To match photoshop, we have to convert our textures from linear space (they're always linear in the shader)\n// to sRGB, perform the calculations and then return to linear space for output from the shader.\n// Yuck.\n/*float AdjustLevels( float inSrc, float inBlackPoint, float inWhitePoint, float inGammaValue )\n{\n\tif ( inBlackPoint == 0.0 && inWhitePoint == 1.0 && inGammaValue == 1.0 )\n\t\treturn inSrc;\n\telse\n\t{\n\t\tinSrc = convertLinearTosRGB( inSrc );\n\n\t\tfloat pcg = saturate( invlerp( inBlackPoint, inWhitePoint, inSrc ) );\n\t\tfloat gammaAdjusted = pow( pcg, inGammaValue );\n\n\t\tgammaAdjusted = convertsRGBToLinear( gammaAdjusted );\n\n\t\treturn saturate( gammaAdjusted );\n\t}\n}*/\n\nfn AdjustLevels( inSrc: vec4f, inBlackPoint: f32, inWhitePoint: f32, inGammaValue: f32 ) -> vec4f {\n\tif ( inBlackPoint == 0.0 && inWhitePoint == 1.0 && inGammaValue == 1.0 ) {\n\t\treturn inSrc;\n\t} else {\n\n\t\tlet pcg: vec4f = saturate( invlerp( inBlackPoint, inWhitePoint, convertLinearTosRGB( inSrc ) ) );\n\t\tvar gammaAdjusted: vec4f = pow( pcg, vec4(inGammaValue) );\n\n\t\tgammaAdjusted = convertsRGBToLinear( gammaAdjusted );\n\n\t\treturn saturate( gammaAdjusted );\n\t}\n}\n";
+
+addWgslInclude('nodeimageeditor_declare_functions', nodeimageeditor_declare_functions);
+
 var applysticker = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n@group(0) @binding(x) var stickerTexture: texture_2d<f32>;\n@group(0) @binding(x) var stickerSampler: sampler;\n#ifdef USE_STICKER_SPECULAR\n\t@group(0) @binding(x) var stickerSpecularTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var stickerSpecularSampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec4f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), vec4f(texCoord.xy, vec3(transformTexCoord0 * vec3(texCoord.xy, 1.0)).xy));\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tlet inputColor: vec4f = textureSample(inputTexture, inputSampler, fragInput.vTextureCoord.xy);\n\tlet stickerColor: vec4f = textureSample(stickerTexture, stickerSampler, fragInput.vTextureCoord.zw);\n#ifdef USE_STICKER_SPECULAR\n\tlet specularColor: vec4f = textureSample(stickerSpecularTexture, stickerSpecularSampler, fragInput.vTextureCoord.zw);\n#else\n\tlet specularColor: vec4f = vec4(1.);\n#endif\n\tlet color: vec4f = vec4((1.0 - stickerColor.a) * inputColor.xyz + stickerColor.a * stickerColor.xyz,\n\t\t\t\t\t\t(1.0 - stickerColor.a) * inputColor.a + stickerColor.a * specularColor.r);\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord.xy * commonUniforms.resolution.xy), color);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
 var combinelerp = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var input0: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var input1: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var inputWeight: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color1: vec4f = textureLoad(input0, id.xy);\n\tlet color2: vec4f = textureLoad(input1, id.xy);\n\tlet color3: vec4f = textureLoad(inputWeight, id.xy);\n\n\ttextureStore(outTexture, id.xy, mix(color1, color2, color3.rrrr));\n}\n";
@@ -19296,7 +19300,7 @@ var multiply$1 = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include 
 
 var select = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n@group(0) @binding(x) var<uniform> select: array<f32, MAX_SELECTORS>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color: vec4f = textureLoad(inputTexture, id.xy);\n\n\tvar out: vec4f = vec4(0.0);\n\tfor (var i: i32 = 0; i < MAX_SELECTORS; i++) {\n\t\tif (select[i] > 0.0) {\n\t\t\tif (abs(color.r * 255.0 - select[i]) < 8.0) {\n\t\t\t\tout = vec4(1.0);\n\t\t\t}\n\t\t}\n\t}\n\n\ttextureStore(outTexture, id.xy, out);\n}\n";
 
-var texturelookup = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), textureSample(inputTexture, inputSampler, vec3(transformTexCoord0 * vec3(fragInput.vTextureCoord, 1.0)).xy) );\n\treturn FragmentOutput(vec4(1.0));\n}\n";
+var texturelookup = "#include matrix_uniforms\n#include common_uniforms\n\n#include nodeimageeditor_declare_functions\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n@group(0) @binding(x) var<uniform> adjustLevels: vec4f;\n#define g_AdjustInBlack\t\tadjustLevels.x\n#define g_AdjustInWhite\t\tadjustLevels.y\n#define g_AdjustGamma\t\tadjustLevels.z\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar color: vec4f = textureSample(inputTexture, inputSampler, vec3(transformTexCoord0 * vec3(fragInput.vTextureCoord, 1.0)).xy);\n\tcolor = AdjustLevels(color, g_AdjustInBlack, g_AdjustInWhite, g_AdjustGamma);\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), color);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
 Shaders['applysticker.wgsl'] = applysticker;
 Shaders['combine_lerp.wgsl'] = combinelerp;
@@ -30334,7 +30338,11 @@ class Source2ModelLoader {
             const elementSizeInBytes = buffer.getValueAsNumber('m_nElementSizeInBytes') ?? 0;
             const inputLayoutFields = buffer.getValueAsElementArray('m_inputLayoutFields') ?? [];
             const meshoptCompressed = buffer.getValueAsBool('m_bMeshoptCompressed');
-            // TODO: also use m_bCompressedZSTD
+            const compressedZSTD = buffer.getValueAsBool('m_bCompressedZSTD');
+            if (compressedZSTD) {
+                // TODO: also use m_bCompressedZSTD
+                throw new Error('code compressedZSTD');
+            }
             const fieldsCount = inputLayoutFields.length;
             const fields = [];
             for (const inputLayoutField of inputLayoutFields) {
@@ -30350,10 +30358,11 @@ class Source2ModelLoader {
             if (meshoptCompressed) {
                 const decompressBuffer = new Uint8Array(new ArrayBuffer(elementCount * elementSizeInBytes));
                 if (isVertex) {
-                    MeshoptDecoder.decodeVertexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
+                    //saveFile(new File([new Blob([sourceBlock.reader.getBytes(200, 0) as unknown as ArrayBuffer])], 'MeshoptDecoder'));
+                    MeshoptDecoder.decodeVertexBuffer(decompressBuffer, elementCount, elementSizeInBytes, sourceBlock.reader.getBytes(sourceBlock.reader.byteLength));
                 }
                 else {
-                    MeshoptDecoder.decodeIndexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
+                    MeshoptDecoder.decodeIndexBuffer(decompressBuffer, elementCount, elementSizeInBytes, sourceBlock.reader.getBytes(sourceBlock.reader.byteLength));
                 }
                 reader = new BinaryReader(decompressBuffer);
             }
