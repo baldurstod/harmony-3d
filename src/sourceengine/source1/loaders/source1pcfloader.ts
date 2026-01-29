@@ -16,6 +16,7 @@ const data_size = [
 
 const BINARY_FORMAT_POS = 25;
 
+// TODO: use harmony-dmx instead
 export class Source1PcfLoader extends SourceBinaryLoader {
 	parse(repository: string, path: string, content: ArrayBuffer): SourcePCF | null {
 		const pcf = new SourcePCF(repository, path);
@@ -56,11 +57,7 @@ export class Source1PcfLoader extends SourceBinaryLoader {
 			pcf.stringDict.push(reader.getNullString());
 		}
 
-		if (pcf.binaryVersion < 5) {
-			nElements = reader.getUint32();
-		} else {
-			nElements = reader.getUint32();
-		}
+		nElements = reader.getUint32();
 
 		for (let i = 0; i < nElements; i++) {
 			pcf.elementsDict.push(this.#parseElement(reader, pcf));
