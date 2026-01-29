@@ -166,7 +166,11 @@ export class Source2ModelLoader {
 			const elementSizeInBytes = buffer.getValueAsNumber('m_nElementSizeInBytes') ?? 0;
 			const inputLayoutFields = buffer.getValueAsElementArray('m_inputLayoutFields') ?? [];
 			const meshoptCompressed = buffer.getValueAsBool('m_bMeshoptCompressed');
-			// TODO: also use m_bCompressedZSTD
+			const compressedZSTD = buffer.getValueAsBool('m_bCompressedZSTD');
+			if (compressedZSTD) {
+				// TODO: also use m_bCompressedZSTD
+				throw new Error('code compressedZSTD');
+			}
 
 			const fieldsCount = inputLayoutFields.length;
 			const fields: VertexField[] = [];
@@ -185,10 +189,10 @@ export class Source2ModelLoader {
 			if (meshoptCompressed) {
 				const decompressBuffer = new Uint8Array(new ArrayBuffer(elementCount * elementSizeInBytes));
 				if (isVertex) {
-					MeshoptDecoder.decodeVertexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
+					//saveFile(new File([new Blob([sourceBlock.reader.getBytes(200, 0) as unknown as ArrayBuffer])], 'MeshoptDecoder'));
+					MeshoptDecoder.decodeVertexBuffer(decompressBuffer, elementCount, elementSizeInBytes, sourceBlock.reader.getBytes(sourceBlock.reader.byteLength));
 				} else {
-					MeshoptDecoder.decodeIndexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
-
+					MeshoptDecoder.decodeIndexBuffer(decompressBuffer, elementCount, elementSizeInBytes, sourceBlock.reader.getBytes(sourceBlock.reader.byteLength));
 				}
 				reader = new BinaryReader(decompressBuffer);
 			}
