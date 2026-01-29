@@ -252,7 +252,7 @@ export class CDmxElement {
 						break;
 				}
 			}
-		} while (current);
+		} while (stack.length);
 
 
 		return subs;
