@@ -1,14 +1,11 @@
-import { FlexAnimationTrack } from './flexanimationtrack';
-import { Source1SoundManager } from '../sounds/soundmanager';
-import { Choreography } from './choreography';
-import { Channel } from './channel';
-import { TimelineElement } from '../../../timeline/element';
-import { Timeline } from '../../../timeline/timeline';
-import { TimelineGroup } from '../../../timeline/group';
 import { TimelineClip } from '../../../timeline/clip';
+import { Source1SoundManager } from '../sounds/soundmanager';
+import { Channel } from './channel';
+import { Choreography } from './choreography';
 import { CurveData } from './curvedata';
+import { FlexAnimationTrack } from './flexanimationtrack';
 
-type ChoreographyEventParam = any/*TODO: improve type*/;
+export type ChoreographyEventParam = any/*TODO: improve type*/;
 
 export class ChoreographyEvent {
 	#repository: string;
@@ -170,7 +167,7 @@ export class ChoreographyEvent {
 	/**
 	 * toString
 	 */
-	toString(indent:string) {
+	toString(indent: string) {
 		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [];
@@ -207,7 +204,7 @@ export class ChoreographyEvent {
 	/**
 	 * Step
 	 */
-	step(previousTime:number, currentTime:number) {
+	step(previousTime: number, currentTime: number) {
 		const actor = this.getActor();
 		if (actor) {
 			actor.frame = currentTime;
@@ -311,8 +308,27 @@ export enum EventType {
 	StopPoint,
 	PermitResponses,
 	Generic,
-
 }
+
+export const ChoreographyEventName = new Map<string, EventType>([
+	['unspecified', EventType.Unspecified],
+	['section', EventType.Section],
+	['expression', EventType.Expression],
+	['lookat', EventType.LookAt],
+	['moveto', EventType.MoveTo],
+	['speak', EventType.Speak],
+	['gesture', EventType.Gesture],
+	['sequence', EventType.Sequence],
+	['face', EventType.Face],
+	['firetrigger', EventType.FireTrigger],
+	['flexanimation', EventType.Flexanimation],
+	['subscene', EventType.SubScene],
+	['loop', EventType.Loop],
+	['interrupt', EventType.Interrupt],
+	['stoppoint', EventType.StopPoint],
+	['permitresponses', EventType.PermitResponses],
+	['generic', EventType.Generic],
+]);
 //TODO: setup const
 /*
 Event.EventType = {
