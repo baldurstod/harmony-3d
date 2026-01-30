@@ -1,3 +1,4 @@
+import { Map2 } from 'harmony-utils';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { Source1ModelInstance } from '../export';
 import { Choreographies } from './choreographies';
@@ -8,6 +9,7 @@ export class ChoreographiesManager {
 	static #playing = true;
 	static readonly #choreographies = new Set<Choreography>();
 	static #sceneImage?: Choreographies;
+	static #vcds = new Map2<string, string, Choreography/*TODO: create a choreography definition*/>();
 
 	static async init(repositoryName: string, fileName: string): Promise<void> {
 		if (!this.#sceneImage) {
@@ -21,25 +23,32 @@ export class ChoreographiesManager {
 		}
 	}
 
-	static async playChoreography(choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null> {
-		if (this.#sceneImage) {
-			const choreography = await this.#sceneImage.getChoreography(choreoName);
-			if (choreography) {
-				//choreography.play();
-				this.#choreographies.add(choreography);
-				choreography.setActors(actors);
-				//choreography.onStop = onStop;
-				return choreography;
-			}
+	static async playChoreography(repository: string, choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null> {
+		let choreography: Choreography | undefined | null = this.#vcds.get(repository, choreoName);
 
-			/* else {
-				setTimeout(function() {playChoreo(choreoName, actors, onStop)}, 100);
-			}*/
+		if (!choreography && this.#sceneImage) {
+			choreography = await this.#sceneImage.getChoreography(choreoName);
 		}
-		return null;
+
+		if (!choreography) {
+			return null;
+		}
+
+		this.#choreographies.add(choreography);
+		choreography.setActors(actors);
+		return choreography;
 	}
 
-	static async getChoreography(choreoName: string): Promise<Choreography | null> {
+	static addChoreography(repository: string, choreoName: string, choreo: Choreography): void {
+		this.#vcds.set(repository, choreoName, choreo);
+	}
+
+	static async getChoreography(repository: string, choreoName: string): Promise<Choreography | null> {
+		let choreography: Choreography | undefined | null = this.#vcds.get(repository, choreoName);
+		if (choreography) {
+			return choreography;
+		}
+
 		if (this.#sceneImage) {
 			return await this.#sceneImage.getChoreography(choreoName);
 		}
