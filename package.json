@@ -17,6 +17,7 @@
 		"gl-matrix": "^3.4.3",
 		"harmony-binary-reader": "github:baldurstod/harmony-binary-reader",
 		"harmony-browser-utils": "github:baldurstod/harmony-browser-utils",
+		"harmony-dmx": "github:baldurstod/harmony-dmx",
 		"harmony-fbx": "github:baldurstod/harmony-fbx",
 		"harmony-svg": "github:baldurstod/harmony-svg",
 		"harmony-types": "github:baldurstod/harmony-types",

@@ -4,20 +4,12 @@ import { Choreographies } from './choreographies';
 import { Choreography } from './choreography';
 
 export class ChoreographiesManager {
-	static #instance: ChoreographiesManager;
-	#playbackSpeed = 1.0;
-	#playing = true;
-	#choreographies = new Set<Choreography>();
-	#sceneImage?: Choreographies;
+	static #playbackSpeed = 1.0;
+	static #playing = true;
+	static readonly #choreographies = new Set<Choreography>();
+	static #sceneImage?: Choreographies;
 
-	constructor() {
-		if (ChoreographiesManager.#instance) {
-			return ChoreographiesManager.#instance;
-		}
-		ChoreographiesManager.#instance = this;
-	}
-
-	async init(repositoryName: string, fileName: string) {
+	static async init(repositoryName: string, fileName: string): Promise<void> {
 		if (!this.#sceneImage) {
 			this.#sceneImage = new Choreographies();
 			await this.#sceneImage.loadFile(repositoryName, fileName);
@@ -29,7 +21,7 @@ export class ChoreographiesManager {
 		}
 	}
 
-	async playChoreography(choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null> {
+	static async playChoreography(choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null> {
 		if (this.#sceneImage) {
 			const choreography = await this.#sceneImage.getChoreography(choreoName);
 			if (choreography) {
@@ -47,14 +39,14 @@ export class ChoreographiesManager {
 		return null;
 	}
 
-	async getChoreography(choreoName: string): Promise<Choreography | null> {
+	static async getChoreography(choreoName: string): Promise<Choreography | null> {
 		if (this.#sceneImage) {
 			return await this.#sceneImage.getChoreography(choreoName);
 		}
 		return null;
 	}
 
-	step(elapsed: number) {
+	static step(elapsed: number): void {
 		if (!this.#playing) {
 			return;
 		}
@@ -66,35 +58,28 @@ export class ChoreographiesManager {
 		}
 	}
 
-	reset() {
+	static reset(): void {
 		for (const choreography of this.#choreographies) {
 			choreography.reset();
 		}
 	}
 
-	stopAll() {
+	static stopAll(): void {
 		for (const choreography of this.#choreographies) {
 			choreography.stop();
 			this.#choreographies.delete(choreography);
 		}
 	}
 
-	play() {
+	static play(): void {
 		this.#playing = true;
 	}
 
-	pause() {
+	static pause(): void {
 		this.#playing = false;
 	}
 
-	setPlaybackSpeed(playbackSpeed: number): void {
+	static setPlaybackSpeed(playbackSpeed: number): void {
 		this.#playbackSpeed = playbackSpeed;
-	}
-
-	/**
-	 * @deprecated Please use `setPlaybackSpeed` instead.
-	 */
-	set playbackSpeed(playbackSpeed: number) {
-		this.setPlaybackSpeed(playbackSpeed);
 	}
 }
