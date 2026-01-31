@@ -857,6 +857,16 @@ export class SourceMdl {
 		}
 		return 0;
 	}
+
+	getSrcBoneTransform(boneName: string): MdlSrcBoneTransform | null {
+		for (const srcBoneTransform of this.srcBoneTransforms) {
+			if (srcBoneTransform.name == boneName) {
+				return srcBoneTransform;
+			}
+		}
+
+		return null;
+	}
 }
 
 export class MdlStudioModelGroup {//{//TODO: turn to type

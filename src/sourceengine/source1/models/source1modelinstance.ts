@@ -1063,7 +1063,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 
 			for (const bone of bones) {
-				animation.addBone(new AnimationBone(bone.boneId, -1, bone.name, vec3.create(), quat.create()));
+				animation.addBone(new AnimationBone(bone.boneId, (bone.parent as Bone)?.boneId ?? -1, bone.name, vec3.create(), quat.create()));
 			}
 
 			for (let frame = 0; frame < frameCount; frame++) {
@@ -1083,6 +1083,29 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 					bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? vec3.create();
 					boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? quat.create();
+
+					const srcBoneTransform = this.sourceModel.mdl.getSrcBoneTransform(boneName);
+					if (srcBoneTransform) {
+						// TODO: improve that
+
+						const preTransform = quat.fromMat3(quat.create(), mat3.fromValues(
+							srcBoneTransform.preTransform[0], srcBoneTransform.preTransform[1], srcBoneTransform.preTransform[2],
+							srcBoneTransform.preTransform[4], srcBoneTransform.preTransform[5], srcBoneTransform.preTransform[6],
+							srcBoneTransform.preTransform[8], srcBoneTransform.preTransform[9], srcBoneTransform.preTransform[10],
+						));
+						const postTransform = quat.fromMat3(quat.create(), mat3.fromValues(
+							srcBoneTransform.postTransform[0], srcBoneTransform.postTransform[1], srcBoneTransform.postTransform[2],
+							srcBoneTransform.postTransform[4], srcBoneTransform.postTransform[5], srcBoneTransform.postTransform[6],
+							srcBoneTransform.postTransform[8], srcBoneTransform.postTransform[9], srcBoneTransform.postTransform[10],
+						));
+						const pre = quat.mul(quat.create(), preTransform, boneOrientations[bone.boneId]!);
+						boneOrientations[bone.boneId] = quat.mul(quat.create(), pre, postTransform);
+						//const pre = quat.mul(quat.create(), boneOrientations[bone.boneId]!, preTransform);
+						//boneOrientations[bone.boneId] = quat.mul(quat.create(), postTransform, boneOrientations[bone.boneId]!);
+
+						bonePositions[bone.boneId] = vec3.transformMat4(vec3.create(), bonePositions[bone.boneId]!, srcBoneTransform.preTransform);
+					}
+
 					boneFlags[bone.boneId] = 0xFFFFFFFF;
 				}
 
@@ -1094,7 +1117,6 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 
 			this.#animations.set(0, new AnimationDescription(animation, 1));
-
 
 			//7833551d-a8e6-43bd-8136-9328f719e208
 
