@@ -1,6 +1,11 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
+import { Dmx, DmxElement } from 'harmony-dmx';
 import { JSONObject } from 'harmony-types';
+import { Animation } from '../../../animations/animation';
+import { AnimationBone } from '../../../animations/animationbone';
 import { AnimationDescription } from '../../../animations/animationdescription';
+import { AnimationFrame } from '../../../animations/animationframe';
+import { AnimationFrameDataType } from '../../../animations/animationframedata';
 import { Animations } from '../../../animations/animations';
 import { Camera } from '../../../cameras/camera';
 import { registerEntity } from '../../../entities/entities';
@@ -956,6 +961,157 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	getAnimations() {
 		return this.sourceModel.mdl.getAnimList();
+	}
+
+	importAnimationFromDmx(dmx: Dmx): void {
+		type Position = [number, vec3];
+		type Orientation = [number, quat];
+
+		if (dmx.format != 'model' || !dmx.root) {
+			return;
+		}
+
+		if (!this.#skeleton) {
+			return;
+		}
+
+		const exportTags = dmx.root.getAttribute('exportTags');
+		if (!exportTags) {
+			return;
+		}
+
+		const frameCount = (exportTags.value as DmxElement).getAttribute('frameCount')?.value as number | undefined;
+		const frameRate = (exportTags.value as DmxElement).getAttribute('frameRate')?.value as number | undefined;
+		if (frameCount === undefined || frameRate === undefined) {
+			return;
+		}
+
+		const animationList = dmx.root.getAttribute('animationList');
+		if (!animationList) {
+			return;
+		}
+
+		const animations = (animationList.value as DmxElement).getAttribute('animations');
+		if (!animations) {
+			return;
+		}
+
+		for (const dmxAnimation of animations.value as DmxElement[]) {
+			const animation = new Animation(dmxAnimation.name);
+
+			const dmxChannels = dmxAnimation.getAttribute('channels');
+			if (!dmxChannels) {
+				continue;
+			}
+
+			const positionsPerBone = new Map<string, Position[]>();
+			const orientationsPerBone = new Map<string, Orientation[]>();
+
+			for (const dmxChannel of dmxChannels.value as DmxElement[]) {
+				const toElement = dmxChannel.getAttribute('toElement');
+				const toAttribute = dmxChannel.getAttribute('toAttribute')?.value as string | undefined;
+				const log = dmxChannel.getAttribute('log');
+
+				if (!toElement || !toAttribute || !log) {
+					continue;
+				}
+
+				if (toAttribute !== 'position' && toAttribute !== 'orientation') {
+					continue;
+				}
+
+				const boneName = (toElement.value as DmxElement).name;
+
+				const logLayers = (log.value as DmxElement).getAttribute('layers');
+				if (!logLayers || (logLayers.value as DmxElement[]).length == 0) {
+					continue;
+				}
+
+				// TODO: use several layers ?
+				const layer = (logLayers.value as DmxElement[])[0]!;
+				const values = layer.getAttribute('values')?.value as (vec3[] | quat[]);
+				if (!values) {
+					continue;
+				}
+				const times = layer.getAttribute('times')?.value as number[];
+				if (!times) {
+					continue;
+				}
+
+				if ((times as []).length != (values as []).length) {
+					console.error('channel discrepancy', times, values, dmx);
+					continue;
+				}
+
+				const arr: [number, vec3 | quat][] = [];
+				for (let i = 0; i < times.length; i++) {
+					arr.push([times[i]!, values[i]!]);
+				}
+
+				if (toAttribute == 'position') {
+					positionsPerBone.set(boneName, arr as Position[]);
+				} else {
+					orientationsPerBone.set(boneName, arr as Orientation[]);
+				}
+
+				//console.info(times, values);
+			}
+
+			console.info(this.#skeleton, positionsPerBone, orientationsPerBone);
+
+			const bones = this.#skeleton.bones;
+
+
+			for (const bone of bones) {
+				animation.addBone(new AnimationBone(bone.boneId, -1, bone.name, vec3.create(), quat.create()));
+			}
+
+			for (let frame = 0; frame < frameCount; frame++) {
+				const animationFrame = new AnimationFrame(frame);
+
+				const time = Math.round(frame * 10000 / frameRate);
+
+				const bonePositions: vec3[] = new Array(bones.length);
+				const boneOrientations: quat[] = new Array(bones.length);
+				const boneFlags: number[] = new Array(bones.length);
+
+				for (const bone of bones) {
+					const boneName = bone.name;
+
+					const positions = positionsPerBone.get(boneName);
+					const orientations = orientationsPerBone.get(boneName);
+
+					bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? vec3.create();
+					boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? quat.create();
+					boneFlags[bone.boneId] = 0xFFFFFFFF;
+				}
+
+				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, bonePositions);
+				animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, boneOrientations);
+				animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
+				animation.addFrame(animationFrame);
+			}
+
+
+			this.#animations.set(0, new AnimationDescription(animation, 1));
+
+
+			//7833551d-a8e6-43bd-8136-9328f719e208
+
+			/*
+			for (let frame = 0; frame < frameCount; frame++) {
+				const animationFrame = new AnimationFrame(frame);
+				const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
+				CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t * /, new Map<string, number>(), BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t* /);
+				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
+
+				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
+				animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, quatRemoveMeTemp);
+				animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
+				animation.addFrame(animationFrame);
+			}
+		*/
+		}
 	}
 
 	toJSON() {

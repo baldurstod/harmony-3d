@@ -120,7 +120,6 @@ function parseEvent(context: VcdParserContext): ChoreographyEvent | null {
 		}
 	}
 
-	console.log('parseEvent', eventType, eventName, startTime, endTime, param1, param2, param3);
 	return new ChoreographyEvent(context.choreography, context.choreography.getRepository(), eventType, eventName, startTime, endTime, param1, param2, param3, 0, 0);
 }
 
@@ -225,7 +224,6 @@ function parseRamp(context: VcdParserContext): CurveData | null {
 					return null;
 				}
 				ramp.add(time, value, false);
-				console.log('parseRamp', time, value);
 		}
 	}
 

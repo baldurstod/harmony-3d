@@ -1,4 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { Dmx } from 'harmony-dmx';
 import { float } from 'harmony-types';
 import { HarmonyMenuItems } from 'harmony-ui';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
@@ -890,20 +891,16 @@ declare class Channel {
 
     export declare class ChoreographiesManager {
         #private;
-        constructor();
-        init(repositoryName: string, fileName: string): Promise<void>;
-        playChoreography(choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null>;
-        getChoreography(choreoName: string): Promise<Choreography | null>;
-        step(elapsed: number): void;
-        reset(): void;
-        stopAll(): void;
-        play(): void;
-        pause(): void;
-        setPlaybackSpeed(playbackSpeed: number): void;
-        /**
-         * @deprecated Please use `setPlaybackSpeed` instead.
-         */
-        set playbackSpeed(playbackSpeed: number);
+        static init(repositoryName: string, fileName: string): Promise<void>;
+        static playChoreography(repository: string, choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null>;
+        static addChoreography(repository: string, choreoName: string, choreo: Choreography): void;
+        static getChoreography(repository: string, choreoName: string): Promise<Choreography | null>;
+        static step(elapsed: number): void;
+        static reset(): void;
+        static stopAll(): void;
+        static play(): void;
+        static pause(): void;
+        static setPlaybackSpeed(playbackSpeed: number): void;
     }
 
     declare class Choreography extends MyEventTarget<ChoreographyEventType> {
@@ -6603,6 +6600,7 @@ declare class Channel {
                           replaceMaterial(material: Material, recursive?: boolean): void;
                           resetMaterial(recursive?: boolean): void;
                           getAnimations(): Promise<Set<string>>;
+                          importAnimationFromDmx(dmx: Dmx): void;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null>;
                           fromJSON(json: JSONObject): void;
@@ -9155,6 +9153,10 @@ declare class Channel {
                           clone(): UnlitTwoTextureMaterial;
                           get shaderSource(): string;
                           afterProcessProxies(): void;
+                      }
+
+                      export declare class VcdParser {
+                          static parse(repository: string, content: string): Choreography | null;
                       }
 
                       /**
