@@ -1,4 +1,4 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
+import { mat3, mat4, quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { float, int16, int32, uint8 } from 'harmony-types';
 import { DEBUG, LOG, TESTING } from '../../../buildoptions';
@@ -146,6 +146,12 @@ export class MdlStudioHitbox { //mstudiobbox_t//TODO: turn into type
 	readonly bbmax = vec3.create();
 	boneId = -1;
 	groupId = -1;
+}
+
+export type MdlSrcBoneTransform = {
+	name: string;
+	preTransform: mat4;
+	postTransform: mat4;
 }
 
 const invQuaternion64 = (1 / 1048576.5);
@@ -353,6 +359,8 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 			mdl.flMaxEyeDeflection = reader.getFloat32();
 
 			mdl.linearboneOffset = reader.getInt32();
+
+			parseSrcBoneTransforms(reader, mdl);
 		}
 	}
 
@@ -687,7 +695,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 			}
 		}
 		*/
-		this.#parseLocalhierarchies(reader, animDesc, numLocalHierarchy, localHierarchyOffset);
+		//this.#parseLocalhierarchies(reader, animDesc, numLocalHierarchy, localHierarchyOffset);
 
 		animDesc.name = reader.getNullString(nameOffset);
 		return animDesc;
@@ -1263,4 +1271,23 @@ function parseCompressedIkError(reader: BinaryReader, offset: number): StudioCom
 	);
 
 	return compressedIkError;
+}
+
+const SRC_BONE_TRANSFORM_STRUCT_SIZE = 100;// int + 2 * mat 4*3
+function parseSrcBoneTransforms(reader: BinaryReader, mdl: SourceMdl): void {
+	const srcBoneTransforms = mdl.srcBoneTransforms;
+
+	for (let i = 0; i < mdl.srcbonetransform_count; ++i) {
+		const srcBoneTransform = parseSrcBoneTransform(reader, mdl, mdl.srcbonetransform_index + i * SRC_BONE_TRANSFORM_STRUCT_SIZE);
+		srcBoneTransforms.push(srcBoneTransform);
+	}
+}
+
+function parseSrcBoneTransform(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlSrcBoneTransform {
+	const nameOffset = reader.getInt32(startOffset) + startOffset;
+	const preTransform = readMatrix3x4(reader);
+	const postTransform = readMatrix3x4(reader);
+	const name = reader.getNullString(nameOffset);
+
+	return { name, preTransform, postTransform };
 }

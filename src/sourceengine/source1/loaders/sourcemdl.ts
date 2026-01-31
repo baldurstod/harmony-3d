@@ -8,7 +8,7 @@ import { FlexController } from '../models/flexcontroller';
 import { MdlBone } from './mdlbone';
 import { MdlStudioAnim } from './mdlstudioanim';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, Source1MdlLoader } from './source1mdlloader';
+import { MdlSrcBoneTransform, MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, Source1MdlLoader } from './source1mdlloader';
 
 /**
  * MDL Model
@@ -171,6 +171,9 @@ export class SourceMdl {
 	reader!: BinaryReader;
 	readonly poseParameters: MdlStudioPoseParam[] = [];
 	readonly hitboxSets: MdlStudioHitboxSet[] = [];
+	// Src bone transforms are transformations that will convert .dmx or .smd-based animations into .mdl-based animations
+	// NOTE: The operation you should apply is: pretransform * bone transform * posttransform
+	readonly srcBoneTransforms: MdlSrcBoneTransform[] = [];
 	boneOffset = 0;
 	boneControllerCount = 0;
 	boneControllerOffset = 0;
