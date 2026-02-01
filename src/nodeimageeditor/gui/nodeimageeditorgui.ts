@@ -18,6 +18,7 @@ export class NodeImageEditorGui {
 	#htmlNodes: HTMLElement;
 	#canvas: HTMLCanvasElement;
 	#context: CanvasRenderingContext2D;
+
 	constructor(nodeImageEditor?: NodeImageEditor) {
 		this.#imageEditorChanged = () => {
 			clearTimeout(this.#refreshTimeout);
@@ -271,5 +272,12 @@ export class NodeImageEditorGui {
 
 	getNodeFilter(): string {
 		return this.#filter.node ?? '';
+	}
+
+	redrawAllNodes(): void {
+		for (const [node] of this.#nodesGui) {
+			node.invalidate();
+			node.updatePreview({ updatePreview: true });
+		}
 	}
 }
