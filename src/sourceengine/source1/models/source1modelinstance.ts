@@ -1068,6 +1068,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			}
 
 			const preTransformRoot = quat.fromEuler(quat.create(), 90, 0, 90);
+
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 
@@ -1104,17 +1105,17 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 
 						if ((bone.parent as Skeleton).isSkeleton) {
+							// Notice: this case has not been tested yet, no example available
 							quat.mul(preTransform, preTransformRoot, preTransform);
 						}
 
 						const pre = quat.mul(quat.create(), preTransform, boneOrientations[bone.boneId]!);
 						boneOrientations[bone.boneId] = quat.mul(quat.create(), pre, postTransform);
-						//const pre = quat.mul(quat.create(), boneOrientations[bone.boneId]!, preTransform);
-						//boneOrientations[bone.boneId] = quat.mul(quat.create(), postTransform, boneOrientations[bone.boneId]!);
 
-						bonePositions[bone.boneId] = vec3.transformMat4(vec3.create(), bonePositions[bone.boneId]!, srcBoneTransform.preTransform);
+						bonePositions[bone.boneId] = vec3.transformQuat(vec3.create(), bonePositions[bone.boneId]!, preTransform);
 					} else if ((bone.parent as Skeleton).isSkeleton) {
 						boneOrientations[bone.boneId] = quat.mul(quat.create(), preTransformRoot, boneOrientations[bone.boneId]!);
+						bonePositions[bone.boneId] = vec3.transformQuat(vec3.create(), bonePositions[bone.boneId]!, preTransformRoot);
 					}
 
 					boneFlags[bone.boneId] = 0xFFFFFFFF;
@@ -1128,22 +1129,6 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 
 			this.#animations.set(0, new AnimationDescription(animation, 1));
-
-			//7833551d-a8e6-43bd-8136-9328f719e208
-
-			/*
-			for (let frame = 0; frame < frameCount; frame++) {
-				const animationFrame = new AnimationFrame(frame);
-				const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
-				CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t * /, new Map<string, number>(), BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t* /);
-				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
-
-				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
-				animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, quatRemoveMeTemp);
-				animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
-				animation.addFrame(animationFrame);
-			}
-		*/
 		}
 	}
 
