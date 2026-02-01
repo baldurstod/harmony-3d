@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class MemoryRepository implements Repository {
 	#name: string;
@@ -6,6 +6,7 @@ export class MemoryRepository implements Repository {
 	active: boolean = true;
 
 	constructor(name: string) {
+		checkRepositoryName(name);
 		this.#name = name;
 	}
 

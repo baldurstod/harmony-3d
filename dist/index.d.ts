@@ -882,6 +882,8 @@ declare class Channel {
         get shaderSource(): string;
     }
 
+    export declare function checkRepositoryName(name: string): void;
+
     export declare interface ChildAddedEventData {
         child: Entity;
         parent: Entity | null;
@@ -8627,6 +8629,22 @@ declare class Channel {
                           value: StorageValue;
                           buffer?: GPUBuffer | null;
                       };
+
+                      /**
+                       * Cache the result of the underlying repository in persistent storage
+                       */
+                      export declare class StorageRepository implements Repository {
+                          #private;
+                          active: boolean;
+                          constructor(base: Repository);
+                          get name(): string;
+                          getFile(path: string): Promise<RepositoryFileResponse>;
+                          getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
+                          getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+                          getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+                          getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+                          getFileList(): Promise<RepositoryFileListResponse>;
+                      }
 
                       export declare type StorageValue = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array;
 

@@ -1,3 +1,4 @@
+export * from './repositories/export';
 export * from './manifestrepository';
 export * from './memorycacherepository';
 export * from './memoryrepository';
