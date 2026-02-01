@@ -1063,7 +1063,8 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 
 			for (const bone of bones) {
-				animation.addBone(new AnimationBone(bone.boneId, (bone.parent as Bone)?.boneId ?? -1, bone.name, vec3.create(), quat.create()));
+				const mdlBone = this.sourceModel.mdl.getBone(bone.boneId)!;
+				animation.addBone(new AnimationBone(bone.boneId, (bone.parent as Bone)?.boneId ?? -1, bone.name, mdlBone._position, mdlBone._quaternion));
 			}
 
 			const preTransformRoot = quat.fromEuler(quat.create(), 90, 0, 90);
@@ -1081,9 +1082,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 					const positions = positionsPerBone.get(boneName);
 					const orientations = orientationsPerBone.get(boneName);
+					const mdlBone = this.sourceModel.mdl.getBone(bone.boneId)!;
 
-					bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? vec3.create();
-					boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? quat.create();
+					bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? mdlBone._position;
+					boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? mdlBone._quaternion;
 
 					const srcBoneTransform = this.sourceModel.mdl.getSrcBoneTransform(boneName);
 					if (srcBoneTransform) {
