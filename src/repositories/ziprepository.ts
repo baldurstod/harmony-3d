@@ -1,5 +1,5 @@
 import { BlobReader, BlobWriter, ZipReader } from '@zip.js/zip.js';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
@@ -12,6 +12,7 @@ export class ZipRepository implements Repository {
 	active: boolean = true;
 
 	constructor(name: string, zip: File) {
+		checkRepositoryName(name);
 		this.#name = name;
 		this.#zip = zip;
 		this.#reader = new ZipReader(new BlobReader(zip));

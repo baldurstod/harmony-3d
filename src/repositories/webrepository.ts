@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -7,6 +7,7 @@ export class WebRepository implements Repository {
 	active: boolean = true;
 
 	constructor(name: string, base: string) {
+		checkRepositoryName(name);
 		this.#name = name;
 		this.#base = base;
 	}

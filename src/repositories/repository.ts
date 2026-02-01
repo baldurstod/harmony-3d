@@ -16,6 +16,7 @@ export interface RepositoryJsonResponse { json?: JSON | null, error?: Repository
 export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
 
 export interface Repository {
+	// Repository name. Authorized characters are a-z, A-Z, 0-9 and _
 	name: string;
 	active: boolean;
 	getFile: (path: string) => Promise<RepositoryFileResponse>;
@@ -24,4 +25,10 @@ export interface Repository {
 	getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
 	getFileList: () => Promise<RepositoryFileListResponse>;
+}
+
+export function checkRepositoryName(name: string): void {
+	if (!/^[a-zA-Z0-9_]+$/.test(name)) {
+		throw new Error('Repository name must contain only [a-zA-Z0-9_]');
+	}
 }

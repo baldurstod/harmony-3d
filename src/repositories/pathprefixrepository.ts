@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
@@ -8,6 +8,7 @@ export class PathPrefixRepository implements Repository {
 	active: boolean = true;
 
 	constructor(name: string, base: Repository, prefix: string = '') {
+		checkRepositoryName(name);
 		this.#name = name;
 		this.#base = base;
 		this.prefix = prefix;
