@@ -56,6 +56,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	readonly previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	previewSize: number = PREVIEW_PICTURE_SIZE;
 	#previewRenderTarget?: RenderTarget;
+	autoRedraw = false;
 	#redrawState: DrawState = DrawState.Invalid;
 	//#operation;
 	protected material?: Material;
@@ -151,13 +152,16 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.params;
 	}
 
-	invalidate() {
+	invalidate(context: NodeContext = {}) {
 		// Invalidate only if valid to avoid recursion
 		if (this.#redrawState != DrawState.Invalid) {
 			this.#redrawState = DrawState.Invalid;
 			for (const output of this.outputs.values()) {
 				output.invalidate();
 			}
+		}
+		if (this.autoRedraw) {
+			this.redraw(context);
 		}
 	}
 

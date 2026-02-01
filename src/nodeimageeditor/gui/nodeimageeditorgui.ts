@@ -276,8 +276,7 @@ export class NodeImageEditorGui {
 
 	redrawAllNodes(): void {
 		for (const [node] of this.#nodesGui) {
-			node.invalidate();
-			node.updatePreview({ updatePreview: true });
+			node.invalidate({ updatePreview: true });
 		}
 	}
 }

@@ -16982,6 +16982,7 @@ class Node extends MyEventTarget {
     previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
     previewSize = PREVIEW_PICTURE_SIZE;
     #previewRenderTarget;
+    autoRedraw = false;
     #redrawState = DrawState.Invalid;
     //#operation;
     material;
@@ -17064,13 +17065,16 @@ class Node extends MyEventTarget {
     getParams() {
         return this.params;
     }
-    invalidate() {
+    invalidate(context = {}) {
         // Invalidate only if valid to avoid recursion
         if (this.#redrawState != DrawState.Invalid) {
             this.#redrawState = DrawState.Invalid;
             for (const output of this.outputs.values()) {
                 output.invalidate();
             }
+        }
+        if (this.autoRedraw) {
+            this.redraw(context);
         }
     }
     async validate(context) {
@@ -18374,6 +18378,11 @@ class NodeImageEditorGui {
     }
     getNodeFilter() {
         return this.#filter.node ?? '';
+    }
+    redrawAllNodes() {
+        for (const [node] of this.#nodesGui) {
+            node.invalidate({ updatePreview: true });
+        }
     }
 }
 
@@ -42746,6 +42755,9 @@ class SourceMdl {
     reader;
     poseParameters = [];
     hitboxSets = [];
+    // Src bone transforms are transformations that will convert .dmx or .smd-based animations into .mdl-based animations
+    // NOTE: The operation you should apply is: pretransform * bone transform * posttransform
+    srcBoneTransforms = [];
     boneOffset = 0;
     boneControllerCount = 0;
     boneControllerOffset = 0;
@@ -43238,6 +43250,14 @@ class SourceMdl {
             return bone.flags;
         }
         return 0;
+    }
+    getSrcBoneTransform(boneName) {
+        for (const srcBoneTransform of this.srcBoneTransforms) {
+            if (srcBoneTransform.name == boneName) {
+                return srcBoneTransform;
+            }
+        }
+        return null;
     }
 }
 class MdlStudioModelGroup {
@@ -44357,8 +44377,10 @@ class Source1ModelInstance extends Entity {
             console.info(this.#skeleton, positionsPerBone, orientationsPerBone);
             const bones = this.#skeleton.bones;
             for (const bone of bones) {
-                animation.addBone(new AnimationBone(bone.boneId, -1, bone.name, vec3.create(), quat.create()));
+                const mdlBone = this.sourceModel.mdl.getBone(bone.boneId);
+                animation.addBone(new AnimationBone(bone.boneId, bone.parent?.boneId ?? -1, bone.name, mdlBone._position, mdlBone._quaternion));
             }
+            const preTransformRoot = quat.fromEuler(quat.create(), 90, 0, 90);
             for (let frame = 0; frame < frameCount; frame++) {
                 const animationFrame = new AnimationFrame(frame);
                 const bonePositions = new Array(bones.length);
@@ -44368,8 +44390,26 @@ class Source1ModelInstance extends Entity {
                     const boneName = bone.name;
                     const positions = positionsPerBone.get(boneName);
                     const orientations = orientationsPerBone.get(boneName);
-                    bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? vec3.create();
-                    boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? quat.create();
+                    const mdlBone = this.sourceModel.mdl.getBone(bone.boneId);
+                    bonePositions[bone.boneId] = positions?.[frame]?.[1] ?? positions?.[0]?.[1] ?? mdlBone._position;
+                    boneOrientations[bone.boneId] = orientations?.[frame]?.[1] ?? orientations?.[0]?.[1] ?? mdlBone._quaternion;
+                    const srcBoneTransform = this.sourceModel.mdl.getSrcBoneTransform(boneName);
+                    if (srcBoneTransform) {
+                        // TODO: improve that
+                        const preTransform = quat.fromMat3(quat.create(), mat3.fromValues(srcBoneTransform.preTransform[0], srcBoneTransform.preTransform[1], srcBoneTransform.preTransform[2], srcBoneTransform.preTransform[4], srcBoneTransform.preTransform[5], srcBoneTransform.preTransform[6], srcBoneTransform.preTransform[8], srcBoneTransform.preTransform[9], srcBoneTransform.preTransform[10]));
+                        const postTransform = quat.fromMat3(quat.create(), mat3.fromValues(srcBoneTransform.postTransform[0], srcBoneTransform.postTransform[1], srcBoneTransform.postTransform[2], srcBoneTransform.postTransform[4], srcBoneTransform.postTransform[5], srcBoneTransform.postTransform[6], srcBoneTransform.postTransform[8], srcBoneTransform.postTransform[9], srcBoneTransform.postTransform[10]));
+                        if (bone.parent.isSkeleton) {
+                            // Notice: this case has not been tested yet, no example available
+                            quat.mul(preTransform, preTransformRoot, preTransform);
+                        }
+                        const pre = quat.mul(quat.create(), preTransform, boneOrientations[bone.boneId]);
+                        boneOrientations[bone.boneId] = quat.mul(quat.create(), pre, postTransform);
+                        bonePositions[bone.boneId] = vec3.transformQuat(vec3.create(), bonePositions[bone.boneId], preTransform);
+                    }
+                    else if (bone.parent.isSkeleton) {
+                        boneOrientations[bone.boneId] = quat.mul(quat.create(), preTransformRoot, boneOrientations[bone.boneId]);
+                        bonePositions[bone.boneId] = vec3.transformQuat(vec3.create(), bonePositions[bone.boneId], preTransformRoot);
+                    }
                     boneFlags[bone.boneId] = 0xFFFFFFFF;
                 }
                 animationFrame.setDatas('position', AnimationFrameDataType.Vec3, bonePositions);
@@ -44378,20 +44418,6 @@ class Source1ModelInstance extends Entity {
                 animation.addFrame(animationFrame);
             }
             this.#animations.set(0, new AnimationDescription(animation, 1));
-            //7833551d-a8e6-43bd-8136-9328f719e208
-            /*
-            for (let frame = 0; frame < frameCount; frame++) {
-                const animationFrame = new AnimationFrame(frame);
-                const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
-                CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t * /, new Map<string, number>(), BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t* /);
-                //console.info(posRemoveMeTemp, quatRemoveMeTemp);
-
-                animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
-                animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, quatRemoveMeTemp);
-                animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
-                animation.addFrame(animationFrame);
-            }
-        */
         }
     }
     toJSON() {
@@ -47043,6 +47069,7 @@ class Source1MdlLoader extends SourceBinaryLoader {
             mdl.illumpositionattachmentindex = reader.getInt32();
             mdl.flMaxEyeDeflection = reader.getFloat32();
             mdl.linearboneOffset = reader.getInt32();
+            parseSrcBoneTransforms(reader, mdl);
         }
     }
     #parseBodyParts(reader, mdl) {
@@ -47730,6 +47757,21 @@ function parseCompressedIkError(reader, offset) {
     }
     const compressedIkError = new StudioCompressedIkError(reader, offset, scale, offsets, values);
     return compressedIkError;
+}
+const SRC_BONE_TRANSFORM_STRUCT_SIZE = 100; // int + 2 * mat 4*3
+function parseSrcBoneTransforms(reader, mdl) {
+    const srcBoneTransforms = mdl.srcBoneTransforms;
+    for (let i = 0; i < mdl.srcbonetransform_count; ++i) {
+        const srcBoneTransform = parseSrcBoneTransform(reader, mdl, mdl.srcbonetransform_index + i * SRC_BONE_TRANSFORM_STRUCT_SIZE);
+        srcBoneTransforms.push(srcBoneTransform);
+    }
+}
+function parseSrcBoneTransform(reader, mdl, startOffset) {
+    const nameOffset = reader.getInt32(startOffset) + startOffset;
+    const preTransform = readMatrix3x4(reader);
+    const postTransform = readMatrix3x4(reader);
+    const name = reader.getNullString(nameOffset);
+    return { name, preTransform, postTransform };
 }
 
 class ParticleColor {

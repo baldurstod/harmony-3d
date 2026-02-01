@@ -3907,6 +3907,12 @@ declare class Channel {
                           m_bNonFACS: number;
                       }
 
+                      declare type MdlSrcBoneTransform = {
+                          name: string;
+                          preTransform: mat4;
+                          postTransform: mat4;
+                      };
+
                       declare class MdlStripHeader {
                           vertices: never[];
                           indexes: never[];
@@ -4441,6 +4447,7 @@ declare class Channel {
                           readonly params: Map<string, NodeParam>;
                           readonly previewPic: HTMLImageElement;
                           previewSize: number;
+                          autoRedraw: boolean;
                           protected material?: Material;
                           constructor(editor: NodeImageEditor, params?: any);
                           addInput(inputId: string, inputType: number, size?: number): Input;
@@ -4455,7 +4462,7 @@ declare class Channel {
                           setParam(paramName: string, paramValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
                           getParams(): Map<string, NodeParam>;
-                          invalidate(): void;
+                          invalidate(context?: NodeContext): void;
                           validate(context: NodeContext): Promise<void>;
                           revalidate(context: NodeContext): Promise<void>;
                           redraw(context: NodeContext): Promise<void>;
@@ -4531,6 +4538,7 @@ declare class Channel {
                           refresh(): void;
                           setNodeFilter(nodeName: string): void;
                           getNodeFilter(): string;
+                          redrawAllNodes(): void;
                       }
 
                       export declare class NodeImageEditorMaterial extends Material {
@@ -8208,6 +8216,7 @@ declare class Channel {
                           reader: BinaryReader;
                           readonly poseParameters: MdlStudioPoseParam[];
                           readonly hitboxSets: MdlStudioHitboxSet[];
+                          readonly srcBoneTransforms: MdlSrcBoneTransform[];
                           boneOffset: number;
                           boneControllerCount: number;
                           boneControllerOffset: number;
@@ -8299,6 +8308,7 @@ declare class Channel {
                           getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam | undefined;
                           getPoseParameters(): MdlStudioPoseParam[];
                           boneFlags(boneIndex: number): number;
+                          getSrcBoneTransform(boneName: string): MdlSrcBoneTransform | null;
                       }
 
                       declare type SourceMdlHeader = {
