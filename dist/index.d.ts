@@ -9463,7 +9463,7 @@ declare class Channel {
                       export declare class WebRepository implements Repository {
                           #private;
                           active: boolean;
-                          constructor(name: string, base: string);
+                          constructor(name: string, base: string, useCacheApi?: boolean);
                           get name(): string;
                           get base(): string;
                           getFile(fileName: string): Promise<RepositoryFileResponse>;

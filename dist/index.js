@@ -22880,11 +22880,14 @@ function cleanupFilename$1(filename) {
 class WebRepository {
     #name;
     #base;
+    #useCacheApi;
+    #cache;
     active = true;
-    constructor(name, base) {
+    constructor(name, base, useCacheApi = false) {
         checkRepositoryName(name);
         this.#name = name;
         this.#base = base;
+        this.#useCacheApi = useCacheApi;
     }
     get name() {
         return this.#name;
@@ -22897,7 +22900,7 @@ class WebRepository {
             return { error: RepositoryError.RepoInactive };
         }
         const url = new URL(fileName, this.#base);
-        const response = await customFetch(url);
+        const response = await this.#fetch(url);
         if (response.ok) {
             return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
         }
@@ -22914,7 +22917,7 @@ class WebRepository {
             return { error: RepositoryError.RepoInactive };
         }
         const url = new URL(fileName, this.#base);
-        const response = await customFetch(url);
+        const response = await this.#fetch(url);
         if (response.ok) {
             return { buffer: await response.arrayBuffer() };
         }
@@ -22931,7 +22934,7 @@ class WebRepository {
             return { error: RepositoryError.RepoInactive };
         }
         const url = new URL(fileName, this.#base);
-        const response = await customFetch(url);
+        const response = await this.#fetch(url);
         if (response.ok) {
             return { text: await response.text() };
         }
@@ -22948,7 +22951,7 @@ class WebRepository {
             return { error: RepositoryError.RepoInactive };
         }
         const url = new URL(fileName, this.#base);
-        const response = await customFetch(url);
+        const response = await this.#fetch(url);
         if (response.ok) {
             return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
         }
@@ -22965,7 +22968,7 @@ class WebRepository {
             return { error: RepositoryError.RepoInactive };
         }
         const url = new URL(fileName, this.#base);
-        const response = await customFetch(url);
+        const response = await this.#fetch(url);
         if (response.ok) {
             return { json: await response.json() };
         }
@@ -22979,6 +22982,22 @@ class WebRepository {
     }
     async getFileList() {
         return { error: RepositoryError.NotSupported };
+    }
+    async #fetch(url) {
+        if (!this.#useCacheApi) {
+            return await customFetch(url);
+        }
+        else {
+            // Open the cache if it doesn't exist
+            this.#cache = this.#cache ?? await caches.open('WebRepository');
+            let response = await this.#cache.match(url);
+            if (!response) {
+                // If cache miss, fetch the request
+                response = await customFetch(url);
+                this.#cache.put(url, response.clone());
+            }
+            return response;
+        }
     }
 }
 
