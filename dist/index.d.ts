@@ -5928,6 +5928,8 @@ declare class Channel {
                           doInit(particle: Source1Particle, elapsedTime: number): void;
                       }
 
+                      export declare function sanitizeRepositoryName(name: string): string;
+
                       export declare class SaturatePass extends Pass {
                           #private;
                           constructor(camera: Camera);

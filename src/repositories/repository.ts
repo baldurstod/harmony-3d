@@ -32,3 +32,7 @@ export function checkRepositoryName(name: string): void {
 		throw new Error('Repository name must contain only [a-zA-Z0-9_]');
 	}
 }
+
+export function sanitizeRepositoryName(name: string): string {
+	return name.replace(/[^a-zA-Z0-9_]/g, '_');
+}
