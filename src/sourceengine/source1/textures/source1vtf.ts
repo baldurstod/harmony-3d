@@ -647,6 +647,60 @@ export class Source1Vtf {
 	getAddressModeV(): GPUAddressMode {
 		return this.#getClampT() ? 'clamp-to-edge' : 'repeat';
 	}
+
+	getImageFormat(): ImageFormat {
+		switch (this.highResImageFormat) {
+
+			/*
+export const IMAGE_FORMAT_UV88 = 22;
+export const IMAGE_FORMAT_UVWQ8888 = 23;
+export const IMAGE_FORMAT_RGBA16161616F = 24;
+export const IMAGE_FORMAT_RGBA16161616 = 25;
+export const IMAGE_FORMAT_UVLX8888 = 26;*/
+
+
+			case IMAGE_FORMAT_RGBA8888:
+				return ImageFormat.RGBA8888;
+			case IMAGE_FORMAT_ABGR8888:
+				return ImageFormat.ABGR8888;
+			case IMAGE_FORMAT_ARGB8888:
+				return ImageFormat.ARGB8888;
+			case IMAGE_FORMAT_BGRA8888:
+			case IMAGE_FORMAT_BGRX8888:
+				return ImageFormat.BGRA8888;
+			case IMAGE_FORMAT_RGB888:
+			case IMAGE_FORMAT_RGB888_BLUESCREEN:
+				return ImageFormat.RGB888;
+			case IMAGE_FORMAT_BGR888:
+			case IMAGE_FORMAT_BGR888_BLUESCREEN:
+				return ImageFormat.BGR888;
+			case IMAGE_FORMAT_RGB565:
+				return ImageFormat.RGB565;
+			case IMAGE_FORMAT_BGR565:
+				return ImageFormat.BGR565;
+			case IMAGE_FORMAT_BGRA5551:
+			case IMAGE_FORMAT_BGRX5551:
+				return ImageFormat.BGRA5551;
+			case IMAGE_FORMAT_BGRA4444:
+				return ImageFormat.BGRA4444;
+			case IMAGE_FORMAT_I8:
+				return ImageFormat.I8;
+			case IMAGE_FORMAT_P8:
+				return ImageFormat.P8;
+			case IMAGE_FORMAT_A8:
+				return ImageFormat.A8;
+			case IMAGE_FORMAT_DXT1:
+			case IMAGE_FORMAT_DXT1_ONEBITALPHA:
+				return ImageFormat.Bc1;
+			case IMAGE_FORMAT_DXT3:
+				return ImageFormat.Bc2;
+			case IMAGE_FORMAT_DXT5:
+				return ImageFormat.Bc3;
+			default:
+				return ImageFormat.Unknown;
+		}
+
+	}
 }
 
 
