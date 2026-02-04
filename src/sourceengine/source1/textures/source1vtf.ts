@@ -529,7 +529,7 @@ export class Source1Vtf {
 			datas = await decompressDxt(vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, mipmapWidth, mipmapHeight, mipmapFaceDatas);
 		} else {
 			datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
-			datas.set(mipmapFaceDatas);
+			datas.set(this.#getWebGPUData(mipmapFaceDatas));
 		}
 
 		return new ImageData(datas, mipmapWidth, mipmapHeight);
