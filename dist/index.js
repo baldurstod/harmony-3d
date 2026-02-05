@@ -23692,6 +23692,19 @@ var ImageFormat;
     ImageFormat["R8G8B8A8Uint"] = "R8G8B8A8Uint";
     ImageFormat["BGRA8888"] = "BGRA8888";
     ImageFormat["RGBA"] = "RGBA";
+    ImageFormat["RGBA8888"] = "RGBA8888";
+    ImageFormat["ABGR8888"] = "ABGR8888";
+    ImageFormat["ARGB8888"] = "ARGB8888";
+    ImageFormat["RGB888"] = "RGB888";
+    ImageFormat["BGR888"] = "BGR888";
+    ImageFormat["RGB565"] = "RGB565";
+    ImageFormat["BGR565"] = "BGR565";
+    ImageFormat["BGRA5551"] = "BGRA5551";
+    ImageFormat["BGRA4444"] = "BGRA4444";
+    ImageFormat["I8"] = "I8";
+    ImageFormat["IA88"] = "IA88";
+    ImageFormat["P8"] = "P8";
+    ImageFormat["A8"] = "A8";
     ImageFormat["PngR8G8B8A8Uint"] = "PngR8G8B8A8Uint";
     ImageFormat["PngDXT5"] = "PngDXT5";
 })(ImageFormat || (ImageFormat = {}));
@@ -24303,7 +24316,7 @@ class Source1Vtf {
         }
         else {
             datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
-            datas.set(mipmapFaceDatas);
+            datas.set(this.#getWebGPUData(mipmapFaceDatas));
         }
         return new ImageData(datas, mipmapWidth, mipmapHeight);
     }
@@ -24375,30 +24388,42 @@ class Source1Vtf {
         }
     }
     #getWebGPUData(data) {
+        let rIndex = 0;
+        let gIndex = 1;
+        let bIndex = 2;
         switch (this.highResImageFormat) {
             case IMAGE_FORMAT_RGB888:
-            case IMAGE_FORMAT_BGR888:
-            case IMAGE_FORMAT_RGB565:
             case IMAGE_FORMAT_RGB888_BLUESCREEN:
+                break;
             case IMAGE_FORMAT_BGR888_BLUESCREEN:
-                let rgba;
-                if (data instanceof Uint8Array) {
-                    rgba = new Uint8Array(data.length * 4 / 3);
-                }
-                else {
-                    rgba = new Float32Array(data.length * 4 / 3);
-                }
-                let j = 0;
-                for (let i = 0; i < data.length;) {
-                    rgba[j++] = data[i++];
-                    rgba[j++] = data[i++];
-                    rgba[j++] = data[i++];
-                    rgba[j++] = 1.0;
-                }
-                return rgba;
+            case IMAGE_FORMAT_BGR888:
+                rIndex = 2;
+                bIndex = 0;
+            case IMAGE_FORMAT_RGB565:
+                // TODO: handle this case. No test data yet
+                console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');
+                break;
             default:
                 return data;
         }
+        let rgba;
+        let alphaValue;
+        if (data instanceof Uint8Array) {
+            rgba = new Uint8Array(data.length * 4 / 3);
+            alphaValue = 255;
+        }
+        else {
+            rgba = new Float32Array(data.length * 4 / 3);
+            alphaValue = 1;
+        }
+        let j = 0;
+        for (let i = 0; i < data.length; i += 3) {
+            rgba[j++] = data[i + rIndex];
+            rgba[j++] = data[i + gIndex];
+            rgba[j++] = data[i + bIndex];
+            rgba[j++] = alphaValue;
+        }
+        return rgba;
     }
     #getClampS() {
         return (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
@@ -24411,6 +24436,55 @@ class Source1Vtf {
     }
     getAddressModeV() {
         return this.#getClampT() ? 'clamp-to-edge' : 'repeat';
+    }
+    getImageFormat() {
+        switch (this.highResImageFormat) {
+            /*
+export const IMAGE_FORMAT_UV88 = 22;
+export const IMAGE_FORMAT_UVWQ8888 = 23;
+export const IMAGE_FORMAT_RGBA16161616F = 24;
+export const IMAGE_FORMAT_RGBA16161616 = 25;
+export const IMAGE_FORMAT_UVLX8888 = 26;*/
+            case IMAGE_FORMAT_RGBA8888:
+                return ImageFormat.RGBA8888;
+            case IMAGE_FORMAT_ABGR8888:
+                return ImageFormat.ABGR8888;
+            case IMAGE_FORMAT_ARGB8888:
+                return ImageFormat.ARGB8888;
+            case IMAGE_FORMAT_BGRA8888:
+            case IMAGE_FORMAT_BGRX8888:
+                return ImageFormat.BGRA8888;
+            case IMAGE_FORMAT_RGB888:
+            case IMAGE_FORMAT_RGB888_BLUESCREEN:
+                return ImageFormat.RGB888;
+            case IMAGE_FORMAT_BGR888:
+            case IMAGE_FORMAT_BGR888_BLUESCREEN:
+                return ImageFormat.BGR888;
+            case IMAGE_FORMAT_RGB565:
+                return ImageFormat.RGB565;
+            case IMAGE_FORMAT_BGR565:
+                return ImageFormat.BGR565;
+            case IMAGE_FORMAT_BGRA5551:
+            case IMAGE_FORMAT_BGRX5551:
+                return ImageFormat.BGRA5551;
+            case IMAGE_FORMAT_BGRA4444:
+                return ImageFormat.BGRA4444;
+            case IMAGE_FORMAT_I8:
+                return ImageFormat.I8;
+            case IMAGE_FORMAT_P8:
+                return ImageFormat.P8;
+            case IMAGE_FORMAT_A8:
+                return ImageFormat.A8;
+            case IMAGE_FORMAT_DXT1:
+            case IMAGE_FORMAT_DXT1_ONEBITALPHA:
+                return ImageFormat.Bc1;
+            case IMAGE_FORMAT_DXT3:
+                return ImageFormat.Bc2;
+            case IMAGE_FORMAT_DXT5:
+                return ImageFormat.Bc3;
+            default:
+                return ImageFormat.Unknown;
+        }
     }
 }
 const IMAGE_FORMAT_RGBA8888 = 0;
@@ -61469,7 +61543,7 @@ Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
 Shaders['source1_worldvertextransition.fs'] = source1_worldvertextransition_fs;
 Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
 
-var source1_calculate_particle_position = "var q: vec4f;\nvar a: vec3f;\n#ifndef PARTICLE_ORIENTATION\n\t#define PARTICLE_ORIENTATION 3\n#endif\n#ifndef USE_PARTICLE_YAW\n\t#define USE_PARTICLE_YAW 1\n#endif\n\n#define PARTICLE_ORIENTATION_SCREEN_ALIGNED 0\n#define PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED 1\n#define PARTICLE_ORIENTATION_WORLD_Z_ALIGNED 2\n#define PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL 3\n#define PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL 4\n#define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5\n\n\tlet p: Particle = getParticle(u32(particleId));\n\toutput.vTextureCoord = vec4f(texCoord, output.vTextureCoord.zw);\n\toutput.vColor = p.color;\n\n\t//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);\n\tlet test: vec4f = vec4(position, 1.0) * p.radius * rotationMatrix(vec3(0.0, .0, 1.0), -p.roll * 1.0);\n\tvar vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);\n\t//vertexPositionModelSpace *= rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 100.0);\n\n\tvar vertexPositionCameraSpace: vec4f;// = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\n\n#ifdef RENDER_SPRITE_TRAIL\n\tlet vecDelta: vec3f = p.vecDelta.xyz;\n\t//vecDelta = vec3(1.0, 1.0, 0.0);\n\tvar aVertexPosition2: vec3f;\n\n\ta = cross(vec3(1.0, 0.0, 0.0), vecDelta);\n\tq = vec4(a, 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta));\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w, 0.0, p.radius), normalize(q));\n\n\tvertexPositionModelSpace = vec4(p.center + aVertexPosition2 + vecDelta * p.vecDelta.w * 0.0, 1.0);\n\n\n\tvar test2: vec3f = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));\n\ttest2 = normalize(test2);\n\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w * 0.5, p.radius * 0.5, 0.0), normalize(q));\n\tlet eyeDir: vec3f = p.center - matrixUniforms.cameraPosition;\n\tq = vec4(vecDelta, 1.0 + dot(eyeDir, a));\n\n#endif\n\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_ALIGNED\n#ifdef RENDER_SPRITE_TRAIL\n\t//A + dot(AP,AB) / dot(AB,AB) * AB\n\tvar A: vec3f =  p.center;\n\tvar B: vec3f =  A + vecDelta;\n\tlet P: vec3f =  matrixUniforms.cameraPosition;\n\tlet AP: vec3f = P-A;\n\tlet AB: vec3f = B-A;\n\n\tlet projPoint: vec3f = A + dot(AP,AB) / dot(AB,AB) * AB;\n\n\n\tlet vDirToBeam: vec3f = normalize(projPoint - matrixUniforms.cameraPosition);\n\tvar vTangentY: vec3f = normalize(cross(vDirToBeam, vecDelta));\n\tvTangentY = test2;\n\tvertexPositionModelSpace = vec4(aVertexPosition2 + vecDelta * p.vecDelta.w * 0.5, 1.0);\n\n\n\tA = -vDirToBeam;\n\tB = normalize(vecDelta);\n\tlet M: mat3x3f  = mat3x3f(\n1.0-B.x*B.x,-B.y*B.x,-B.z*B.x,\n-B.x*B.y,1.0-B.y*B.y,-B.z*B.y,\n-B.x*B.z,-B.y*B.z,1.0-B.z*B.z\n\t    );\n\tlet C: vec3f = M * A;//B * (A * B / length(B)) / length(B);\n\n\tq = vec4(cross(vTangentY, C),1.0 + dot(vTangentY, C));\n\tvertexPositionModelSpace = vec4_transformQuat(vertexPositionModelSpace, normalize(q));\n\tvertexPositionModelSpace = vec4(vertexPositionModelSpace.xyz + p.center, vertexPositionModelSpace.w);\n\n\n\t//vertexPositionModelSpace.xyz = vertexPositionModelSpace.xyz + vTangentY * p.radius * 0.5;\n\n\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#else\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\n#endif\n#else\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED\n\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_WORLD_Z_ALIGNED\n\tlet yawMatrix: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\n\t#ifdef IS_SPRITE_CARD_MATERIAL\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);\n\t#else\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);\n\t#endif\n\tvar lookAt: mat4x4f;\n\n\tlet cpMat: mat4x4f = mat4FromQuat(uOrientationControlPoint);\n\n\t#if USE_PARTICLE_YAW == 1\n\t\tlookAt = cpMat * yawMatrix * rollMatrix;\n\t#else\n\t\tlookAt = cpMat * rollMatrix;\n\t#endif\n\n\t#ifndef IS_SPRITE_CARD_MATERIAL\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(vec2(1.0, -1.0) * position.xy * p.radius, 0.0, 0.0)));\n\t#else\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0)));\n\t#endif\n#endif\n\n#ifdef SOURCE1_PARTICLES\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tmat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\t\tmat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\t\tlookAt = lookAt * lookAt2;\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\t#endif\n#else //SOURCE2\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tvec3 particleNormal = normalize(p.normal);//not sure we have to normalize\n\t\tmat4 lookAt = rotationMatrix(particleNormal, p.roll);\n\t\tvec4 pos;\n\n\t\tvec3 vTrialVector = vec3( 0.0, 0.0, 1.0 );\n\t\tif ( abs( particleNormal.z ) > 0.9 )\n\t\t{\n\t\t\tvTrialVector = float3( 1, 0, 0 );\n\t\t}\n\t\tvec3 up = normalize( cross( particleNormal, vTrialVector ) );\n\t\tvec3 right = cross( particleNormal, up );\n\n\t    pos.xyz = position.x * p.radius * right;\n\t    pos.xyz += position.y * p.radius * up;\n\t\tpos = lookAt * pos;\n\t\tpos += vec4(p.center, 1.0);\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * pos);\n\t#endif\n#endif\n";
+var source1_calculate_particle_position = "var q: vec4f;\nvar a: vec3f;\n#ifndef PARTICLE_ORIENTATION\n\t#define PARTICLE_ORIENTATION 3\n#endif\n#ifndef USE_PARTICLE_YAW\n\t#define USE_PARTICLE_YAW 1\n#endif\n\n#define PARTICLE_ORIENTATION_SCREEN_ALIGNED 0\n#define PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED 1\n#define PARTICLE_ORIENTATION_WORLD_Z_ALIGNED 2\n#define PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL 3\n#define PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL 4\n#define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5\n\n\tlet p: Particle = getParticle(u32(particleId));\n\toutput.vTextureCoord = vec4f(texCoord, output.vTextureCoord.zw);\n\toutput.vColor = p.color;\n\n\t//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);\n\tlet test: vec4f = vec4(position, 1.0) * p.radius * rotationMatrix(vec3(0.0, .0, 1.0), -p.roll * 1.0);\n\tvar vertexPositionModelSpace: vec4f = vec4(p.center.xyz + test.xyz, 1.0);\n\t//vertexPositionModelSpace *= rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 100.0);\n\n\tvar vertexPositionCameraSpace: vec4f;// = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\n\n#ifdef RENDER_SPRITE_TRAIL\n\tlet vecDelta: vec3f = p.vecDelta.xyz;\n\t//vecDelta = vec3(1.0, 1.0, 0.0);\n\tvar aVertexPosition2: vec3f;\n\n\ta = cross(vec3(1.0, 0.0, 0.0), vecDelta);\n\tq = vec4(a, 1.0 + dot(vec3(1.0, 0.0, 0.0), vecDelta));\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w, 0.0, p.radius), normalize(q));\n\n\tvertexPositionModelSpace = vec4(p.center + aVertexPosition2 + vecDelta * p.vecDelta.w * 0.0, 1.0);\n\n\n\tvar test2: vec3f = vec3_transformQuat(vec3(0.0, 0.0, 1.0), normalize(q));\n\ttest2 = normalize(test2);\n\n\n\taVertexPosition2 = vec3_transformQuat(position * vec3(p.vecDelta.w * 0.5, p.radius * 0.5, 0.0), normalize(q));\n\tlet eyeDir: vec3f = p.center - matrixUniforms.cameraPosition;\n\tq = vec4(vecDelta, 1.0 + dot(eyeDir, a));\n\n#endif\n\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_ALIGNED\n#ifdef RENDER_SPRITE_TRAIL\n\t//A + dot(AP,AB) / dot(AB,AB) * AB\n\tvar A: vec3f =  p.center;\n\tvar B: vec3f =  A + vecDelta;\n\tlet P: vec3f =  matrixUniforms.cameraPosition;\n\tlet AP: vec3f = P-A;\n\tlet AB: vec3f = B-A;\n\n\tlet projPoint: vec3f = A + dot(AP,AB) / dot(AB,AB) * AB;\n\n\n\tlet vDirToBeam: vec3f = normalize(projPoint - matrixUniforms.cameraPosition);\n\tvar vTangentY: vec3f = normalize(cross(vDirToBeam, vecDelta));\n\tvTangentY = test2;\n\tvertexPositionModelSpace = vec4(aVertexPosition2 + vecDelta * p.vecDelta.w * 0.5, 1.0);\n\n\n\tA = -vDirToBeam;\n\tB = normalize(vecDelta);\n\tlet M: mat3x3f  = mat3x3f(\n1.0-B.x*B.x,-B.y*B.x,-B.z*B.x,\n-B.x*B.y,1.0-B.y*B.y,-B.z*B.y,\n-B.x*B.z,-B.y*B.z,1.0-B.z*B.z\n\t    );\n\tlet C: vec3f = M * A;//B * (A * B / length(B)) / length(B);\n\n\tq = vec4(cross(vTangentY, C),1.0 + dot(vTangentY, C));\n\tvertexPositionModelSpace = vec4_transformQuat(vertexPositionModelSpace, normalize(q));\n\tvertexPositionModelSpace = vec4(vertexPositionModelSpace.xyz + p.center, vertexPositionModelSpace.w);\n\n\n\t//vertexPositionModelSpace.xyz = vertexPositionModelSpace.xyz + vTangentY * p.radius * 0.5;\n\n\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#else\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\n#endif\n#else\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL\n\tvertexPositionCameraSpace = matrixUniforms.modelViewMatrix * vertexPositionModelSpace;\n\toutput.position = matrixUniforms.projectionMatrix * vertexPositionCameraSpace;\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED\n\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\tlookAt = lookAt * lookAt2;\n\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n#endif\n\n#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_WORLD_Z_ALIGNED\n\tlet yawMatrix: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);\n\n\t#ifdef IS_SPRITE_CARD_MATERIAL\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), HALF_PI - p.roll);\n\t#else\n\t\tlet rollMatrix: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), p.roll);\n\t#endif\n\tvar lookAt: mat4x4f;\n\n\tlet cpMat: mat4x4f = mat4FromQuat(uOrientationControlPoint);\n\n\t#if USE_PARTICLE_YAW == 1\n\t\tlookAt = cpMat * yawMatrix * rollMatrix;\n\t#else\n\t\tlookAt = cpMat * rollMatrix;\n\t#endif\n\n\t#ifndef IS_SPRITE_CARD_MATERIAL\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(vec2(1.0, -1.0) * position.xy * p.radius, 0.0, 0.0)));\n\t#else\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * (vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0)));\n\t#endif\n#endif\n\n#ifdef SOURCE1_PARTICLES\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tvar lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);\n\t\tlet lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);\n\t\tlookAt = lookAt * lookAt2;\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));\n\t#endif\n#else //SOURCE2\n\t#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL\n\t\tvec3 particleNormal = normalize(p.normal);//not sure we have to normalize\n\t\tvar lookAt: mat4x4f = rotationMatrix(particleNormal, p.roll);\n\t\tvec4 pos;\n\n\t\tvec3 vTrialVector = vec3( 0.0, 0.0, 1.0 );\n\t\tif ( abs( particleNormal.z ) > 0.9 )\n\t\t{\n\t\t\tvTrialVector = float3( 1, 0, 0 );\n\t\t}\n\t\tvec3 up = normalize( cross( particleNormal, vTrialVector ) );\n\t\tvec3 right = cross( particleNormal, up );\n\n\t    pos.xyz = position.x * p.radius * right;\n\t    pos.xyz += position.y * p.radius * up;\n\t\tpos = lookAt * pos;\n\t\tpos += vec4(p.center, 1.0);\n\t\toutput.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * pos);\n\t#endif\n#endif\n";
 
 var source1_calculate_selfillum = "#if defined(USE_SELF_ILLUM)// && COLOR_MAP_ALPHA_BITS > 0\n\t#ifdef USE_SELF_ILLUM_ENVMAPMASK_ALPHA\n\t\t#ifdef USE_CUBE_MAP\n\t\t\tlet selfIllumComponent: vec3f = uSelfIllumTint * albedo;\n\t\t\tlet Adj_Alpha:f 32 = 1. * cubeMapColor.a;\n\t\t\tdiffuse = max(0., 1. - Adj_Alpha) * diffuse + Adj_Alpha * selfIllumComponent;\n\t\t#endif\n\t#else\n\t\t#ifdef USE_SELF_ILLUM_MASK_MAP\n\t\t\tlet selfIllumMask: vec3f = textureSample(uSelfIllumMaskTexture, uSelfIllumMaskSampler, fragInput.vTextureCoord.xy).rgb;\n\t\t#else\n\t\t\tlet selfIllumMask: vec3f = texelColor.aaa;\n\t\t#endif\n\n\t\t#if !defined(SKIP_SELF_ILLUM_FRESNEL) && defined(USE_SELF_ILLUM_FRESNEL)\n\t\t\tlet worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ: vec3f = normalize(uCameraPosition - vVertexPositionWorldSpace.xyz);\n\t\t\tlet vVertexNormal: vec3f = normalize(vVertexNormalWorldSpace.xyz);\n\n\t\t\tlet flSelfIllumFresnel: f32 = (\n\t\t\t\t\t\t\t\t\t\tpow(\n\t\t\t\t\t\t\t\t\t\t\tsaturate(\n\t\t\t\t\t\t\t\t\t\t\t\tdot(vVertexNormal, normalize(worldVertToEyeVectorXYZ_tangentSpaceVertToEyeVectorZ))\n\t\t\t\t\t\t\t\t\t\t\t), uSelfIllumScaleBiasExpBrightness.z\n\t\t\t\t\t\t\t\t\t\t) * uSelfIllumScaleBiasExpBrightness.x) + uSelfIllumScaleBiasExpBrightness.y;\n\t\t\tdiffuse = mix(diffuse, albedo * uSelfIllumTint * uSelfIllumScaleBiasExpBrightness.w, selfIllumMask * saturate(flSelfIllumFresnel));\n\t\t#else\n\t\t\t// Not sure why I need to multiply by g_DiffuseModulation.rgb, but it works better\n\t\t\tdiffuse = mix(diffuse, albedo * uSelfIllumTint * g_DiffuseModulation.rgb, selfIllumMask);\n\t\t#endif\n\t#endif\n#endif\n";
 

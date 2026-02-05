@@ -100,8 +100,8 @@ var a: vec3f;
 #endif
 
 #if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL
-	mat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);
-	mat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
+	var lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), p.yaw);
+	let lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
 	lookAt = lookAt * lookAt2;
 	output.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));
 #endif
@@ -112,8 +112,8 @@ var a: vec3f;
 #endif
 
 #if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED
-	mat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);
-	mat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
+	var lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);
+	let lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
 	lookAt = lookAt * lookAt2;
 	output.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));
 #endif
@@ -145,15 +145,15 @@ var a: vec3f;
 
 #ifdef SOURCE1_PARTICLES
 	#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL
-		mat4 lookAt = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);
-		mat4 lookAt2 = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
+		var lookAt: mat4x4f = rotationMatrix(vec3(0.0, 1.0, 0.0), -p.yaw);
+		let lookAt2: mat4x4f = rotationMatrix(vec3(0.0, 0.0, 1.0), -p.roll);
 		lookAt = lookAt * lookAt2;
 		output.position = matrixUniforms.projectionMatrix * (matrixUniforms.modelViewMatrix * vec4(p.center, 1.0) + lookAt * vec4(position.xy * p.radius, 0.0, 0.0));
 	#endif
 #else //SOURCE2
 	#if PARTICLE_ORIENTATION == PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL
 		vec3 particleNormal = normalize(p.normal);//not sure we have to normalize
-		mat4 lookAt = rotationMatrix(particleNormal, p.roll);
+		var lookAt: mat4x4f = rotationMatrix(particleNormal, p.roll);
 		vec4 pos;
 
 		vec3 vTrialVector = vec3( 0.0, 0.0, 1.0 );

@@ -606,30 +606,43 @@ export class Source1Vtf {
 	}
 
 	#getWebGPUData(data: Uint8Array | Float32Array): Uint8Array | Float32Array {
+		let rIndex: 0 | 1 | 2 = 0;
+		let gIndex: 0 | 1 | 2 = 1;
+		let bIndex: 0 | 1 | 2 = 2;
 		switch (this.highResImageFormat) {
 			case IMAGE_FORMAT_RGB888:
-			case IMAGE_FORMAT_BGR888:
-			case IMAGE_FORMAT_RGB565:
 			case IMAGE_FORMAT_RGB888_BLUESCREEN:
+				break;
 			case IMAGE_FORMAT_BGR888_BLUESCREEN:
-				let rgba: Uint8Array | Float32Array;
-				if (data instanceof Uint8Array) {
-					rgba = new Uint8Array(data.length * 4 / 3);
-				} else {
-					rgba = new Float32Array(data.length * 4 / 3);
-				}
-
-				let j = 0;
-				for (let i = 0; i < data.length;) {
-					rgba[j++] = data[i++]!;
-					rgba[j++] = data[i++]!;
-					rgba[j++] = data[i++]!;
-					rgba[j++] = 1.0;
-				}
-				return rgba;
+			case IMAGE_FORMAT_BGR888:
+				rIndex = 2;
+				bIndex = 0;
+			case IMAGE_FORMAT_RGB565:
+				// TODO: handle this case. No test data yet
+				console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');
+				break;
 			default:
 				return data;
 		}
+
+		let rgba: Uint8Array | Float32Array;
+		let alphaValue: number;
+		if (data instanceof Uint8Array) {
+			rgba = new Uint8Array(data.length * 4 / 3);
+			alphaValue = 255;
+		} else {
+			rgba = new Float32Array(data.length * 4 / 3);
+			alphaValue = 1;
+		}
+
+		let j = 0;
+		for (let i = 0; i < data.length; i += 3) {
+			rgba[j++] = data[i + rIndex]!;
+			rgba[j++] = data[i + gIndex]!;
+			rgba[j++] = data[i + bIndex]!;
+			rgba[j++] = alphaValue;
+		}
+		return rgba;
 	}
 
 	#getClampS(): boolean {
