@@ -661,9 +661,9 @@ function getBlurShader(lodMax: number, width: number, height: number): ShaderMat
 		name: 'SphericalGaussianBlur',
 
 		defines: {
-			'n': MAX_SAMPLES,
-			'CUBEUV_TEXEL_WIDTH': 1.0 / width,
-			'CUBEUV_TEXEL_HEIGHT': 1.0 / height,
+			'n': `${MAX_SAMPLES}`,
+			'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
+			'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
 			'CUBEUV_MAX_MIP': `${lodMax}.0`,
 		},
 
@@ -677,9 +677,10 @@ function getBlurShader(lodMax: number, width: number, height: number): ShaderMat
 			'poleAxis': poleAxis
 		},
 
-		vertex: getCommonVertexShader(),
+		glsl: {
+			vertex: getCommonVertexShader(),
 
-		fragment: /* glsl */`
+			fragment: /* glsl */`
 
 			precision mediump float;
 			precision mediump int;
@@ -851,6 +852,7 @@ function getBlurShader(lodMax: number, width: number, height: number): ShaderMat
 
 			}
 		`,
+		},
 
 		//blending: NoBlending,
 		depthTest: false,
@@ -872,9 +874,10 @@ function getEquirectMaterial(): ShaderMaterial {
 			'envMap': null
 		},
 
-		vertex: getCommonVertexShader(),
+		glsl: {
+			vertex: getCommonVertexShader(),
 
-		fragment: /* glsl */`
+			fragment: /* glsl */`
 
 			precision mediump float;
 			precision mediump int;
@@ -908,6 +911,7 @@ function getEquirectMaterial(): ShaderMaterial {
 
 			}
 		`,
+		},
 
 		//blending: NoBlending,
 		depthTest: false,
@@ -927,10 +931,11 @@ function getCubemapMaterial(): ShaderMaterial {
 			'envMap': null,
 			'flipEnvMap': -1
 		},
+		glsl: {
 
-		vertexShader: getCommonVertexShader(),
+			vertex: getCommonVertexShader(),
 
-		fragmentShader: /* glsl */`
+			fragment: /* glsl */`
 
 			precision mediump float;
 			precision mediump int;
@@ -947,6 +952,7 @@ function getCubemapMaterial(): ShaderMaterial {
 
 			}
 		`,
+		},
 
 		//blending: NoBlending,
 		depthTest: false,

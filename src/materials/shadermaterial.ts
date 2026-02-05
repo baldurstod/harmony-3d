@@ -1,24 +1,38 @@
 import { ShaderManager } from '../managers/shadermanager';
 import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from '../webgl/constants';
-import { Material } from './material';
+import { Material, MaterialParams, MaterialUniform } from './material';
 
 let id = 0;
 
-export class ShaderMaterial extends Material {
-	#shaderSource: string = '';
+export type ShaderMaterialParams = MaterialParams & {
+	// Name of an existing shader
+	shaderSource?: string;
+	// Source of the WebGL shader
+	glsl?: { vertex: string, fragment: string };
+	// Source of the WebGPU shader
+	wgsl?: string;
 
-	constructor(params: any = {}) {
+	uniforms?: MaterialUniform;
+	defines?: Record<string, string>;
+};
+
+export class ShaderMaterial extends Material {
+	readonly #shaderSource: string = '';
+
+	constructor(params: ShaderMaterialParams = {}) {
 		super(params);
 
-		this.shaderSource = params.shaderSource;
+		if (params.shaderSource) {
+			this.#shaderSource = params.shaderSource;
+		}
 
 		const name = `shadermaterial_${++id}`;
-		if (params.vertex) {
-			ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.vertex);
-			this.shaderSource = name;
+		if (params.glsl?.vertex) {
+			ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.glsl.vertex);
+			this.#shaderSource = name;
 		}
-		if (params.fragment) {
-			ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.fragment);
+		if (params.glsl?.fragment) {
+			ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.glsl.fragment);
 		}
 
 		if (params.uniforms) {
@@ -36,9 +50,5 @@ export class ShaderMaterial extends Material {
 
 	getShaderSource(): string {
 		return this.#shaderSource;
-	}
-
-	set shaderSource(shaderSource: string) {
-		this.#shaderSource = shaderSource;
 	}
 }

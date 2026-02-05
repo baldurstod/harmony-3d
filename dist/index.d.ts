@@ -3681,7 +3681,7 @@ declare class Channel {
                           #private;
                           id: string;
                           name: string;
-                          uniforms: Record<string, UniformValue | Record<string, UniformValue>>;
+                          uniforms: MaterialUniform;
                           defines: Record<string, any>;
                           parameters: MaterialParams;
                           depthTest: boolean;
@@ -3791,12 +3791,16 @@ declare class Channel {
                       }
 
                       declare type MaterialParams = {
+                          name?: string;
                           depthTest?: boolean;
+                          depthWrite?: boolean;
                           renderFace?: RenderFace;
                           polygonOffset?: boolean;
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
                       };
+
+                      declare type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
 
                       export declare class MateriaParameter {
                           #private;
@@ -6295,10 +6299,20 @@ declare class Channel {
 
                       export declare class ShaderMaterial extends Material {
                           #private;
-                          constructor(params?: any);
+                          constructor(params?: ShaderMaterialParams);
                           getShaderSource(): string;
-                          set shaderSource(shaderSource: string);
                       }
+
+                      declare type ShaderMaterialParams = MaterialParams & {
+                          shaderSource?: string;
+                          glsl?: {
+                              vertex: string;
+                              fragment: string;
+                          };
+                          wgsl?: string;
+                          uniforms?: MaterialUniform;
+                          defines?: Record<string, string>;
+                      };
 
                       export declare enum ShaderPrecision {
                           Low = 0,

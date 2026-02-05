@@ -2043,14 +2043,16 @@ class ShaderMaterial extends Material {
     #shaderSource = '';
     constructor(params = {}) {
         super(params);
-        this.shaderSource = params.shaderSource;
-        const name = `shadermaterial_${++id$1}`;
-        if (params.vertex) {
-            ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.vertex);
-            this.shaderSource = name;
+        if (params.shaderSource) {
+            this.#shaderSource = params.shaderSource;
         }
-        if (params.fragment) {
-            ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.fragment);
+        const name = `shadermaterial_${++id$1}`;
+        if (params.glsl?.vertex) {
+            ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.glsl.vertex);
+            this.#shaderSource = name;
+        }
+        if (params.glsl?.fragment) {
+            ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.glsl.fragment);
         }
         if (params.uniforms) {
             for (const name in params.uniforms) {
@@ -2065,9 +2067,6 @@ class ShaderMaterial extends Material {
     }
     getShaderSource() {
         return this.#shaderSource;
-    }
-    set shaderSource(shaderSource) {
-        this.#shaderSource = shaderSource;
     }
 }
 
@@ -76248,9 +76247,9 @@ function getBlurShader(lodMax, width, height) {
     const shaderMaterial = new ShaderMaterial({
         name: 'SphericalGaussianBlur',
         defines: {
-            'n': MAX_SAMPLES,
-            'CUBEUV_TEXEL_WIDTH': 1.0 / width,
-            'CUBEUV_TEXEL_HEIGHT': 1.0 / height,
+            'n': `${MAX_SAMPLES}`,
+            'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
+            'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
             'CUBEUV_MAX_MIP': `${lodMax}.0`,
         },
         uniforms: {
@@ -76262,8 +76261,9 @@ function getBlurShader(lodMax, width, height) {
             'mipInt': 0,
             'poleAxis': poleAxis
         },
-        vertex: getCommonVertexShader(),
-        fragment: /* glsl */ `
+        glsl: {
+            vertex: getCommonVertexShader(),
+            fragment: /* glsl */ `
 
 			precision mediump float;
 			precision mediump int;
@@ -76435,6 +76435,7 @@ function getBlurShader(lodMax, width, height) {
 
 			}
 		`,
+        },
         //blending: NoBlending,
         depthTest: false,
         depthWrite: false
@@ -76447,8 +76448,9 @@ function getEquirectMaterial() {
         uniforms: {
             'envMap': null
         },
-        vertex: getCommonVertexShader(),
-        fragment: /* glsl */ `
+        glsl: {
+            vertex: getCommonVertexShader(),
+            fragment: /* glsl */ `
 
 			precision mediump float;
 			precision mediump int;
@@ -76482,6 +76484,7 @@ function getEquirectMaterial() {
 
 			}
 		`,
+        },
         //blending: NoBlending,
         depthTest: false,
         depthWrite: false
@@ -76494,8 +76497,9 @@ function getCubemapMaterial() {
             'envMap': null,
             'flipEnvMap': -1
         },
-        vertexShader: getCommonVertexShader(),
-        fragmentShader: /* glsl */ `
+        glsl: {
+            vertex: getCommonVertexShader(),
+            fragment: /* glsl */ `
 
 			precision mediump float;
 			precision mediump int;
@@ -76512,6 +76516,7 @@ function getCubemapMaterial() {
 
 			}
 		`,
+        },
         //blending: NoBlending,
         depthTest: false,
         depthWrite: false

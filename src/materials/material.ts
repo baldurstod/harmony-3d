@@ -35,13 +35,17 @@ export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 //export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export type MaterialParams = {
+	name?: string;
 	depthTest?: boolean;
+	depthWrite?: boolean;
 	renderFace?: RenderFace;
 	polygonOffset?: boolean;
 	polygonOffsetFactor?: number;
 	polygonOffsetUnits?: number;
 
 }/*TODO: create proper type*/;
+
+export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
 
 export class Material {
 	id = '';
@@ -53,7 +57,7 @@ export class Material {
 	#alphaTestReference = 0;
 	#users = new Set<any>();
 	#parameters = new Map<string, MateriaParameter>();
-	uniforms: Record<string, UniformValue | Record<string, UniformValue>> = {};// TODO: transform to map ?
+	uniforms: MaterialUniform = {};// TODO: transform to map ?
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
