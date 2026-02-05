@@ -1,5 +1,5 @@
 export const DEFAULT_MAX_PARTICLES = 1000;
-export const HARD_MAX_PARTICLES = 5000;
+export const MAX_PARTICLES_IN_A_SYSTEM = 5000;
 
 export const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0;//Point towards camera
 export const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1;//parallel to camera axis

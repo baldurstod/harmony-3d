@@ -7,7 +7,7 @@ import { Entity, EntityParameters } from '../../../entities/entity';
 import { Loopable } from '../../../interfaces/loopable';
 import { BoundingBox } from '../../../math/boundingbox';
 import { ControlPoint } from '../../common/particles/controlpoint';
-import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
+import { DEFAULT_MAX_PARTICLES, MAX_PARTICLES_IN_A_SYSTEM } from '../../common/particles/particleconsts';
 import { MAX_FLOATS } from '../../common/particles/randomfloats';
 import { CDmxAttribute } from '../loaders/source1pcfloader';
 import { SourcePCF } from '../loaders/sourcepcf';
@@ -565,7 +565,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	}
 
 	setMaxParticles(max: number): void {
-		this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
+		this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
 	}
 	setRadius(radius: number): void {
 		this.radius = radius;

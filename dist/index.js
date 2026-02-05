@@ -11907,7 +11907,7 @@ function getDefinesAsString(meshOrMaterial) {
     return defines.join('\n') + '\n';
 }
 
-const MAX_PARTICLES_IN_A_SYSTEM = 5000;
+const MAX_PARTICLES_IN_A_SYSTEM$1 = 5000;
 const TEXTURE_WIDTH = 8;
 
 // remove these when unused
@@ -12083,7 +12083,7 @@ class WebGPURenderer {
         const pick = context.renderContext.pick;
         material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
         const defines = new Map(this.#defines); // TODO: don't create one each time
-        defines.set('MAX_PARTICLES_IN_A_SYSTEM', String(MAX_PARTICLES_IN_A_SYSTEM));
+        defines.set('MAX_PARTICLES_IN_A_SYSTEM', String(MAX_PARTICLES_IN_A_SYSTEM$1));
         if (pick) {
             defines.set('PICKING_MODE', '');
         }
@@ -24399,6 +24399,7 @@ class Source1Vtf {
             case IMAGE_FORMAT_BGR888:
                 rIndex = 2;
                 bIndex = 0;
+                break;
             case IMAGE_FORMAT_RGB565:
                 // TODO: handle this case. No test data yet
                 console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');
@@ -48083,7 +48084,7 @@ class Source1ParticleOperators {
 }
 
 const DEFAULT_MAX_PARTICLES$2 = 1000;
-const HARD_MAX_PARTICLES = 5000;
+const MAX_PARTICLES_IN_A_SYSTEM = 5000;
 const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0; //Point towards camera
 const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1; //parallel to camera axis
 const PARTICLE_ORIENTATION_WORLD_Z_ALIGNED = 2;
@@ -49503,7 +49504,7 @@ class Source1ParticleSystem extends Entity {
         return parameter.value;
     }
     setMaxParticles(max) {
-        this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
+        this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
     }
     setRadius(radius) {
         this.radius = radius;
@@ -57809,7 +57810,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -57882,7 +57883,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
             webgpuDescriptor: {
                 size: {
                     width: TEXTURE_WIDTH,
-                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                    height: MAX_PARTICLES_IN_A_SYSTEM$1,
                 },
                 format: 'rgba8unorm',
                 usage: GPUTextureUsage.TEXTURE_BINDING,
@@ -58047,7 +58048,7 @@ class RenderRope extends Source1ParticleOperator {
             webgpuDescriptor: {
                 size: {
                     width: TEXTURE_WIDTH,
-                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                    height: MAX_PARTICLES_IN_A_SYSTEM$1,
                 },
                 format: 'rgba8unorm',
                 usage: GPUTextureUsage.TEXTURE_BINDING,
@@ -58168,7 +58169,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         }
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
-        const maxParticles = Graphics$1.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        const maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         let index = 0;
@@ -58201,7 +58202,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
     initRenderer() {
         const geometry = new BufferGeometry();
         this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
-        const maxParticles = Graphics$1.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
+        const maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
         this.createParticlesArray(maxParticles);
         if (Graphics$1.isWebGLAny) {
             this.#createParticlesTexture();
@@ -58245,7 +58246,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
             webgpuDescriptor: {
                 size: {
                     width: TEXTURE_WIDTH,
-                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                    height: MAX_PARTICLES_IN_A_SYSTEM$1,
                 },
                 format: 'rgba8unorm',
                 usage: GPUTextureUsage.TEXTURE_BINDING,
@@ -63763,7 +63764,7 @@ class Source2ParticleSystem extends Entity {
         }
     }
     setMaxParticles(max) {
-        this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
+        this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
@@ -72796,7 +72797,7 @@ class RenderRopes extends RenderBase {
             webgpuDescriptor: {
                 size: {
                     width: TEXTURE_WIDTH,
-                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                    height: MAX_PARTICLES_IN_A_SYSTEM$1,
                 },
                 format: 'rgba8unorm',
                 usage: GPUTextureUsage.TEXTURE_BINDING,
@@ -72891,7 +72892,7 @@ class RenderSprites extends RenderBase {
         webgpuDescriptor: {
             size: {
                 width: TEXTURE_WIDTH,
-                height: MAX_PARTICLES_IN_A_SYSTEM,
+                height: MAX_PARTICLES_IN_A_SYSTEM$1,
             },
             format: 'rgba8unorm',
             usage: GPUTextureUsage.TEXTURE_BINDING,
@@ -73059,8 +73060,8 @@ class RenderSprites extends RenderBase {
         this.geometry.attributes.get('aTextureCoord2').dirty = true;
     }
     setMaxParticles(maxParticles) {
-        maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM);
-        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM$1);
+        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -73301,7 +73302,7 @@ class RenderTrails extends RenderBase {
         }
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -73345,7 +73346,7 @@ class RenderTrails extends RenderBase {
             webgpuDescriptor: {
                 size: {
                     width: TEXTURE_WIDTH,
-                    height: MAX_PARTICLES_IN_A_SYSTEM,
+                    height: MAX_PARTICLES_IN_A_SYSTEM$1,
                 },
                 format: 'rgba8unorm',
                 usage: GPUTextureUsage.TEXTURE_BINDING,

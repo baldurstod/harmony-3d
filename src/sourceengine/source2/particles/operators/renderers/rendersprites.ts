@@ -235,7 +235,7 @@ export class RenderSprites extends RenderBase {
 
 	setMaxParticles(maxParticles: number): void {
 		maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM);
-		this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+		this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
 		this.#createParticlesArray();
 		this.#initBuffers();
 	}

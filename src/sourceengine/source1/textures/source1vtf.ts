@@ -617,6 +617,7 @@ export class Source1Vtf {
 			case IMAGE_FORMAT_BGR888:
 				rIndex = 2;
 				bIndex = 0;
+				break;
 			case IMAGE_FORMAT_RGB565:
 				// TODO: handle this case. No test data yet
 				console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');

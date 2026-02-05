@@ -12,7 +12,6 @@ import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/par
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
-import { Source1ParticleControler } from '../../source1particlecontroler';
 import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
@@ -108,7 +107,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 	}
 
 	set maxParticles(maxParticles: number) {
-		this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+		this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
 		this.#createParticlesArray();
 		this.#initBuffers();
 	}

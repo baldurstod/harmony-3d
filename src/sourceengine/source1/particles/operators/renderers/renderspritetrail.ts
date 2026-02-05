@@ -13,7 +13,6 @@ import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/par
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_FLOAT } from '../../constants';
 import { Source1Particle } from '../../particle';
-import { Source1ParticleControler } from '../../source1particlecontroler';
 import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
@@ -48,7 +47,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		}
 		const rate = this.getParameter('animation rate') ?? 30;
 		this.geometry.count = particleList.length * 6;
-		const maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+		const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 
@@ -87,7 +86,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	initRenderer() {
 		const geometry = new BufferGeometry();
 		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
-		const maxParticles = Graphics.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
+		const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
 		this.createParticlesArray(maxParticles);
 		if (Graphics.isWebGLAny) {
 			this.#createParticlesTexture();

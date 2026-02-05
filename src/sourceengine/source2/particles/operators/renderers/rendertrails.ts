@@ -216,7 +216,7 @@ export class RenderTrails extends RenderBase {
 	}
 
 	set maxParticles(maxParticles: number) {
-		this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+		this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
 		this.#createParticlesArray();
 		this.#initBuffers();
 	}

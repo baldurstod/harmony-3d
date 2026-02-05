@@ -3,7 +3,7 @@ import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { TESTING } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
 import { ControlPoint } from '../../common/particles/controlpoint';
-import { HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
+import { MAX_PARTICLES_IN_A_SYSTEM } from '../../common/particles/particleconsts';
 import { Source2ModelInstance } from '../export';
 import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
 import { DEFAULT_EMITTER_INDEX } from './operators/emitters/emitter';
@@ -466,7 +466,7 @@ export class Source2ParticleSystem extends Entity {
 	}
 
 	setMaxParticles(max: number): void {
-		this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
+		this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
 	}
 
 	stepConstraints(particle: Source2Particle): void {
