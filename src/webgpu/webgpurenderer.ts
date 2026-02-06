@@ -28,6 +28,7 @@ import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
+import { StorageValueMultiple, StorageValueSingle } from './storage';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -1379,25 +1380,42 @@ export class WebGPURenderer implements Renderer {
 						} else {
 							const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
 							if (storageBuffer) {
-								//storageBuffer.buffer?.destroy();
 
-								if (!storageBuffer.buffer) {
-									storageBuffer.buffer = device.createBuffer({
-										label: storage.name,
-										size: storageBuffer.value.byteLength,
-										usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
-										//mappedAtCreation: true,
-									});
+								if (storage.isStruct) {
+									// TODO: handle nested structs
+									if (!storageBuffer.buffer) {
+										storageBuffer.buffer = device.createBuffer({
+											label: storage.name,
+											size: storage.size,
+											usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+										});
+									}
+
+									for (const member of (storage.type as StructInfo).members) {
+										const source = (storageBuffer.value as StorageValueMultiple)[member.name];
+										if (source) {
+											device.queue.writeBuffer(
+												storageBuffer.buffer,
+												member.offset,
+												source as BufferSource,
+											);
+										}
+									}
+
+								} else if (storage.isArray) {
+									if (!storageBuffer.buffer) {
+										storageBuffer.buffer = device.createBuffer({
+											label: storage.name,
+											size: storage.size || (storageBuffer.value as StorageValueSingle).byteLength,
+											usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+										});
+									}
+
+									device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+
+								} else {
+									throw new Error('code me: storage is neither a struct nor an array');
 								}
-
-
-								device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length);
-
-								//new Float32Array(storageBuffer.buffer.getMappedRange()).set(storageBuffer.value);// TODO: determinate the buffer type
-								//storageBuffer.buffer.unmap();
-
-
-								//groups.set(storage.group, storage.binding, { storageTexture, access });
 								groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
 							} else {
 								errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
