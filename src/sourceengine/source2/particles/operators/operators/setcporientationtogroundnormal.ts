@@ -1,5 +1,4 @@
 import { quat, vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -27,7 +26,7 @@ export class SetCPOrientationToGroundNormal extends Operator {
 	#outputCP = DEFAULT_OUTPUT_CP;
 	#includeWater = DEFAULT_INCLUDE_WATER;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInterpRate':
 				this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE;
@@ -58,12 +57,12 @@ export class SetCPOrientationToGroundNormal extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//TODO: do it properly
 		const outputCP = this.system.getControlPoint(this.#outputCP);
 		if (outputCP) {
 			quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
-			outputCP.quaternion = q;
+			outputCP.setQuaternion(q);
 		}
 	}
 }

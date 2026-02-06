@@ -18,7 +18,7 @@ export class CreateSequentialPath extends Operator {
 	#pathParams = new Source2ParticlePathParams();
 	#t = 0;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bLoop':
 				this.#loop = param.getValueAsBool() ?? DEFAULT_LOOP;
@@ -41,7 +41,7 @@ export class CreateSequentialPath extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use other parameters m_fMaxDistance, m_flNumToAssign
 		// TODO: check if m_flNumToAssign is really computed real time
 		const startControlPointNumber = this.#pathParams.startControlPointNumber;

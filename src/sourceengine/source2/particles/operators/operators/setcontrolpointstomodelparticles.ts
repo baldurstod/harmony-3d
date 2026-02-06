@@ -1,4 +1,4 @@
-import { Source2Particle } from '../../source2particle';
+import { Source2ModelInstance } from '../../../export';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -21,7 +21,7 @@ export class SetControlPointsToModelParticles extends Operator {
 	firstSourcePoint = DEFAULT_FIRST_SOURCE_POINT;
 	#skin = DEFAULT_SKIN;//TODO: remove ?
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_HitboxSetName':
 				this.#hitboxSetName = param.getValueAsString() ?? DEFAULT_HITBOX_SET_NAME;
@@ -49,7 +49,7 @@ export class SetControlPointsToModelParticles extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number) {
+	override doOperate(): void {
 		//todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
 		const children = this.system.childSystems;
 		const firstControlPoint = this.#firstControlPoint;
@@ -61,15 +61,15 @@ export class SetControlPointsToModelParticles extends Operator {
 			if (particle) {
 				for (const child of children) {
 					const childCp = child.getOwnControlPoint(firstControlPoint + i);
-					childCp.position = particle.position;
+					childCp.setPosition(particle.position);
 
 					if (this.#followAttachment) {
 						const model = this.system.getParentModel();
 						if (model) {
-							const attachment = (model as any).getAttachment?.(this.#attachmentName);
+							const attachment = (model as Source2ModelInstance).getAttachment?.(this.#attachmentName);
 							if (attachment) {
-								childCp.quaternion = attachment.getWorldQuaternion();
-								childCp.quaternion = particle.quaternion;
+								//childCp.quaternion = attachment.getWorldQuaternion();
+								childCp.setQuaternion(particle.quaternion);
 							}
 						}
 					}

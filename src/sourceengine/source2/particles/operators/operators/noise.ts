@@ -36,7 +36,7 @@ export class Noise extends Operator {//Noise scalar
 		this.#update();
 	}
 
-	#update() {
+	#update(): void {
 		if (ATTRIBUTES_WHICH_ARE_ANGLES & (1 << this.#fieldOutput)) {
 			this.#outputMinRad = this.#outputMin * DEG_TO_RAD;
 			this.#outputMaxRad = this.#outputMax * DEG_TO_RAD;
@@ -49,7 +49,7 @@ export class Noise extends Operator {//Noise scalar
 		this.#valueBase = this.#outputMinRad + this.#valueScale;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nFieldOutput':
 				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
@@ -77,7 +77,7 @@ export class Noise extends Operator {//Noise scalar
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		// TODO: use other params #additive, noiseAnimationTimeScale
 		vec3.scale(Coord, particle.position, this.#noiseScale);
 		const noise = NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale + this.#valueBase;

@@ -1,5 +1,5 @@
 import { RemapValClamped, lerp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2ParticleSetMethod, stringToSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -14,7 +14,7 @@ const DEFAULT_OUTPUT_MAX = 1;// TODO: check default value
 const DEFAULT_START_TIME = -1;// TODO: check default value
 const DEFAULT_END_TIME = -1;// TODO: check default value
 const DEFAULT_INTERP_RATE = 0;// TODO: check default value
-const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check default value//TODO: enum
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value//TODO: enum
 
 export class RemapCPtoScalar extends Operator {
 	//#fieldOutput = PARTICLE_FIELD_RADIUS;
@@ -30,7 +30,7 @@ export class RemapCPtoScalar extends Operator {
 	#setMethod = DEFAULT_SET_METHOD;
 	//scaleInitialRange;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
 				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
@@ -61,26 +61,26 @@ export class RemapCPtoScalar extends Operator {
 				this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE;
 				break;
 			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
+				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use m_flInterpRate
 		const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
 		let value = cpInputPos[this.#field] ?? 0;
 
 		value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
 
-		const scaleInitial = /*this.scaleInitialRange || */this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
+		const scaleInitial = /*this.scaleInitialRange || */this.#setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
 
 		if (scaleInitial) {
 			value = lerp(1, value, strength);
 		} else {
-			value = lerp(particle.getField(this.fieldOutput) as number, value, strength);
+			value = lerp(particle.getScalarField(this.fieldOutput), value, strength);
 		}
 
 		particle.setField(this.fieldOutput, value, scaleInitial);

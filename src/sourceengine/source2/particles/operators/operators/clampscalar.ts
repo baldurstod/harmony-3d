@@ -1,4 +1,3 @@
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -22,7 +21,7 @@ export class ClampScalar extends Operator {
 	#setMethod = DEFAULT_SET_METHOD;
 	*/
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 
 			case 'm_flOutputMin'://TODO: mutualize
@@ -50,7 +49,7 @@ export class ClampScalar extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//TODO
 	}
 }

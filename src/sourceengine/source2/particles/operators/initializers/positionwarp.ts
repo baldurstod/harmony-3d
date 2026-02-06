@@ -26,7 +26,7 @@ export class PositionWarp extends Operator {
 	#invertWarp = DEFAULT_INVERT_WARP;
 	#useCount = DEFAULT_USE_COUNT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecWarpMin':
 				param.getValueAsVec3(this.#warpMin);
@@ -60,10 +60,10 @@ export class PositionWarp extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use time parameters, m_bUseCount
 		vec3RandomBox(v, this.#warpMin, this.#warpMax);
-		let scale;
+		//let scale;
 		if (this.#scaleControlPointNumber != -1) {
 			const scaleCp = this.system.getControlPoint(this.#scaleControlPointNumber);
 			if (scaleCp) {

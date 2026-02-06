@@ -1,5 +1,5 @@
 import { RemapValClampedBias } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2ParticleSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -29,7 +29,7 @@ export class RemapParticleCountToScalar extends Operator {
 	remapBias = DEFAULT_REMAP_BIAS;
 	//#fieldOutput = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nInputMin':
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
@@ -44,7 +44,7 @@ export class RemapParticleCountToScalar extends Operator {
 				this.#scaleControlPointField = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT_FIELD;
 				break;
 			case 'm_flOutputMin':
-				this.#outputMin  = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;
+				this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;
 				break;
 			case 'm_flOutputMax':
 				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
@@ -54,20 +54,20 @@ export class RemapParticleCountToScalar extends Operator {
 				this.#activeRange = param.getValueAsBool() ?? DEFAULT_ACTIVE_RANGE;
 				break;
 			case 'm_bInvert':
-				this.#invert  = param.getValueAsBool() ?? DEFAULT_INVERT;
+				this.#invert = param.getValueAsBool() ?? DEFAULT_INVERT;
 				break;
 			case 'm_bWrap':
-				this.#wrap  = param.getValueAsBool() ?? DEFAULT_WRAP;
+				this.#wrap = param.getValueAsBool() ?? DEFAULT_WRAP;
 				break;
 			case 'm_flRemapBias':
-				this.remapBias  = param.getValueAsNumber() ?? DEFAULT_REMAP_BIAS;
+				this.remapBias = param.getValueAsNumber() ?? DEFAULT_REMAP_BIAS;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use bias, invert m_nScaleControlPointField parameters
 		let value = particle.id;
 		if (this.#wrap) {
@@ -79,7 +79,7 @@ export class RemapParticleCountToScalar extends Operator {
 		}
 
 		value = RemapValClampedBias(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax, this.remapBias);
-		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.fieldOutput, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RemapParticleCountToScalar', RemapParticleCountToScalar);

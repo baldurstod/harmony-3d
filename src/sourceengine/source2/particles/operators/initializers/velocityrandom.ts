@@ -1,9 +1,9 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
@@ -17,7 +17,7 @@ const DEFAULT_IGNORE_DT = false;// TODO: check default value
 export class VelocityRandom extends Operator {
 	#ignoreDT = DEFAULT_IGNORE_DT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_LocalCoordinateSystemSpeedMin':
 			case 'm_LocalCoordinateSystemSpeedMax':
@@ -33,7 +33,7 @@ export class VelocityRandom extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle, elapsedTime: number): void {
 		const localCoordinateSystemSpeedMin = this.getParamVectorValue(velocityRandomTempVec4_0, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED;
 		const localCoordinateSystemSpeedMax = this.getParamVectorValue(velocityRandomTempVec4_1, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED;
 		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
@@ -63,7 +63,7 @@ export class VelocityRandom extends Operator {
 		vec3.add(particle.prevPosition, particle.prevPosition, randomVector);
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

@@ -21,7 +21,7 @@ export class FadeAndKill extends Operator {
 	#endAlpha = DEFAULT_END_ALPHA;
 	#forcePreserveParticleOrder = DEFAULT_FORCE_PRESERVE_PARTICLE_ORDER;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartFadeInTime':
 				this.#startFadeInTime = param.getValueAsNumber() ?? DEFAULT_START_FADE_IN_TIME;
@@ -49,7 +49,7 @@ export class FadeAndKill extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		//TODO:use forcePreserveParticleOrder
 		const startAlpha = this.#startAlpha;
 		const endAlpha = this.#endAlpha;
@@ -59,7 +59,7 @@ export class FadeAndKill extends Operator {
 		const startFadeOutTime = this.#startFadeOutTime;
 		const endFadeOutTime = this.#endFadeOutTime;
 
-		const alpha = 1.0;
+		//const alpha = 1.0;
 
 		const proportionOfLife = particle.currentTime / particle.timeToLive;
 		const fl4FadeInDuration = endFadeInTime - startFadeInTime;

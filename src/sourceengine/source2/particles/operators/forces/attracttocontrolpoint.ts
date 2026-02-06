@@ -16,7 +16,7 @@ export class AttractToControlPoint extends Operator {
 	#scaleLocal = false;
 	#applyMinForce = false;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecComponentScale':// TODO: mutualize ?
 				param.getValueAsVec3(this.#componentScale);
@@ -40,11 +40,11 @@ export class AttractToControlPoint extends Operator {
 		}
 	}
 
-	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
+	override doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
 		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;// TODO: check default value
-		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;// TODO: check default value
+		//const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;// TODO: check default value
 
-		const power_frac = (-4.0 * this.#falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
+		//const power_frac = (-4.0 * this.#falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
 		const fForceScale = -forceAmount * strength/*flStrength*/;
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);

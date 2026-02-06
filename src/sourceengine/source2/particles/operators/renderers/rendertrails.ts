@@ -67,7 +67,7 @@ export class RenderTrails extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
 				console.error('do this param', paramName, param);
@@ -129,7 +129,7 @@ export class RenderTrails extends RenderBase {
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
+	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
 		// TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
 		//const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
@@ -246,7 +246,7 @@ export class RenderTrails extends RenderBase {
 		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem): void {
+	override initRenderer(particleSystem: Source2ParticleSystem): void {
 		this.mesh!.serializable = false;
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');

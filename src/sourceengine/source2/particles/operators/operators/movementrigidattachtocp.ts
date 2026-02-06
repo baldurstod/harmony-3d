@@ -1,14 +1,14 @@
 import { vec3 } from 'gl-matrix';
-import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS } from '../../../../common/particles/particlefields';
+import { Source2ParticleCpField, Source2ParticleVectorField } from '../../enums';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
-import { Source2ParticleCpField, Source2ParticleVectorField } from '../../enums';
 
 //const tempMat4 = mat4.create();
-const tempPrevPos = vec3.create();
-const tempPos = vec3.create();
+//const tempPrevPos = vec3.create();
+//const tempPos = vec3.create();
+const tempVectorField = vec3.create();
 const v = vec3.create();
 
 const DEFAULT_SCALE_CONTROL_POINT = -1;//disabled
@@ -24,7 +24,7 @@ export class MovementRigidAttachToCP extends Operator {
 	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#offsetLocal = DEFAULT_OFFSET_LOCAL;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nScaleControlPoint':
 				console.error('do this param', paramName, param);
@@ -47,7 +47,7 @@ export class MovementRigidAttachToCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		//TODO: use scale cp and other parameters
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
@@ -91,7 +91,7 @@ export class MovementRigidAttachToCP extends Operator {
 			//vec3.transformMat4(particle.position, particle.position, delta);
 			//vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
 
-			vec3.transformMat4(v, particle.getField(this.#fieldInput) as vec3, delta);
+			vec3.transformMat4(v, particle.getVectorField(tempVectorField, this.#fieldInput), delta);
 			particle.setField(this.#fieldInput, v);
 			particle.setField(this.#fieldOutput, v);
 

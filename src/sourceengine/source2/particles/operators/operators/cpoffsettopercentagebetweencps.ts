@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { RemapValClamped } from '../../../../../math/functions';
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
@@ -34,7 +33,7 @@ export class CPOffsetToPercentageBetweenCPs extends Operator {
 	#scaleOffset = DEFAULT_SCALE_OFFSET;//treat offset as scale of total distance
 	#vecOffset = vec3.create();
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInputMin':
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
@@ -74,7 +73,7 @@ export class CPOffsetToPercentageBetweenCPs extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const startCpPos = this.system.getControlPoint(this.#startCP).currentWorldPosition;
 		const endCPPos = this.system.getControlPoint(this.#endCP).currentWorldPosition;
 
@@ -98,7 +97,7 @@ export class CPOffsetToPercentageBetweenCPs extends Operator {
 		console.error('code me')
 
 		//const value = RemapValClamped(percentage, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
-		//particle.setField(this.#fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		//particle.setField(this.#fieldOutput, value, this.scaleInitialRange || this.setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_CPOffsetToPercentageBetweenCPs', CPOffsetToPercentageBetweenCPs);

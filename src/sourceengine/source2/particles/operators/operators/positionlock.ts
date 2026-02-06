@@ -6,10 +6,10 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const tempPrevPos = vec3.create();
-const tempPos = vec3.create();
+//const tempPrevPos = vec3.create();
+//const tempPos = vec3.create();
 //const tempQuat = quat.create();
-const vec = vec3.create();
+//const vec = vec3.create();
 
 const DEFAULT_JUMP_THRESHOLD = 512;
 const DEFAULT_RANGE = 0;// TODO: check default value
@@ -43,13 +43,13 @@ export class PositionLock extends Operator {//Movement lock to control point
 		this.#update();
 	}
 
-	#update() {
+	#update():void {
 		//TODO: this is wrong: must be done per particle
 		this.#startFadeOutTime = RandomFloatExp(this.#startTimeMin, this.#startTimeMax, this.#startTimeExp);
 		this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartTime_min':
 				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
@@ -92,7 +92,7 @@ export class PositionLock extends Operator {//Movement lock to control point
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		// TODO: use jumpThreshold
 		const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
 		if (proportionOfLife > this.#endFadeOutTime) {

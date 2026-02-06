@@ -1,10 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { NoiseSIMD } from '../../../../common/math/noise';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
+/*
 const DEFAULT_OUTPUT_MIN = vec3.create();
 const DEFAULT_OUTPUT_MAX = vec3.fromValues(1, 1, 1);
 const DEFAULT_OFFSET_LOC = vec3.create();
@@ -17,6 +16,7 @@ const Coord = vec3.create();
 const Coord2 = vec3.create();
 const Coord3 = vec3.create();
 const poffset = vec3.create();
+*/
 
 const DEFAULT_IGNORE_DT = false;
 
@@ -26,7 +26,7 @@ export class InitialVelocityNoise extends Operator {
 	#localSpace = false;
 	#ignoreDt = DEFAULT_IGNORE_DT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecAbsVal':
 				param.getValueAsVec3(this.#absVal);
@@ -54,7 +54,7 @@ export class InitialVelocityNoise extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(): void {
 		//TODO: use m_vecOffsetLoc, m_vecOutputMin,m_vecOutputMax,  m_flOffset, m_flNoiseScale, m_flNoiseScaleLoc
 		//TODO: fix this operator
 		/*
@@ -204,7 +204,7 @@ export class InitialVelocityNoise extends Operator {
 		*/
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

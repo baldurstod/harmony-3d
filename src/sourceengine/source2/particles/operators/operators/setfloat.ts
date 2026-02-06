@@ -1,4 +1,5 @@
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2ParticleSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -8,7 +9,7 @@ export class SetFloat extends Operator {
 	#normalizePerLiving = true;
 	outputField = PARTICLE_FIELD_RADIUS;//TODO: not sure about the default field
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_InputValue':
 				// used in dooperate
@@ -21,12 +22,12 @@ export class SetFloat extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		//TODO: use lerp
 		const value = this.getParamScalarValue('m_InputValue', particle);
 		//TODO: use setMethod
-		particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
-		//particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.outputField, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
+		//particle.setField(this.outputField, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_SetFloat', SetFloat);

@@ -1,14 +1,14 @@
-import { vec3, vec4 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { clamp, RemapValClamped, lerp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS, ATTRIBUTES_WHICH_ARE_0_TO_1 } from '../../../../common/particles/particlefields';
-import { OperatorParam } from '../operatorparam';
+import { vec3 } from 'gl-matrix';
+import { clamp, lerp, RemapValClamped } from '../../../../../math/functions';
+import { ATTRIBUTES_WHICH_ARE_0_TO_1, PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { Source2Particle } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
+//const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
 
-const distanceToCPTempVec4 = vec4.create();
+//const distanceToCPTempVec4 = vec4.create();
 
 const DEFAULT_INPUT_MIN = 0;// TODO: check default value
 const DEFAULT_INPUT_MAX = 128;// TODO: check default value
@@ -41,7 +41,7 @@ export class DistanceToCP extends Operator {
 	#outputMin1 = 0;// computed
 	#outputMax1 = 0;// computed
 
-	#update() {
+	#update(): void {
 		if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.fieldOutput)) {
 			this.#outputMin1 = clamp(this.#outputMin, 0, 1);
 			this.#outputMax1 = clamp(this.#outputMax, 0, 1);
@@ -51,10 +51,10 @@ export class DistanceToCP extends Operator {
 		}
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecComponentScale':
-				throw `do this param ${paramName}`;
+				throw new Error(`do this param ${paramName}`);
 				break;
 			case 'm_nFieldOutput':
 				this.fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
@@ -106,9 +106,9 @@ export class DistanceToCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use setMethod
-		const componentScale: vec3 = this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) as vec3 ?? DEFAULT_COMPONENT_SCALE;
+		//const componentScale: vec3 = this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) as vec3 ?? DEFAULT_COMPONENT_SCALE;
 
 		const flMin = this.#outputMin1;
 		const flMax = this.#outputMax1;
@@ -167,7 +167,7 @@ export class DistanceToCP extends Operator {
 			//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
 			//TODO: use m_nSetMethod m_bActiveRange m_bAdditive m_bScaleInitialRange
 
-			let output = particle.getField(this.fieldOutput) as number;
+			let output = particle.getScalarField(this.fieldOutput);
 
 			//*pOutput = Lerp (flStrength, *pOutput, flOutput);
 			output = lerp(output, flOutput, strength);

@@ -25,13 +25,13 @@ export class FadeIn extends Operator {
 		this.#update();
 	}
 
-	#update() {
+	#update():void {
 		//TODO: this is wrong: must be done per particle
 		this.#fadeInTime = RandomFloatExp(this.#fadeInTimeMin, this.#fadeInTimeMax, this.#fadeInTimeExp);
 		this.#invFadeInTime = 1.0 / this.#fadeInTime;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeInTimeMin':
 				this.#fadeInTimeMin = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_MIN;
@@ -53,7 +53,7 @@ export class FadeIn extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
 	}
 }

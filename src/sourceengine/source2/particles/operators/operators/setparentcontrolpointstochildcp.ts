@@ -1,4 +1,3 @@
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -16,7 +15,7 @@ export class SetParentControlPointsToChildCP extends Operator {
 	#firstSourcePoint = DEFAULT_FIRST_SOURCE_CONTROL_POINT;
 	#setOrientation = DEFAULT_SET_ORIENTATION;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nChildGroupID':
 				this.#childGroupID = param.getValueAsNumber() ?? 0;
@@ -38,7 +37,7 @@ export class SetParentControlPointsToChildCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		// TODO: use setOrientation
 		const children = this.system.childSystems;
 		let childId = this.#childGroupID;
@@ -49,14 +48,14 @@ export class SetParentControlPointsToChildCP extends Operator {
 			const cp = this.system.getControlPoint(cpId);
 			if (child && cp) {
 				const childCp = child.getOwnControlPoint(this.#childControlPoint);
-				childCp.position = cp.currentWorldPosition;
+				childCp.setPosition(cp.currentWorldPosition);
 			}
 			++childId;
 			++cpId;
 		}
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

@@ -1,10 +1,9 @@
 import { vec4 } from 'gl-matrix';
-import { PARTICLE_FIELD_COLOR } from '../../../../common/particles/particlefields';
+import { Source2ParticleSetMethod, Source2ParticleVectorField, stringToSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2ParticleSetMethod, Source2ParticleVectorField, stringToSetMethod } from '../../enums';
 
 const DEFAULT_VECTOR_VALUE = vec4.create();
 const setVecTempVec4 = vec4.create();
@@ -16,7 +15,7 @@ export class SetVec extends Operator {
 	#outputField = DEFAULT_OUTPUT_FIELD;
 	#setMethod = DEFAULT_SET_METHOD;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nOutputField':
 				this.#outputField = param.getValueAsNumber() ?? DEFAULT_OUTPUT_FIELD;
@@ -33,12 +32,12 @@ export class SetVec extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		//TODO: use lerp
 		const inputValue = this.getParamVectorValue(setVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_VECTOR_VALUE;
-		const lerp = this.getParamScalarValue('m_Lerp', particle) ?? 1;
+		//const lerp = this.getParamScalarValue('m_Lerp', particle) ?? 1;
 
-		particle.setField(this.#outputField, inputValue, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.#outputField, inputValue, this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);

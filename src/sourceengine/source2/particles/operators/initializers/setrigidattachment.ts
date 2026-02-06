@@ -14,7 +14,7 @@ export class SetRigidAttachment extends Operator {
 	#fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
 	#fieldInput = PARTICLE_FIELD_POSITION;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bLocalSpace':
 				this.#localSpace = param.getValueAsBool() ?? DEFAULT_LOCAL_SPACE;
@@ -24,10 +24,10 @@ export class SetRigidAttachment extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO : use m_bLocalSpace
 		if (!this.#localSpace) {
-			throw 'code me';
+			throw new Error('code me');
 		}
 		vec3.sub(v, particle.getVectorField(v, this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
 		particle.setField(this.#fieldOutput, v);

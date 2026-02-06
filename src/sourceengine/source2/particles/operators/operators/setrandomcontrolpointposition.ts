@@ -3,7 +3,6 @@ import { vec3RandomBox } from '../../../../../math/functions';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const v = vec3.create();
 
@@ -21,7 +20,7 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 	cpMaxPos = vec3.create();// TODO: check default value
 	lastRandomTime = -1;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':
 				this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_LOCATION;
@@ -50,9 +49,9 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;// TODO: check default value
-		const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;// TODO: check default value
+		//const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;// TODO: check default value
 
 		//TODO: do interpolation
 		if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
@@ -64,7 +63,7 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 			const cp1 = this.system.getControlPoint(this.#cp1);
 			vec3.transformQuat(v, v, headLocation.currentWorldQuaternion);
 			vec3.add(v, v, headLocation.currentWorldPosition);
-			cp1.position = v;
+			cp1.setPosition(v);
 
 			if (this.#orient) {
 				cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
@@ -72,7 +71,7 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 		}
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

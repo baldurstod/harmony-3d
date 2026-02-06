@@ -16,11 +16,11 @@ export class FadeInSimple extends Operator {
 		this.#update();
 	}
 
-	#update() {
+	#update():void {
 		this.#invFadeInTime = 1.0 / this.#fadeInTime;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeInTime':
 				this.#fadeInTime = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME;
@@ -31,7 +31,7 @@ export class FadeInSimple extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const proportionOfLife = particle.currentTime / particle.timeToLive;
 		particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
 		//TODO: use fieldOutput

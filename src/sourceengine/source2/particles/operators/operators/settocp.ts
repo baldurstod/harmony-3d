@@ -14,7 +14,7 @@ export class SetToCP extends Operator {
 	#offset = vec3.create();
 	#offsetLocal = DEFAULT_OFFSET_LOCAL;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override   _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecOffset':
 				param.getValueAsVec3(this.#offset);
@@ -27,7 +27,7 @@ export class SetToCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			cp.getWorldPosition(tempVec3_2);

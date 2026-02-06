@@ -16,7 +16,7 @@ export class RingWave extends Operator {
 	#xyVelocityOnly = DEFAULT_XY_VELOCITY_ONLY;
 	t = 0;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flParticlesPerOrbit':
 			case 'm_flInitialRadius':
@@ -38,13 +38,13 @@ export class RingWave extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use all parameters
 		const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1;//even distribution count
 		const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
-		const thickness = this.getParamScalarValue('m_flThickness') ?? 0;
-		const initialSpeedMin = this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
-		const initialSpeedMax = this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
+		//const thickness = this.getParamScalarValue('m_flThickness') ?? 0;
+		//const initialSpeedMin = this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
+		//const initialSpeedMax = this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
 		const roll = this.getParamScalarValue('m_flRoll') ?? 0;
 		const pitch = this.getParamScalarValue('m_flPitch') ?? 0;
 		const yaw = this.getParamScalarValue('m_flYaw') ?? 0;

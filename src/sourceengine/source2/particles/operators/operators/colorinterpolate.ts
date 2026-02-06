@@ -17,18 +17,18 @@ export class ColorInterpolate extends Operator {
 	#fadeStartTime = DEFAULT_FADE_START_TIME;
 	#fadeEndTime = DEFAULT_FADE_END_TIME;
 	#easeInAndOut = DEFAULT_EASE_IN_AND_OUT;
-	#invTime: number = 1;//computed
+	#invTime = 1;//computed
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.#update();
 	}
 
-	#update() {
+	#update(): void {
 		this.#invTime = 1.0 / (this.#fadeEndTime - this.#fadeStartTime);
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_ColorFade':
 				if (param.getValueAsVec4(colorInterpolateTempVec4)) {
@@ -44,7 +44,7 @@ export class ColorInterpolate extends Operator {
 				this.#update();
 				break;
 			case 'm_bEaseInAndOut'://TODO: check thoses params m_bEaseInAndOut and m_bEaseInOut
-			//case 'm_bEaseInOut':
+				//case 'm_bEaseInOut':
 				this.#easeInAndOut = param.getValueAsBool() ?? DEFAULT_EASE_IN_AND_OUT;
 				break;
 			default:
@@ -52,8 +52,8 @@ export class ColorInterpolate extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
-		const color = vec3.clone(particle.initialColor as vec3);//TODO: optimize
+	override doOperate(particle: Source2Particle): void {
+		//const color = vec3.clone(particle.initialColor as vec3);//TODO: optimize
 
 		const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
 

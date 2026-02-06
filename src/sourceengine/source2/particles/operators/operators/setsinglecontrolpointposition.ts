@@ -20,7 +20,7 @@ export class SetSingleControlPointPosition extends Operator {
 	#headLocation = DEFAULT_HEAD_LOCATION;
 	#set = false;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecCP1Pos':
 				//used in doOperate
@@ -42,11 +42,11 @@ export class SetSingleControlPointPosition extends Operator {
 		}
 	}
 
-	reset() {
+	override reset(): void {
 		this.#set = false;
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp1Pos = this.getParamVectorValue(tempVec4, 'm_vecCP1Pos', particle) ?? DEFAULT_POSITION;
 		//TODO
 		if (!this.#setOnce || !this.#set) {
@@ -57,13 +57,13 @@ export class SetSingleControlPointPosition extends Operator {
 				const headCp = this.system.getControlPoint(this.#headLocation);
 				vec3.transformQuat(v, cp1Pos as vec3, headCp.currentWorldQuaternion);
 				vec3.add(v, v, headCp.currentWorldPosition);
-				cp.position = v;
+				cp.setPosition(v);
 			}
 			this.#set = true;
 		}
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

@@ -1,6 +1,5 @@
 import { once } from 'harmony-utils';
 import { Source2ParticleRotationSetType, Source2ParticleVectorField, stringToRotationSetType } from '../../enums';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -34,7 +33,7 @@ export class LockToBone extends Operator {
 
 
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flLifeTimeFadeStart':
 				this.#lifeTimeFadeStart = param.getValueAsNumber() ?? DEFAULT_LIFE_TIME_FADE_START;
@@ -80,7 +79,7 @@ export class LockToBone extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		error();
 		// TODO: use 'm_modelInput''m_transformInput', m_vecRotation, m_flRotLerp
 		/*

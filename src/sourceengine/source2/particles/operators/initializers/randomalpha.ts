@@ -1,7 +1,3 @@
-import { RandomFloatExp } from '../../../../../math/functions';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 /*
 DISABLED: replaced by C_INIT_InitFloat
@@ -11,7 +7,7 @@ export class RandomAlpha extends Operator {
 	alphaMax = 255;
 	alphaRandExponent = 1;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nAlphaMin':
 				this.alphaMin = (param);
@@ -27,7 +23,7 @@ export class RandomAlpha extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		const alpha = RandomFloatExp(this.alphaMin, this.alphaMax, this.alphaRandExponent) / 255.0;
 		particle.alpha = alpha;
 		particle.startAlpha = alpha;

@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -24,7 +23,7 @@ export class SetControlPointPositions extends Operator {
 	#headLocation = DEFAULT_HEAD_LOCATION;
 	#setOnce: boolean = DEFAULT_SET_ONCE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':// TODO: mutualize
 				this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_LOCATION;
@@ -67,13 +66,13 @@ export class SetControlPointPositions extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle | Source2Particle[] | undefined | null, elapsedTime: number, strength: number) {
+	override doOperate(): void {
 		// TODO: use orient
 		//const list = ['First', 'Second', 'Third', 'Fourth'];
 
 		const useWorldLocation = this.#useWorldLocation;
 
-		const vecControlPoint = this.system.getControlPointPosition(this.#headLocation);
+		//const vecControlPoint = this.system.getControlPointPosition(this.#headLocation);
 
 		let cpNumber;
 		let cpLocation;
@@ -96,7 +95,7 @@ export class SetControlPointPositions extends Operator {
 		}
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

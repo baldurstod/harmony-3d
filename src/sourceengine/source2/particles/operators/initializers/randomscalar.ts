@@ -1,8 +1,3 @@
-import { RandomFloatExp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 /*
 Disabled: replaced by C_INIT_InitFloat
@@ -13,7 +8,7 @@ export class RandomScalar extends Operator {
 	exponent = 1;
 	#fieldOutput = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flMin':
 				this.min = param;
@@ -29,7 +24,7 @@ export class RandomScalar extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		particle.setInitialField(this.#fieldOutput, RandomFloatExp(this.min, this.max, this.exponent));
 	}
 }

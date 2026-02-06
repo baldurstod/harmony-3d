@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -11,7 +10,7 @@ export class SetControlPointFromObjectScale extends Operator {
 	#cpInput = 0;
 	#cpOutput = 1;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
 				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
@@ -24,15 +23,15 @@ export class SetControlPointFromObjectScale extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
-		const cpInput = this.system.getControlPoint(this.#cpInput);
+	override doOperate(): void {
+		//const cpInput = this.system.getControlPoint(this.#cpInput);
 		const cpOutput = this.system.getControlPoint(this.#cpOutput);
 
 		//TODO: use the actual scale
 		cpOutput.setPosition(vec3.fromValues(1, 1, 1));
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

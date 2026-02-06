@@ -15,7 +15,7 @@ export class RemapControlPointDirectionToVector extends Operator {
 	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#scale = DEFAULT_SCALE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flScale':
 				this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE;
@@ -24,7 +24,7 @@ export class RemapControlPointDirectionToVector extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		vec3.transformQuat(v, DEFAULT_VECTOR, cp.currentWorldQuaternion);
 		vec3.scale(v, v, this.#scale);

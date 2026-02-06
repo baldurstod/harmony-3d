@@ -23,11 +23,11 @@ export class PlaneCull extends Operator {
 		this.#update();
 	}
 
-	#update() {
+	#update(): void {
 		vec3.scale(this.#planeDirectionOffset, this.#planeDirection, this.#planeOffset);
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nPlaneControlPoint':
 				this.#planeControlPoint = param.getValueAsNumber() ?? DEFAULT_PLANE_CONTROL_POINT;
@@ -49,7 +49,7 @@ export class PlaneCull extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		// TODO: use m_bLocalSpace
 		const cp = this.system.getControlPoint(this.#planeControlPoint);
 		if (cp) {

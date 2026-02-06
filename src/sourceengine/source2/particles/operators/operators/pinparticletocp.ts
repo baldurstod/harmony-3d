@@ -1,5 +1,4 @@
 import { Source2ParticleSelection, Source2PinBreakType, stringToParticleSelection, stringToPinBreakType } from '../../enums';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -38,7 +37,7 @@ export class PinParticleToCP extends Operator {
 	{ name: 'm_flOpStrength', type: OperatorDefinitionType.Float, defaultValue: 1, complex: true },
 	{ name: 'm_nOpEndCapState', type: OperatorDefinitionType.Enum, defaultValue: Source2ParticleEndCapState.AlwaysEnabled, complex: false },
 	 */
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nPinBreakType':
 				this.#pinBreakType = stringToPinBreakType(param.getValueAsString()) ?? DEFAULT_PIN_BREAK;
@@ -72,7 +71,7 @@ export class PinParticleToCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//m_nParticleNumber
 		//TODO
 		console.error('code me');

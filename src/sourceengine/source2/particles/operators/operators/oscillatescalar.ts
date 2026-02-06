@@ -35,7 +35,7 @@ export class OscillateScalar extends Operator {
 	#oscMult = DEFAULT_OSC_MULT;
 	#oscAdd = DEFAULT_OSC_ADD;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':// TODO: mutualize ?
 				this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
@@ -81,7 +81,7 @@ export class OscillateScalar extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		const fl4StartTimeWidth = this.#startTimeMax - this.#startTimeMin;
 		const fl4EndTimeWidth = this.#endTimeMax - this.#endTimeMin;
 
@@ -125,7 +125,7 @@ export class OscillateScalar extends Operator {
 					fl4Cos = fl4CosFactor * fl4Frequency;
 				}
 				const fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
-				let fl4OscVal = particle.getField(this.#field) as number + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
+				let fl4OscVal = particle.getScalarField(this.#field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
 				if (this.#field == PARTICLE_FIELD_ALPHA) {
 					fl4OscVal = clamp(fl4OscVal, 0.0, 1.0);
 				}

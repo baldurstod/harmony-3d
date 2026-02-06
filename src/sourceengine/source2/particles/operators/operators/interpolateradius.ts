@@ -21,46 +21,46 @@ export class InterpolateRadius extends Operator {
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this._update();
+		this.#update();
 	}
 
-	_update() {
+	#update(): void {
 		this.#invTime = 1.0 / (this.#endTime - this.#startTime);
 		this.#biasParam = 1.0 / this.#bias - 2;
 		this.#scaleWidth = this.#endScale - this.#startScale;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartTime':
 				this.#startTime = param.getValueAsNumber() ?? 0;
-				this._update();
+				this.#update();
 				break;
 			case 'm_flEndTime':
 				this.#endTime = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#update();
 				break;
 			case 'm_flStartScale':
 				this.#startScale = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#update();
 				break;
 			case 'm_flEndScale':
 				this.#endScale = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#update();
 				break;
 			case 'm_bEaseInAndOut':
 				this.#easeInAndOut = param.getValueAsBool() ?? false;
 				break;
 			case 'm_flBias':
 				this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS;
-				this._update();
+				this.#update();
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const fl4LifeDuration = particle.timeToLive;
 		let fl4GoodMask = CmpGtSIMD(fl4LifeDuration, 0);
 		const fl4CurTime = this.system.currentTime;

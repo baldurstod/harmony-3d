@@ -30,14 +30,14 @@ export class FadeOut extends Operator {
 		this.#update();
 	}
 
-	#update() {
+	#update():void {
 		//TODO: this is wrong: must be done per particle
 		this.#fadeOutTime = RandomFloatExp(this.#fadeOutTimeMin, this.#fadeOutTimeMax, this.#fadeOutTimeExp);
 		this.#startFadeOutTime = 1.0 - this.#fadeOutTime;
 		this.#invFadeOutTime = 1.0 / this.#fadeOutTime;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeOutTimeMin':
 				this.#fadeOutTimeMin = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME_MIN;
@@ -48,11 +48,11 @@ export class FadeOut extends Operator {
 				this.#update();
 				break;
 			case 'm_flFadeOutTimeExp':
-				this.#fadeOutTimeExp  = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME_EXP;
+				this.#fadeOutTimeExp = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME_EXP;
 				this.#update();
 				break;
 			case 'm_flFadeBias':
-				this.#fadeBias  = param.getValueAsNumber() ?? DEFAULT_FADE_BIAS;
+				this.#fadeBias = param.getValueAsNumber() ?? DEFAULT_FADE_BIAS;
 				this.#update();
 				break;
 			case 'm_bProportional':
@@ -66,7 +66,7 @@ export class FadeOut extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		//TODO: use fadeBias, easeInAndOut
 		//particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
 		particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, this.#startFadeOutTime, this.#fadeOutTime, this.#invFadeOutTime, particle.startAlpha, -particle.startAlpha);

@@ -17,12 +17,12 @@ export class FadeOutSimple extends Operator {
 		this.#update();
 	}
 
-	#update() {
+	#update():void {
 		this.startFadeOutTime = 1.0 - this.fadeOutTime;
 		this.invFadeOutTime = 1.0 / this.fadeOutTime;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeOutTime':
 				this.fadeOutTime = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME;
@@ -33,7 +33,7 @@ export class FadeOutSimple extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		particle.alpha = SimpleSplineRemapValWithDeltasClamped(particle.proportionOfLife, this.startFadeOutTime, this.fadeOutTime, this.invFadeOutTime, particle.startAlpha, -particle.startAlpha);
 		//TODO: use fieldOutput
 	}

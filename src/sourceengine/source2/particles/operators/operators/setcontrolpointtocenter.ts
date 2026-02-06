@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -12,7 +11,7 @@ export class SetControlPointToCenter extends Operator {
 	#cp1 = DEFAULT_CP_1;
 	#cp1Pos = vec3.create();
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCP1':// TODO: mutualize this parameter ?
 				this.#cp1 = param.getValueAsNumber() ?? DEFAULT_CP_1;
@@ -25,13 +24,13 @@ export class SetControlPointToCenter extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		this.system.getBoundsCenter(center);
 		vec3.add(center, center, this.#cp1Pos);
-		this.system.getOwnControlPoint(this.#cp1).position = center;
+		this.system.getOwnControlPoint(this.#cp1).setPosition(center);
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

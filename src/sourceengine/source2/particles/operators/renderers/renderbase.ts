@@ -22,7 +22,7 @@ export class RenderBase extends Operator {
 		this.material = material;
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecTexturesInput':
 				if (TESTING) {

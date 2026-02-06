@@ -10,7 +10,7 @@ export class RampScalarLinearSimple extends Operator {
 	#endTime = 1;//TODO: check default value
 	#field = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_Rate':
 				this.#rate = param.getValueAsNumber() ?? 0;
@@ -29,13 +29,13 @@ export class RampScalarLinearSimple extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		const particleTime = particle.proportionOfLife;
 		if (particleTime < this.#startTime || particleTime > this.#endTime) {
 			return;
 		}
 
-		const value = particle.getField(this.#field) as number + this.#rate * elapsedTime;
+		const value = particle.getScalarField(this.#field) + this.#rate * elapsedTime;
 		particle.setField(this.#field, value);
 	}
 }

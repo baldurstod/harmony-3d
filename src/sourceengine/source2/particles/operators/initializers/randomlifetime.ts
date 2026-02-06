@@ -1,7 +1,3 @@
-import { RandomFloatExp } from '../../../../../math/functions';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 /*
 DISABLED: replaced by C_INIT_InitFloat
@@ -11,7 +7,7 @@ export class RandomLifeTime extends Operator {
 	lifetimeMax = 0;
 	lifetimeRandExponent = 1;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_fLifetimeMin':
 				this.lifetimeMin = (param);
@@ -27,7 +23,7 @@ export class RandomLifeTime extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		particle.setInitialTTL(RandomFloatExp(this.lifetimeMin, this.lifetimeMax, this.lifetimeRandExponent));
 	}
 }

@@ -61,7 +61,7 @@ export class InitFromCPSnapshot extends Operator {
 	#randomSeed = DEFAULT_RANDOM_SEED;
 	#localSpaceAngles = DEFAULT_LOCAL_SPACE_ANGLES;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nAttributeToRead':
 				this.#attributeToRead = param.getValueAsNumber() ?? DEFAULT_ATTRIBUTE_TO_READ;
@@ -89,7 +89,7 @@ export class InitFromCPSnapshot extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		if (this.#attributeToRead == -1) {
 			return;
 		}
@@ -99,7 +99,7 @@ export class InitFromCPSnapshot extends Operator {
 		if (snapshot) {
 			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.#attributeToRead]!;//TODO: check this.#attributeToRead range
 			if (TESTING && attributeToReadName === undefined) {
-				throw 'Unknown field';
+				throw new Error('Unknown field');
 			}
 			const attributeToRead = snapshot.attributes[attributeToReadName];
 			if (attributeToRead) {

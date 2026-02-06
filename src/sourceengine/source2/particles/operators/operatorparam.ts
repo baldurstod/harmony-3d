@@ -15,7 +15,7 @@ export enum OperatorParamType {
 export type OperatorParamValueType = null | boolean | number | bigint | string | OperatorParam | OperatorParamValueType[] | Map<string, OperatorParam> | Uint8Array | Float32Array;
 
 export class OperatorParam {
-	isOperatorParam: true = true;
+	isOperatorParam = true as const;
 	#value: OperatorParamValueType;
 	#type: OperatorParamType;
 	#name: string;
@@ -82,7 +82,7 @@ export class OperatorParam {
 		const value = this.#value as number[];//TODO: check the actual type
 		for (let i = 0; i < 2; i++) {
 			// TODO: check len
-			out[i] = (value as number[])[i] ?? 0;
+			out[i] = value[i] ?? 0;
 		}
 		return out;
 	}
@@ -95,7 +95,7 @@ export class OperatorParam {
 		const value = this.#value as number[];//TODO: check the actual type
 		for (let i = 0; i < 3; i++) {
 			// TODO: check len
-			out[i] = (value as number[])[i] ?? 0;
+			out[i] = value[i] ?? 0;
 		}
 		return out;
 	}
@@ -108,7 +108,7 @@ export class OperatorParam {
 		const value = this.#value as number[];//TODO: check the actual type
 		for (let i = 0; i < 4; i++) {
 			// TODO: check len
-			out[i] = (value as number[])[i] ?? 0;
+			out[i] = value[i] ?? 0;
 		}
 		return out;
 	}
@@ -153,9 +153,9 @@ export class OperatorParam {
 		}
 
 		if (kv3 === null) {
-			const operatorParam = new OperatorParam(name, OperatorParamType.Null, null);
+			//const operatorParam = new OperatorParam(name, OperatorParamType.Null, null);
 		}
-		throw 'fix me';
+		throw new Error('fix me');
 	}
 
 	static #fromKv3Element(name: string, element: Kv3Element): OperatorParam {
@@ -219,7 +219,7 @@ export class OperatorParam {
 				case Kv3Type.Element:
 					return this.#fromKv3Element(name, kv3.getValue() as Kv3Element);
 				default:
-					throw 'fix me, missing type';
+					throw new Error('fix me, missing type');
 			}
 		}
 

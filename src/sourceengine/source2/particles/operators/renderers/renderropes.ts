@@ -60,7 +60,7 @@ export class RenderRopes extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
 				this.setTexture(param.getValueAsString() ?? '');// TODO: check default value
@@ -122,7 +122,7 @@ export class RenderRopes extends RenderBase {
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
+	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		//const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
@@ -162,7 +162,7 @@ export class RenderRopes extends RenderBase {
 		this.#createParticlesArray();
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem): void {
+	override initRenderer(particleSystem: Source2ParticleSystem): void {
 		if (this.mesh) {
 			this.mesh.serializable = false;
 			this.mesh.hideInExplorer = true;

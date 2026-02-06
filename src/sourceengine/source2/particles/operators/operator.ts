@@ -4,23 +4,24 @@ import { clamp, lerp, RandomFloat, RemapValClamped, RemapValClampedBias, vec3Ran
 import { Mesh } from '../../../../objects/mesh';
 import { PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION, PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
 import { Source2Material } from '../../materials/source2material';
+import { Source2ParticleSetMethod, stringToSetMethod } from '../enums';
 import { Source2Particle } from '../source2particle';
 import { Source2ParticleSystem } from '../source2particlesystem';
 import { OperatorParam, OperatorParamType, OperatorParamValueType } from './operatorparam';
-import { Source2ParticleSetMethod, stringToSetMethod } from '../enums';
-import { OperatorDefinition } from './operatorparams';
 
 export const COLOR_SCALE = 1 / 255;
 
-function vec4Scale(out: vec4, a: vec4, b: number) {
+/*
+function vec4Scale(out: vec4, a: vec4, b: number) :vec4{
 	out[0] = Number(a[0]) * b;
 	out[1] = Number(a[1]) * b;
 	out[2] = Number(a[2]) * b;
 	out[3] = Number(a[3]) * b;
 	return out;
 }
+*/
 
-function vec3Lerp(out: vec3, a: vec3, b: vec3, t: number) {
+function vec3Lerp(out: vec3, a: vec3, b: vec3, t: number): vec3 {
 	const ax = Number(a[0]);
 	const ay = Number(a[1]);
 	const az = Number(a[2]);
@@ -29,8 +30,8 @@ function vec3Lerp(out: vec3, a: vec3, b: vec3, t: number) {
 	out[2] = az + t * (Number(b[2]) - az);
 	return out;
 }
-
-function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
+/*
+function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number):vec4 {
 	const ax = Number(a[0]);
 	const ay = Number(a[1]);
 	const az = Number(a[2]);
@@ -41,6 +42,7 @@ function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
 	out[3] = aw + t * (Number(b[3]) - aw);
 	return out;
 }
+*/
 
 export type Source2OperatorParamValue = number | number[];/*TODO: improve type */
 
@@ -88,7 +90,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.system = system;
 	}
 
-	setParam(paramName: string, param: /*Source2OperatorParamValue*/OperatorParam) {
+	setParam(paramName: string, param: /*Source2OperatorParamValue*/OperatorParam): void {
 		/*
 		if (value instanceof Kv3Array) {
 			const arr = [];
@@ -170,7 +172,7 @@ export class Operator {//TODOv3: rename this class ?
 				case 'PF_TYPE_PARTICLE_FLOAT':
 					// TODO: use m_nMapType (PF_MAP_TYPE_REMAP...)
 					return inputValue = RemapValClamped(
-						particle?.getField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) as number ?? 0,
+						particle?.getScalarField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) as number ?? 0,
 						parameter.getSubValueAsNumber('m_flInput0') ?? 0,
 						parameter.getSubValueAsNumber('m_flInput1') ?? 1,
 						parameter.getSubValueAsNumber('m_flOutput0') as number ?? 0,
@@ -181,7 +183,7 @@ export class Operator {//TODOv3: rename this class ?
 					return null;
 				default:
 					console.error('#getParamScalarValue unknown type', parameter);
-					throw 'Code me'
+					throw new Error('Code me');
 			}
 		} else {
 			return parameter.getValueAsNumber();
@@ -227,8 +229,8 @@ export class Operator {//TODOv3: rename this class ?
 
 		const inputMin = domainMins[0];
 		const inputMax = domainMaxs[0];
-		const outputMin = domainMins[1];
-		const outputMax = domainMaxs[1];
+		//const outputMin = domainMins[1];
+		//const outputMax = domainMaxs[1];
 		//let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
 
 		// TODO: use params m_spline, m_tangents, see for instance particles/units/heroes/hero_dawnbreaker/dawnbreaker_ambient_hair.vpcf_c
@@ -295,7 +297,7 @@ export class Operator {//TODOv3: rename this class ?
 				case 'PVEC_TYPE_PARTICLE_VECTOR':
 					if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
 						Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
-						throw 'Code me';
+						throw new Error('Code me');
 					}
 					break;
 				case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
@@ -332,7 +334,7 @@ export class Operator {//TODOv3: rename this class ?
 					break;
 				default:
 					console.error('getParamVectorValue unknown type', type, parameter);
-					throw 'Code me'
+					throw new Error('Code me');
 			}
 		} else {
 			const value = parameter.getValueAsArray();
@@ -457,7 +459,7 @@ export class Operator {//TODOv3: rename this class ?
 			case 'm_nFieldInput':
 				console.error('do this param', paramName, param);
 				if (TESTING && this.#fieldInput === undefined) {
-					throw 'this.fieldInput must have a default value';
+					throw new Error('this.fieldInput must have a default value');
 				}
 				this.#fieldInput = param.getValueAsNumber() ?? DEFAULT_FIELD_INPUT;
 				break;
@@ -494,7 +496,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	initializeParticle(particles: Source2Particle, elapsedTime: number) {
+	initializeParticle(particles: Source2Particle, elapsedTime: number): void {
 		if (!particles || this.disableOperator) {
 			return;
 		}
@@ -506,7 +508,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.doInit(particles, elapsedTime, strength);
 	}
 
-	operateParticle(particle: Source2Particle | null | Source2Particle[], elapsedTime: number) {
+	operateParticle(particle: Source2Particle | null | Source2Particle[], elapsedTime: number): void {
 		if (this.disableOperator) {
 			return;
 		}
@@ -520,34 +522,34 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3) {
+	forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void {
 		if (!particle || this.disableOperator) {
 			return;
 		}
 		this.doForce(particle, elapsedTime, accumulatedForces, 1/*TODO: compute actual strengh*/);
 	}
 
-	constraintParticle(particle: Source2Particle) {
+	constraintParticle(particle: Source2Particle): void {
 		if (!particle || this.disableOperator) {
 			return;
 		}
 		this.applyConstraint(particle);
 	}
 
-	renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material) {
+	renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void {
 		if (!particleList) {
 			return;
 		}
 		this.doRender(particleList, elapsedTime, material);
 	}
 
-	#checkIfOperatorShouldRun() {
+	#checkIfOperatorShouldRun(): boolean {
 		// use opFadeOscillatePeriod
 		const strength = this.fadeInOut();
 		return strength > 0;
 	}
 
-	fadeInOut() {
+	fadeInOut(): number {
 		if (this.currentTime < this.opStartFadeInTime) {
 			return 0;
 		}
@@ -566,9 +568,9 @@ export class Operator {//TODOv3: rename this class ?
 		return 1;
 	}
 
-	setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType) {
+	setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType): void {
 		if (name == '' || name == undefined) {
-			return this;
+			return;
 		}
 		if (name == 'operator end cap state') {
 			this.endCapState = value as number;
@@ -579,32 +581,33 @@ export class Operator {//TODOv3: rename this class ?
 		//this.#parameters[name].type = type;
 		//this.#parameters[name].value = value;
 		//this.propertyChanged(parameter);
-		return this;
 	}
 
 	getParameter(name: string): OperatorParam | null {
 		return this.#parameters.get(name) ?? null;
 	}
 
-	getParameters() {
+	getParameters(): Map<string, OperatorParam> {
 		return this.#parameters;
 	}
 
-	setParameters(parameters: Record<string, any>) {
+	setParameters(parameters: Record<string, any>): void {
 		for (const i in parameters) {
 			const pair = parameters[i];
 			this.setParameter(pair[0], pair[1], pair[2]);
 		}
-		return this;
 	}
 
+	/*
 	doNothing() {
 	}
+	*/
 
-	reset() {
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	reset(): void {
 	}
 
-	getOperatorFade() {
+	getOperatorFade(): number {
 		if (!this.system) {
 			return 0;
 		}
@@ -648,7 +651,7 @@ export class Operator {//TODOv3: rename this class ?
 		return 0;
 	}
 
-	getInputValue(inputField: number, particle: Source2Particle) {
+	getInputValue(inputField: number, particle: Source2Particle): number | vec3 | undefined {
 		let input;
 		switch (inputField) {
 			case 0: //creation time
@@ -661,8 +664,7 @@ export class Operator {//TODOv3: rename this class ?
 		return input;
 	}
 
-	getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4) {
-		let input;
+	getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4): void {
 		switch (inputField) {
 			case 0: //creation time
 				vec3.copy(v as vec3, particle.position);
@@ -680,19 +682,19 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	setOutputValue(outputField: number, value: any, particle: Source2Particle) {
+	setOutputValue(outputField: number, value: any, particle: Source2Particle): void {
 		particle.setInitialField(outputField, value /*TODO*/);
 	}
 
-	initMultipleOverride() {
+	initMultipleOverride(): boolean {
 		return false;
 	}
 
-	isPreEmission() {
+	isPreEmission(): boolean {
 		return false;
 	}
 
-	setOrientationType(orientationType: string | number | bigint) {
+	setOrientationType(orientationType: string | number | bigint): void {
 		//TODO: finish this
 		switch (orientationType) {
 			case 'PARTICLE_ORIENTATION_SCREEN_ALIGNED':
@@ -730,19 +732,24 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	init() {
+	init(): void {
 		//This function is called after parameters are set
 	}
 
-	dispose() {
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	dispose(): void {
 	}
 
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void { }
 	doEmit(elapsedTime: number): void { }
 	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void { }
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void { }
-	applyConstraint(particle: Source2Particle) { }
-	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
-	initRenderer(particleSystem: Source2ParticleSystem) { }
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) { }
+	applyConstraint(particle: Source2Particle): void { }
+	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void { }
+	initRenderer(particleSystem: Source2ParticleSystem): void { }
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void { }
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
 }

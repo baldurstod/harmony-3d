@@ -17,7 +17,7 @@ export class PositionOffset extends Operator {
 	#offsetMin = vec4.create();
 	#offsetMax = vec4.create();
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_OffsetMin':
 			case 'm_OffsetMax':
@@ -34,7 +34,7 @@ export class PositionOffset extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		// TODO: use m_bProportional
 		const offsetMin = this.getParamVectorValue(this.#offsetMin, 'm_OffsetMin', particle) ?? DEFAULT_OFFSET;
 		const offsetMax = this.getParamVectorValue(this.#offsetMax, 'm_OffsetMax', particle) ?? DEFAULT_OFFSET;
@@ -52,7 +52,7 @@ export class PositionOffset extends Operator {
 		vec3.add(particle.prevPosition, particle.prevPosition, offset);
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride():boolean {
 		return true;
 	}
 }

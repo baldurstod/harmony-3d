@@ -8,7 +8,7 @@ const DEFAULT_PERCENT = 0.5;
 export class RandomYawFlip extends Operator {
 	#percent = DEFAULT_PERCENT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flPercent':
 				this.#percent = param.getValueAsNumber() ?? DEFAULT_PERCENT;
@@ -18,11 +18,11 @@ export class RandomYawFlip extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		particle.rotationYaw += (Math.random() < this.#percent) ? Math.PI : 0;
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

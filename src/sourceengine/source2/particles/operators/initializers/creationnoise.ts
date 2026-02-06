@@ -30,7 +30,7 @@ export class CreationNoise extends Operator {//Remap noise to scalar
 	#offsetLoc = vec3.create();//spatial coordinate offset
 	#worldTimeScale = DEFAULT_WORLD_TIME_SCALE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nFieldOutput':
 				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
@@ -39,7 +39,7 @@ export class CreationNoise extends Operator {//Remap noise to scalar
 				this.#absVal = param.getValueAsBool() ?? DEFAULT_ABS_VAL;
 				break;
 			case 'm_bAbsValInv':
-				this.#absValInv  = param.getValueAsBool() ?? DEFAULT_ABS_VAL_INV;
+				this.#absValInv = param.getValueAsBool() ?? DEFAULT_ABS_VAL_INV;
 				break;
 			case 'm_flOffset':
 				this.#offset = param.getValueAsNumber() ?? DEFAULT_OFFSET;
@@ -67,7 +67,7 @@ export class CreationNoise extends Operator {//Remap noise to scalar
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		const fieldOutput = this.fieldOutput;
 		//let nAbsVal = 0xffffffff;
 		let flAbsScale = 0.5;
@@ -86,16 +86,15 @@ export class CreationNoise extends Operator {//Remap noise to scalar
 
 		const CoordScaleLoc = this.#noiseScaleLoc;
 
-		let ValueScale, ValueBase;
-		ValueScale = (flAbsScale * (fMax - fMin));
-		ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
+		const ValueScale = (flAbsScale * (fMax - fMin));
+		const ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
 
-		let CoordLoc, CoordWorldTime, CoordBase;
+		//let CoordWorldTime;
 		//let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
 		const Offset = this.#offset;
 		const a = (particle.cTime + Offset) * this.#noiseScale + performance.now() * this.#worldTimeScale;
-		CoordBase = vec3.fromValues(a, a, a);
-		CoordLoc = vec3.create();
+		const CoordBase = vec3.fromValues(a, a, a);
+		const CoordLoc = vec3.create();
 		//CoordBase *= this.noiseScale;
 		//CoordWorldTime = Vector( (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale) );
 		//CoordBase += CoordWorldTime;

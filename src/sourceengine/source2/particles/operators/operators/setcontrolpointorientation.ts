@@ -2,7 +2,6 @@ import { quat, vec3 } from 'gl-matrix';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const q = quat.create();
 
@@ -21,7 +20,7 @@ export class SetControlPointOrientation extends Operator {
 	#rotation = vec3.create();// TODO: check default value
 	#rotationB = vec3.create();// TODO: check default value
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInterpolation':
 				console.error('do this param', paramName, param);
@@ -54,7 +53,7 @@ export class SetControlPointOrientation extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		return;
 		//TODO: randomize parameter + interpolation
 		const cp = this.system.getControlPoint(this.#cp);
@@ -71,12 +70,12 @@ export class SetControlPointOrientation extends Operator {
 			}
 			//TODO: dafuck ?
 			quat.invert(q, q);
-			cp.quaternion = q;
+			cp.setQuaternion(q);
 			//cp._compute();
 		}
 	}
 
-	isPreEmission() {
+	override isPreEmission(): boolean {
 		return true;
 	}
 }

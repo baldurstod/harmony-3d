@@ -14,7 +14,7 @@ const DEFAULT_TRANSFORM_NORMALS = false;// TODO: check default value
 export class SnapshotRigidSkinToBones extends Operator {
 	#transformNormals = DEFAULT_TRANSFORM_NORMALS;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bTransformNormals':
 				//normal seems to be transformed whatever this parameter value is ?
@@ -25,7 +25,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		let bone, boneName, boneWeight, boneMat;
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (!cp) {
@@ -94,7 +94,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 		} else {
 			//Probably should do it better, but it just works
 			const particleHitbox = particle.snapHitbox;
-			const particleHitboxOffset = particle.snapHitboxOffset;
+			//const particleHitboxOffset = particle.snapHitboxOffset;
 			if (particleHitbox) {
 				bone = skeleton.getBoneByName(particleHitbox);
 				if (bone) {

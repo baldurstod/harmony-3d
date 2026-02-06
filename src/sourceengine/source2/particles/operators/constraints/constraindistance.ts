@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const vec = vec3.create();
 
@@ -14,7 +14,7 @@ export class ConstrainDistance extends Operator {
 	#centerOffset = vec3.create();
 	#globalCenter = DEFAULT_GLOBAL_CENTER;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_CenterOffset':
 				param.getValueAsVec3(this.#centerOffset);
@@ -24,17 +24,17 @@ export class ConstrainDistance extends Operator {
 				break;
 			case 'm_fMinDistance':
 			case 'm_fMaxDistance':
-				// used in applyConstraint
+			// used in applyConstraint
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	applyConstraint(particle: Source2Particle) {
+	override applyConstraint(particle: Source2Particle): void {
 		const minDistance: number = this.getParamScalarValue('m_fMinDistance') ?? DEFAULT_MIN_DISTANCE;
 		const maxDistance: number = this.getParamScalarValue('m_fMaxDistance') ?? DEFAULT_MAX_DISTANCE;
-		const offsetOfCenter = this.getParameter('offset of center');
-		const cpNumber = this.getParameter('control point number');
+		//const offsetOfCenter = this.getParameter('offset of center');
+		//const cpNumber = this.getParameter('control point number');
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		const v = vec3.clone(particle.position);

@@ -12,7 +12,7 @@ export class InstantaneousEmitter extends Emitter {
 	#maxEmittedPerFrame = DEFAULT_MAX_EMITTED_PER_FRAME;
 	#snapshotControlPoint = DEFAULT_SNAPSHOT_CONTROL_POINT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nParticlesToEmit':
 			case 'm_flStartTime':
@@ -32,10 +32,10 @@ export class InstantaneousEmitter extends Emitter {
 		}
 	}
 
-	doEmit(elapsedTime: number): void {
+	override doEmit(elapsedTime: number): void {
 		//todo: use snapshotControlPoint
 		let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
-		const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
+		//const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
 
 		const system = this.system;
 		if (this.#snapshotControlPoint != -1) {
@@ -65,7 +65,7 @@ export class InstantaneousEmitter extends Emitter {
 		}
 	}
 
-	reset() {
+	override reset(): void {
 		this.#emitted = 0;
 	}
 }

@@ -82,7 +82,7 @@ export class RenderSprites extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
 				this.setTexture(param.getValueAsString() ?? '');// TODO: check default value
@@ -160,7 +160,7 @@ export class RenderSprites extends RenderBase {
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
+	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode, m_bGammaCorrectVertexColors
 		// TODO: do refraction ex: particles/units/heroes/hero_arc_warden/arc_warden_bracer_hand.vpcf_c
 		//const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
@@ -272,7 +272,7 @@ export class RenderSprites extends RenderBase {
 		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem): void {
+	override initRenderer(particleSystem: Source2ParticleSystem): void {
 		this.mesh!.serializable = false;
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');

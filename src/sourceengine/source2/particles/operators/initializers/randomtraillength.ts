@@ -1,7 +1,3 @@
-import { RandomFloatExp } from '../../../../../math/functions';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 /*
 DISABLED: replaced by C_INIT_InitFloat
@@ -10,7 +6,7 @@ export class RandomTrailLength extends Operator {
 	#maxLength = 0.1;
 	#lengthRandExponent = 1;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flMinLength':
 				this.#minLength = (param);
@@ -26,7 +22,7 @@ export class RandomTrailLength extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		particle.trailLength = RandomFloatExp(this.#minLength, this.#maxLength, this.#lengthRandExponent);
 	}
 }

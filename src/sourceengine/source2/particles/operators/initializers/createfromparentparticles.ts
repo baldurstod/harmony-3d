@@ -17,7 +17,7 @@ export class CreateFromParentParticles extends Operator {
 	#randomSeed = DEFAULT_RANDOM_SEED;
 	#subFrame = DEFAULT_SUB_FRAME;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flVelocityScale':
 				this.#velocityScale = param.getValueAsNumber() ?? DEFAULT_VELOCITY_SCALE;
@@ -40,7 +40,7 @@ export class CreateFromParentParticles extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		const parent = this.system.parentSystem;
 		if (parent == null) {
 			return;

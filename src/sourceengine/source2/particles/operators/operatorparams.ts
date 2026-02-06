@@ -47,8 +47,7 @@ export type OperatorDefinitionEnums =
 	typeof Source2ParticleTintBlendMode |
 	typeof Source2ParticleEndCapState |
 	typeof Source2PinBreakType |
-	typeof Source2ParticleSelection |
-	typeof Source2PinBreakType;
+	typeof Source2ParticleSelection;
 
 export type OperatorDefinition = {
 	name: string;

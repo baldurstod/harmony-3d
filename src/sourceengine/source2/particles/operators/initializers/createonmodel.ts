@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { Source2ModelInstance } from '../../../export';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -29,7 +30,7 @@ export class CreateOnModel extends Operator {
 	#localCoords = DEFAULT_LOCAL_COORDS;//bias in local space
 	#useBones = DEFAULT_USE_BONES;//use bones instead of hitboxes
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nForceInModel':
 				this.#forceInModel = param.getValueAsNumber() ?? DEFAULT_FORCE_IN_MODEL;
@@ -45,7 +46,7 @@ export class CreateOnModel extends Operator {
 				break;
 			case 'm_flMaxBoneVelocity':
 				console.error('do this param', paramName, param);
-				this.#maxBoneVelocity  = param.getValueAsNumber() ?? DEFAULT_MAX_BONE_VELOCITY;
+				this.#maxBoneVelocity = param.getValueAsNumber() ?? DEFAULT_MAX_BONE_VELOCITY;
 				break;
 			case 'm_HitboxSetName':
 				this.#hitboxSetName = param.getValueAsString() ?? DEFAULT_HITBOX_SET_NAME;
@@ -68,7 +69,7 @@ export class CreateOnModel extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		// TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName, m_modelInput, m_transformInput, m_nDesiredHitbox, m_vecDirectionBias
 		//const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
 
@@ -79,7 +80,7 @@ export class CreateOnModel extends Operator {
 				const bones: any[] = []/*TODO: improve type*/;
 				particle.bones = bones;
 				particle.initialVec = vec3.create();
-				const position = (controllingModel as any).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+				const position = (controllingModel as Source2ModelInstance).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
 				if (controlPoint) {
 					vec3.copy(particle.position, position);
 					vec3.copy(particle.prevPosition, position);

@@ -7,14 +7,14 @@ import { Source2Particle } from '../../source2particle';
 
 const DEFAULT_MAX_CONSTRAINTS_PASSES = 3;
 
-const basicMovementGravity = vec3.create();
+//const basicMovementGravity = vec3.create();
 
 export class BasicMovement extends Operator {
 	#gravity = vec3.create();
 	#drag = 0;
 	#maxConstraintPasses = DEFAULT_MAX_CONSTRAINTS_PASSES;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_Gravity':
 				param.getValueAsVec3(this.#gravity);//TODO: default gravity ?
@@ -30,7 +30,7 @@ export class BasicMovement extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		/*if (particle.id == 5) {
 			console.error(particle.prevPosition, particle.position);
 		}*/

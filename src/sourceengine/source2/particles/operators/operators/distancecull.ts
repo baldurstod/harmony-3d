@@ -14,7 +14,7 @@ export class DistanceCull extends Operator {
 	#distance = DEFAULT_DISTANCE;
 	#cullInside = DEFAULT_CULL_INSIDE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nControlPoint':// TODO: mutualize ?
 				this.controlPointNumber = param.getValueAsNumber() ?? DEFAULT_CONTROL_POINT_NUMBER;
@@ -33,7 +33,7 @@ export class DistanceCull extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			const origin = cp.getWorldPosition(vec);

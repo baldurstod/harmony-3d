@@ -22,7 +22,7 @@ export class CreateWithinSphere extends Operator {
 	#speedRandExp = DEFAULT_SPEED_RAND_EXP;
 	#localCoords = DEFAULT_LOCAL_COORDS;//bias in local system
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_LocalCoordinateSystemSpeedMin':
 			case 'm_LocalCoordinateSystemSpeedMax':
@@ -46,7 +46,7 @@ export class CreateWithinSphere extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle, elapsedTime: number): void {
 		const localCoordinateSystemSpeedMin = (this.getParamVectorValue(createWithinSphereSpeedMin, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED) as vec3;
 		const localCoordinateSystemSpeedMax = (this.getParamVectorValue(createWithinSphereSpeedMax, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED) as vec3;
 		const m_vecDistanceBias = (this.getParamVectorValue(createWithinSphereDistanceBias, 'm_vecDistanceBias', particle) ?? DEFAULT_DISTANCE_BIAS) as vec3;
@@ -84,7 +84,7 @@ export class CreateWithinSphere extends Operator {
 			vec3.mul(randpos, randpos, m_vecDistanceBias);//randpos *= m_vecDistanceBias;
 			vec3.normalize(randpos, randpos);//randpos.NormalizeInPlace();
 
-			const randDir = vec3.clone(randpos);
+			//const randDir = vec3.clone(randpos);
 			vec3.scale(randpos, randpos, lerp(radiusMin, radiusMax, flLength));
 
 			if (!m_bDistanceBias || !this.#localCoords) {

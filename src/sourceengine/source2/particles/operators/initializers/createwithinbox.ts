@@ -20,7 +20,7 @@ export class CreateWithinBox extends Operator {
 	#randomParams = new Source2ParticleRandomParams();
 	#useNewCode = DEFAULT_USE_NEW_CODE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bLocalSpace':
 				this.#localSpace = param.getValueAsBool() ?? DEFAULT_LOCAl_SPACE;
@@ -40,7 +40,7 @@ export class CreateWithinBox extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number) {
+	override doInit(particle: Source2Particle): void {
 		//TODO: useNewCode ??
 		this.getParamVectorValue(this.#vecMin, 'm_vecMin', particle);
 		this.getParamVectorValue(this.#vecMax, 'm_vecMax', particle);

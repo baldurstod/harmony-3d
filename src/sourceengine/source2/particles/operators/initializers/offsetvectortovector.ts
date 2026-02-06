@@ -1,12 +1,5 @@
-import { vec3 } from 'gl-matrix';
-import { ONE_EPS } from '../../../../../math/constants';
-import { vec3RandomBox } from '../../../../../math/functions';
-import { PARTICLE_FIELD_COLOR, PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const v = vec3.create();
+//const v = vec3.create();
 
 /*
 DISABLED: replaced by C_INIT_InitVec
@@ -17,7 +10,7 @@ export class OffsetVectorToVector extends Operator {
 	#fieldOutput = PARTICLE_FIELD_POSITION;
 	#fieldInput = PARTICLE_FIELD_POSITION;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecOutputMin':
 				vec3.copy(this.outputMin, param);
@@ -30,7 +23,7 @@ export class OffsetVectorToVector extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		vec3RandomBox(v, this.outputMin, this.outputMax);
 		vec3.add(v, v, particle.getField(this.#fieldInput));
 		if (this.#fieldOutput == PARTICLE_FIELD_COLOR) {

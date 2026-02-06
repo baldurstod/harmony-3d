@@ -43,7 +43,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 	#copyAlpha = DEFAULT_COPY_ALPHA;
 	#copyRadius = DEFAULT_COPY_RADIUS;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSnapshotControlPointNumber':
 				this.#snapshotControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
@@ -96,7 +96,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use all parameters
 		//use  m_flReadIndex
 		const system = this.system;
@@ -227,7 +227,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			} else {
 				//Probably should do it better, but it just works
 				const particleHitbox = particle.snapHitbox;
-				const particleHitboxOffset = particle.snapHitboxOffset;
+				//const particleHitboxOffset = particle.snapHitboxOffset;
 				if (particleHitbox) {
 					bone = skeleton.getBoneByName(particleHitbox);
 					if (bone) {

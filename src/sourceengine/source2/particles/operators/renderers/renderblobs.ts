@@ -16,7 +16,7 @@ export class RenderBlobs extends RenderBase {
 		this.material = new Source2SpriteCard(system.repository);
 	}
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		/*
 		cube_width
 			This is the density of the matrix through which the blob is meshed. Smaller numbers give higher precision at higher performance cost, while larger number will cause more swimming with movement but at a much cheaper cost.
@@ -38,7 +38,7 @@ export class RenderBlobs extends RenderBase {
 		}
 	}
 
-	initRenderer(particleSystem: Source2ParticleSystem): void {
+	override initRenderer(particleSystem: Source2ParticleSystem): void {
 		/*this.geometry = new BufferGeometry();
 		this.mesh = new StaticMesh(this.geometry, this.material);
 		this.mesh.setDefine('HARDWARE_PARTICLES');
@@ -50,7 +50,7 @@ export class RenderBlobs extends RenderBase {
 		particleSystem.addChild(this.#metaballs);
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
+	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
 		this.#metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
 		const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
 		//const m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;

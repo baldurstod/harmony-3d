@@ -8,7 +8,7 @@ const nmat = mat3.create();
 
 export class NormalLock extends Operator {
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			//mat4.invert(mat, particle.cpPreviousTransform);

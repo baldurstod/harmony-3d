@@ -17,7 +17,7 @@ export class RenderModels extends Operator {
 	#allModels = new Map<Source2ModelInstance, { repository: string, modelName: string, used: boolean }/*TODO:create a type*/>();
 	#animated = false;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_ModelList':
 				this.#modelList.clear();
@@ -55,7 +55,7 @@ export class RenderModels extends Operator {
 		}
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
+	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[]/*, elapsedTime: number*/): void {
 		const activity = particleSystem.getAttribute('activity');
 
 		for (let i = 0, l = particleList.length; i < l; ++i) {

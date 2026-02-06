@@ -1,9 +1,9 @@
 import { vec3, vec4 } from 'gl-matrix';
+import { Source2ParticleTintBlendMode, stringToTintBlendMode } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2ParticleTintBlendMode, stringToTintBlendMode } from '../../enums';
 
 const randomColorTempVec4 = vec4.create();
 
@@ -24,7 +24,7 @@ export class RandomColor extends Operator {
 	#lightAmplification = DEFAULT_LIGHT_AMPLIFICATION;
 	#tintPerc = DEFAULT_TINT_PERC;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_ColorMin':
 				//console.error('do this param', paramName, param);
@@ -68,7 +68,7 @@ export class RandomColor extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//TODO: use tint
 		const rand = Math.random();
 		vec4.lerp(particle.color, this.#colorMin, this.#colorMax, rand);

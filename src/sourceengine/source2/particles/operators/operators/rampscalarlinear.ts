@@ -24,7 +24,7 @@ export class RampScalarLinear extends Operator {
 	#field = DEFAULT_FIELD;// TODO: not sure about the field
 	#proportionalOp = DEFAULT_PROPORTIONAL_OP;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
 				this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
@@ -56,7 +56,7 @@ export class RampScalarLinear extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		const context = particle.context.get(this);
 		let rate, startTime, endTime;
 		if (context == undefined) {
@@ -76,7 +76,7 @@ export class RampScalarLinear extends Operator {
 			return;
 		}
 
-		const value = particle.getField(this.#field) as number + rate * elapsedTime;
+		const value = particle.getScalarField(this.#field) + rate * elapsedTime;
 		particle.setField(this.#field, value);
 
 	}

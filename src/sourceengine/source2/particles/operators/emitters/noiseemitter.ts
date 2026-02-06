@@ -32,7 +32,7 @@ export class NoiseEmitter extends Emitter {
 	#worldTimeScale = DEFAULT_WORLD_TIME_SCALE;//world time noise coordinate scale
 	#remainder = 0;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nScaleControlPoint':
 				this.#scaleControlPoint = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT;
@@ -75,7 +75,7 @@ export class NoiseEmitter extends Emitter {
 		}
 	}
 
-	doEmit(elapsedTime: number) {
+	override doEmit(elapsedTime: number): void {
 		//TODO: code me
 		const emission_start_time = this.startTime;
 		let emission_rate = (this.#outputMin + this.#outputMax) * 0.5;

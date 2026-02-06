@@ -6,7 +6,7 @@ export class SpinUpdate extends Operator {
 
 	//This operator has no parameters
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
 	}
 }

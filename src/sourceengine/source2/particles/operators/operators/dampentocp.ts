@@ -13,7 +13,7 @@ export class DampenToCP extends Operator {
 	#range = DEFAULT_RANGE;
 	#scale = DEFAULT_SCALE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flRange':
 				this.#range = param.getValueAsNumber() ?? DEFAULT_RANGE;
@@ -26,7 +26,7 @@ export class DampenToCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		// TODO: use m_flScale
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 

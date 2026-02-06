@@ -11,7 +11,7 @@ export class ContinuousEmitter extends Emitter {
 	//#emitRate = DEFAULT_EMIT_RATE;
 	#remainder = 0;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flEmissionDuration':
 			case 'm_flEmitRate':
@@ -23,11 +23,11 @@ export class ContinuousEmitter extends Emitter {
 		}
 	}
 
-	doEmit(elapsedTime: number) {
+	override doEmit(elapsedTime: number): void {
 		// TODO: use m_flEmissionDuration
 		const emissionDuration = this.getParamScalarValue('m_flEmissionDuration') ?? DEFAULT_EMISSION_DURATION;
 
-		const emissionStartTime = this.getParamScalarValue('m_flStartTime') ??  DEFAULT_EMISSION_START_TIME;
+		const emissionStartTime = this.getParamScalarValue('m_flStartTime') ?? DEFAULT_EMISSION_START_TIME;
 		//let emitRate = this.#emitRate;
 		//const emissionDuration = this.getParameter('emission_duration') ?? 0;
 

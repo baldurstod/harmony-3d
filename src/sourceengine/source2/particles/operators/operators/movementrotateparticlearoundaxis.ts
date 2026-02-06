@@ -16,7 +16,7 @@ const DEFAULT_LOCAL_SPACE = false;// TODO: check default value
 export class MovementRotateParticleAroundAxis extends Operator {
 	#localSpace = DEFAULT_LOCAL_SPACE;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecRotAxis':
 			case 'm_flRotRate':
@@ -33,7 +33,7 @@ export class MovementRotateParticleAroundAxis extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		const axis = vec3.normalize(movementRotateParticleAroundAxisTempVec4 as vec3, this.getParamVectorValue(movementRotateParticleAroundAxisTempVec4, 'm_vecRotAxis', particle) as vec3 ?? DEFAULT_AXIS);
 		const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
 

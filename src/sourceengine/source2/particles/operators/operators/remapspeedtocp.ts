@@ -1,4 +1,3 @@
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -16,7 +15,7 @@ export class RemapSpeedtoCP extends Operator {
 	#outputMax = DEFAULT_OUTPUT_MAX;
 	#outControlPointNumber = DEFAULT_OUT_CONTROL_POINT_NUMBER;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInputMin':
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
@@ -38,7 +37,7 @@ export class RemapSpeedtoCP extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//TODO
 	}
 }

@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { Source2ParticlePathParams } from '../utils/pathparams';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
+import { Source2ParticlePathParams } from '../utils/pathparams';
 
 const vec = vec3.create();
 
@@ -28,10 +28,10 @@ export class MaintainSequentialPath extends Operator {
 	#startPointOffset = vec3.create();// TODO: check default value
 	#midPointOffset = vec3.create();// TODO: check default value
 	#endOffset = vec3.create();// TODO: check default value
-	operateAllParticlesRemoveme: true = true;
+	operateAllParticlesRemoveme = true as const;
 	#pathParams = new Source2ParticlePathParams();
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flNumToAssign':
 				this.#numToAssign = param.getValueAsNumber() ?? DEFAULT_NUM_TO_ASSIGN;
@@ -69,7 +69,7 @@ export class MaintainSequentialPath extends Operator {
 		}
 	}
 
-	doOperate(particles: Source2Particle[], elapsedTime: number, strength: number): void {
+	doOperate(particles: Source2Particle[]): void {
 		const t = vec3.create();
 		//TODO: use other parameters
 		const startControlPointNumber = this.#pathParams.startControlPointNumber;
@@ -82,7 +82,7 @@ export class MaintainSequentialPath extends Operator {
 			const numToAssign = this.#numToAssign;
 			let assignedSoFar = this.assignedSoFar;
 
-			let particle;
+			//let particle;
 			const delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
 			for (const particle of particles) {
 

@@ -10,7 +10,7 @@ export class RandomSecondSequence extends Operator {
 	#sequenceMin = DEFAULT_SEQUENCE_MIN
 	#sequenceMax = DEFAULT_SEQUENCE_MAX;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSequenceMin':
 				this.#sequenceMin = param.getValueAsNumber() ?? DEFAULT_SEQUENCE_MIN;
@@ -23,7 +23,7 @@ export class RandomSecondSequence extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		particle.sequence2 = Math.round((this.#sequenceMax - this.#sequenceMin) * Math.random()) + this.#sequenceMin;
 	}
 }

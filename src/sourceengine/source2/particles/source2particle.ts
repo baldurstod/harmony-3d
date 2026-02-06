@@ -2,7 +2,7 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { WARN } from '../../../buildoptions';
 import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
-import { PARTICLE_FIELD_COLOR, PARTICLE_FIELD_GLOW_ALPHA, PARTICLE_FIELD_GLOW_RGB, PARTICLE_FIELD_HITBOX_OFFSET_POSITION, PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_SCRATCH_FLOAT, PARTICLE_FIELD_SCRATCH_VECTOR, PARTICLE_FIELD_SEQUENCE_NUMBER, PARTICLE_FIELD_SHADER_EXTRA_DATA_1, PARTICLE_FIELD_SHADER_EXTRA_DATA_2, PARTICLE_FIELD_TRAIL_LENGTH } from '../../common/particles/particlefields';
+import { PARTICLE_FIELD_COLOR, PARTICLE_FIELD_GLOW_ALPHA, PARTICLE_FIELD_GLOW_RGB, PARTICLE_FIELD_HITBOX_OFFSET_POSITION, PARTICLE_FIELD_NORMAL, PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_SCRATCH_FLOAT, PARTICLE_FIELD_SCRATCH_VECTOR, PARTICLE_FIELD_SEQUENCE_NUMBER, PARTICLE_FIELD_SHADER_EXTRA_DATA_1, PARTICLE_FIELD_SHADER_EXTRA_DATA_2, PARTICLE_FIELD_TRAIL_LENGTH } from '../../common/particles/particlefields';
 import { Source2ParticleSystem } from './export';
 import { Operator } from './operators/operator';
 
@@ -413,7 +413,7 @@ export class Source2Particle {
 			case PARTICLE_FIELD_SCRATCH_VECTOR:
 				vec3.copy(out, this.scratchVec);
 				break;
-			case 21:
+			case PARTICLE_FIELD_NORMAL:
 				vec3.copy(out, this.normal);
 				break;
 			case PARTICLE_FIELD_GLOW_RGB:
@@ -429,7 +429,7 @@ export class Source2Particle {
 	}
 
 	/**
-	 * @deprecated Please use getScalarField instead.
+	 * @deprecated Please use getScalarField or getVectorField instead.
 	 */
 	getField(field = 0, initial = false): number | vec3 | vec4 {
 		// TODO: create getScalarField / getVectorField

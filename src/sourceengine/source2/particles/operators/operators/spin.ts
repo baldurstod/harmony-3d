@@ -13,7 +13,7 @@ export class Spin extends Operator {
 	#spinRateMinDegrees = DEFAULT_SPIN_RATE_MIN;
 	#spinRateStopTime = DEFAULT_SPIN_RATE_STOP_TIME;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override   _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSpinRateDegrees':
 				this.#spinRateDegrees = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE;
@@ -29,7 +29,7 @@ export class Spin extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle , elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		//particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
 		const m_fSpinRateStopTime = this.#spinRateStopTime;
 		const m_fSpinRateRadians = (this.#spinRateDegrees) * DEG_TO_RAD;//TODO: optimize
@@ -96,7 +96,7 @@ export class Spin extends Operator {
 		NewRot = OrSIMD(AndSIMD(Toosmall, AddSIMD(NewRot, Pi_2)),
 		AndNotSIMD(Toosmall, NewRot));*/
 
-				//NewRot = Math.min(Math.max(-Math.TWO_PI, NewRot), Math.TWO_PI);
+		//NewRot = Math.min(Math.max(-Math.TWO_PI, NewRot), Math.TWO_PI);
 
 		particle.rotationRoll = NewRot;
 	}

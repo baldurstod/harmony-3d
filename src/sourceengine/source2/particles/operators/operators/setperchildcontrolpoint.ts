@@ -1,5 +1,4 @@
 import { Source2ParticleVectorField } from '../../enums';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -19,7 +18,7 @@ export class SetPerChildControlPoint extends Operator {
 	#orientationField = DEFAULT_ORIENTATION_FIELD;//orientation vector
 	#numBasedOnParticleCount = DEFAULT_NUM_BASED_ON_PARTICLE_COUNT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nChildGroupID':
 				this.#childGroupID = param.getValueAsNumber() ?? DEFAULT_CHILD_GROUP_ID;
@@ -48,7 +47,7 @@ export class SetPerChildControlPoint extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//TODO: use m_nChildGroupID
 		//TODO: set m_bSetOrientation
 		const particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1;// TODO: check default value
@@ -57,14 +56,14 @@ export class SetPerChildControlPoint extends Operator {
 
 		const children = this.system.childSystems;
 		let childId = this.#childGroupID;
-		const cpId = particleId;
+		//const cpId = particleId;
 		let count = this.#numBasedOnParticleCount ? this.system.livingParticles.length : this.#numControlPoints;
 		while (count--) {
 			const child = children[childId];
 			const sourceParticle = this.system.livingParticles[particleId];
 			if (child && sourceParticle) {
 				const childCp = child.getOwnControlPoint(this.#firstControlPoint);
-				childCp.position = sourceParticle.position;
+				childCp.setPosition(sourceParticle.position);
 			}
 			++childId;
 			particleId += particleIncrement;

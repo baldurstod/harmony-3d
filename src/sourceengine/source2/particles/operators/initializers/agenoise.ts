@@ -1,5 +1,3 @@
-import { vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -11,7 +9,7 @@ export class AgeNoise extends Operator {
 	#noiseScale = DEFAULT_NOISE_SCALE;
 	#noiseScaleLoc = DEFAULT_NOISE_SCALE_LOC;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flNoiseScale':
 				this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE;
@@ -24,7 +22,7 @@ export class AgeNoise extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(): void {
 		//TODO
 	}
 }

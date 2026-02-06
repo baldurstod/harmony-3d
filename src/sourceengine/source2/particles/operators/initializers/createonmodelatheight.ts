@@ -1,10 +1,8 @@
-import { vec3 } from 'gl-matrix';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const vec = vec3.create();
+//const vec = vec3.create();
 
 const DEFAULT_HEIGHT_CP = 1;
 const DEFAULT_DESIRED_HEIGHT = 1;
@@ -26,7 +24,7 @@ export class CreateOnModelAtHeight extends Operator {// TODO: try to mutualize w
 	#useBones = false;
 	*/
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nHeightCP':
 				this.#heightCP = param.getValueAsNumber() ?? DEFAULT_HEIGHT_CP;
@@ -40,46 +38,46 @@ export class CreateOnModelAtHeight extends Operator {// TODO: try to mutualize w
 			case 'm_vecHitBoxScale':
 				// used in doInit
 				break;
-				/*
-			case 'm_nForceInModel':
-				this.#forceInModel = param.getValueAsNumber() ?? 0;
-				break;
-			case 'm_nDesiredHitbox':
-				console.error('do this param', paramName, param);
-				this.#desiredHitbox = (param);
-				break;
-			case 'm_nHitboxValueFromControlPointIndex':
-				console.error('do this param', paramName, param);
-				this.#hitboxValueFromControlPointIndex = (param);
-				break;
-			case 'm_flBoneVelocity':
-				console.error('do this param', paramName, param);
-				this.#boneVelocity = param;
-				break;
-			case 'm_flMaxBoneVelocity':
-				console.error('do this param', paramName, param);
-				this.#maxBoneVelocity = param;
-				break;
-			case 'm_vecDirectionBias':
-				param.getValueAsVec3(this.#directionBias);
-				break;
-			case 'm_HitboxSetName':
-				this.#hitboxSetName = param.getValueAsString() ?? '';
-				break;
-			case 'm_bLocalCoords':
-				this.#localCoords = param.getValueAsBool() ?? false;
-				break;
-			case 'm_bUseBones':
-				console.error('do this param', paramName, param);
-				this.#useBones = param;
-				break;
-				*/
+			/*
+		case 'm_nForceInModel':
+			this.#forceInModel = param.getValueAsNumber() ?? 0;
+			break;
+		case 'm_nDesiredHitbox':
+			console.error('do this param', paramName, param);
+			this.#desiredHitbox = (param);
+			break;
+		case 'm_nHitboxValueFromControlPointIndex':
+			console.error('do this param', paramName, param);
+			this.#hitboxValueFromControlPointIndex = (param);
+			break;
+		case 'm_flBoneVelocity':
+			console.error('do this param', paramName, param);
+			this.#boneVelocity = param;
+			break;
+		case 'm_flMaxBoneVelocity':
+			console.error('do this param', paramName, param);
+			this.#maxBoneVelocity = param;
+			break;
+		case 'm_vecDirectionBias':
+			param.getValueAsVec3(this.#directionBias);
+			break;
+		case 'm_HitboxSetName':
+			this.#hitboxSetName = param.getValueAsString() ?? '';
+			break;
+		case 'm_bLocalCoords':
+			this.#localCoords = param.getValueAsBool() ?? false;
+			break;
+		case 'm_bUseBones':
+			console.error('do this param', paramName, param);
+			this.#useBones = param;
+			break;
+			*/
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(): void {
 		// TODO
 		/*
 		// TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName

@@ -1,18 +1,13 @@
-import { vec3 } from 'gl-matrix';
-import { RemapValClamped } from '../../../../../math/functions';
-import { Source2Particle } from '../../source2particle';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-
+/*
 const DEFAULT_START_CP = 0;// TODO: check default value
 const DEFAULT_END_CP = 1;// TODO: check default value
 const DEFAULT_MAX_TRACE_LENGTH = -1;// TODO: check default value
 const DEFAULT_LOS = false;// TODO: check default value
 const DEFAULT_LOS_SCALE = 0;// TODO: check default value
 const DEFAULT_COLLISION_GROUP_NAME = 'NONE';// TODO: check default value
-const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check default value//TODO: enum
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value//TODO: enum
+*/
 // Disabled
 /*
 export class DistanceBetweenCPs extends Operator {
@@ -23,7 +18,7 @@ export class DistanceBetweenCPs extends Operator {
 	#losScale = DEFAULT_LOS_SCALE;
 	#collisionGroupName = DEFAULT_COLLISION_GROUP_NAME;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nStartCP'://TODO: mutualize
 				this.#startCP = param.getValueAsNumber() ?? DEFAULT_START_CP;
@@ -57,7 +52,7 @@ export class DistanceBetweenCPs extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
 		const inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
 		const outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
@@ -71,7 +66,7 @@ export class DistanceBetweenCPs extends Operator {
 		let value = vec3.distance(startCpPos, endCPPos);
 
 		value = RemapValClamped(value, inputMin, inputMax, outputMin, outputMax);
-		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.fieldOutput, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_DistanceBetweenCPs', DistanceBetweenCPs);

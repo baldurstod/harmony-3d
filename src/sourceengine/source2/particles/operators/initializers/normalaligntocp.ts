@@ -10,14 +10,14 @@ const DEFAULT_NORMAL = vec3.fromValues(1, 0, 0);
 
 export class NormalAlignToCP extends Operator {
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		//This operator overrides the normal
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {

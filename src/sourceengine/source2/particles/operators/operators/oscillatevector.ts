@@ -32,7 +32,7 @@ export class OscillateVector extends Operator {
 	#oscMult = DEFAULT_OSC_MULT;
 	#oscAdd = DEFAULT_OSC_ADD;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
 				param.getValueAsVec3(this.#rateMin);
@@ -81,10 +81,10 @@ export class OscillateVector extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		const m_nField = this.#field;
 
-		const pCreationTime = particle.cTime;//CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
+		//const pCreationTime = particle.cTime;//CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
 		const pLifeDuration = particle.timeToLive;//CM128AttributeIterator pLifeDuration(PARTICLE_ATTRIBUTE_LIFE_DURATION, pParticles);
 		//C4IAttributeIterator pParticleId (PARTICLE_ATTRIBUTE_PARTICLE_ID, pParticles);
 		//C4VAttributeWriteIterator pOscField (m_nField, pParticles) ;

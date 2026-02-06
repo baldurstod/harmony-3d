@@ -1,3 +1,4 @@
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 
@@ -10,7 +11,7 @@ export class Emitter extends Operator {
 	emissionDuration = DEFAULT_EMISSION_DURATION;
 	startTime = DEFAULT_START_TIME;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nEmitterIndex':
 				this.emitterIndex = param.getValueAsNumber() ?? DEFAULT_EMITTER_INDEX;
@@ -26,7 +27,7 @@ export class Emitter extends Operator {
 		}
 	}
 
-	emitParticle(creationTime: number, elapsedTime: number) {
+	emitParticle(creationTime: number, elapsedTime: number): Source2Particle | undefined {
 		if (!this.system || this.disableOperator) {
 			return;
 		}

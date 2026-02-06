@@ -1,8 +1,3 @@
-import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
-import { RandomFloat, RandomFloatExp } from '../../../../../math/functions';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 // Disabled: replaced by C_INIT_InitFloat
 /*
@@ -13,7 +8,7 @@ export class RandomYaw extends Operator {
 	rotationRandExponent = 1;
 	randomlyFlipDirection: boolean//TODO: search default value
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flDegreesMin':
 				this.radiansMin = DEG_TO_RAD * param;
@@ -35,7 +30,7 @@ export class RandomYaw extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	override doInit(particle, elapsedTime) {
 		const rotation = this.radians + RandomFloatExp(this.radiansMin, this.radiansMax, this.rotationRandExponent);
 		if (this.randomlyFlipDirection && (RandomFloat(-1, 1) >= 0)) {
 			particle.rotationYaw -= rotation;

@@ -8,7 +8,7 @@ const DEFAULT_PARTICLES_TO_MAINTAIN = 100;
 export class MaintainEmitter extends Emitter {
 	#particlesToMaintain = DEFAULT_PARTICLES_TO_MAINTAIN;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nParticlesToMaintain':
 				this.#particlesToMaintain = param.getValueAsNumber() ?? DEFAULT_PARTICLES_TO_MAINTAIN;
@@ -18,7 +18,7 @@ export class MaintainEmitter extends Emitter {
 		}
 	}
 
-	doEmit(elapsedTime: number): void {
+	override doEmit(elapsedTime: number): void {
 		const nToEmit = this.#particlesToMaintain - this.system.livingParticles.length;
 
 		if (nToEmit > 0) {

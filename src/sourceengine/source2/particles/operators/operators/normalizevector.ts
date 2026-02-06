@@ -13,7 +13,7 @@ export class NormalizeVector extends Operator {
 	#fieldOutput = Source2ParticleVectorField.Position;
 	#scale = DEFAULT_SCALE_FACTOR;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flScale':
 				this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE_FACTOR;
@@ -23,7 +23,7 @@ export class NormalizeVector extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		particle.getVectorField(normalizeVectorVec3, this.#fieldOutput);
 		vec3.normalize(normalizeVectorVec3, normalizeVectorVec3);
 		vec3.scale(normalizeVectorVec3, normalizeVectorVec3, this.#scale);

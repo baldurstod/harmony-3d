@@ -1,18 +1,20 @@
 import { vec3 } from 'gl-matrix';
 import { RemapValClampedBias } from '../../../../../math/functions';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
+import { Source2ParticleSetMethod, stringToSetMethod } from '../../enums';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const v = vec3.create();
+const tempVectorField = vec3.create();
 const v1 = vec3.fromValues(1, 1, 1);
 
 const DEFAULT_CP_INPUT = 0;// TODO: check default value
 const DEFAULT_START_TIME = -1;// TODO: check default value
 const DEFAULT_END_TIME = -1;// TODO: check default value
-const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check default value
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value
 const DEFAULT_OFFSET = false;// TODO: check default value
 const DEFAULT_ACCELERATE = false;// TODO: check default value
 const DEFAULT_LOCAL_SPACE_CP = -1;// TODO: check default value
@@ -36,7 +38,7 @@ export class RemapCPtoVector extends Operator {
 	#scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE;// TODO: search default value
 	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
 				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
@@ -61,7 +63,7 @@ export class RemapCPtoVector extends Operator {
 				this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME;
 				break;
 			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
+				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
 				break;
 			case 'm_bOffset':
 				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
@@ -84,7 +86,7 @@ export class RemapCPtoVector extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use missing parameters
 		const inputMin = this.#inputMin;
 		const inputMax = this.#inputMax;
@@ -97,12 +99,12 @@ export class RemapCPtoVector extends Operator {
 		v[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
 		v[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
 
-		const scaleInitial = this.#scaleInitialRange || this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
+		const scaleInitial = this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
 
 		if (scaleInitial) {
 			vec3.lerp(v, v1, v, strength);
 		} else {
-			vec3.lerp(v, particle.getField(this.#fieldOutput) as vec3, v, strength);
+			vec3.lerp(v, particle.getVectorField(tempVectorField, this.#fieldOutput), v, strength);
 		}
 
 		particle.setField(this.#fieldOutput, v, scaleInitial);

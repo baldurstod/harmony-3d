@@ -28,7 +28,7 @@ export class RampScalarSpline extends Operator {//Ramp scalar spline random
 	#bias = DEFAULT_BIAS;
 	#easeOut = DEFAULT_EASE_OUT;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
 				this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
@@ -66,7 +66,7 @@ export class RampScalarSpline extends Operator {//Ramp scalar spline random
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle, elapsedTime: number): void {
 		//TODO : use m_flBias m_bEaseOut
 		const context = particle.context.get(this);
 		let rate, startTime, endTime;
@@ -87,7 +87,7 @@ export class RampScalarSpline extends Operator {//Ramp scalar spline random
 			return;
 		}
 
-		const value = particle.getField(this.#field) as number + rate * elapsedTime;
+		const value = particle.getScalarField(this.#field) + rate * elapsedTime;
 		particle.setField(this.#field, value);
 
 	}

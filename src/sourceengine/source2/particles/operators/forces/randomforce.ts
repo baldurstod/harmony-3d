@@ -9,7 +9,7 @@ export class RandomForce extends Operator {
 	#minForce = vec3.create();
 	#maxForce = vec3.create();
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_MinForce':
 				param.getValueAsVec3(this.#minForce);
@@ -22,7 +22,7 @@ export class RandomForce extends Operator {
 		}
 	}
 
-	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
+	override doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void {
 		vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.#minForce, this.#maxForce));
 	}
 }

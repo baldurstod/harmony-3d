@@ -1,10 +1,5 @@
-import { RemapValClampedBias, lerp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
-import { Source2Particle } from '../../source2particle';
-import { Operator } from '../operator';
-import { OperatorParam } from '../operatorparam';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+/*
 const DEFAULT_CP_INPUT = 0;// TODO: check default value
 const DEFAULT_FIELD = 0;// TODO: check default value
 const DEFAULT_INPUT_MIN = 0;// TODO: check default value
@@ -13,9 +8,10 @@ const DEFAULT_OUTPUT_MIN = 0;// TODO: check default value
 const DEFAULT_OUTPUT_MAX = 1;// TODO: check default value
 const DEFAULT_START_TIME = -1;// TODO: check default value
 const DEFAULT_END_TIME = -1;// TODO: check default value
-const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check default value//TODO: enum
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value//TODO: enum
 const DEFAULT_REMAP_BIAS = 0.5;// TODO: check default value//TODO: enum
 const DEFAULT_SCALAR_INITIAL_RANGE = false;// TODO: check default value//TODO: enum
+*/
 
 // Disabled: replaced by C_INIT_InitFloat
 /*
@@ -32,7 +28,7 @@ export class RemapCPtoScalar extends Operator {
 	remapBias = DEFAULT_REMAP_BIAS;
 	scaleInitialRange = DEFAULT_SCALAR_INITIAL_RANGE;// TODO: search default value
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
 				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
@@ -72,13 +68,13 @@ export class RemapCPtoScalar extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
 		let value = cpInputPos[this.#field] ?? 0;
 
 		value = RemapValClampedBias(value, this.#inputMin, this.#inputMax, this.outputMin, this.outputMax, this.remapBias);
 
-		const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
+		const scaleInitial = this.scaleInitialRange || this.setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
 
 		if (scaleInitial) {
 			value = lerp(1, value, strength);

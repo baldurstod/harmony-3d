@@ -1,6 +1,3 @@
-import { RemapValClamped, lerp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
-import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -16,7 +13,7 @@ export class RemapSpeed extends Operator {
 	#inputMax = DEFAULT_INPUT_MAX;
 	#setMethod = DEFAULT_SET_METHOD;
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bIgnoreDelta':
 				this.#ignoreDelta = param.getValueAsBool() ?? DEFAULT_IGNORE_DELTA;
@@ -35,7 +32,7 @@ export class RemapSpeed extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(): void {
 		//TODO
 	}
 }

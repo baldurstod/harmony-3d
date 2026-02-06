@@ -16,7 +16,7 @@ export class NormalOffset extends Operator {
 	#localCoords = DEFAULT_LOCAL_COORDS;// TODO: check default value
 	#normalize = DEFAULT_NORMALIZE;// TODO: check default value
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_OffsetMin':
 				param.getValueAsVec3(this.#offsetMin);
@@ -35,7 +35,7 @@ export class NormalOffset extends Operator {
 		}
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doInit(particle: Source2Particle): void {
 		vec3RandomBox(v, this.#offsetMin, this.#offsetMax);
 
 		if (this.#localCoords) {
@@ -50,7 +50,7 @@ export class NormalOffset extends Operator {
 		}
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride():boolean {
 		return true;
 	}
 }

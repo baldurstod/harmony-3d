@@ -1,18 +1,18 @@
 import { quat, vec3 } from 'gl-matrix';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const tempQuat = quat.create();
-const tempQuat2 = quat.create();
+//const tempQuat2 = quat.create();
 
 export class RemapCPOrientationToRotations extends Operator {
 	#vecRotation = vec3.create();
 	#controlPointNumber = 0;//m_TransformInput
 
-	_paramChanged(paramName: string, param: OperatorParam): void {
+	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecRotation':
 				param.getValueAsVec3(this.#vecRotation);// pitch yaw roll (Y Z X)
@@ -22,7 +22,7 @@ export class RemapCPOrientationToRotations extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.#controlPointNumber);
 		if (cp) {
 			cp.getWorldQuaternion(tempQuat);
