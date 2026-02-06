@@ -1019,9 +1019,23 @@ export class WebGPURenderer implements Renderer {
 						uniformBuffer.label = uniform.name + '.' + member.name;
 						const subUniform = (materialUniform as Record<string, UniformValue>)[member.name];
 						if (subUniform !== undefined) {
-							bufferSource = subUniform as BufferSource;
+							if (typeof subUniform === 'number') {
+								switch (member.type.name) {
+									case 'u32':
+										bufferSource = new Uint32Array([subUniform]);
+										break;
+									case 'f32':
+										bufferSource = new Float32Array([subUniform]);
+										break;
+									default:
+										errorOnce(`unknwon type: ${member.type.name} for member: ${member.name} for uniform ${uniform.name}in ${material.getShaderSource() + '.wgsl'}`);
+										break;
+								}
+							} else {
+								bufferSource = subUniform as BufferSource;
+							}
 						} else {
-							errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+							errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}
 
 						if (bufferSource) {
