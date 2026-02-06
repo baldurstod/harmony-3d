@@ -929,6 +929,7 @@ class Graphics {
 			if (hasBGRA8unormStorage) {
 				(requiredFeatures as string[]).push('bgra8unorm-storage');
 			}
+			(requiredFeatures as string[]).push('texture-formats-tier2');
 
 			configuration.device = await adapter.requestDevice({
 				requiredFeatures,

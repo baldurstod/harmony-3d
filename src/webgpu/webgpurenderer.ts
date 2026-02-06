@@ -330,7 +330,7 @@ export class WebGPURenderer implements Renderer {
 			this.#setupLights(renderList, camera, cameraMatrix, uniforms);
 		}
 
-		this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context);
+		this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, false);
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
@@ -833,7 +833,7 @@ export class WebGPURenderer implements Renderer {
 
 		const groups = new Map2<number, number, Binding>();
 
-		this.#populateBindGroups(shaderModule, groups, material, null, null, null, context);
+		this.#populateBindGroups(shaderModule, groups, material, null, null, null, context, true);
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
@@ -984,7 +984,16 @@ export class WebGPURenderer implements Renderer {
 		}
 	}
 
-	#populateBindGroups(shaderModule: WgslModule, groups: Map2<number, number, Binding>, material: Material, object: Mesh | null, camera: Camera | null, uniforms: Map<string, BufferSource> | null, context: InternalRenderContext | null): void {
+	#populateBindGroups(
+		shaderModule: WgslModule,
+		groups: Map2<number, number, Binding>,
+		material: Material,
+		object: Mesh | null,
+		camera: Camera | null,
+		uniforms: Map<string, BufferSource> | null,
+		context: InternalRenderContext | null,
+		isCompute: boolean,
+	): void {
 		if (!shaderModule.reflection) {
 			return;
 		}
@@ -1302,10 +1311,15 @@ export class WebGPURenderer implements Renderer {
 
 		for (const storage of shaderModule.reflection.storage) {
 			let access: GPUStorageTextureAccess = 'read-only';
-			let bufferType: GPUBufferBindingType = 'storage'
+			let bufferType: GPUBufferBindingType = 'storage';
+			let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;
 			switch ((storage.type as TemplateInfo).access ?? storage.access) {
 				case 'read':
 					bufferType = 'read-only-storage';
+					// TODO: only set vertex if the storage is actually used in a vertex buffer
+					if (!isCompute) {
+						visibility |= GPUShaderStage.VERTEX;
+					}
 					break;
 				case 'write':
 					access = 'write-only';
@@ -1363,14 +1377,14 @@ export class WebGPURenderer implements Renderer {
 								groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility });
 							}
 						} else {
-							const storageBuffer = object?.getStorage(storage.name);
+							const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
 							if (storageBuffer) {
 								//storageBuffer.buffer?.destroy();
 
 								if (!storageBuffer.buffer) {
 									storageBuffer.buffer = device.createBuffer({
 										label: storage.name,
-										size: storage.size,
+										size: storageBuffer.value.byteLength,
 										usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 										//mappedAtCreation: true,
 									});
@@ -1384,7 +1398,7 @@ export class WebGPURenderer implements Renderer {
 
 
 								//groups.set(storage.group, storage.binding, { storageTexture, access });
-								groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
+								groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
 							} else {
 								errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
 							}
