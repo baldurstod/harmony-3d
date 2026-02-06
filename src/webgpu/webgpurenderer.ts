@@ -1,6 +1,7 @@
 import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
+import { TypedArray } from 'harmony-types';
 import { Map2, once } from 'harmony-utils';
-import { StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
+import { ArrayInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
@@ -28,7 +29,7 @@ import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
-import { StorageValueMultiple, StorageValueSingle } from './storage';
+import { StorageValueStruct } from './storage';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -1392,7 +1393,7 @@ export class WebGPURenderer implements Renderer {
 									}
 
 									for (const member of (storage.type as StructInfo).members) {
-										const source = (storageBuffer.value as StorageValueMultiple)[member.name];
+										const source = (storageBuffer.value as StorageValueStruct)[member.name];
 										if (source) {
 											device.queue.writeBuffer(
 												storageBuffer.buffer,
@@ -1403,15 +1404,54 @@ export class WebGPURenderer implements Renderer {
 									}
 
 								} else if (storage.isArray) {
-									if (!storageBuffer.buffer) {
-										storageBuffer.buffer = device.createBuffer({
-											label: storage.name,
-											size: storage.size || (storageBuffer.value as StorageValueSingle).byteLength,
-											usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
-										});
-									}
+									if (storage.format!.isArray) {
+										// Array of array
+										if (!storageBuffer.buffer) {
+											storageBuffer.buffer = device.createBuffer({
+												label: storage.name,
+												size: storage.size || (storageBuffer.value as TypedArray).byteLength,
+												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+											});
+										}
+										device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+									} else if (storage.format!.isStruct) {
+										if (!storageBuffer.buffer) {
+											storageBuffer.buffer = device.createBuffer({
+												label: storage.name,
+												size: storage.size || (storageBuffer.value as StorageValueStruct[]).length * storage.format!.size,
+												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+											});
+										}
 
-									device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+										for (const s of storageBuffer.value as StorageValueStruct[]) {
+											for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
+												const source = s[member.name];
+												if (source) {
+													device.queue.writeBuffer(
+														storageBuffer.buffer,
+														member.offset,
+														source as BufferSource,
+													);
+												}
+											}
+										}
+
+
+									} else if (storage.format!.isPointer) {
+										throw new Error('code me: storage is a pointer array');
+									} else if (storage.format!.isTemplate) {
+										throw new Error('code me: storage is a template array');
+									} else {
+										// Array of primitives
+										if (!storageBuffer.buffer) {
+											storageBuffer.buffer = device.createBuffer({
+												label: storage.name,
+												size: storage.size || (storageBuffer.value as TypedArray).byteLength,
+												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+											});
+										}
+										device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+									}
 
 								} else {
 									throw new Error('code me: storage is neither a struct nor an array');
