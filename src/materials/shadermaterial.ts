@@ -11,9 +11,6 @@ export type ShaderMaterialParams = MaterialParams & {
 	glsl?: { vertex: string, fragment: string };
 	// Source of the WebGPU shader
 	wgsl?: string;
-
-	uniforms?: MaterialUniform;
-	defines?: Record<string, string>;
 };
 
 export class ShaderMaterial extends Material {
@@ -35,18 +32,6 @@ export class ShaderMaterial extends Material {
 		if (params.wgsl) {
 			ShaderManager.addSource(ShaderType.Wgsl, name + '.wgsl', params.wgsl);
 			this.#shaderSource = name;
-		}
-
-		if (params.uniforms) {
-			for (const name in params.uniforms) {
-				this.uniforms[name] = params.uniforms[name];
-			}
-		}
-
-		if (params.defines) {
-			for (const name in params.defines) {
-				this.setDefine(name, params.defines[name]);
-			}
 		}
 	}
 

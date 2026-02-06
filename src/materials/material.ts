@@ -8,6 +8,7 @@ import { Mesh } from '../objects/mesh';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
+import { StorageBuffer, StorageValue } from '../webgpu/storage';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 
@@ -43,6 +44,10 @@ export type MaterialParams = {
 	polygonOffsetFactor?: number;
 	polygonOffsetUnits?: number;
 
+	uniforms?: MaterialUniform;
+	storages?: Record<string, StorageValue>;
+	defines?: Record<string, string>;
+
 }/*TODO: create proper type*/;
 
 export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -58,6 +63,7 @@ export class Material {
 	#users = new Set<any>();
 	#parameters = new Map<string, MateriaParameter>();
 	uniforms: MaterialUniform = {};// TODO: transform to map ?
+	readonly storage = new Map<string, StorageBuffer>();
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
@@ -98,6 +104,24 @@ export class Material {
 		this.polygonOffsetUnits = params.polygonOffsetUnits ?? -5;
 
 		this._dirtyProgram = true;//TODOv3 use another method
+
+		if (params.uniforms) {
+			for (const name in params.uniforms) {
+				this.uniforms[name] = params.uniforms[name];
+			}
+		}
+
+		if (params.defines) {
+			for (const name in params.defines) {
+				this.setDefine(name, params.defines[name]);
+			}
+		}
+
+		if (params.storages) {
+			for (const name in params.storages) {
+				this.setStorage(name, params.storages[name]!);
+			}
+		}
 	}
 
 	get transparent() {
@@ -535,6 +559,22 @@ export class Material {
 
 	getWebGPUShader(): string {
 		throw new Error('Override this function');
+	}
+
+	getStorage(name: string): StorageBuffer | undefined {
+		return this.storage.get(name);
+	}
+
+	setStorage(name: string, value: StorageValue): void {
+		this.storage.set(name, { value });
+	}
+
+	deleteStorage(name: string): void {
+		const sto = this.storage.get(name);
+		if (sto) {
+			sto.buffer?.destroy();
+			sto.buffer = null;
+		}
 	}
 }
 registerEntity(Material);
