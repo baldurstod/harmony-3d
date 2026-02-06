@@ -1,5 +1,5 @@
 import { ShaderManager } from '../managers/shadermanager';
-import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from '../webgl/constants';
+import { ShaderType } from '../webgl/types';
 import { Material, MaterialParams, MaterialUniform } from './material';
 
 let id = 0;
@@ -27,12 +27,14 @@ export class ShaderMaterial extends Material {
 		}
 
 		const name = `shadermaterial_${++id}`;
-		if (params.glsl?.vertex) {
-			ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.glsl.vertex);
+		if (params.glsl) {
+			ShaderManager.addSource(ShaderType.Vertex, name + '.vs', params.glsl.vertex);
+			ShaderManager.addSource(ShaderType.Fragment, name + '.fs', params.glsl.fragment);
 			this.#shaderSource = name;
 		}
-		if (params.glsl?.fragment) {
-			ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.glsl.fragment);
+		if (params.wgsl) {
+			ShaderManager.addSource(ShaderType.Wgsl, name + '.wgsl', params.wgsl);
+			this.#shaderSource = name;
 		}
 
 		if (params.uniforms) {

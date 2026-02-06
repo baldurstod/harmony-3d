@@ -3,6 +3,7 @@ import { ShaderManager } from '../managers/shadermanager';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_FRAGMENT_SHADER, GL_VERTEX_SHADER } from './constants';
 import { WebGLShaderSource } from './shadersource';
+import { ShaderType } from './types';
 import { Uniform, UniformValue } from './uniform';
 
 export class Program {
@@ -42,8 +43,8 @@ export class Program {
 	}
 
 	validate(includeCode: string): boolean {//TODO: remove include code
-		const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
-		const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
+		const vertexShaderScript = ShaderManager.getShaderSource(ShaderType.Vertex, this.#vertexShaderName);
+		const fragmentShaderScript = ShaderManager.getShaderSource(ShaderType.Fragment, this.#fragmentShaderName);
 
 		if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
 			const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
