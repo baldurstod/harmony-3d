@@ -1,6 +1,6 @@
 import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { Map2, once } from 'harmony-utils';
-import { StructInfo, TemplateInfo, WgslReflect } from 'wgsl_reflect';
+import { StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
@@ -1178,52 +1178,29 @@ export class WebGPURenderer implements Renderer {
 								break;
 							default:
 								errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
-								switch (uniform.type.name) {
-									case 'f32':
+								const format = (uniform.type as unknown as VariableInfo)?.format as TypeInfo;
+								if (format) {
+									let buffer: BufferSource;
+									switch (format.name) {
+										case 'f32':
+											buffer = new Float32Array(format.size);
+											break;
+										case 'u32':
+											buffer = new Uint32Array(format.size);
+											break;
+										default:
+
+											errorOnce(`unknwon uniform type: ${format.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+											break;
+									}
+
+									if (buffer!) {
 										device.queue.writeBuffer(
 											uniformBuffer,
 											0,
-											new Float32Array([0]),// TODO: create a const
+											buffer,
 										);
-										break;
-									case 'mat3x3f':
-										device.queue.writeBuffer(
-											uniformBuffer,
-											0,
-											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0,]),// TODO: create a const
-										);
-										break;
-									case 'mat4x4f':
-										device.queue.writeBuffer(
-											uniformBuffer,
-											0,
-											new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]),// TODO: create a const
-										);
-										break;
-									case 'vec2f':
-										device.queue.writeBuffer(
-											uniformBuffer,
-											0,
-											new Float32Array([0, 0]),// TODO: create a const
-										);
-										break;
-									case 'vec3f':
-										device.queue.writeBuffer(
-											uniformBuffer,
-											0,
-											new Float32Array([0, 0, 0]),// TODO: create a const
-										);
-										break;
-									case 'vec4f':
-										device.queue.writeBuffer(
-											uniformBuffer,
-											0,
-											new Float32Array([0, 0, 0, 0]),// TODO: create a const
-										);
-										break;
-									default:
-										errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-										break;
+									}
 								}
 						}
 
