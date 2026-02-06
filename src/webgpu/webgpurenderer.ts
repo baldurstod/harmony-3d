@@ -720,12 +720,22 @@ export class WebGPURenderer implements Renderer {
 			for (const vertexEntry of reflection.entry.vertex) {
 				if (vertexEntry.name == vertexEntryPoint) {
 					for (const argument of vertexEntry.arguments) {
-						if (!argument.attributes) {
-							continue;
-						}
-						for (const argumentAttribute of argument.attributes) {
-							if (argumentAttribute.name == 'location') {
-								attributes.set(argument.name, Number(argumentAttribute.value));
+						if (argument.attributes) {
+							for (const argumentAttribute of argument.attributes) {
+								if (argumentAttribute.name == 'location') {
+									attributes.set(argument.name, Number(argumentAttribute.value));
+								}
+							}
+						} else {
+							const type = argument.type as StructInfo;
+							for (const member of type.members) {
+								if (member.attributes) {
+									for (const argumentAttribute of member.attributes) {
+										if (argumentAttribute.name == 'location') {
+											attributes.set(member.name, Number(argumentAttribute.value));
+										}
+									}
+								}
 							}
 						}
 					}
