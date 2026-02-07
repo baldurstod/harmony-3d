@@ -29,7 +29,7 @@ import { errorOnce } from '../utils/console';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
-import { StorageValueStruct } from './storage';
+import { StorageValueArray, StorageValueStruct } from './storage';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -1423,7 +1423,12 @@ export class WebGPURenderer implements Renderer {
 											});
 										}
 
+										let baseOffset = 0;
 										for (const s of storageBuffer.value as StorageValueStruct[]) {
+
+											writeStruct(device.queue, storageBuffer.buffer, (storage.format as StructInfo).members, s, baseOffset);
+											baseOffset += (storage.type as ArrayInfo).stride;
+											/*
 											for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
 												const source = s[member.name];
 												if (source !== undefined) {
@@ -1438,6 +1443,7 @@ export class WebGPURenderer implements Renderer {
 													}
 												}
 											}
+											*/
 										}
 
 
@@ -1479,7 +1485,7 @@ export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string,
 	}
 }
 
-function writeNumber(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number): void {
+function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number): void {
 	switch (member.type.name) {
 		case 'u32':
 			queue.writeBuffer(
@@ -1506,5 +1512,58 @@ function writeNumber(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, val
 			errorOnce(`unknwon type ${member.type.name} in writeNumber`);
 			break;
 	}
+}
 
+function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], struct: StorageValueStruct, baseOffset: number): void {
+	for (const member of members) {
+		const structValue = struct[member.name];
+
+		if (member.isTemplate) {
+			writeTemplate(queue, buffer, member.type, structValue as StorageValueArray, baseOffset + member.offset);
+		} else if (member.isStruct) {
+			// nested struct
+			if (structValue) {
+				writeStruct(queue, buffer, (member.type as StructInfo).members, structValue as StorageValueStruct, baseOffset + member.offset);
+			}
+		} else if (member.isArray) {
+			throw new Error('code me');
+		} else {
+			// primitive
+			writePrimitive(queue, buffer, member, structValue as number);
+		}
+
+
+		/*
+		const source = struct[member.name];
+		if (source !== undefined) {
+			if (typeof source === 'number') {
+				writeNumber(queue, buffer, member, source);
+			} else if (ArrayBuffer.isView(source)) {
+				queue.writeBuffer(
+					buffer,
+					member.offset,
+					source as BufferSource,
+				);
+			} else {
+				// nested struct
+				//writeStruct(queue, buffer,)
+			}
+		}
+		*/
+	}
+}
+
+function writeTemplate(queue: GPUQueue, buffer: GPUBuffer, type: TypeInfo, value: StorageValueArray, offset: number): void {
+	switch (type.name) {
+		case 'vec4':
+			queue.writeBuffer(
+				buffer,
+				offset,
+				value as BufferSource,
+			);
+
+			break;
+		default:
+			throw new Error(`code this type ${type.name}`);
+	}
 }
