@@ -725,13 +725,24 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#attachSystemToBone(system: Source1ParticleSystem, boneName: string) {
+	#attachSystemToBone(system: Source1ParticleSystem, boneName: string): void {
 		if (!this.#skeleton) {
 			return;
 		}
 
 		this.addChild(system);
 		const controlPoint = system.getControlPoint(0);
+
+		// Handle special case for root
+		if (boneName == 'root') {
+			for (const bone of this.#skeleton.bones) {
+				// We look for the first merged bone
+				if (bone.parentSkeletonBone) {
+					bone.addChild(controlPoint);
+					return;
+				}
+			}
+		}
 
 		const bone = this.#skeleton.getBoneByName(boneName);
 		if (bone) {
