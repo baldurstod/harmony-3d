@@ -1,7 +1,7 @@
 import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { TypedArray } from 'harmony-types';
 import { Map2, once } from 'harmony-utils';
-import { ArrayInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
+import { ArrayInfo, MemberInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
@@ -1426,12 +1426,16 @@ export class WebGPURenderer implements Renderer {
 										for (const s of storageBuffer.value as StorageValueStruct[]) {
 											for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
 												const source = s[member.name];
-												if (source) {
-													device.queue.writeBuffer(
-														storageBuffer.buffer,
-														member.offset,
-														source as BufferSource,
-													);
+												if (source !== undefined) {
+													if (typeof source === 'number') {
+														writeNumber(device.queue, storageBuffer.buffer, member, source);
+													} else {
+														device.queue.writeBuffer(
+															storageBuffer.buffer,
+															member.offset,
+															source as BufferSource,
+														);
+													}
 												}
 											}
 										}
@@ -1473,4 +1477,34 @@ export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string,
 	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
 		defines.set(name, value as string);
 	}
+}
+
+function writeNumber(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number): void {
+	switch (member.type.name) {
+		case 'u32':
+			queue.writeBuffer(
+				buffer,
+				member.offset,
+				new Uint32Array([value]),
+			);
+			break;
+		case 'i32':
+			queue.writeBuffer(
+				buffer,
+				member.offset,
+				new Int32Array([value]),
+			);
+			break;
+		case 'f32':
+			queue.writeBuffer(
+				buffer,
+				member.offset,
+				new Float32Array([value]),
+			);
+			break;
+		default:
+			errorOnce(`unknwon type ${member.type.name} in writeNumber`);
+			break;
+	}
+
 }
