@@ -1,5 +1,5 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { float, int } from 'harmony-types';
+import { float32, int } from 'harmony-types';
 import { FLT_EPSILON } from '../../../math/constants';
 import { clamp, quatFromEulerRad, SimpleSpline } from '../../../math/functions';
 import { QuaternionIdentityBlend } from '../../../math/quaternion';
@@ -1663,7 +1663,7 @@ function calcLocalHierarchyAnimation(
 	pHierarchy: StudioLocalHierarchy,//mstudiolocalhierarchy_t * pHierarchy,
 	iBone: int,//int iBone,
 	iNewParent: int,//int iNewParent,
-	cycle: float,//float cycle,
+	cycle: float32,//float cycle,
 	iFrame: int,//int iFrame,
 	flFraq: int,//float flFraq,
 	boneMask: int,//int boneMask
@@ -1682,7 +1682,7 @@ function calcLocalHierarchyAnimation(
 
 	// check to see if there's a ramp on the influence
 	if (pHierarchy.tail - pHierarchy.peak < 1.0) {
-		let index: float = cycle;
+		let index: float32 = cycle;
 
 		if (pHierarchy.end > 1.0 && index < pHierarchy.start) {
 			index += 1.0;
@@ -1862,7 +1862,7 @@ function WorldSpaceSlerp(
 }
 */
 
-function calcDecompressedAnimation(compressed: StudioCompressedIkError, iFrame: int, fraq: float, pos: vec3, q: quat): void {
+function calcDecompressedAnimation(compressed: StudioCompressedIkError, iFrame: int, fraq: float32, pos: vec3, q: quat): void {
 	if (fraq > 0.0001) {
 		const p1 = vec3.create();
 		const p2 = vec3.create();

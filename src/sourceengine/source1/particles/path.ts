@@ -1,12 +1,11 @@
-import { vec3 } from 'gl-matrix';
-import { float, int, uint } from 'harmony-types';
+import { float32, uint } from 'harmony-types';
 
 export type PathParameters = {
 	startControlPointNumber: uint;
 	endControlPointNumber: uint;
 	bulgeControl: BulgeControl;
-	bulge: float;
-	midPoint: float;
+	bulge: float32;
+	midPoint: float32;
 }
 
 export enum BulgeControl {

@@ -1,6 +1,6 @@
 import { mat3, mat4, quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { float, int16, int32, uint8 } from 'harmony-types';
+import { float32, int16, int32, uint8 } from 'harmony-types';
 import { DEBUG, LOG, TESTING } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
@@ -1244,7 +1244,7 @@ function parsePoseParameter(reader: BinaryReader, startOffset: number): MdlStudi
 
 function parseCompressedIkError(reader: BinaryReader, offset: number): StudioCompressedIkError {
 	reader.seek(offset);
-	const scale: [float, float, float, float, float, float,] = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(),];
+	const scale: [float32, float32, float32, float32, float32, float32,] = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(),];
 	const offsets: [int16, int16, int16, int16, int16, int16,] = [reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(),];
 	const localAnimIndex: int32 = reader.getInt32();
 	const values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,] = [null, null, null, null, null, null,];

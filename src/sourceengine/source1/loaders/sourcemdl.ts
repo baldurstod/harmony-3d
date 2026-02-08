@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { float, int, int16, int32, int8 } from 'harmony-types';
+import { float32, int, int16, int32, int8 } from 'harmony-types';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { Source1ModelInstance } from '../export';
@@ -890,10 +890,10 @@ export type StudioLocalHierarchy = {// mstudiolocalhierarchy_t
 	bone: int32;
 	newParent: int32;
 
-	start: float;
-	peak: float;
-	tail: float;
-	end: float;
+	start: float32;
+	peak: float32;
+	tail: float32;
+	end: float32;
 
 	iStart: int32;// first frame
 	//localAnimIndex: int32;
@@ -926,14 +926,14 @@ export type StudioLocalHierarchy = {// mstudiolocalhierarchy_t
 export class StudioCompressedIkError {// mstudiocompressedikerror_t
 	#reader: BinaryReader;
 	#offset: number;
-	#scale: [float, float, float, float, float, float,];
+	#scale: [float32, float32, float32, float32, float32, float32,];
 	#offsets: [int16, int16, int16, int16, int16, int16,];
 	#values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,];
 
 	constructor(
 		reader: BinaryReader,
 		offset: number,
-		scale: [float, float, float, float, float, float,],
+		scale: [float32, float32, float32, float32, float32, float32,],
 		offsets: [int16, int16, int16, int16, int16, int16,],
 		values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,],
 	) {

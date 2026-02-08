@@ -1,5 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { float, int, JSONObject } from 'harmony-types';
+import { float32, int, JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { ERROR, WARN } from '../../../buildoptions';
 import { registerEntity } from '../../../entities/entities';
@@ -946,7 +946,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		return this.#livingParticles.length;//TODO: optimize
 	}
 
-	randomVector(randomSampleId: int, min: float, max: float, out: vec3): void {
+	randomVector(randomSampleId: int, min: float32, max: float32, out: vec3): void {
 		const delta = max - min;
 		const nBaseId = this.#randomSeed + randomSampleId;
 
@@ -955,7 +955,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		out[2] = randomFloats[(nBaseId + 2) & RANDOM_FLOAT_MASK]! * delta + min;
 	}
 
-	calculatePathValues(pathIn: PathParameters, timeStamp: float, startPnt: vec3, midPnt: vec3, endPnt: vec3): void {
+	calculatePathValues(pathIn: PathParameters, timeStamp: float32, startPnt: vec3, midPnt: vec3, endPnt: vec3): void {
 		// TODO: use timeStamp to get control point at time
 		const startControlPoint = this.getControlPoint(pathIn.startControlPointNumber);
 		const endControlPoint = this.getControlPoint(pathIn.endControlPointNumber);
