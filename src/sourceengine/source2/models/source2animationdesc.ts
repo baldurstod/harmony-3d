@@ -59,14 +59,14 @@ export class Source2AnimationDesc {
 	}
 
 
-	getFrame(frameIndex: number): any/*TODO: fix type*/[] {
+	getFrame(frameIndex: number): { name: string, Position: vec3, Angle: quat }/*TODO: fix type*/[] {
 		frameIndex = clamp(frameIndex, 0, this.lastFrame);
 		const frameBlockArray = this.#frameBlockArray;
 		let segmentIndexArray = null;
 		let frameBlock = null;
 		const decodeKey = this.#animationResource.getDecodeKey();
 		const decodeArray = this.#animationResource.getDecoderArray();
-		const boneArray = [];
+		const boneArray: { name: string, Position: vec3, Angle: quat }[] = [];
 		const decodeKeyBoneArray = decodeKey?.getValueAsElementArray('m_boneArray');
 		const decodeKeyDataChannelArray = decodeKey?.getValueAsElementArray('m_dataChannelArray');
 
@@ -94,7 +94,11 @@ export class Source2AnimationDesc {
 
 		if (frameBlockArray && decodeArray && decodeKeyBoneArray && decodeKeyDataChannelArray) {
 			for (const decodeKeyBone of decodeKeyBoneArray) {
-				boneArray.push({ name: decodeKeyBone.getValueAsString('m_name') });
+				boneArray.push({
+					name: decodeKeyBone.getValueAsString('m_name') ?? '',
+					Position: vec3.create(),
+					Angle: quat.create(),
+				});
 			}
 
 			for (const frameBlock of frameBlockArray) {

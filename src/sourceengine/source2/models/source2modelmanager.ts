@@ -10,10 +10,7 @@ export class Source2ModelManager {
 	static #modelList = new Map();
 	static instances = new Set();
 
-	static async #createModel(repository: string, path: string) {
-		if (!path) {
-			return;
-		}
+	static async #createModel(repository: string, path: string): Promise<Source2Model | null> {
 		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 		/*let fullPath = repository + fileName;
 		let model = this.#modelList.get(fullPath);*/
@@ -70,7 +67,7 @@ export class Source2ModelManager {
 		return null;
 	}
 
-	static async loadManifest(repository: string) {
+	static loadManifest(repository: string): void {
 		const modelList = this.#modelListPerRepository[repository];
 
 		if (modelList === undefined) {

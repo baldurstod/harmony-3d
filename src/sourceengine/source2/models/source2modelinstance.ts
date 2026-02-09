@@ -1,4 +1,5 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Camera } from '../../../cameras/camera';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
@@ -14,7 +15,7 @@ import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
-import { cleanSource2MaterialName, Source2MaterialManager } from '../materials/source2materialmanager';
+import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2Model } from './source2model';
 import { Source2ModelAttachmentInstance } from './source2modelattachment';
@@ -50,7 +51,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	mainAnimFrame = 0;
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
-	hasAnimations: true = true;
+	hasAnimations = true as const;
 	#bodyGroups = new Map<string, number | undefined>();
 
 	static {
@@ -75,7 +76,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#updateMaterials();
 	}
 
-	#initDefaultBodyGroups() {
+	#initDefaultBodyGroups(): void {
 		this.#bodyGroups.set(SOURCE2_DEFAULT_BODY_GROUP, undefined);
 
 		for (const bodyGroup of this.sourceModel.bodyGroups) {
@@ -84,7 +85,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#refreshMeshesVisibility();
 	}
 
-	setBodyGroup(name: string, choice: number) {
+	setBodyGroup(name: string, choice: number): void {
 		if (this.sourceModel.bodyGroups.has(name)) {
 			this.#bodyGroups.set(name, choice);
 		}
@@ -96,7 +97,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#refreshMeshesVisibility();
 	}
 
-	#refreshMeshesVisibility() {
+	#refreshMeshesVisibility(): void {
 		let mask = 0n;
 
 		for (const bodyGroupsChoice of this.sourceModel.bodyGroupsChoices) {
@@ -111,7 +112,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 
 		for (const mesh of this.meshes) {
-			const geometry = mesh.geometry;
+			const geometry = mesh.getGeometry();
 			mesh.setVisible(undefined);
 			if (geometry) {
 				const meshGroupMask = geometry.properties.getBigint('mesh_group_mask') ?? 0xFFFFFFFFFFFFFFFFn;
@@ -125,24 +126,25 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	get skeleton() {
+	get skeleton(): Skeleton | null {
 		return this.#skeleton;
 	}
 
-	setPosition(position: vec3) {
+	override setPosition(position: vec3): void {
 		super.setPosition(position);
 		if (this.#skeleton) {
 			this.#skeleton.dirty();
 		}
 	}
 
-	addChild(child?: Entity | null): Entity | null {
+	override addChild(child?: Entity | null): Entity | null {
 		if (!child) {
 			return null;
 		}
 		const ret = super.addChild(child);
-		if ((child as any).skeleton) {
-			(child as any).skeleton.setParentSkeleton(this.#skeleton);
+		const skeleton = (child as Source2ModelInstance).skeleton;
+		if (skeleton) {
+			skeleton.setParentSkeleton(this.#skeleton);
 		}
 		/*if (child instanceof Source2ModelInstance) {
 			for (let mesh of child.meshes) {
@@ -157,10 +159,11 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		return ret;
 	}
 
-	removeChild(child: Entity) {
+	override removeChild(child: Entity): void {
 		super.removeChild(child);
-		if ((child as any).skeleton) {
-			(child as any).skeleton.setParentSkeleton(null);
+		const skeleton = (child as Source2ModelInstance).skeleton;
+		if (skeleton) {
+			skeleton.setParentSkeleton(null);
 		}
 	}
 
@@ -169,16 +172,17 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#updateMaterials();
 	}
 
-	get skin() {
+	get skin(): number {
 		return this.#skin;
 	}
 
-	async setSkin(skin: string) {
+	setSkin(skin: string): Promise<void> {
 		this.#skin = Number(skin);
-		await this.#updateMaterials();
+		this.#updateMaterials();
+		return Promise.resolve();
 	}
 
-	setLOD(lod: number) {
+	setLOD(lod: number): void {
 		this.#lod = BigInt(lod);
 		this.#refreshMeshesVisibility();
 		this.forEach((child) => {
@@ -188,24 +192,24 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		});
 	}
 
-	setPoseParameter(paramName: string, paramValue: number) {
+	setPoseParameter(paramName: string, paramValue: number): void {
 		this.poseParameters[paramName] = paramValue;
 	}
 
-	playSequence(activity: string, activityModifiers: string[] = []) {
+	playSequence(activity: string, activityModifiers: string[] = []): void {
 		this.activity = activity;
 		this.setActivityModifiers(activityModifiers);
 	}
 
-	playAnimation(name: string) {
+	playAnimation(name: string): void {
 		this.#animName = name;
 	}
 
-	async setAnimation(id: number, name: string, weight: number) {
+	setAnimation(id: number, name: string/*, weight: number*/): void {
 		this.#animName = name;
 	}
 
-	setActivityModifiers(activityModifiers: string[] = []) {
+	setActivityModifiers(activityModifiers: string[] = []): void {
 		this.activityModifiers.clear();
 		for (const modifier of activityModifiers) {
 			if (modifier) {
@@ -214,7 +218,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	update(scene: Scene, camera: Camera, delta: number) {
+	update(scene: Scene, camera: Camera, delta: number): void {
 		if (this.#skeleton && this.isPlaying()) {
 			this.#playSequences(delta * animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
@@ -240,33 +244,32 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 			const posArray = animDesc.getFrame(Math.floor(this.mainAnimFrame % (animDesc.lastFrame + 1)));
 			this.mainAnimFrame += delta * animDesc.fps;
 
-			for (let i = 0; i < posArray.length; ++i) {
-				const pos = posArray[i];
+			for (const pos of posArray) {
 				const boneName = pos.name.toLowerCase();
 
 				const propBone = this.#skeleton.getBoneByName(boneName);
 				if (propBone) {
 					if (!propBone.lockPosition) {
-						propBone.position = pos.Position || identityVec3;
+						propBone.setPosition(pos.Position || identityVec3);
 					}
 					if (!propBone.lockRotation) {
-						propBone.quaternion = pos.Angle || identityQuat;
+						propBone.setQuaternion(pos.Angle || identityQuat);
 					}
 				}
 			}
 		} else {
 			for (const bone of this.#skeleton.bones) {
 				if (!bone.lockPosition) {
-					bone.position = bone.refPosition;
+					bone.setPosition(bone.refPosition);
 				}
 				if (!bone.lockRotation) {
-					bone.quaternion = bone.refQuaternion;
+					bone.setQuaternion(bone.refQuaternion);
 				}
 			}
 		}
 	}
 
-	#updateMaterials() {//TODO: turn to async, remove then
+	#updateMaterials(): void {//TODO: turn to async, remove then
 		//console.error(this);
 		const materials0 = this.sourceModel.getSkinMaterials(0);
 		const materials = this.sourceModel.getSkinMaterials(this.#skin);
@@ -276,8 +279,8 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		//console.error(materials, this);
 		for (const mesh of this.meshes) {
 			if (materials0 && materials) {
-				for (const i in materials0) {
-					if (materials0[i] == mesh.geometry?.properties.getString('materialPath')) {
+				for (let i = 0; i < materials0.length; i++) {
+					if (materials0[i] == mesh.getGeometry()?.properties.getString('materialPath')) {
 						const materialPath = materials[i];
 						if (materialPath) {
 							mesh.properties.setString('materialPath', materialPath);
@@ -290,7 +293,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 					mesh.materialPath = materialPath;
 				}*/
 			} else {
-				const materialPath = mesh.geometry?.properties.getString('materialPath');
+				const materialPath = mesh.getGeometry()?.properties.getString('materialPath');
 				if (materialPath) {
 					mesh.properties.setString('materialPath', materialPath);
 				}
@@ -311,15 +314,15 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	async getSkins(): Promise<Set<string>> {
+	getSkins(): Promise<Set<string>> {
 		const skins = this.sourceModel.getSkinList();
 		if (skins.length == 0) {
 			skins.push('default');
 		}
-		return new Set(skins);
+		return Promise.resolve(new Set(skins));
 	}
 
-	async getMaterialsName(skin: string): Promise<[string, Set<string>]> {
+	getMaterialsName(skin: string): Promise<[string, Set<string>]> {
 		const materials = this.sourceModel.getSkinMaterials(Number(skin));
 
 		const s = new Set<string>();
@@ -338,10 +341,10 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 			}
 		}
 
-		return [this.sourceModel.repository, s];
+		return Promise.resolve([this.sourceModel.repository, s]);
 	}
 
-	#init() {
+	#init(): void {
 		const sourceModel = this.sourceModel;
 		for (const [bodyPartName, bodyPart] of sourceModel.bodyParts) {
 			const newBodyPart = [];
@@ -379,7 +382,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#initDefaultBodyGroups();
 	}
 
-	#initSkeleton() {
+	#initSkeleton(): void {
 		const bones = this.sourceModel.getBones();
 		if (bones) {
 			const bonesName = bones.getValueAsStringArray('m_boneName');
@@ -390,8 +393,8 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 				for (const [modelBoneIndex, boneName] of bonesName.entries()) {
 					const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
 					//bone.name = boneName;
-					bone.quaternion = boneRotParent[modelBoneIndex] as quat;
-					bone.position = bonePosParent[modelBoneIndex] as vec3;
+					bone.setQuaternion(boneRotParent[modelBoneIndex] as quat);
+					bone.setPosition(bonePosParent[modelBoneIndex] as vec3);
 					bone.refQuaternion = boneRotParent[modelBoneIndex] as quat;
 					bone.refPosition = bonePosParent[modelBoneIndex] as vec3;
 					//const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
@@ -425,7 +428,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#initAttachments() {
+	#initAttachments(): void {
 		const attachments = new Group({ name: 'Attachments' });
 		this.addChild(attachments);
 		for (const attachment of this.sourceModel.attachments.values()) {
@@ -435,17 +438,17 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	getAnimations() {
-		return this.sourceModel.getAnimations();
+	getAnimations(): Promise<Set<string>> {
+		return Promise.resolve(this.sourceModel.getAnimations());
 	}
 
-	buildContextMenu() {
+	buildContextMenu(): HarmonyMenuItemsDict {
 		const skins = this.sourceModel.getSkinList();
 		const skinMenu = [];
 		for (const [skinId, skin] of skins.entries()) {
 			const item: any = {};
 			item.name = skin;
-			item.f = () => this.skin = skinId;
+			item.f = (): number => this.skin = skinId;
 			skinMenu.push(item);
 		}
 		return Object.assign(super.buildContextMenu(), {
@@ -458,7 +461,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		});
 	}
 
-	getParentModel() {
+	getParentModel(): Source2ModelInstance {
 		return this;
 	}
 
@@ -471,8 +474,8 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		return vec;
 	}
 
-	getAttachment(name: string) {
-		return this.attachments.get(name.toLowerCase());
+	getAttachment(name: string): Source2ModelAttachmentInstance | null {
+		return this.attachments.get(name.toLowerCase()) ?? null;
 	}
 
 	static set animSpeed(speed: number) {
@@ -480,7 +483,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		animSpeed = Number.isNaN(s) ? 1 : s;
 	}
 
-	dispose() {
+	dispose(): void {
 		super.dispose();
 		this.#skeleton?.dispose();
 		for (const material of this.#materialsUsed) {
@@ -491,7 +494,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	static getEntityName() {
+	static getEntityName(): string {
 		return 'Source 2 model';
 	}
 }

@@ -3,7 +3,6 @@ import { Graphics } from '../graphics/graphics2';
 import { RenderContext } from '../interfaces/rendercontext';
 import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
-import { WebGPUInternal } from '../graphics/webgpuinternal';
 
 const tempVec2 = vec2.create();
 

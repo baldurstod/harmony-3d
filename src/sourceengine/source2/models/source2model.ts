@@ -11,7 +11,7 @@ import { Source2AnimGroup } from './source2animgroup';
 import { Source2ModelAttachment } from './source2modelattachment';
 import { SOURCE2_DEFAULT_BODY_GROUP, Source2ModelInstance } from './source2modelinstance';
 
-const _SOURCE_MODEL_DEBUG_ = false; // removeme
+//const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
 export interface BodyGroupChoice {
 	choice: string,
@@ -51,7 +51,7 @@ export class Source2Model {
 		this.#createBodyGroups();
 	}
 
-	#createAnimGroup() {
+	#createAnimGroup(): void {
 		const aseq = this.vmdl.getBlockByType('ASEQ');
 		if (aseq && this.#internalAnimGroup) {
 			this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
@@ -81,14 +81,14 @@ export class Source2Model {
 		}
 	}
 
-	matchActivity(activity: string, modifiers: string[]) {
+	matchActivity(activity: string, modifiers: string[]): null {
 		if (this.#seqGroup) {
 			return this.#seqGroup.matchActivity(activity, modifiers);
 		}
 		return null;
 	}
 
-	addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number) {
+	addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void {
 		if (bodyPartName !== undefined) {
 			let bodyPart = this.bodyParts.get(bodyPartName);
 			if (bodyPart === undefined) {
@@ -194,7 +194,7 @@ export class Source2Model {
 		return skinList;
 	}
 
-	async loadAnimGroups() {
+	async loadAnimGroups(): Promise<void> {
 		if (this.vmdl) {
 			const m_refAnimGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_refAnimGroups');
 			if (m_refAnimGroups) {
@@ -207,7 +207,7 @@ export class Source2Model {
 		}
 	}
 
-	#loadInternalAnimGroup() {
+	#loadInternalAnimGroup(): void {
 		//TODOv3: make a common code where external and internal group are loaded
 		if (this.vmdl) {
 			const sourceFile = this.vmdl;
@@ -241,11 +241,11 @@ export class Source2Model {
 		//return refAnimIncludeModels ?? [];
 	}
 
-	addIncludeModel(includeModel: Source2Model) {
+	addIncludeModel(includeModel: Source2Model): void {
 		this.#includeModels.push(includeModel);
 	}
 
-	getAnim(activityName: string, activityModifiers: Set<string>) {
+	getAnim(activityName: string, activityModifiers: Set<string>): Source2AnimationDesc | null {
 		const animations = this.getAnimationsByActivity(activityName);
 
 		for (const model of this.#includeModels) {
@@ -295,7 +295,7 @@ export class Source2Model {
 		return null;
 	}
 
-	getAnimationsByActivity(activityName: string, animations = new Source2Animations()) {
+	getAnimationsByActivity(activityName: string, animations = new Source2Animations()): Source2Animations {
 		const anims = [];
 		if (this.#seqGroup) {
 			anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
@@ -309,20 +309,20 @@ export class Source2Model {
 		return animations;
 	}
 
-	async getAnimations() {
+	getAnimations(): Set<string> {
 		const animations = new Set<string>();
 		for (const animGroup of this.#animGroups) {
 			if (animGroup.localAnimArray) {
 				for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
-					const animRemoveMe = await animGroup.getAnim(localAnimIndex);
+					const animRemoveMe = animGroup.getAnim(localAnimIndex);
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
 					}
 				}
 			}
 			if (animGroup._changemyname) {
-				for (let animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
-					const animRemoveMe = animGroup._changemyname[animResIndex];
+				for (const animRemoveMe of animGroup._changemyname) {
+					//const animRemoveMe = animGroup._changemyname[animResIndex];
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
 					}
@@ -332,7 +332,7 @@ export class Source2Model {
 		return animations;
 	}
 
-	_addAttachments(attachments: Kv3Element[]) {
+	_addAttachments(attachments: Kv3Element[]): void {
 		for (const attachment of attachments) {
 			//throw 'fix attachments type';
 			const attachmentValue = attachment.getValueAsElement('value');//TODO: use property 'key'
@@ -371,7 +371,7 @@ export class Source2Model {
 		}
 	}
 
-	getAnimationByName(animName: string) {
+	getAnimationByName(animName: string): Source2AnimationDesc | null {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		for (const animGroup of this.#animGroups) {
 			const anim = animGroup.getAnimationByName(animName);
@@ -379,5 +379,6 @@ export class Source2Model {
 				return anim;
 			}
 		}
+		return null;
 	}
 }
