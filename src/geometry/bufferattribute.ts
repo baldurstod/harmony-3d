@@ -51,7 +51,7 @@ export class BufferAttribute {
 		this.dirty = true;
 
 		if (array) {
-			this.array = array;
+			this.setArray(array);
 		}
 
 		return this;
@@ -73,10 +73,6 @@ export class BufferAttribute {
 		this.dirty = true;
 		this.#wireframeDirty = true;
 		this.#solidWireframeDirty = true;
-	}
-
-	set array(array: typeof TypedArrayProto) {
-		this.setArray(array);
 	}
 
 	setArray(array: typeof TypedArrayProto) {
@@ -117,6 +113,10 @@ export class BufferAttribute {
 			default:
 				throw 'Unsupported array type';
 		}
+	}
+
+	getArray(): TypedArrayNumber | null {
+		return this._array ?? null;
 	}
 
 	update(glContext: WebGLAnyRenderingContext) {
@@ -183,7 +183,7 @@ export class Uint8BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
 		super(null, 1, itemSize, wgslName, getUint8Format(itemSize));
 		this.setSource(array);
-		this.array = new Uint8Array(array);
+		this.setArray(new Uint8Array(array));
 	}
 }
 
@@ -191,7 +191,7 @@ export class Uint16BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
 		super(null, 2, itemSize, wgslName, getUint16Format(itemSize));
 		this.setSource(array);
-		this.array = new Uint16Array(array, offset, length);
+		this.setArray(new Uint16Array(array, offset, length));
 	}
 }
 
@@ -199,7 +199,7 @@ export class Uint32BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
 		super(null, 4, itemSize, wgslName, getUint32Format(itemSize));
 		this.setSource(array);
-		this.array = new Uint32Array(array, offset, length);
+		this.setArray(new Uint32Array(array, offset, length));
 	}
 }
 
@@ -207,7 +207,7 @@ export class Float32BufferAttribute extends BufferAttribute {//fixme
 	constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number) {
 		super(null, 4, itemSize, wgslName, getFloat32Format(itemSize));
 		this.setSource(array);
-		this.array = new Float32Array(array, offset, length);
+		this.setArray(new Float32Array(array, offset, length));
 	}
 }
 
