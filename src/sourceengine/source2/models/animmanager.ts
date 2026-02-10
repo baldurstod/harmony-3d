@@ -6,7 +6,7 @@ export const AnimManager = new (function () {// TODO: remove this class ?  is th
 	const animGroupList: Record<string, Source2AnimGroup> = {};
 	class AnimManager {
 
-		async getAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string) {
+		async getAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup> {
 			let animGroup = animGroupList[animGroupName];
 			if (!animGroup) {
 
@@ -21,7 +21,7 @@ export const AnimManager = new (function () {// TODO: remove this class ?  is th
 			return animGroup;
 		}
 
-		removeAnimGroup(animGroupName:string) {
+		removeAnimGroup(animGroupName: string): void {
 			delete animGroupList[animGroupName];
 		}
 

@@ -1,4 +1,4 @@
-import { quat, vec3 } from 'gl-matrix';
+import { quat, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { DEBUG, TESTING } from '../../../buildoptions';
 import { clamp, pow2 } from '../../../math/functions';
@@ -13,7 +13,7 @@ const Warning: Record<string, boolean> = {};
 export class Source2AnimationDesc {
 	#source2Model: Source2Model;
 	#fps: number;
-	#lastFrame: number = 0;
+	#lastFrame = 0;
 	data: Kv3Element;
 	#animationResource: Source2Animation | Source2SeqGroup;
 	#frameBlockArray: Kv3Element[] | null = null;
@@ -63,7 +63,7 @@ export class Source2AnimationDesc {
 		frameIndex = clamp(frameIndex, 0, this.lastFrame);
 		const frameBlockArray = this.#frameBlockArray;
 		let segmentIndexArray = null;
-		let frameBlock = null;
+		//let frameBlock = null;
 		const decodeKey = this.#animationResource.getDecodeKey();
 		const decodeArray = this.#animationResource.getDecoderArray();
 		const boneArray: { name: string, Position: vec3, Angle: quat }[] = [];
@@ -129,7 +129,7 @@ export class Source2AnimationDesc {
 		return boneArray;
 	}
 
-	#getReader(segment: Kv3Element, container: Uint8Array): BinaryReader {
+	#getReader(segment: Kv3Element/*, container: Uint8Array*/): BinaryReader {
 		let reader = this.#segmentReaders.get(segment);
 		if (!reader) {
 			reader = new BinaryReader(segment.getValueAsBlob('m_container') ?? '');
@@ -151,12 +151,12 @@ export class Source2AnimationDesc {
 			return;
 		}
 
-		const reader = this.#getReader(segment, container);//segment.dataReader;
+		const reader = this.#getReader(segment/*, container*/);//segment.dataReader;
 
 		const decoderId = container[0]! + (container[1]! << 8);
 		let bytesPerBone = container[2]! + (container[3]! << 8);
 		const boneCount = container[4]! + (container[5]! << 8);
-		const dataLength = container[6]! + (container[7]! << 8);
+		//const dataLength = container[6]! + (container[7]! << 8);
 		bytesPerBone = 0;
 		const segmentBoneArray = [];
 
@@ -217,13 +217,13 @@ export class Source2AnimationDesc {
 					return;
 			}
 
-			var byteIndex = 8;
-			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
+			let byteIndex = 8;
+			for (let boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
 				segmentBoneArray.push(container[byteIndex + 0]!/*TODO: actually check value*/ + (container[byteIndex + 1]!/*TODO: actually check value*/ << 8));
 			}
 
-			var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
-			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
+			byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
+			for (let boneIndex = 0; boneIndex < boneCount; boneIndex++) {
 				const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex]!/*TODO: actually check value*/);
 				if (boneIndex2 === undefined) {//removeme
 					continue;
@@ -235,6 +235,7 @@ export class Source2AnimationDesc {
 				}
 
 				let tmpValue = null;
+				let x, y, z;
 				switch (decoderName) {
 					case 'CCompressedFullFloat':
 					case 'CCompressedStaticFloat':
@@ -243,18 +244,18 @@ export class Source2AnimationDesc {
 					case 'CCompressedStaticFullVector3':
 					case 'CCompressedFullVector3':
 						//case 'CCompressedAnimVector3':
-						var x = getFloat32(bytes, 0);
-						var y = getFloat32(bytes, 4);
-						var z = getFloat32(bytes, 8);
+						x = getFloat32(bytes, 0);
+						y = getFloat32(bytes, 4);
+						z = getFloat32(bytes, 8);
 						tmpValue = vec3.fromValues(x, y, z);
 						break;
 					case 'CCompressedDeltaVector3':
 						tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
 						break;
 					case 'CCompressedStaticVector3':
-						var x = getFloat16(bytes, 0);
-						var y = getFloat16(bytes, 2);
-						var z = getFloat16(bytes, 4);
+						x = getFloat16(bytes, 0);
+						y = getFloat16(bytes, 2);
+						z = getFloat16(bytes, 4);
 						tmpValue = vec3.fromValues(x, y, z);
 						break;
 					case 'CCompressedAnimQuaternion':
@@ -301,7 +302,7 @@ export class Source2AnimationDesc {
 	*/
 
 
-	modifiersScore(activityName: string, modifiers: Set<string>) {
+	modifiersScore(activityName: string, modifiers: Set<string>): number {
 		const activityArray = this.data?.getSubValueAsElementArray('m_activityArray');
 		if (activityArray && activityArray.length > 0) {
 			if (activityArray[0]!.getSubValueAsString('m_name') != activityName) {
@@ -366,7 +367,7 @@ export class Source2AnimationDesc {
 	}
 }
 
-function getFloat16(b: number[], offset: number) {//TODOv3: optimize this function
+function getFloat16(b: number[], offset: number): number {//TODOv3: optimize this function
 	const sign = b[1 + offset]! >> 7;
 	const exponent = ((b[1 + offset]! & 0x7C) >> 2);
 	const mantissa = ((b[1 + offset]! & 0x03) << 8) | b[0 + offset]!;
@@ -380,7 +381,7 @@ function getFloat16(b: number[], offset: number) {//TODOv3: optimize this functi
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
 
-function getFloat32(b: number[], offset: number) {//TODOv3: remove these functions or something
+function getFloat32(b: number[], offset: number): number {//TODOv3: remove these functions or something
 	const sign = 1 - (2 * (b[3 + offset]! >> 7)),
 		exponent = (((b[3 + offset]! << 1) & 0xff) | (b[2 + offset]! >> 7)) - 127,
 		mantissa = ((b[2 + offset]! & 0x7f) << 16) | (b[1 + offset]! << 8) | b[0 + offset]!;
@@ -401,7 +402,7 @@ function getFloat32(b: number[], offset: number) {//TODOv3: remove these functio
 }
 
 const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
-function readQuaternion48(bytes: number[]) {
+function readQuaternion48(bytes: number[]): vec4 {
 	// Values
 	const i1 = bytes[0]! + ((bytes[1]! & 127) << 8) - 0x4000;
 	const i2 = bytes[2]! + ((bytes[3]! & 127) << 8) - 0x4000;

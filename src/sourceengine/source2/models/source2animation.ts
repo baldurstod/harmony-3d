@@ -1,5 +1,4 @@
 import { Kv3Element } from '../../common/keyvalue/kv3element';
-import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2File } from '../loaders/source2file';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimeDecoder, Source2AnimGroup } from './source2animgroup';
@@ -18,7 +17,7 @@ export class Source2Animation {
 		this.#animGroup = animGroup;
 	}
 
-	setFile(sourceFile: Source2File) {
+	setFile(sourceFile: Source2File): void {
 		this.file = sourceFile;
 
 		const animDatas =
@@ -32,7 +31,7 @@ export class Source2Animation {
 		}
 	}
 
-	setAnimDatas(data: Kv3Element) {
+	setAnimDatas(data: Kv3Element): void {
 		if (data) {
 			this.#animArray = data.getValueAsElementArray('m_animArray') ?? [];//data.m_animArray ?? [];
 			//console.error('data.m_animArray', data.m_animArray);
@@ -56,11 +55,11 @@ export class Source2Animation {
 		return this.#animNames.get(name);
 	}
 
-	getDecodeKey() {
+	getDecodeKey(): Kv3Element | undefined {
 		return this.#animGroup.decodeKey;
 	}
 
-	getDecoderArray() {
+	getDecoderArray(): Source2AnimeDecoder[] {
 		return this.#decoderArray;
 	}
 
@@ -69,7 +68,7 @@ export class Source2Animation {
 		return this.#segmentArray[segmentIndex] ?? null;
 	}
 
-	async getAnimations(animations = new Set<string>()) {
+	getAnimations(animations = new Set<string>()): Set<string> {
 		for (const anim of this.#animArray) {
 			const animName = anim.getSubValueAsString('m_name');
 			if (animName) {
@@ -144,9 +143,9 @@ export class Source2Animation {
 	}
 	*/
 
-	getAnimationsByActivity(activityName: string) {
+	getAnimationsByActivity(activityName: string): Source2AnimationDesc[] {
 		const anims = [];
-		for (const [animName, animDesc] of this.#animNames) {
+		for (const [, animDesc] of this.#animNames) {
 			if (animDesc.matchActivity(activityName)) {
 				anims.push(animDesc);
 			}
@@ -154,11 +153,11 @@ export class Source2Animation {
 		return anims;
 	}
 
-	get animArray() {
+	get animArray(): Kv3Element[] {
 		return this.#animArray;
 	}
 
-	getAnimationByName(animName: string) {
+	getAnimationByName(animName: string): Source2AnimationDesc | undefined {
 		return this.#animNames.get(animName);
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		/*for (let source2Animation in this.#animArray) {
