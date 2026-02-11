@@ -67,6 +67,10 @@ export class BufferGeometry {
 */
 	}
 
+	getIndex(): BufferAttribute | null {
+		return this.getAttribute('index') ?? null;
+	}
+
 	update(glContext: WebGLAnyRenderingContext) {
 		throw 'error';
 		if (this.dirty) {

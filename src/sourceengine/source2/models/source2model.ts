@@ -280,7 +280,7 @@ export class Source2Model {
 	}
 
 	getAnimation(name: string): Source2AnimationDesc | null {
-		let animation: Source2AnimationDesc | undefined;
+		let animation: Source2AnimationDesc | undefined | null;
 		animation = this.#seqGroup?.getAnimDesc(name);
 		if (animation) {
 			return animation;

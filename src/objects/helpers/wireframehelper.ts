@@ -46,7 +46,7 @@ export class WireframeHelper extends Entity {
 		const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1, 'index') : new Uint16BufferAttribute(new Array(arraySize), 1, 'index');
 
 		wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
-		geometry.setAttribute('index', wireframeAttribute);
+		geometry.setIndex(wireframeAttribute);
 		geometry.count = arraySize;
 		wireframeArray = wireframeAttribute._array;
 		if (!wireframeArray) {
