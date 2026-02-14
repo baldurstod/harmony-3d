@@ -43,6 +43,10 @@ export class ChoreographiesManager {
 		return choreography;
 	}
 
+	static stopChoreography(choreography: Choreography): void {
+		this.#choreographies.delete(choreography);
+	}
+
 	static addChoreography(repository: string, choreoName: string, choreo: Choreography): void {
 		this.#vcds.set(repository, choreoName, choreo);
 	}

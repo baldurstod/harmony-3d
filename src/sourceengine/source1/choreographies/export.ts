@@ -1,3 +1,3 @@
 export { ChoreographiesManager } from './choreographiesmanager';
-export { ChoreographyEventType } from './choreography';
+export { ChoreographyEventType, Choreography } from './choreography';
 export * from './vcdparser';
