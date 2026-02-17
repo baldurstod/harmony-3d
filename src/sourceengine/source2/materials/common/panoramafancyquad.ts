@@ -4,7 +4,7 @@ import { Source2Material } from '../source2material';
 // deadlock/core materials/panorama/panorama_fancyquad.vmat_c
 export class Source2PanoramaFancyQuad extends Source2Material {// TODO: code me
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_sky';// TODO: create shader
 	}
 }

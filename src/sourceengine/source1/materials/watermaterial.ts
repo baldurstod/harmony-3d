@@ -24,7 +24,7 @@ export class WaterMaterial extends Source1Material {
 		return new WaterMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source1_water';
 	}
 }

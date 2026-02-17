@@ -1,7 +1,7 @@
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { Source2Material } from './source2material';
 
-export function cleanSource2MaterialName(name: string) {
+export function cleanSource2MaterialName(name: string): string {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmat_c$/, '').replace(/\.vmat$/, '');
 	name = name + '.vmat_c';
 	return name;
@@ -11,11 +11,11 @@ export class Source2MaterialManager {
 	static #materialList = new Map<string, Source2Material | Promise<Source2Material | null>>();// TODO: turn to Map2
 	static #materialList2 = new Set<Source2Material>();
 
-	static addMaterial(material: Source2Material) {
+	static addMaterial(material: Source2Material): void {
 		this.#materialList2.add(material);
 	}
 
-	static removeMaterial(material: Source2Material) {
+	static removeMaterial(material: Source2Material): void {
 		this.#materialList2.delete(material);
 	}
 

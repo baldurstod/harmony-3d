@@ -3,7 +3,7 @@ import { Source2MaterialLoader } from '../loaders/source2materialloader';
 
 export class Source2UI extends Source2Material {
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_ui';
 	}
 }

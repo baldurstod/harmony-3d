@@ -13,7 +13,7 @@ export class Source2Error extends Source2Material{
 		this.renderFace(RenderFace.Both);
 	}
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_error';
 	}
 }

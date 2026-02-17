@@ -2,7 +2,7 @@ import { Source2Material } from './source2material';
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
 
 export class Source2Pbr extends Source2Material{
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_pbr';
 	}
 }

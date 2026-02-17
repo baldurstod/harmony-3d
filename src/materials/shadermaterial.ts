@@ -35,7 +35,7 @@ export class ShaderMaterial extends Material {
 		}
 	}
 
-	getShaderSource(): string {
+	override getShaderSource(): string {
 		return this.#shaderSource;
 	}
 }

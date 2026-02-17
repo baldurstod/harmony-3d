@@ -31,7 +31,7 @@ export class MeshBasicMaterial extends Material {
 		this.setValues(params);
 	}
 
-	getShaderSource(): string {
+	override getShaderSource(): string {
 		return 'meshbasic';
 	}
 

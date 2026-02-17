@@ -1,9 +1,9 @@
-import { Source2Material } from '../source2material';
 import { Source2MaterialLoader } from '../../loaders/source2materialloader';
+import { Source2Material } from '../source2material';
 
-export class Source2VrXenFoliage extends Source2Material{
+export class Source2VrXenFoliage extends Source2Material {
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_vr_xen_foliage';
 	}
 }

@@ -59,7 +59,7 @@ export class Source2CsgoWeapon extends Source2Material {
 		return uniforms;
 	}
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_csgo_weapon';
 	}
 }

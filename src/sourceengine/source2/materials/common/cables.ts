@@ -3,7 +3,7 @@ import { Source2Material } from '../source2material';
 
 export class Source2CablesMaterial extends Source2Material {// TODO: code me
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_cables';
 	}
 }

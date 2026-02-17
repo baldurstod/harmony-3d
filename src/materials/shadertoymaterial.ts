@@ -13,7 +13,7 @@ export class ShaderToyMaterial extends Material {
 		}));
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'shadertoy';
 	}
 }

@@ -6,7 +6,7 @@ export class MeshFlatMaterial extends Material {
 		this.setDefine('FLAT_SHADING');
 	}
 
-	getShaderSource(): string {
+	override getShaderSource(): string {
 		return 'meshphong';
 	}
 }

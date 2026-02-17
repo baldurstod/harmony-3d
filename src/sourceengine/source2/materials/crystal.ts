@@ -9,7 +9,7 @@ export class Source2Crystal extends Source2Material{
 		this.setDefine('IS_TRANSLUCENT');
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source2_crystal';
 	}
 }

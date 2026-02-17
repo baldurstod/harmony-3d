@@ -9,7 +9,7 @@ import { Source2Material } from './source2material';
 export class Source2SpriteCard extends Source2Material {
 	#texturePath = '';
 
-	constructor(repository: string, shader: string = 'spritecard.vfx', source2File?: Source2File) {
+	constructor(repository: string, shader = 'spritecard.vfx', source2File?: Source2File) {
 		super(repository, shader, source2File);
 
 		//TODO: we should adapt transparency depending on particle renderer params ?
@@ -24,7 +24,7 @@ export class Source2SpriteCard extends Source2Material {
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	setOutputBlendMode(outputBlendMode: number/*TODO; create enum*/) {
+	setOutputBlendMode(outputBlendMode: number/*TODO; create enum*/): void {
 		switch (outputBlendMode) {
 			case 0:
 				this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -50,11 +50,11 @@ export class Source2SpriteCard extends Source2Material {
 		}
 	}
 
-	async setTexturePath(texturePath: string) {
+	setTexturePath(texturePath: string): void {
 		this.#texturePath = texturePath;
 	}
 
-	async initTextureUniforms() {
+	async initTextureUniforms(): Promise<void> {
 		await super.initTextureUniforms();
 		if (this.#texturePath) {
 			this.setTexture('colorMap', await Source2TextureManager.getTexture(this.repository, this.#texturePath, 0), 'USE_COLOR_MAP');
@@ -62,12 +62,12 @@ export class Source2SpriteCard extends Source2Material {
 	}
 
 	getFrameSpan(sequence: number): number {
-		console.error('code me');
+		console.error('code me', sequence);
 		return 0;
 	}
 
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source2_spritecard';
 	}
 }

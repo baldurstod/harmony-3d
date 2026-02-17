@@ -30,7 +30,7 @@ export class WorldVertexTransitionMaterial extends Source1Material {
 		return new WorldVertexTransitionMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source1_worldvertextransition';
 	}
 }

@@ -7,7 +7,7 @@ export class NodeImageEditorMaterial extends Material {
 		this.shaderName = params?.shaderName;
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return this.shaderName;
 	}
 }

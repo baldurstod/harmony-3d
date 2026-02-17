@@ -4,7 +4,7 @@ import { Source2Material } from '../source2material';
 //materials/colorwarps/dota_reef_dead.vmat_c
 export class Source2ColorCorrection extends Source2Material {// TODO: code me
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_color_correction';
 	}
 }

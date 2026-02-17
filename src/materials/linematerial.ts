@@ -10,7 +10,7 @@ export class LineMaterial extends Material {
 		this.setValues(params);
 	}
 
-	getShaderSource(): string {
+	override getShaderSource(): string {
 		return 'line';
 	}
 

@@ -3,7 +3,7 @@ import { Source2MaterialLoader } from '../../loaders/source2materialloader';
 
 export class Source2CsgoGlass extends Source2Material{
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_vr_simple';//TODO: code proper shader
 	}
 }

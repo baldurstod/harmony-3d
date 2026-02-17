@@ -13,7 +13,7 @@ export class LineBasicMaterial extends Material {
 		this.setValues(params);
 	}
 
-	getShaderSource(): string {
+	override getShaderSource(): string {
 		return 'meshbasic';
 	}
 }

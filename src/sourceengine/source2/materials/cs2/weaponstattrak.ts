@@ -10,7 +10,7 @@ export class Source2CsgoWeaponStattrak extends Source2Material {
 		this.setDynamicUniform('g_nStatTrakValue');
 	}
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_csgo_weapon_stattrak';
 	}
 }

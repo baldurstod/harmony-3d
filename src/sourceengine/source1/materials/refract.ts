@@ -6,7 +6,7 @@ export class RefractMaterial extends Source1Material {
 		return new RefractMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source1_refract';
 	}
 }

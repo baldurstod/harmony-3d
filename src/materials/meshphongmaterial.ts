@@ -24,7 +24,7 @@ export class MeshPhongMaterial extends Material{
 		this.setValues(params);
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'meshphong';
 	}
 }

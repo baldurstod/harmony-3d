@@ -4,7 +4,7 @@ import { Source2Material } from '../../source2material';
 // dota2/core materials/tools/show_bent_normals.vmat_c
 export class Source2ToolsVisualizeTangentFrame extends Source2Material {// TODO: code me
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_sky';// TODO: create shader
 	}
 }

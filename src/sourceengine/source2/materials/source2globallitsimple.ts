@@ -1,9 +1,9 @@
-import { Source2Material } from './source2material';
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
+import { Source2Material } from './source2material';
 
-export class Source2GlobalLitSimple extends Source2Material{
+export class Source2GlobalLitSimple extends Source2Material {
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source2_global_lit_simple';
 	}
 }

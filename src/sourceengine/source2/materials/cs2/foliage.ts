@@ -3,7 +3,7 @@ import { Source2MaterialLoader } from '../../loaders/source2materialloader';
 
 export class Source2CsgoFoliage extends Source2Material{
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_vr_xen_foliage';//TODO: code proper shader
 	}
 }

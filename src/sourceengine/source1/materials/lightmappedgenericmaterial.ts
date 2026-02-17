@@ -7,7 +7,7 @@ export class LightMappedGenericMaterial extends Source1Material {//TODOv3 remove
 		return new LightMappedGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	getShaderSource() {
+	override getShaderSource(): string {
 		return 'source1_lightmappedgeneric';
 	}
 }

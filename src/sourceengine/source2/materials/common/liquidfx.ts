@@ -6,7 +6,7 @@ import { Source2Material } from '../source2material';
 // materials/models/items/lion/lion_dungeon_poacher_shoulder/lion_dungeon_poacher_shoulder_jar.vmat_c
 export class Source2LiquidFx extends Source2Material {// TODO: code me
 
-	get shaderSource() {
+	override get shaderSource(): string {
 		return 'source2_liquid_fx';
 	}
 }
