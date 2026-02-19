@@ -27,7 +27,7 @@ export class Source2ModelLoader {
 		defaultMaterial.addUser(Source2ModelLoader);
 	}
 
-	async load(repository: string, path: string): Promise<Source2Model | null> {
+	load(repository: string, path: string): Source2Model | null {
 		// Cleanup filename
 		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 
@@ -55,7 +55,7 @@ export class Source2ModelLoader {
 					}
 					const newSourceModel = new Source2Model(repository, source2File);
 					this.#loadIncludeModels(newSourceModel);
-					const mesh = await this.testProcess2(source2File, newSourceModel, repository);
+					await this.testProcess2(source2File, newSourceModel, repository);
 					newSourceModel.loadAnimGroups();
 					resolve(newSourceModel);
 				}
@@ -393,7 +393,7 @@ export class Source2ModelLoader {
 
 				} else {
 					sourceBlock.reader.seek(startOffset);
-					var vertex = {};
+					//var vertex = {};
 					//s2.indices.push(indexReader.getUint16());
 					if (elementSizeInBytes == 2) {
 						s2Indices[elementIndex] = reader.getUint16();
@@ -411,7 +411,7 @@ export class Source2ModelLoader {
 		}
 	}
 
-	#loadMesh(repository: string, name: string, model: Source2Model, group: Entity, dataBlock: Source2FileBlock, vbibBlock: Source2FileBlock, lodGroupMask: number, vmdl: Source2File, meshIndex: number, meshGroupMask: number | undefined) {
+	#loadMesh(repository: string, name: string, model: Source2Model, group: Entity, dataBlock: Source2FileBlock, vbibBlock: Source2FileBlock, lodGroupMask: number, vmdl: Source2File, meshIndex: number, meshGroupMask: number | undefined): void {
 		// TODO: remove vbibBlock
 		const remappingTable = vmdl.getRemappingTable(meshIndex);
 
@@ -505,8 +505,8 @@ export class Source2ModelLoader {
 		}
 	}
 
-	async #loadExternalMeshes(group: Entity, vmdl: Source2File, model: Source2Model, repository: string) {
-		const callback = (mesh: Source2File, lodGroupMask: number, meshIndex: number, meshGroupMask: number | undefined) => {
+	async #loadExternalMeshes(group: Entity, vmdl: Source2File, model: Source2Model, repository: string): Promise<void> {
+		const callback = (mesh: Source2File, lodGroupMask: number, meshIndex: number, meshGroupMask: number | undefined): void => {
 			//TODO: only load highest LOD
 			const dataBlock = mesh.getBlockByType('DATA');
 			const vbibBlock = mesh.getBlockByType('VBIB');
@@ -517,7 +517,7 @@ export class Source2ModelLoader {
 		await this.#loadMeshes(vmdl, callback);
 	}
 
-	async #loadMeshes(vmdl: Source2File, callback: (arg1: Source2File, arg2: number, arg3: number, arg4: number | undefined) => void/*TODO: remove callback*/) {
+	async #loadMeshes(vmdl: Source2File, callback: (arg1: Source2File, arg2: number, arg3: number, arg4: number | undefined) => void/*TODO: remove callback*/): Promise<void> {
 		const promises = new Set<Promise<Source2File>>();
 		//const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
 		//const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
@@ -547,7 +547,7 @@ export class Source2ModelLoader {
 		await Promise.all(promises);
 	}
 
-	async #loadIncludeModels(model: Source2Model) {
+	async #loadIncludeModels(model: Source2Model): Promise<void> {
 		const includeModels = model.getIncludeModels();
 		for (const includeModel of includeModels) {
 			const refModel = await new Source2ModelLoader().load(model.repository, includeModel);

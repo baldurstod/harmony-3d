@@ -9,7 +9,7 @@ import { Source2FileLoader } from './source2fileloader';
 export const Source2SnapshotLoader = new (function () {
 	class Source2SnapshotLoader {
 
-		async load(repository: string, filename: string) {
+		async load(repository: string, filename: string): Promise<Source2Snapshot | null> {
 			filename = filename.replace(/\.vsnap_c/, '').replace(/\.vsnap/, '');
 			const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
 			if (snapFile) {

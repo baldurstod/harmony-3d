@@ -4,7 +4,7 @@ import { Source2Material } from '../source2material';
 
 export class Source2CsgoWeaponStattrak extends Source2Material {
 
-	_afterProcessProxies(proxyParams: DynamicParams) {
+	_afterProcessProxies(proxyParams: DynamicParams): void {
 		//Proxy param: $ent_stattrak
 		super._afterProcessProxies(proxyParams);
 		this.setDynamicUniform('g_nStatTrakValue');

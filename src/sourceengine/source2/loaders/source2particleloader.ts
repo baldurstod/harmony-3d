@@ -45,7 +45,7 @@ function valueToControlPointConfigurations(value: Kv3Element[] | null): ControlP
 	return ret;
 }
 
-function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Element) {
+function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Element): void  {
 	//const keys = Object.keys(systemDefinition);
 
 
@@ -192,7 +192,7 @@ export const Source2ParticleLoader = new (function () {
 			return promise;
 		}
 
-		async getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>) {
+		async getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem> {
 			if (TESTING && LOG) {
 				console.debug(vpcf);
 			}

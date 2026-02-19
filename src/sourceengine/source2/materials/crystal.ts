@@ -1,9 +1,10 @@
-import { Source2Material } from './source2material';
-import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
+import { Source2MaterialLoader } from '../loaders/source2materialloader';
+import { Source2Material } from './source2material';
 
-export class Source2Crystal extends Source2Material{
-	setupUniformsOnce() {
+export class Source2Crystal extends Source2Material {
+
+	setupUniformsOnce(): void {
 		super.setupUniformsOnce()
 		this.setBlending(MATERIAL_BLENDING_ADDITIVE);
 		this.setDefine('IS_TRANSLUCENT');
