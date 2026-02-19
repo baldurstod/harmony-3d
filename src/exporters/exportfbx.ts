@@ -173,14 +173,15 @@ async function createFBXMesh(fbxScene: FBXScene, mesh: Mesh, context: FbxContext
 
 	let meshDatasBi;
 	let meshDatasBw;
-	if (EXPORT_SKELETON && (mesh as any/*TODO: create a skeleton entity interface*/).skeleton && mesh.geometry) {
+	const meshGeometry = mesh.getGeometry();
+	if (EXPORT_SKELETON && (mesh as any/*TODO: create a skeleton entity interface*/).skeleton) {
 		meshDatas = {
-			f: mesh.geometry.getAttribute('index')?._array as Uint8Array | Uint32Array,
-			v: mesh.geometry.getAttribute('aVertexPosition')?._array as Float32Array,
-			vn: mesh.geometry.getAttribute('aVertexNormal')?._array as Float32Array,
-			vt: mesh.geometry.getAttribute('aTextureCoord')?._array as Float32Array,
-			bi: mesh.geometry.getAttribute('aBoneIndices')?._array as Float32Array,
-			bw: mesh.geometry.getAttribute('aBoneWeight')?._array as Float32Array,
+			f: meshGeometry.getAttribute('index')?._array as Uint8Array | Uint32Array,
+			v: meshGeometry.getAttribute('aVertexPosition')?._array as Float32Array,
+			vn: meshGeometry.getAttribute('aVertexNormal')?._array as Float32Array,
+			vt: meshGeometry.getAttribute('aTextureCoord')?._array as Float32Array,
+			bi: meshGeometry.getAttribute('aBoneIndices')?._array as Float32Array,
+			bw: meshGeometry.getAttribute('aBoneWeight')?._array as Float32Array,
 		};
 
 		meshDatasBi = meshDatas.bi;
