@@ -23,3 +23,4 @@ export { RotationSpinYaw } from './rotationspinyaw';
 export { SetChildControlPointsFromParticlePositions } from './setchildcontrolpointsfromparticlepositions';
 export { SetControlPointPositions } from './setcontrolpointpositions';
 export { SetControlPointToParticlesCenter } from './setcontrolpointtoparticlescenter';
+export { SetControlPointToPlayer } from './setcontrolpointtoplayer';
