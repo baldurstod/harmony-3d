@@ -29,6 +29,8 @@ export class PositionOnModelRandom extends Source1ParticleOperator {
 	doInit(particle: Source1Particle, elapsedTime: number) {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const forceInModel = this.getParameter('force to be inside model');
+		const directionBias = this.getParameter('direction bias');
+		const hitboxScale = this.getParameter('hitbox scale');
 
 		if (forceInModel > 15) {
 			errorOnce(`forceInModel > 15 ${forceInModel}`);
@@ -42,13 +44,23 @@ export class PositionOnModelRandom extends Source1ParticleOperator {
 			return;
 		}
 
-		// TODO : Actually we should get the model parenting the control point
 		const controllingModel = controlPoint.parentModel;
 		if (controllingModel && (controllingModel as unknown as RandomPointOnModel).getRandomPointOnModel) {
 			//TODOv3
 			particle.bones = [];
 			particle.initialVec = vec3.create();
-			const position = (controllingModel as unknown as RandomPointOnModel).getRandomPointOnModel(vec3.create(), particle.initialVec, particle.bones);
+			const position = vec3.create();
+			(controllingModel as unknown as RandomPointOnModel).getRandomPointOnModel(
+				position,
+				particle.initialVec,
+				controlPoint,
+				forceInModel,
+				directionBias,
+				hitboxScale,
+				particle.bones,
+				undefined,
+			);
+
 			//vec3.copy(particle.position, position);
 			//vec3.copy(particle.prevPosition, position);
 			if (controlPoint) {

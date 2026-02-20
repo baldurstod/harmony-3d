@@ -1,6 +1,6 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { Dmx, DmxElement } from 'harmony-dmx';
-import { JSONObject } from 'harmony-types';
+import { int32, JSONObject } from 'harmony-types';
 import { Animation } from '../../../animations/animation';
 import { AnimationBone } from '../../../animations/animationbone';
 import { AnimationDescription } from '../../../animations/animationdescription';
@@ -26,6 +26,7 @@ import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
 import { getRandomInt } from '../../../utils/random';
+import { ControlPoint } from '../../export';
 import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
 import { MdlStudioSeqDesc } from '../loaders/mdlstudioseqdesc';
 import { MdlStudioFlex, MeshTest } from '../loaders/source1mdlloader';
@@ -71,6 +72,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	#bodyGroups = new Map<string, number>();
 	readonly frameframe: { bones: Record<string, any> } = { bones: {} };
 	static #animSpeed = 1.0;
+	hasHitBoxes = true as const;
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -809,22 +811,32 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return this;
 	}
 
-	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3 {
+	getRandomPointOnModel(
+		out: vec3,
+		initialVec: vec3,
+		controlPoint: ControlPoint,
+		numTriesToGetAPointInsideTheModel: int32,
+		directionBias: vec3,
+		boundingBoxScale: number,
+		bones: [Bone, number][],
+		hitBoxRelativeCoordOut: vec3 | undefined,
+	): int32 {
 		const hitboxes = this.getHitboxes();
-		const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+		const hitBoxId = getRandomInt/*TODO: use random int of the particle collection*/(hitboxes.length);
+		const hitbox = hitboxes[hitBoxId];
 		if (!hitbox) {
-			return vec;
+			return -1;
 		}
 
 		const bone = hitbox.parent;
 		if (bone) {
 			bones.push([bone, 1]);
-			vec3RandomBox(vec, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
+			vec3RandomBox(out, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
 			//vec3.transformMat4(vec, vec, bone.boneMat);
-			vec3.copy(initialVec, vec);
-			vec3.transformMat4(vec, vec, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
+			vec3.copy(initialVec, out);
+			vec3.transformMat4(out, out, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
 		}
-		return vec;
+		return hitBoxId;
 	}
 
 	setPosition(position: vec3) {

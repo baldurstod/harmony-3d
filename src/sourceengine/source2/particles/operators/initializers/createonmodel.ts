@@ -29,6 +29,8 @@ export class CreateOnModel extends Operator {
 	#hitboxSetName = DEFAULT_HITBOX_SET_NAME;
 	#localCoords = DEFAULT_LOCAL_COORDS;//bias in local space
 	#useBones = DEFAULT_USE_BONES;//use bones instead of hitboxes
+	#directionBias = vec3.create();
+	#hitBoxScale = vec3.create();
 
 	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -57,11 +59,15 @@ export class CreateOnModel extends Operator {
 			case 'm_bUseBones':
 				this.#useBones = param.getValueAsBool() ?? DEFAULT_USE_BONES;
 				break;
+			case 'm_vecDirectionBias':
+				param.getValueAsVec3(this.#directionBias);
+				break;
+			case 'm_vecHitBoxScale':
+				param.getValueAsVec3(this.#hitBoxScale);
+				break;
 			case 'm_modelInput':
 			case 'm_transformInput':
 			case 'm_nDesiredHitbox':
-			case 'm_vecHitBoxScale':
-			case 'm_vecDirectionBias':
 				//used in doInit
 				break;
 			default:
@@ -80,7 +86,18 @@ export class CreateOnModel extends Operator {
 				const bones: any[] = []/*TODO: improve type*/;
 				particle.bones = bones;
 				particle.initialVec = vec3.create();
-				const position = (controllingModel as Source2ModelInstance).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+				const position = vec3.create();
+				(controllingModel as Source2ModelInstance).getRandomPointOnModel(
+					position,
+					particle.initialVec,
+					controlPoint,
+					this.#forceInModel,
+					this.#directionBias,
+					1,// TODO: fix hit box scale//this.#hitBoxScale,
+					bones,
+					undefined,
+				);
+
 				if (controlPoint) {
 					vec3.copy(particle.position, position);
 					vec3.copy(particle.prevPosition, position);

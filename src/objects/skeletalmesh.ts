@@ -1,10 +1,12 @@
 import { mat4, vec2, vec3 } from 'gl-matrix';
+import { int32 } from 'harmony-types';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { BoundingBox } from '../math/boundingbox';
 import { getNormal, getUV } from '../math/triangle';
 import { Intersection } from '../raycasting/intersection';
 import { Ray } from '../raycasting/ray';
 import { Raycaster } from '../raycasting/raycaster';
+import { ControlPoint } from '../sourceengine/export';
 import { Bone } from './bone';
 import { Mesh, MeshParameters, ObjDatas } from './mesh';
 import { Skeleton } from './skeleton';
@@ -153,7 +155,17 @@ export class SkeletalMesh extends Mesh {
 		return ret as ObjDatas;
 	}
 
-	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]) {//TODO: optimize this stuff
+	getRandomPointOnModel(
+		out: vec3,
+		initialVec: vec3,
+		controlPoint: ControlPoint,
+		numTriesToGetAPointInsideTheModel: int32,
+		directionBias: vec3,
+		boundingBoxScale: number,
+		bones: [Bone, number][],
+		hitBoxRelativeCoordOut: vec3 | undefined,
+	): int32 {
+		//TODO: optimize this stuff
 		const ret = {};
 		const skeletonBones = this.skeleton._bones;
 		//let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
@@ -174,9 +186,9 @@ export class SkeletalMesh extends Mesh {
 		}
 
 		const vertexIndex = RandomInt(vertexCount);
-		vec[0] = 0;
-		vec[1] = 0;
-		vec[2] = 0;
+		out[0] = 0;
+		out[1] = 0;
+		out[2] = 0;
 		if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
 			//for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 			{
@@ -188,10 +200,10 @@ export class SkeletalMesh extends Mesh {
 				accumulateMat[8] = 0; accumulateMat[9] = 0; accumulateMat[10] = 0;
 				accumulateMat[12] = 0; accumulateMat[13] = 0; accumulateMat[14] = 0;
 
-				vec[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
-				vec[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
-				vec[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
-				vec3.copy(initialVec, vec);
+				out[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
+				out[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
+				out[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
+				vec3.copy(initialVec, out);
 
 				for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
 					const boneArrayIndex2 = boneArrayIndex + boneIndex;
@@ -220,10 +232,10 @@ export class SkeletalMesh extends Mesh {
 						accumulateMat[14] += boneWeight * boneMat[14];
 					}
 				}
-				vec3.transformMat4(vec, vec, accumulateMat);
+				vec3.transformMat4(out, out, accumulateMat);
 			}
 		}
-		return ret;
+		return -1;
 	}
 
 	getBoundingBox(boundingBox = new BoundingBox()) {

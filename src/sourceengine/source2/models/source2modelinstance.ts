@@ -1,4 +1,5 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { int32 } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Camera } from '../../../cameras/camera';
 import { Entity } from '../../../entities/entity';
@@ -15,6 +16,7 @@ import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
+import { ControlPoint } from '../../export';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2Model } from './source2model';
@@ -465,13 +467,30 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		return this;
 	}
 
-	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3 {
+	getRandomPointOnModel(
+		out: vec3,
+		initialVec: vec3,
+		controlPoint: ControlPoint,
+		numTriesToGetAPointInsideTheModel: int32,
+		directionBias: vec3,
+		boundingBoxScale: number,
+		bones: [Bone, number][],
+		hitBoxRelativeCoordOut: vec3 | undefined,
+	): int32 {
 		const meshes = this.meshes;
 		for (const mesh of meshes) {
-			(mesh as SkeletalMesh).getRandomPointOnModel(vec, initialVec, bones);
-			return vec;
+			return (mesh as SkeletalMesh).getRandomPointOnModel(
+				out,
+				initialVec,
+				controlPoint,
+				numTriesToGetAPointInsideTheModel,
+				directionBias,
+				boundingBoxScale,
+				bones,
+				hitBoxRelativeCoordOut,
+			);
 		}
-		return vec;
+		return -1;
 	}
 
 	getAttachment(name: string): Source2ModelAttachmentInstance | null {
