@@ -45,7 +45,7 @@ function valueToControlPointConfigurations(value: Kv3Element[] | null): ControlP
 	return ret;
 }
 
-function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Element): void  {
+function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Element): void {
 	//const keys = Object.keys(systemDefinition);
 
 
@@ -174,54 +174,51 @@ async function initChildren(repository: string, systemArray: Source2ParticleSyst
 	await Promise.allSettled(promises);
 }
 
-export const Source2ParticleLoader = new (function () {
-	class Source2ParticleLoader {
-		load(repository: string, path: string): Promise<Source2File | null> {
-			const promise = new Promise<Source2File | null>(resolve => {
-				path = path.replace(/\.vpcf_c/, '');
-				const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c') as Promise<Source2File | null>;
-				vpcfPromise.then(
-					(source2File: Source2File | null) => {
-						if (VERBOSE) {
-							console.log(source2File);
-						}
-						resolve(source2File);
+export class Source2ParticleLoader {
+	static load(repository: string, path: string): Promise<Source2File | null> {
+		const promise = new Promise<Source2File | null>(resolve => {
+			path = path.replace(/\.vpcf_c/, '');
+			const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c') as Promise<Source2File | null>;
+			vpcfPromise.then(
+				(source2File: Source2File | null) => {
+					if (VERBOSE) {
+						console.log(source2File);
 					}
-				);
-			});
-			return promise;
-		}
-
-		async getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem> {
-			if (TESTING && LOG) {
-				console.debug(vpcf);
-			}
-
-			const fileName = vpcf.fileName;
-			const result = /[ \w-]+?(?=\.)/.exec(fileName);
-
-			const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
-
-			//const systemDefinition = vpcf.getBlockStruct('DATA', '');
-			if (vpcf.getBlockStructAsString('DATA', '_class') == CParticleSystemDefinition) {
-				initOperators(system, system.preEmissionOperators, vpcf.getBlockStructAsElementArray('DATA', 'm_PreEmissionOperators'));
-				initOperators(system, system.emitters, vpcf.getBlockStructAsElementArray('DATA', 'm_Emitters'));
-				initOperators(system, system.initializers, vpcf.getBlockStructAsElementArray('DATA', 'm_Initializers'));
-				initOperators(system, system.operators, vpcf.getBlockStructAsElementArray('DATA', 'm_Operators'));
-				initOperators(system, system.renderers, vpcf.getBlockStructAsElementArray('DATA', 'm_Renderers'));
-				initOperators(system, system.forces, vpcf.getBlockStructAsElementArray('DATA', 'm_ForceGenerators'));
-				initOperators(system, system.constraints, vpcf.getBlockStructAsElementArray('DATA', 'm_Constraints'));
-				await initChildren(repository, system.childSystems, vpcf.getBlockStructAsElementArray('DATA', 'm_Children'), snapshotModifiers);
-				const dataKv = vpcf.getBlockKeyValues('DATA');
-				if (dataKv) {
-					initProperties(system, dataKv);
+					resolve(source2File);
 				}
-			}
-
-			await system.init(snapshotModifiers);
-			return system;
-		}
+			);
+		});
+		return promise;
 	}
-	return Source2ParticleLoader;
-}());
+
+	static async getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem> {
+		if (TESTING && LOG) {
+			console.debug(vpcf);
+		}
+
+		const fileName = vpcf.fileName;
+		const result = /[ \w-]+?(?=\.)/.exec(fileName);
+
+		const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
+
+		//const systemDefinition = vpcf.getBlockStruct('DATA', '');
+		if (vpcf.getBlockStructAsString('DATA', '_class') == CParticleSystemDefinition) {
+			initOperators(system, system.preEmissionOperators, vpcf.getBlockStructAsElementArray('DATA', 'm_PreEmissionOperators'));
+			initOperators(system, system.emitters, vpcf.getBlockStructAsElementArray('DATA', 'm_Emitters'));
+			initOperators(system, system.initializers, vpcf.getBlockStructAsElementArray('DATA', 'm_Initializers'));
+			initOperators(system, system.operators, vpcf.getBlockStructAsElementArray('DATA', 'm_Operators'));
+			initOperators(system, system.renderers, vpcf.getBlockStructAsElementArray('DATA', 'm_Renderers'));
+			initOperators(system, system.forces, vpcf.getBlockStructAsElementArray('DATA', 'm_ForceGenerators'));
+			initOperators(system, system.constraints, vpcf.getBlockStructAsElementArray('DATA', 'm_Constraints'));
+			await initChildren(repository, system.childSystems, vpcf.getBlockStructAsElementArray('DATA', 'm_Children'), snapshotModifiers);
+			const dataKv = vpcf.getBlockKeyValues('DATA');
+			if (dataKv) {
+				initProperties(system, dataKv);
+			}
+		}
+
+		await system.init(snapshotModifiers);
+		return system;
+	}
+}
 registerLoader('Source2ParticleLoader', Source2ParticleLoader);

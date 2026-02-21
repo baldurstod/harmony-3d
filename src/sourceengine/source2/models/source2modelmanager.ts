@@ -20,7 +20,7 @@ export class Source2ModelManager {
 			return model;
 		}
 
-		model = await new Source2ModelLoader().load(repository, path);
+		model = new Source2ModelLoader().load(repository, path);
 		if (model) {
 			this.#modelsPerRepository[repository]![path] = model;
 		} else {

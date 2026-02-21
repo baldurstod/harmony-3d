@@ -550,7 +550,7 @@ export class Source2ModelLoader {
 	async #loadIncludeModels(model: Source2Model): Promise<void> {
 		const includeModels = model.getIncludeModels();
 		for (const includeModel of includeModels) {
-			const refModel = await new Source2ModelLoader().load(model.repository, includeModel);
+			const refModel = new Source2ModelLoader().load(model.repository, includeModel);
 			if (refModel) {
 				model.addIncludeModel(refModel);
 			}

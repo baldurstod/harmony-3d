@@ -2,13 +2,14 @@ import { Source2MaterialLoader } from '../../loaders/source2materialloader';
 import { Source2Material } from '../source2material';
 
 const STICKER_COUNT = 5;
-
+/*
 class WeaponSticker {
 	sticker = '';
 	holoSpectrum = '';
 	normalRoughness = '';
 	sfxMask = '';
 }
+*/
 
 export class Source2CsgoWeapon extends Source2Material {
 

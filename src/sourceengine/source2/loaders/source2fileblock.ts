@@ -66,9 +66,9 @@ export class Source2FileBlock {
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
-	getNormalsTangents(meshIndex: number, bufferId: number) {
+	getNormalsTangents(meshIndex: number, bufferId: number): number[][] {
 		function decompressNormal(inputNormal: vec2, outputNormal: vec3): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
-			const fOne = 1.0;
+			//const fOne = 1.0;
 			//let outputNormal = vec3.create();
 
 			//float2 ztSigns		= ( inputNormal.xy - 128.0 ) < 0;				// sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
@@ -99,8 +99,6 @@ export class Source2FileBlock {
 		}
 
 		function decompressNormal2(inputNormal: number): [vec3, vec4] {
-			let normals;
-			let tangents;
 
 			const SignBit = inputNormal & 1;            // LSB bit
 			const Tbits = (inputNormal >> 1) & 0x7ff;  // 11 bits
@@ -126,7 +124,7 @@ export class Source2FileBlock {
 			unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
 
 			const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
-			normals = normal;
+			const normals = normal;
 
 			// Invert tangent when normal Z is negative
 			const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
@@ -157,7 +155,7 @@ export class Source2FileBlock {
 			vec3.scale(c, c, Math.sin(nPackedFrameT));
 			vec3.add(tangent, tangent, c);
 
-			tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
+			const tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
 			return [normals, tangents];
 		}
 
@@ -167,7 +165,7 @@ export class Source2FileBlock {
 		const tangentArray = [];
 		const compressedNormal = vec2.create();
 		const compressedTangent = vec2.create();
-		let normalVec3;
+		//let normalVec3;
 		let normalTemp = vec3.create();
 		let tangentTemp = vec4.create();
 
@@ -293,4 +291,4 @@ export type Source2StructField = {
 }
 
 export type Source2StructEnum = (string | number)[];
-export type Source2StructFieldValue = null | number | boolean | string | string | number | bigint | Float32Array | Source2DataStruct | Source2StructEnum | Source2StructFieldValue[];//TODO: remove type
+export type Source2StructFieldValue = null | boolean | string | number | bigint | Float32Array | Source2DataStruct | Source2StructEnum | Source2StructFieldValue[];//TODO: remove type
