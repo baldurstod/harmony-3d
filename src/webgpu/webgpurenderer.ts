@@ -1201,6 +1201,21 @@ export class WebGPURenderer implements Renderer {
 									materialUniform as BufferSource,
 								);
 								break;
+							case 'vec4':
+								switch ((uniform.type as TemplateInfo).format?.name) {
+									case 'u32':
+										const m = new Uint32Array((uniform.type as TemplateInfo).format!.size);
+										for (let i = 0; i < materialUniform.length; i++) {
+											m[i] = materialUniform[i];
+										}
+										device.queue.writeBuffer(
+											uniformBuffer,
+											0,
+											m as BufferSource,
+										);
+										break;
+								}
+								break;
 							default:
 								errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
 								break;
