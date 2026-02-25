@@ -5,7 +5,7 @@ import { Scene } from '../scenes/scene';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
-import { JSONObject } from 'harmony-types';
+import { Degree, JSONObject, Radian } from 'harmony-types';
 import { vec3ToJSON } from '../utils/json';
 import { ortho } from '../math/ortho';
 
@@ -79,6 +79,10 @@ export class Camera extends Entity {
 	isOrthographic!: boolean;
 	#tanHalfVerticalFov!: number
 	autoResize: boolean;
+	// Aperture for ray tracing
+	aperture = 0;
+	// Focus distance. Only relevant if aperture is non zero
+	focus = 10;
 
 	constructor(params: CameraParameters = {}) {
 		super();
@@ -216,7 +220,18 @@ export class Camera extends Entity {
 		}
 	}
 
+	/**
+	 * @deprecated use getVerticalFovAsDegree instead
+	 */
 	get verticalFov() {
+		return this.#verticalFov * RAD_TO_DEG;
+	}
+
+	getVerticalFov(): Radian {
+		return this.#verticalFov;
+	}
+
+	getVerticalFovAsDegree(): Degree {
 		return this.#verticalFov * RAD_TO_DEG;
 	}
 
@@ -244,7 +259,6 @@ export class Camera extends Entity {
 	get upVector() {
 		return this.#upVector;
 	}
-
 
 	set left(left) {
 		const oldValue = this.#left;
