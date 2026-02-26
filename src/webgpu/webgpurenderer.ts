@@ -1500,26 +1500,26 @@ export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string,
 	}
 }
 
-function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number): void {
+function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number, baseOffset: number): void {
 	switch (member.type.name) {
 		case 'u32':
 			queue.writeBuffer(
 				buffer,
-				member.offset,
+				baseOffset + member.offset,
 				new Uint32Array([value]),
 			);
 			break;
 		case 'i32':
 			queue.writeBuffer(
 				buffer,
-				member.offset,
+				baseOffset + member.offset,
 				new Int32Array([value]),
 			);
 			break;
 		case 'f32':
 			queue.writeBuffer(
 				buffer,
-				member.offset,
+				baseOffset + member.offset,
 				new Float32Array([value]),
 			);
 			break;
@@ -1544,7 +1544,7 @@ function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], 
 			throw new Error('code me');
 		} else {
 			// primitive
-			writePrimitive(queue, buffer, member, structValue as number);
+			writePrimitive(queue, buffer, member, structValue as number, baseOffset);
 		}
 
 
