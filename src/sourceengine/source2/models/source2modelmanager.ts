@@ -10,7 +10,7 @@ export class Source2ModelManager {
 	static #modelList = new Map();
 	static instances = new Set();
 
-	static async #createModel(repository: string, path: string): Promise<Source2Model | null> {
+	static #createModel(repository: string, path: string): Source2Model | null {
 		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 		/*let fullPath = repository + fileName;
 		let model = this.#modelList.get(fullPath);*/
@@ -48,7 +48,7 @@ export class Source2ModelManager {
 		return this.#modelsPerRepository[repository][path] ?? null;
 	}
 
-	static async createInstance(repository: string, fileName: string, dynamic: boolean): Promise<Source2ModelInstance | null> {
+	static createInstance(repository: string, fileName: string, dynamic: boolean): Source2ModelInstance | null {
 		if (!repository) {
 			//try to get repository from filename
 			for (const repo in this.#modelListPerRepository) {
@@ -59,7 +59,7 @@ export class Source2ModelManager {
 				}
 			}
 		}
-		const model = await this.#createModel(repository, fileName);
+		const model = this.#createModel(repository, fileName);
 		if (model) {
 			const instance = model.createInstance(dynamic);
 			return instance;
