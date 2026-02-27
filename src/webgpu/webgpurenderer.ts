@@ -1424,11 +1424,13 @@ export class WebGPURenderer implements Renderer {
 										if (!storageBuffer.buffer) {
 											storageBuffer.buffer = device.createBuffer({
 												label: storage.name,
-												size: storage.size || (storageBuffer.value as TypedArray).byteLength,
+												size: storage.size || storageBuffer.size || (storageBuffer.value as TypedArray).byteLength,
 												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 											});
 										}
-										device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+										if (storageBuffer.value !== null) {
+											device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+										}
 									} else if (storage.format!.isStruct) {
 										if (!storageBuffer.buffer) {
 											storageBuffer.buffer = device.createBuffer({
@@ -1471,11 +1473,13 @@ export class WebGPURenderer implements Renderer {
 										if (!storageBuffer.buffer) {
 											storageBuffer.buffer = device.createBuffer({
 												label: storage.name,
-												size: storage.size || (storageBuffer.value as TypedArray).byteLength,
+												size: storage.size || storageBuffer.size || (storageBuffer.value as TypedArray).byteLength,
 												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 											});
 										}
-										device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+										if (storageBuffer.value !== null) {
+											device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
+										}
 									}
 
 								} else {

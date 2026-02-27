@@ -45,7 +45,7 @@ export type MaterialParams = {
 	polygonOffsetUnits?: number;
 
 	uniforms?: MaterialUniform;
-	storages?: Record<string, StorageValue>;
+	storages?: Record<string, StorageValue | number>;
 	defines?: Record<string, string>;
 
 }/*TODO: create proper type*/;
@@ -565,8 +565,12 @@ export class Material {
 		return this.storage.get(name);
 	}
 
-	setStorage(name: string, value: StorageValue): void {
-		this.storage.set(name, { value });
+	setStorage(name: string, value: StorageValue | number): void {
+		if (typeof value === 'number') {
+			this.storage.set(name, { value: null, size: value });
+		} else {
+			this.storage.set(name, { value });
+		}
 	}
 
 	deleteStorage(name: string): void {

@@ -3782,7 +3782,7 @@ declare class Channel {
                           getShaderSource(): string;
                           getWebGPUShader(): string;
                           getStorage(name: string): StorageBuffer | undefined;
-                          setStorage(name: string, value: StorageValue): void;
+                          setStorage(name: string, value: StorageValue | number): void;
                           deleteStorage(name: string): void;
                       }
 
@@ -3813,7 +3813,7 @@ declare class Channel {
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
                           uniforms?: MaterialUniform;
-                          storages?: Record<string, StorageValue>;
+                          storages?: Record<string, StorageValue | number>;
                           defines?: Record<string, string>;
                       };
 
@@ -8673,8 +8673,9 @@ declare class Channel {
                       }
 
                       export declare type StorageBuffer = {
-                          value: StorageValue;
+                          value: StorageValue | null;
                           buffer?: GPUBuffer | null;
+                          size?: number;
                       };
 
                       /**

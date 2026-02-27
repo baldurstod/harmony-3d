@@ -5,6 +5,7 @@ export type StorageValueStruct = { [key: string]: StorageValue | number };
 export type StorageValue = StorageValueArray | StorageValueStruct;
 
 export type StorageBuffer = {
-	value: StorageValue;
+	value: StorageValue | null;
 	buffer?: GPUBuffer | null;
+	size?: number;
 };

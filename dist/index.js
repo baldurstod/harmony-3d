@@ -2055,7 +2055,12 @@ class Material {
         return this.storage.get(name);
     }
     setStorage(name, value) {
-        this.storage.set(name, { value });
+        if (typeof value === 'number') {
+            this.storage.set(name, { value: null, size: value });
+        }
+        else {
+            this.storage.set(name, { value });
+        }
     }
     deleteStorage(name) {
         const sto = this.storage.get(name);
@@ -13100,11 +13105,13 @@ class WebGPURenderer {
                                         if (!storageBuffer.buffer) {
                                             storageBuffer.buffer = device.createBuffer({
                                                 label: storage.name,
-                                                size: storage.size || storageBuffer.value.byteLength,
+                                                size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
                                                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
                                             });
                                         }
-                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                        if (storageBuffer.value !== null) {
+                                            device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                        }
                                     }
                                     else if (storage.format.isStruct) {
                                         if (!storageBuffer.buffer) {
@@ -13147,11 +13154,13 @@ class WebGPURenderer {
                                         if (!storageBuffer.buffer) {
                                             storageBuffer.buffer = device.createBuffer({
                                                 label: storage.name,
-                                                size: storage.size || storageBuffer.value.byteLength,
+                                                size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
                                                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
                                             });
                                         }
-                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                        if (storageBuffer.value !== null) {
+                                            device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                        }
                                     }
                                 }
                                 else {
