@@ -1,6 +1,7 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { Degree } from 'harmony-types';
 import { Dmx } from 'harmony-dmx';
-import { float } from 'harmony-types';
+import { float32 } from 'harmony-types';
 import { HarmonyMenuItems } from 'harmony-ui';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { int } from 'harmony-types';
@@ -14,13 +15,13 @@ import { mat4 } from 'gl-matrix';
 import { Millisecond } from 'harmony-types';
 import { MyEventTarget } from 'harmony-utils';
 import { quat } from 'gl-matrix';
+import { Radian } from 'harmony-types';
 import { ReadonlyQuat } from 'gl-matrix';
 import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
 import { Shape } from './shape';
 import { Source1ModelInstance as Source1ModelInstance_2 } from '../export';
 import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
-import { Source2Particle as Source2Particle_2 } from '../../source2particle';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { TypedArrayNumber } from 'harmony-types';
@@ -92,7 +93,7 @@ export declare function addWgslInclude(name: string, source: string): void;
 export declare class AgeNoise extends Operator {
     #private;
     _paramChanged(paramName: string, param: OperatorParam): void;
-    doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+    doInit(): void;
 }
 
 export declare class AlphaFadeAndDecay extends Source1ParticleOperator {
@@ -283,7 +284,7 @@ export declare interface BaseProperties {
 export declare class BasicMovement extends Operator {
     #private;
     _paramChanged(paramName: string, param: OperatorParam): void;
-    doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+    doOperate(particle: Source2Particle, elapsedTime: number): void;
 }
 
 export declare class BeamBufferGeometry extends BufferGeometry {
@@ -500,8 +501,8 @@ export declare class BufferAttribute {
     get type(): number;
     set usage(usage: BufferUsage);
     set target(target: GLenum);
-    set array(array: typeof TypedArrayProto);
     setArray(array: typeof TypedArrayProto): void;
+    getArray(): TypedArrayNumber | null;
     update(glContext: WebGLAnyRenderingContext): void;
     updateWireframe(glContext: WebGLAnyRenderingContext): void;
     clone(): Uint8BufferAttribute;
@@ -521,6 +522,7 @@ export declare class BufferGeometry {
     deleteAttribute(name: string): void;
     get elementArrayType(): number;
     setIndex(attribute: BufferAttribute): void;
+    getIndex(): BufferAttribute | null;
     update(glContext: WebGLAnyRenderingContext): void;
     computeVertexNormals(): void;
     clone(): BufferGeometry;
@@ -573,6 +575,8 @@ export declare class Camera extends Entity {
     isPerspective: boolean;
     isOrthographic: boolean;
     autoResize: boolean;
+    aperture: number;
+    focus: number;
     constructor(params?: CameraParameters);
     computeCameraMatrix(): void;
     reset(): void;
@@ -588,7 +592,12 @@ export declare class Camera extends Entity {
     set orthoZoom(orthoZoom: number);
     get orthoZoom(): number;
     set verticalFov(verticalFov: number);
+    /**
+     * @deprecated use getVerticalFovAsDegree instead
+     */
     get verticalFov(): number;
+    getVerticalFov(): Radian;
+    getVerticalFovAsDegree(): Degree;
     getTanHalfVerticalFov(): number;
     set aspectRatio(aspectRatio: number);
     get aspectRatio(): number;
@@ -895,6 +904,7 @@ declare class Channel {
         #private;
         static init(repositoryName: string, fileName: string): Promise<void>;
         static playChoreography(repository: string, choreoName: string, actors: Source1ModelInstance[]): Promise<Choreography | null>;
+        static stopChoreography(choreography: Choreography): void;
         static addChoreography(repository: string, choreoName: string, choreo: Choreography): void;
         static getChoreography(repository: string, choreoName: string): Promise<Choreography | null>;
         static step(elapsed: number): void;
@@ -905,7 +915,7 @@ declare class Channel {
         static setPlaybackSpeed(playbackSpeed: number): void;
     }
 
-    declare class Choreography extends MyEventTarget<ChoreographyEventType> {
+    export declare class Choreography extends MyEventTarget<ChoreographyEventType> {
         #private;
         actors2: Source1ModelInstance[];
         previousTime: number;
@@ -1072,7 +1082,7 @@ declare class Channel {
              export declare class ClampScalar extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doOperate(): void;
              }
 
              export declare class ClearPass extends Pass {
@@ -1129,7 +1139,7 @@ declare class Channel {
                  #private;
                  constructor(system: Source2ParticleSystem);
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doOperate(particle: Source2Particle): void;
              }
 
              export declare class ColorRandom extends Source1ParticleOperator {
@@ -1301,7 +1311,7 @@ declare class Channel {
 
              export declare class CPVelocityForce extends Operator {
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
+                 doForce(): void;
              }
 
              declare type CreateCheckerTextureParams = {
@@ -1319,7 +1329,7 @@ declare class Channel {
              export declare class CreateFromParentParticles extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(particle: Source2Particle): void;
              }
 
              declare type CreateImageTextureParams = Omit<TextureParams, 'format'> & {
@@ -1332,13 +1342,13 @@ declare class Channel {
              export declare class CreateOnModel extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(particle: Source2Particle): void;
              }
 
              export declare class CreateOnModelAtHeight extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(): void;
              }
 
              declare type CreateRenderTargetParams = {
@@ -1358,7 +1368,7 @@ declare class Channel {
              export declare class CreateSequentialPath extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(particle: Source2Particle): void;
              }
 
              export declare function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTexture | GPUTexture | null;
@@ -1376,19 +1386,19 @@ declare class Channel {
              export declare class CreateWithinBox extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number): void;
+                 doInit(particle: Source2Particle): void;
              }
 
              export declare class CreateWithinSphere extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(particle: Source2Particle, elapsedTime: number): void;
              }
 
              export declare class CreationNoise extends Operator {
                  #private;
                  _paramChanged(paramName: string, param: OperatorParam): void;
-                 doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                 doInit(particle: Source2Particle): void;
              }
 
              export declare class CrosshatchPass extends Pass {
@@ -1521,7 +1531,7 @@ declare class Channel {
                   export declare class DampenToCP extends Operator {
                       #private;
                       _paramChanged(paramName: string, param: OperatorParam): void;
-                      doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                      doOperate(particle: Source2Particle): void;
                   }
 
                   export declare class Decal extends Mesh {
@@ -1579,7 +1589,7 @@ declare class Channel {
                   export declare class DistanceCull extends Operator {
                       #private;
                       _paramChanged(paramName: string, param: OperatorParam): void;
-                      doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                      doOperate(particle: Source2Particle): void;
                   }
 
                   export declare class DistanceToCP extends Operator {
@@ -1653,7 +1663,7 @@ declare class Channel {
                       emissionDuration: number;
                       startTime: number;
                       _paramChanged(paramName: string, param: OperatorParam): void;
-                      emitParticle(creationTime: number, elapsedTime: number): Source2Particle_2 | undefined;
+                      emitParticle(creationTime: number, elapsedTime: number): Source2Particle | undefined;
                   }
 
                   export declare class Entity {
@@ -1948,28 +1958,28 @@ declare class Channel {
                       export declare class FadeAndKill extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class FadeIn extends Operator {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class FadeInSimple extends Operator {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class FadeOut extends Operator {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class FadeOutSimple extends Operator {
@@ -1979,7 +1989,7 @@ declare class Channel {
                           invFadeOutTime: number;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       declare type FetchFunction = (resource: string | URL | Request, options?: RequestInit) => Promise<Response>;
@@ -2058,11 +2068,11 @@ declare class Channel {
 
                       export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
+                      declare type float = number;
+
                       export declare class Float32BufferAttribute extends BufferAttribute {
                           constructor(array: typeof TypedArrayProto, itemSize: number, wgslName: string, offset?: number, length?: number);
                       }
-
-                      declare type float_2 = number;
 
                       export declare class FloatArrayNode extends ParametersNode {
                           #private;
@@ -2877,8 +2887,8 @@ declare class Channel {
                           type?: ContextType;
                           /** WebGL attributes passed to getContext() */
                           webGL?: WebGLContextAttributes;
-                          /** WebGPU configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
-                          webGPU?: GPUConfiguration;
+                          /** WebGPU attributes if type is WebGPU */
+                          webGPU?: WebGPUAttributes;
                       }
 
                       declare type GraphicsType = typeof Graphics_2;
@@ -2951,6 +2961,7 @@ declare class Channel {
                       };
 
                       declare interface HasHitBoxes {
+                          hasHitBoxes: true;
                           getHitboxes(): Hitbox[];
                       }
 
@@ -3026,26 +3037,26 @@ declare class Channel {
                       export declare class InheritFromParentParticles extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class InitFloat extends Operator {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class InitFromCPSnapshot extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class InitialVelocityNoise extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -3054,13 +3065,13 @@ declare class Channel {
                       export declare class InitSkinnedPositionFromCPSnapshot extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class InitVec extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare function initWebGPUConst(): void;
@@ -3128,9 +3139,8 @@ declare class Channel {
                       export declare class InterpolateRadius extends Operator {
                           #private;
                           constructor(system: Source2ParticleSystem);
-                          _update(): void;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class Intersection {
@@ -3363,7 +3373,7 @@ declare class Channel {
                       export declare class LerpEndCapScalar extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class LessOrEqualProxy extends Proxy_2 {
@@ -3559,7 +3569,7 @@ declare class Channel {
                           cpPairs: boolean;
                           operateAllParticlesRemoveme: true;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particles: Source2Particle[], elapsedTime: number, strength: number): void;
+                          doOperate(particles: Source2Particle[]): void;
                       }
 
                       export declare class ManifestRepository implements Repository {
@@ -3682,6 +3692,7 @@ declare class Channel {
                           id: string;
                           name: string;
                           uniforms: MaterialUniform;
+                          readonly storage: Map<string, StorageBuffer>;
                           defines: Record<string, any>;
                           parameters: MaterialParams;
                           depthTest: boolean;
@@ -3770,6 +3781,9 @@ declare class Channel {
                           get shaderSource(): string;
                           getShaderSource(): string;
                           getWebGPUShader(): string;
+                          getStorage(name: string): StorageBuffer | undefined;
+                          setStorage(name: string, value: StorageValue): void;
+                          deleteStorage(name: string): void;
                       }
 
                       export declare const MATERIAL_BLENDING_NONE = 0;
@@ -3798,6 +3812,9 @@ declare class Channel {
                           polygonOffset?: boolean;
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
+                          uniforms?: MaterialUniform;
+                          storages?: Record<string, StorageValue>;
+                          defines?: Record<string, string>;
                       };
 
                       declare type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -4439,7 +4456,7 @@ declare class Channel {
                       export declare class MovementRigidAttachToCP extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
@@ -4596,7 +4613,7 @@ declare class Channel {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class NoiseEmitter extends Emitter {
@@ -4607,23 +4624,23 @@ declare class Channel {
 
                       export declare class NormalAlignToCP extends Operator {
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class NormalizeVector extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class NormalLock extends Operator {
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class NormalOffset extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -4691,11 +4708,10 @@ declare class Channel {
                           constraintParticle(particle: Source2Particle): void;
                           renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void;
                           fadeInOut(): number;
-                          setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType): this;
+                          setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType): void;
                           getParameter(name: string): OperatorParam | null;
                           getParameters(): Map<string, OperatorParam>;
-                          setParameters(parameters: Record<string, any>): this;
-                          doNothing(): void;
+                          setParameters(parameters: Record<string, any>): void;
                           reset(): void;
                           getOperatorFade(): number;
                           getInputValue(inputField: number, particle: Source2Particle): number | vec3 | undefined;
@@ -4790,7 +4806,7 @@ declare class Channel {
                       export declare class OscillateScalarSimple extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class OscillateVector extends Source1ParticleOperator {
@@ -4925,8 +4941,8 @@ declare class Channel {
                           startControlPointNumber: uint;
                           endControlPointNumber: uint;
                           bulgeControl: BulgeControl;
-                          bulge: float;
-                          midPoint: float;
+                          bulge: float32;
+                          midPoint: float32;
                       };
 
                       export declare class PathPrefixRepository implements Repository {
@@ -4954,7 +4970,7 @@ declare class Channel {
                           #private;
                           static doOnce: boolean;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class PixelatePass extends Pass {
@@ -4995,7 +5011,7 @@ declare class Channel {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       declare type PlaneParameters = MeshParameters & {
@@ -5077,7 +5093,7 @@ declare class Channel {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class PositionModifyOffsetRandom extends Source1ParticleOperator {
@@ -5090,7 +5106,7 @@ declare class Channel {
                       export declare class PositionOffset extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -5103,7 +5119,7 @@ declare class Channel {
                       export declare class PositionWarp extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class PositionWithinBoxRandom extends Source1ParticleOperator {
@@ -5231,7 +5247,7 @@ declare class Channel {
                       export declare const RAD_TO_DEG: number;
 
                       export declare class RadiusFromCPObject extends Operator {
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(): void;
                       }
 
                       export declare class RadiusRandom extends Source1ParticleOperator {
@@ -5251,25 +5267,25 @@ declare class Channel {
                       export declare class RampScalarLinear extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class RampScalarLinearSimple extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class RampScalarSpline extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class RandomColor extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare function RandomFloat(min: number, max: number): number;
@@ -5283,19 +5299,31 @@ declare class Channel {
                       }
 
                       export declare interface RandomPointOnModel {
-                          getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
+                          /**
+                           * Get a random point on a model and returns the hitbox index
+                           *
+                           * @param out The receiving vector
+                           * @param initialVec The receiving vector for the initial random point
+                           * @param controlPoint The control point used to determine the model
+                           * @param numTriesToGetAPointInsideTheModel If non zero try to get a point inside the model
+                           * @param directionBias Direction bias. If direction bias is non zero, tries is set to a minimum of 5
+                           * @param boundingBoxScale Scale of the bounding box. Must be in the 0..1 range
+                           * @param bones The receiving array to store the bone(s) this particle will be linked to
+                           * @param hitBoxRelativeCoordOut TODO: doc
+                           */
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
                       }
 
                       export declare class RandomSecondSequence extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class RandomSequence extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare function RandomVectorInUnitSphere(out: vec3): number;
@@ -5303,7 +5331,7 @@ declare class Channel {
                       export declare class RandomYawFlip extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -5343,7 +5371,7 @@ declare class Channel {
                       export declare class RemapControlPointDirectionToVector extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class RemapControlPointToScalar extends Source1ParticleOperator {
@@ -5363,7 +5391,7 @@ declare class Channel {
                       export declare class RemapCPOrientationToRotations extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class RemapCPSpeedToCP extends Source1ParticleOperator {
@@ -5413,7 +5441,7 @@ declare class Channel {
                           #private;
                           remapBias: number;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class RemapScalar extends Source1ParticleOperator {
@@ -5432,13 +5460,13 @@ declare class Channel {
                       export declare class RemapSpeed extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class RemapSpeedtoCP extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare function RemapValClamped(val: number, A: number, B: number, C: number, D: number): number;
@@ -5746,7 +5774,7 @@ declare class Channel {
 
                       export declare class RepeatedTriggerChildGroup extends Operator {
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class Repositories {
@@ -5854,7 +5882,7 @@ declare class Channel {
                           #private;
                           t: number;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class RotationBasic extends Source1ParticleOperator {
@@ -6110,7 +6138,7 @@ declare class Channel {
                       }
 
                       export declare class SequenceLifeTime extends Operator {
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(): void;
                       }
 
                       export declare class SequenceRandom extends Source1ParticleOperator {
@@ -6132,14 +6160,14 @@ declare class Channel {
                       export declare class SetControlPointFromObjectScale extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
                       export declare class SetControlPointOrientation extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
@@ -6153,13 +6181,13 @@ declare class Channel {
                           #private;
                           firstSourcePoint: number;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class SetControlPointToCenter extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
@@ -6169,10 +6197,16 @@ declare class Channel {
                           doOperate(particle: Source1Particle, elapsedTime: number): void;
                       }
 
+                      export declare class SetControlPointToPlayer extends Source1ParticleOperator {
+                          static functionName: string;
+                          constructor(system: Source1ParticleSystem);
+                          doOperate(): void;
+                      }
+
                       export declare class SetCPOrientationToGroundNormal extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare function setCustomIncludeSource(name: string, source: string, type: ShaderType): void;
@@ -6183,20 +6217,20 @@ declare class Channel {
                           #private;
                           outputField: number;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class SetParentControlPointsToChildCP extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
                       export declare class SetPerChildControlPoint extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class SetRandomControlPointPosition extends Operator {
@@ -6205,7 +6239,7 @@ declare class Channel {
                           cpMaxPos: vec3;
                           lastRandomTime: number;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
@@ -6214,14 +6248,14 @@ declare class Channel {
                       export declare class SetRigidAttachment extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle): void;
                       }
 
                       export declare class SetSingleControlPointPosition extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           reset(): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                           isPreEmission(): boolean;
                       }
 
@@ -6230,13 +6264,13 @@ declare class Channel {
                       export declare class SetToCP extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class SetVec extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       declare const SHADER_PARAM_TYPE_BOOL = 8;
@@ -6310,8 +6344,6 @@ declare class Channel {
                               fragment: string;
                           };
                           wgsl?: string;
-                          uniforms?: MaterialUniform;
-                          defines?: Record<string, string>;
                       };
 
                       export declare enum ShaderPrecision {
@@ -6334,8 +6366,8 @@ declare class Channel {
                       }
 
                       export declare enum ShaderType {
-                          Vertex = 35633,
-                          Fragment = 35632,
+                          Vertex = "vertex",
+                          Fragment = "fragment",
                           Wgsl = "wgsl"
                       }
 
@@ -6381,7 +6413,7 @@ declare class Channel {
                           set bonesPerVertex(bonesPerVertex: number);
                           get bonesPerVertex(): number;
                           exportObj(): ObjDatas;
-                          getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): {};
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           toString(): string;
                           prepareRayCasting(): void;
@@ -6451,7 +6483,7 @@ declare class Channel {
                       export declare class SnapshotRigidSkinToBones extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class Source1BspLoader extends SourceBinaryLoader {
@@ -6554,6 +6586,7 @@ declare class Channel {
                           readonly frameframe: {
                               bones: Record<string, any>;
                           };
+                          hasHitBoxes: true;
                           constructor(params?: any);
                           get skeleton(): Skeleton | null;
                           set skeleton(skeleton: Skeleton | null);
@@ -6627,7 +6660,7 @@ declare class Channel {
                               };
                           };
                           getParentModel(): Source1ModelInstance;
-                          getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
                           setPosition(position: vec3): void;
                           set quaternion(quaternion: vec4);
                           get quaternion(): vec4;
@@ -6970,8 +7003,8 @@ declare class Channel {
                           static setSimulationSteps(simulationSteps: number): void;
                           getChildrenSystems(): Source1ParticleSystem[];
                           getActiveParticlesCount(): number;
-                          randomVector(randomSampleId: int, min: float, max: float, out: vec3): void;
-                          calculatePathValues(pathIn: PathParameters, timeStamp: float, startPnt: vec3, midPnt: vec3, endPnt: vec3): void;
+                          randomVector(randomSampleId: int, min: float32, max: float32, out: vec3): void;
+                          calculatePathValues(pathIn: PathParameters, timeStamp: float32, startPnt: vec3, midPnt: vec3, endPnt: vec3): void;
                           buildContextMenu(): HarmonyMenuItemsDict;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem | null>;
@@ -7136,7 +7169,7 @@ declare class Channel {
                           getDecodeKey(): Kv3Element | undefined;
                           getDecoderArray(): Source2AnimeDecoder[];
                           getSegment(segmentIndex: number): Kv3Element | null;
-                          getAnimations(animations?: Set<string>): Promise<Set<string>>;
+                          getAnimations(animations?: Set<string>): Set<string>;
                           getAnimationsByActivity(activityName: string): Source2AnimationDesc[];
                           get animArray(): Kv3Element[];
                           getAnimationByName(animName: string): Source2AnimationDesc | undefined;
@@ -7148,7 +7181,11 @@ declare class Channel {
                           constructor(source2Model: Source2Model, data: Kv3Element, animationResource: Source2Animation | Source2SeqGroup);
                           get fps(): number;
                           get lastFrame(): number;
-                          getFrame(frameIndex: number): any[];
+                          getFrame(frameIndex: number): {
+                              name: string;
+                              Position: vec3;
+                              Angle: quat;
+                          }[];
                           matchActivity(activityName: string): boolean;
                           modifiersScore(activityName: string, modifiers: Set<string>): number;
                           matchModifiers(activityName: string, modifiers: Set<string>): boolean;
@@ -7181,8 +7218,8 @@ declare class Channel {
                           setFile(sourceFile: Source2File): void;
                           setAnimationGroupResourceData(localAnimArray: string[] | null, decodeKey: Kv3Element): void;
                           getAnim(animIndex: number): Source2Animation | null;
-                          getAnimDesc(name: string): Source2AnimationDesc | undefined;
-                          matchActivity(activity: string, modifiers: string[]): any;
+                          getAnimDesc(name: string): Source2AnimationDesc | null;
+                          matchActivity(activity: string, modifiers: string[]): boolean;
                           getAnims(): Set<Source2Animation>;
                           getAnimationsByActivity(activityName: string): Source2AnimationDesc[];
                           getDecodeKey(): Kv3Element | undefined;
@@ -7370,7 +7407,7 @@ declare class Channel {
                       }
 
                       export declare class Source2LifespanDecay extends Operator {
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class Source2LiquidFx extends Source2Material {
@@ -7380,7 +7417,7 @@ declare class Channel {
                       export declare class Source2LockToBone extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class Source2Material extends Material {
@@ -7404,7 +7441,7 @@ declare class Channel {
                           getIntParam(intName: string): number | null;
                           getIntParams(): Map<string, integer> | null;
                           getFloatParam(floatName: string): number | null;
-                          getFloatParams(): Map<string, float_2> | null;
+                          getFloatParams(): Map<string, float> | null;
                           getVectorParam(vectorName: string, out: vec4): vec4 | null;
                           getVectorParams(): Map<string, vec4> | null;
                           getDynamicParam(name: string): vec4 | null;
@@ -7437,7 +7474,7 @@ declare class Channel {
                           bodyGroups: Set<string>;
                           bodyGroupsChoices: Set<BodyGroupChoice>;
                           constructor(repository: string, vmdl: Source2File);
-                          matchActivity(activity: string, modifiers: string[]): any;
+                          matchActivity(activity: string, modifiers: string[]): null;
                           addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void;
                           createInstance(isDynamic: boolean): Source2ModelInstance;
                           getBones(): Kv3Element | null;
@@ -7449,9 +7486,9 @@ declare class Channel {
                           getAnim(activityName: string, activityModifiers: Set<string>): Source2AnimationDesc | null;
                           getAnimation(name: string): Source2AnimationDesc | null;
                           getAnimationsByActivity(activityName: string, animations?: Source2Animations): Source2Animations;
-                          getAnimations(): Promise<Set<string>>;
+                          getAnimations(): Set<string>;
                           _addAttachments(attachments: Kv3Element[]): void;
-                          getAnimationByName(animName: string): Source2AnimationDesc | undefined;
+                          getAnimationByName(animName: string): Source2AnimationDesc | null;
                       }
 
                       declare class Source2ModelAttachment {
@@ -7502,36 +7539,16 @@ declare class Channel {
                           setPoseParameter(paramName: string, paramValue: number): void;
                           playSequence(activity: string, activityModifiers?: string[]): void;
                           playAnimation(name: string): void;
-                          setAnimation(id: number, name: string, weight: number): Promise<void>;
+                          setAnimation(id: number, name: string): void;
                           setActivityModifiers(activityModifiers?: string[]): void;
                           update(scene: Scene, camera: Camera, delta: number): void;
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;
                           getAnimations(): Promise<Set<string>>;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Source2ModelInstance_1: null;
-                              skin: {
-                                  i18n: string;
-                                  submenu: any[];
-                              };
-                              animation: {
-                                  i18n: string;
-                                  f: (entity: Source2ModelInstance) => Promise<void>;
-                              };
-                              Source2ModelInstance_2: null;
-                              animate: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => 0 | 1;
-                              };
-                              frame: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
-                          getParentModel(): this;
-                          getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
-                          getAttachment(name: string): Source2ModelAttachmentInstance | undefined;
+                          buildContextMenu(): HarmonyMenuItemsDict;
+                          getParentModel(): Source2ModelInstance;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
+                          getAttachment(name: string): Source2ModelAttachmentInstance | null;
                           static set animSpeed(speed: number);
                           dispose(): void;
                           static getEntityName(): string;
@@ -7539,34 +7556,34 @@ declare class Channel {
 
                       export declare class Source2ModelLoader {
                           #private;
-                          load(repository: string, path: string): Promise<Source2Model | null>;
+                          load(repository: string, path: string): Source2Model | null;
                           testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity>;
                       }
 
                       export declare class Source2ModelManager {
                           #private;
                           static instances: Set<never>;
-                          static createInstance(repository: string, fileName: string, dynamic: boolean): Promise<Source2ModelInstance | null>;
-                          static loadManifest(repository: string): Promise<void>;
+                          static createInstance(repository: string, fileName: string, dynamic: boolean): Source2ModelInstance | null;
+                          static loadManifest(repository: string): void;
                           static getModelList(): Promise<FileSelectorFile>;
                       }
 
                       export declare class Source2MovementRotateParticleAroundAxis extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class Source2OscillateScalar extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class Source2OscillateVector extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class Source2Panorama extends Source2Material {
@@ -7648,7 +7665,7 @@ declare class Channel {
                           getScalarField(field?: number, initial?: boolean): number;
                           getVectorField(out: vec3, field?: number): vec3;
                           /**
-                           * @deprecated Please use getScalarField instead.
+                           * @deprecated Please use getScalarField or getVectorField instead.
                            */
                           getField(field?: number, initial?: boolean): number | vec3 | vec4;
                           /**
@@ -7686,10 +7703,10 @@ declare class Channel {
                           getLocalPos(worldPos?: vec3): vec3;
                       }
 
-                      export declare const Source2ParticleLoader: {
-                          load(repository: string, path: string): Promise<Source2File | null>;
-                          getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem>;
-                      };
+                      export declare class Source2ParticleLoader {
+                          static load(repository: string, path: string): Promise<Source2File | null>;
+                          static getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>): Promise<Source2ParticleSystem>;
+                      }
 
                       export declare const Source2ParticleManager: Source2ParticleManagerClass;
 
@@ -7817,7 +7834,7 @@ declare class Channel {
                       export declare class Source2RandomForce extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
+                          doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void;
                       }
 
                       export declare class Source2RefractMaterial extends Source2Material {
@@ -7852,7 +7869,7 @@ declare class Channel {
                       export declare class Source2SetControlPointPositions extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle | Source2Particle[] | undefined | null, elapsedTime: number, strength: number): void;
+                          doOperate(): void;
                           isPreEmission(): boolean;
                       }
 
@@ -7867,10 +7884,10 @@ declare class Channel {
                           setParticleCount(particleCount: number): void;
                       }
 
-                      export declare const Source2SnapshotLoader: {
-                          load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#193@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
-                      };
+                      export declare class Source2SnapshotLoader {
+                          #private;
+                          static load(repository: string, filename: string): Promise<Source2Snapshot | null>;
+                      }
 
                       export declare class Source2SpringMeteor extends Source2Material {
                           get shaderSource(): string;
@@ -7880,7 +7897,7 @@ declare class Channel {
                           #private;
                           constructor(repository: string, shader?: string, source2File?: Source2File);
                           setOutputBlendMode(outputBlendMode: number): void;
-                          setTexturePath(texturePath: string): Promise<void>;
+                          setTexturePath(texturePath: string): void;
                           initTextureUniforms(): Promise<void>;
                           getFrameSpan(sequence: number): number;
                           getShaderSource(): string;
@@ -7928,7 +7945,7 @@ declare class Channel {
 
                       export declare class Source2TwistAroundAxis extends Operator {
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
+                          doForce(): void;
                       }
 
                       export declare class Source2UI extends Source2Material {
@@ -7942,7 +7959,7 @@ declare class Channel {
                       export declare class Source2VelocityRandom extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doInit(particle: Source2Particle, elapsedTime: number): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -8525,11 +8542,11 @@ declare class Channel {
                       export declare class Spin extends Operator {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class SpinUpdate extends Operator {
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class SpotLight extends Light {
@@ -8676,7 +8693,13 @@ declare class Channel {
                           getFileList(): Promise<RepositoryFileListResponse>;
                       }
 
-                      export declare type StorageValue = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array;
+                      export declare type StorageValue = StorageValueArray | StorageValueStruct;
+
+                      export declare type StorageValueArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec4;
+
+                      export declare type StorageValueStruct = {
+                          [key: string]: StorageValue | number;
+                      };
 
                       export declare function stringToQuat(s: string, q?: quat): quat;
 
@@ -8690,7 +8713,7 @@ declare class Channel {
 
                       declare class StudioCompressedIkError {
                           #private;
-                          constructor(reader: BinaryReader, offset: number, scale: [float, float, float, float, float, float], offsets: [int16, int16, int16, int16, int16, int16], values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null]);
+                          constructor(reader: BinaryReader, offset: number, scale: [float32, float32, float32, float32, float32, float32], offsets: [int16, int16, int16, int16, int16, int16], values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null]);
                           getValues(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): [number, number];
                           getValue(frame: int, index: 0 | 1 | 2 | 3 | 4 | 5): number;
                       }
@@ -8698,10 +8721,10 @@ declare class Channel {
                       declare type StudioLocalHierarchy = {
                           bone: int32;
                           newParent: int32;
-                          start: float;
-                          peak: float;
-                          tail: float;
-                          end: float;
+                          start: float32;
+                          peak: float32;
+                          tail: float32;
+                          end: float32;
                           iStart: int32;
                           localAnim: StudioCompressedIkError;
                       };
@@ -9195,7 +9218,7 @@ declare class Channel {
 
                       declare type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
 
-                      declare type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined;
+                      export declare type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined | vec3;
 
                       export declare class UnlitGenericMaterial extends Source1Material {
                           #private;
@@ -9252,7 +9275,7 @@ declare class Channel {
                           #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+                          doOperate(particle: Source2Particle): void;
                       }
 
                       export declare class VelocityNoise extends Source1ParticleOperator {
@@ -9488,6 +9511,30 @@ declare class Channel {
                           static drawElements(mode: GLenum, count: number): void;
                           static get htmlElement(): HTMLElement;
                           static getFps(): number;
+                      }
+
+                      declare type WebGPUAttributes = {
+                          /** Configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
+                          configuration: GPUConfiguration;
+                          /**
+                           * Features passed to requestDevice()
+                           * @see https://developer.mozilla.org/en-US/docs/Web/API/GPUAdapter/requestDevice#requiredfeatures
+                           * */
+                          requiredFeatures?: GPUFeatureName[];
+                          /**
+                           * Limits passed to requestDevice()
+                           * @see https://developer.mozilla.org/en-US/docs/Web/API/GPUAdapter/requestDevice#requiredlimits
+                           * */
+                          requiredLimits?: Record<string, GPUSize64 | undefined>;
+                      };
+
+                      export declare class WebGPUInternal {
+                          static gpuContext: GPUCanvasContext;
+                          static config: GPUCanvasConfiguration;
+                          static adapter: GPUAdapter;
+                          static device: GPUDevice;
+                          static format: GPUTextureFormat;
+                          static depthTexture: GPUTexture;
                       }
 
                       export declare class WebRepository implements Repository {

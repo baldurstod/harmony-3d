@@ -58,8 +58,24 @@ export enum ContextType {
 export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 
-
 type GPUConfiguration = PartialBy<GPUCanvasConfiguration, 'device' | 'format'>;
+
+type WebGPUAttributes = {
+	/** Configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
+	configuration: GPUConfiguration;
+
+	/**
+	 * Features passed to requestDevice()
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/GPUAdapter/requestDevice#requiredfeatures
+	 * */
+	requiredFeatures?: GPUFeatureName[];
+
+	/**
+	 * Limits passed to requestDevice()
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/GPUAdapter/requestDevice#requiredlimits
+	 * */
+	requiredLimits?: Record<string, GPUSize64 | undefined>;
+};
 
 export interface GraphicsInitOptions {
 	/**
@@ -77,8 +93,8 @@ export interface GraphicsInitOptions {
 
 	/** WebGL attributes passed to getContext() */
 	webGL?: WebGLContextAttributes
-	/** WebGPU configuration passed to GPUCanvasContext.configure(). If device and format are not set, the engine will fill the values. */
-	webGPU?: GPUConfiguration;
+	/** WebGPU attributes if type is WebGPU */
+	webGPU?: WebGPUAttributes;
 }
 
 export interface AddCanvasOptions {
@@ -885,7 +901,7 @@ class Graphics {
 		}
 	}
 
-	static async #initWebGPUContext(configuration: GPUConfiguration = {}): Promise<void> {
+	static async #initWebGPUContext(attributes?: WebGPUAttributes): Promise<void> {
 		const canvas = this.#offscreenCanvas ?? this.#canvas;
 		if (!canvas) {
 			return;
@@ -907,7 +923,7 @@ class Graphics {
 			this.isWebGPU = true;
 			setClipSpaceWebGPU();
 			//context.configure(configuration);
-			await this.#configureWebGPU(configuration);
+			await this.#configureWebGPU(attributes);
 
 		} catch (error) {
 			console.error(error);
@@ -915,7 +931,7 @@ class Graphics {
 		}
 	}
 
-	static async #configureWebGPU(configuration: GPUConfiguration): Promise<boolean> {
+	static async #configureWebGPU(attributes?: WebGPUAttributes): Promise<boolean> {
 		const adapter = await navigator.gpu.requestAdapter();
 		if (!adapter) {
 			return false;
@@ -923,8 +939,14 @@ class Graphics {
 
 		const hasBGRA8unormStorage = adapter.features.has('bgra8unorm-storage');
 
+		const configuration = attributes?.configuration ?? {};
+
 		if (!configuration.device) {
-			const requiredFeatures: Iterable<GPUFeatureName> = ['texture-compression-bc'];
+			const requiredFeatures: GPUFeatureName[] = ['texture-compression-bc'];
+
+			if (attributes?.requiredFeatures) {
+				requiredFeatures.push(...attributes?.requiredFeatures);
+			}
 
 			if (hasBGRA8unormStorage) {
 				(requiredFeatures as string[]).push('bgra8unorm-storage');
@@ -933,6 +955,7 @@ class Graphics {
 
 			configuration.device = await adapter.requestDevice({
 				requiredFeatures,
+				requiredLimits: attributes?.requiredLimits,
 			});
 		}
 

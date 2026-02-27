@@ -580,316 +580,10 @@ function errorOnce(message, max = 1) {
 const __DISABLE_WEBGL2__ = false;
 const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
 
-//See https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
-const GL_NONE = 0;
-const GL_ZERO = 0;
-const GL_ONE = 1;
-const GL_FALSE = 0;
-const GL_TRUE = 1;
-/* ErrorCode */
-const GL_NO_ERROR = 0;
-const GL_INVALID_ENUM = 0x0500;
-const GL_INVALID_VALUE = 0x0501;
-const GL_INVALID_OPERATION = 0x0502;
-const GL_STACK_OVERFLOW = 0x0503;
-const GL_STACK_UNDERFLOW = 0x0504;
-const GL_OUT_OF_MEMORY = 0x0505;
-//Shaders
-const GL_FRAGMENT_SHADER = 0x8B30;
-const GL_VERTEX_SHADER = 0x8B31;
-//clear
-const GL_DEPTH_BUFFER_BIT = 0x00000100;
-const GL_STENCIL_BUFFER_BIT = 0x00000400;
-const GL_COLOR_BUFFER_BIT = 0x00004000;
-const GL_RED = 0x1903;
-const GL_GREEN = 0x1904;
-const GL_BLUE = 0x1905;
-const GL_ALPHA = 0x1906;
-const GL_RGB = 0x1907;
-const GL_RGBA = 0x1908;
-const GL_LUMINANCE = 0x1909;
-const GL_LUMINANCE_ALPHA = 0x190A;
-const GL_R8 = 0x8229;
-const GL_R8_SNORM = 0x8F94;
-const GL_RGBA32F = 0x8814;
-const GL_RGB32F = 0x8815;
-const GL_RGBA16F = 0x881A;
-// drawArrays mode
-const GL_POINTS = 0x0000;
-const GL_LINES = 0x0001;
-const GL_LINE_LOOP = 0x0002;
-const GL_LINE_STRIP = 0x0003;
-const GL_TRIANGLES = 0x0004;
-const GL_TRIANGLE_STRIP = 0x0005;
-const GL_TRIANGLE_FAN = 0x0006;
-//bufferData usage
-const GL_STREAM_DRAW = 0x88E0;
-const GL_STREAM_READ = 0x88E1;
-const GL_STREAM_COPY = 0x88E2;
-const GL_STATIC_DRAW = 0x88E4;
-const GL_STATIC_READ = 0x88E5;
-const GL_STATIC_COPY = 0x88E6;
-const GL_DYNAMIC_DRAW = 0x88E8;
-const GL_DYNAMIC_READ = 0x88E9;
-const GL_DYNAMIC_COPY = 0x88EA;
-//bindBuffer target
-const GL_ARRAY_BUFFER = 0x8892;
-const GL_ELEMENT_ARRAY_BUFFER = 0x8893;
-const GL_COPY_READ_BUFFER = 0x8F36;
-const GL_COPY_WRITE_BUFFER = 0x8F37;
-const GL_TRANSFORM_FEEDBACK_BUFFER = 0x8C8E;
-const GL_UNIFORM_BUFFER = 0x8A11;
-const GL_PIXEL_PACK_BUFFER = 0x88EB;
-const GL_PIXEL_UNPACK_BUFFER = 0x88EC;
-//buffer type / uniform type
-const GL_BYTE = 0x1400;
-const GL_UNSIGNED_BYTE = 0x1401;
-const GL_SHORT = 0x1402;
-const GL_UNSIGNED_SHORT = 0x1403;
-const GL_INT = 0x1404;
-const GL_UNSIGNED_INT = 0x1405;
-const GL_FLOAT = 0x1406;
-const GL_HALF_FLOAT = 0x140B;
-const GL_FLOAT_VEC2 = 0x8B50;
-const GL_FLOAT_VEC3 = 0x8B51;
-const GL_FLOAT_VEC4 = 0x8B52;
-const GL_INT_VEC2 = 0x8B53;
-const GL_INT_VEC3 = 0x8B54;
-const GL_INT_VEC4 = 0x8B55;
-const GL_BOOL = 0x8B56;
-const GL_BOOL_VEC2 = 0x8B57;
-const GL_BOOL_VEC3 = 0x8B58;
-const GL_BOOL_VEC4 = 0x8B59;
-const GL_FLOAT_MAT2 = 0x8B5A;
-const GL_FLOAT_MAT3 = 0x8B5B;
-const GL_FLOAT_MAT4 = 0x8B5C;
-const GL_SAMPLER_2D = 0x8B5E;
-const GL_SAMPLER_CUBE = 0x8B60;
-const GL_UNSIGNED_INT_VEC2 = 0x8DC6;
-const GL_UNSIGNED_INT_VEC3 = 0x8DC7;
-const GL_UNSIGNED_INT_VEC4 = 0x8DC8;
-const GL_UNSIGNED_INT_24_8 = 0x84FA;
-const GL_FLOAT_MAT2x3 = 0x8B65;
-const GL_FLOAT_MAT2x4 = 0x8B66;
-const GL_FLOAT_MAT3x2 = 0x8B67;
-const GL_FLOAT_MAT3x4 = 0x8B68;
-const GL_FLOAT_MAT4x2 = 0x8B69;
-const GL_FLOAT_MAT4x3 = 0x8B6A;
-const GL_SAMPLER_3D = 0x8B5F;
-const GL_SAMPLER_2D_SHADOW = 0x8B62;
-const GL_SAMPLER_2D_ARRAY = 0x8DC1;
-const GL_SAMPLER_2D_ARRAY_SHADOW = 0x8DC4;
-const GL_SAMPLER_CUBE_SHADOW = 0x8DC5;
-const GL_INT_SAMPLER_2D = 0x8DCA;
-const GL_INT_SAMPLER_3D = 0x8DCB;
-const GL_INT_SAMPLER_CUBE = 0x8DCC;
-const GL_INT_SAMPLER_2D_ARRAY = 0x8DCF;
-const GL_UNSIGNED_INT_SAMPLER_2D = 0x8DD2;
-const GL_UNSIGNED_INT_SAMPLER_3D = 0x8DD3;
-const GL_UNSIGNED_INT_SAMPLER_CUBE = 0x8DD4;
-const GL_UNSIGNED_INT_SAMPLER_2D_ARRAY = 0x8DD7;
-const GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033;
-const GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034;
-const GL_UNSIGNED_SHORT_5_6_5 = 0x8363;
-const GL_UNSIGNED_INT_2_10_10_10_REV = 0x8368;
-const GL_UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
-const GL_UNSIGNED_INT_5_9_9_9_REV = 0x8C3E;
-const GL_FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
-// Extensions
-const GL_HALF_FLOAT_OES = 0x8D61;
-//get parameters
-const GL_MAX_VERTEX_ATTRIBS = 0x8869;
-//depthFunc
-const GL_NEVER = 0x0200;
-const GL_LESS = 0x0201;
-const GL_EQUAL = 0x0202;
-const GL_LEQUAL = 0x0203;
-const GL_GREATER = 0x0204;
-const GL_NOTEQUAL = 0x0205;
-const GL_GEQUAL = 0x0206;
-const GL_ALWAYS = 0x0207;
-//enable
-const GL_BLEND = 0x0BE2;
-const GL_CULL_FACE = 0x0B44;
-const GL_DEPTH_TEST = 0x0B71;
-const GL_DITHER = 0x0BD0;
-const GL_POLYGON_OFFSET_FILL = 0x8037;
-const GL_SAMPLE_ALPHA_TO_COVERAGE = 0x809E;
-const GL_SAMPLE_COVERAGE = 0x80A0;
-const GL_SCISSOR_TEST = 0x0C11;
-const GL_STENCIL_TEST = 0x0B90;
-const GL_RASTERIZER_DISCARD = 0x8C89;
-//textures
-const GL_TEXTURE0 = 0x84C0; //GL_RENDERING_CONTEXT.TEXTURE0;
-//Framebuffers and renderbuffers
-const GL_MAX_RENDERBUFFER_SIZE = 0x84E8;
-//texture targets
-const GL_TEXTURE_2D = 0x0DE1;
-const GL_TEXTURE_CUBE_MAP = 0x8513;
-const GL_TEXTURE_3D = 0x806F;
-const GL_TEXTURE_2D_ARRAY = 0x8C1A;
-const GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515;
-const GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516;
-const GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517;
-const GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518;
-const GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519;
-const GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A;
-//texParameter
-const GL_TEXTURE_MAG_FILTER = 0x2800;
-const GL_TEXTURE_MIN_FILTER = 0x2801;
-const GL_TEXTURE_WRAP_S = 0x2802;
-const GL_TEXTURE_WRAP_T = 0x2803;
-//export const GL_TEXTURE_MAX_ANISOTROPY_EXT = GL_RENDERING_CONTEXT.TEXTURE_MAX_ANISOTROPY_EXT;//TODO
-const GL_TEXTURE_BASE_LEVEL = 0x813C;
-const GL_TEXTURE_COMPARE_FUNC = 0x884D;
-const GL_TEXTURE_COMPARE_MODE = 0x884C;
-const GL_TEXTURE_MAX_LEVEL = 0x813D;
-const GL_TEXTURE_MAX_LOD = 0x813B;
-const GL_TEXTURE_MIN_LOD = 0x813A;
-const GL_TEXTURE_WRAP_R = 0x8072;
-//texture filter
-const GL_NEAREST = 0x2600;
-const GL_LINEAR = 0x2601;
-const GL_NEAREST_MIPMAP_NEAREST = 0x2700;
-const GL_LINEAR_MIPMAP_NEAREST = 0x2701;
-const GL_NEAREST_MIPMAP_LINEAR = 0x2702;
-const GL_LINEAR_MIPMAP_LINEAR = 0x2703;
-// texture wrap
-const GL_REPEAT = 0x2901;
-const GL_CLAMP_TO_EDGE = 0x812F;
-const GL_MIRRORED_REPEAT = 0x8370;
-//TEXTURE_MAX_ANISOTROPY_EXT //TODO EXT_texture_filter_anisotropic
-//pixelStorei
-const GL_UNPACK_FLIP_Y_WEBGL = 0x9240;
-const GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241;
-const GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243;
-//blendFunc
-const GL_SRC_COLOR = 0x0300;
-const GL_ONE_MINUS_SRC_COLOR = 0x0301;
-const GL_DST_COLOR = 0x0306;
-const GL_ONE_MINUS_DST_COLOR = 0x0307;
-const GL_SRC_ALPHA = 0x0302;
-const GL_ONE_MINUS_SRC_ALPHA = 0x0303;
-const GL_DST_ALPHA = 0x0304;
-const GL_ONE_MINUS_DST_ALPHA = 0x0305;
-const GL_CONSTANT_COLOR = 0x8001;
-const GL_ONE_MINUS_CONSTANT_COLOR = 0x8002;
-const GL_CONSTANT_ALPHA = 0x8003;
-const GL_ONE_MINUS_CONSTANT_ALPHA = 0x8004;
-const GL_SRC_ALPHA_SATURATE = 0x0308;
-//blendEquation
-const GL_FUNC_ADD = 0x8006; //GL_RENDERING_CONTEXT.GL_FUNC_ADD;
-const GL_FUNC_SUBTRACT = 0x800A; //GL_RENDERING_CONTEXT.FUNC_SUBTRACT;
-const GL_FUNC_REVERSE_SUBTRACT = 0x800B; //GL_RENDERING_CONTEXT.FUNC_REVERSE_SUBTRACT;
-const GL_MIN_EXT = 0x8007; //GL_RENDERING_CONTEXT.MIN_EXT;//TODOv3 EXT_blend_minmax
-const GL_MAX_EXT = 0x8008; //GL_RENDERING_CONTEXT.MAX_EXT;//TODOv3 EXT_blend_minmax
-const GL_MIN = 0x8007; //GL_RENDERING_CONTEXT.MIN;
-const GL_MAX = 0x8008; //GL_RENDERING_CONTEXT.MAX;
-//cullFace
-const GL_FRONT = 0x0404;
-const GL_BACK = 0x0405;
-const GL_FRONT_AND_BACK = 0x0408;
-//frontFace
-const GL_CW = 0x0900;
-const GL_CCW = 0x0901;
-const GL_RGB4 = 0x804F;
-const GL_RGB5 = 0x8050;
-const GL_RGB8 = 0x8051;
-const GL_RGB10 = 0x8052;
-const GL_RGB12 = 0x8053;
-const GL_RGB16 = 0x8054;
-const GL_RGBA2 = 0x8055;
-const GL_RGBA4 = 0x8056;
-const GL_RGB5_A1 = 0x8057;
-const GL_RGBA8 = 0x8058;
-const GL_RGB10_A2 = 0x8059;
-const GL_RGBA12 = 0x805A;
-const GL_RGBA16 = 0x805B;
-const GL_RGBA32UI = 0x8D70;
-const GL_RGBA16UI = 0x8D76;
-const GL_RGB16UI = 0x8D77;
-const GL_RGBA8UI = 0x8D7C;
-const GL_RGBA32I = 0x8D82;
-const GL_RGB32I = 0x8D83;
-const GL_RGBA16I = 0x8D88;
-const GL_RGB16I = 0x8D89;
-const GL_RGBA8I = 0x8D8E;
-const GL_RGB10_A2UI = 0x906F;
-const GL_VERTEX_ARRAY = 0x8074;
-const GL_DEPTH_COMPONENT = 0x1902;
-const GL_DEPTH_COMPONENT16 = 0x81A5;
-const GL_DEPTH_COMPONENT24 = 0x81A6;
-const GL_DEPTH_COMPONENT32 = 0x81A7;
-const GL_DEPTH_COMPONENT32F = 0x8CAC;
-const FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 0x8210;
-const GL_SRGB = 0x8C40;
-const GL_SRGB8 = 0x8C41;
-const GL_SRGB_ALPHA = 0x8C42;
-const GL_SRGB8_ALPHA8 = 0x8C43;
-const GL_RG8 = 0x822B;
-const GL_R8I = 0x8231;
-const GL_R8UI = 0x8232;
-const GL_R16I = 0x8233;
-const GL_R16UI = 0x8234;
-const GL_R32I = 0x8235;
-const GL_R32UI = 0x8236;
-const GL_RG8I = 0x8237;
-const GL_RG8UI = 0x8238;
-const GL_RG16I = 0x8239;
-const GL_RG16UI = 0x823A;
-const GL_RG32I = 0x823B;
-const GL_RG32UI = 0x823C;
-// drawBuffers
-const GL_MAX_COLOR_ATTACHMENTS = 0x8CDF;
-const GL_COLOR_ATTACHMENT0 = 0x8CE0;
-const GL_COLOR_ATTACHMENT1 = 0x8CE1;
-const GL_COLOR_ATTACHMENT2 = 0x8CE2;
-const GL_COLOR_ATTACHMENT3 = 0x8CE3;
-const GL_COLOR_ATTACHMENT4 = 0x8CE4;
-const GL_COLOR_ATTACHMENT5 = 0x8CE5;
-const GL_COLOR_ATTACHMENT6 = 0x8CE6;
-const GL_COLOR_ATTACHMENT7 = 0x8CE7;
-const GL_COLOR_ATTACHMENT8 = 0x8CE8;
-const GL_COLOR_ATTACHMENT9 = 0x8CE9;
-const GL_COLOR_ATTACHMENT10 = 0x8CEA;
-const GL_COLOR_ATTACHMENT11 = 0x8CEB;
-const GL_COLOR_ATTACHMENT12 = 0x8CEC;
-const GL_COLOR_ATTACHMENT13 = 0x8CED;
-const GL_COLOR_ATTACHMENT14 = 0x8CEE;
-const GL_COLOR_ATTACHMENT15 = 0x8CEF;
-const GL_COLOR_ATTACHMENT16 = 0x8CF0;
-const GL_COLOR_ATTACHMENT17 = 0x8CF1;
-const GL_COLOR_ATTACHMENT18 = 0x8CF2;
-const GL_COLOR_ATTACHMENT19 = 0x8CF3;
-const GL_COLOR_ATTACHMENT20 = 0x8CF4;
-const GL_COLOR_ATTACHMENT21 = 0x8CF5;
-const GL_COLOR_ATTACHMENT22 = 0x8CF6;
-const GL_COLOR_ATTACHMENT23 = 0x8CF7;
-const GL_COLOR_ATTACHMENT24 = 0x8CF8;
-const GL_COLOR_ATTACHMENT25 = 0x8CF9;
-const GL_COLOR_ATTACHMENT26 = 0x8CFA;
-const GL_COLOR_ATTACHMENT27 = 0x8CFB;
-const GL_COLOR_ATTACHMENT28 = 0x8CFC;
-const GL_COLOR_ATTACHMENT29 = 0x8CFD;
-const GL_COLOR_ATTACHMENT30 = 0x8CFE;
-const GL_COLOR_ATTACHMENT31 = 0x8CFF;
-const GL_DEPTH_ATTACHMENT = 0x8D00;
-const GL_STENCIL_ATTACHMENT = 0x8D20;
-//Framebuffers and renderbuffers
-const GL_FRAMEBUFFER = 0x8D40;
-const GL_RENDERBUFFER = 0x8D41;
-const GL_READ_FRAMEBUFFER = 0x8CA8;
-const GL_DRAW_FRAMEBUFFER = 0x8CA9;
-const GL_RGB565 = 0x8D62;
-const GL_STENCIL_INDEX8 = 0x8D48;
-const GL_DEPTH_STENCIL = 0x84F9;
-const GL_DEPTH24_STENCIL8 = 0x88F0;
-const GL_DEPTH32F_STENCIL8 = 0x8CAD;
-
 var ShaderType;
 (function (ShaderType) {
-    ShaderType[ShaderType["Vertex"] = 35633] = "Vertex";
-    ShaderType[ShaderType["Fragment"] = 35632] = "Fragment";
+    ShaderType["Vertex"] = "vertex";
+    ShaderType["Fragment"] = "fragment";
     ShaderType["Wgsl"] = "wgsl";
 })(ShaderType || (ShaderType = {}));
 
@@ -1488,6 +1182,312 @@ function getEntity(name) {
     return entities$1.get(name.toLowerCase());
 }
 
+//See https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
+const GL_NONE = 0;
+const GL_ZERO = 0;
+const GL_ONE = 1;
+const GL_FALSE = 0;
+const GL_TRUE = 1;
+/* ErrorCode */
+const GL_NO_ERROR = 0;
+const GL_INVALID_ENUM = 0x0500;
+const GL_INVALID_VALUE = 0x0501;
+const GL_INVALID_OPERATION = 0x0502;
+const GL_STACK_OVERFLOW = 0x0503;
+const GL_STACK_UNDERFLOW = 0x0504;
+const GL_OUT_OF_MEMORY = 0x0505;
+//Shaders
+const GL_FRAGMENT_SHADER = 0x8B30;
+const GL_VERTEX_SHADER = 0x8B31;
+//clear
+const GL_DEPTH_BUFFER_BIT = 0x00000100;
+const GL_STENCIL_BUFFER_BIT = 0x00000400;
+const GL_COLOR_BUFFER_BIT = 0x00004000;
+const GL_RED = 0x1903;
+const GL_GREEN = 0x1904;
+const GL_BLUE = 0x1905;
+const GL_ALPHA = 0x1906;
+const GL_RGB = 0x1907;
+const GL_RGBA = 0x1908;
+const GL_LUMINANCE = 0x1909;
+const GL_LUMINANCE_ALPHA = 0x190A;
+const GL_R8 = 0x8229;
+const GL_R8_SNORM = 0x8F94;
+const GL_RGBA32F = 0x8814;
+const GL_RGB32F = 0x8815;
+const GL_RGBA16F = 0x881A;
+// drawArrays mode
+const GL_POINTS = 0x0000;
+const GL_LINES = 0x0001;
+const GL_LINE_LOOP = 0x0002;
+const GL_LINE_STRIP = 0x0003;
+const GL_TRIANGLES = 0x0004;
+const GL_TRIANGLE_STRIP = 0x0005;
+const GL_TRIANGLE_FAN = 0x0006;
+//bufferData usage
+const GL_STREAM_DRAW = 0x88E0;
+const GL_STREAM_READ = 0x88E1;
+const GL_STREAM_COPY = 0x88E2;
+const GL_STATIC_DRAW = 0x88E4;
+const GL_STATIC_READ = 0x88E5;
+const GL_STATIC_COPY = 0x88E6;
+const GL_DYNAMIC_DRAW = 0x88E8;
+const GL_DYNAMIC_READ = 0x88E9;
+const GL_DYNAMIC_COPY = 0x88EA;
+//bindBuffer target
+const GL_ARRAY_BUFFER = 0x8892;
+const GL_ELEMENT_ARRAY_BUFFER = 0x8893;
+const GL_COPY_READ_BUFFER = 0x8F36;
+const GL_COPY_WRITE_BUFFER = 0x8F37;
+const GL_TRANSFORM_FEEDBACK_BUFFER = 0x8C8E;
+const GL_UNIFORM_BUFFER = 0x8A11;
+const GL_PIXEL_PACK_BUFFER = 0x88EB;
+const GL_PIXEL_UNPACK_BUFFER = 0x88EC;
+//buffer type / uniform type
+const GL_BYTE = 0x1400;
+const GL_UNSIGNED_BYTE = 0x1401;
+const GL_SHORT = 0x1402;
+const GL_UNSIGNED_SHORT = 0x1403;
+const GL_INT = 0x1404;
+const GL_UNSIGNED_INT = 0x1405;
+const GL_FLOAT = 0x1406;
+const GL_HALF_FLOAT = 0x140B;
+const GL_FLOAT_VEC2 = 0x8B50;
+const GL_FLOAT_VEC3 = 0x8B51;
+const GL_FLOAT_VEC4 = 0x8B52;
+const GL_INT_VEC2 = 0x8B53;
+const GL_INT_VEC3 = 0x8B54;
+const GL_INT_VEC4 = 0x8B55;
+const GL_BOOL = 0x8B56;
+const GL_BOOL_VEC2 = 0x8B57;
+const GL_BOOL_VEC3 = 0x8B58;
+const GL_BOOL_VEC4 = 0x8B59;
+const GL_FLOAT_MAT2 = 0x8B5A;
+const GL_FLOAT_MAT3 = 0x8B5B;
+const GL_FLOAT_MAT4 = 0x8B5C;
+const GL_SAMPLER_2D = 0x8B5E;
+const GL_SAMPLER_CUBE = 0x8B60;
+const GL_UNSIGNED_INT_VEC2 = 0x8DC6;
+const GL_UNSIGNED_INT_VEC3 = 0x8DC7;
+const GL_UNSIGNED_INT_VEC4 = 0x8DC8;
+const GL_UNSIGNED_INT_24_8 = 0x84FA;
+const GL_FLOAT_MAT2x3 = 0x8B65;
+const GL_FLOAT_MAT2x4 = 0x8B66;
+const GL_FLOAT_MAT3x2 = 0x8B67;
+const GL_FLOAT_MAT3x4 = 0x8B68;
+const GL_FLOAT_MAT4x2 = 0x8B69;
+const GL_FLOAT_MAT4x3 = 0x8B6A;
+const GL_SAMPLER_3D = 0x8B5F;
+const GL_SAMPLER_2D_SHADOW = 0x8B62;
+const GL_SAMPLER_2D_ARRAY = 0x8DC1;
+const GL_SAMPLER_2D_ARRAY_SHADOW = 0x8DC4;
+const GL_SAMPLER_CUBE_SHADOW = 0x8DC5;
+const GL_INT_SAMPLER_2D = 0x8DCA;
+const GL_INT_SAMPLER_3D = 0x8DCB;
+const GL_INT_SAMPLER_CUBE = 0x8DCC;
+const GL_INT_SAMPLER_2D_ARRAY = 0x8DCF;
+const GL_UNSIGNED_INT_SAMPLER_2D = 0x8DD2;
+const GL_UNSIGNED_INT_SAMPLER_3D = 0x8DD3;
+const GL_UNSIGNED_INT_SAMPLER_CUBE = 0x8DD4;
+const GL_UNSIGNED_INT_SAMPLER_2D_ARRAY = 0x8DD7;
+const GL_UNSIGNED_SHORT_4_4_4_4 = 0x8033;
+const GL_UNSIGNED_SHORT_5_5_5_1 = 0x8034;
+const GL_UNSIGNED_SHORT_5_6_5 = 0x8363;
+const GL_UNSIGNED_INT_2_10_10_10_REV = 0x8368;
+const GL_UNSIGNED_INT_10F_11F_11F_REV = 0x8C3B;
+const GL_UNSIGNED_INT_5_9_9_9_REV = 0x8C3E;
+const GL_FLOAT_32_UNSIGNED_INT_24_8_REV = 0x8DAD;
+// Extensions
+const GL_HALF_FLOAT_OES = 0x8D61;
+//get parameters
+const GL_MAX_VERTEX_ATTRIBS = 0x8869;
+//depthFunc
+const GL_NEVER = 0x0200;
+const GL_LESS = 0x0201;
+const GL_EQUAL = 0x0202;
+const GL_LEQUAL = 0x0203;
+const GL_GREATER = 0x0204;
+const GL_NOTEQUAL = 0x0205;
+const GL_GEQUAL = 0x0206;
+const GL_ALWAYS = 0x0207;
+//enable
+const GL_BLEND = 0x0BE2;
+const GL_CULL_FACE = 0x0B44;
+const GL_DEPTH_TEST = 0x0B71;
+const GL_DITHER = 0x0BD0;
+const GL_POLYGON_OFFSET_FILL = 0x8037;
+const GL_SAMPLE_ALPHA_TO_COVERAGE = 0x809E;
+const GL_SAMPLE_COVERAGE = 0x80A0;
+const GL_SCISSOR_TEST = 0x0C11;
+const GL_STENCIL_TEST = 0x0B90;
+const GL_RASTERIZER_DISCARD = 0x8C89;
+//textures
+const GL_TEXTURE0 = 0x84C0; //GL_RENDERING_CONTEXT.TEXTURE0;
+//Framebuffers and renderbuffers
+const GL_MAX_RENDERBUFFER_SIZE = 0x84E8;
+//texture targets
+const GL_TEXTURE_2D = 0x0DE1;
+const GL_TEXTURE_CUBE_MAP = 0x8513;
+const GL_TEXTURE_3D = 0x806F;
+const GL_TEXTURE_2D_ARRAY = 0x8C1A;
+const GL_TEXTURE_CUBE_MAP_POSITIVE_X = 0x8515;
+const GL_TEXTURE_CUBE_MAP_NEGATIVE_X = 0x8516;
+const GL_TEXTURE_CUBE_MAP_POSITIVE_Y = 0x8517;
+const GL_TEXTURE_CUBE_MAP_NEGATIVE_Y = 0x8518;
+const GL_TEXTURE_CUBE_MAP_POSITIVE_Z = 0x8519;
+const GL_TEXTURE_CUBE_MAP_NEGATIVE_Z = 0x851A;
+//texParameter
+const GL_TEXTURE_MAG_FILTER = 0x2800;
+const GL_TEXTURE_MIN_FILTER = 0x2801;
+const GL_TEXTURE_WRAP_S = 0x2802;
+const GL_TEXTURE_WRAP_T = 0x2803;
+//export const GL_TEXTURE_MAX_ANISOTROPY_EXT = GL_RENDERING_CONTEXT.TEXTURE_MAX_ANISOTROPY_EXT;//TODO
+const GL_TEXTURE_BASE_LEVEL = 0x813C;
+const GL_TEXTURE_COMPARE_FUNC = 0x884D;
+const GL_TEXTURE_COMPARE_MODE = 0x884C;
+const GL_TEXTURE_MAX_LEVEL = 0x813D;
+const GL_TEXTURE_MAX_LOD = 0x813B;
+const GL_TEXTURE_MIN_LOD = 0x813A;
+const GL_TEXTURE_WRAP_R = 0x8072;
+//texture filter
+const GL_NEAREST = 0x2600;
+const GL_LINEAR = 0x2601;
+const GL_NEAREST_MIPMAP_NEAREST = 0x2700;
+const GL_LINEAR_MIPMAP_NEAREST = 0x2701;
+const GL_NEAREST_MIPMAP_LINEAR = 0x2702;
+const GL_LINEAR_MIPMAP_LINEAR = 0x2703;
+// texture wrap
+const GL_REPEAT = 0x2901;
+const GL_CLAMP_TO_EDGE = 0x812F;
+const GL_MIRRORED_REPEAT = 0x8370;
+//TEXTURE_MAX_ANISOTROPY_EXT //TODO EXT_texture_filter_anisotropic
+//pixelStorei
+const GL_UNPACK_FLIP_Y_WEBGL = 0x9240;
+const GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL = 0x9241;
+const GL_UNPACK_COLORSPACE_CONVERSION_WEBGL = 0x9243;
+//blendFunc
+const GL_SRC_COLOR = 0x0300;
+const GL_ONE_MINUS_SRC_COLOR = 0x0301;
+const GL_DST_COLOR = 0x0306;
+const GL_ONE_MINUS_DST_COLOR = 0x0307;
+const GL_SRC_ALPHA = 0x0302;
+const GL_ONE_MINUS_SRC_ALPHA = 0x0303;
+const GL_DST_ALPHA = 0x0304;
+const GL_ONE_MINUS_DST_ALPHA = 0x0305;
+const GL_CONSTANT_COLOR = 0x8001;
+const GL_ONE_MINUS_CONSTANT_COLOR = 0x8002;
+const GL_CONSTANT_ALPHA = 0x8003;
+const GL_ONE_MINUS_CONSTANT_ALPHA = 0x8004;
+const GL_SRC_ALPHA_SATURATE = 0x0308;
+//blendEquation
+const GL_FUNC_ADD = 0x8006; //GL_RENDERING_CONTEXT.GL_FUNC_ADD;
+const GL_FUNC_SUBTRACT = 0x800A; //GL_RENDERING_CONTEXT.FUNC_SUBTRACT;
+const GL_FUNC_REVERSE_SUBTRACT = 0x800B; //GL_RENDERING_CONTEXT.FUNC_REVERSE_SUBTRACT;
+const GL_MIN_EXT = 0x8007; //GL_RENDERING_CONTEXT.MIN_EXT;//TODOv3 EXT_blend_minmax
+const GL_MAX_EXT = 0x8008; //GL_RENDERING_CONTEXT.MAX_EXT;//TODOv3 EXT_blend_minmax
+const GL_MIN = 0x8007; //GL_RENDERING_CONTEXT.MIN;
+const GL_MAX = 0x8008; //GL_RENDERING_CONTEXT.MAX;
+//cullFace
+const GL_FRONT = 0x0404;
+const GL_BACK = 0x0405;
+const GL_FRONT_AND_BACK = 0x0408;
+//frontFace
+const GL_CW = 0x0900;
+const GL_CCW = 0x0901;
+const GL_RGB4 = 0x804F;
+const GL_RGB5 = 0x8050;
+const GL_RGB8 = 0x8051;
+const GL_RGB10 = 0x8052;
+const GL_RGB12 = 0x8053;
+const GL_RGB16 = 0x8054;
+const GL_RGBA2 = 0x8055;
+const GL_RGBA4 = 0x8056;
+const GL_RGB5_A1 = 0x8057;
+const GL_RGBA8 = 0x8058;
+const GL_RGB10_A2 = 0x8059;
+const GL_RGBA12 = 0x805A;
+const GL_RGBA16 = 0x805B;
+const GL_RGBA32UI = 0x8D70;
+const GL_RGBA16UI = 0x8D76;
+const GL_RGB16UI = 0x8D77;
+const GL_RGBA8UI = 0x8D7C;
+const GL_RGBA32I = 0x8D82;
+const GL_RGB32I = 0x8D83;
+const GL_RGBA16I = 0x8D88;
+const GL_RGB16I = 0x8D89;
+const GL_RGBA8I = 0x8D8E;
+const GL_RGB10_A2UI = 0x906F;
+const GL_VERTEX_ARRAY = 0x8074;
+const GL_DEPTH_COMPONENT = 0x1902;
+const GL_DEPTH_COMPONENT16 = 0x81A5;
+const GL_DEPTH_COMPONENT24 = 0x81A6;
+const GL_DEPTH_COMPONENT32 = 0x81A7;
+const GL_DEPTH_COMPONENT32F = 0x8CAC;
+const FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 0x8210;
+const GL_SRGB = 0x8C40;
+const GL_SRGB8 = 0x8C41;
+const GL_SRGB_ALPHA = 0x8C42;
+const GL_SRGB8_ALPHA8 = 0x8C43;
+const GL_RG8 = 0x822B;
+const GL_R8I = 0x8231;
+const GL_R8UI = 0x8232;
+const GL_R16I = 0x8233;
+const GL_R16UI = 0x8234;
+const GL_R32I = 0x8235;
+const GL_R32UI = 0x8236;
+const GL_RG8I = 0x8237;
+const GL_RG8UI = 0x8238;
+const GL_RG16I = 0x8239;
+const GL_RG16UI = 0x823A;
+const GL_RG32I = 0x823B;
+const GL_RG32UI = 0x823C;
+// drawBuffers
+const GL_MAX_COLOR_ATTACHMENTS = 0x8CDF;
+const GL_COLOR_ATTACHMENT0 = 0x8CE0;
+const GL_COLOR_ATTACHMENT1 = 0x8CE1;
+const GL_COLOR_ATTACHMENT2 = 0x8CE2;
+const GL_COLOR_ATTACHMENT3 = 0x8CE3;
+const GL_COLOR_ATTACHMENT4 = 0x8CE4;
+const GL_COLOR_ATTACHMENT5 = 0x8CE5;
+const GL_COLOR_ATTACHMENT6 = 0x8CE6;
+const GL_COLOR_ATTACHMENT7 = 0x8CE7;
+const GL_COLOR_ATTACHMENT8 = 0x8CE8;
+const GL_COLOR_ATTACHMENT9 = 0x8CE9;
+const GL_COLOR_ATTACHMENT10 = 0x8CEA;
+const GL_COLOR_ATTACHMENT11 = 0x8CEB;
+const GL_COLOR_ATTACHMENT12 = 0x8CEC;
+const GL_COLOR_ATTACHMENT13 = 0x8CED;
+const GL_COLOR_ATTACHMENT14 = 0x8CEE;
+const GL_COLOR_ATTACHMENT15 = 0x8CEF;
+const GL_COLOR_ATTACHMENT16 = 0x8CF0;
+const GL_COLOR_ATTACHMENT17 = 0x8CF1;
+const GL_COLOR_ATTACHMENT18 = 0x8CF2;
+const GL_COLOR_ATTACHMENT19 = 0x8CF3;
+const GL_COLOR_ATTACHMENT20 = 0x8CF4;
+const GL_COLOR_ATTACHMENT21 = 0x8CF5;
+const GL_COLOR_ATTACHMENT22 = 0x8CF6;
+const GL_COLOR_ATTACHMENT23 = 0x8CF7;
+const GL_COLOR_ATTACHMENT24 = 0x8CF8;
+const GL_COLOR_ATTACHMENT25 = 0x8CF9;
+const GL_COLOR_ATTACHMENT26 = 0x8CFA;
+const GL_COLOR_ATTACHMENT27 = 0x8CFB;
+const GL_COLOR_ATTACHMENT28 = 0x8CFC;
+const GL_COLOR_ATTACHMENT29 = 0x8CFD;
+const GL_COLOR_ATTACHMENT30 = 0x8CFE;
+const GL_COLOR_ATTACHMENT31 = 0x8CFF;
+const GL_DEPTH_ATTACHMENT = 0x8D00;
+const GL_STENCIL_ATTACHMENT = 0x8D20;
+//Framebuffers and renderbuffers
+const GL_FRAMEBUFFER = 0x8D40;
+const GL_RENDERBUFFER = 0x8D41;
+const GL_READ_FRAMEBUFFER = 0x8CA8;
+const GL_DRAW_FRAMEBUFFER = 0x8CA9;
+const GL_RGB565 = 0x8D62;
+const GL_STENCIL_INDEX8 = 0x8D48;
+const GL_DEPTH_STENCIL = 0x84F9;
+const GL_DEPTH24_STENCIL8 = 0x88F0;
+const GL_DEPTH32F_STENCIL8 = 0x8CAD;
+
 var BlendingFactor;
 (function (BlendingFactor) {
     BlendingFactor[BlendingFactor["Zero"] = 0] = "Zero";
@@ -1625,6 +1625,7 @@ class Material {
     #users = new Set();
     #parameters = new Map();
     uniforms = {}; // TODO: transform to map ?
+    storage = new Map();
     defines = {}; //TODOv3: put defines in meshes too ? TODO: transform to map ?
     parameters;
     depthTest;
@@ -1659,6 +1660,21 @@ class Material {
         this.polygonOffsetFactor = params.polygonOffsetFactor ?? -5;
         this.polygonOffsetUnits = params.polygonOffsetUnits ?? -5;
         this._dirtyProgram = true; //TODOv3 use another method
+        if (params.uniforms) {
+            for (const name in params.uniforms) {
+                this.uniforms[name] = params.uniforms[name];
+            }
+        }
+        if (params.defines) {
+            for (const name in params.defines) {
+                this.setDefine(name, params.defines[name]);
+            }
+        }
+        if (params.storages) {
+            for (const name in params.storages) {
+                this.setStorage(name, params.storages[name]);
+            }
+        }
     }
     get transparent() {
         return this.blend;
@@ -2035,6 +2051,19 @@ class Material {
     getWebGPUShader() {
         throw new Error('Override this function');
     }
+    getStorage(name) {
+        return this.storage.get(name);
+    }
+    setStorage(name, value) {
+        this.storage.set(name, { value });
+    }
+    deleteStorage(name) {
+        const sto = this.storage.get(name);
+        if (sto) {
+            sto.buffer?.destroy();
+            sto.buffer = null;
+        }
+    }
 }
 registerEntity(Material);
 
@@ -2047,22 +2076,14 @@ class ShaderMaterial extends Material {
             this.#shaderSource = params.shaderSource;
         }
         const name = `shadermaterial_${++id$1}`;
-        if (params.glsl?.vertex) {
-            ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.glsl.vertex);
+        if (params.glsl) {
+            ShaderManager.addSource(ShaderType.Vertex, name + '.vs', params.glsl.vertex);
+            ShaderManager.addSource(ShaderType.Fragment, name + '.fs', params.glsl.fragment);
             this.#shaderSource = name;
         }
-        if (params.glsl?.fragment) {
-            ShaderManager.addSource(GL_FRAGMENT_SHADER, name + '.fs', params.glsl.fragment);
-        }
-        if (params.uniforms) {
-            for (const name in params.uniforms) {
-                this.uniforms[name] = params.uniforms[name];
-            }
-        }
-        if (params.defines) {
-            for (const name in params.defines) {
-                this.setDefine(name, params.defines[name]);
-            }
+        if (params.wgsl) {
+            ShaderManager.addSource(ShaderType.Wgsl, name + '.wgsl', params.wgsl);
+            this.#shaderSource = name;
         }
     }
     getShaderSource() {
@@ -3687,7 +3708,7 @@ class BufferAttribute {
         //TODO: normalized ?
         this.dirty = true;
         if (array) {
-            this.array = array;
+            this.setArray(array);
         }
         return this;
     }
@@ -3705,9 +3726,6 @@ class BufferAttribute {
         this.dirty = true;
         this.#wireframeDirty = true;
         this.#solidWireframeDirty = true;
-    }
-    set array(array) {
-        this.setArray(array);
     }
     setArray(array) {
         if (!(array instanceof TypedArrayProto)) {
@@ -3743,6 +3761,9 @@ class BufferAttribute {
             default:
                 throw 'Unsupported array type';
         }
+    }
+    getArray() {
+        return this._array ?? null;
     }
     update(glContext) {
         if (this.dirty && this._array) {
@@ -3797,28 +3818,28 @@ class Uint8BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, wgslName, offset, length) {
         super(null, 1, itemSize, wgslName, getUint8Format(itemSize));
         this.setSource(array);
-        this.array = new Uint8Array(array);
+        this.setArray(new Uint8Array(array));
     }
 }
 class Uint16BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, wgslName, offset, length) {
         super(null, 2, itemSize, wgslName, getUint16Format(itemSize));
         this.setSource(array);
-        this.array = new Uint16Array(array, offset, length);
+        this.setArray(new Uint16Array(array, offset, length));
     }
 }
 class Uint32BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, wgslName, offset, length) {
         super(null, 4, itemSize, wgslName, getUint32Format(itemSize));
         this.setSource(array);
-        this.array = new Uint32Array(array, offset, length);
+        this.setArray(new Uint32Array(array, offset, length));
     }
 }
 class Float32BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, wgslName, offset, length) {
         super(null, 4, itemSize, wgslName, getFloat32Format(itemSize));
         this.setSource(array);
-        this.array = new Float32Array(array, offset, length);
+        this.setArray(new Float32Array(array, offset, length));
     }
 }
 function getUint8Format(size) {
@@ -3895,6 +3916,9 @@ class BufferGeometry {
         attribute.target = GL_ELEMENT_ARRAY_BUFFER;
         this.setAttribute('index', attribute);
 */
+    }
+    getIndex() {
+        return this.getAttribute('index') ?? null;
     }
     update(glContext) {
         throw 'error';
@@ -5715,6 +5739,10 @@ class Camera extends Entity {
     isOrthographic;
     #tanHalfVerticalFov;
     autoResize;
+    // Aperture for ray tracing
+    aperture = 0;
+    // Focus distance. Only relevant if aperture is non zero
+    focus = 10;
     constructor(params = {}) {
         super();
         super.setParameters(params);
@@ -5834,7 +5862,16 @@ class Camera extends Entity {
             EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
         }
     }
+    /**
+     * @deprecated use getVerticalFovAsDegree instead
+     */
     get verticalFov() {
+        return this.#verticalFov * RAD_TO_DEG;
+    }
+    getVerticalFov() {
+        return this.#verticalFov;
+    }
+    getVerticalFovAsDegree() {
         return this.#verticalFov * RAD_TO_DEG;
     }
     getTanHalfVerticalFov() {
@@ -10401,14 +10438,15 @@ async function createFBXMesh(fbxScene, mesh, context) {
         await configureMaterial(meshMaterial, fbxMaterial, mesh.materialsParams);
     }
     let meshDatas = mesh.exportObj();
-    if (mesh /*TODO: create a skeleton entity interface*/.skeleton && mesh.geometry) {
+    const meshGeometry = mesh.getGeometry();
+    if (mesh /*TODO: create a skeleton entity interface*/.skeleton) {
         meshDatas = {
-            f: mesh.geometry.getAttribute('index')?._array,
-            v: mesh.geometry.getAttribute('aVertexPosition')?._array,
-            vn: mesh.geometry.getAttribute('aVertexNormal')?._array,
-            vt: mesh.geometry.getAttribute('aTextureCoord')?._array,
-            bi: mesh.geometry.getAttribute('aBoneIndices')?._array,
-            bw: mesh.geometry.getAttribute('aBoneWeight')?._array,
+            f: meshGeometry.getAttribute('index')?._array,
+            v: meshGeometry.getAttribute('aVertexPosition')?._array,
+            vn: meshGeometry.getAttribute('aVertexNormal')?._array,
+            vt: meshGeometry.getAttribute('aTextureCoord')?._array,
+            bi: meshGeometry.getAttribute('aBoneIndices')?._array,
+            bw: meshGeometry.getAttribute('aBoneWeight')?._array,
         };
         meshDatas.bi;
         meshDatas.bw;
@@ -11338,8 +11376,8 @@ class Program {
         }
     }
     validate(includeCode) {
-        const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
-        const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
+        const vertexShaderScript = ShaderManager.getShaderSource(ShaderType.Vertex, this.#vertexShaderName);
+        const fragmentShaderScript = ShaderManager.getShaderSource(ShaderType.Fragment, this.#fragmentShaderName);
         if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
             const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
             const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, includeCode);
@@ -12136,7 +12174,7 @@ class WebGPURenderer {
         if (renderLights) {
             this.#setupLights(renderList, camera, cameraMatrix, uniforms);
         }
-        this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context);
+        this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, false);
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
@@ -12461,12 +12499,23 @@ class WebGPURenderer {
             for (const vertexEntry of reflection.entry.vertex) {
                 if (vertexEntry.name == vertexEntryPoint) {
                     for (const argument of vertexEntry.arguments) {
-                        if (!argument.attributes) {
-                            continue;
+                        if (argument.attributes) {
+                            for (const argumentAttribute of argument.attributes) {
+                                if (argumentAttribute.name == 'location') {
+                                    attributes.set(argument.name, Number(argumentAttribute.value));
+                                }
+                            }
                         }
-                        for (const argumentAttribute of argument.attributes) {
-                            if (argumentAttribute.name == 'location') {
-                                attributes.set(argument.name, Number(argumentAttribute.value));
+                        else {
+                            const type = argument.type;
+                            for (const member of type.members) {
+                                if (member.attributes) {
+                                    for (const argumentAttribute of member.attributes) {
+                                        if (argumentAttribute.name == 'location') {
+                                            attributes.set(member.name, Number(argumentAttribute.value));
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -12552,7 +12601,7 @@ class WebGPURenderer {
         }
         const device = WebGPUInternal.device;
         const groups = new Map2();
-        this.#populateBindGroups(shaderModule, groups, material, null, null, null, context);
+        this.#populateBindGroups(shaderModule, groups, material, null, null, null, context, true);
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
@@ -12681,7 +12730,7 @@ class WebGPURenderer {
             encoder.setBindGroup(groupId, uniformBindGroup);
         }
     }
-    #populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context) {
+    #populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, isCompute) {
         if (!shaderModule.reflection) {
             return;
         }
@@ -12710,10 +12759,25 @@ class WebGPURenderer {
                         uniformBuffer.label = uniform.name + '.' + member.name;
                         const subUniform = materialUniform[member.name];
                         if (subUniform !== undefined) {
-                            bufferSource = subUniform;
+                            if (typeof subUniform === 'number') {
+                                switch (member.type.name) {
+                                    case 'u32':
+                                        bufferSource = new Uint32Array([subUniform]);
+                                        break;
+                                    case 'f32':
+                                        bufferSource = new Float32Array([subUniform]);
+                                        break;
+                                    default:
+                                        errorOnce(`unknwon type: ${member.type.name} for member: ${member.name} for uniform ${uniform.name}in ${material.getShaderSource() + '.wgsl'}`);
+                                        break;
+                                }
+                            }
+                            else {
+                                bufferSource = subUniform;
+                            }
                         }
                         else {
-                            errorOnce(`unknwon uniform: ${uniform.name} for uniform ${member.name} in ${material.getShaderSource() + '.wgsl'}`);
+                            errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                         }
                         if (bufferSource) {
                             device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
@@ -12838,6 +12902,17 @@ class WebGPURenderer {
                             case 'vec4f':
                                 device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
                                 break;
+                            case 'vec4':
+                                switch (uniform.type.format?.name) {
+                                    case 'u32':
+                                        const m = new Uint32Array(uniform.type.format.size);
+                                        for (let i = 0; i < materialUniform.length; i++) {
+                                            m[i] = materialUniform[i];
+                                        }
+                                        device.queue.writeBuffer(uniformBuffer, 0, m);
+                                        break;
+                                }
+                                break;
                             default:
                                 errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
                                 break;
@@ -12851,28 +12926,23 @@ class WebGPURenderer {
                                 break;
                             default:
                                 errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
-                                switch (uniform.type.name) {
-                                    case 'f32':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0]));
-                                        break;
-                                    case 'mat3x3f':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0,]));
-                                        break;
-                                    case 'mat4x4f':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,]));
-                                        break;
-                                    case 'vec2f':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0]));
-                                        break;
-                                    case 'vec3f':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0]));
-                                        break;
-                                    case 'vec4f':
-                                        device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([0, 0, 0, 0]));
-                                        break;
-                                    default:
-                                        errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                                        break;
+                                const format = uniform.type?.format;
+                                if (format) {
+                                    let buffer;
+                                    switch (format.name) {
+                                        case 'f32':
+                                            buffer = new Float32Array(format.size);
+                                            break;
+                                        case 'u32':
+                                            buffer = new Uint32Array(format.size);
+                                            break;
+                                        default:
+                                            errorOnce(`unknwon uniform type: ${format.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                                            break;
+                                    }
+                                    if (buffer) {
+                                        device.queue.writeBuffer(uniformBuffer, 0, buffer);
+                                    }
                                 }
                         }
                         if (bufferSource) {
@@ -12945,9 +13015,14 @@ class WebGPURenderer {
         for (const storage of shaderModule.reflection.storage) {
             let access = 'read-only';
             let bufferType = 'storage';
+            let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;
             switch (storage.type.access ?? storage.access) {
                 case 'read':
                     bufferType = 'read-only-storage';
+                    // TODO: only set vertex if the storage is actually used in a vertex buffer
+                    if (!isCompute) {
+                        visibility |= GPUShaderStage.VERTEX;
+                    }
                     break;
                 case 'write':
                     access = 'write-only';
@@ -13001,22 +13076,88 @@ class WebGPURenderer {
                             }
                         }
                         else {
-                            const storageBuffer = object?.getStorage(storage.name);
+                            const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
                             if (storageBuffer) {
-                                //storageBuffer.buffer?.destroy();
-                                if (!storageBuffer.buffer) {
-                                    storageBuffer.buffer = device.createBuffer({
-                                        label: storage.name,
-                                        size: storage.size,
-                                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
-                                        //mappedAtCreation: true,
-                                    });
+                                if (storage.isStruct) {
+                                    // TODO: handle nested structs
+                                    if (!storageBuffer.buffer) {
+                                        storageBuffer.buffer = device.createBuffer({
+                                            label: storage.name,
+                                            size: storage.size,
+                                            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                        });
+                                    }
+                                    for (const member of storage.type.members) {
+                                        const source = storageBuffer.value[member.name];
+                                        if (source) {
+                                            device.queue.writeBuffer(storageBuffer.buffer, member.offset, source);
+                                        }
+                                    }
                                 }
-                                device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
-                                //new Float32Array(storageBuffer.buffer.getMappedRange()).set(storageBuffer.value);// TODO: determinate the buffer type
-                                //storageBuffer.buffer.unmap();
-                                //groups.set(storage.group, storage.binding, { storageTexture, access });
-                                groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
+                                else if (storage.isArray) {
+                                    if (storage.format.isArray) {
+                                        // Array of array
+                                        if (!storageBuffer.buffer) {
+                                            storageBuffer.buffer = device.createBuffer({
+                                                label: storage.name,
+                                                size: storage.size || storageBuffer.value.byteLength,
+                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                            });
+                                        }
+                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                    }
+                                    else if (storage.format.isStruct) {
+                                        if (!storageBuffer.buffer) {
+                                            storageBuffer.buffer = device.createBuffer({
+                                                label: storage.name,
+                                                size: storage.size || storageBuffer.value.length * storage.format.size,
+                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                            });
+                                        }
+                                        let baseOffset = 0;
+                                        for (const s of storageBuffer.value) {
+                                            writeStruct(device.queue, storageBuffer.buffer, storage.format.members, s, baseOffset);
+                                            baseOffset += storage.type.stride;
+                                            /*
+                                            for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
+                                                const source = s[member.name];
+                                                if (source !== undefined) {
+                                                    if (typeof source === 'number') {
+                                                        writeNumber(device.queue, storageBuffer.buffer, member, source);
+                                                    } else {
+                                                        device.queue.writeBuffer(
+                                                            storageBuffer.buffer,
+                                                            member.offset,
+                                                            source as BufferSource,
+                                                        );
+                                                    }
+                                                }
+                                            }
+                                            */
+                                        }
+                                    }
+                                    else if (storage.format.isPointer) {
+                                        throw new Error('code me: storage is a pointer array');
+                                    }
+                                    else if (storage.format.isTemplate) {
+                                        throw new Error('code me: storage is a template array');
+                                    }
+                                    else {
+                                        // Array of primitives
+                                        if (!storageBuffer.buffer) {
+                                            storageBuffer.buffer = device.createBuffer({
+                                                label: storage.name,
+                                                size: storage.size || storageBuffer.value.byteLength,
+                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                            });
+                                        }
+                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                    }
+                                }
+                                else {
+                                    throw new Error('code me: storage is neither a struct nor an array');
+                                }
+                                groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
                             }
                             else {
                                 errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -13031,6 +13172,69 @@ class WebGPURenderer {
 function getDefines(meshOrMaterial, defines) {
     for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
         defines.set(name, value);
+    }
+}
+function writePrimitive(queue, buffer, member, value, baseOffset) {
+    switch (member.type.name) {
+        case 'u32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Uint32Array([value]));
+            break;
+        case 'i32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Int32Array([value]));
+            break;
+        case 'f32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Float32Array([value]));
+            break;
+        default:
+            errorOnce(`unknwon type ${member.type.name} in writeNumber`);
+            break;
+    }
+}
+function writeStruct(queue, buffer, members, struct, baseOffset) {
+    for (const member of members) {
+        const structValue = struct[member.name];
+        if (member.isTemplate) {
+            writeTemplate(queue, buffer, member.type, structValue, baseOffset + member.offset);
+        }
+        else if (member.isStruct) {
+            // nested struct
+            if (structValue) {
+                writeStruct(queue, buffer, member.type.members, structValue, baseOffset + member.offset);
+            }
+        }
+        else if (member.isArray) {
+            throw new Error('code me');
+        }
+        else {
+            // primitive
+            writePrimitive(queue, buffer, member, structValue, baseOffset);
+        }
+        /*
+        const source = struct[member.name];
+        if (source !== undefined) {
+            if (typeof source === 'number') {
+                writeNumber(queue, buffer, member, source);
+            } else if (ArrayBuffer.isView(source)) {
+                queue.writeBuffer(
+                    buffer,
+                    member.offset,
+                    source as BufferSource,
+                );
+            } else {
+                // nested struct
+                //writeStruct(queue, buffer,)
+            }
+        }
+        */
+    }
+}
+function writeTemplate(queue, buffer, type, value, offset) {
+    switch (type.name) {
+        case 'vec4':
+            queue.writeBuffer(buffer, offset, value);
+            break;
+        default:
+            throw new Error(`code this type ${type.name}`);
     }
 }
 
@@ -13723,7 +13927,7 @@ class Graphics {
             setTextureFactoryContext(this.glContext);
         }
     }
-    static async #initWebGPUContext(configuration = {}) {
+    static async #initWebGPUContext(attributes) {
         const canvas = this.#offscreenCanvas ?? this.#canvas;
         if (!canvas) {
             return;
@@ -13743,26 +13947,32 @@ class Graphics {
             this.isWebGPU = true;
             setClipSpaceWebGPU();
             //context.configure(configuration);
-            await this.#configureWebGPU(configuration);
+            await this.#configureWebGPU(attributes);
         }
         catch (error) {
             console.error(error);
             throw error;
         }
     }
-    static async #configureWebGPU(configuration) {
+    static async #configureWebGPU(attributes) {
         const adapter = await navigator.gpu.requestAdapter();
         if (!adapter) {
             return false;
         }
         const hasBGRA8unormStorage = adapter.features.has('bgra8unorm-storage');
+        const configuration = attributes?.configuration ?? {};
         if (!configuration.device) {
             const requiredFeatures = ['texture-compression-bc'];
+            if (attributes?.requiredFeatures) {
+                requiredFeatures.push(...attributes?.requiredFeatures);
+            }
             if (hasBGRA8unormStorage) {
                 requiredFeatures.push('bgra8unorm-storage');
             }
+            requiredFeatures.push('texture-formats-tier2');
             configuration.device = await adapter.requestDevice({
                 requiredFeatures,
+                requiredLimits: attributes?.requiredLimits,
             });
         }
         if (!configuration.format) {
@@ -16304,7 +16514,7 @@ for(var i = 0; i < rawLength; i++) {
   }
 }
 
-function loopSubdivision(imports){return _loadWasmModule(0, null, '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IAIgASgCBGsLIQAgA0EgaiQAIAALPgEBfyMAQRBrIgMkACAAKAI8IAEgAkH/AXEgA0EIahACIgAEQEGEMCAANgIACyADKQMIIQEgA0EQaiQAIAELCQAgACgCPBADC4MBAgN/AX4CQCAAQoCAgIAQVARAIAAhBQwBCwNAIAFBf2oiASAAIABCCoAiBUIKfn2nQTByOgAAIABC/////58BViECIAUhACACDQALCyAFpyICBEADQCABQX9qIgEgAiACQQpuIgNBCmxrQTByOgAAIAJBCUshBCADIQIgBA0ACwsgAQs0AQJ/QfgvKAIAIQBB8C8oAgAiAQRAIAEQBQsgAARAIAAQBQtB+C9CADcDAEHwL0IANwMACzQAIABQRQRAA0AgAUF/aiIBIACnQQ9xQfAQai0AACACcjoAACAAQgSIIgBCAFINAAsLIAELLQAgAFBFBEADQCABQX9qIgEgAKdBB3FBMHI6AAAgAEIDiCIAQgBSDQALCyABC8UCAQN/IwBB0AFrIgIkACACIAE2AswBQQAhASACQaABakEAQSgQCCACIAIoAswBNgLIAQJAQQAgAkHIAWogAkHQAGogAkGgAWoQIUEASA0AIAAoAkxBAE4EQEEBIQELIAAoAgAhAyAALABKQQBMBEAgACADQV9xNgIACyADQSBxIQQCfyAAKAIwBEAgACACQcgBaiACQdAAaiACQaABahAhDAELIABB0AA2AjAgACACQdAAajYCECAAIAI2AhwgACACNgIUIAAoAiwhAyAAIAI2AiwgACACQcgBaiACQdAAaiACQaABahAhIANFDQAaIABBAEEAIAAoAiQRBAAaIABBADYCMCAAIAM2AiwgAEEANgIcIABBADYCECAAKAIUGiAAQQA2AhRBAAsaIAAgBCAAKAIAcjYCACABRQ0ACyACQdABaiQAC4kCAAJAIAAEfyABQf8ATQ0BAkBBqC4oAgAoAgBFBEAgAUGAf3FBgL8DRg0DDAELIAFB/w9NBEAgACABQT9xQYABcjoAASAAIAFBBnZBwAFyOgAAQQIPCyABQYCwA09BACABQYBAcUGAwANHG0UEQCAAIAFBP3FBgAFyOgACIAAgAUEMdkHgAXI6AAAgACABQQZ2QT9xQYABcjoAAUEDDwsgAUGAgHxqQf//P00EQCAAIAFBP3FBgAFyOgADIAAgAUES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', imports)}
+function loopSubdivision(imports){return _loadWasmModule(0, null, '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KAIAIAFGQQJ0aigCAARAA0AgBigCECIBKAIAIgIgAigCACABRkECdGooAgAiBigCECIBKAIAIgIgAigCACABRkECdGooAgANAAsLIAYoAhAhASARKAJIIgYiAigCACIHIAcoAgAgAkZBAnRqKAIAIgIEfyACKAIMBUEACwRAA0AgBigCECICKAIAIgYgBigCACACRkECdGooAgAiBiICKAIAIgcgBygCACACRkECdGooAgAiAgR/IAIoAgwFQQALDQALCyARKwMQISYgASgCCCIBKwMQIScgBigCDCgCCCICKwMQISggESsDGCEpIAErAxghKiACKwMYISsgFyARKwMIRAAAAAAAAOg/oiACKwMIIAErAwigRAAAAAAAAMA/oqA5AwggFyApRAAAAAAAAOg/oiArICqgRAAAAAAAAMA/oqA5AxggFyAmRAAAAAAAAOg/oiAoICegRAAAAAAAAMA/oqA5AxAMAQtBACEGIA1BADYCCCARKAJIIQdBACEKQQAhEEEAIQICQAJAAkADQCACIRUgBygCDCgCCCECAkAgBiAQRwRAIBAgAikDCDcDACAQIAIpAxg3AxAgECACKQMQNwMIIBBBGGohEAwBCyAGIAprQRhtIgFBAWoiCEGr1arVAE8NAiABQQF0IgsgCCAIIAtJG0Gq1arVACABQdWq1SpJGyIIBH8gCEGr1arVAE8NBCAIQRhsEDwFQQALIgsgAUEYbGoiASACKQMINwMAIAEgAikDGDcDECABIAIpAxA3AwggASECIAYgCkcEQANAIAJBGGsiAiAGQRhrIgYpAwA3AwAgAiAGKQMQNwMQIAIgBikDCDcDCCAGIApHDQALCyABQRhqIRAgDSALIAhBGGxqIgY2AgggCgRAIAoQPQsgAiEKCyAVQQFqIQIgBygCECIBKAIAIgcgBygCACABRkECdGooAgAiByARKAJIRw0AC0MAAEA+IQUgFUEDTwRAIwBBEGsiFCQAAn1D2w/JQCACsiIulSIFvCIGQf////8HcSIBQdqfpPoDTQRAQwAAgD8gAUGAgIDMA0kNARogBbsQJQwBCyABQdGn7YMETQRAIAFB5JfbgARPBEBEGC1EVPshCUBEGC1EVPshCcAgBkEASBsgBbugECWMDAILIAW7ISYgBkEASARAICZEGC1EVPsh+T+gECYMAgtEGC1EVPsh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AkEMaiIHRwRAA0AgCSgCCCIEKAIEIQYgAyADNgIEIAMhAEEAIQgDQCAGKAIQIQZBDBA8IgEgBjYCCCABIAA2AgAgASADNgIEIAAgATYCBCAIQQFqIQggASEAIAYgBCgCBEcNAAsgAyAINgIIIAMgADYCAAJAIAMgAygCBCIARwR/A0AgACgCCCIBBEAgASwAI0EASARAIAEoAhgQPQsgARA9CyAAKAIEIgAgA0cNAAsgAygCCAUgCAtFDQAgAygCBCIAKAIAIgEgAygCACIGKAIENgIEIAYoAgQgATYCACADQQA2AgggACADRg0AA0AgACgCBCEBIAAQPSABIgAgA0cNAAsLIAQsABdBAEgEQCAEKAIMED0LIAQQPQJAIAMoAghFDQAgAygCBCIAKAIAIgEgAygCACIEKAIENgIEIAQoAgQgATYCACADQQA2AgggACADRg0AA0AgACgCBCEBIAAQPSABIgAgA0cNAAsLIAkoAgQiCSAHRw0ACwsCQCACKAIURQ0AIAIoAhAiACgCACIBIAIoAgwiBCgCBDYCBCAEKAIEIAE2AgAgAkEANgIUIAAgB0YNAANAIAAoAgQhASAAED0gASIAIAdHDQALCyACIAIoAgQiAEcEQANAIAAoAggiAQRAIAEsABdBAEgEQCABKAIMED0LIAEQPQsgACgCBCIAIAJHDQALCwJAIAIoAghFDQAgAigCBCIAKAIAIgEgAigCACIEKAIENgIEIAQoAgQgATYCACACQQA2AgggACACRg0AA0AgACgCBCEBIAAQPSABIgAgAkcNAAsLIAJBJGoiASACQShqIgAoAgAQESACIAA2AiQgAkIANwIoIAJBMGoiBCACQTRqIgAoAgAQEiACIAA2AjAgAkIANwI0IAJBPGoiBiACQUBrIgAoAgAQEyACIAA2AjwgAEIANwIAIAZBABATIAQgAigCNBASIAEgAigCKBARAkAgAigCIEUNACACKAIcIgAoAgAiASACKAIYIgQoAgQ2AgQgBCgCBCABNgIAIAJBADYCICAAIAVGDQADQCAAKAIEIQEgABA9IAEiACAFRw0ACwsCQCACKAIURQ0AIAIoAhAiACgCACIBIAIoAgwiBSgCBDYCBCAFKAIEIAE2AgAgAkEANgIUIAAgB0YNAANAIAAoAgQhASAAED0gASIAIAdHDQALCwJAIAIo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AAsgBCgCGAUgBwtFDQAgBCgCFCIBKAIAIgIgBCgCECIDKAIENgIEIAMoAgQgAjYCACAEQQA2AhggASAEQRBqRg0AA0AgASgCBCECIAEQPSACIgEgBEEQakcNAAsLIARBIGokACAAKAIcIgggAEEYaiILRwRAIAZBBHIhBANAIAgoAggiCS0ATARAIAkoAkghBSAGIAQ2AgAgBkIANwIEAkAgBSgCACIAIAUgACgCAEZBAnRqKAIARQRAQQAhAAwBCwNAIAUoAgAiACAAKAIAIAVGQQJ0aigCACIABH8gACgCDAVBAAshBSAGKAIEIgAhAiAEIgEhAwJAAkAgAEUNAANAIAEiAyACIgcgAigCECAFSSIKGyEBIAJBBGogAiAKGygCACICDQALIAEgBEcEQCAFIAMgByAKGygCEE8NBAsDQCAAIgMoAhAiACAFSwRAIAMiASgCACIADQEMAgsgACAFTw0CIAMoAgQiAA0ACyADQQRqIQELQRQQPCICIAM2AgggAkIANwIAIAIgBTYCECABIAI2AgAgBigCACgCACIABEAgBiAANgIAIAEoAgAhAgsgAiACIAYoAgQiB0YiADoADAJAIAANAANAIAIoAggiAS0ADA0BAkAgASABKAIIIgMoAgAiAEYEQAJAIAMoAgQiAEUNACAALQAMDQAMAgsCQCACIAEoAgBGBEAgASECDAELIAEgASgCBCICKAIAIgA2AgQgAiAABH8gACABNgIIIAEoAggFIAMLNgIIIAEoAggiACAAKAIAIAFHQQJ0aiACNgIAIAIgATYCACABIAI2AgggAigCCCIDKAIAIQELIAJBAToADCADQQA6AAwgAyABKAIEIgA2AgAgAARAIAAgAzYCCAsgASADKAIINgIIIAMoAggiACAAKAIAIANHQQJ0aiABNgIAIAEgAzYCBCADIAE2AggMAwsCQCAARQ0AIAAtAAwNAAwBCwJAIAIgASgCAEcEQCABIQIMAQsgASACKAIEIgA2AgAgAiAABH8gACABNgIIIAEoAggFIAMLNgIIIAEoAggiACAAKAIAIAFHQQJ0aiACNgIAIAIgATYCBCABIAI2AgggAigCCCEDCyACQQE6AAwgA0EAOgAMIAMgAygCBCIAKAIAIgE2AgQgAQRAIAEgAzYCCAsgACADKAIINgIIIAMoAggiASABKAIAIANH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ACADIARKBEBBAA8LIAAoAgQoAgAiAyABKAIEKAIAIgRIDQBBACECIAMgBEoNACAAKAIIKAIAIAEoAggoAgBIIQILIAILhAEBBH9B9C1B/Cw2AgBBrC1BKjYCACMAQRBrIgAkAAJAIABBDGogAEEIahAARQRAIAAgACgCDEECdCICQRNqQXBxayIBJAAgASAAKAIIQQ9qQXBxayIDJAAgASACakEANgIAIAEgAxABDQEgACgCDBoDQAwACwALQccAEAIAC0HHABACAAuCAwECfyMAQRBrIgQkACAEIAI2AgwgBCADNgIIIAQgATYCBCAEIAA2AgAjAEEQayICJAAgAiAENgIMQQAhASMAQdABayIAJAAgACAENgLMASAAQaABaiIDQQBBKBAnIAAgACgCzAE2AsgBAkBBACAAQcgBaiAAQdAAaiADEC9BAEgNAEH0KygCAEEATiEEQagrKAIAIQNB8CsoAgBBAEwEQEGoKyADQV9xNgIACwJ/AkACQEHYKygCAEUEQEHYK0HQADYCAEHEK0EANgIAQbgrQgA3AwBB1CsoAgAhAUHUKyAANgIADAELQbgrKAIADQELQX9BqCsQLA0BGgtBqCsgAEHIAWogAEHQAGogAEGgAWoQLwshBSABBH9BqCtBAEEAQcwrKAIAEQUAGkHYK0EANgIAQdQrIAE2AgBBxCtBADYCAEG8KygCABpBuCtCADcDAEEABSAFCxpBqCtBqCsoAgAgA0EgcXI2AgAgBEUNAAsgAEHQAWokACACQRBqJAAQIwAL5AMBA38gACACaiEDAkACQAJAIAAgAXNBA3FFBEAgAEEDcUUNASACQQBMDQEgACECA0AgAiABLQAAOgAAIAFBAWohASACQQFqIgJBA3FFDQMgAiADSQ0ACwwCCwJAIANBBEkNACADQQRrIgQgAEkNACAAIQIDQCACIAEtAAA6AAAgAiABLQABOgABIAIgAS0AAjoAAiACIAEtAAM6AAMgAUEEaiEBIAJBBGoiAiAETQ0ACwwDCyAAIQIMAgsgACECCwJAIANBfHEiBEHAAEkNACACIARBQGoiBUsNAANAIAIgASgCADYCACACIAEoAgQ2AgQgAiABKAIINgIIIAIgASgCDDYCDCACIAEoAhA2AhAgAiABKAIUNgIUIAIgASgCGDYCGCACIAEoAhw2AhwgAiABKAIgNgIgIAIgASgCJDYCJCACIAEoAig2AiggAiABKAIsNgIsIAIgASgCMDYCMCACIAEoAjQ2AjQgAiABKAI4NgI4IAIgASgCPDYCPCABQUBrIQEgAkFAayICIAVNDQALCyACIARPDQADQCACIAEoAgA2AgAgAUEEaiEBIAJBBGoiAiAESQ0ACwsgAiADSQRAA0AgAiABLQAAOgAAIAFBAWohASACQQFqIgIgA0cNAAsLIAALBwBBARACAAsFAEHQLAtPAQF8IAAgAKIiACAAIACiIgGiIABEaVDu4EKT+T6iRCceD+iHwFa/oKIgAURCOgXhU1WlP6IgAESBXgz9///fv6JEAAAAAAAA8D+goKC2C0sBAnwgACAAoiIBIACiIgIgASABoqIgAUSnRjuMh83GPqJEdOfK4vkAKr+goiACIAFEsvtuiRARgT+iRHesy1RVVcW/oKIgAKCgtgvwAgICfwF+AkAgAkUNACAAIAE6AAAgACACaiIDQQFrIAE6AAAgAkEDSQ0AIAAgAToAAiAAIAE6AAEgA0EDayABOgAAIANBAmsgAToAACACQQdJDQAgACABOgADIANBBGsgAToAACACQQlJDQAgAEEAIABrQQNxIgRqIgMgAUH/AXFBgYKECGwiADYCACADIAIgBGtBfHEiAmoiAUEEayAANgIAIAJBCUkNACADIAA2AgggAyAANgIEIAFBCGsgADYCACABQQxrIAA2AgAgAkEZSQ0AIAMgADYCGCADIAA2AhQgAyAANgIQIAMgADYCDCABQRBrIAA2AgAgAUEUayAANgIAIAFBGGsgADYCACABQRxrIAA2AgAgAiADQQRxQRhyIgFrIgJBIEkNACAArUKBgICAEH4hBSABIANqIQEDQCABIAU3AxggASAFNwMQIAEgBTcDCCABIAU3AwAgAUEgaiEBIAJBIGsiAkEfSw0ACwsLAwABC04BAX8gACgCPCEDIwBBEGsiACQAIAMgASACQf8BcSAAQQhqEAYiAgR/QdAsIAI2AgBBfwVBAAshAiAAKQMIIQEgAEEQaiQAQn8gASACGwv0AgEHfyMAQSBrIgMkACADIAAoAhwiBDYCECAAKAIUIQUgAyACNgIcIAMgATYCGCADIAUgBGsiATYCFCABIAJqIQVBAiEHAn8CQAJAAkAgACgCPCADQRBqIgFBAiADQQxqEAQi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EDQgACANIAUQMCAAQSAgAiADIARBgMAAcxA0IAMgAiACIANIGyEJCyALQbAEaiQAIAkLiQUCBn4BfyABIAEoAgBBB2pBeHEiAUEQajYCACAAAnwgASkDACEEIAEpAwghBSMAQSBrIgAkAAJAIAVC////////////AIMiA0KAgICAgIDAgDx9IANCgICAgICAwP/DAH1UBEAgBUIEhiAEQjyIhCEDIARC//////////8PgyIEQoGAgICAgICACFoEQCADQoGAgICAgICAwAB8IQIMAgsgA0KAgICAgICAgEB9IQIgBEKAgICAgICAgAhSDQEgAiADQgGDfCECDAELIARQIANCgICAgICAwP//AFQgA0KAgICAgIDA//8AURtFBEAgBUIEhiAEQjyIhEL/////////A4NCgICAgICAgPz/AIQhAgwBC0KAgICAgICA+P8AIQIgA0L///////+//8MAVg0AQgAhAiADQjCIpyIBQZH3AEkNACAEIQIgBUL///////8/g0KAgICAgIDAAIQiAyEGAkAgAUGB9wBrIghBwABxBEAgAiAIQUBqrYYhBkIAIQIMAQsgCEUNACAGIAitIgeGIAJBwAAgCGutiIQhBiACIAeGIQILIAAgAjcDECAAIAY3AxgCQEGB+AAgAWsiAUHAAHEEQCADIAFBQGqtiCEEQgAhAwwBCyABRQ0AIANBwAAgAWuthiAEIAGtIgKIhCEEIAMgAoghAwsgACAENwMAIAAgAzcDCCAAKQMIQgSGIAApAwAiBEI8iIQhAiAAKQMQIAApAxiEQgBSrSAEQv//////////D4OEIgRCgYCAgICAgIAIWgRAIAJCAXwhAgwBCyAEQoCAgICAgICACFINACACQgGDIAJ8IQILIABBIGokACACIAVCgICAgICAgICAf4OEvws5AwALlwIAIABFBEBBAA8LAn8CQCAABH8gAUH/AE0NAQJAQfQtKAIAKAIARQRAIAFBgH9xQYC/A0YNAwwBCyABQf8PTQRAIAAgAUE/cUGAAXI6AAEgACABQQZ2QcABcjoAAEECDAQLIAFBgEBxQYDAA0cgAUGAsANPcUUEQCAAIAFBP3FBgAFyOgACIAAgAUEMdkHgAXI6AAAgACABQQZ2QT9xQYABcjoAAUEDDAQLIAFBgIAEa0H//z9NBEAgACABQT9xQYABcjoA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', imports)}
 
 class LoopSubdivision {
     static #instance;
@@ -16392,6 +16602,8 @@ class LoopSubdivision {
                 fd_close: (p1, p2, p3, p4) => {
                 },
                 proc_exit: (p1) => { console.log('Exit code:', p1); },
+                args_sizes_get: () => { return 0; },
+                args_get: (p1) => { },
             },
         };
         //this.#webAssembly = await WebAssembly.instantiateStreaming(fetch('loop_subdivision.wasm'), imports);
@@ -20540,8 +20752,7 @@ class SkeletalMesh extends Mesh {
         }
         return ret;
     }
-    getRandomPointOnModel(vec, initialVec, bones) {
-        const ret = {};
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
         const skeletonBones = this.skeleton._bones;
         //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
         const geometry = this.getGeometry();
@@ -20556,9 +20767,9 @@ class SkeletalMesh extends Mesh {
             return Math.floor(Math.random() * max);
         }
         const vertexIndex = RandomInt(vertexCount);
-        vec[0] = 0;
-        vec[1] = 0;
-        vec[2] = 0;
+        out[0] = 0;
+        out[1] = 0;
+        out[2] = 0;
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             //for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
             {
@@ -20576,10 +20787,10 @@ class SkeletalMesh extends Mesh {
                 accumulateMat[12] = 0;
                 accumulateMat[13] = 0;
                 accumulateMat[14] = 0;
-                vec[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
-                vec[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
-                vec[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
-                vec3.copy(initialVec, vec);
+                out[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
+                out[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
+                out[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
+                vec3.copy(initialVec, out);
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
                     const boneArrayIndex2 = boneArrayIndex + boneIndex;
                     const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
@@ -20603,10 +20814,10 @@ class SkeletalMesh extends Mesh {
                         accumulateMat[14] += boneWeight * boneMat[14];
                     }
                 }
-                vec3.transformMat4(vec, vec, accumulateMat);
+                vec3.transformMat4(out, out, accumulateMat);
             }
         }
-        return ret;
+        return -1;
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
         const skeletonBones = this.skeleton._bones;
@@ -23327,7 +23538,7 @@ class WireframeHelper extends Entity {
         const arraySize = indexArray.length * 2;
         const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1, 'index') : new Uint16BufferAttribute(new Array(arraySize), 1, 'index');
         wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
-        geometry.setAttribute('index', wireframeAttribute);
+        geometry.setIndex(wireframeAttribute);
         geometry.count = arraySize;
         wireframeArray = wireframeAttribute._array;
         if (!wireframeArray) {
@@ -28206,6 +28417,7 @@ class Source2FileBlock {
     }
     getNormalsTangents(meshIndex, bufferId) {
         function decompressNormal(inputNormal, outputNormal) {
+            //const fOne = 1.0;
             //let outputNormal = vec3.create();
             //float2 ztSigns		= ( inputNormal.xy - 128.0 ) < 0;				// sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
             const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
@@ -28232,8 +28444,6 @@ class Source2FileBlock {
             outputTangent[3] = tSign;
         }
         function decompressNormal2(inputNormal) {
-            let normals;
-            let tangents;
             const SignBit = inputNormal & 1; // LSB bit
             const Tbits = (inputNormal >> 1) & 0x7ff; // 11 bits
             const Xbits = (inputNormal >> 12) & 0x3ff; // 10 bits
@@ -28252,7 +28462,7 @@ class Source2FileBlock {
             unpackedNormal[0] += negativeZCompensation * (1 - unpackedNormalXPositive) + -negativeZCompensation * unpackedNormalXPositive; // mix() - x×(1−a)+y×a
             unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
             const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
-            normals = normal;
+            const normals = normal;
             // Invert tangent when normal Z is negative
             const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
             // equal to tangentSign * (1.0 + abs(normal.z))
@@ -28276,7 +28486,7 @@ class Source2FileBlock {
             const c = vec3.cross(vec3.create(), normal, unalignedTangent);
             vec3.scale(c, c, Math.sin(nPackedFrameT));
             vec3.add(tangent, tangent, c);
-            tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
+            const tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
             return [normals, tangents];
         }
         const vertexBuffer = this.file.vertices.get(meshIndex)?.[bufferId];
@@ -28285,6 +28495,7 @@ class Source2FileBlock {
         const tangentArray = [];
         const compressedNormal = vec2.create();
         const compressedTangent = vec2.create();
+        //let normalVec3;
         let normalTemp = vec3.create();
         let tangentTemp = vec4.create();
         for (let i = 0, l = normals.length; i < l; i += 4) {
@@ -28411,7 +28622,7 @@ class Source2MaterialLoader {
         const material = this.#loadMaterial(repository, source2File);
         return material;
     }
-    static async #loadMaterial(repository, file) {
+    static #loadMaterial(repository, file) {
         //TODO: use getMaterialResourceData()
         const shaderName = file.getBlockStructAsString('DATA', 'm_shaderName') ?? file.getBlockStructAsString('DATA', 'MaterialResourceData_t.m_shaderName'); // || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
         if (shaderName === null) {
@@ -28620,6 +28831,7 @@ class Source2AnimationDesc {
         frameIndex = clamp$1(frameIndex, 0, this.lastFrame);
         const frameBlockArray = this.#frameBlockArray;
         let segmentIndexArray = null;
+        //let frameBlock = null;
         const decodeKey = this.#animationResource.getDecodeKey();
         const decodeArray = this.#animationResource.getDecoderArray();
         const boneArray = [];
@@ -28648,7 +28860,11 @@ class Source2AnimationDesc {
         }
         if (frameBlockArray && decodeArray && decodeKeyBoneArray && decodeKeyDataChannelArray) {
             for (const decodeKeyBone of decodeKeyBoneArray) {
-                boneArray.push({ name: decodeKeyBone.getValueAsString('m_name') });
+                boneArray.push({
+                    name: decodeKeyBone.getValueAsString('m_name') ?? '',
+                    Position: vec3.create(),
+                    Angle: quat.create(),
+                });
             }
             for (const frameBlock of frameBlockArray) {
                 const startFrame = frameBlock.getValueAsNumber('m_nStartFrame') ?? 0;
@@ -28673,7 +28889,7 @@ class Source2AnimationDesc {
         //console.log(boneArray);
         return boneArray;
     }
-    #getReader(segment, container) {
+    #getReader(segment /*, container: Uint8Array*/) {
         let reader = this.#segmentReaders.get(segment);
         if (!reader) {
             reader = new BinaryReader(segment.getValueAsBlob('m_container') ?? '');
@@ -28693,11 +28909,11 @@ class Source2AnimationDesc {
         if (!channelVar || !container || container.length < 8) {
             return;
         }
-        const reader = this.#getReader(segment, container); //segment.dataReader;
+        const reader = this.#getReader(segment /*, container*/); //segment.dataReader;
         const decoderId = container[0] + (container[1] << 8);
         let bytesPerBone = container[2] + (container[3] << 8);
         const boneCount = container[4] + (container[5] << 8);
-        container[6] + (container[7] << 8);
+        //const dataLength = container[6]! + (container[7]! << 8);
         bytesPerBone = 0;
         const segmentBoneArray = [];
         const elementIndexArray = channel.getValueAsNumberArray('m_nElementIndexArray');
@@ -28749,12 +28965,12 @@ class Source2AnimationDesc {
                 default:
                     return;
             }
-            var byteIndex = 8;
-            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
+            let byteIndex = 8;
+            for (let boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
                 segmentBoneArray.push(container[byteIndex + 0] /*TODO: actually check value*/ + (container[byteIndex + 1] /*TODO: actually check value*/ << 8));
             }
-            var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
-            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
+            byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
+            for (let boneIndex = 0; boneIndex < boneCount; boneIndex++) {
                 const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex] /*TODO: actually check value*/);
                 if (boneIndex2 === undefined) { //removeme
                     continue;
@@ -28765,6 +28981,7 @@ class Source2AnimationDesc {
                     bytes.push(container[byteIndex2 + j] ?? 0);
                 }
                 let tmpValue = null;
+                let x, y, z;
                 switch (decoderName) {
                     case 'CCompressedFullFloat':
                     case 'CCompressedStaticFloat':
@@ -28773,18 +28990,18 @@ class Source2AnimationDesc {
                     case 'CCompressedStaticFullVector3':
                     case 'CCompressedFullVector3':
                         //case 'CCompressedAnimVector3':
-                        var x = getFloat32$1(bytes, 0);
-                        var y = getFloat32$1(bytes, 4);
-                        var z = getFloat32$1(bytes, 8);
+                        x = getFloat32$1(bytes, 0);
+                        y = getFloat32$1(bytes, 4);
+                        z = getFloat32$1(bytes, 8);
                         tmpValue = vec3.fromValues(x, y, z);
                         break;
                     case 'CCompressedDeltaVector3':
                         tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
                         break;
                     case 'CCompressedStaticVector3':
-                        var x = getFloat16(bytes, 0);
-                        var y = getFloat16(bytes, 2);
-                        var z = getFloat16(bytes, 4);
+                        x = getFloat16(bytes, 0);
+                        y = getFloat16(bytes, 2);
+                        z = getFloat16(bytes, 4);
                         tmpValue = vec3.fromValues(x, y, z);
                         break;
                     case 'CCompressedAnimQuaternion':
@@ -28998,7 +29215,7 @@ class Source2Animation {
         //TODO: check segement
         return this.#segmentArray[segmentIndex] ?? null;
     }
-    async getAnimations(animations = new Set()) {
+    getAnimations(animations = new Set()) {
         for (const anim of this.#animArray) {
             const animName = anim.getSubValueAsString('m_name');
             if (animName) {
@@ -29073,7 +29290,7 @@ class Source2Animation {
     */
     getAnimationsByActivity(activityName) {
         const anims = [];
-        for (const [animName, animDesc] of this.#animNames) {
+        for (const [, animDesc] of this.#animNames) {
             if (animDesc.matchActivity(activityName)) {
                 anims.push(animDesc);
             }
@@ -29346,11 +29563,13 @@ class Source2AnimGroup {
                 return animation;
             }
         }
+        return null;
     }
     matchActivity(activity, modifiers) {
         if (this.directHSeqGroup) {
             return this.directHSeqGroup.matchActivity(activity, modifiers);
         }
+        return false;
     }
     getAnims() {
         const anims = new Set();
@@ -29507,7 +29726,7 @@ async function getVanim(repository, animName, anim) {
                     })
                 });
                 */
-    loadVanim(repository, animFile, anim);
+    await loadVanim(repository, animFile, anim);
     /*
     let promise = new Promise((resolve) => {
         fetch(new Request(animFile)).then((response) => {
@@ -29563,29 +29782,26 @@ async function loadVagrp(repository, fileName, animGroup) {
     //this.fileLoaded(model);TODOv3
 }
 
-const AnimManager = new (function () {
-    const animGroupList = {};
-    class AnimManager {
-        async getAnimGroup(source2Model, repository, animGroupName) {
-            let animGroup = animGroupList[animGroupName];
-            if (!animGroup) {
-                animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
-            }
-            if (animGroup) {
-                animGroupList[animGroupName] = animGroup;
-            }
-            else {
-                //TODO; create dummy
-                console.error('No anim group loaded');
-            }
-            return animGroup;
+class AnimManager {
+    static #animGroupList = {};
+    static async getAnimGroup(source2Model, repository, animGroupName) {
+        let animGroup = this.#animGroupList[animGroupName];
+        if (!animGroup) {
+            animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
         }
-        removeAnimGroup(animGroupName) {
-            delete animGroupList[animGroupName];
+        if (animGroup) {
+            this.#animGroupList[animGroupName] = animGroup;
         }
+        else {
+            //TODO; create dummy
+            console.error('No anim group loaded');
+        }
+        return animGroup;
     }
-    return AnimManager;
-}());
+    static removeAnimGroup(animGroupName) {
+        delete this.#animGroupList[animGroupName];
+    }
+}
 
 const tempPos$1 = vec3.create();
 const tempQuat$6 = quat.create();
@@ -29719,7 +29935,7 @@ class Source2ModelInstance extends Entity {
             mask = 0xffffffffffffffffn;
         }
         for (const mesh of this.meshes) {
-            const geometry = mesh.geometry;
+            const geometry = mesh.getGeometry();
             mesh.setVisible(undefined);
             if (geometry) {
                 const meshGroupMask = geometry.properties.getBigint('mesh_group_mask') ?? 0xffffffffffffffffn;
@@ -29745,8 +29961,9 @@ class Source2ModelInstance extends Entity {
             return null;
         }
         const ret = super.addChild(child);
-        if (child.skeleton) {
-            child.skeleton.setParentSkeleton(this.#skeleton);
+        const skeleton = child.skeleton;
+        if (skeleton) {
+            skeleton.setParentSkeleton(this.#skeleton);
         }
         /*if (child instanceof Source2ModelInstance) {
             for (let mesh of child.meshes) {
@@ -29762,8 +29979,9 @@ class Source2ModelInstance extends Entity {
     }
     removeChild(child) {
         super.removeChild(child);
-        if (child.skeleton) {
-            child.skeleton.setParentSkeleton(null);
+        const skeleton = child.skeleton;
+        if (skeleton) {
+            skeleton.setParentSkeleton(null);
         }
     }
     set skin(skin) {
@@ -29773,9 +29991,10 @@ class Source2ModelInstance extends Entity {
     get skin() {
         return this.#skin;
     }
-    async setSkin(skin) {
+    setSkin(skin) {
         this.#skin = Number(skin);
-        await this.#updateMaterials();
+        this.#updateMaterials();
+        return Promise.resolve();
     }
     setLOD(lod) {
         this.#lod = BigInt(lod);
@@ -29796,7 +30015,7 @@ class Source2ModelInstance extends Entity {
     playAnimation(name) {
         this.#animName = name;
     }
-    async setAnimation(id, name, weight) {
+    setAnimation(id, name /*, weight: number*/) {
         this.#animName = name;
     }
     setActivityModifiers(activityModifiers = []) {
@@ -29830,16 +30049,15 @@ class Source2ModelInstance extends Entity {
         if (animDesc) {
             const posArray = animDesc.getFrame(Math.floor(this.mainAnimFrame % (animDesc.lastFrame + 1)));
             this.mainAnimFrame += delta * animDesc.fps;
-            for (let i = 0; i < posArray.length; ++i) {
-                const pos = posArray[i];
+            for (const pos of posArray) {
                 const boneName = pos.name.toLowerCase();
                 const propBone = this.#skeleton.getBoneByName(boneName);
                 if (propBone) {
                     if (!propBone.lockPosition) {
-                        propBone.position = pos.Position || identityVec3$1;
+                        propBone.setPosition(pos.Position || identityVec3$1);
                     }
                     if (!propBone.lockRotation) {
-                        propBone.quaternion = pos.Angle || identityQuat;
+                        propBone.setQuaternion(pos.Angle || identityQuat);
                     }
                 }
             }
@@ -29847,10 +30065,10 @@ class Source2ModelInstance extends Entity {
         else {
             for (const bone of this.#skeleton.bones) {
                 if (!bone.lockPosition) {
-                    bone.position = bone.refPosition;
+                    bone.setPosition(bone.refPosition);
                 }
                 if (!bone.lockRotation) {
-                    bone.quaternion = bone.refQuaternion;
+                    bone.setQuaternion(bone.refQuaternion);
                 }
             }
         }
@@ -29865,8 +30083,8 @@ class Source2ModelInstance extends Entity {
         //console.error(materials, this);
         for (const mesh of this.meshes) {
             if (materials0 && materials) {
-                for (const i in materials0) {
-                    if (materials0[i] == mesh.geometry?.properties.getString('materialPath')) {
+                for (let i = 0; i < materials0.length; i++) {
+                    if (materials0[i] == mesh.getGeometry()?.properties.getString('materialPath')) {
                         const materialPath = materials[i];
                         if (materialPath) {
                             mesh.properties.setString('materialPath', materialPath);
@@ -29880,7 +30098,7 @@ class Source2ModelInstance extends Entity {
                 }*/
             }
             else {
-                const materialPath = mesh.geometry?.properties.getString('materialPath');
+                const materialPath = mesh.getGeometry()?.properties.getString('materialPath');
                 if (materialPath) {
                     mesh.properties.setString('materialPath', materialPath);
                 }
@@ -29897,14 +30115,14 @@ class Source2ModelInstance extends Entity {
             }
         }
     }
-    async getSkins() {
+    getSkins() {
         const skins = this.sourceModel.getSkinList();
         if (skins.length == 0) {
             skins.push('default');
         }
-        return new Set(skins);
+        return Promise.resolve(new Set(skins));
     }
-    async getMaterialsName(skin) {
+    getMaterialsName(skin) {
         const materials = this.sourceModel.getSkinMaterials(Number(skin));
         const s = new Set();
         if (materials) {
@@ -29921,7 +30139,7 @@ class Source2ModelInstance extends Entity {
                 }
             }
         }
-        return [this.sourceModel.repository, s];
+        return Promise.resolve([this.sourceModel.repository, s]);
     }
     #init() {
         const sourceModel = this.sourceModel;
@@ -29972,8 +30190,8 @@ class Source2ModelInstance extends Entity {
                 for (const [modelBoneIndex, boneName] of bonesName.entries()) {
                     const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
                     //bone.name = boneName;
-                    bone.quaternion = boneRotParent[modelBoneIndex];
-                    bone.position = bonePosParent[modelBoneIndex];
+                    bone.setQuaternion(boneRotParent[modelBoneIndex]);
+                    bone.setPosition(bonePosParent[modelBoneIndex]);
                     bone.refQuaternion = boneRotParent[modelBoneIndex];
                     bone.refPosition = bonePosParent[modelBoneIndex];
                     //const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
@@ -30015,7 +30233,7 @@ class Source2ModelInstance extends Entity {
         }
     }
     getAnimations() {
-        return this.sourceModel.getAnimations();
+        return Promise.resolve(this.sourceModel.getAnimations());
     }
     buildContextMenu() {
         const skins = this.sourceModel.getSkinList();
@@ -30029,7 +30247,7 @@ class Source2ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source2ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, entity.sourceModel.getAnimations()); if (animation) {
                     entity.playAnimation(animation);
                 } } },
             Source2ModelInstance_2: null,
@@ -30043,16 +30261,15 @@ class Source2ModelInstance extends Entity {
     getParentModel() {
         return this;
     }
-    getRandomPointOnModel(vec, initialVec, bones) {
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
         const meshes = this.meshes;
         for (const mesh of meshes) {
-            mesh.getRandomPointOnModel(vec, initialVec, bones);
-            return vec;
+            return mesh.getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut);
         }
-        return vec;
+        return -1;
     }
     getAttachment(name) {
-        return this.attachments.get(name.toLowerCase());
+        return this.attachments.get(name.toLowerCase()) ?? null;
     }
     static set animSpeed(speed) {
         const s = Number(speed);
@@ -30335,20 +30552,20 @@ class Source2Model {
         animations.addAnimations(anims);
         return animations;
     }
-    async getAnimations() {
+    getAnimations() {
         const animations = new Set();
         for (const animGroup of this.#animGroups) {
             if (animGroup.localAnimArray) {
                 for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
-                    const animRemoveMe = await animGroup.getAnim(localAnimIndex);
+                    const animRemoveMe = animGroup.getAnim(localAnimIndex);
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
                     }
                 }
             }
             if (animGroup._changemyname) {
-                for (let animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
-                    const animRemoveMe = animGroup._changemyname[animResIndex];
+                for (const animRemoveMe of animGroup._changemyname) {
+                    //const animRemoveMe = animGroup._changemyname[animResIndex];
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
                     }
@@ -30401,6 +30618,7 @@ class Source2Model {
                 return anim;
             }
         }
+        return null;
     }
 }
 
@@ -30411,7 +30629,7 @@ class Source2ModelLoader {
     static {
         defaultMaterial$1.addUser(_a$3);
     }
-    async load(repository, path) {
+    load(repository, path) {
         // Cleanup filename
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
         let repoPromises = _a$3.#loadPromisesPerRepo[repository];
@@ -30740,6 +30958,7 @@ class Source2ModelLoader {
                 }
                 else {
                     sourceBlock.reader.seek(startOffset);
+                    //var vertex = {};
                     //s2.indices.push(indexReader.getUint16());
                     if (elementSizeInBytes == 2) {
                         s2Indices[elementIndex] = reader.getUint16();
@@ -30877,10 +31096,10 @@ class Source2ModelLoader {
         }
         await Promise.all(promises);
     }
-    async #loadIncludeModels(model) {
+    #loadIncludeModels(model) {
         const includeModels = model.getIncludeModels();
         for (const includeModel of includeModels) {
-            const refModel = await new _a$3().load(model.repository, includeModel);
+            const refModel = new _a$3().load(model.repository, includeModel);
             if (refModel) {
                 model.addIncludeModel(refModel);
             }
@@ -30894,10 +31113,7 @@ class Source2ModelManager {
     static #modelsPerRepository = {}; //TODO: use a map2
     static #modelList = new Map();
     static instances = new Set();
-    static async #createModel(repository, path) {
-        if (!path) {
-            return;
-        }
+    static #createModel(repository, path) {
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
         /*let fullPath = repository + fileName;
         let model = this.#modelList.get(fullPath);*/
@@ -30905,7 +31121,7 @@ class Source2ModelManager {
         if (model) {
             return model;
         }
-        model = await new Source2ModelLoader().load(repository, path);
+        model = new Source2ModelLoader().load(repository, path);
         if (model) {
             this.#modelsPerRepository[repository][path] = model;
         }
@@ -30931,7 +31147,7 @@ class Source2ModelManager {
         }
         return this.#modelsPerRepository[repository][path] ?? null;
     }
-    static async createInstance(repository, fileName, dynamic) {
+    static createInstance(repository, fileName, dynamic) {
         if (!repository) {
             //try to get repository from filename
             for (const repo in this.#modelListPerRepository) {
@@ -30942,14 +31158,14 @@ class Source2ModelManager {
                 }
             }
         }
-        const model = await this.#createModel(repository, fileName);
+        const model = this.#createModel(repository, fileName);
         if (model) {
             const instance = model.createInstance(dynamic);
             return instance;
         }
         return null;
     }
-    static async loadManifest(repository) {
+    static loadManifest(repository) {
         const modelList = this.#modelListPerRepository[repository];
         if (modelList === undefined) {
             this.#modelListPerRepository[repository] = null;
@@ -38114,19 +38330,22 @@ class ChoreographiesManager {
     static #vcds = new Map2();
     static async init(repositoryName, fileName) {
         if (!this.#sceneImage) {
-            this.#sceneImage = new Choreographies();
-            await this.#sceneImage.loadFile(repositoryName, fileName);
-            GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
-                if (event.detail.delta) {
-                    this.step(event.detail.delta);
-                }
+            this.#sceneImage = new Promise(resolve => {
+                const choreographies = new Choreographies();
+                choreographies.loadFile(repositoryName, fileName).then(() => resolve(choreographies));
+                GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
+                    if (event.detail.delta) {
+                        this.step(event.detail.delta);
+                    }
+                });
             });
         }
+        await this.#sceneImage;
     }
     static async playChoreography(repository, choreoName, actors) {
         let choreography = this.#vcds.get(repository, choreoName);
         if (!choreography && this.#sceneImage) {
-            choreography = await this.#sceneImage.getChoreography(choreoName);
+            choreography = await (await this.#sceneImage).getChoreography(choreoName);
         }
         if (!choreography) {
             return null;
@@ -38134,6 +38353,9 @@ class ChoreographiesManager {
         this.#choreographies.add(choreography);
         choreography.setActors(actors);
         return choreography;
+    }
+    static stopChoreography(choreography) {
+        this.#choreographies.delete(choreography);
     }
     static addChoreography(repository, choreoName, choreo) {
         this.#vcds.set(repository, choreoName, choreo);
@@ -38144,7 +38366,7 @@ class ChoreographiesManager {
             return choreography;
         }
         if (this.#sceneImage) {
-            return await this.#sceneImage.getChoreography(choreoName);
+            return await (await this.#sceneImage).getChoreography(choreoName);
         }
         return null;
     }
@@ -43689,6 +43911,7 @@ class Source1ModelInstance extends Entity {
     #bodyGroups = new Map();
     frameframe = { bones: {} };
     static #animSpeed = 1.0;
+    hasHitBoxes = true;
     static {
         defaultMaterial.addUser(_a$1);
     }
@@ -44271,6 +44494,16 @@ class Source1ModelInstance extends Entity {
         }
         this.addChild(system);
         const controlPoint = system.getControlPoint(0);
+        // Handle special case for root
+        if (boneName == 'root') {
+            for (const bone of this.#skeleton.bones) {
+                // We look for the first merged bone
+                if (bone.parentSkeletonBone) {
+                    bone.addChild(controlPoint);
+                    return;
+                }
+            }
+        }
         const bone = this.#skeleton.getBoneByName(boneName);
         if (bone) {
             bone.addChild(controlPoint);
@@ -44337,21 +44570,22 @@ class Source1ModelInstance extends Entity {
     getParentModel() {
         return this;
     }
-    getRandomPointOnModel(vec, initialVec, bones) {
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
         const hitboxes = this.getHitboxes();
-        const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+        const hitBoxId = getRandomInt /*TODO: use random int of the particle collection*/(hitboxes.length);
+        const hitbox = hitboxes[hitBoxId];
         if (!hitbox) {
-            return vec;
+            return -1;
         }
         const bone = hitbox.parent;
         if (bone) {
             bones.push([bone, 1]);
-            vec3RandomBox(vec, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
+            vec3RandomBox(out, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
             //vec3.transformMat4(vec, vec, bone.boneMat);
-            vec3.copy(initialVec, vec);
-            vec3.transformMat4(vec, vec, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
+            vec3.copy(initialVec, out);
+            vec3.transformMat4(out, out, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
         }
-        return vec;
+        return hitBoxId;
     }
     setPosition(position) {
         super.setPosition(position);
@@ -55421,6 +55655,8 @@ class PositionOnModelRandom extends Source1ParticleOperator {
     doInit(particle, elapsedTime) {
         const controlPointNumber = this.getParameter('control_point_number');
         const forceInModel = this.getParameter('force to be inside model');
+        const directionBias = this.getParameter('direction bias');
+        const hitboxScale = this.getParameter('hitbox scale');
         if (forceInModel > 15) {
             errorOnce(`forceInModel > 15 ${forceInModel}`);
             particle.die();
@@ -55430,13 +55666,13 @@ class PositionOnModelRandom extends Source1ParticleOperator {
         if (!controlPoint) {
             return;
         }
-        // TODO : Actually we should get the model parenting the control point
         const controllingModel = controlPoint.parentModel;
         if (controllingModel && controllingModel.getRandomPointOnModel) {
             //TODOv3
             particle.bones = [];
             particle.initialVec = vec3.create();
-            const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, particle.bones);
+            const position = vec3.create();
+            controllingModel.getRandomPointOnModel(position, particle.initialVec, controlPoint, forceInModel, directionBias, hitboxScale, particle.bones, undefined);
             //vec3.copy(particle.position, position);
             //vec3.copy(particle.prevPosition, position);
             if (controlPoint) {
@@ -57720,6 +57956,23 @@ class SetControlPointToParticlesCenter extends Source1ParticleOperator {
     }
 }
 Source1ParticleOperators.registerOperator(SetControlPointToParticlesCenter);
+
+vec3.create();
+class SetControlPointToPlayer extends Source1ParticleOperator {
+    static functionName = 'Set Control Point To Player';
+    constructor(system) {
+        super(system);
+        this.addParam('Control Point Number', PARAM_TYPE_INT, 1);
+        this.addParam('Control Point Offset', PARAM_TYPE_VECTOR3, vec3.create());
+    }
+    doOperate( /*particle: Source1Particle, elapsedTime: number*/) {
+        const controlPointNumber = this.getParameter('Control Point Number');
+        this.getParameter('Control Point Offset');
+        // TODO: set it to the camera position
+        this.particleSystem.setControlPointPosition(controlPointNumber, vec3.fromValues(1000, 0, 0));
+    }
+}
+Source1ParticleOperators.registerOperator(SetControlPointToPlayer);
 
 const tempQuat$3 = quat.create();
 const IDENTITY_QUAT = quat.create();
@@ -61714,10 +61967,7 @@ class OperatorParam {
         if (kv3.isKv3Value) {
             return this.#fromKv3Value(name, kv3);
         }
-        if (kv3 === null) {
-            new OperatorParam(name, OperatorParamType.Null, null);
-        }
-        throw 'fix me';
+        throw new Error('fix me');
     }
     static #fromKv3Element(name, element) {
         const operatorParam = new OperatorParam(name, OperatorParamType.Element, new Map);
@@ -61772,7 +62022,7 @@ class OperatorParam {
                 case Kv3Type.Element:
                     return this.#fromKv3Element(name, kv3.getValue());
                 default:
-                    throw 'fix me, missing type';
+                    throw new Error('fix me, missing type');
             }
         }
         return new OperatorParam(name, type, value);
@@ -61806,91 +62056,88 @@ class Source2Snapshot {
     }
 }
 
-const Source2SnapshotLoader = new (function () {
-    class Source2SnapshotLoader {
-        async load(repository, filename) {
-            filename = filename.replace(/\.vsnap_c/, '').replace(/\.vsnap/, '');
-            const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
-            if (snapFile) {
-                return this.#loadSnapshot(snapFile);
-            }
-            else {
-                return null;
-            }
+class Source2SnapshotLoader {
+    static async load(repository, filename) {
+        filename = filename.replace(/\.vsnap_c/, '').replace(/\.vsnap/, '');
+        const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
+        if (snapFile) {
+            return this.#loadSnapshot(snapFile);
         }
-        #loadSnapshot(snapFile) {
-            const snapShot = new Source2Snapshot();
-            snapShot.file = snapFile;
-            const dataBlock = snapFile.getBlockByType('DATA');
-            const snapBlock = snapFile.getBlockByType('SNAP');
-            if (dataBlock && snapBlock) {
-                const particleCount = dataBlock.getKeyValueAsNumber('num_particles') ?? 0;
-                snapShot.setParticleCount(particleCount);
-                const snapshotAttributes = dataBlock.getKeyValueAsElementArray('attributes') ?? [];
-                const snapshotStringList = dataBlock.getKeyValueAsStringArray('string_list') ?? [];
-                const reader = new BinaryReader(snapBlock.datas);
-                let attributeValue;
-                let bones;
-                let weights;
-                for (const snapshotAttribute of snapshotAttributes) {
-                    const dataOffset = snapshotAttribute.getSubValueAsNumber('data_offset');
-                    if (dataOffset === null) {
-                        continue;
-                    }
-                    reader.seek(dataOffset);
-                    const attributeType = snapshotAttribute.getSubValueAsString('type');
-                    switch (attributeType) {
-                        case 'float3':
-                        case 'vector':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(reader.getVector3());
-                            }
-                            break;
-                        case 'skinning':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                const skinning = Object.create(null) /*TODO: create type*/;
-                                bones = [];
-                                weights = [];
-                                for (let i = 0; i < 4; ++i) {
-                                    bones.push(snapshotStringList[reader.getUint16()]);
-                                }
-                                for (let i = 0; i < 4; ++i) {
-                                    weights.push(reader.getFloat32());
-                                }
-                                skinning.bones = bones;
-                                skinning.weights = weights;
-                                attributeValue.push(skinning);
-                            }
-                            break;
-                        case 'string':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(snapshotStringList[reader.getUint32()]);
-                            }
-                            break;
-                        case 'float':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(reader.getFloat32());
-                            }
-                            break;
-                        default:
-                            attributeValue = null;
-                            console.error('Unknown snapshot attribute type', attributeType, snapshotAttribute, snapFile, particleCount);
-                    }
-                    const name = snapshotAttribute.getSubValueAsString('name');
-                    if (name) {
-                        snapShot.attributes[name] = attributeValue;
-                    }
-                }
-            }
-            return snapShot;
+        else {
+            return null;
         }
     }
-    return Source2SnapshotLoader;
-}());
+    static #loadSnapshot(snapFile) {
+        const snapShot = new Source2Snapshot();
+        snapShot.file = snapFile;
+        const dataBlock = snapFile.getBlockByType('DATA');
+        const snapBlock = snapFile.getBlockByType('SNAP');
+        if (dataBlock && snapBlock) {
+            const particleCount = dataBlock.getKeyValueAsNumber('num_particles') ?? 0;
+            snapShot.setParticleCount(particleCount);
+            const snapshotAttributes = dataBlock.getKeyValueAsElementArray('attributes') ?? [];
+            const snapshotStringList = dataBlock.getKeyValueAsStringArray('string_list') ?? [];
+            const reader = new BinaryReader(snapBlock.datas);
+            let attributeValue;
+            let bones;
+            let weights;
+            for (const snapshotAttribute of snapshotAttributes) {
+                const dataOffset = snapshotAttribute.getSubValueAsNumber('data_offset');
+                if (dataOffset === null) {
+                    continue;
+                }
+                reader.seek(dataOffset);
+                const attributeType = snapshotAttribute.getSubValueAsString('type');
+                switch (attributeType) {
+                    case 'float3':
+                    case 'vector':
+                        attributeValue = [];
+                        for (let i = 0; i < particleCount; ++i) {
+                            attributeValue.push(reader.getVector3());
+                        }
+                        break;
+                    case 'skinning':
+                        attributeValue = [];
+                        for (let i = 0; i < particleCount; ++i) {
+                            const skinning = Object.create(null) /*TODO: create type*/;
+                            bones = [];
+                            weights = [];
+                            for (let i = 0; i < 4; ++i) {
+                                bones.push(snapshotStringList[reader.getUint16()]);
+                            }
+                            for (let i = 0; i < 4; ++i) {
+                                weights.push(reader.getFloat32());
+                            }
+                            skinning.bones = bones;
+                            skinning.weights = weights;
+                            attributeValue.push(skinning);
+                        }
+                        break;
+                    case 'string':
+                        attributeValue = [];
+                        for (let i = 0; i < particleCount; ++i) {
+                            attributeValue.push(snapshotStringList[reader.getUint32()]);
+                        }
+                        break;
+                    case 'float':
+                        attributeValue = [];
+                        for (let i = 0; i < particleCount; ++i) {
+                            attributeValue.push(reader.getFloat32());
+                        }
+                        break;
+                    default:
+                        attributeValue = null;
+                        console.error('Unknown snapshot attribute type', attributeType, snapshotAttribute, snapFile, particleCount);
+                }
+                const name = snapshotAttribute.getSubValueAsString('name');
+                if (name) {
+                    snapShot.attributes[name] = attributeValue;
+                }
+            }
+        }
+        return snapShot;
+    }
+}
 
 var Source2ParticleSetMethod;
 (function (Source2ParticleSetMethod) {
@@ -62145,6 +62392,15 @@ var Source2ParticleCpField;
 })(Source2ParticleCpField || (Source2ParticleCpField = {}));
 
 const COLOR_SCALE = 1 / 255;
+/*
+function vec4Scale(out: vec4, a: vec4, b: number) :vec4{
+    out[0] = Number(a[0]) * b;
+    out[1] = Number(a[1]) * b;
+    out[2] = Number(a[2]) * b;
+    out[3] = Number(a[3]) * b;
+    return out;
+}
+*/
 function vec3Lerp(out, a, b, t) {
     const ax = Number(a[0]);
     const ay = Number(a[1]);
@@ -62167,7 +62423,7 @@ const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0; // TODO: check default value
 const DEFAULT_FIELD_INPUT$1 = -1; // TODO: check default value
 const DEFAULT_SCALE_CP = -1; // TODO: check default value
 const DEFAULT_CONTROL_POINT_NUMBER = 0; // TODO: check default value
-const DEFAULT_SET_METHOD$5 = Source2ParticleSetMethod.SetValue; // TODO: check default value
+const DEFAULT_SET_METHOD$6 = Source2ParticleSetMethod.SetValue; // TODO: check default value
 const DEFAULT_ASSOCIATED_EMITTER_INDEX = -1; // disabled
 class Operator {
     static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -62188,7 +62444,7 @@ class Operator {
     endCapState;
     currentTime = 0;
     operateAllParticlesRemoveme = false;
-    setMethod = DEFAULT_SET_METHOD$5;
+    setMethod = DEFAULT_SET_METHOD$6;
     //protected opStrength = DEFAULT_OP_STRENGTH;
     associatedEmitterIndex = DEFAULT_ASSOCIATED_EMITTER_INDEX;
     constructor(system) {
@@ -62265,13 +62521,13 @@ class Operator {
                     return 0;
                 case 'PF_TYPE_PARTICLE_FLOAT':
                     // TODO: use m_nMapType (PF_MAP_TYPE_REMAP...)
-                    return inputValue = RemapValClamped(particle?.getField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) ?? 0, parameter.getSubValueAsNumber('m_flInput0') ?? 0, parameter.getSubValueAsNumber('m_flInput1') ?? 1, parameter.getSubValueAsNumber('m_flOutput0') ?? 0, parameter.getSubValueAsNumber('m_flOutput1') ?? 1);
+                    return inputValue = RemapValClamped(particle?.getScalarField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) ?? 0, parameter.getSubValueAsNumber('m_flInput0') ?? 0, parameter.getSubValueAsNumber('m_flInput1') ?? 1, parameter.getSubValueAsNumber('m_flOutput0') ?? 0, parameter.getSubValueAsNumber('m_flOutput1') ?? 1);
                 case 'PF_TYPE_CONTROL_POINT_SPEED':
                     // TODO: code me
                     return null;
                 default:
                     console.error('#getParamScalarValue unknown type', parameter);
-                    throw 'Code me';
+                    throw new Error('Code me');
             }
         }
         else {
@@ -62310,8 +62566,8 @@ class Operator {
         }
         const inputMin = domainMins[0];
         const inputMax = domainMaxs[0];
-        domainMins[1];
-        domainMaxs[1];
+        //const outputMin = domainMins[1];
+        //const outputMax = domainMaxs[1];
         //let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
         // TODO: use params m_spline, m_tangents, see for instance particles/units/heroes/hero_dawnbreaker/dawnbreaker_ambient_hair.vpcf_c
         if (parameter.getSubValueAsString('m_nInputMode') == 'PF_INPUT_MODE_CLAMPED') {
@@ -62370,7 +62626,7 @@ class Operator {
                 case 'PVEC_TYPE_PARTICLE_VECTOR':
                     if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
                         Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
-                        throw 'Code me';
+                        throw new Error('Code me');
                     }
                     break;
                 case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
@@ -62406,7 +62662,7 @@ class Operator {
                     break;
                 default:
                     console.error('getParamVectorValue unknown type', type, parameter);
-                    throw 'Code me';
+                    throw new Error('Code me');
             }
         }
         else {
@@ -62546,7 +62802,7 @@ class Operator {
                 // used in operateParticle
                 break;
             case 'm_nSetMethod':
-                this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$5;
+                this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$6;
                 break;
             case 'm_nAssociatedEmitterIndex':
                 this.associatedEmitterIndex = param.getValueAsNumber() ?? DEFAULT_ASSOCIATED_EMITTER_INDEX;
@@ -62628,7 +62884,7 @@ class Operator {
     }
     setParameter(name, type, value) {
         if (name == '' || name == undefined) {
-            return this;
+            return;
         }
         if (name == 'operator end cap state') {
             this.endCapState = value;
@@ -62639,7 +62895,6 @@ class Operator {
         //this.#parameters[name].type = type;
         //this.#parameters[name].value = value;
         //this.propertyChanged(parameter);
-        return this;
     }
     getParameter(name) {
         return this.#parameters.get(name) ?? null;
@@ -62652,10 +62907,12 @@ class Operator {
             const pair = parameters[i];
             this.setParameter(pair[0], pair[1], pair[2]);
         }
-        return this;
     }
+    /*
     doNothing() {
     }
+    */
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     reset() {
     }
     getOperatorFade() {
@@ -62772,8 +63029,11 @@ class Operator {
     init() {
         //This function is called after parameters are set
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     dispose() {
     }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
     doInit(particle, elapsedTime, strength) { }
     doEmit(elapsedTime) { }
     doOperate(particle, elapsedTime, strength) { }
@@ -62828,10 +63088,20 @@ const PARTICLE_FIELD_HITBOX_OFFSET_POSITION = 15;
 const PARTICLE_FIELD_SCRATCH_VECTOR = 17;
 const PARTICLE_FIELD_SCRATCH_FLOAT = 18;
 const PARTICLE_FIELD_PITCH = 20;
+const PARTICLE_FIELD_NORMAL = 21;
 const PARTICLE_FIELD_GLOW_RGB = 22;
 const PARTICLE_FIELD_GLOW_ALPHA = 23;
 const ATTRIBUTES_WHICH_ARE_ANGLES = 1 << PARTICLE_FIELD_ROTATION_ROLL | 1 << PARTICLE_FIELD_ROTATION_ROLL_SPEED | 1 << PARTICLE_FIELD_YAW | 1 << PARTICLE_FIELD_PITCH;
 const ATTRIBUTES_WHICH_ARE_0_TO_1 = 1 << PARTICLE_FIELD_ALPHA;
+function isVectorField(field /*TODO: create an enum*/) {
+    return field == PARTICLE_FIELD_POSITION
+        || field == PARTICLE_FIELD_POSITION_PREVIOUS
+        || field == PARTICLE_FIELD_COLOR
+        || field == PARTICLE_FIELD_HITBOX_OFFSET_POSITION
+        || field == PARTICLE_FIELD_SCRATCH_VECTOR
+        || field == PARTICLE_FIELD_NORMAL
+        || field == PARTICLE_FIELD_GLOW_RGB;
+}
 
 const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
 class Source2Particle {
@@ -63216,7 +63486,7 @@ class Source2Particle {
             case PARTICLE_FIELD_SCRATCH_VECTOR:
                 vec3.copy(out, this.scratchVec);
                 break;
-            case 21:
+            case PARTICLE_FIELD_NORMAL:
                 vec3.copy(out, this.normal);
                 break;
             case PARTICLE_FIELD_GLOW_RGB:
@@ -63226,7 +63496,7 @@ class Source2Particle {
         return out;
     }
     /**
-     * @deprecated Please use getScalarField instead.
+     * @deprecated Please use getScalarField or getVectorField instead.
      */
     getField(field = 0, initial = false) {
         // TODO: create getScalarField / getVectorField
@@ -64017,54 +64287,48 @@ async function initChildren(repository, systemArray, kv3Array, snapshotModifiers
     }
     await Promise.allSettled(promises);
 }
-const Source2ParticleLoader = new (function () {
-    class Source2ParticleLoader {
-        load(repository, path) {
-            const promise = new Promise(resolve => {
-                path = path.replace(/\.vpcf_c/, '');
-                const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c');
-                vpcfPromise.then((source2File) => {
-                    resolve(source2File);
-                });
+class Source2ParticleLoader {
+    static load(repository, path) {
+        const promise = new Promise(resolve => {
+            path = path.replace(/\.vpcf_c/, '');
+            const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c');
+            vpcfPromise.then((source2File) => {
+                resolve(source2File);
             });
-            return promise;
-        }
-        async getSystem(repository, vpcf, snapshotModifiers) {
-            const fileName = vpcf.fileName;
-            const result = /[ \w-]+?(?=\.)/.exec(fileName);
-            const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
-            //const systemDefinition = vpcf.getBlockStruct('DATA', '');
-            if (vpcf.getBlockStructAsString('DATA', '_class') == CParticleSystemDefinition) {
-                initOperators(system, system.preEmissionOperators, vpcf.getBlockStructAsElementArray('DATA', 'm_PreEmissionOperators'));
-                initOperators(system, system.emitters, vpcf.getBlockStructAsElementArray('DATA', 'm_Emitters'));
-                initOperators(system, system.initializers, vpcf.getBlockStructAsElementArray('DATA', 'm_Initializers'));
-                initOperators(system, system.operators, vpcf.getBlockStructAsElementArray('DATA', 'm_Operators'));
-                initOperators(system, system.renderers, vpcf.getBlockStructAsElementArray('DATA', 'm_Renderers'));
-                initOperators(system, system.forces, vpcf.getBlockStructAsElementArray('DATA', 'm_ForceGenerators'));
-                initOperators(system, system.constraints, vpcf.getBlockStructAsElementArray('DATA', 'm_Constraints'));
-                await initChildren(repository, system.childSystems, vpcf.getBlockStructAsElementArray('DATA', 'm_Children'), snapshotModifiers);
-                const dataKv = vpcf.getBlockKeyValues('DATA');
-                if (dataKv) {
-                    initProperties(system, dataKv);
-                }
-            }
-            await system.init(snapshotModifiers);
-            return system;
-        }
+        });
+        return promise;
     }
-    return Source2ParticleLoader;
-}());
+    static async getSystem(repository, vpcf, snapshotModifiers) {
+        const fileName = vpcf.fileName;
+        const result = /[ \w-]+?(?=\.)/.exec(fileName);
+        const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
+        //const systemDefinition = vpcf.getBlockStruct('DATA', '');
+        if (vpcf.getBlockStructAsString('DATA', '_class') == CParticleSystemDefinition) {
+            initOperators(system, system.preEmissionOperators, vpcf.getBlockStructAsElementArray('DATA', 'm_PreEmissionOperators'));
+            initOperators(system, system.emitters, vpcf.getBlockStructAsElementArray('DATA', 'm_Emitters'));
+            initOperators(system, system.initializers, vpcf.getBlockStructAsElementArray('DATA', 'm_Initializers'));
+            initOperators(system, system.operators, vpcf.getBlockStructAsElementArray('DATA', 'm_Operators'));
+            initOperators(system, system.renderers, vpcf.getBlockStructAsElementArray('DATA', 'm_Renderers'));
+            initOperators(system, system.forces, vpcf.getBlockStructAsElementArray('DATA', 'm_ForceGenerators'));
+            initOperators(system, system.constraints, vpcf.getBlockStructAsElementArray('DATA', 'm_Constraints'));
+            await initChildren(repository, system.childSystems, vpcf.getBlockStructAsElementArray('DATA', 'm_Children'), snapshotModifiers);
+            const dataKv = vpcf.getBlockKeyValues('DATA');
+            if (dataKv) {
+                initProperties(system, dataKv);
+            }
+        }
+        await system.init(snapshotModifiers);
+        return system;
+    }
+}
 registerLoader('Source2ParticleLoader', Source2ParticleLoader);
 
-const Source2TextureLoader = new (function () {
-    class Source2TextureLoader {
-        async load(repository, path) {
-            path = path.replace(/\.vtex_c/, '');
-            return await new Source2FileLoader(true).load(repository, path + '.vtex_c');
-        }
+class Source2TextureLoader {
+    static async load(repository, path) {
+        path = path.replace(/\.vtex_c/, '');
+        return await new Source2FileLoader(true).load(repository, path + '.vtex_c');
     }
-    return Source2TextureLoader;
-}());
+}
 
 class Source2TextureManagerClass {
     #vtexList = new Map2();
@@ -64472,7 +64736,7 @@ function executeDynamicExpression(byteCode, renderAttributes) {
                 break;
             case 25: // get value
                 const hash = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
-                let stringValue = getAttribute(hash, renderAttributes);
+                const stringValue = getAttribute(hash, renderAttributes);
                 if (stringValue) {
                     let value = 0;
                     if (stringValue === 'time') {
@@ -64619,10 +64883,10 @@ function processFunction(functionCode) {
             max$1();
             break;
         case 30:
-            SrgbLinearToGamma();
+            srgbLinearToGamma();
             break;
         case 31:
-            SrgbGammaToLinear();
+            srgbGammaToLinear();
             break;
         case 32: // random
             random();
@@ -64991,7 +65255,7 @@ function max$1() {
     a[3] = Math.max(b[3], a[3]);
     stack.push(a);
 }
-function SrgbLinearToGamma() {
+function srgbLinearToGamma() {
     const a = stack.pop();
     //saturate
     a[0] = Math.min(Math.max(a[0], 0), 1);
@@ -65004,7 +65268,7 @@ function SrgbLinearToGamma() {
     a[3] = (a[3] <= 0.0031308) ? (a[3] * 12.92) : (1.055 * Math.pow(a[3], (1.0 / 2.4))) - 0.055;
     stack.push(a);
 }
-function SrgbGammaToLinear() {
+function srgbGammaToLinear() {
     const a = stack.pop();
     //saturate
     a[0] = Math.min(Math.max(a[0], 0), 1);
@@ -65115,6 +65379,7 @@ var OpCode;
     OpCode[OpCode["Swizzle"] = 30] = "Swizzle";
     OpCode[OpCode["Exists"] = 31] = "Exists";
 })(OpCode || (OpCode = {}));
+//const done = new Map<string, boolean>();
 function decompileDynamicExpression(dynamicName, byteCode, renderAttributes) {
     const operand = toOperation(byteCode, renderAttributes);
     if (operand) {
@@ -65125,6 +65390,7 @@ function decompileDynamicExpression(dynamicName, byteCode, renderAttributes) {
 }
 function toOperation(byteCode, renderAttributes, startPointer = 0, operandStack = []) {
     let pointer = startPointer - 1;
+    //const storage = new Map<number, vec4>();
     //const operandStack: Operand[] = [];
     while (pointer < byteCode.length) {
         ++pointer;
@@ -65190,7 +65456,7 @@ function toOperation(byteCode, renderAttributes, startPointer = 0, operandStack 
             case OpCode.Exists:
                 const hash = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
                 pointer += 4;
-                let stringValue = getAttribute(hash, renderAttributes);
+                const stringValue = getAttribute(hash, renderAttributes);
                 operandStack.push({ operator: opcode, operand1: stringValue });
                 break;
             default:
@@ -65243,6 +65509,7 @@ const functions = new Map([
     [FunctionCode.TextureSize, [1, 'TextureSize']],
 ]);
 function functionToOperation(functionCode, operandStack) {
+    //let a: vec4, b: vec4, c: vec4, d;
     const params = functions.get(functionCode);
     if (params === undefined) {
         console.error('undefined function' + functionCode);
@@ -65396,7 +65663,7 @@ function operandToString(operand) {
     }
 }
 function functionToString(operand) {
-    let operands = [];
+    const operands = [];
     /*
     let operand2: string | undefined;
     let operand3: string | undefined;
@@ -66051,12 +66318,14 @@ class Source2CsgoWeaponStattrak extends Source2Material {
 Source2MaterialLoader.registerMaterial('csgo_weapon_stattrak.vfx', Source2CsgoWeaponStattrak);
 
 const STICKER_COUNT = 5;
+/*
 class WeaponSticker {
     sticker = '';
     holoSpectrum = '';
     normalRoughness = '';
     sfxMask = '';
 }
+*/
 class Source2CsgoWeapon extends Source2Material {
     setupUniformsOnce() {
         super.setupUniformsOnce();
@@ -66761,7 +67030,7 @@ class Source2SpriteCard extends Source2Material {
                 break;
         }
     }
-    async setTexturePath(texturePath) {
+    setTexturePath(texturePath) {
         this.#texturePath = texturePath;
     }
     async initTextureUniforms() {
@@ -66771,7 +67040,7 @@ class Source2SpriteCard extends Source2Material {
         }
     }
     getFrameSpan(sequence) {
-        console.error('code me');
+        console.error('code me', sequence);
         return 0;
     }
     getShaderSource() {
@@ -66819,8 +67088,8 @@ class ConstrainDistance extends Operator {
     applyConstraint(particle) {
         const minDistance = this.getParamScalarValue('m_fMinDistance') ?? DEFAULT_MIN_DISTANCE;
         const maxDistance = this.getParamScalarValue('m_fMaxDistance') ?? DEFAULT_MAX_DISTANCE$1;
-        this.getParameter('offset of center');
-        this.getParameter('control point number');
+        //const offsetOfCenter = this.getParameter('offset of center');
+        //const cpNumber = this.getParameter('control point number');
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const v = vec3.clone(particle.position);
         if (cp) {
@@ -66919,7 +67188,7 @@ class InstantaneousEmitter extends Emitter {
     doEmit(elapsedTime) {
         //todo: use snapshotControlPoint
         let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
-        this.getParamScalarValue('m_flStartTime') ?? 0;
+        //const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
         const system = this.system;
         if (this.#snapshotControlPoint != -1) {
             const snapshot = system.getControlPoint(this.#snapshotControlPoint)?.snapshot;
@@ -67108,8 +67377,8 @@ class AttractToControlPoint extends Operator {
     }
     doForce(particle, elapsedTime, accumulatedForces, strength) {
         const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100; // TODO: check default value
-        this.getParamScalarValue('m_fForceAmountMin') ?? 0; // TODO: check default value
-        (-4.0 * this.#falloffPower) << 0; // convert to what pow_fixedpoint_exponent_simd wants
+        //const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;// TODO: check default value
+        //const power_frac = (-4.0 * this.#falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
         const fForceScale = -forceAmount * strength /*flStrength*/;
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (!cp) {
@@ -67136,8 +67405,8 @@ class CPVelocityForce extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength) {
-        this.getParamScalarValue('m_flScale') ?? 1;
+    doForce() {
+        //const scale = this.getParamScalarValue('m_flScale') ?? 1;
         //TODO
     }
 }
@@ -67158,13 +67427,13 @@ class RandomForce extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength) {
+    doForce(particle, elapsedTime, accumulatedForces) {
         vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.#minForce, this.#maxForce));
     }
 }
 RegisterSource2ParticleOperator('C_OP_RandomForce', RandomForce);
 
-const DEFAULT_FORCE_AMOUNT = 100; // TODO: check default value
+//const DEFAULT_FORCE_AMOUNT = 100;// TODO: check default value
 class TwistAroundAxis extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -67174,8 +67443,8 @@ class TwistAroundAxis extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength) {
-        this.getParamScalarValue('m_fForceAmount') ?? DEFAULT_FORCE_AMOUNT;
+    doForce() {
+        //const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? DEFAULT_FORCE_AMOUNT;
     }
 }
 RegisterSource2ParticleOperator('C_OP_TwistAroundAxis', TwistAroundAxis);
@@ -67197,7 +67466,7 @@ class AgeNoise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit() {
         //TODO
     }
 }
@@ -67236,7 +67505,7 @@ class CreateFromParentParticles extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         const parent = this.system.parentSystem;
         if (parent == null) {
             return;
@@ -67302,6 +67571,8 @@ class CreateOnModel extends Operator {
     #hitboxSetName = DEFAULT_HITBOX_SET_NAME$2;
     #localCoords = DEFAULT_LOCAL_COORDS$3; //bias in local space
     #useBones = DEFAULT_USE_BONES$1; //use bones instead of hitboxes
+    #directionBias = vec3.create();
+    #hitBoxScale = vec3.create();
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nForceInModel':
@@ -67329,18 +67600,22 @@ class CreateOnModel extends Operator {
             case 'm_bUseBones':
                 this.#useBones = param.getValueAsBool() ?? DEFAULT_USE_BONES$1;
                 break;
+            case 'm_vecDirectionBias':
+                param.getValueAsVec3(this.#directionBias);
+                break;
+            case 'm_vecHitBoxScale':
+                param.getValueAsVec3(this.#hitBoxScale);
+                break;
             case 'm_modelInput':
             case 'm_transformInput':
             case 'm_nDesiredHitbox':
-            case 'm_vecHitBoxScale':
-            case 'm_vecDirectionBias':
                 //used in doInit
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         // TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName, m_modelInput, m_transformInput, m_nDesiredHitbox, m_vecDirectionBias
         //const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
         const controlPoint = this.system.getControlPoint(this.controlPointNumber);
@@ -67350,7 +67625,9 @@ class CreateOnModel extends Operator {
                 const bones = [] /*TODO: improve type*/;
                 particle.bones = bones;
                 particle.initialVec = vec3.create();
-                const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+                const position = vec3.create();
+                controllingModel.getRandomPointOnModel(position, particle.initialVec, controlPoint, this.#forceInModel, this.#directionBias, 1, // TODO: fix hit box scale//this.#hitBoxScale,
+                bones, undefined);
                 if (controlPoint) {
                     vec3.copy(particle.position, position);
                     vec3.copy(particle.prevPosition, position);
@@ -67367,7 +67644,7 @@ class CreateOnModel extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateOnModel', CreateOnModel);
 
-vec3.create();
+//const vec = vec3.create();
 const DEFAULT_HEIGHT_CP = 1;
 const DEFAULT_DESIRED_HEIGHT = 1;
 const DEFAULT_FORCE_Z = false;
@@ -67438,7 +67715,7 @@ class CreateOnModelAtHeight extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit() {
         // TODO
         /*
         // TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName
@@ -67525,7 +67802,7 @@ class CreateSequentialPath extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use other parameters m_fMaxDistance, m_flNumToAssign
         // TODO: check if m_flNumToAssign is really computed real time
         const startControlPointNumber = this.#pathParams.startControlPointNumber;
@@ -67590,7 +67867,7 @@ class CreateWithinBox extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle) {
         //TODO: useNewCode ??
         this.getParamVectorValue(this.#vecMin, 'm_vecMin', particle);
         this.getParamVectorValue(this.#vecMax, 'm_vecMax', particle);
@@ -67656,7 +67933,7 @@ class CreateWithinSphere extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle, elapsedTime) {
         const localCoordinateSystemSpeedMin = (this.getParamVectorValue(createWithinSphereSpeedMin, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED$1);
         const localCoordinateSystemSpeedMax = (this.getParamVectorValue(createWithinSphereSpeedMax, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED$1);
         const m_vecDistanceBias = (this.getParamVectorValue(createWithinSphereDistanceBias, 'm_vecDistanceBias', particle) ?? DEFAULT_DISTANCE_BIAS);
@@ -67688,7 +67965,7 @@ class CreateWithinSphere extends Operator {
             }
             vec3.mul(randpos, randpos, m_vecDistanceBias); //randpos *= m_vecDistanceBias;
             vec3.normalize(randpos, randpos); //randpos.NormalizeInPlace();
-            vec3.clone(randpos);
+            //const randDir = vec3.clone(randpos);
             vec3.scale(randpos, randpos, lerp(radiusMin, radiusMax, flLength));
             if (!m_bDistanceBias || !this.#localCoords) {
                 /*Vector vecControlPoint;
@@ -67795,7 +68072,7 @@ class CreationNoise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         const fieldOutput = this.fieldOutput;
         //let nAbsVal = 0xffffffff;
         let flAbsScale = 0.5;
@@ -67810,15 +68087,14 @@ class CreationNoise extends Operator {
             fMax *= DEG_TO_RAD;
         }
         const CoordScaleLoc = this.#noiseScaleLoc;
-        let ValueScale, ValueBase;
-        ValueScale = (flAbsScale * (fMax - fMin));
-        ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
-        let CoordLoc, CoordBase;
+        const ValueScale = (flAbsScale * (fMax - fMin));
+        const ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
+        //let CoordWorldTime;
         //let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
         const Offset = this.#offset;
         const a = (particle.cTime + Offset) * this.#noiseScale + performance.now() * this.#worldTimeScale;
-        CoordBase = vec3.fromValues(a, a, a);
-        CoordLoc = vec3.create();
+        const CoordBase = vec3.fromValues(a, a, a);
+        const CoordLoc = vec3.create();
         //CoordBase *= this.noiseScale;
         //CoordWorldTime = Vector( (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale) );
         //CoordBase += CoordWorldTime;
@@ -67866,6 +68142,7 @@ const DEFAULT_FIELD_OUTPUT$7 = PARTICLE_FIELD_RADIUS; // TODO: check default val
 const DEFAULT_INCREMENT = 1; // TODO: check default value
 const DEFAULT_RANDOM_DISTRIBUTION = false; // TODO: check default value
 const DEFAULT_RANDOM_SEED$2 = 0; // TODO: check default value
+const tempVectorField$2 = vec3.create();
 class InheritFromParentParticles extends Operator {
     #scale = DEFAULT_SCALE$2;
     #fieldOutput = DEFAULT_FIELD_OUTPUT$7;
@@ -67890,21 +68167,27 @@ class InheritFromParentParticles extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use m_flScale m_nIncrement m_bRandomDistribution m_nRandomSeed
         const parentSystem = this.system.parentSystem;
         if (parentSystem) {
             const parentParticle = parentSystem.getParticle(particle.id - 1);
             if (parentParticle) {
-                particle.setField(this.#fieldOutput, parentParticle.getField(this.#fieldOutput));
+                if (isVectorField(this.#fieldOutput)) {
+                    particle.setField(this.#fieldOutput, parentParticle.getVectorField(tempVectorField$2, this.#fieldOutput));
+                }
+                else {
+                    particle.setField(this.#fieldOutput, parentParticle.getScalarField(this.#fieldOutput));
+                }
             }
         }
     }
 }
 RegisterSource2ParticleOperator('C_INIT_InheritFromParentParticles', InheritFromParentParticles);
 
+const DEFAULT_SET_METHOD$5 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 class InitFloat extends Operator {
-    #setMethod = '';
+    #setMethod = DEFAULT_SET_METHOD$5;
     constructor(system) {
         super(system);
         this.fieldOutput = PARTICLE_FIELD_RADIUS;
@@ -67921,16 +68204,16 @@ class InitFloat extends Operator {
                 break;
             */
             case 'm_nSetMethod': //TODO: mutualize
-                this.#setMethod = param.getValueAsString() ?? '';
+                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$5;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
-        particle.setField(this.fieldOutput, value, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
+        particle.setField(this.fieldOutput, value, this.#setMethod == Source2ParticleSetMethod.ScaleInitial, true);
         //setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
     }
 }
@@ -68017,7 +68300,7 @@ class InitFromCPSnapshot extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         if (this.#attributeToRead == -1) {
             return;
         }
@@ -68054,16 +68337,20 @@ class InitFromCPSnapshot extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_InitFromCPSnapshot', InitFromCPSnapshot);
 
-vec3.create();
-vec3.fromValues(1, 1, 1);
-vec3.create();
-vec3.fromValues(100000.5, 300000.25, 9000000.75);
-vec3.fromValues(110000.25, 310000.75, 9100000.5);
-vec3.create();
-vec3.create();
-vec3.create();
-vec3.create();
-vec3.create();
+/*
+const DEFAULT_OUTPUT_MIN = vec3.create();
+const DEFAULT_OUTPUT_MAX = vec3.fromValues(1, 1, 1);
+const DEFAULT_OFFSET_LOC = vec3.create();
+
+const ofs_y = vec3.fromValues(100000.5, 300000.25, 9000000.75);
+const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
+
+const CoordLoc = vec3.create();
+const Coord = vec3.create();
+const Coord2 = vec3.create();
+const Coord3 = vec3.create();
+const poffset = vec3.create();
+*/
 const DEFAULT_IGNORE_DT$3 = false;
 class InitialVelocityNoise extends Operator {
     #absVal = vec3.create();
@@ -68097,7 +68384,7 @@ class InitialVelocityNoise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit() {
         //TODO: use m_vecOffsetLoc, m_vecOutputMin,m_vecOutputMax,  m_flOffset, m_flNoiseScale, m_flNoiseScaleLoc
         //TODO: fix this operator
         /*
@@ -68336,7 +68623,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use all parameters
         //use  m_flReadIndex
         const system = this.system;
@@ -68440,7 +68727,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
             else {
                 //Probably should do it better, but it just works
                 const particleHitbox = particle.snapHitbox;
-                particle.snapHitboxOffset;
+                //const particleHitboxOffset = particle.snapHitboxOffset;
                 if (particleHitbox) {
                     bone = skeleton.getBoneByName(particleHitbox);
                     if (bone) {
@@ -68519,7 +68806,7 @@ RegisterSource2ParticleOperator('C_INIT_InitSkinnedPositionFromCPSnapshot', Init
 const DEFAULT_INPUT_VALUE = vec3.create();
 const initVecTempVec4 = vec4.create();
 const DEFAULT_FIELD_OUTPUT$6 = PARTICLE_FIELD_COLOR; // TODO: check default value
-const DEFAULT_SET_METHOD$4 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value
+const DEFAULT_SET_METHOD$4 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 const DEFAULT_SCALE_INITIAL_RANGE$2 = false; // TODO: check default value
 class InitVec extends Operator {
     #setMethod = DEFAULT_SET_METHOD$4;
@@ -68534,7 +68821,7 @@ class InitVec extends Operator {
                 this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT$6;
                 break;
             case 'm_nSetMethod': // TODO: mutualize
-                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$4;
+                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$4;
                 break;
             case 'm_bScaleInitialRange':
                 this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE$2;
@@ -68543,9 +68830,9 @@ class InitVec extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         const inputValue = this.getParamVectorValue(initVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_INPUT_VALUE;
-        particle.setField(this.#fieldOutput, inputValue, this.#scaleInitialRange || this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        particle.setField(this.#fieldOutput, inputValue, this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_InitVec', InitVec);
@@ -68560,7 +68847,7 @@ class NormalAlignToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //This operator overrides the normal
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -68597,7 +68884,7 @@ class NormalOffset extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         vec3RandomBox(v$b, this.#offsetMin, this.#offsetMax);
         if (this.#localCoords) {
             const cp = this.system.getControlPoint(this.controlPointNumber);
@@ -68639,7 +68926,7 @@ class PositionOffset extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         // TODO: use m_bProportional
         const offsetMin = this.getParamVectorValue(this.#offsetMin, 'm_OffsetMin', particle) ?? DEFAULT_OFFSET$3;
         const offsetMax = this.getParamVectorValue(this.#offsetMax, 'm_OffsetMax', particle) ?? DEFAULT_OFFSET$3;
@@ -68710,9 +68997,10 @@ class PositionWarp extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use time parameters, m_bUseCount
         vec3RandomBox(v$a, this.#warpMin, this.#warpMax);
+        //let scale;
         if (this.#scaleControlPointNumber != -1) {
             const scaleCp = this.system.getControlPoint(this.#scaleControlPointNumber);
             if (scaleCp) {
@@ -68732,7 +69020,7 @@ class PositionWarp extends Operator {
 RegisterSource2ParticleOperator('C_INIT_PositionWarp', PositionWarp);
 
 class RadiusFromCPObject extends Operator {
-    doInit(particle, elapsedTime, strength) {
+    doInit() {
         //TODO:  I don't really know what it is supposed to do
     }
 }
@@ -68797,7 +69085,7 @@ class RandomColor extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use tint
         const rand = Math.random();
         vec4.lerp(particle.color, this.#colorMin, this.#colorMax, rand);
@@ -68823,7 +69111,7 @@ class RandomSecondSequence extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         particle.sequence2 = Math.round((this.#sequenceMax - this.#sequenceMin) * Math.random()) + this.#sequenceMin;
     }
 }
@@ -68844,7 +69132,7 @@ class RandomSequence extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         particle.setInitialSequence(Math.round((this.#sequenceMax - this.#sequenceMin) * Math.random()) + this.#sequenceMin);
     }
 }
@@ -68862,7 +69150,7 @@ class RandomYawFlip extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         particle.rotationYaw += (Math.random() < this.#percent) ? Math.PI : 0;
     }
     initMultipleOverride() {
@@ -68872,11 +69160,12 @@ class RandomYawFlip extends Operator {
 RegisterSource2ParticleOperator('C_INIT_RandomYawFlip', RandomYawFlip);
 
 const v$9 = vec3.create();
+const tempVectorField$1 = vec3.create();
 const v1 = vec3.fromValues(1, 1, 1);
 const DEFAULT_CP_INPUT$2 = 0; // TODO: check default value
 const DEFAULT_START_TIME$1 = -1; // TODO: check default value
 const DEFAULT_END_TIME$1 = -1; // TODO: check default value
-const DEFAULT_SET_METHOD$3 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value
+const DEFAULT_SET_METHOD$3 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 const DEFAULT_OFFSET$2 = false; // TODO: check default value
 const DEFAULT_ACCELERATE = false; // TODO: check default value
 const DEFAULT_LOCAL_SPACE_CP = -1; // TODO: check default value
@@ -68923,7 +69212,7 @@ class RemapCPtoVector extends Operator {
                 this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME$1;
                 break;
             case 'm_nSetMethod':
-                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$3;
+                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$3;
                 break;
             case 'm_bOffset':
                 this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET$2;
@@ -68955,12 +69244,12 @@ class RemapCPtoVector extends Operator {
         v$9[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.#remapBias);
         v$9[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
         v$9[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
-        const scaleInitial = this.#scaleInitialRange || this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const scaleInitial = this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
         if (scaleInitial) {
             vec3.lerp(v$9, v1, v$9, strength);
         }
         else {
-            vec3.lerp(v$9, particle.getField(this.#fieldOutput), v$9, strength);
+            vec3.lerp(v$9, particle.getVectorField(tempVectorField$1, this.#fieldOutput), v$9, strength);
         }
         particle.setField(this.#fieldOutput, v$9, scaleInitial);
     }
@@ -69025,7 +69314,7 @@ class RemapParticleCountToScalar extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use bias, invert m_nScaleControlPointField parameters
         let value = particle.id;
         if (this.#wrap) {
@@ -69035,7 +69324,7 @@ class RemapParticleCountToScalar extends Operator {
             return;
         }
         value = RemapValClampedBias(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax, this.remapBias);
-        particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        particle.setField(this.fieldOutput, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_RemapParticleCountToScalar', RemapParticleCountToScalar);
@@ -69069,13 +69358,13 @@ class RingWave extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO: use all parameters
         const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1; //even distribution count
         const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
-        this.getParamScalarValue('m_flThickness') ?? 0;
-        this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
-        this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
+        //const thickness = this.getParamScalarValue('m_flThickness') ?? 0;
+        //const initialSpeedMin = this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
+        //const initialSpeedMax = this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
         const roll = this.getParamScalarValue('m_flRoll') ?? 0;
         const pitch = this.getParamScalarValue('m_flPitch') ?? 0;
         const yaw = this.getParamScalarValue('m_flYaw') ?? 0;
@@ -69109,7 +69398,7 @@ class RingWave extends Operator {
 RegisterSource2ParticleOperator('C_INIT_RingWave', RingWave);
 
 class SequenceLifeTime extends Operator {
-    doInit(particle, elapsedTime, strength) {
+    doInit() {
         //TODO: I don't know what to do
     }
 }
@@ -69130,10 +69419,10 @@ class SetRigidAttachment extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle) {
         //TODO : use m_bLocalSpace
         if (!this.#localSpace) {
-            throw 'code me';
+            throw new Error('code me');
         }
         vec3.sub(v$8, particle.getVectorField(v$8, this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
         particle.setField(this.#fieldOutput, v$8);
@@ -69164,7 +69453,7 @@ class VelocityRandom extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime, strength) {
+    doInit(particle, elapsedTime) {
         const localCoordinateSystemSpeedMin = this.getParamVectorValue(velocityRandomTempVec4_0, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED;
         const localCoordinateSystemSpeedMax = this.getParamVectorValue(velocityRandomTempVec4_1, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED;
         const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
@@ -69197,7 +69486,7 @@ class VelocityRandom extends Operator {
 RegisterSource2ParticleOperator('C_INIT_VelocityRandom', VelocityRandom);
 
 const DEFAULT_MAX_CONSTRAINTS_PASSES = 3;
-vec3.create();
+//const basicMovementGravity = vec3.create();
 class BasicMovement extends Operator {
     #gravity = vec3.create();
     #drag = 0;
@@ -69217,7 +69506,7 @@ class BasicMovement extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         /*if (particle.id == 5) {
             console.error(particle.prevPosition, particle.position);
         }*/
@@ -69280,7 +69569,7 @@ class ClampScalar extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO
     }
 }
@@ -69326,8 +69615,8 @@ class ColorInterpolate extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
-        vec3.clone(particle.initialColor); //TODO: optimize
+    doOperate(particle) {
+        //const color = vec3.clone(particle.initialColor as vec3);//TODO: optimize
         const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
         if (proportionOfLife < this.#fadeStartTime) {
             return;
@@ -69360,7 +69649,7 @@ class DampenToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         // TODO: use m_flScale
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const distance = vec3.distance(particle.position, cp.currentWorldPosition);
@@ -69403,7 +69692,7 @@ class DistanceCull extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             const origin = cp.getWorldPosition(vec$3);
@@ -69423,8 +69712,8 @@ class DistanceCull extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_DistanceCull', DistanceCull);
 
-const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
-const distanceToCPTempVec4 = vec4.create();
+//const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
+//const distanceToCPTempVec4 = vec4.create();
 const DEFAULT_INPUT_MIN$3 = 0; // TODO: check default value
 const DEFAULT_INPUT_MAX$3 = 128; // TODO: check default value
 const DEFAULT_OUTPUT_MIN$3 = 0; // TODO: check default value
@@ -69467,7 +69756,7 @@ class DistanceToCP extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecComponentScale':
-                throw `do this param ${paramName}`;
+                throw new Error(`do this param ${paramName}`);
             case 'm_nFieldOutput':
                 this.fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 this.#update();
@@ -69519,7 +69808,7 @@ class DistanceToCP extends Operator {
     }
     doOperate(particle, elapsedTime, strength) {
         //TODO: use setMethod
-        this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) ?? DEFAULT_COMPONENT_SCALE;
+        //const componentScale: vec3 = this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) as vec3 ?? DEFAULT_COMPONENT_SCALE;
         const flMin = this.#outputMin1;
         const flMax = this.#outputMax1;
         /*if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & ( 1 << m_nFieldOutput ) )
@@ -69572,7 +69861,7 @@ class DistanceToCP extends Operator {
             }*/
             //float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
             //TODO: use m_nSetMethod m_bActiveRange m_bAdditive m_bScaleInitialRange
-            let output = particle.getField(this.fieldOutput);
+            let output = particle.getScalarField(this.fieldOutput);
             //*pOutput = Lerp (flStrength, *pOutput, flOutput);
             output = lerp(output, flOutput, strength);
             particle.setField(this.fieldOutput, output);
@@ -69626,7 +69915,7 @@ class FadeAndKill extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO:use forcePreserveParticleOrder
         const startAlpha = this.#startAlpha;
         const endAlpha = this.#endAlpha;
@@ -69634,6 +69923,7 @@ class FadeAndKill extends Operator {
         const endFadeInTime = this.#endFadeInTime;
         const startFadeOutTime = this.#startFadeOutTime;
         const endFadeOutTime = this.#endFadeOutTime;
+        //const alpha = 1.0;
         const proportionOfLife = particle.currentTime / particle.timeToLive;
         const fl4FadeInDuration = endFadeInTime - startFadeInTime;
         const fl4OOFadeInDuration = 1.0 / fl4FadeInDuration;
@@ -69705,7 +69995,7 @@ class FadeIn extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
     }
 }
@@ -69732,7 +70022,7 @@ class FadeInSimple extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const proportionOfLife = particle.currentTime / particle.timeToLive;
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
         //TODO: use fieldOutput
@@ -69795,7 +70085,7 @@ class FadeOut extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO: use fadeBias, easeInAndOut
         //particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, this.#startFadeOutTime, this.#fadeOutTime, this.#invFadeOutTime, particle.startAlpha, -particle.startAlpha);
@@ -69827,7 +70117,7 @@ class FadeOutSimple extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(particle.proportionOfLife, this.startFadeOutTime, this.fadeOutTime, this.invFadeOutTime, particle.startAlpha, -particle.startAlpha);
         //TODO: use fieldOutput
     }
@@ -69847,9 +70137,9 @@ class InterpolateRadius extends Operator {
     #scaleWidth = 0;
     constructor(system) {
         super(system);
-        this._update();
+        this.#update();
     }
-    _update() {
+    #update() {
         this.#invTime = 1.0 / (this.#endTime - this.#startTime);
         this.#biasParam = 1.0 / this.#bias - 2;
         this.#scaleWidth = this.#endScale - this.#startScale;
@@ -69858,32 +70148,32 @@ class InterpolateRadius extends Operator {
         switch (paramName) {
             case 'm_flStartTime':
                 this.#startTime = param.getValueAsNumber() ?? 0;
-                this._update();
+                this.#update();
                 break;
             case 'm_flEndTime':
                 this.#endTime = param.getValueAsNumber() ?? 1;
-                this._update();
+                this.#update();
                 break;
             case 'm_flStartScale':
                 this.#startScale = param.getValueAsNumber() ?? 1;
-                this._update();
+                this.#update();
                 break;
             case 'm_flEndScale':
                 this.#endScale = param.getValueAsNumber() ?? 1;
-                this._update();
+                this.#update();
                 break;
             case 'm_bEaseInAndOut':
                 this.#easeInAndOut = param.getValueAsBool() ?? false;
                 break;
             case 'm_flBias':
                 this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS$1;
-                this._update();
+                this.#update();
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const fl4LifeDuration = particle.timeToLive;
         let fl4GoodMask = CmpGtSIMD(fl4LifeDuration, 0);
         const fl4CurTime = this.system.currentTime;
@@ -69929,14 +70219,14 @@ class LerpEndCapScalar extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO
     }
 }
 RegisterSource2ParticleOperator('C_OP_LerpEndCapScalar', LerpEndCapScalar);
 
 class LifespanDecay extends Operator {
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         if (particle.timeToLive < particle.currentTime) {
             particle.die();
         }
@@ -70012,7 +70302,7 @@ class LockToBone extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         error();
         // TODO: use 'm_modelInput''m_transformInput', m_vecRotation, m_flRotLerp
         /*
@@ -70091,7 +70381,7 @@ class MaintainSequentialPath extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particles, elapsedTime, strength) {
+    doOperate(particles) {
         const t = vec3.create();
         //TODO: use other parameters
         const startControlPointNumber = this.#pathParams.startControlPointNumber;
@@ -70101,6 +70391,7 @@ class MaintainSequentialPath extends Operator {
         if (startControlPoint && endControlPoint) {
             const numToAssign = this.#numToAssign;
             let assignedSoFar = this.assignedSoFar;
+            //let particle;
             const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$2);
             for (const particle of particles) {
                 vec3.scale(t, delta, assignedSoFar * this.#step);
@@ -70124,8 +70415,9 @@ class MaintainSequentialPath extends Operator {
 RegisterSource2ParticleOperator('C_OP_MaintainSequentialPath', MaintainSequentialPath);
 
 //const tempMat4 = mat4.create();
-vec3.create();
-vec3.create();
+//const tempPrevPos = vec3.create();
+//const tempPos = vec3.create();
+const tempVectorField = vec3.create();
 const v$6 = vec3.create();
 const DEFAULT_SCALE_CONTROL_POINT = -1; //disabled
 const DEFAULT_SCALE_CP_FIELD = Source2ParticleCpField.X;
@@ -70160,7 +70452,7 @@ let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO: use scale cp and other parameters
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -70202,7 +70494,7 @@ let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
             }
             //vec3.transformMat4(particle.position, particle.position, delta);
             //vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
-            vec3.transformMat4(v$6, particle.getField(this.#fieldInput), delta);
+            vec3.transformMat4(v$6, particle.getVectorField(tempVectorField, this.#fieldInput), delta);
             particle.setField(this.#fieldInput, v$6);
             particle.setField(this.#fieldOutput, v$6);
         }
@@ -70234,7 +70526,7 @@ class MovementRotateParticleAroundAxis extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         const axis = vec3.normalize(movementRotateParticleAroundAxisTempVec4, this.getParamVectorValue(movementRotateParticleAroundAxisTempVec4, 'm_vecRotAxis', particle) ?? DEFAULT_AXIS);
         const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
         const cp = this.system.getControlPoint(this.controlPointNumber);
@@ -70317,7 +70609,7 @@ class Noise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         // TODO: use other params #additive, noiseAnimationTimeScale
         vec3.scale(Coord$1, particle.position, this.#noiseScale);
         const noise = NoiseSIMD(Coord$1[0], Coord$1[1], Coord$1[2]) * this.#valueScale + this.#valueBase;
@@ -70341,7 +70633,7 @@ class NormalizeVector extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         particle.getVectorField(normalizeVectorVec3, this.#fieldOutput);
         vec3.normalize(normalizeVectorVec3, normalizeVectorVec3);
         vec3.scale(normalizeVectorVec3, normalizeVectorVec3, this.#scale);
@@ -70353,7 +70645,7 @@ RegisterSource2ParticleOperator('C_OP_NormalizeVector', NormalizeVector);
 //const mat = mat4.create();
 const nmat$1 = mat3.create();
 class NormalLock extends Operator {
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             //mat4.invert(mat, particle.cpPreviousTransform);
@@ -70438,7 +70730,7 @@ class OscillateScalar extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         const fl4StartTimeWidth = this.#startTimeMax - this.#startTimeMin;
         const fl4EndTimeWidth = this.#endTimeMax - this.#endTimeMin;
         const fl4FrequencyWidth = this.#frequencyMax - this.#frequencyMin;
@@ -70475,7 +70767,7 @@ class OscillateScalar extends Operator {
                     fl4Cos = fl4CosFactor * fl4Frequency;
                 }
                 const fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
-                let fl4OscVal = particle.getField(this.#field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
+                let fl4OscVal = particle.getScalarField(this.#field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
                 if (this.#field == PARTICLE_FIELD_ALPHA) {
                     fl4OscVal = clamp$1(fl4OscVal, 0.0, 1.0);
                 }
@@ -70518,11 +70810,11 @@ class OscillateScalarSimple extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const currentTime = this.system.currentTime;
         const sinFactor = (this.#oscMult * currentTime + this.#oscAdd) * this.#frequency;
         let value = particle.getScalarField(this.#field) + this.#rate * Math.sin(sinFactor * Math.PI) * DEG_TO_RAD; //DEG_TO_RAD seems to apply to all field even radius, alpha and so on. Valve style
-        if (this.#field == PARTICLE_FIELD_ALPHA) {
+        if (this.#field == Source2ParticleScalarField.Alpha) {
             value = clamp$1(value, 0.0, 1.0);
         }
         particle.setField(this.#field, value);
@@ -70603,9 +70895,9 @@ class OscillateVector extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         const m_nField = this.#field;
-        particle.cTime; //CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
+        //const pCreationTime = particle.cTime;//CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
         const pLifeDuration = particle.timeToLive; //CM128AttributeIterator pLifeDuration(PARTICLE_ATTRIBUTE_LIFE_DURATION, pParticles);
         //C4IAttributeIterator pParticleId (PARTICLE_ATTRIBUTE_PARTICLE_ID, pParticles);
         //C4VAttributeWriteIterator pOscField (m_nField, pParticles) ;
@@ -70765,7 +71057,7 @@ class PinParticleToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //m_nParticleNumber
         //TODO
         console.error('code me');
@@ -70811,7 +71103,7 @@ class PlaneCull extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         // TODO: use m_bLocalSpace
         const cp = this.system.getControlPoint(this.#planeControlPoint);
         if (cp) {
@@ -70826,10 +71118,10 @@ class PlaneCull extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_PlaneCull', PlaneCull);
 
-vec3.create();
-vec3.create();
+//const tempPrevPos = vec3.create();
+//const tempPos = vec3.create();
 //const tempQuat = quat.create();
-vec3.create();
+//const vec = vec3.create();
 const DEFAULT_JUMP_THRESHOLD = 512;
 const DEFAULT_RANGE = 0; // TODO: check default value
 const DEFAULT_START_TIME_MIN$2 = 1; // TODO: check default value
@@ -70906,7 +71198,7 @@ class PositionLock extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         // TODO: use jumpThreshold
         const proportionOfLife = clamp$1(particle.proportionOfLife, 0, 1);
         if (proportionOfLife > this.#endFadeOutTime) {
@@ -70998,7 +71290,7 @@ class RampScalarLinear extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         const context = particle.context.get(this);
         let rate, startTime, endTime;
         if (context == undefined) {
@@ -71017,7 +71309,7 @@ class RampScalarLinear extends Operator {
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        const value = particle.getField(this.#field) + rate * elapsedTime;
+        const value = particle.getScalarField(this.#field) + rate * elapsedTime;
         particle.setField(this.#field, value);
     }
 }
@@ -71046,12 +71338,12 @@ class RampScalarLinearSimple extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         const particleTime = particle.proportionOfLife;
         if (particleTime < this.#startTime || particleTime > this.#endTime) {
             return;
         }
-        const value = particle.getField(this.#field) + this.#rate * elapsedTime;
+        const value = particle.getScalarField(this.#field) + this.#rate * elapsedTime;
         particle.setField(this.#field, value);
     }
 }
@@ -71115,7 +71407,7 @@ class RampScalarSpline extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         //TODO : use m_flBias m_bEaseOut
         const context = particle.context.get(this);
         let rate, startTime, endTime;
@@ -71135,7 +71427,7 @@ class RampScalarSpline extends Operator {
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        const value = particle.getField(this.#field) + rate * elapsedTime;
+        const value = particle.getScalarField(this.#field) + rate * elapsedTime;
         particle.setField(this.#field, value);
     }
 }
@@ -71156,7 +71448,7 @@ class RemapControlPointDirectionToVector extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         vec3.transformQuat(v$4, DEFAULT_VECTOR, cp.currentWorldQuaternion);
         vec3.scale(v$4, v$4, this.#scale);
@@ -71166,7 +71458,7 @@ class RemapControlPointDirectionToVector extends Operator {
 RegisterSource2ParticleOperator('C_OP_RemapControlPointDirectionToVector', RemapControlPointDirectionToVector);
 
 const tempQuat$1 = quat.create();
-quat.create();
+//const tempQuat2 = quat.create();
 class RemapCPOrientationToRotations extends Operator {
     #vecRotation = vec3.create();
     #controlPointNumber = 0; //m_TransformInput
@@ -71179,7 +71471,7 @@ class RemapCPOrientationToRotations extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp = this.system.getControlPoint(this.#controlPointNumber);
         if (cp) {
             cp.getWorldQuaternion(tempQuat$1);
@@ -71201,7 +71493,7 @@ const DEFAULT_OUTPUT_MAX$1 = 1; // TODO: check default value
 const DEFAULT_START_TIME = -1; // TODO: check default value
 const DEFAULT_END_TIME = -1; // TODO: check default value
 const DEFAULT_INTERP_RATE$1 = 0; // TODO: check default value
-const DEFAULT_SET_METHOD$2 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value//TODO: enum
+const DEFAULT_SET_METHOD$2 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value//TODO: enum
 class RemapCPtoScalar extends Operator {
     //#fieldOutput = PARTICLE_FIELD_RADIUS;
     #cpInput = DEFAULT_CP_INPUT$1;
@@ -71246,7 +71538,7 @@ class RemapCPtoScalar extends Operator {
                 this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE$1;
                 break;
             case 'm_nSetMethod':
-                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$2;
+                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$2;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -71257,12 +71549,12 @@ class RemapCPtoScalar extends Operator {
         const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
         let value = cpInputPos[this.#field] ?? 0;
         value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
-        const scaleInitial = /*this.scaleInitialRange || */ this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const scaleInitial = /*this.scaleInitialRange || */ this.#setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
         if (scaleInitial) {
             value = lerp(1, value, strength);
         }
         else {
-            value = lerp(particle.getField(this.fieldOutput), value, strength);
+            value = lerp(particle.getScalarField(this.fieldOutput), value, strength);
         }
         particle.setField(this.fieldOutput, value, scaleInitial);
     }
@@ -71296,7 +71588,7 @@ class RemapSpeed extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO
     }
 }
@@ -71334,12 +71626,13 @@ class RemapSpeedtoCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO
     }
 }
 RegisterSource2ParticleOperator('C_OP_RemapSpeedtoCP', RemapSpeedtoCP);
 
+//const DEFAULT_CLUSTER_COOLDOWN = 0;// TODO: check default value
 class RepeatedTriggerChildGroup extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -71350,8 +71643,8 @@ class RepeatedTriggerChildGroup extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
-        this.getParamScalarValue('m_flClusterCooldown');
+    doOperate() {
+        //const clusterCooldown = this.getParamScalarValue('m_flClusterCooldown');
         //TODO: i have no idea of what it does
     }
 }
@@ -71374,8 +71667,8 @@ class SetControlPointFromObjectScale extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
-        this.system.getControlPoint(this.#cpInput);
+    doOperate() {
+        //const cpInput = this.system.getControlPoint(this.#cpInput);
         const cpOutput = this.system.getControlPoint(this.#cpOutput);
         //TODO: use the actual scale
         cpOutput.setPosition(vec3.fromValues(1, 1, 1));
@@ -71431,7 +71724,7 @@ class SetControlPointOrientation extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         return;
     }
     isPreEmission() {
@@ -71498,11 +71791,11 @@ class SetControlPointPositions extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         // TODO: use orient
         //const list = ['First', 'Second', 'Third', 'Fourth'];
         const useWorldLocation = this.#useWorldLocation;
-        this.system.getControlPointPosition(this.#headLocation);
+        //const vecControlPoint = this.system.getControlPointPosition(this.#headLocation);
         let cpNumber;
         let cpLocation;
         const headLocation = this.system.getControlPoint(this.#headLocation);
@@ -71569,7 +71862,7 @@ class SetControlPointsToModelParticles extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate() {
         //todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
         const children = this.system.childSystems;
         const firstControlPoint = this.#firstControlPoint;
@@ -71579,14 +71872,14 @@ class SetControlPointsToModelParticles extends Operator {
             if (particle) {
                 for (const child of children) {
                     const childCp = child.getOwnControlPoint(firstControlPoint + i);
-                    childCp.position = particle.position;
+                    childCp.setPosition(particle.position);
                     if (this.#followAttachment) {
                         const model = this.system.getParentModel();
                         if (model) {
                             const attachment = model.getAttachment?.(this.#attachmentName);
                             if (attachment) {
-                                childCp.quaternion = attachment.getWorldQuaternion();
-                                childCp.quaternion = particle.quaternion;
+                                //childCp.quaternion = attachment.getWorldQuaternion();
+                                childCp.setQuaternion(particle.quaternion);
                             }
                         }
                     }
@@ -71618,10 +71911,10 @@ class SetControlPointToCenter extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         this.system.getBoundsCenter(center$1);
         vec3.add(center$1, center$1, this.#cp1Pos);
-        this.system.getOwnControlPoint(this.#cp1).position = center$1;
+        this.system.getOwnControlPoint(this.#cp1).setPosition(center$1);
     }
     isPreEmission() {
         return true;
@@ -71679,12 +71972,12 @@ class SetCPOrientationToGroundNormal extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO: do it properly
         const outputCP = this.system.getControlPoint(this.#outputCP);
         if (outputCP) {
             quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
-            outputCP.quaternion = q;
+            outputCP.setQuaternion(q);
         }
     }
 }
@@ -71705,12 +71998,12 @@ class SetFloat extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO: use lerp
         const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
-        particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
-        //particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        particle.setField(this.outputField, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
+        //particle.setField(this.outputField, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_OP_SetFloat', SetFloat);
@@ -71747,7 +72040,7 @@ class SetParentControlPointsToChildCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         // TODO: use setOrientation
         const children = this.system.childSystems;
         let childId = this.#childGroupID;
@@ -71758,7 +72051,7 @@ class SetParentControlPointsToChildCP extends Operator {
             const cp = this.system.getControlPoint(cpId);
             if (child && cp) {
                 const childCp = child.getOwnControlPoint(this.#childControlPoint);
-                childCp.position = cp.currentWorldPosition;
+                childCp.setPosition(cp.currentWorldPosition);
             }
             ++childId;
             ++cpId;
@@ -71811,20 +72104,21 @@ class SetPerChildControlPoint extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         //TODO: use m_nChildGroupID
         //TODO: set m_bSetOrientation
         const particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1; // TODO: check default value
         let particleId = this.getParamScalarValue('m_nFirstSourcePoint') ?? 0; // TODO: check default value
         const children = this.system.childSystems;
         let childId = this.#childGroupID;
+        //const cpId = particleId;
         let count = this.#numBasedOnParticleCount ? this.system.livingParticles.length : this.#numControlPoints;
         while (count--) {
             const child = children[childId];
             const sourceParticle = this.system.livingParticles[particleId];
             if (child && sourceParticle) {
                 const childCp = child.getOwnControlPoint(this.#firstControlPoint);
-                childCp.position = sourceParticle.position;
+                childCp.setPosition(sourceParticle.position);
             }
             ++childId;
             particleId += particleIncrement;
@@ -71874,9 +72168,9 @@ class SetRandomControlPointPosition extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate() {
         const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1; // TODO: check default value
-        this.getParamScalarValue('m_flInterpolation') ?? 1; // TODO: check default value
+        //const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;// TODO: check default value
         //TODO: do interpolation
         if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
             this.lastRandomTime = this.system.currentTime;
@@ -71885,7 +72179,7 @@ class SetRandomControlPointPosition extends Operator {
             const cp1 = this.system.getControlPoint(this.#cp1);
             vec3.transformQuat(v$2, v$2, headLocation.currentWorldQuaternion);
             vec3.add(v$2, v$2, headLocation.currentWorldPosition);
-            cp1.position = v$2;
+            cp1.setPosition(v$2);
             if (this.#orient) {
                 cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
             }
@@ -71934,7 +72228,7 @@ class SetSingleControlPointPosition extends Operator {
     reset() {
         this.#set = false;
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp1Pos = this.getParamVectorValue(tempVec4, 'm_vecCP1Pos', particle) ?? DEFAULT_POSITION;
         //TODO
         if (!this.#setOnce || !this.#set) {
@@ -71946,7 +72240,7 @@ class SetSingleControlPointPosition extends Operator {
                 const headCp = this.system.getControlPoint(this.#headLocation);
                 vec3.transformQuat(v$1, cp1Pos, headCp.currentWorldQuaternion);
                 vec3.add(v$1, v$1, headCp.currentWorldPosition);
-                cp.position = v$1;
+                cp.setPosition(v$1);
             }
             this.#set = true;
         }
@@ -71976,7 +72270,7 @@ class SetToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
@@ -72017,11 +72311,11 @@ class SetVec extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO: use lerp
         const inputValue = this.getParamVectorValue(setVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_VECTOR_VALUE;
-        this.getParamScalarValue('m_Lerp', particle) ?? 1;
-        particle.setField(this.#outputField, inputValue, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        //const lerp = this.getParamScalarValue('m_Lerp', particle) ?? 1;
+        particle.setField(this.#outputField, inputValue, this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);
@@ -72042,7 +72336,7 @@ class SnapshotRigidSkinToBones extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         let bone, boneName, boneWeight, boneMat;
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (!cp) {
@@ -72103,7 +72397,7 @@ class SnapshotRigidSkinToBones extends Operator {
         else {
             //Probably should do it better, but it just works
             const particleHitbox = particle.snapHitbox;
-            particle.snapHitboxOffset;
+            //const particleHitboxOffset = particle.snapHitboxOffset;
             if (particleHitbox) {
                 bone = skeleton.getBoneByName(particleHitbox);
                 if (bone) {
@@ -72142,7 +72436,7 @@ class Spin extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         //particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
         const m_fSpinRateStopTime = this.#spinRateStopTime;
         const m_fSpinRateRadians = (this.#spinRateDegrees) * DEG_TO_RAD; //TODO: optimize
@@ -72203,7 +72497,7 @@ RegisterSource2ParticleOperator('C_OP_Spin', Spin);
 
 class SpinUpdate extends Operator {
     //This operator has no parameters
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle, elapsedTime) {
         particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
     }
 }
@@ -72213,6 +72507,8 @@ const Coord = vec3.create();
 const output = vec3.create();
 const ofs_y = vec3.fromValues(100000.5, 300000.25, 9000000.75);
 const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
+//const posScale = 0.00;
+//const timeScale = 0.1;
 const DEFAULT_FIELD_OUTPUT = Source2ParticleVectorField.Color;
 const DEFAULT_NOISE_SCALE = 0.1;
 const DEFAULT_ADDITIVE = false;
@@ -72272,7 +72568,7 @@ class VectorNoise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, strength) {
+    doOperate(particle) {
         //TODO: fix this operator ('particles/units/heroes/hero_dark_willow/dark_willow_head_ambient_smoke.vpcf_c')
         vec3.scale(Coord, particle.position, this.#noiseScale * particle.currentTime * 0.001);
         output[0] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale[0] + this.#valueBase[0]);
@@ -76997,4 +77293,4 @@ Shaders['pixelate.wgsl'] = pixelate;
 Shaders['saturate.wgsl'] = saturate;
 Shaders['sketch.wgsl'] = sketch;
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
