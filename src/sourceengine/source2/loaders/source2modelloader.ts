@@ -547,7 +547,7 @@ export class Source2ModelLoader {
 		await Promise.all(promises);
 	}
 
-	async #loadIncludeModels(model: Source2Model): Promise<void> {
+	#loadIncludeModels(model: Source2Model): void {
 		const includeModels = model.getIncludeModels();
 		for (const includeModel of includeModels) {
 			const refModel = new Source2ModelLoader().load(model.repository, includeModel);
