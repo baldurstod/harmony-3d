@@ -340,7 +340,7 @@ export class ShaderEditor extends HTMLElement {
 				*/
 			//return this.clear();
 		}
-		const token = this.#findUuid(docPos.row, docPos.column);
+		const token = this.#findImportName(docPos.row, docPos.column);
 
 		this.#uuid = token;
 		if (!token) {
@@ -362,7 +362,7 @@ export class ShaderEditor extends HTMLElement {
 		this.#selectToken(this.#uuid.value);
 	}
 
-	#findUuid(row: number, column: number): Token | undefined {
+	#findImportName(row: number, column: number): Token | undefined {
 		if (!this.#shaderEditor) {
 			return;
 		}
@@ -373,7 +373,7 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 
-		const match = this.#getMatchAround(/\w+/g, line, column);
+		const match = this.#getMatchAround(/[\w:]+/g, line, column);
 		if (!match) {
 			return;
 		}
