@@ -215,7 +215,7 @@ export class Texture {
 }
 
 export function getCurrentTexture(): Texture {
-	const texture = new Texture({ gpuFormat: WebGPUInternal.format, gpuVisibility: GPUShaderStage.FRAGMENT/*TODO: check visibility for the canvas texture*/ });
+	const texture = new Texture({ gpuFormat: WebGPUInternal.format, gpuVisibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE/*TODO: check visibility for the canvas texture*/ });
 	texture.texture = WebGPUInternal.gpuContext.getCurrentTexture();
 	return texture;
 }
