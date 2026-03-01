@@ -1504,31 +1504,38 @@ export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string,
 	}
 }
 
-function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number, baseOffset: number): void {
+function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number | vec3, baseOffset: number): void {
 	switch (member.type.name) {
 		case 'u32':
 			queue.writeBuffer(
 				buffer,
 				baseOffset + member.offset,
-				new Uint32Array([value]),
+				new Uint32Array([value as number]),
 			);
 			break;
 		case 'i32':
 			queue.writeBuffer(
 				buffer,
 				baseOffset + member.offset,
-				new Int32Array([value]),
+				new Int32Array([value as number]),
 			);
 			break;
 		case 'f32':
 			queue.writeBuffer(
 				buffer,
 				baseOffset + member.offset,
-				new Float32Array([value]),
+				new Float32Array([value as number]),
+			);
+			break;
+		case 'vec3f':
+			queue.writeBuffer(
+				buffer,
+				baseOffset + member.offset,
+				value as vec3 as BufferSource,
 			);
 			break;
 		default:
-			errorOnce(`unknwon type ${member.type.name} in writeNumber`);
+			errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
 			break;
 	}
 }
@@ -1548,7 +1555,11 @@ function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], 
 			throw new Error('code me');
 		} else {
 			// primitive
-			writePrimitive(queue, buffer, member, structValue as number, baseOffset);
+			if (structValue !== undefined && structValue !== null) {
+				writePrimitive(queue, buffer, member, structValue as number, baseOffset);
+			} else {
+				errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
+			}
 		}
 
 
