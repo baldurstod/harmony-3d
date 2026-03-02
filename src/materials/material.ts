@@ -46,6 +46,7 @@ export type MaterialParams = {
 
 	uniforms?: MaterialUniform;
 	storages?: Record<string, StorageValue | number | StorageBuffer>;
+	gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines?: Record<string, string>;
 
 }/*TODO: create proper type*/;
@@ -64,6 +65,7 @@ export class Material {
 	#parameters = new Map<string, MateriaParameter>();
 	uniforms: MaterialUniform = {};// TODO: transform to map ?
 	readonly storage = new Map<string, StorageBuffer>();
+	readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
@@ -121,6 +123,10 @@ export class Material {
 			for (const name in params.storages) {
 				this.setStorage(name, params.storages[name]!);
 			}
+		}
+
+		if (params.gpuConstants) {
+			this.gpuConstants = params.gpuConstants;
 		}
 	}
 

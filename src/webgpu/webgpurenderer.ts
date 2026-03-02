@@ -846,6 +846,7 @@ export class WebGPURenderer implements Renderer {
 			compute: {
 				module: shaderModule.module,
 				entryPoint: computeEntryPoint,
+				constants: material.gpuConstants,
 			},
 			layout: pipelineLayout,
 		};
