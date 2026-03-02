@@ -1396,14 +1396,31 @@ export class WebGPURenderer implements Renderer {
 						} else {
 							const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
 							if (storageBuffer) {
-
-								if (storage.isStruct) {
+								const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
+								if (storageBuffer.raw) {
+									if (!storageBuffer.buffer) {
+										storageBuffer.buffer = device.createBuffer({
+											label: storage.name,
+											size: storage.size || storageBuffer.size || (storageBuffer.value as TypedArray).byteLength,
+											usage,
+										});
+									}
+									if (storageBuffer.value !== null) {
+										device.queue.writeBuffer(
+											storageBuffer.buffer,
+											storageBuffer.rawOffset ?? 0,
+											storageBuffer.value as BufferSource,
+											0/*TODO: use data offset ?*/,
+											storageBuffer.rawSize ?? storageBuffer.buffer.size,
+										);
+									}
+								} else if (storage.isStruct) {
 									// TODO: handle nested structs
 									if (!storageBuffer.buffer) {
 										storageBuffer.buffer = device.createBuffer({
 											label: storage.name,
 											size: storage.size,
-											usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+											usage,
 										});
 									}
 
@@ -1425,7 +1442,7 @@ export class WebGPURenderer implements Renderer {
 											storageBuffer.buffer = device.createBuffer({
 												label: storage.name,
 												size: storage.size || storageBuffer.size || (storageBuffer.value as TypedArray).byteLength,
-												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+												usage,
 											});
 										}
 										if (storageBuffer.value !== null) {
@@ -1436,7 +1453,7 @@ export class WebGPURenderer implements Renderer {
 											storageBuffer.buffer = device.createBuffer({
 												label: storage.name,
 												size: storage.size || (storageBuffer.value as StorageValueStruct[]).length * storage.format!.size,
-												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+												usage,
 											});
 										}
 
@@ -1474,7 +1491,7 @@ export class WebGPURenderer implements Renderer {
 											storageBuffer.buffer = device.createBuffer({
 												label: storage.name,
 												size: storage.size || storageBuffer.size || (storageBuffer.value as TypedArray).byteLength,
-												usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+												usage,
 											});
 										}
 										if (storageBuffer.value !== null) {
