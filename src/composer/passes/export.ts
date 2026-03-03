@@ -6,6 +6,7 @@ export { OldMoviePass } from './oldmoviepass';
 export { OutlinePass } from './outlinepass';
 export { PalettePass } from './palettepass';
 export { PixelatePass } from './pixelatepass';
+export { RayTracingPass } from './raytracingpass';
 export { RenderPass } from './renderpass';
 export { SaturatePass } from './saturatepass';
 export { SketchPass } from './sketchpass';

@@ -2132,6 +2132,8 @@ declare class Channel {
 
                       export declare function generateRandomUUID(): string;
 
+                      export declare function getCurrentTexture(): Texture;
+
                       export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
 
                       export declare function getIncludeList(): Set<string>;
@@ -3693,6 +3695,7 @@ declare class Channel {
                           name: string;
                           uniforms: MaterialUniform;
                           readonly storage: Map<string, StorageBuffer>;
+                          readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines: Record<string, any>;
                           parameters: MaterialParams;
                           depthTest: boolean;
@@ -3782,7 +3785,7 @@ declare class Channel {
                           getShaderSource(): string;
                           getWebGPUShader(): string;
                           getStorage(name: string): StorageBuffer | undefined;
-                          setStorage(name: string, value: StorageValue | number): void;
+                          setStorage(name: string, value: StorageValue | number | StorageBuffer): void;
                           deleteStorage(name: string): void;
                       }
 
@@ -3813,7 +3816,8 @@ declare class Channel {
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
                           uniforms?: MaterialUniform;
-                          storages?: Record<string, StorageValue | number>;
+                          storages?: Record<string, StorageValue | number | StorageBuffer>;
+                          gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines?: Record<string, string>;
                       };
 
@@ -5359,6 +5363,17 @@ declare class Channel {
                           castRay(origin: vec3, direction: vec3, entities: Entity[] | Set<Entity>, recursive: boolean): Intersection[];
                           castCameraRay(camera: Camera, normalizedX: number, normalizedY: number, entities: Entity[] | Set<Entity>, recursive: boolean): Intersection[];
                           intersectEntity(entity: Entity, intersections: Intersection[], recursive: boolean): void;
+                      }
+
+                      export declare class Raytracer {
+                      }
+
+                      export declare class RayTracingPass extends Pass {
+                          #private;
+                          aabbs?: Uint8ClampedArray;
+                          material?: ShaderMaterial;
+                          constructor(scene: Scene, camera: Camera);
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare class RefractMaterial extends Source1Material {
@@ -8676,6 +8691,13 @@ declare class Channel {
                           value: StorageValue | null;
                           buffer?: GPUBuffer | null;
                           size?: number;
+                          /** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
+                          raw?: boolean;
+                          /** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */
+                          rawOffset?: number;
+                          /** If raw is true, Size of content to write from `value` to `buffer`.
+                           * Given in elements if `value` is a `TypedArray` and bytes otherwise. Default to `value` size. */
+                          rawSize?: number;
                       };
 
                       /**
@@ -9219,7 +9241,7 @@ declare class Channel {
 
                       declare type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
 
-                      export declare type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined | vec3;
+                      export declare type UniformValue = GLint | GLboolean | GLboolean[] | Uint32List | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined | vec3;
 
                       export declare class UnlitGenericMaterial extends Source1Material {
                           #private;

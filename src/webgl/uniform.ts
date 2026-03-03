@@ -43,7 +43,7 @@ const SAMPLERS = new Set([
 
 type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
 
-export type UniformValue = GLint | GLboolean | GLboolean[] | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined | vec3;
+export type UniformValue = GLint | GLboolean | GLboolean[] | Uint32List | Int32List | Float32List | Texture | CubeTexture | Float32List[] | Texture[] | CubeTexture[] | null | undefined | vec3;
 
 //export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;/
 

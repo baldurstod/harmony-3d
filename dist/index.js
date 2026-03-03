@@ -1626,6 +1626,7 @@ class Material {
     #parameters = new Map();
     uniforms = {}; // TODO: transform to map ?
     storage = new Map();
+    gpuConstants;
     defines = {}; //TODOv3: put defines in meshes too ? TODO: transform to map ?
     parameters;
     depthTest;
@@ -1674,6 +1675,9 @@ class Material {
             for (const name in params.storages) {
                 this.setStorage(name, params.storages[name]);
             }
+        }
+        if (params.gpuConstants) {
+            this.gpuConstants = params.gpuConstants;
         }
     }
     get transparent() {
@@ -2059,7 +2063,12 @@ class Material {
             this.storage.set(name, { value: null, size: value });
         }
         else {
-            this.storage.set(name, { value });
+            if (value.value) {
+                this.storage.set(name, value);
+            }
+            else {
+                this.storage.set(name, { value: value });
+            }
         }
     }
     deleteStorage(name) {
@@ -4998,7 +5007,7 @@ const uv2$1 = vec2.create();
 const uv3$1 = vec2.create();
 const intersectionPoint$1 = vec3.create();
 const intersectionNormal$2 = vec3.create();
-const ray$2 = new Ray();
+const ray$3 = new Ray();
 const uv$2 = vec2.create();
 const meshDefaultBufferGeometry = new BufferGeometry();
 const meshDefaultMaterial = new MeshBasicMaterial();
@@ -5190,7 +5199,7 @@ class Mesh extends Entity {
         const textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
         let normals = geometry?.getAttribute('aVertexNormal')?._array;
         const worldMatrix = this.worldMatrix;
-        ray$2.copyTransform(raycaster.ray, worldMatrix);
+        ray$3.copyTransform(raycaster.ray, worldMatrix);
         if (normals) {
             for (let i = 0, l = indices.length; i < l; i += 3) {
                 let i1 = 3 * indices[i];
@@ -5199,7 +5208,7 @@ class Mesh extends Entity {
                 vec3.set(v1$2, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
                 vec3.set(v2$1, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
                 vec3.set(v3$1, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
-                if (ray$2.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
+                if (ray$3.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
                     vec3.set(n1$1, normals[i1], normals[i1 + 1], normals[i1 + 2]);
                     vec3.set(n2$1, normals[i2], normals[i2 + 1], normals[i2 + 2]);
                     vec3.set(n3$1, normals[i3], normals[i3 + 1], normals[i3 + 2]);
@@ -5221,7 +5230,7 @@ class Mesh extends Entity {
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                     intersectionNormal$2[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                     vec3.transformMat4(intersectionPoint$1, intersectionPoint$1, worldMatrix);
-                    intersections.push(ray$2.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
+                    intersections.push(ray$3.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
                 }
             }
         }
@@ -5234,7 +5243,7 @@ class Mesh extends Entity {
                 vec3.set(v1$2, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
                 vec3.set(v2$1, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
                 vec3.set(v3$1, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
-                if (ray$2.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
+                if (ray$3.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
                     vec3.set(n1$1, normals[0], normals[1], normals[2]);
                     vec3.set(n2$1, normals[0], normals[1], normals[2]);
                     vec3.set(n3$1, normals[0], normals[1], normals[2]);
@@ -5256,7 +5265,7 @@ class Mesh extends Entity {
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                     intersectionNormal$2[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                     vec3.transformMat4(intersectionPoint$1, intersectionPoint$1, worldMatrix);
-                    intersections.push(ray$2.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
+                    intersections.push(ray$3.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
                 }
             }
         }
@@ -6662,7 +6671,7 @@ class Texture {
     }
 }
 function getCurrentTexture() {
-    const texture = new Texture({ gpuFormat: WebGPUInternal.format, gpuVisibility: GPUShaderStage.FRAGMENT /*TODO: check visibility for the canvas texture*/ });
+    const texture = new Texture({ gpuFormat: WebGPUInternal.format, gpuVisibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE /*TODO: check visibility for the canvas texture*/ });
     texture.texture = WebGPUInternal.gpuContext.getCurrentTexture();
     return texture;
 }
@@ -7288,6 +7297,104 @@ class PixelatePass extends Pass {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, context, context.width, context.height);
+        }
+    }
+}
+
+class RayTracingPass extends Pass {
+    #frameId = 0;
+    aabbs;
+    #accumulatedSamplesPerPixel = 0;
+    material;
+    /*
+     = new ShaderMaterial({
+        shaderSource: 'raytracer',
+        uniforms: {
+            samplingParams: {
+                numSamplesPerPixel: 1,// TODO: param
+                accumulatedSamplesPerPixel: 0,// TODO: param
+                numBounces: 5,// TODO: param
+                clearAccumulatedSamples: 0,
+            },
+            //camera: computeCamera(perspectiveCamera),
+            //frameData: [mainCanvas.width!, mainCanvas.height!, 1, 0],
+            commonUniforms: {
+                seed: new Uint32Array([Math.random() * 0xffffff, Math.random() * 0xffffff, Math.random() * 0xffffff,]),
+                frameCounter: 0,
+                maxBounces: 4,
+                flatShading: 0,
+                debugNormals: 0,
+            },
+            cameraUniforms: {
+                viewportSize: new Uint32Array([WIDTH, HEIGHT]),
+                imageWidth: WIDTH,
+                imageHeight: HEIGHT,
+                pixel00Loc: vec3.create(),// Fake value
+                pixelDeltaU: vec3.create(),// Fake value
+                pixelDeltaV: vec3.create(),// Fake value
+                aspectRatio: WIDTH / HEIGHT,
+                center: vec3.create(),// Fake value
+                vfov: 60,
+                lookFrom: vec3.fromValues(0, 0, 2),
+                lookAt: vec3.create(),
+                vup: vec3.create(),
+                defocusAngle: 0,
+                focusDist: 3.4,
+                defocusDiscU: vec3.create(),
+                defocusDiscV: vec3.create(),
+            },
+        },
+        storages: {
+            raytraceImageBuffer: WIDTH * HEIGHT * 4 * 4,// 4 elements * 4 bytes per element
+            rngStateBuffer: WIDTH * HEIGHT * 4,// 4 bytes per element
+            skyState: {
+                // TODO: do a proper Hosek-Wilkie computation
+                params: new Float32Array([-1.146293, -0.19404611, 0.6892759, 0.9089986, -2.0779164, 0.68428886, 0.21258523, 1.7967614, 0.6864839, -1.1500875, -0.22125047, 0.3443094, 0.37174478, -0.9696021, 0.64278126, 0.11194256, 2.956004, 0.6878244, -1.2532278, -0.4073885, -1.0929729, 1.48517, -0.056945086, 0.46961704, 0.019326262, 2.5557024, 0.6794679]),
+                radiances: new Float32Array([5.8619566, 5.681205, 4.7109914]),
+                sunDirection: new Float32Array([0.9961947, 0.087155804, 0.0, 0.0]),
+            },
+            //spheres,
+            //materials,
+            /*
+            faces: {
+                value: faces,
+                raw: true,
+            },
+            AABBs: {
+                value: aabbs,
+                raw: true,
+            },
+            * /
+            //textures,
+            lights: new Uint32Array([1, 2, 3, 9]),
+        },
+        /*
+        gpuConstants: {
+            WORKGROUP_SIZE_X: COMPUTE_WORKGROUP_SIZE_X,
+            WORKGROUP_SIZE_Y: COMPUTE_WORKGROUP_SIZE_Y,
+            OBJECTS_COUNT_IN_SCENE: RayTracingScene.MODELS_COUNT,
+            MAX_BVs_COUNT_PER_MESH: RayTracingScene.MAX_NUM_BVs_PER_MESH,
+            MAX_FACES_COUNT_PER_MESH: RayTracingScene.MAX_NUM_FACES_PER_MESH,
+        }
+        * /
+    });
+    */
+    constructor(scene, camera) {
+        super();
+        this.swapBuffers = false;
+        this.scene = scene;
+        this.camera = camera;
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        if (Graphics$1.isWebGLAny) {
+            errorOnce('RayTracingPass is unavailable for webgl');
+        }
+        else {
+            if (this.material) {
+                this.material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+                this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
+                Graphics$1.compute(this.material, context, context.width, context.height);
+            }
         }
     }
 }
@@ -10754,7 +10861,7 @@ async function configureMaterial(material, fbxMaterial, materialsParams) {
     }
 }
 let scene$1;
-let camera$1;
+let camera$2;
 let fullScreenQuadMesh;
 var RenderMode$1;
 (function (RenderMode) {
@@ -10764,8 +10871,8 @@ var RenderMode$1;
 async function renderMaterial(material, materialsParams, renderMode) {
     if (!scene$1) {
         scene$1 = new Scene();
-        camera$1 = new Camera();
-        camera$1.position = [0, 0, 100];
+        camera$2 = new Camera();
+        camera$2.position = [0, 0, 100];
         fullScreenQuadMesh = new FullScreenQuad();
         scene$1.addChild(fullScreenQuadMesh);
     }
@@ -10782,7 +10889,7 @@ async function renderMaterial(material, materialsParams, renderMode) {
     }
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    Graphics$1.render(scene$1, camera$1, 0, { DisableToolRendering: true });
+    Graphics$1.render(scene$1, camera$2, 0, { DisableToolRendering: true });
     const imgContent = await Graphics$1.toBlob();
     Graphics$1.setIncludeCode('EXPORT_TEXTURES', '');
     Graphics$1.setIncludeCode('SKIP_PROJECTION', '');
@@ -12615,6 +12722,7 @@ class WebGPURenderer {
             compute: {
                 module: shaderModule.module,
                 entryPoint: computeEntryPoint,
+                constants: material.gpuConstants,
             },
             layout: pipelineLayout,
         };
@@ -13083,13 +13191,26 @@ class WebGPURenderer {
                         else {
                             const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
                             if (storageBuffer) {
-                                if (storage.isStruct) {
+                                const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
+                                if (storageBuffer.raw) {
+                                    if (!storageBuffer.buffer) {
+                                        storageBuffer.buffer = device.createBuffer({
+                                            label: storage.name,
+                                            size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
+                                            usage,
+                                        });
+                                    }
+                                    if (storageBuffer.value !== null) {
+                                        device.queue.writeBuffer(storageBuffer.buffer, storageBuffer.rawOffset ?? 0, storageBuffer.value, 0 /*TODO: use data offset ?*/, storageBuffer.rawSize ?? storageBuffer.buffer.size);
+                                    }
+                                }
+                                else if (storage.isStruct) {
                                     // TODO: handle nested structs
                                     if (!storageBuffer.buffer) {
                                         storageBuffer.buffer = device.createBuffer({
                                             label: storage.name,
                                             size: storage.size,
-                                            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                            usage,
                                         });
                                     }
                                     for (const member of storage.type.members) {
@@ -13106,7 +13227,7 @@ class WebGPURenderer {
                                             storageBuffer.buffer = device.createBuffer({
                                                 label: storage.name,
                                                 size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
-                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                                usage,
                                             });
                                         }
                                         if (storageBuffer.value !== null) {
@@ -13118,7 +13239,7 @@ class WebGPURenderer {
                                             storageBuffer.buffer = device.createBuffer({
                                                 label: storage.name,
                                                 size: storage.size || storageBuffer.value.length * storage.format.size,
-                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                                usage,
                                             });
                                         }
                                         let baseOffset = 0;
@@ -13155,7 +13276,7 @@ class WebGPURenderer {
                                             storageBuffer.buffer = device.createBuffer({
                                                 label: storage.name,
                                                 size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
-                                                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                                                usage,
                                             });
                                         }
                                         if (storageBuffer.value !== null) {
@@ -13194,8 +13315,11 @@ function writePrimitive(queue, buffer, member, value, baseOffset) {
         case 'f32':
             queue.writeBuffer(buffer, baseOffset + member.offset, new Float32Array([value]));
             break;
+        case 'vec3f':
+            queue.writeBuffer(buffer, baseOffset + member.offset, value);
+            break;
         default:
-            errorOnce(`unknwon type ${member.type.name} in writeNumber`);
+            errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
             break;
     }
 }
@@ -13216,7 +13340,12 @@ function writeStruct(queue, buffer, members, struct, baseOffset) {
         }
         else {
             // primitive
-            writePrimitive(queue, buffer, member, structValue, baseOffset);
+            if (structValue !== undefined && structValue !== null) {
+                writePrimitive(queue, buffer, member, structValue, baseOffset);
+            }
+            else {
+                errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
+            }
         }
         /*
         const source = struct[member.name];
@@ -20645,7 +20774,7 @@ const uv2 = vec2.create();
 const uv3 = vec2.create();
 const intersectionPoint = vec3.create();
 const intersectionNormal = vec3.create();
-const ray$1 = new Ray();
+const ray$2 = new Ray();
 const uv$1 = vec2.create();
 class SkeletalMesh extends Mesh {
     isSkeletalMesh = true;
@@ -20981,7 +21110,7 @@ class SkeletalMesh extends Mesh {
         const skinnedVertexNormal = new Float32Array(vertexCount * 3);
         const textureCoords = geometry.getAttribute('aTextureCoord')._array;
         const worldMatrix = this.worldMatrix;
-        ray$1.copyTransform(raycaster.ray, worldMatrix);
+        ray$2.copyTransform(raycaster.ray, worldMatrix);
         const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
@@ -21052,7 +21181,7 @@ class SkeletalMesh extends Mesh {
             vec3.set(v1$1, skinnedVertexPosition[i1] ?? 0, skinnedVertexPosition[i1 + 1] ?? 0, skinnedVertexPosition[i1 + 2] ?? 0);
             vec3.set(v2, skinnedVertexPosition[i2] ?? 0, skinnedVertexPosition[i2 + 1] ?? 0, skinnedVertexPosition[i2 + 2] ?? 0);
             vec3.set(v3, skinnedVertexPosition[i3] ?? 0, skinnedVertexPosition[i3 + 1] ?? 0, skinnedVertexPosition[i3 + 2] ?? 0);
-            if (ray$1.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
+            if (ray$2.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
                 vec3.set(n1, skinnedVertexNormal[i1] ?? 0, skinnedVertexNormal[i1 + 1] ?? 0, skinnedVertexNormal[i1 + 2] ?? 0);
                 vec3.set(n2, skinnedVertexNormal[i2] ?? 0, skinnedVertexNormal[i2 + 1] ?? 0, skinnedVertexNormal[i2 + 2] ?? 0);
                 vec3.set(n3, skinnedVertexNormal[i3] ?? 0, skinnedVertexNormal[i3 + 1] ?? 0, skinnedVertexNormal[i3 + 2] ?? 0);
@@ -21072,7 +21201,7 @@ class SkeletalMesh extends Mesh {
                 intersectionNormal[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                 intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                 vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
-                intersections.push(ray$1.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
+                intersections.push(ray$2.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
             }
         }
     }
@@ -22227,6 +22356,44 @@ class Triangles extends Mesh {
     updateGeometry() {
         this.geometry.updateGeometry(this.#triangles);
     }
+}
+
+var camera$1 = "  struct Camera {\n    viewportSize: vec2u,\n    imageWidth: f32,\n    imageHeight: f32,\n    pixel00Loc: vec3<f32>,\n    pixelDeltaU: vec3<f32>,\n    pixelDeltaV: vec3<f32>,\n\n    aspectRatio: f32,\n    center: vec3<f32>,\n    vfov: f32,\n\n    lookFrom: vec3f,\n    lookAt: vec3f,\n    vup: vec3f,\n\n    defocusAngle: f32,\n    focusDist: f32,\n\n    defocusDiscU: vec3f,\n    defocusDiscV: vec3f\n  }\n\n  fn initCamera(camera: ptr<function, Camera>) {\n    (*camera).imageHeight = (*camera).imageWidth / (*camera).aspectRatio;\n    (*camera).imageHeight = select((*camera).imageHeight, 1, (*camera).imageHeight < 1);\n\n    (*camera).center = (*camera).lookFrom;\n\n    let theta = radians((*camera).vfov);\n    let h = tan(theta * 0.5);\n    let viewportHeight = 2.0 * h * (*camera).focusDist;\n    let viewportWidth = viewportHeight * ((*camera).imageWidth / (*camera).imageHeight);\n\n    let w = normalize((*camera).lookFrom - (*camera).lookAt);\n    let u = normalize(cross((*camera).vup, w));\n    let v = cross(w, u);\n\n    let viewportU = viewportWidth * u;\n    let viewportV = viewportHeight * -v;\n\n    (*camera).pixelDeltaU = viewportU / (*camera).imageWidth;\n    (*camera).pixelDeltaV = viewportV / (*camera).imageHeight;\n\n    let viewportUpperLeft = (*camera).center - ((*camera).focusDist * w) - viewportU / 2 - viewportV / 2;\n    (*camera).pixel00Loc = viewportUpperLeft + 0.5 * ((*camera).pixelDeltaU + (*camera).pixelDeltaV);\n\n    let defocusRadius = (*camera).focusDist * tan(radians((*camera).defocusAngle * 0.5));\n    (*camera).defocusDiscU = u * defocusRadius;\n    (*camera).defocusDiscV = v * defocusRadius;\n  }\n";
+
+var color$1 = "  // Narkowicz 2015, \"ACES Filmic Tone Mapping Curve\"\n  @must_use\n  fn aces(x: vec3f) -> vec3f {\n    let a = 2.51;\n    let b = 0.03;\n    let c = 2.43;\n    let d = 0.59;\n    let e = 0.14;\n    return saturate(x * (a * x + b)) / (x * (c * x + d) + e);\n  }\n\n  // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/\n  @must_use\n  fn filmic(x: vec3f) -> vec3f {\n    let X = max(vec3f(0.0), x - 0.004);\n    let result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);\n    return pow(result, vec3(2.2));\n  }\n\n  // Lottes 2016, \"Advanced Techniques and Optimization of HDR Color Pipelines\"\n  @must_use\n  fn lottes(x: vec3f) -> vec3f {\n    let a = vec3f(1.6);\n    let d = vec3f(0.977);\n    let hdrMax = vec3f(8.0);\n    let midIn = vec3f(0.18);\n    let midOut = vec3f(0.267);\n\n    let b =\n        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n    let c =\n        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n\n    return pow(x, a) / (pow(x, a * d) * b + c);\n  }\n\n  @must_use\n  fn reinhard(x: vec3f) -> vec3f {\n    return x / (1.0 + x);\n  }\n";
+
+var common = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    faceNormal: vec3f,\n    materialIdx: u32\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
+
+var interval = "  struct Interval {\n    min: f32,\n    max: f32,\n  };\n\n  @must_use\n  fn intervalContains(interval: Interval, x: f32) -> bool {\n    return interval.min <= x && x <= interval.max;\n  }\n\n  @must_use\n  fn intervalSurrounds(interval: Interval, x: f32) -> bool {\n    return interval.min < x && x < interval.max;\n  }\n\n  @must_use\n  fn intervalClamp(interval: Interval, x: f32) -> f32 {\n    var out = x;\n    if (x < interval.min) {\n      out = interval.min;\n    }\n    if (x > interval.max) {\n      out = interval.max;\n    }\n    return out;\n  }\n\n  const emptyInterval = Interval(f32max, f32min);\n  const universeInterval = Interval(f32min, f32max);\n  const positiveUniverseInterval = Interval(EPSILON, f32max);\n";
+
+var material$1 = "  struct Material {\n    materialType: u32,\n    reflectionRatio: f32,\n    reflectionGloss: f32,\n    refractionIndex: f32,\n    albedo: vec3f,\n  };\n\n  @must_use\n  fn scatterLambertian(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = (*material).albedo;\n    return true;\n  }\n\n  @must_use\n  fn scatterMetal(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    let reflected = reflect(normalize((*ray).direction), (*hitRec).normal);\n    (*scattered) = Ray((*hitRec).p, reflected + (*material).reflectionGloss * randomUnitVec3(rngState));\n    (*attenuation) = (*material).albedo;\n    return (dot((*scattered).direction, (*hitRec).normal) >= 0);\n  }\n\n  @must_use\n  fn scatterDielectric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    *attenuation = vec3f(1);\n    let refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, (*hitRec).frontFace);\n    let unitDirection = normalize((*ray).direction);\n    let cosTheta = dot(-unitDirection, (*hitRec).normal);\n    let sinTheta = sqrt(1.0 - cosTheta * cosTheta);\n    let cannotRefract = refractRatio * sinTheta > 1.0;\n    let direction = select(\n      refract(unitDirection, (*hitRec).normal, refractRatio),\n      reflect(unitDirection, (*hitRec).normal),\n      cannotRefract || reflectance(cosTheta, refractRatio) > rngNextFloat(rngState)\n    );\n    (*scattered) = Ray((*hitRec).p, direction);\n    return true;\n  }\n\n  @must_use\n  fn reflectance(cosine: f32, refractionIndex: f32) -> f32 {\n    // Use Schlick's approximation for reflectance.\n    var r0 = (1.0 - refractionIndex) / (1.0 + refractionIndex);\n    r0 *= r0;\n    return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);\n  }\n";
+
+var ray$1 = "  struct Ray {\n    origin: vec3f,\n    direction: vec3f,\n  };\n\n  @must_use\n  fn rayAt(ray: ptr<function, Ray>, t: f32) -> vec3f {\n    return (*ray).origin + (*ray).direction * t;\n  }\n\n  @must_use\n  fn rayIntersectFace(\n    ray: ptr<function, Ray>,\n    face: ptr<function, Face>,\n    rec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n    // Mäller-Trumbore algorithm\n    // https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm\n\n    // let fnDotRayDir = dot((*face).faceNormal, (*ray).direction);\n    // if (abs(fnDotRayDir) < EPSILON) {\n    //   return false; // ray direction almost parallel\n    // }\n\n    let e1 = (*face).p1 - (*face).p0;\n    let e2 = (*face).p2 - (*face).p0;\n\n    let h = cross((*ray).direction, e2);\n    let det = dot(e1, h);\n\n    if det > -0.00001 && det < 0.00001 {\n      return false;\n    }\n\n    let invDet = 1.0f / det;\n    let s = (*ray).origin - (*face).p0;\n    let u = invDet * dot(s, h);\n\n    if u < 0.0f || u > 1.0f {\n      return false;\n    }\n\n    let q = cross(s, e1);\n    let v = invDet * dot((*ray).direction, q);\n\n    if v < 0.0f || u + v > 1.0f {\n      return false;\n    }\n\n    let t = invDet * dot(e2, q);\n\n    if t > interval.min && t < interval.max {\n      // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html\n\n      let p = (*face).p0 + u * e1 + v * e2;\n      // *hit = TriangleHit(offsetRay(p, n), b, t);\n      (*rec).t = t;\n      (*rec).p = p;\n      (*rec).materialIdx = (*face).materialIdx;\n      if (commonUniforms.flatShading == 1u) {\n        (*rec).normal = (*face).faceNormal;\n      } else {\n        let b = vec3f(1f - u - v, u, v);\n        let n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;\n        (*rec).normal = n;\n      }\n      return true;\n    } else {\n      return false;\n    }\n  }\n\n\n  @must_use\n  fn rayIntersectBV(ray: ptr<function, Ray>, aabb: ptr<function, AABB>) -> bool {\n    let t0 = ((*aabb).min - (*ray).origin) / (*ray).direction;\n    let t1 = ((*aabb).max - (*ray).origin) / (*ray).direction;\n    let tmin = min(t0, t1);\n    let tmax = max(t0, t1);\n    let maxMinT = max(tmin.x, max(tmin.y, tmin.z));\n    let minMaxT = min(tmax.x, min(tmax.y, tmax.z));\n    return maxMinT < minMaxT;\n  }\n\n  @must_use\n  fn rayIntersectBVH(\n    ray: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n\n    var current: HitRecord;\n    var didIntersect = false;\n    var stack: array<i32, BV_MAX_STACK_DEPTH>;\n\n    (*hitRec).t = f32max;\n\n    var top: i32;\n\n    for (var objIdx = 0u; objIdx < OBJECTS_COUNT_IN_SCENE; objIdx++) {\n      top = 0;\n      stack[0] = 0;\n\n      while (top > -1) {\n        var bvIdx = stack[top];\n        top--;\n        var aabb = AABBs[u32(bvIdx) + objIdx * MAX_BVs_COUNT_PER_MESH];\n\n        if (rayIntersectBV(ray, &aabb)) {\n          if (aabb.leftChildIdx != -1) {\n            top++;\n            stack[top] = aabb.leftChildIdx;\n          }\n          if (aabb.rightChildIdx != -1) {\n            top++;\n            stack[top] = aabb.rightChildIdx;\n          }\n\n          if (aabb.faceIdx0 != -1) {\n            var face = faces[u32(aabb.faceIdx0) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n\n          if (aabb.faceIdx1 != -1) {\n            var face = faces[u32(aabb.faceIdx1) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n        }\n      }\n    }\n    return didIntersect;\n  }\n\n  @must_use\n  fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n    let pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n    let pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n    let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n    let rayDirection = pixelSample - rayOrigin;\n    return Ray(rayOrigin, rayDirection);\n  }\n\n  @must_use\n  fn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n    let p = randomVec3InUnitDisc(rngState);\n    return (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n  }\n\n  @must_use\n  fn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n    let px = -0.5 + rngNextFloat(rngState);\n    let py = -0.5 + rngNextFloat(rngState);\n    return (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n  }\n";
+
+var utils = "  const f32min = 0x1p-126f;\n  const f32max = 0x1.fffffep+127;\n\n  const pi = 3.1415927f;\n\n  @must_use\n  fn rngNextFloat(state: ptr<function, u32>) -> f32 {\n    rngNextInt(state);\n    return f32(*state) / f32(0xffffffffu);\n  }\n\n  fn rngNextInt(state: ptr<function, u32>) {\n    // PCG random number generator\n    // Based on https://www.shadertoy.com/view/XlGcRh\n\n    let oldState = *state + 747796405u + 2891336453u;\n    let word = ((oldState >> ((oldState >> 28u) + 4u)) ^ oldState) * 277803737u;\n    *state = (word >> 22u) ^ word;\n  }\n\n  @must_use\n  fn randInRange(min: f32, max: f32, state: ptr<function, u32>) -> f32 {\n    return min + rngNextFloat(state) * (max - min);\n  }\n";
+
+var vec$9 = "  @must_use\n  fn randomVec3(rngState: ptr<function, u32>) -> vec3f {\n    return vec3f(rngNextFloat(rngState), rngNextFloat(rngState), rngNextFloat(rngState));\n  }\n\n  @must_use\n  fn randomVec3InRange(min: f32, max: f32, rngState: ptr<function, u32>) -> vec3f {\n    return vec3f(\n      randInRange(min, max, rngState),\n      randInRange(min, max, rngState),\n      randInRange(min, max, rngState)\n    );\n  }\n\n  fn randomVec3InUnitDisc(state: ptr<function, u32>) -> vec3<f32> {\n    let r = sqrt(rngNextFloat(state));\n    let alpha = 2f * pi * rngNextFloat(state);\n\n    let x = r * cos(alpha);\n    let y = r * sin(alpha);\n\n    return vec3(x, y, 0f);\n  }\n\n  fn randomVec3InUnitSphere(state: ptr<function, u32>) -> vec3<f32> {\n    let r = pow(rngNextFloat(state), 0.33333f);\n    let theta = pi * rngNextFloat(state);\n    let phi = 2f * pi * rngNextFloat(state);\n\n    let x = r * sin(theta) * cos(phi);\n    let y = r * sin(theta) * sin(phi);\n    let z = r * cos(theta);\n\n    return vec3(x, y, z);\n  }\n\n  @must_use\n  fn randomUnitVec3(rngState: ptr<function, u32>) -> vec3f {\n    return normalize(randomVec3InUnitSphere(rngState));\n  }\n\n  @must_use\n  fn randomUnitVec3OnHemisphere(normal: vec3f, rngState: ptr<function, u32>) -> vec3f {\n    let onUnitSphere = randomUnitVec3(rngState);\n    return select(-onUnitSphere, onUnitSphere, dot(onUnitSphere, normal) > 0.0);\n  }\n\n  @must_use\n  fn nearZero(v: vec3f) -> bool {\n    let epsilon = vec3f(1e-8);\n    return any(abs(v) < epsilon);\n  }\n";
+
+var vertex = "  struct VertexOutput {\n    @builtin(position) Position: vec4f,\n    @location(0) uv: vec2f,\n  }\n";
+
+addWgslInclude('raytracer::camera', camera$1);
+addWgslInclude('raytracer::color', color$1);
+addWgslInclude('raytracer::common', common);
+addWgslInclude('raytracer::interval', interval);
+addWgslInclude('raytracer::material', material$1);
+addWgslInclude('raytracer::ray', ray$1);
+addWgslInclude('raytracer::utils', utils);
+addWgslInclude('raytracer::vec', vec$9);
+addWgslInclude('raytracer::vertex', vertex);
+
+var raytracer = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::ray\n#include raytracer::vec\n#include raytracer::interval\n#include raytracer::camera\n#include raytracer::color\n#include raytracer::material\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  @group(1) @binding(2) var<storage, read> materials: array<Material>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  //@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  @compute @workgroup_size(1)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    if (any(globalInvocationId.xy > cameraUniforms.viewportSize)) {\n      return;\n    }\n\n\n    //textureStore(outTexture, globalInvocationId.xy, vec4(1.0));\n\n    let pos = globalInvocationId.xy;\n    let x = f32(pos.x);\n    let y = f32(pos.y);\n    let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n    var rngState = rngStateBuffer[idx];\n\n    var camera = cameraUniforms;\n    initCamera(&camera);\n\n    var hitRec: HitRecord;\n\n    var r = getCameraRay(&camera, x, y, &rngState);\n\n    var color = vec3f(0);\n\n    var mtlStack: array<Material, 16>;\n    var bLoop = true;\n    var i = 0u;\n\n    while(bLoop && rayIntersectBVH(&r, &hitRec, positiveUniverseInterval)) {\n      var scattered: Ray;\n      var material = materials[hitRec.materialIdx];\n      var albedo = material.albedo;\n\n      mtlStack[i] = material;\n\n      if (commonUniforms.debugNormals == 1u) {\n        color = (hitRec.normal + 1) * 0.5;\n        break;\n      }\n\n      switch material.materialType {\n        case 0: {\n          color = material.albedo;\n          bLoop = false;\n          break;\n        }\n        case 1: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            if (scatters) {\n              i++;\n              r = scattered;\n            } else {\n              color = vec3f(0);\n              bLoop = false;\n              i = 0u;\n            }\n          } else {\n            color = material.albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 2: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            r = scattered;\n            i++;\n          } else {\n            color = mtlStack[i].albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 3: {\n          var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        default: {\n          // ...\n        }\n      }\n    }\n\n\n    while (i > 0) {\n      i--;\n      color *= mtlStack[i].albedo;\n    }\n\n    var pixel = raytraceImageBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      pixel = vec3f(0);\n    }\n\n    pixel += color;\n    raytraceImageBuffer[idx] = pixel;\n\n\n    textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n    rngStateBuffer[idx] = rngState;\n  }\n";
+
+var test = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
+
+Shaders['raytracer.wgsl'] = raytracer;
+Shaders['test.wgsl'] = test;
+
+class Raytracer {
 }
 
 var RepositoryError;
@@ -34418,7 +34585,7 @@ class ShaderEditor extends HTMLElement {
         const docPos = session.screenToDocumentPosition(screenPos.row, screenPos.column);
         const selectionRange = this.#shaderEditor.selection.getRange();
         if (!selectionRange.isEmpty()) ;
-        const token = this.#findUuid(docPos.row, docPos.column);
+        const token = this.#findImportName(docPos.row, docPos.column);
         this.#uuid = token;
         if (!token) {
             return this.#clearMarkers();
@@ -34435,7 +34602,7 @@ class ShaderEditor extends HTMLElement {
         }
         this.#selectToken(this.#uuid.value);
     }
-    #findUuid(row, column) {
+    #findImportName(row, column) {
         if (!this.#shaderEditor) {
             return;
         }
@@ -34444,7 +34611,7 @@ class ShaderEditor extends HTMLElement {
         if (!line.trim().startsWith('#include')) {
             return;
         }
-        const match = this.#getMatchAround(/\w+/g, line, column);
+        const match = this.#getMatchAround(/[\w:]+/g, line, column);
         if (!match) {
             return;
         }
@@ -77302,4 +77469,4 @@ Shaders['pixelate.wgsl'] = pixelate;
 Shaders['saturate.wgsl'] = saturate;
 Shaders['sketch.wgsl'] = sketch;
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

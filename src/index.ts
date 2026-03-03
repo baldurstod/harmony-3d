@@ -26,6 +26,7 @@ export * from './nodeimageeditor/export';
 export * from './objects/export';
 export * from './primitives/export';
 export * from './raycasting/export';
+export * from './raytracing/export';
 export * from './repositories/export';
 export * from './scenes/export';
 export * from './shaders/export';
