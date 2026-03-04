@@ -26,8 +26,7 @@
   override MAX_BVs_COUNT_PER_MESH: u32;
   override MAX_FACES_COUNT_PER_MESH: u32;
 
-  //@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
-  @compute @workgroup_size(1)
+  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
   fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {
     if (any(globalInvocationId.xy > cameraUniforms.viewportSize)) {
       return;

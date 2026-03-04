@@ -1,4 +1,4 @@
-import { vec2, vec4 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
@@ -48,8 +48,8 @@ export type MaterialParams = {
 	storages?: Record<string, StorageValue | number | StorageBuffer>;
 	gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines?: Record<string, string>;
-
-}/*TODO: create proper type*/;
+	workgroupSize?: vec3;
+};
 
 export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
 
@@ -87,6 +87,8 @@ export class Material {
 	colorMap: Texture | null = null;
 	properties = new Map<string, any>();
 	static materialList: Record<string, typeof Material> = {};
+	/** Workgroup size for WebGPU compute shaders. All components default to 1 */
+	workgroupSize?: vec3;
 
 	constructor(params: MaterialParams = {}) {
 		this.parameters = params;
@@ -104,6 +106,8 @@ export class Material {
 		this.polygonOffset = params.polygonOffset ?? false;
 		this.polygonOffsetFactor = params.polygonOffsetFactor ?? -5;
 		this.polygonOffsetUnits = params.polygonOffsetUnits ?? -5;
+
+		this.workgroupSize = params.workgroupSize;
 
 		this._dirtyProgram = true;//TODOv3 use another method
 

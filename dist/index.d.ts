@@ -2134,7 +2134,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
+                      export declare function getHelper(type: Entity): CameraFrustum | PointLightHelper | SpotLightHelper | Grid | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3179,7 +3179,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -3716,6 +3716,8 @@ declare class Channel {
                           colorMap: Texture | null;
                           properties: Map<string, any>;
                           static materialList: Record<string, typeof Material>;
+                          /** Workgroup size for WebGPU compute shaders. All components default to 1 */
+                          workgroupSize?: vec3;
                           constructor(params?: MaterialParams);
                           get transparent(): boolean;
                           set renderLights(renderLights: boolean);
@@ -3819,6 +3821,7 @@ declare class Channel {
                           storages?: Record<string, StorageValue | number | StorageBuffer>;
                           gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines?: Record<string, string>;
+                          workgroupSize?: vec3;
                       };
 
                       declare type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -4497,7 +4500,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | string[] | null;
                           setParams(params?: any): void;
                           setParam(paramName: string, paramValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
