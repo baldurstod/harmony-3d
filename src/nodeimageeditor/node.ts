@@ -50,7 +50,7 @@ export type NodeParamAddedEvent = NodeEvent & {
 }
 
 export type NodeParamChangedEvent = NodeEvent & {
-	origin: any;
+	origin: NodeParamOrigin;
 	paramName: string;
 	oldValue?: NodeParamValue;
 	newValue?: NodeParamValue;

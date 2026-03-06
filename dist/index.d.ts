@@ -4604,7 +4604,7 @@ declare class Channel {
                       declare type NodeParamArray = number[] | boolean[] | vec2[] | string[];
 
                       export declare type NodeParamChangedEvent = NodeEvent & {
-                          origin: any;
+                          origin: NodeParamOrigin;
                           paramName: string;
                           oldValue?: NodeParamValue;
                           newValue?: NodeParamValue;
