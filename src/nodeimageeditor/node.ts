@@ -19,6 +19,11 @@ enum DrawState {
 	Valid,
 }
 
+export enum NodeParamOrigin {
+	Code = 0,
+	Gui,
+}
+
 export const NODE_PARAM_TYPE_INT = 1;
 export const NODE_PARAM_TYPE_BOOL = 2;
 export const NODE_PARAM_TYPE_FLOAT = 3;
@@ -45,6 +50,7 @@ export type NodeParamAddedEvent = NodeEvent & {
 }
 
 export type NodeParamChangedEvent = NodeEvent & {
+	origin: any;
 	paramName: string;
 	oldValue?: NodeParamValue;
 	newValue?: NodeParamValue;
@@ -137,7 +143,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
-	setParam(paramName: string, newValue: NodeParamValue, paramIndex?: number) {
+	setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number) {
 		const p = this.params.get(paramName);
 		if (p) {
 			let oldValue: NodeParamValue | undefined = undefined;
@@ -150,6 +156,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 			}
 
 			this.#dispatchEvent(NodeEventType.ParamChanged, {
+				origin,
 				eventName: NodeEventType.ParamChanged,
 				paramName,
 				oldValue,

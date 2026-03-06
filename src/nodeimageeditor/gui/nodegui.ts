@@ -7,7 +7,7 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { TextureManager } from '../../textures/texturemanager';
 import { GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_2D } from '../../webgl/constants';
 import { Input } from '../input';
-import { Node, NodeEventType } from '../node';
+import { Node, NodeEventType, NodeParamOrigin } from '../node';
 import { NodeParam, NodeParamArray, NodeParamType } from '../nodeparam';
 import { ApplySticker } from '../operations/applysticker';
 import { TextureLookup } from '../operations/texturelookup';
@@ -584,7 +584,7 @@ export class NodeGui {
 			this.#updateManipulator();
 		}
 
-		node.setParam(param.name, value, index);
+		node.setParam(NodeParamOrigin.Gui, param.name, value, index);
 		node.revalidate({ updatePreview: true });
 	}
 
@@ -665,9 +665,9 @@ export class NodeGui {
 
 		//this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
 		const node = this.#node;
-		node.setParam('top left', newTopLeft);
-		node.setParam('bottom left', newBottomLeft);
-		node.setParam('top right', newTopRight);
+		node.setParam(NodeParamOrigin.Code, 'top left', newTopLeft);
+		node.setParam(NodeParamOrigin.Code, 'bottom left', newBottomLeft);
+		node.setParam(NodeParamOrigin.Code, 'top right', newTopRight);
 
 		this.#updateManipulator();
 		node.revalidate({ updatePreview: true });

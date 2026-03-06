@@ -4500,9 +4500,9 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | string[] | null;
                           setParams(params?: any): void;
-                          setParam(paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
+                          setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
                           getParams(): Map<string, NodeParam>;
                           invalidate(context?: NodeContext): void;
@@ -4524,6 +4524,7 @@ declare class Channel {
                           set hasPreview(hasPreview: boolean);
                           get hasPreview(): boolean;
                       }
+                      export { Node_2 as Node }
 
                       export declare type NodeContext = {
                           previewSize?: number;
@@ -4603,11 +4604,17 @@ declare class Channel {
                       declare type NodeParamArray = number[] | boolean[] | vec2[] | string[];
 
                       export declare type NodeParamChangedEvent = NodeEvent & {
+                          origin: any;
                           paramName: string;
                           oldValue?: NodeParamValue;
                           newValue?: NodeParamValue;
                           paramIndex?: number;
                       };
+
+                      export declare enum NodeParamOrigin {
+                          Code = 0,
+                          Gui = 1
+                      }
 
                       declare type NodeParamScalar = number | boolean | vec2 | string;
 
