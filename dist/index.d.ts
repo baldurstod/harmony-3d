@@ -2134,7 +2134,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): CameraFrustum | PointLightHelper | SpotLightHelper | Grid | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3179,7 +3179,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4500,9 +4500,9 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | string[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
-                          setParam(paramName: string, paramValue: NodeParamValue, paramIndex?: number): void;
+                          setParam(paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
                           getParams(): Map<string, NodeParam>;
                           invalidate(context?: NodeContext): void;
@@ -4524,19 +4524,17 @@ declare class Channel {
                           set hasPreview(hasPreview: boolean);
                           get hasPreview(): boolean;
                       }
-                      export { Node_2 as Node }
 
-                      declare type NodeContext = {
+                      export declare type NodeContext = {
                           previewSize?: number;
                           updatePreview?: boolean;
                       };
 
-                      declare type NodeEvent = {
-                          eventName?: string;
-                          value?: NodeParam;
+                      export declare type NodeEvent = {
+                          eventName: string;
                       };
 
-                      declare enum NodeEventType {
+                      export declare enum NodeEventType {
                           Any = "*",
                           ParamAdded = "paramadded",
                           ParamChanged = "paramchanged"
@@ -4598,7 +4596,18 @@ declare class Channel {
                           constructor(name: string, type: NodeParamType, value: NodeParamValue, length?: number);
                       }
 
+                      export declare type NodeParamAddedEvent = NodeEvent & {
+                          paramName: string;
+                      };
+
                       declare type NodeParamArray = number[] | boolean[] | vec2[] | string[];
+
+                      export declare type NodeParamChangedEvent = NodeEvent & {
+                          paramName: string;
+                          oldValue?: NodeParamValue;
+                          newValue?: NodeParamValue;
+                          paramIndex?: number;
+                      };
 
                       declare type NodeParamScalar = number | boolean | vec2 | string;
 
@@ -5369,6 +5378,13 @@ declare class Channel {
                       }
 
                       export declare class Raytracer {
+                          #private;
+                          constructor();
+                          configure(scene: Scene, width: number, height: number, materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray, MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number): boolean;
+                          play(): void;
+                          pause(): void;
+                          getOutputTexture(): Texture | null;
+                          dispose(): void;
                       }
 
                       export declare class RayTracingPass extends Pass {
@@ -8721,7 +8737,7 @@ declare class Channel {
 
                       export declare type StorageValue = StorageValueArray | StorageValueStruct;
 
-                      export declare type StorageValueArray = Int8Array | Uint8Array | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec4;
+                      export declare type StorageValueArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec4;
 
                       export declare type StorageValueStruct = {
                           [key: string]: StorageValue | number;

@@ -37,8 +37,18 @@ export enum NodeEventType {
 }
 
 export type NodeEvent = {
-	eventName?: string;
-	value?: NodeParam;
+	eventName: string;
+}
+
+export type NodeParamAddedEvent = NodeEvent & {
+	paramName: string;
+}
+
+export type NodeParamChangedEvent = NodeEvent & {
+	paramName: string;
+	oldValue?: NodeParamValue;
+	newValue?: NodeParamValue;
+	paramIndex?: number;
 }
 
 export type NodeContext = {
@@ -96,7 +106,10 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 
 	addParam(param: NodeParam) {
 		this.params.set(param.name, param);
-		this.#dispatchEvent(NodeEventType.ParamAdded, param);
+		this.#dispatchEvent(NodeEventType.ParamAdded, {
+			eventName: NodeEventType.ParamAdded,
+			paramName: param.name,
+		} as NodeParamAddedEvent);
 	}
 
 	getParam(paramName: string) {
@@ -124,15 +137,25 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
-	setParam(paramName: string, paramValue: NodeParamValue, paramIndex?: number) {
+	setParam(paramName: string, newValue: NodeParamValue, paramIndex?: number) {
 		const p = this.params.get(paramName);
 		if (p) {
+			let oldValue: NodeParamValue | undefined = undefined;
 			if (paramIndex !== undefined) {
-				(p.value as NodeParamArray)[paramIndex] = paramValue as NodeParamScalar;
+				oldValue = (p.value as NodeParamArray)[paramIndex];
+				(p.value as NodeParamArray)[paramIndex] = newValue as NodeParamScalar;
 			} else {
-				p.value = paramValue;
+				oldValue = p.value;
+				p.value = newValue;
 			}
-			this.#dispatchEvent(NodeEventType.ParamChanged, p);
+
+			this.#dispatchEvent(NodeEventType.ParamChanged, {
+				eventName: NodeEventType.ParamChanged,
+				paramName,
+				oldValue,
+				newValue,
+				paramIndex,
+			} as NodeParamChangedEvent);
 		}
 	}
 
@@ -251,9 +274,9 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		throw 'This function must be overriden';
 	}
 
-	#dispatchEvent(eventName: NodeEventType, eventDetail: NodeParam) {
-		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail: { value: eventDetail } }));
-		this.dispatchEvent(new CustomEvent<NodeEvent>(NodeEventType.Any, { detail: { eventName: eventName } }));
+	#dispatchEvent(eventName: NodeEventType, detail: NodeEvent) {
+		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail }));
+		this.dispatchEvent(new CustomEvent<NodeEvent>(NodeEventType.Any, { detail }));
 	}
 
 	updatePreview(context: NodeContext = {}) {

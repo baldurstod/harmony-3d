@@ -573,6 +573,9 @@ export class NodeGui {
 				const arr = stringValue.split(' ');
 				value = vec2.fromValues(Number(arr[0]), Number(arr[1]));
 				break;
+			case NodeParamType.String:
+				value = stringValue;
+				break;
 			default:
 				value = Number(stringValue);
 		}
