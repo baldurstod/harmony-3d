@@ -1,6 +1,9 @@
 import { Shaders } from '../../shaders/shaders';
 export * from './includes/export';
 
+import presentation from './presentation.wgsl';
+Shaders['presentation.wgsl'] = presentation;
+
 import raytracer from './raytracer.wgsl';
 Shaders['raytracer.wgsl'] = raytracer;
 

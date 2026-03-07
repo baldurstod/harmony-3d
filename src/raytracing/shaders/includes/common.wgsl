@@ -1,6 +1,6 @@
   struct CommonUniforms {
     // Random seed for the workgroup
-    seed : vec3u,
+    //seed : vec3u,
     frameCounter: u32,
     maxBounces: u32,
     flatShading: u32,

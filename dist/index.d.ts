@@ -4500,7 +4500,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | string[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;

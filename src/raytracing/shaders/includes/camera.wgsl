@@ -27,7 +27,7 @@
 
     (*camera).center = (*camera).lookFrom;
 
-    let theta = radians((*camera).vfov);
+    let theta = ((*camera).vfov);
     let h = tan(theta * 0.5);
     let viewportHeight = 2.0 * h * (*camera).focusDist;
     let viewportWidth = viewportHeight * ((*camera).imageWidth / (*camera).imageHeight);

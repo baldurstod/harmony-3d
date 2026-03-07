@@ -32,15 +32,16 @@
       return;
     }
 
-
-    //textureStore(outTexture, globalInvocationId.xy, vec4(1.0));
-
     let pos = globalInvocationId.xy;
     let x = f32(pos.x);
     let y = f32(pos.y);
     let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;
 
     var rngState = rngStateBuffer[idx];
+
+    if (commonUniforms.frameCounter == 0) {
+      rngState = idx;
+    }
 
     var camera = cameraUniforms;
     initCamera(&camera);
