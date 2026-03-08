@@ -245,6 +245,7 @@ export class Source2Material extends Material {
 		this.afterProcessProxies(proxyParams);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	_afterProcessProxies(proxyParams: DynamicParams): void {
 		//this.setupUniforms();
 		this.initTextureUniforms();//TODO : do this only once
@@ -300,9 +301,13 @@ export class Source2Material extends Material {
 		}
 	}
 
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
 	afterProcessProxies(proxyParams: DynamicParams): void {
 
 	}
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
 
 	setUniform(uniformName: string, uniformValue: UniformValue): void {
 		this.uniforms[uniformName] = uniformValue;

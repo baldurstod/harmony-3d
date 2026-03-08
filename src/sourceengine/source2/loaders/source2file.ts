@@ -1,4 +1,3 @@
-import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGBA } from '../../../textures/textureconstants';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
@@ -606,7 +605,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 }
 
-
+/*
 function DecompressNormal(inputNormal: vec4): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
 	const fOne = 1.0;
 	const outputNormal = vec3.create();
@@ -632,3 +631,4 @@ function DecompressNormal(inputNormal: vec4): vec3 {				// {nX, nY, nZ}//_Decomp
 	outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
 	return vec3.normalize(outputNormal, outputNormal);
 }
+*/

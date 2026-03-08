@@ -39,7 +39,7 @@ export type MeshParameters = EntityParameters & {
 const meshDefaultBufferGeometry = new BufferGeometry();
 const meshDefaultMaterial = new MeshBasicMaterial();
 
-export type ObjDatas = { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array };
+export type ObjDatas = { f: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array };
 
 export class Mesh extends Entity {
 	#geometry!: BufferGeometry;
