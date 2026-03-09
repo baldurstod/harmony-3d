@@ -1,4 +1,5 @@
 export * from './constants';
+export { EmissiveMaterial } from './emissivematerial';
 export { GridMaterial } from './gridmaterial';
 export { LineMaterial } from './linematerial';
 export { Material, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MaterialColorMode } from './material';
