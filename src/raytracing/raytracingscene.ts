@@ -59,11 +59,7 @@ export function sceneToRtScene(scene: Scene): RayTracingScene {
 			meshes.push(entity as Mesh);
 		}
 	}
-	/*
 
-	for (const mesh of meshes) {
-	}
-	*/
 	return loadModels(
 		{
 			MODELS_COUNT: 0,
@@ -77,24 +73,7 @@ export function sceneToRtScene(scene: Scene): RayTracingScene {
 }
 
 function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene {
-	/*
-	const [objFileContents, mtlFileContents] = await Promise.all([
-		RayTracingScene.loadObjFileContents("./assets/models/obj/raytracing.obj"),
-		RayTracingScene.loadMtlFileContents("./assets/models/obj/raytraced-scene.mtl"),
-	]);
-	*/
-
 	const sceneModels = parseModel(meshes);
-	/*
-		objFileContents.models,
-		mtlFileContents,
-	);
-	*/
-	//const sceneMaterials = RayTracingScene.parseMaterial(mtlFileContents);
-	//this.sceneMaterials = sceneMaterials;
-
-
-
 
 	context.MODELS_COUNT = sceneModels.length;
 
@@ -114,19 +93,7 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 			context.MAX_NUM_FACES_PER_MESH *// TODO: fix that: variable faces per mesh
 			context.MODELS_COUNT
 		)
-		/*
-		this.facesBuffer = this.device.createBuffer({
-			size:
-				numFloatsPerFace *
-				Float32Array.BYTES_PER_ELEMENT *
-				RayTracingScene.MAX_NUM_FACES_PER_MESH *
-				RayTracingScene.MODELS_COUNT,
-			usage: GPUBufferUsage.STORAGE,
-			mappedAtCreation: true,
-		});
-		this.facesBuffer.label = "Faces Buffer";
-		const facesBufferMappedRange = this.facesBuffer.getMappedRange();
-		*/
+
 		const faceData = new Float32Array(faces.buffer);
 		const faceColorData = new Uint32Array(faces.buffer);
 
@@ -164,25 +131,9 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 
 				faceColorData[idx + 27] = face.mi;
 
-				/*
-				faces.push({
-					p0: face.p0,
-					p1: face.p1,
-					p2: face.p2,
-
-					n0: face.n0,
-					n1: face.n1,
-					n2: face.n2,
-
-					faceNormal: face.fn,
-					materialIdx: face.mi,
-				});
-				*/
-
 				idx += numFloatsPerFace;
 			}
 		}
-		//this.facesBuffer.unmap();
 	}
 
 	// Prepare AABBS buffer
@@ -198,17 +149,6 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 
 		aabbs = new Uint8ClampedArray(numFloatsPerBV * Float32Array.BYTES_PER_ELEMENT * context.AABBS_COUNT)
 
-		/*
-		this.aabbsBuffer = this.device.createBuffer({
-			size:
-				numFloatsPerBV * Float32Array.BYTES_PER_ELEMENT * RayTracingScene.AABBS_COUNT,
-			usage: GPUBufferUsage.STORAGE,
-			mappedAtCreation: true,
-		});
-		this.aabbsBuffer.label = "AABBs Buffer";
-
-		const aabbArrBuffer = this.aabbsBuffer.getMappedRange();
-		*/
 		const aabbPosData = new Float32Array(aabbs.buffer);
 		const aabbIdxData = new Int32Array(aabbs.buffer);
 
@@ -229,56 +169,17 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 				aabbIdxData[idx + 10] = aabb.fi[1]!;
 				aabbIdxData[idx + 11] = 0; // padding
 				idx += numFloatsPerBV;
-
-				/*
-				aabbs.push({
-					min: aabb.min,
-					max: aabb.max,
-					leftChildIdx: aabb.lt,
-					rightChildIdx: aabb.rt,
-					faceIdx0: aabb.fi[0],
-					faceIdx1: aabb.fi[1],
-
-				});
-				*/
 			}
 		}
-		//this.aabbsBuffer.unmap();
 
 		// Prepare materials buffer
 		{
 			context.MATERIALS_COUNT = sceneMaterials.length;
 			const numFloatsPerMaterial = 8;
-			/*
-			this.materialsBuffer = this.device.createBuffer({
-				size:
-					numFloatsPerMaterial *
-					Float32Array.BYTES_PER_ELEMENT *
-					RayTracingScene.MATERIALS_COUNT,
-				usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-				mappedAtCreation: true,
-			});
-			this.materialsBuffer.label = "Materials Buffer";
-			*/
-
-			//const materialBufferContents = this.materialsBuffer.getMappedRange();
-			//const materialsProperties = new Float32Array(materialBufferContents);
-			//const materialsTypes = new Uint32Array(materialBufferContents);
 
 			for (let i = 0; i < sceneMaterials.length; i++) {
 				const mtl = sceneMaterials[i]!;
-				/*
-				const idx = i * numFloatsPerMaterial;
-				materialsTypes[idx + 0] = mtl.mtlType;
 
-				materialsProperties[idx + 1] = mtl.reflectionRatio;
-				materialsProperties[idx + 2] = mtl.reflectionGloss;
-				materialsProperties[idx + 3] = mtl.refractionIndex;
-
-				materialsProperties[idx + 4] = mtl.albedo[0];
-				materialsProperties[idx + 5] = mtl.albedo[1];
-				materialsProperties[idx + 6] = mtl.albedo[2];
-				*/
 				materials.push({
 					materialType: mtl.mtlType,
 					reflectionRatio: mtl.reflectionRatio,
@@ -287,7 +188,6 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 					albedo: mtl.albedo as vec3,
 				})
 			}
-			//this.materialsBuffer.unmap();
 		}
 	}
 	return {
@@ -312,9 +212,6 @@ function parseModel(meshes: Mesh[]/*, materials: Mtl[]*/): ParsedModel[] {
 
 	return meshes.map((mesh, i) => {
 		const obj = mesh.exportObj(true);
-
-		//posArray = posArray.concat(vertices);
-		//nrmArray = nrmArray.concat(vertexNormals);
 
 		const outFaces: Face[] = [];
 		const faces = obj.f;
