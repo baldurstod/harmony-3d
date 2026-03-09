@@ -150,7 +150,12 @@ export class Mesh extends Entity {
 		delete this.defines[define];
 	}
 
-	exportObj(): ObjDatas {
+	/**
+	 * Export mesh as obj
+	 * @param worldSpace Export mesh in world space. Default to false
+	 * @returns Exported mesh
+	 */
+	exportObj(worldSpace = false): ObjDatas {
 		//const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		const ret: Record<string, Uint8Array | Uint32Array | Float32Array | []> = {};
 		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
@@ -167,6 +172,24 @@ export class Mesh extends Entity {
 					ret['f'] = new Uint8Array();
 				} else {
 					ret[objAttribute as ('v' | 'vn' | 'vt')] = new Float32Array();
+				}
+			}
+		}
+		if (worldSpace) {
+			const vertexArray = ret['v'] as Float32Array;
+			if (vertexArray) {
+				const worldMatrix = this.worldMatrix;
+				const vec = vec3.create();
+				for (let i = 0; i < vertexArray.length; i += 3) {
+					vec[0] = vertexArray[i + 0]!;
+					vec[1] = vertexArray[i + 1]!;
+					vec[2] = vertexArray[i + 2]!;
+
+					vec3.transformMat4(vec, vec, worldMatrix);
+
+					vertexArray[i + 0] = vec[0];
+					vertexArray[i + 1] = vec[1];
+					vertexArray[i + 2] = vec[2];
 				}
 			}
 		}
