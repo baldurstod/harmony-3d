@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+import { float32 } from 'harmony-types';
 import { Texture } from '../textures/texture';
 
 export enum RtMaterial {
@@ -8,6 +10,11 @@ export enum RtMaterial {
 }
 
 export type RaytracingMaterial = {
-	type: RtMaterial;
+	index: number;
+	materialType: RtMaterial;
 	textures?: Map<string, Texture>;
+	reflectionRatio: float32,
+	reflectionGloss: float32,
+	refractionIndex: float32,
+	albedo: vec3,
 }

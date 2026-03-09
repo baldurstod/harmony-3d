@@ -1,6 +1,8 @@
-import { Material } from './material'
-import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
+import { registerEntity } from '../entities/entities';
+import { RaytracingMaterial, RtMaterial } from '../raytracing/material';
+import { Material } from './material';
+import { vec3 } from 'gl-matrix';
 
 export class MeshBasicMaterial extends Material {
 	map = null;
@@ -35,13 +37,24 @@ export class MeshBasicMaterial extends Material {
 		return 'meshbasic';
 	}
 
+	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		return {
+			index,
+			materialType: RtMaterial.Lambertian,
+			reflectionRatio: 0,
+			reflectionGloss: 1,
+			refractionIndex: 1,
+			albedo: vec3.fromValues(6, 6, 6),// TODO: set actual value
+		}
+	}
+
 	toJSON() {
 		const json = super.toJSON();
 		json.skinning = this.skinning;
 		return json;
 	}
 
-	static async constructFromJSON(json:JSONObject) {
+	static async constructFromJSON(json: JSONObject) {
 		return new MeshBasicMaterial();
 	}
 

@@ -1,10 +1,11 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
+import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
+import { SkeletalMesh } from '../objects/skeletalmesh';
 import { Scene } from '../scenes/scene';
 import { BV, Face } from './bv';
-import { Box } from '../primitives/box';
-import { SkeletalMesh } from '../objects/skeletalmesh';
+import { RaytracingMaterial } from './material';
 
 type RtMaterial = {
 	materialType: uint32,
@@ -53,10 +54,17 @@ interface ParsedModel {
 export function sceneToRtScene(scene: Scene): RayTracingScene {
 	const entitites = scene.getRenderableList();
 	const meshes: Mesh[] = [];
+	const materials = new Map<Material, RaytracingMaterial>();
+	let materialIndex = 0;
 
 	for (const entity of entitites) {
 		if ((entity as Mesh).isMesh) {
 			meshes.push(entity as Mesh);
+
+			const material = (entity as Mesh).getMaterial();
+			if (!materials.has(material)) {
+				materials.set(material, material.getRaytracingMaterial(materialIndex++));
+			}
 		}
 	}
 
@@ -69,11 +77,12 @@ export function sceneToRtScene(scene: Scene): RayTracingScene {
 			AABBS_COUNT: 0,
 		},
 		meshes,
+		materials,
 	);
 }
 
-function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene {
-	const sceneModels = parseModel(meshes);
+function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial>): RayTracingScene {
+	const sceneModels = parseModel(meshes, sceneMaterials);
 
 	context.MODELS_COUNT = sceneModels.length;
 
@@ -174,24 +183,22 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 
 		// Prepare materials buffer
 		{
-			context.MATERIALS_COUNT = sceneMaterials.length;
+			context.MATERIALS_COUNT = sceneMaterials.size;
 			const numFloatsPerMaterial = 8;
 
-			for (let i = 0; i < sceneMaterials.length; i++) {
-				const mtl = sceneMaterials[i]!;
-
+			for (const [, mtl] of sceneMaterials) {
 				materials.push({
-					materialType: mtl.mtlType,
+					materialType: mtl.materialType,
 					reflectionRatio: mtl.reflectionRatio,
 					reflectionGloss: mtl.reflectionGloss,
 					refractionIndex: mtl.refractionIndex,
-					albedo: mtl.albedo as vec3,
+					albedo: mtl.albedo,
 				})
 			}
 		}
 	}
 	return {
-		materials,
+		materials: materials,
 		faces,
 		aabbs,
 		MODELS_COUNT: context.MODELS_COUNT,
@@ -200,9 +207,9 @@ function loadModels(context: RayTracingContext, meshes: Mesh[]): RayTracingScene
 	}
 }
 
-function parseModel(meshes: Mesh[]/*, materials: Mtl[]*/): ParsedModel[] {
-	let posArray: { x: number; y: number; z: number }[] = [];
-	let nrmArray: { x: number; y: number; z: number }[] = [];
+function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>): ParsedModel[] {
+	//let posArray: { x: number; y: number; z: number }[] = [];
+	//let nrmArray: { x: number; y: number; z: number }[] = [];
 
 	console.log(meshes);
 
@@ -212,6 +219,7 @@ function parseModel(meshes: Mesh[]/*, materials: Mtl[]*/): ParsedModel[] {
 
 	return meshes.map((mesh, i) => {
 		const obj = mesh.exportObj(true);
+		const rtMaterial = materials.get(mesh.getMaterial())!;
 
 		const outFaces: Face[] = [];
 		const faces = obj.f;
@@ -244,7 +252,7 @@ function parseModel(meshes: Mesh[]/*, materials: Mtl[]*/): ParsedModel[] {
 				n2,
 				fn: vec3.clone(fn),
 				fi: outFaces.length,
-				mi: (mesh instanceof SkeletalMesh ? 5 : 4),//TODO materials.findIndex(({ name }) => name === f.material),
+				mi: rtMaterial.index //(mesh instanceof SkeletalMesh ? 5 : 4),//TODO materials.findIndex(({ name }) => name === f.material),
 			});
 		}
 
