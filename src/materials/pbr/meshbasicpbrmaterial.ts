@@ -56,7 +56,7 @@ export class MeshBasicPbrMaterial extends Material {
 		this.setParameterValue('roughness_texture', roughnessTexture);
 	}
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		return 'meshbasicpbr';
 	}
 

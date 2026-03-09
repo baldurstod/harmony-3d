@@ -70,7 +70,7 @@ export class SpriteCardMaterial extends Source1Material {
 		return new SpriteCardMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		return 'source1_spritecard';
 	}
 }

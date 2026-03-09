@@ -34,7 +34,7 @@ export class UnlitGenericMaterial extends Source1Material {
 		return new UnlitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		//Note: this is vertexlitgeneric without lighting
 		return 'source1_unlitgeneric';
 	}

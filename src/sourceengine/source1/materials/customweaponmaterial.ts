@@ -255,7 +255,7 @@ export class CustomWeaponMaterial extends Source1Material {
 	}
 
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		return 'source1_customweapon';
 	}
 }

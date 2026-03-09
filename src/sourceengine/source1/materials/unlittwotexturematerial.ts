@@ -43,7 +43,7 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 		return new UnlitTwoTextureMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		return 'source1_unlittwotexture';
 	}
 

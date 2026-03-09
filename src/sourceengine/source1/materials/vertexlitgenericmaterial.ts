@@ -103,9 +103,10 @@ export class VertexLitGenericMaterial extends Source1Material {
 		return new VertexLitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	get shaderSource() {
+	override getShaderSource(): string {
 		return 'source1_vertexlitgeneric';
 	}
+
 }
 Source1VmtLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
 //MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, Source1MaterialManager);
