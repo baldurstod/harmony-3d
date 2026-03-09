@@ -1,4 +1,4 @@
-export enum RaytracingMaterial {
+export enum RaytracingMaterials {
 	Emissive = 0,
 	Reflective,
 	Dielectric,
