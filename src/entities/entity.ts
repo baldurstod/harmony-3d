@@ -660,7 +660,6 @@ export class Entity {
 		mat4.getRotation(tempQuat, tempMat4);
 		quat.invert(tempQuat, tempQuat);
 
-
 		if (parent) {
 			quat.conjugate(tempQuat2, parent._quaternion);
 			quat.mul(tempQuat, tempQuat2, tempQuat);
@@ -668,7 +667,7 @@ export class Entity {
 		this.setQuaternion(tempQuat);
 	}
 
-	getMeshList(): Set<Entity> {
+	getRenderableList(): Set<Entity> {
 		const meshList = new Set<Entity>();
 		const treated = new WeakSet<Entity>();
 

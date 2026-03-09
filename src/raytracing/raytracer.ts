@@ -1,15 +1,15 @@
 import { vec3 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
+import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { ShaderMaterial } from '../materials/shadermaterial';
 import { Scene } from '../scenes/scene';
-import { Graphics } from '../graphics/graphics2';
-import { UniformValue } from '../webgl/uniform';
-import { StorageBuffer } from '../webgpu/storage';
-import { getCurrentTexture, Texture } from '../textures/texture';
-import { createTexture } from '../textures/texturefactory';
+import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
+import { UniformValue } from '../webgl/uniform';
+import { StorageValueArray } from '../webgpu/storage';
+import { sceneToRtScene } from './raytracingscene';
 
 type RtCamera = {
 	eye: vec3,
@@ -66,8 +66,8 @@ export class Raytracer {
 	}
 
 	configure(scene: Scene, width: number, height: number,
-		materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray,
-		MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number
+		//materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray,
+		//MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number
 	): boolean {
 		const activeCamera = scene.activeCamera;
 		if (!activeCamera) {
@@ -77,6 +77,9 @@ export class Raytracer {
 		this.#width = width;
 		this.#height = height;
 		this.#reset();
+
+		const { materials, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = sceneToRtScene(scene);
+		console.info(materials, faces, aabbs);
 
 		this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
@@ -97,7 +100,7 @@ export class Raytracer {
 			value: aabbs,
 			raw: true,
 		});
-		this.#material.setStorage('materials', materials);
+		this.#material.setStorage('materials', materials as StorageValueArray);
 
 		this.#material.gpuConstants!.OBJECTS_COUNT_IN_SCENE = MODELS_COUNT;
 		this.#material.gpuConstants!.MAX_BVs_COUNT_PER_MESH = MAX_NUM_BVs_PER_MESH;

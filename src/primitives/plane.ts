@@ -7,10 +7,15 @@ import { JSONObject } from 'harmony-types';
 import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
 
 export type PlaneParameters = MeshParameters & {
+	/** Plane width. Default to 1 */
 	width?: number,
+	/** Plane height. Default to width */
 	height?: number,
+	/** Segments along plane width. Default to 1 */
 	widthSegments?: number,
+	/** Segments along plane height. Default to 1 */
 	heightSegments?: number,
+	/** Plane material */
 	material?: Material,
 };
 
