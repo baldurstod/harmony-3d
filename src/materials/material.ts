@@ -576,6 +576,13 @@ export class Material {
 	}
 
 	setStorage(name: string, value: StorageValue | number | StorageBuffer): void {
+		const existingValue = this.storage.get(name);
+		if (existingValue) {
+			if (existingValue.buffer) {
+				existingValue.buffer.destroy();
+			}
+		}
+
 		if (typeof value === 'number') {
 			this.storage.set(name, { value: null, size: value });
 		} else {
