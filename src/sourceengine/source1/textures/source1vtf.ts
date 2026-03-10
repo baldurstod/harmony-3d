@@ -237,6 +237,7 @@ export class Source1Vtf {
 
 		const data = mipmap.frames[frame]?.[face];
 		if (data) {
+			texture.setDatas(data);
 			if (Graphics.isWebGPU) {
 				this.#fillTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
 			} else {

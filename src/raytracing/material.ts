@@ -7,12 +7,13 @@ export enum RtMaterial {
 	Reflective,
 	Dielectric,
 	Lambertian,
+	Source1VertexLitGeneric,
 }
 
 export type RaytracingMaterial = {
 	index: number;
 	materialType: RtMaterial;
-	textures?: Map<string, Texture>;
+	textures?: Map<number, Texture | null>;
 	reflectionRatio: float32,
 	reflectionGloss: float32,
 	refractionIndex: float32,

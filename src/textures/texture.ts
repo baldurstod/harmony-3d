@@ -49,6 +49,8 @@ export class Texture {
 	isCube = false;// TODO: remove. Cube maps should be using CubeTexture
 	gpuFormat: GPUTextureFormat;
 	gpuVisibility?: number;
+	#datas?: Uint8Array | Float32Array;
+	readonly elementsPerTexel = 4;// TODO: set param
 	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
 
 	constructor(textureParams: TextureParams = { gpuFormat: 'rgba8unorm', gpuVisibility: GPUShaderStage.COMPUTE | GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT }) {
@@ -181,6 +183,27 @@ export class Texture {
 
 	getHeight(): number {
 		return this.height;
+	}
+
+	setDatas(datas: Uint8Array | Float32Array): void {
+		this.#datas = datas;
+	}
+
+	getDatas(): Float32Array {
+		if (!this.#datas) {
+			const datas = new Float32Array(this.width * this.height * this.elementsPerTexel);
+			for (let i = 0; i < datas.length; i++) {
+				datas[i] = 1;
+			}
+
+			return datas;
+		}
+
+		if (this.#datas instanceof Float32Array) {
+			return this.#datas;
+		}
+
+		return new Float32Array(this.#datas);
 	}
 
 	is(type: string): boolean {

@@ -2,6 +2,7 @@ import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
 import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
+import { Texture } from '../../../textures/texture';
 import { UniformValue } from '../../../webgl/uniform';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, TextureRole } from './source1material';
@@ -111,14 +112,18 @@ export class VertexLitGenericMaterial extends Source1Material {
 	override getRaytracingMaterial(index: number): RaytracingMaterial {
 		return {
 			index,
-			materialType: RtMaterial.Lambertian,
+			materialType: RtMaterial.Source1VertexLitGeneric,
 			reflectionRatio: 0.1,
 			reflectionGloss: 1,
 			refractionIndex: 0.1,
 			albedo: vec3.fromValues(
 				0.901960015296936,
 				0.49411699175834656,
-				0.1333329975605011,),// TODO: set actual value
+				0.1333329975605011,
+			),// TODO: set actual value
+			textures: new Map([
+				[0, this.uniforms.colorMap as Texture],
+			]),
 		}
 	}
 

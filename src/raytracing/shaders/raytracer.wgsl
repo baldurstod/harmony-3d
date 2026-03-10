@@ -19,6 +19,7 @@
   @group(1) @binding(0) var<storage, read> faces: array<Face>;
   @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;
   @group(1) @binding(2) var<storage, read> materials: array<Material>;
+  @group(1) @binding(3) var<storage, read> textures: array<array<f32, 3>>;
 
   override WORKGROUP_SIZE_X: u32;
   override WORKGROUP_SIZE_Y: u32;
@@ -52,7 +53,7 @@
 
     var color = vec3f(0);
 
-    var mtlStack: array<Material, 16>;
+    var mtlStack: array<vec3f, 16>;
     var bLoop = true;
     var i = 0u;
 
@@ -61,7 +62,7 @@
       var material = materials[hitRec.materialIdx];
       var albedo = material.albedo;
 
-      mtlStack[i] = material;
+      mtlStack[i] = material.albedo;
 
       if (commonUniforms.debugNormals == 1u) {
         color = (hitRec.normal + 1) * 0.5;
@@ -97,7 +98,7 @@
             r = scattered;
             i++;
           } else {
-            color = mtlStack[i].albedo;
+            color = mtlStack[i];
             bLoop = false;
           }
           break;
@@ -112,8 +113,19 @@
           }
           break;
         }
+        case 4: {
+          var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
+          if (i < commonUniforms.maxBounces) {
+            i++;
+            r = scattered;
+          } else {
+            bLoop = false;
+          }
+          break;
+        }
         default: {
           // ...
+          bLoop = false;
         }
       }
     }
@@ -121,7 +133,7 @@
 
     while (i > 0) {
       i--;
-      color *= mtlStack[i].albedo;
+      color *= mtlStack[i];
     }
 
     var pixel = raytraceImageBuffer[idx];

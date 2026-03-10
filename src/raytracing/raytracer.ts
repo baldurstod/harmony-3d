@@ -9,7 +9,7 @@ import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray } from '../webgpu/storage';
-import { sceneToRtScene } from './raytracingscene';
+import { RtTextureDescriptor, sceneToRtScene } from './raytracingscene';
 
 type RtCamera = {
 	eye: vec3,
@@ -78,7 +78,7 @@ export class Raytracer {
 		this.#height = height;
 		this.#reset();
 
-		const { materials, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = sceneToRtScene(scene);
 		console.info(materials, faces, aabbs);
 
 		this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
@@ -101,6 +101,7 @@ export class Raytracer {
 			raw: true,
 		});
 		this.#material.setStorage('materials', materials as StorageValueArray);
+		this.#material.setStorage('textures', textures);
 
 		this.#material.gpuConstants!.OBJECTS_COUNT_IN_SCENE = MODELS_COUNT;
 		this.#material.gpuConstants!.MAX_BVs_COUNT_PER_MESH = MAX_NUM_BVs_PER_MESH;

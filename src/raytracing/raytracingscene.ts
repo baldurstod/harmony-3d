@@ -2,10 +2,26 @@ import { vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
-import { SkeletalMesh } from '../objects/skeletalmesh';
 import { Scene } from '../scenes/scene';
+import { Texture } from '../textures/texture';
 import { BV, Face } from './bv';
 import { RaytracingMaterial } from './material';
+
+export type RtTextureDescriptor = {
+	width: uint32,
+	height: uint32,
+	offset: uint32,
+	elements: uint32,
+};
+
+export const emptyTexture: RtTextureDescriptor = {
+	width: 0,
+	height: 0,
+	offset: 0xffffffff,
+	elements: 0,
+}
+
+type RtTextureDescriptors = [RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor];
 
 type RtMaterial = {
 	materialType: uint32,
@@ -13,12 +29,14 @@ type RtMaterial = {
 	reflectionGloss: float32,
 	refractionIndex: float32,
 	albedo: vec3,
+	textures: RtTextureDescriptors,
 };
 
 type RayTracingScene = {
 	materials: RtMaterial[],
 	faces: Uint8ClampedArray,
 	aabbs: Uint8ClampedArray,
+	textures: Float32Array,
 	MODELS_COUNT: number,
 	MAX_NUM_BVs_PER_MESH: number,
 	MAX_NUM_FACES_PER_MESH: number,
@@ -30,6 +48,8 @@ type RayTracingContext = {
 	MATERIALS_COUNT: number;
 	MAX_NUM_BVs_PER_MESH: number;
 	AABBS_COUNT: number;
+	textures: Float32Array;
+	textureDescriptors: Map<Texture, RtTextureDescriptor>;
 }
 
 interface Model {
@@ -75,6 +95,8 @@ export function sceneToRtScene(scene: Scene): RayTracingScene {
 			MATERIALS_COUNT: 0,
 			MAX_NUM_BVs_PER_MESH: 0,
 			AABBS_COUNT: 0,
+			textures: new Float32Array(),
+			textureDescriptors: new Map<Texture, RtTextureDescriptor>(),
 		},
 		meshes,
 		materials,
@@ -187,20 +209,31 @@ function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: 
 			const numFloatsPerMaterial = 8;
 
 			for (const [, mtl] of sceneMaterials) {
+				const textures: RtTextureDescriptors = [emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture];
+				if (mtl.textures) {
+					for (const [id, tex] of mtl.textures) {
+						if (tex) {
+							textures[id] = getTextureDescriptor(context, tex);
+						}
+					}
+				}
+
 				materials.push({
 					materialType: mtl.materialType,
 					reflectionRatio: mtl.reflectionRatio,
 					reflectionGloss: mtl.reflectionGloss,
 					refractionIndex: mtl.refractionIndex,
 					albedo: mtl.albedo,
+					textures,
 				})
 			}
 		}
 	}
 	return {
-		materials: materials,
+		materials,
 		faces,
 		aabbs,
+		textures: context.textures,
 		MODELS_COUNT: context.MODELS_COUNT,
 		MAX_NUM_BVs_PER_MESH: context.MAX_NUM_BVs_PER_MESH,
 		MAX_NUM_FACES_PER_MESH: context.MAX_NUM_FACES_PER_MESH,
@@ -300,128 +333,36 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 	});
 }
 
+function getTextureDescriptor(context: RayTracingContext, texture: Texture): RtTextureDescriptor {
+	let descriptor = context.textureDescriptors.get(texture);
+	if (!descriptor) {
+		descriptor = addToGlobalTextureData(context, texture);
+		context.textureDescriptors.set(texture, descriptor);
+	}
+	return descriptor;
+}
 
-// TODO: remove that
-const sceneMaterials =
-	[
-		{
-			"albedo": vec4.fromValues(
-				0.8500000238418579,
-				0,
-				0,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0,
-				0.3199999928474426,
-				0,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0.800000011920929,
-				0.800000011920929,
-				0.800000011920929,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0.800000011920929,
-				0.800000011920929,
-				0.800000011920929,
-				1
-			),
-			"mtlType": 1,
-			"reflectionRatio": 0.2,
-			"reflectionGloss": 0.4,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				6,
-				6,
-				6,
-				1
-			),
-			"mtlType": 0,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0.901960015296936,
-				0.49411699175834656,
-				0.1333329975605011,
-				1
-			),
-			"mtlType": 1,
-			"reflectionRatio": 0.1,
-			"reflectionGloss": 1,
-			"refractionIndex": 0.1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0.16078400611877441,
-				0.5,
-				0.7254899740219116,
-				1
-			),
-			"mtlType": 1,
-			"reflectionRatio": 1,
-			"reflectionGloss": 0.4,
-			"refractionIndex": 1.523
-		},
-		{
-			"albedo": vec4.fromValues(
-				1,
-				1,
-				1,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				0.13598400354385376,
-				0.13424600660800934,
-				0.11277300119400024,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		},
-		{
-			"albedo": vec4.fromValues(
-				1,
-				1,
-				1,
-				1
-			),
-			"mtlType": 3,
-			"reflectionRatio": 0,
-			"reflectionGloss": 1,
-			"refractionIndex": 1
-		}
-	]
+function addToGlobalTextureData(context: RayTracingContext, texture: Texture): RtTextureDescriptor {
+	const offset = context.textures.length / texture.elementsPerTexel;
+	const growth = texture.width * texture.height * texture.elementsPerTexel;
+
+	const old = context.textures;
+	context.textures = new Float32Array(context.textures.length + growth);
+	context.textures.set(old);
+
+	/*
+	const datas = new Float32Array(growth);
+	for (let i = 0; i < datas.length; i++) {
+		datas[i] = 1;
+	}
+	*/
+
+	context.textures.set(texture.getDatas(), old.length);
+
+	return {
+		width: texture.width,
+		height: texture.height,
+		offset,
+		elements: texture.elementsPerTexel,
+	}
+}
