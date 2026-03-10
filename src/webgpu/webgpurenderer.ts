@@ -1570,7 +1570,7 @@ function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], 
 				writeStruct(queue, buffer, (member.type as StructInfo).members, structValue as StorageValueStruct, baseOffset + member.offset);
 			}
 		} else if (member.isArray) {
-			throw new Error('code me');
+			writeArray(queue, buffer, (member.type as ArrayInfo), structValue as StorageValueArray, baseOffset + member.offset);
 		} else {
 			// primitive
 			if (structValue !== undefined && structValue !== null) {
@@ -1579,25 +1579,6 @@ function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], 
 				errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
 			}
 		}
-
-
-		/*
-		const source = struct[member.name];
-		if (source !== undefined) {
-			if (typeof source === 'number') {
-				writeNumber(queue, buffer, member, source);
-			} else if (ArrayBuffer.isView(source)) {
-				queue.writeBuffer(
-					buffer,
-					member.offset,
-					source as BufferSource,
-				);
-			} else {
-				// nested struct
-				//writeStruct(queue, buffer,)
-			}
-		}
-		*/
 	}
 }
 
@@ -1613,5 +1594,17 @@ function writeTemplate(queue: GPUQueue, buffer: GPUBuffer, type: TypeInfo, value
 			break;
 		default:
 			throw new Error(`code this type ${type.name}`);
+	}
+}
+
+function writeArray(queue: GPUQueue, buffer: GPUBuffer, type: ArrayInfo, value: StorageValueArray, baseOffset: number): void {
+	if (type.format.isStruct) {
+		for (let i = 0; i < type.count; ++i) {
+			writeStruct(queue, buffer, (type.format as StructInfo).members, value[i] as StorageValueStruct, baseOffset + i * type.stride);
+		}
+	} else if (type.format.isArray) {
+		throw new Error('code me');
+	} else {
+		throw new Error('code me');
 	}
 }
