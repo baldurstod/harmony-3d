@@ -165,7 +165,7 @@ export class Mesh extends Entity {
 			if (geometry?.getAttribute(geometryAttribute)) {
 				const webglAttrib = geometry.getAttribute(geometryAttribute);
 				if (webglAttrib) {
-					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array as Uint8Array | Uint32Array | Float32Array;
+					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array?.slice() as Uint8Array | Uint32Array | Float32Array;
 				}
 			} else {
 				if (objAttribute == 'f') {
