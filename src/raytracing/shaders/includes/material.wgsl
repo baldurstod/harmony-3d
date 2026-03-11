@@ -94,19 +94,26 @@ struct Material {
     }
     (*scattered) = Ray((*hitRec).p, scatterDirection);
     //(*attenuation) = (*material).albedo;
-    (*attenuation) = textureLookup((*material).textures[0], 0, 0);
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
 
     return true;
   }
 
   fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec3<f32> {
     let u2: f32 = clamp(u, 0f, 1f);
-    let v2: f32 = 1f - clamp(v, 0f, 1f);
+    let v2: f32 = clamp(v, 0f, 1f);
 
     let j = u32(u2 * f32(desc.width - 1));
     let i = u32(v2 * f32(desc.height - 1));
-    let idx = i * desc.width + j;
+    let idx = (i * desc.width + j) * desc.elements;
+
+    //return abs(vec3f(vec2f(u2, v2), 0.));
+    //return abs(vec3f(f32(j) / f32(desc.width)));
 
     let elem = textures[desc.offset + idx];
-    return vec3f(elem[0u], elem[1u], elem[2u]);
+    return vec3f(
+      textures[desc.offset + idx + 0],
+      textures[desc.offset + idx + 1],
+      textures[desc.offset + idx + 2],
+    ) / 255.;
   }

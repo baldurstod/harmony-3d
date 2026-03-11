@@ -237,7 +237,13 @@ export class Source1Vtf {
 
 		const data = mipmap.frames[frame]?.[face];
 		if (data) {
-			texture.setDatas(data);
+			(async () => {
+				const datas = await this.getImageData();
+				if (datas) {
+					texture.setDatas(datas.data);
+				}
+			})()
+
 			if (Graphics.isWebGPU) {
 				this.#fillTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
 			} else {

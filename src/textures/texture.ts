@@ -49,7 +49,7 @@ export class Texture {
 	isCube = false;// TODO: remove. Cube maps should be using CubeTexture
 	gpuFormat: GPUTextureFormat;
 	gpuVisibility?: number;
-	#datas?: Uint8Array | Float32Array;
+	#datas?: Uint8Array | Uint8ClampedArray | Float32Array;
 	readonly elementsPerTexel = 4;// TODO: set param
 	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
 
@@ -185,7 +185,7 @@ export class Texture {
 		return this.height;
 	}
 
-	setDatas(datas: Uint8Array | Float32Array): void {
+	setDatas(datas: Uint8Array | Uint8ClampedArray | Float32Array): void {
 		this.#datas = datas;
 	}
 

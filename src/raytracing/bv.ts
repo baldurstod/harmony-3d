@@ -1,4 +1,4 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 
 type Axis = 0 | 1 | 2;
 
@@ -10,6 +10,10 @@ export interface Face {
 	n0: vec3;
 	n1: vec3;
 	n2: vec3;
+
+	t0: vec2;
+	t1: vec2;
+	t2: vec2;
 
 	fn: vec3;
 	fi: number; // index into face array

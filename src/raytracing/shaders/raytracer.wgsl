@@ -19,7 +19,7 @@
   @group(1) @binding(0) var<storage, read> faces: array<Face>;
   @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;
   @group(1) @binding(2) var<storage, read> materials: array<Material>;
-  @group(1) @binding(3) var<storage, read> textures: array<array<f32, 3>>;
+  @group(1) @binding(3) var<storage, read> textures: array<f32>;
 
   override WORKGROUP_SIZE_X: u32;
   override WORKGROUP_SIZE_Y: u32;
