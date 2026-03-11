@@ -117,7 +117,7 @@ function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: 
 			(max, obj) => Math.max(max, obj.faces.length),
 			0,
 		);
-		const numFloatsPerFace = 28;
+		const numFloatsPerFace = 36;
 		faces = new Uint8ClampedArray(
 			numFloatsPerFace *
 			Float32Array.BYTES_PER_ELEMENT *
@@ -156,11 +156,19 @@ function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: 
 				faceData[idx + 21] = face.n2[1];
 				faceData[idx + 22] = face.n2[2];
 				// idx + 23 padding
-				faceData[idx + 24] = face.fn[0];
-				faceData[idx + 25] = face.fn[1];
-				faceData[idx + 26] = face.fn[2];
+				faceData[idx + 24] = face.t0[0];
+				faceData[idx + 25] = face.t0[1];
+				faceData[idx + 26] = face.t1[0];
+				faceData[idx + 27] = face.t1[1];
+				faceData[idx + 28] = face.t2[0];
+				faceData[idx + 29] = face.t2[1];
+				// idx + 30 padding
+				// idx + 31 padding
+				faceData[idx + 32] = face.fn[0];
+				faceData[idx + 33] = face.fn[1];
+				faceData[idx + 34] = face.fn[2];
 
-				faceColorData[idx + 27] = face.mi;
+				faceColorData[idx + 35] = face.mi;
 
 				idx += numFloatsPerFace;
 			}
@@ -258,6 +266,7 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 		const faces = obj.f;
 		const vertexPos = obj.v!;
 		const vertexNormal = obj.vn!;
+		const vertexCoord = obj.vt!;
 
 		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
 			const i0 = faces[vertexIndex + 0]!;
@@ -272,6 +281,10 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 			const n1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
 			const n2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
 
+			const t0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
+			const t1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
+			const t2 = new Float32Array(vertexCoord.buffer, i2 * 4 * 2, 2);
+
 			vec3.sub(p1p0Diff, p1, p0);
 			vec3.sub(p2p0Diff, p2, p0);
 			vec3.cross(fn, p1p0Diff, p2p0Diff);
@@ -283,6 +296,9 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 				n0,
 				n1,
 				n2,
+				t0,
+				t1,
+				t2,
 				fn: vec3.clone(fn),
 				fi: outFaces.length,
 				mi: rtMaterial.index //(mesh instanceof SkeletalMesh ? 5 : 4),//TODO materials.findIndex(({ name }) => name === f.material),

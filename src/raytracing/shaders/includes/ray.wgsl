@@ -26,6 +26,9 @@
     let e1 = (*face).p1 - (*face).p0;
     let e2 = (*face).p2 - (*face).p0;
 
+    let t1 = (*face).t1 - (*face).t0;
+    let t2 = (*face).t2 - (*face).t0;
+
     let h = cross((*ray).direction, e2);
     let det = dot(e1, h);
 
@@ -54,9 +57,11 @@
       // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
 
       let p = (*face).p0 + u * e1 + v * e2;
+      let coord = (*face).t0 + u * t1 + v * t2;
       // *hit = TriangleHit(offsetRay(p, n), b, t);
       (*rec).t = t;
       (*rec).p = p;
+      (*rec).coord = coord;
       (*rec).materialIdx = (*face).materialIdx;
       if (commonUniforms.flatShading == 1u) {
         (*rec).normal = (*face).faceNormal;
