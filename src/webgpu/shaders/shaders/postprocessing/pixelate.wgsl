@@ -1,13 +1,10 @@
 #include common_uniforms
+#include math::modulo
 
 @group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;
 @group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;
 //@group(0) @binding(x) var<uniform> resolution : vec4f;
 @group(0) @binding(x) var<uniform> uHorizontalTiles: f32;
-
-fn mymod(x: vec2f, y: vec2f) -> vec2f {
-	return x - y * floor(x / y);
-}
 
 fn lum(pix: vec4f) -> f32 {
 	return dot( pix, vec4(.3,.59,.11,0));
@@ -28,8 +25,8 @@ fn computeSquarePixel(pos: vec2u) {
 
 	let rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
-	let a: vec2f = mymod(uv , rep) - hrep;
-	let b: vec2f = mymod(uv - hrep , rep) - hrep;
+	let a: vec2f = modulo_vec2f(uv , rep) - hrep;
+	let b: vec2f = modulo_vec2f(uv - hrep , rep) - hrep;
 	let hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;
 	let cellId: vec2f = uv - hexUv;
 
@@ -54,8 +51,8 @@ fn computeDiamondPixel(pos: vec2u) {
 
 	let rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
-	let a: vec2f = mymod(uv , rep) - hrep;
-	let b: vec2f = mymod(uv - hrep,  rep) - hrep;
+	let a: vec2f = modulo_vec2f(uv , rep) - hrep;
+	let b: vec2f = modulo_vec2f(uv - hrep,  rep) - hrep;
 	let hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;
 	let cellId: vec2f = uv - hexUv;
 
@@ -167,8 +164,8 @@ fn computeHexagonPixel(pos: vec2u) {
 
 	const rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)
 	let hrep: vec2f = 0.5 * rep;
-	let a: vec2f = mymod(uv , rep) - hrep;
-	let b: vec2f = mymod((uv - hrep) , rep) - hrep;
+	let a: vec2f = modulo_vec2f(uv , rep) - hrep;
+	let b: vec2f = modulo_vec2f((uv - hrep) , rep) - hrep;
 	let hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;
 	let cellId: vec2f = uv - hexUv;
 
