@@ -1,8 +1,11 @@
+#include math::modulo
+
 struct TextureDescriptor {
 	width: u32,
 	height: u32,
 	offset: u32,
 	elements: u32,
+	repeat: u32,
 }
 
 struct Material {
@@ -124,8 +127,8 @@ struct Material {
     if (desc.offset == 0xffffff) {
       return vec3f(0.0);
     }
-    let u2: f32 = clamp(u, 0f, 1f);
-    let v2: f32 = clamp(v, 0f, 1f);
+    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);
+    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);
 
     let j = u32(u2 * f32(desc.width - 1));
     let i = u32(v2 * f32(desc.height - 1));

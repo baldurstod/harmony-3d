@@ -6,12 +6,14 @@ import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
 import { BV, Face } from './bv';
 import { RaytracingMaterial } from './material';
+import { GL_REPEAT } from '../webgl/constants';
 
 export type RtTextureDescriptor = {
 	width: uint32,
 	height: uint32,
 	offset: uint32,
 	elements: uint32,
+	repeat: uint32,
 };
 
 export const emptyTexture: RtTextureDescriptor = {
@@ -19,6 +21,7 @@ export const emptyTexture: RtTextureDescriptor = {
 	height: 0,
 	offset: 0xffffffff,
 	elements: 0,
+	repeat: 0,
 }
 
 type RtTextureDescriptors = [RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor];
@@ -375,10 +378,20 @@ function addToGlobalTextureData(context: RayTracingContext, texture: Texture): R
 
 	context.textures.set(texture.getDatas(), old.length);
 
+	let repeat = 0;
+	if (texture.wrapS === GL_REPEAT) {
+		repeat += 1;
+	}
+
+	if (texture.wrapT === GL_REPEAT) {
+		repeat += 2;
+	}
+
 	return {
 		width: texture.width,
 		height: texture.height,
 		offset,
 		elements: texture.elementsPerTexel,
+		repeat,
 	}
 }
