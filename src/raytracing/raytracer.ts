@@ -81,15 +81,27 @@ export class Raytracer {
 		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = sceneToRtScene(scene);
 		console.info(materials, faces, aabbs);
 
+		const lookFrom = activeCamera.getWorldPosition();
+
+		const cameraQuat = activeCamera.getWorldQuaternion();
+
+		const lookAt = vec3.fromValues(0, 0, -1);
+		vec3.transformQuat(lookAt, lookAt, cameraQuat);
+		vec3.add(lookAt, lookFrom, lookAt);
+
+		const vup = vec3.fromValues(0, 1, 0);
+		vec3.transformQuat(vup, vup, cameraQuat);
+		vec3.add(vup, vup, vup);
+
 		this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = vec3.fromValues(0, 0, 2);
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = vec3.create();
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).vup = vec3.fromValues(0, 1, 0);// TODO: set an actual value
+		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
+		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
+		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
 		this.#material.setStorage('faces', {

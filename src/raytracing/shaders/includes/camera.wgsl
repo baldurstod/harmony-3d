@@ -45,7 +45,7 @@
     let viewportUpperLeft = (*camera).center - ((*camera).focusDist * w) - viewportU / 2 - viewportV / 2;
     (*camera).pixel00Loc = viewportUpperLeft + 0.5 * ((*camera).pixelDeltaU + (*camera).pixelDeltaV);
 
-    let defocusRadius = (*camera).focusDist * tan(radians((*camera).defocusAngle * 0.5));
+    let defocusRadius = (*camera).focusDist * tan((*camera).defocusAngle * 0.5);
     (*camera).defocusDiscU = u * defocusRadius;
     (*camera).defocusDiscV = v * defocusRadius;
   }
