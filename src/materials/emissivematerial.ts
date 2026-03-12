@@ -28,10 +28,6 @@ export class EmissiveMaterial extends Material {
 
 	skinning = false;
 	morphTargets = false;
-	constructor(params?: any) {
-		super(params);
-		this.setValues(params);
-	}
 
 	override getShaderSource(): string {
 		return 'meshbasic';

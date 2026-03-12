@@ -57,7 +57,7 @@ export type MaterialUniform = Record<string, UniformValue | Record<string, Unifo
 export class Material {
 	id = '';
 	name = '';
-	#renderFace = RenderFace.Front;
+	#renderFace!: RenderFace;
 	#renderLights = true;
 	#color = vec4.create();
 	#alphaTest = false;
@@ -101,6 +101,7 @@ export class Material {
 		this.modeAlpha = GL_FUNC_ADD;
 
 		//this.culling = parameters.culling ?? DEFAULT_CULLING_MODE;
+		this.renderFace(params.renderFace ?? RenderFace.Front);
 
 		this.color = DEFAULT_COLOR;
 
