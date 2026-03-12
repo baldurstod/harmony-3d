@@ -6,6 +6,7 @@ import { Vec3Middle } from '../../../math/functions';
 import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
 import { World } from '../../../objects/world';
+import { Source1ModelInstance } from '../export';
 import { MapEntities } from '../maps/mapentities';
 import { AngleQuaternion, MapEntity, MapEntityConnection } from '../maps/mapentity';
 import { Source1MaterialManager } from '../materials/source1materialmanager';
@@ -68,9 +69,9 @@ export class SourceBSP extends World {
 	funcBrushesRemoveMe: FuncBrush[] = [];
 	partialLoading = false;
 	eventTarget = new EventTarget();//TODOv3
-	staticProps = new Group({ name: 'Static props' });
-	dynamicProps = new Group({ name: 'Dynamic props' });
-	mapFaces = new Group({ name: 'World geometry' });
+	readonly #staticProps = new Group({ name: 'Static props' });
+	readonly #dynamicProps = new Group({ name: 'Dynamic props' });
+	readonly #mapFaces = new Group({ name: 'World geometry' });
 	#characterSpawn?: vec3;
 	#geometries: Record<string, BspGeometry> = {};//TODO: turn into map
 	//loader;
@@ -85,9 +86,9 @@ export class SourceBSP extends World {
 		//BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
 
 
-		this.addChild(this.staticProps);
-		this.addChild(this.dynamicProps);
-		this.addChild(this.mapFaces);
+		this.addChild(this.#staticProps);
+		this.addChild(this.#dynamicProps);
+		this.addChild(this.#mapFaces);
 	}
 
 	initMap() {
@@ -127,7 +128,7 @@ export class SourceBSP extends World {
 				Source1ModelManager.createInstance(this.repository, propName, true).then(
 					(model) => {
 						if (model) {
-							this.staticProps.addChild(model);
+							this.#staticProps.addChild(model);
 							model.position = prop.position;
 							model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
 							model.skin = String(prop.skin);
@@ -596,7 +597,7 @@ export class SourceBSP extends World {
 			const bufferGeometry = new BufferGeometry();
 
 			const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3, 'position');
-			const vertexNormal = new Float32BufferAttribute(geometry.vertices, 3, 'normal');
+			const vertexNormal = new Float32BufferAttribute(geometry.normals, 3, 'normal');
 			const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1, 'alpha');
 			const textureCoord = new Float32BufferAttribute(geometry.coords, 2, 'texCoord');
 
@@ -618,7 +619,7 @@ export class SourceBSP extends World {
 				}
 			);
 
-			this.mapFaces.addChild(staticMesh);
+			this.#mapFaces.addChild(staticMesh);
 		}
 	}
 
@@ -698,6 +699,10 @@ export class SourceBSP extends World {
 			}
 		}
 		return vec3.sub(vec3.create(), max, min);
+	}
+
+	addDynamicProp(prop: Source1ModelInstance): void {
+		this.#dynamicProps.addChild(prop);
 	}
 
 	static getEntityName() {

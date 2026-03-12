@@ -69,7 +69,9 @@ export class PropDynamic extends MapEntity {
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
 		this.#model = model;
-		this.map.dynamicProps.addChild(model);
+		if (model) {
+			this.map.addDynamicProp(model);
+		}
 		/*.then(
 			(model) => {
 				this.map.dynamicProps.addChild(model);
