@@ -7,6 +7,7 @@ export enum RtMaterial {
 	Reflective,
 	Dielectric,
 	Lambertian,
+	Source1Material,// fallback for all source 1 materials
 	Source1VertexLitGeneric,
 }
 

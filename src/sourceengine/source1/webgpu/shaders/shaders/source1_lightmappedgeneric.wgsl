@@ -4,6 +4,7 @@
 
 #include declare_fragment_standard
 #include declare_fragment_color_map
+#include declare_fragment_normal_map
 #include declare_lights
 const defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);
 

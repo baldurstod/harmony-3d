@@ -114,6 +114,16 @@
           break;
         }
         case 4: {
+          var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
+          if (i < commonUniforms.maxBounces) {
+            i++;
+            r = scattered;
+          } else {
+            bLoop = false;
+          }
+          break;
+        }
+        case 5: {
           var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;

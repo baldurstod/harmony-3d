@@ -80,6 +80,27 @@ struct Material {
   }
 
   @must_use
+  fn scatterSource1(
+    material: ptr<function, Material>,
+    ray: ptr<function, Ray>,
+    scattered: ptr<function, Ray>,
+    hitRec: ptr<function, HitRecord>,
+    attenuation: ptr<function, vec3f>,
+    rngState: ptr<function, u32>
+  ) -> bool {
+    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);
+    if (nearZero(scatterDirection)) {
+      scatterDirection = (*hitRec).normal;
+    }
+    (*scattered) = Ray((*hitRec).p, scatterDirection);
+    //(*attenuation) = (*material).albedo;
+    (*attenuation) = vec3f(1.0);
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+
+    return true;
+  }
+
+  @must_use
   fn scatterSource1VertexLitGeneric(
     material: ptr<function, Material>,
     ray: ptr<function, Ray>,
@@ -100,6 +121,9 @@ struct Material {
   }
 
   fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec3<f32> {
+    if (desc.offset == 0xffffff) {
+      return vec3f(0.0);
+    }
     let u2: f32 = clamp(u, 0f, 1f);
     let v2: f32 = clamp(v, 0f, 1f);
 

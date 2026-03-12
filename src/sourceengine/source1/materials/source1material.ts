@@ -17,6 +17,7 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Proxy } from './proxies/proxy';
 import { ProxyManager } from './proxies/proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
+import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -749,6 +750,24 @@ export class Source1Material extends Material {
 			this.variables.set(key, sanitized);
 		} else {
 			this.variables.set(key, value);
+		}
+	}
+
+	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		return {
+			index,
+			materialType: RtMaterial.Source1Material,
+			reflectionRatio: 0.1,
+			reflectionGloss: 1,
+			refractionIndex: 0.1,
+			albedo: vec3.fromValues(
+				0.901960015296936,
+				0.49411699175834656,
+				0.1333329975605011,
+			),// TODO: set actual value
+			textures: new Map([
+				[0, this.uniforms.colorMap as Texture],
+			]),
 		}
 	}
 

@@ -359,7 +359,7 @@ function getTextureDescriptor(context: RayTracingContext, texture: Texture): RtT
 }
 
 function addToGlobalTextureData(context: RayTracingContext, texture: Texture): RtTextureDescriptor {
-	const offset = context.textures.length / texture.elementsPerTexel;
+	const offset = context.textures.length;
 	const growth = texture.width * texture.height * texture.elementsPerTexel;
 
 	const old = context.textures;
