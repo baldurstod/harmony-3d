@@ -1173,6 +1173,7 @@ export class WebGPURenderer implements Renderer {
 					if (materialUniform !== undefined) {
 						switch (uniform.type.name) {
 							case 'f32':
+							case 'u32':
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
@@ -1196,6 +1197,7 @@ export class WebGPURenderer implements Renderer {
 							case 'vec2f':
 							case 'vec3f':
 							case 'vec4f':
+							case 'vec2u':
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
