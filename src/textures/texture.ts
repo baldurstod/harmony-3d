@@ -53,6 +53,7 @@ export class Texture {
 	#datas?: Uint8Array | Uint8ClampedArray | Float32Array;
 	readonly elementsPerTexel = 4;// TODO: set param
 	//readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
+	isSrgb: boolean = false;
 
 	constructor(textureParams: TextureParams = { gpuFormat: 'rgba8unorm', gpuVisibility: GPUShaderStage.COMPUTE | GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT }) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?

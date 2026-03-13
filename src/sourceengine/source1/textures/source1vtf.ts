@@ -235,6 +235,8 @@ export class Source1Vtf {
 		texture.width = mipmap.width;
 		texture.height = mipmap.height;
 
+		texture.isSrgb = srgb;
+
 		const data = mipmap.frames[frame]?.[face];
 		if (data) {
 			if (Graphics.isWebGPU) {
