@@ -4,9 +4,9 @@ import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
+import { GL_REPEAT } from '../webgl/constants';
 import { BV, Face } from './bv';
 import { RaytracingMaterial } from './material';
-import { GL_REPEAT } from '../webgl/constants';
 
 export type RtTextureDescriptor = {
 	width: uint32,
@@ -74,7 +74,7 @@ interface ParsedModel {
 	AABBs: BV[];
 }
 
-export function sceneToRtScene(scene: Scene): RayTracingScene {
+export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	const entitites = scene.getRenderableList();
 	const meshes: Mesh[] = [];
 	const materials = new Map<Material, RaytracingMaterial>();
@@ -106,7 +106,7 @@ export function sceneToRtScene(scene: Scene): RayTracingScene {
 	);
 }
 
-function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial>): RayTracingScene {
+async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial>): Promise<RayTracingScene> {
 	const sceneModels = parseModel(meshes, sceneMaterials);
 
 	context.MODELS_COUNT = sceneModels.length;
@@ -224,7 +224,7 @@ function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: 
 				if (mtl.textures) {
 					for (const [id, tex] of mtl.textures) {
 						if (tex) {
-							textures[id] = getTextureDescriptor(context, tex);
+							textures[id] = await getTextureDescriptor(context, tex);
 						}
 					}
 				}
@@ -252,11 +252,6 @@ function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: 
 }
 
 function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>): ParsedModel[] {
-	//let posArray: { x: number; y: number; z: number }[] = [];
-	//let nrmArray: { x: number; y: number; z: number }[] = [];
-
-	console.log(meshes);
-
 	const fn = vec3.create();
 	const p1p0Diff = vec3.create();
 	const p2p0Diff = vec3.create();
@@ -352,16 +347,16 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 	});
 }
 
-function getTextureDescriptor(context: RayTracingContext, texture: Texture): RtTextureDescriptor {
+async function getTextureDescriptor(context: RayTracingContext, texture: Texture): Promise<RtTextureDescriptor> {
 	let descriptor = context.textureDescriptors.get(texture);
 	if (!descriptor) {
-		descriptor = addToGlobalTextureData(context, texture);
+		descriptor = await addToGlobalTextureData(context, texture);
 		context.textureDescriptors.set(texture, descriptor);
 	}
 	return descriptor;
 }
 
-function addToGlobalTextureData(context: RayTracingContext, texture: Texture): RtTextureDescriptor {
+async function addToGlobalTextureData(context: RayTracingContext, texture: Texture): Promise<RtTextureDescriptor> {
 	const offset = context.textures.length;
 	const growth = texture.width * texture.height * texture.elementsPerTexel;
 
@@ -376,7 +371,7 @@ function addToGlobalTextureData(context: RayTracingContext, texture: Texture): R
 	}
 	*/
 
-	context.textures.set(texture.getDatas(), old.length);
+	context.textures.set(await texture.getDatas(), old.length);
 
 	let repeat = 0;
 	if (texture.wrapS === GL_REPEAT) {

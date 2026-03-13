@@ -9,7 +9,7 @@ import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray } from '../webgpu/storage';
-import { RtTextureDescriptor, sceneToRtScene } from './raytracingscene';
+import { sceneToRtScene } from './raytracingscene';
 
 type RtCamera = {
 	eye: vec3,
@@ -65,10 +65,10 @@ export class Raytracer {
 		this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm'/*WebGPUInternal.format*/);
 	}
 
-	configure(scene: Scene, width: number, height: number,
+	async configure(scene: Scene, width: number, height: number,
 		//materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray,
 		//MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number
-	): boolean {
+	): Promise<boolean> {
 		const activeCamera = scene.activeCamera;
 		if (!activeCamera) {
 			return false;
@@ -78,8 +78,7 @@ export class Raytracer {
 		this.#height = height;
 		this.#reset();
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = sceneToRtScene(scene);
-		console.info(materials, faces, aabbs);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = await sceneToRtScene(scene);
 
 		const lookFrom = activeCamera.getWorldPosition();
 
@@ -175,9 +174,9 @@ export class Raytracer {
 			{
 				width: this.#width,
 				height: this.#height,
-			},
-			Math.ceil(this.#width! / (this.#material.workgroupSize?.[0] ?? 1)),
-			Math.ceil(this.#height! / (this.#material.workgroupSize?.[1] ?? 1))
+				workgroupCountX: Math.ceil(this.#width! / (this.#material.workgroupSize?.[0] ?? 1)),
+				workgroupCountY: Math.ceil(this.#height! / (this.#material.workgroupSize?.[1] ?? 1)),
+			}
 		);
 	}
 
