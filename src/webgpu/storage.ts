@@ -8,6 +8,8 @@ export type StorageBuffer = {
 	value: StorageValue | null;
 	buffer?: GPUBuffer | null;
 	size?: number;
+	/** Buffer usage. Combination of GPUBufferUsage values. Default to UNIFORM | COPY_DST | STORAGE */
+	usage?: number;
 	/** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
 	raw?: boolean;
 	/** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */

@@ -9,7 +9,7 @@ import { RaytracingMaterial } from '../raytracing/material';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
-import { StorageBuffer, StorageValue } from '../webgpu/storage';
+import { StorageBuffer, StorageValue, StorageValueArray } from '../webgpu/storage';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 
@@ -46,7 +46,7 @@ export type MaterialParams = {
 	polygonOffsetUnits?: number;
 
 	uniforms?: MaterialUniform;
-	storages?: Record<string, StorageValue | number | StorageBuffer>;
+	storages?: Record<string, StorageValueArray | number | StorageBuffer>;
 	gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines?: Record<string, string>;
 	workgroupSize?: vec3;
@@ -577,7 +577,7 @@ export class Material {
 		return this.storage.get(name);
 	}
 
-	setStorage(name: string, value: StorageValue | number | StorageBuffer): void {
+	setStorage(name: string, value: StorageValueArray | number | StorageBuffer): void {
 		const existingValue = this.storage.get(name);
 		if (existingValue) {
 			if (existingValue.buffer) {

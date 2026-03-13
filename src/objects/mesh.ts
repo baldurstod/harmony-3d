@@ -131,6 +131,7 @@ export class Mesh extends Entity {
 	}
 
 	setStorage(name: string, value: StorageValue): void {
+		// TODO: copy the behavior of material setStorage
 		this.storage[name] = { value };
 	}
 

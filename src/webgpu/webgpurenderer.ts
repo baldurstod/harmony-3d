@@ -1397,7 +1397,7 @@ export class WebGPURenderer implements Renderer {
 						} else {
 							const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
 							if (storageBuffer) {
-								const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
+								const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
 								if (storageBuffer.raw) {
 									if (!storageBuffer.buffer) {
 										storageBuffer.buffer = device.createBuffer({
