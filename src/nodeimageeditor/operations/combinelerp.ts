@@ -93,7 +93,10 @@ export class CombineLerp extends Node {
 
 		this.material.uniforms['outTexture'] = this.#outputTexture;
 
-		Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
+		Graphics.compute(this.material, {
+			workgroupCountX: this.#textureSize,
+			workgroupCountY: this.#textureSize,
+		});
 
 		const output = this.getOutput('output');
 		if (output) {

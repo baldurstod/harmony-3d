@@ -33,7 +33,11 @@ export class SketchPass extends Pass {
 		} else {
 			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-			Graphics.compute(this.#material, context, context.width!, context.height);
+			Graphics.compute(this.#material, {
+				...context,
+				workgroupCountX: context.width,
+				workgroupCountY: context.height,
+			});
 		}
 
 	}

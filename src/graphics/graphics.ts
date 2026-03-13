@@ -638,8 +638,15 @@ class Graphics {
 		}
 	}
 
-	static compute(material: Material, context: RenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
-		this.#forwardRenderer!.compute(material, { renderContext: context, width: context.width!, height: context.height! }, workgroupCountX, workgroupCountY, workgroupCountZ);
+	static compute(material: Material, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
+		this.#forwardRenderer!.compute(material,
+			{
+				renderContext: context,
+				width: context.width!,
+				height: context.height!,
+			},
+			postCompute,
+		);
 	}
 
 	static renderMultiCanvas(delta: number, context: RenderContext = {}) {

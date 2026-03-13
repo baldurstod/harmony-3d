@@ -823,7 +823,7 @@ export class WebGPURenderer implements Renderer {
 		this.#defines.delete(define);
 	}
 
-	compute(material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void {
+	compute(material: Material, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
 		getDefines(material, defines);
 
@@ -854,14 +854,16 @@ export class WebGPURenderer implements Renderer {
 		const computePipeline = device.createComputePipeline(pipelineDescriptor);
 
 		const encoder = device.createCommandEncoder({ label: 'compute encoder' });
-		const pass = encoder.beginComputePass({});
+		const passEncoder = encoder.beginComputePass({});
 
-		pass.setPipeline(computePipeline);
+		passEncoder.setPipeline(computePipeline);
 		//pass.setBindGroup(0, bindGroup);
 
-		this.#createBindGroups(groups, computePipeline, pass);
-		pass.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
-		pass.end();
+		this.#createBindGroups(groups, computePipeline, passEncoder);
+		passEncoder.dispatchWorkgroups(context.renderContext.workgroupCountX ?? 1, context.renderContext.workgroupCountY ?? 1, context.renderContext.workgroupCountZ ?? 1);
+		passEncoder.end();
+
+		postCompute?.(encoder);
 
 		const commandBuffer = encoder.finish();
 		device.queue.submit([commandBuffer]);

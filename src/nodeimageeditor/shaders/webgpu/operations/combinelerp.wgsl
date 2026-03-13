@@ -1,8 +1,3 @@
-//#define INPUT_COUNT 8
-
-#include matrix_uniforms
-#include common_uniforms
-
 @group(0) @binding(x) var input0: texture_storage_2d<rgba8unorm, read>;
 @group(0) @binding(x) var input1: texture_storage_2d<rgba8unorm, read>;
 @group(0) @binding(x) var inputWeight: texture_storage_2d<rgba8unorm, read>;
