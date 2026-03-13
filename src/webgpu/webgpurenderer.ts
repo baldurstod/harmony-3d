@@ -1175,11 +1175,16 @@ export class WebGPURenderer implements Renderer {
 					if (materialUniform !== undefined) {
 						switch (uniform.type.name) {
 							case 'f32':
-							case 'u32':
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
 									new Float32Array([materialUniform as number]),
+								);
+							case 'u32':
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									new Uint32Array([materialUniform as number]),
 								);
 								break;
 							case 'mat3x3f':
@@ -1199,11 +1204,18 @@ export class WebGPURenderer implements Renderer {
 							case 'vec2f':
 							case 'vec3f':
 							case 'vec4f':
-							case 'vec2u':
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
 									materialUniform as BufferSource,
+								);
+								break;
+							case 'vec2u':
+								const vec2uArray = new Uint32Array([materialUniform[0], materialUniform[1]]);
+								device.queue.writeBuffer(
+									uniformBuffer,
+									0,
+									vec2uArray as BufferSource,
 								);
 								break;
 							case 'vec4':
