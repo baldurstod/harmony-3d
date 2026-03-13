@@ -31,7 +31,8 @@
     t2: vec2f,
 
     faceNormal: vec3f,
-    materialIdx: u32
+    materialIdx: u32,
+    flatShading: u32,
   }
 
   struct AABB {

@@ -768,6 +768,7 @@ export class Source1Material extends Material {
 			textures: new Map([
 				[0, this.uniforms.colorMap as Texture],
 			]),
+			flatShading: false,
 		}
 	}
 

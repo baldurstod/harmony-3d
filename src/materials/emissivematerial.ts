@@ -41,6 +41,7 @@ export class EmissiveMaterial extends Material {
 			reflectionGloss: 1,
 			refractionIndex: 1,
 			albedo: vec3.fromValues(6, 6, 6),// TODO: set actual value
+			flatShading: false,
 		}
 	}
 

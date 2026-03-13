@@ -63,7 +63,7 @@
       (*rec).p = p;
       (*rec).coord = coord;
       (*rec).materialIdx = (*face).materialIdx;
-      if (commonUniforms.flatShading == 1u) {
+      if (commonUniforms.flatShading == 1u || (*face).flatShading == 1) {
         (*rec).normal = (*face).faceNormal;
       } else {
         let b = vec3f(1f - u - v, u, v);

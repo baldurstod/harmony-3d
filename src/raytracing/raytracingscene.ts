@@ -120,7 +120,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 			(max, obj) => Math.max(max, obj.faces.length),
 			0,
 		);
-		const numFloatsPerFace = 36;
+		const numFloatsPerFace = 40;
 		faces = new Uint8ClampedArray(
 			numFloatsPerFace *
 			Float32Array.BYTES_PER_ELEMENT *
@@ -172,6 +172,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				faceData[idx + 34] = face.fn[2];
 
 				faceColorData[idx + 35] = face.mi;
+				faceColorData[idx + 36] = face.mi;
 
 				idx += numFloatsPerFace;
 			}
@@ -299,7 +300,8 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 				t2,
 				fn: vec3.clone(fn),
 				fi: outFaces.length,
-				mi: rtMaterial.index //(mesh instanceof SkeletalMesh ? 5 : 4),//TODO materials.findIndex(({ name }) => name === f.material),
+				mi: rtMaterial.index,
+				flatShading: rtMaterial.flatShading,
 			});
 		}
 

@@ -124,6 +124,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			textures: new Map([
 				[0, this.uniforms.colorMap as Texture],
 			]),
+			flatShading: false,
 		}
 	}
 }

@@ -29,6 +29,7 @@ export class LightMappedGenericMaterial extends Source1Material {//TODOv3 remove
 			textures: new Map([
 				[0, this.uniforms.colorMap as Texture],
 			]),
+			flatShading: true,
 		}
 	}
 }

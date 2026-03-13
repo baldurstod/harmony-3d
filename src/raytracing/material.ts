@@ -20,4 +20,5 @@ export type RaytracingMaterial = {
 	reflectionGloss: float32,
 	refractionIndex: float32,
 	albedo: vec3,
+	flatShading: boolean,
 }
