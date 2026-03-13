@@ -8,5 +8,6 @@ export { ShadowMap } from './shadowmap';
 export * from './spritesheet';
 export { getCurrentTexture, Texture } from './texture';
 export * from './textureconstants';
+export * from './texturedata';
 export * from './texturefactory';
 export { TextureManager } from './texturemanager';
