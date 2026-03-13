@@ -1,4 +1,4 @@
-@group(0) @binding(0) var input: texture_storage_2d<rgba8unorm/*TODO: set a var*/, read>;
+@group(0) @binding(0) var input: texture_2d<f32>;
 @group(0) @binding(1) var<storage, read_write> output: array<f32>;// TODO: handle uint textures
 @group(0) @binding(2) var<uniform> size: vec2u;
 @group(0) @binding(3) var<uniform> elements: u32;
@@ -16,7 +16,7 @@ override WORKGROUP_SIZE_Y: u32 = 16;
 
 	let idx = (id.x + id.y * size.x) * elements;
 
-	let color: vec4f = textureLoad(input, id.xy) * 255.;// TODO: handle uint textures
+	let color: vec4f = textureLoad(input, vec2u(id.xy), 0) * 255.;// TODO: handle uint textures
 
 	output[idx + 0] = color.r;
 	output[idx + 1] = color.g;

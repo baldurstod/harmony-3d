@@ -5,6 +5,7 @@ import { WebGLAnyRenderingContext } from '../types';
 import { errorOnce } from '../utils/console';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
+import { getTextureData } from './texturedata';
 import { deleteTexture } from './texturefactory';
 
 export type TextureParams = {
@@ -185,18 +186,9 @@ export class Texture {
 		return this.height;
 	}
 
-	setDatas(datas: Uint8Array | Uint8ClampedArray | Float32Array): void {
-		this.#datas = datas;
-	}
-
-	getDatas(): Float32Array {
+	async getDatas(): Promise<Float32Array> {
 		if (!this.#datas) {
-			const datas = new Float32Array(this.width * this.height * this.elementsPerTexel);
-			for (let i = 0; i < datas.length; i++) {
-				datas[i] = 1;
-			}
-
-			return datas;
+			this.#datas = await getTextureData(this);
 		}
 
 		if (this.#datas instanceof Float32Array) {
