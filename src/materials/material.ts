@@ -554,6 +554,7 @@ export class Material {
 				this.#disposeUniform(uniform);
 			}
 		}
+		// TODO: destroy gpu buffers
 	}
 
 	static getEntityName(): string {
@@ -588,10 +589,10 @@ export class Material {
 		if (typeof value === 'number') {
 			this.storage.set(name, { value: null, size: value });
 		} else {
-			if ((value as StorageBuffer).value) {
-				this.storage.set(name, value as StorageBuffer);
+			if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
+				this.storage.set(name, { value: value as StorageValueArray });
 			} else {
-				this.storage.set(name, { value: value as StorageValue });
+				this.storage.set(name, value as StorageBuffer);
 			}
 		}
 	}

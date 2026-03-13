@@ -5,7 +5,7 @@ export type StorageValueStruct = { [key: string]: StorageValue | number };
 export type StorageValue = StorageValueArray | StorageValueStruct;
 
 export type StorageBuffer = {
-	value: StorageValue | null;
+	value?: StorageValue | null;
 	buffer?: GPUBuffer | null;
 	size?: number;
 	/** Buffer usage. Combination of GPUBufferUsage values. Default to UNIFORM | COPY_DST | STORAGE */

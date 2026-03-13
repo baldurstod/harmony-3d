@@ -1446,7 +1446,7 @@ export class WebGPURenderer implements Renderer {
 												usage,
 											});
 										}
-										if (storageBuffer.value !== null) {
+										if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
 											device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
 										}
 									} else if (storage.format!.isStruct) {
@@ -1495,7 +1495,7 @@ export class WebGPURenderer implements Renderer {
 												usage,
 											});
 										}
-										if (storageBuffer.value !== null) {
+										if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
 											device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value as BufferSource, 0, storageBuffer.value.length as number);
 										}
 									}
