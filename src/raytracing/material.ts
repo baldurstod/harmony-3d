@@ -9,6 +9,7 @@ export enum RtMaterial {
 	Lambertian,
 	Source1Material,// fallback for all source 1 materials
 	Source1VertexLitGeneric,
+	Source1LightMappedGeneric,
 }
 
 export type RaytracingMaterial = {

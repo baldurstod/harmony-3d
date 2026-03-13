@@ -126,7 +126,6 @@ export class VertexLitGenericMaterial extends Source1Material {
 			]),
 		}
 	}
-
 }
 Source1VmtLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
 //MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, Source1MaterialManager);

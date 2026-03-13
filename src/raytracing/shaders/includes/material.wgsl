@@ -96,8 +96,6 @@ struct Material {
       scatterDirection = (*hitRec).normal;
     }
     (*scattered) = Ray((*hitRec).p, scatterDirection);
-    //(*attenuation) = (*material).albedo;
-    (*attenuation) = vec3f(1.0);
     (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
 
     return true;
@@ -117,7 +115,25 @@ struct Material {
       scatterDirection = (*hitRec).normal;
     }
     (*scattered) = Ray((*hitRec).p, scatterDirection);
-    //(*attenuation) = (*material).albedo;
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+
+    return true;
+  }
+
+  @must_use
+  fn scatterSource1LightMappedGeneric(
+    material: ptr<function, Material>,
+    ray: ptr<function, Ray>,
+    scattered: ptr<function, Ray>,
+    hitRec: ptr<function, HitRecord>,
+    attenuation: ptr<function, vec3f>,
+    rngState: ptr<function, u32>
+  ) -> bool {
+    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);
+    if (nearZero(scatterDirection)) {
+      scatterDirection = (*hitRec).normal;
+    }
+    (*scattered) = Ray((*hitRec).p, scatterDirection);
     (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
 
     return true;

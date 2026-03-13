@@ -219,7 +219,7 @@ fragColor.a = alpha;
 gl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);
 */
 #ifdef SKIP_LIGHTING
-	gl_FragColor.rgb = albedo;
+	fragColor = vec4f(albedo, fragColor.a);
 #endif
 
 	#include source1_calculate_sheen
