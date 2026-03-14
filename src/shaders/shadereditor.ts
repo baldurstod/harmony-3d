@@ -15,6 +15,14 @@ const EDIT_MODE_INCLUDE = 1;
 
 type Token = { start: number, value: string, row?: number };
 
+type ShaderEditorInit = {
+	/** Provide an url for ACE editor. Default to a cdn script. */
+	aceUrl?: string;
+	displayCustomShaderButtons?: boolean;
+	/** Name of the shader to open */
+	defaultShader?: string;
+}
+
 export class ShaderEditor extends HTMLElement {
 	#initialized = false;
 	#recompileDelay = 1000;
@@ -33,7 +41,7 @@ export class ShaderEditor extends HTMLElement {
 	#marker = -1;
 	#sessions = new Map<string, Ace.EditSession>;
 
-	initEditor(options: any = {}) {
+	initEditor(options: ShaderEditorInit = {}) {
 		if (this.#initialized) {
 			return;
 		}
@@ -92,15 +100,15 @@ export class ShaderEditor extends HTMLElement {
 		this.#shadowRoot.append(this.#htmlShaderNameSelect, this.#htmlShaderRenderMode, htmlCustomShaderButtons, c);
 
 		if (aceScript == '') {
-			this.#initEditor2(c);
+			this.#initEditor2(options, c);
 		} else {
-			loadScript(aceScript).then(() => this.#initEditor2(c));
+			loadScript(aceScript).then(() => this.#initEditor2(options, c));
 		}
 		ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
 		ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
 	}
 
-	#initEditor2(id: HTMLElement) {
+	#initEditor2(options: ShaderEditorInit, id: HTMLElement) {
 		this.#shaderEditor = (globalThis as any).ace.edit(id) as Ace.Editor;
 		this.#shaderEditor.renderer.attachToShadowRoot();
 		//this.#shaderEditor.$blockScrolling = Infinity;
@@ -121,6 +129,21 @@ export class ShaderEditor extends HTMLElement {
 
 		this.#initEditorEvents();
 		this.#reloadGLSLList();
+
+		const defaultShader = options.defaultShader;
+		if (defaultShader) {
+			this.openShader(defaultShader);
+		}
+	}
+
+	openShader(name: string): void {
+		if (name.endsWith('fs') || name.endsWith('vs') || name.endsWith('wgsl')) {
+			this.setEditorShaderName(name);
+		} else {
+			if (name.endsWith('glsl')) {
+				this.setEditorIncludeName(name);
+			}
+		}
 	}
 
 	#reloadGLSLList() {
