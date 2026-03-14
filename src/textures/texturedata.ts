@@ -33,7 +33,6 @@ export async function getTextureData(texture: Texture): Promise<Float32Array> {/
 		gpuConstants: {
 			WORKGROUP_SIZE_X: COMPUTE_WORKGROUP_SIZE_X,
 			WORKGROUP_SIZE_Y: COMPUTE_WORKGROUP_SIZE_Y,
-			isSrgb: texture.isSrgb ? 1 : 0,
 		},
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});

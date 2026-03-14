@@ -6,8 +6,6 @@
 override WORKGROUP_SIZE_X: u32 = 16;
 override WORKGROUP_SIZE_Y: u32 = 16;
 
-override isSrgb: bool = false;
-
 @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y) fn compute_main(
 	@builtin(global_invocation_id) id : vec3u
 )
@@ -19,10 +17,6 @@ override isSrgb: bool = false;
 	let idx = (id.x + id.y * size.x) * elements;
 
 	var color: vec4f = textureLoad(input, vec2u(id.xy), 0);
-
-	if (isSrgb) {
-		color = pow(color, vec4f(1 / 2.2));
-	}
 
 	color *= 255;// TODO: handle uint textures
 
