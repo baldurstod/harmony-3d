@@ -65,7 +65,7 @@
       mtlStack[i] = material.albedo;
 
       if (commonUniforms.debugNormals == 1u) {
-        color = (hitRec.normal + 1) * 0.5;
+        color = abs(hitRec.normal);
         break;
       }
 
@@ -113,7 +113,7 @@
           }
           break;
         }
-        case 4: {
+        case 4: {// Source1Material
           var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -121,9 +121,12 @@
           } else {
             bLoop = false;
           }
+            //i--;
+            //color = mtlStack[i];
+            //bLoop = false;
           break;
         }
-        case 5: {
+        case 5: {// Source1VertexLitGeneric
           var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -131,6 +134,22 @@
           } else {
             bLoop = false;
           }
+//            i--;
+//            color = mtlStack[i];
+//            bLoop = false;
+          break;
+        }
+        case 6: {// LightMappedGeneric
+          var scatters = scatterSource1LightMappedGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
+          if (i < commonUniforms.maxBounces) {
+            i++;
+            r = scattered;
+          } else {
+            bLoop = false;
+          }
+          //i--;
+          //color = mtlStack[i];
+          //bLoop = false;
           break;
         }
         default: {

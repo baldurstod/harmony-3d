@@ -172,7 +172,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				faceData[idx + 34] = face.fn[2];
 
 				faceColorData[idx + 35] = face.mi;
-				faceColorData[idx + 36] = face.mi;
+				faceColorData[idx + 36] = face.flatShading ? 1 : 0;
 
 				idx += numFloatsPerFace;
 			}

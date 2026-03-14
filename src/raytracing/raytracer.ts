@@ -184,6 +184,10 @@ export class Raytracer {
 		return this.#outputTexture;
 	}
 
+	getMaterial(): ShaderMaterial {
+		return this.#material;
+	}
+
 	dispose(): void {
 		GraphicsEvents.removeEventListener(GraphicsEvent.Tick, this.#tick);
 	}

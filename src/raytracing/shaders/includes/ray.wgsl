@@ -63,11 +63,16 @@
       (*rec).p = p;
       (*rec).coord = coord;
       (*rec).materialIdx = (*face).materialIdx;
-      if (commonUniforms.flatShading == 1u || (*face).flatShading == 1) {
-        (*rec).normal = (*face).faceNormal;
+      if (commonUniforms.flatShading == 1u) {
+        (*rec).normal = abs((*face).faceNormal);
       } else {
-        let b = vec3f(1f - u - v, u, v);
-        let n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;
+        var n: vec3f;
+        if ((*face).flatShading == 0) {
+          let b = vec3f(1f - u - v, u, v);
+          n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;
+        } else {
+          n = ((*face).faceNormal);
+        }
         (*rec).normal = n;
       }
       return true;
