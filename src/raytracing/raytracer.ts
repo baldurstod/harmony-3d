@@ -38,6 +38,7 @@ export class Raytracer {
 				flatShading: 0,
 				maxBounces: 4,
 				debugNormals: 0,
+				debugColor: 0,
 			},
 			cameraUniforms: {
 				// TODO: remove the fake uniforms from the shader

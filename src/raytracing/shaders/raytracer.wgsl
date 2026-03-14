@@ -121,9 +121,6 @@
           } else {
             bLoop = false;
           }
-            //i--;
-            //color = mtlStack[i];
-            //bLoop = false;
           break;
         }
         case 5: {// Source1VertexLitGeneric
@@ -134,9 +131,6 @@
           } else {
             bLoop = false;
           }
-//            i--;
-//            color = mtlStack[i];
-//            bLoop = false;
           break;
         }
         case 6: {// LightMappedGeneric
@@ -147,9 +141,6 @@
           } else {
             bLoop = false;
           }
-          //i--;
-          //color = mtlStack[i];
-          //bLoop = false;
           break;
         }
         default: {
@@ -160,9 +151,13 @@
     }
 
 
-    while (i > 0) {
-      i--;
-      color *= mtlStack[i];
+    if (commonUniforms.debugColor == 1) {
+        color = mtlStack[i];
+    } else {
+      while (i > 0) {
+        i--;
+        color *= mtlStack[i];
+      }
     }
 
     var pixel = raytraceImageBuffer[idx];

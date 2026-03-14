@@ -4,7 +4,8 @@
     frameCounter: u32,
     maxBounces: u32,
     flatShading: u32,
-    debugNormals: u32
+    debugNormals: u32,
+    debugColor: u32,
   }
 
   struct HitRecord {
