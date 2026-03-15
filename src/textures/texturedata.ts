@@ -45,10 +45,10 @@ export async function getTextureData(texture: Texture): Promise<Float32Array> {/
 	Graphics.compute(material,
 		{
 			workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
-			workgroupCountY: Math.ceil(texture.height! / (material.workgroupSize?.[1] ?? 1)),
+			workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
 		},
 		(commandEncoder: GPUCommandEncoder) => {
-			const outputBuffer = material.getStorage('output')?.buffer!;
+			const outputBuffer = material.getStorage('output')!.buffer!;
 
 			commandEncoder.copyBufferToBuffer(
 				outputBuffer,

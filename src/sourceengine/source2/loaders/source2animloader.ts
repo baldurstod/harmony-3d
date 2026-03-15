@@ -3,7 +3,7 @@ import { Source2Model } from '../models/source2model';
 import { Source2File } from './source2file';
 import { Source2FileLoader } from './source2fileloader';
 
-const loadingSlot = 100;//TODO
+//const loadingSlot = 100;//TODO
 const pending: Record<string, boolean> = {};
 
 export async function loadAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup> {
@@ -16,7 +16,7 @@ export async function loadAnimGroup(source2Model: Source2Model, repository: stri
 	return animGroup;
 }
 
-async function getVagrp(repository: string, animGroupName: string, animGroup: Source2AnimGroup) {
+async function getVagrp(repository: string, animGroupName: string, animGroup: Source2AnimGroup): Promise<boolean> {
 	const agrpFile = animGroupName + '.vagrp_c';
 	if (pending[agrpFile]) {
 		return true;
@@ -27,7 +27,7 @@ async function getVagrp(repository: string, animGroupName: string, animGroup: So
 	return true;
 }
 
-async function loadVagrp(repository: string, fileName: string, animGroup: Source2AnimGroup) {
+async function loadVagrp(repository: string, fileName: string, animGroup: Source2AnimGroup): Promise<void> {
 	const vagrp = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vagrp) {
 		animGroup.setFile(vagrp);

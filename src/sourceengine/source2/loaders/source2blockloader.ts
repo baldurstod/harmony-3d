@@ -21,7 +21,7 @@ import { Source2File } from './source2file';
 import { Source2FileBlock, Source2NtroBlock, Source2RerlBlock, Source2ResEditInfoBlock, Source2SnapBlock } from './source2fileblock';
 
 
-export function sNormUint16(uint16: number) {
+export function sNormUint16(uint16: number): number {
 	//https://www.khronos.org/opengl/wiki/Normalized_Integer
 	return Math.max(uint16 / 0x7FFF, -1.0);
 }
@@ -33,7 +33,7 @@ export type Source2BlockLoaderContext = {
 export const Source2BlockLoader = new (function () {
 	class Source2BlockLoader {
 
-		async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean, context: Source2BlockLoaderContext) {//TODOv3 parseVtex
+		async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean, context: Source2BlockLoaderContext): Promise<void> {//TODOv3 parseVtex
 			const introspection = file.blocks['NTRO'] as Source2NtroBlock;
 			const reference = file.blocks['RERL'] as Source2RerlBlock;
 			switch (block.type) {
@@ -66,8 +66,8 @@ export const Source2BlockLoader = new (function () {
 					loadVbib(reader, block, context.meshIndex++);
 					break;
 				case 'SNAP':
-					let decodeLength, sa;
-					decodeLength = reader.getUint32(block.offset);
+					let sa;
+					const decodeLength = reader.getUint32(block.offset);
 					if ((decodeLength >>> 24) == 0x80) {
 						//no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
 						sa = reader.getBytes(decodeLength & 0xFFFFFF);
@@ -89,7 +89,7 @@ export const Source2BlockLoader = new (function () {
 	return Source2BlockLoader;
 }());
 
-function loadRerl(reader: BinaryReader, block: Source2RerlBlock) {
+function loadRerl(reader: BinaryReader, block: Source2RerlBlock): void {
 	reader.seek(block.offset);
 	const resOffset = reader.getInt32();// Seems to be always 0x00000008
 	const resCount = reader.getInt32();
@@ -110,7 +110,7 @@ function loadRerl(reader: BinaryReader, block: Source2RerlBlock) {
 	}
 }
 
-function loadNtro(reader: BinaryReader, block: Source2NtroBlock) {
+function loadNtro(reader: BinaryReader, block: Source2NtroBlock): void {
 	const _NTRO_STRUCT_LENGTH_ = 40;
 	const _NTRO_FIELD_LENGTH_ = 24;
 	reader.seek(block.offset);
@@ -124,13 +124,13 @@ function loadNtro(reader: BinaryReader, block: Source2NtroBlock) {
 
 	for (let structIndex = 0; structIndex < structCount; structIndex++) {
 		reader.seek(block.offset + ntroOffset + 4 + _NTRO_STRUCT_LENGTH_ * structIndex);
-		const ntroStruct: any = {};
+		const ntroStruct: any/*TODO: make an actual NTRO type*/ = {};
 		ntroStruct.version = reader.getInt32();
 		//console.log(ntroStruct.version);
 		ntroStruct._offset = reader.tell();
 		ntroStruct.id = reader.getUint32();
-		var strStart = reader.tell();
-		var strOffset = reader.getInt32();
+		const strStart = reader.tell();
+		const strOffset = reader.getInt32();
 		ntroStruct.crc = reader.getInt32();
 		ntroStruct.unknown1 = reader.getInt32();
 		ntroStruct.discSize = reader.getInt16();
@@ -152,8 +152,8 @@ function loadNtro(reader: BinaryReader, block: Source2NtroBlock) {
 			reader.seek(fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex);
 			const field: any = {};
 			field._offset = fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex;
-			var strStart = reader.tell();
-			var strOffset = reader.getInt32();
+			const strStart = reader.tell();
+			const strOffset = reader.getInt32();
 			field.count = reader.getInt16();
 			field.offset = reader.getInt16();
 			const indStart = reader.tell();
@@ -205,7 +205,7 @@ export const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
 export const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 export const BYTES_PER_INDEX = 1 * 4;
 
-function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: number) {
+function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: number): void {
 
 	const VERTEX_HEADER_SIZE = 24;
 	const INDEX_HEADER_SIZE = 24;
@@ -226,7 +226,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 	block.file.vertices.set(meshIndex, blockVertices);
 	block.file.indices.set(meshIndex, blockIndices);
 
-	for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
+	for (let i = 0; i < vertexCount; i++) { // header size: 24 bytes
 		reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
 		const s1: any/*TODO: fix typer*/ = {};
 		s1.vertexCount = reader.getInt32();
@@ -276,7 +276,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 		const s1BoneWeight = new Float32Array(s1.boneWeight);
 		for (let vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
 			vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex);
-			var vertex = {};
+			//var vertex = {};
 
 			let positionFilled = false;//TODOv3: remove this
 			let normalFilled = false;
@@ -284,13 +284,13 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 			let texCoordFilled = false;
 			let blendIndicesFilled = false;
 			let blendWeightFilled = false;
-			for (let headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
-				const headerName = s1.headers[headerIndex].name;
-				const headerType = s1.headers[headerIndex].type;
+			for (const header of s1.headers.length) {
+				const headerName = header.name;
+				const headerType = header.type;
 				let tempValue: number[] | vec2 | vec3 | vec4;// = vec4.create();//TODO: optimize
 
 
-				vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex + s1.headers[headerIndex].offset);
+				vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex + header.offset);
 				switch (headerType) {
 					case DXGI_FORMAT_R32G32B32A32_FLOAT:
 						tempValue = vec4.create();//TODO: optimize
@@ -452,7 +452,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 
 	//console.log(block.vertices);
 
-	for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
+	for (let i = 0; i < indexCount; i++) { // header size: 24 bytes
 		reader.seek(indexOffset + i * INDEX_HEADER_SIZE);
 		const s2: any = {};
 		s2.indexCount = reader.getInt32();
@@ -476,7 +476,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 		const s2Indices = new Uint32Array(s2.indices);
 		for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
 			indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
-			var vertex = {};
+			//var vertex = {};
 			//s2.indices.push(indexReader.getUint16());
 			if (s2.bytesPerIndex == 2) {
 				s2Indices[indicesIndex] = indexReader.getUint16();
