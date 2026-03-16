@@ -77,9 +77,9 @@ export class Raytracer {
 
 		this.#width = width;
 		this.#height = height;
-		this.#reset();
 
 		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = await sceneToRtScene(scene);
+		this.#reset();
 
 		const lookFrom = activeCamera.getWorldPosition();
 
