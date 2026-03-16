@@ -28,9 +28,9 @@
     n1: vec3f,
     n2: vec3f,
 
-    ta0: vec3f,
-    ta1: vec3f,
-    ta2: vec3f,
+    ta0: vec4f,
+    ta1: vec4f,
+    ta2: vec4f,
 
     bta0: vec3f,
     bta1: vec3f,

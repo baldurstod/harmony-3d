@@ -60,13 +60,12 @@ export class SkeletalMesh extends Mesh {
 	exportObj(): ObjDatas {
 		const ret: Record<string, Uint8Array | Uint32Array | Float32Array | []> = {};
 		const skeletonBones = this.skeleton._bones;
-		const attributes: Record<'f' | 'v' | 'vn' | 'vt' | 'tangent' | 'bitangent', string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', 'tangent': 'aVertexTangent', 'bitangent': 'aVertexBitangent' };
+		const attributes: Record<'f' | 'v' | 'vn' | 'vt' | 'tangent', string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', 'tangent': 'aVertexTangent' };
 		const geometry = this.getGeometry();
 		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const skinnedVertexTangent = new Float32Array(vertexCount * 3);
-		const skinnedVertexBitangent = new Float32Array(vertexCount * 3);
+		const skinnedVertexTangent = new Float32Array(vertexCount * 4);
 		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
 		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
 		const vertexTangent = geometry.getAttribute('aVertexTangent')?._array;
@@ -77,7 +76,6 @@ export class SkeletalMesh extends Mesh {
 		const tempVertex = vec3.create();
 		const tempVertexNormal = vec3.create();
 		const tempVertexTangent = vec4.create();
-		const tempVertexBitangent = vec3.create();
 		const accumulateMat = mat4.create();
 
 		if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
@@ -147,12 +145,7 @@ export class SkeletalMesh extends Mesh {
 				skinnedVertexTangent[vertexArrayIndex + 0] = tempVertexTangent[0];
 				skinnedVertexTangent[vertexArrayIndex + 1] = tempVertexTangent[1];
 				skinnedVertexTangent[vertexArrayIndex + 2] = tempVertexTangent[2];
-
-				vec3.cross(tempVertexBitangent, tempVertexNormal, tempVertexTangent as vec3);
-				vec3.scale(tempVertexBitangent, tempVertexBitangent, tempVertexTangent[3]);
-				skinnedVertexBitangent[vertexArrayIndex + 0] = tempVertexBitangent[0];
-				skinnedVertexBitangent[vertexArrayIndex + 1] = tempVertexBitangent[1];
-				skinnedVertexBitangent[vertexArrayIndex + 2] = tempVertexBitangent[2];
+				skinnedVertexTangent[vertexArrayIndex + 3] = tempVertexTangent[3];
 			}
 		}
 
@@ -172,11 +165,7 @@ export class SkeletalMesh extends Mesh {
 					}
 				}
 			} else {
-				if (objAttribute == 'bitangent') {
-					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = skinnedVertexBitangent;
-				} else {
-					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = [];
-				}
+				ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = [];
 			}
 		}
 		return ret as ObjDatas;

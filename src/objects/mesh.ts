@@ -39,7 +39,14 @@ export type MeshParameters = EntityParameters & {
 const meshDefaultBufferGeometry = new BufferGeometry();
 const meshDefaultMaterial = new MeshBasicMaterial();
 
-export type ObjDatas = { f: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array };
+export type ObjDatas = {
+	f: Uint8Array | Uint32Array,
+	v?: Float32Array,
+	vn?: Float32Array,
+	vt?: Float32Array
+	tangent?: Float32Array
+	bitangent?: Float32Array
+};
 
 export class Mesh extends Entity {
 	#geometry!: BufferGeometry;
@@ -159,7 +166,7 @@ export class Mesh extends Entity {
 	exportObj(worldSpace = false): ObjDatas {
 		//const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		const ret: Record<string, Uint8Array | Uint32Array | Float32Array | []> = {};
-		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', tangent: 'aVertexTangent' };
 		const geometry = this.#geometry;
 		for (const objAttribute in attributes) {
 			const geometryAttribute = attributes[objAttribute]!;
@@ -172,7 +179,7 @@ export class Mesh extends Entity {
 				if (objAttribute == 'f') {
 					ret['f'] = new Uint8Array();
 				} else {
-					ret[objAttribute as ('v' | 'vn' | 'vt')] = new Float32Array();
+					//ret[objAttribute as ('v' | 'vn' | 'vt')] = new Float32Array();
 				}
 			}
 		}

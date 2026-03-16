@@ -38,6 +38,7 @@ type RtMaterial = {
 type RayTracingScene = {
 	materials: RtMaterial[],
 	faces: Uint8ClampedArray,
+	facesCount: number,
 	aabbs: Uint8ClampedArray,
 	textures: Float32Array,
 	MODELS_COUNT: number,
@@ -47,6 +48,7 @@ type RayTracingScene = {
 
 type RayTracingContext = {
 	MODELS_COUNT: number;
+	facesCount: number;
 	MAX_NUM_FACES_PER_MESH: number;
 	MATERIALS_COUNT: number;
 	MAX_NUM_BVs_PER_MESH: number;
@@ -94,6 +96,7 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	return loadModels(
 		{
 			MODELS_COUNT: 0,
+			facesCount: 0,
 			MAX_NUM_FACES_PER_MESH: 0,
 			MATERIALS_COUNT: 0,
 			MAX_NUM_BVs_PER_MESH: 0,
@@ -118,6 +121,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	{
 		context.MAX_NUM_FACES_PER_MESH = sceneModels.reduce(
 			(max, obj) => Math.max(max, obj.faces.length),
+			0,
+		);
+		context.facesCount = sceneModels.reduce(
+			(value, obj) => value + obj.faces.length,
 			0,
 		);
 		const numFloatsPerFace = 64;
@@ -171,17 +178,17 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				faceData[idx + 33] = face.ta2[1];
 				faceData[idx + 34] = face.ta2[2];
 				// idx + 35 padding
-				faceData[idx + 36] = face.bta0[0];
-				faceData[idx + 37] = face.bta0[1];
-				faceData[idx + 38] = face.bta0[2];
+				// idx + 36 bitangent
+				// idx + 37 bitangent
+				// idx + 38 bitangent
 				// idx + 39 padding
-				faceData[idx + 40] = face.bta1[0];
-				faceData[idx + 41] = face.bta1[1];
-				faceData[idx + 42] = face.bta1[2];
+				// idx + 40 bitangent
+				// idx + 41 bitangent
+				// idx + 42 bitangent
 				// idx + 43 padding
-				faceData[idx + 44] = face.bta2[0];
-				faceData[idx + 45] = face.bta2[1];
-				faceData[idx + 46] = face.bta2[2];
+				// idx + 44 bitangent
+				// idx + 45 bitangent
+				// idx + 46 bitangent
 				// idx + 47 padding
 				faceData[idx + 48] = face.t0[0];
 				faceData[idx + 49] = face.t0[1];
@@ -268,6 +275,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	return {
 		materials,
 		faces,
+		facesCount: context.facesCount,
 		aabbs,
 		textures: context.textures,
 		MODELS_COUNT: context.MODELS_COUNT,
@@ -351,9 +359,6 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 				ta0,
 				ta1,
 				ta2,
-				bta0,
-				bta1,
-				bta2,
 				t0,
 				t1,
 				t2,

@@ -117,7 +117,7 @@ struct Material {
     (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
     let normalTexture = (*material).textures[1];
 
-    if (normalTexture.offset != 0xffffff) {
+    if (normalTexture.offset != 0xffffffff) {
       let pixelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y) * 2 - 1;
       scatterDirection = normalize((*hitRec).tbn * pixelNormal);
     }
@@ -151,7 +151,7 @@ struct Material {
   }
 
   fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec3<f32> {
-    if (desc.offset == 0xffffff) {
+    if (desc.offset == 0xffffffff) {
       return vec3f(0.0);
     }
     let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);

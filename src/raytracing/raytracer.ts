@@ -59,7 +59,15 @@ export class Raytracer {
 		},
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});
+	#prepassMaterial = new ShaderMaterial({
+		shaderSource: 'bitangent_prepass',
+		gpuConstants: {
+			WORKGROUP_SIZE_X: 256,
+		},
+	});
 	#outputTexture: Texture | null = null;
+	#prepassDone = false;
+	#facesCount = 0;
 
 	constructor() {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
@@ -77,8 +85,10 @@ export class Raytracer {
 
 		this.#width = width;
 		this.#height = height;
+		this.#prepassDone = false;
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, } = await sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount } = await sceneToRtScene(scene);
+		this.#facesCount = facesCount;
 		this.#reset();
 
 		const lookFrom = activeCamera.getWorldPosition();
@@ -105,6 +115,10 @@ export class Raytracer {
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
 		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
 		this.#material.setStorage('faces', {
+			value: faces,
+			raw: true,
+		});
+		this.#prepassMaterial.setStorage('faces', {
 			value: faces,
 			raw: true,
 		});
@@ -171,12 +185,27 @@ export class Raytracer {
 		(this.#material.uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
 		//this.#material.uniforms['outTexture'] = getCurrentTexture();
 
+		if (!this.#prepassDone) {
+			Graphics.compute(this.#prepassMaterial,
+				{
+					width: this.#facesCount,
+					height: 1,
+					// TODO: fix that: we can hit the limit of 65536 workgroup * 256 workgroup size
+					// if we have more than 16M triangles
+					workgroupCountX: Math.ceil(this.#facesCount! / 256),
+				}
+			);
+			this.#prepassDone = true;
+
+			this.#material.getStorage('faces')!.buffer = this.#prepassMaterial.getStorage('faces')!.buffer;
+		}
+
 		Graphics.compute(this.#material,
 			{
 				width: this.#width,
 				height: this.#height,
-				workgroupCountX: Math.ceil(this.#width! / (this.#material.workgroupSize?.[0] ?? 1)),
-				workgroupCountY: Math.ceil(this.#height! / (this.#material.workgroupSize?.[1] ?? 1)),
+				workgroupCountX: Math.ceil(this.#width! / COMPUTE_WORKGROUP_SIZE_X),
+				workgroupCountY: Math.ceil(this.#height! / COMPUTE_WORKGROUP_SIZE_Y),
 			}
 		);
 	}

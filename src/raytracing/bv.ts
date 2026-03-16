@@ -15,10 +15,6 @@ export interface Face {
 	ta1: vec3;
 	ta2: vec3;
 
-	bta0: vec3;
-	bta1: vec3;
-	bta2: vec3;
-
 	t0: vec2;
 	t1: vec2;
 	t2: vec2;
