@@ -11,6 +11,7 @@
   struct HitRecord {
     p: vec3f,
     normal: vec3f,
+    tbn: mat3x3f,
     coord: vec2f,
     t: f32,
     frontFace: bool,
@@ -26,6 +27,14 @@
     n0: vec3f,
     n1: vec3f,
     n2: vec3f,
+
+    ta0: vec3f,
+    ta1: vec3f,
+    ta2: vec3f,
+
+    bta0: vec3f,
+    bta1: vec3f,
+    bta2: vec3f,
 
     t0: vec2f,
     t1: vec2f,

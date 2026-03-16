@@ -63,6 +63,10 @@
       (*rec).p = p;
       (*rec).coord = coord;
       (*rec).materialIdx = (*face).materialIdx;
+
+      var tangent: vec3f;
+      var bitangent: vec3f;
+
       if (commonUniforms.flatShading == 1u) {
         (*rec).normal = abs((*face).faceNormal);
       } else {
@@ -70,10 +74,15 @@
         if ((*face).flatShading == 0) {
           let b = vec3f(1f - u - v, u, v);
           n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;
+          tangent = b[0] * (*face).ta0.xyz + b[1] * (*face).ta1.xyz + b[2] * (*face).ta2.xyz;
+          bitangent = b[0] * (*face).bta0.xyz + b[1] * (*face).bta1.xyz + b[2] * (*face).bta2.xyz;
         } else {
           n = ((*face).faceNormal);
+          tangent = vec3f(1, 0, 0);// TODO: compute actual tangent
+          bitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent
         }
         (*rec).normal = n;
+        (*rec).tbn = mat3x3f(tangent, bitangent, n);
       }
       return true;
     } else {

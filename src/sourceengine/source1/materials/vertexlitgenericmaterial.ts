@@ -123,6 +123,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			),// TODO: set actual value
 			textures: new Map([
 				[0, this.uniforms.colorMap as Texture],
+				[1, this.uniforms.normalTexture as Texture],
 			]),
 			flatShading: false,
 		}

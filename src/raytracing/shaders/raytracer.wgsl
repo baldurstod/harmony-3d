@@ -69,6 +69,9 @@
         break;
       }
 
+
+      var i2 = i;
+
       switch material.materialType {
         case 0: {
           color = material.albedo;
@@ -147,6 +150,10 @@
           // ...
           bLoop = false;
         }
+      }
+      if (commonUniforms.debugColor == 1) {
+        i = i2;
+        break;
       }
     }
 

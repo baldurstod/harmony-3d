@@ -110,13 +110,24 @@ struct Material {
     attenuation: ptr<function, vec3f>,
     rngState: ptr<function, u32>
   ) -> bool {
-    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);
+    var scatterDirection = (*hitRec).normal;
     if (nearZero(scatterDirection)) {
       scatterDirection = (*hitRec).normal;
     }
-    (*scattered) = Ray((*hitRec).p, scatterDirection);
     (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+    let normalTexture = (*material).textures[1];
 
+    if (normalTexture.offset != 0xffffff) {
+      let pixelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y) * 2 - 1;
+      scatterDirection = normalize((*hitRec).tbn * pixelNormal);
+    }
+
+    scatterDirection += randomUnitVec3(rngState);
+    if (nearZero(scatterDirection)) {
+      scatterDirection = (*hitRec).normal;
+    }
+
+    (*scattered) = Ray((*hitRec).p, scatterDirection);
     return true;
   }
 

@@ -120,7 +120,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 			(max, obj) => Math.max(max, obj.faces.length),
 			0,
 		);
-		const numFloatsPerFace = 40;
+		const numFloatsPerFace = 64;
 		faces = new Uint8ClampedArray(
 			numFloatsPerFace *
 			Float32Array.BYTES_PER_ELEMENT *
@@ -159,20 +159,44 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				faceData[idx + 21] = face.n2[1];
 				faceData[idx + 22] = face.n2[2];
 				// idx + 23 padding
-				faceData[idx + 24] = face.t0[0];
-				faceData[idx + 25] = face.t0[1];
-				faceData[idx + 26] = face.t1[0];
-				faceData[idx + 27] = face.t1[1];
-				faceData[idx + 28] = face.t2[0];
-				faceData[idx + 29] = face.t2[1];
-				// idx + 30 padding
+				faceData[idx + 24] = face.ta0[0];
+				faceData[idx + 25] = face.ta0[1];
+				faceData[idx + 26] = face.ta0[2];
+				// idx + 27 padding
+				faceData[idx + 28] = face.ta1[0];
+				faceData[idx + 29] = face.ta1[1];
+				faceData[idx + 30] = face.ta1[2];
 				// idx + 31 padding
-				faceData[idx + 32] = face.fn[0];
-				faceData[idx + 33] = face.fn[1];
-				faceData[idx + 34] = face.fn[2];
+				faceData[idx + 32] = face.ta2[0];
+				faceData[idx + 33] = face.ta2[1];
+				faceData[idx + 34] = face.ta2[2];
+				// idx + 35 padding
+				faceData[idx + 36] = face.bta0[0];
+				faceData[idx + 37] = face.bta0[1];
+				faceData[idx + 38] = face.bta0[2];
+				// idx + 39 padding
+				faceData[idx + 40] = face.bta1[0];
+				faceData[idx + 41] = face.bta1[1];
+				faceData[idx + 42] = face.bta1[2];
+				// idx + 43 padding
+				faceData[idx + 44] = face.bta2[0];
+				faceData[idx + 45] = face.bta2[1];
+				faceData[idx + 46] = face.bta2[2];
+				// idx + 47 padding
+				faceData[idx + 48] = face.t0[0];
+				faceData[idx + 49] = face.t0[1];
+				faceData[idx + 50] = face.t1[0];
+				faceData[idx + 51] = face.t1[1];
+				faceData[idx + 52] = face.t2[0];
+				faceData[idx + 53] = face.t2[1];
+				// idx + 44 padding
+				// idx + 55 padding
+				faceData[idx + 56] = face.fn[0];
+				faceData[idx + 57] = face.fn[1];
+				faceData[idx + 58] = face.fn[2];
 
-				faceColorData[idx + 35] = face.mi;
-				faceColorData[idx + 36] = face.flatShading ? 1 : 0;
+				faceColorData[idx + 59] = face.mi;
+				faceColorData[idx + 60] = face.flatShading ? 1 : 0;
 
 				idx += numFloatsPerFace;
 			}
@@ -265,8 +289,17 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 		const faces = obj.f;
 		const vertexPos = obj.v!;
 		const vertexNormal = obj.vn!;
+		const vertexTangent = obj.tangent;
+		const vertexBitangent = obj.bitangent;
 		const vertexCoord = obj.vt!;
 
+		let ta0: vec3;
+		let ta1: vec3;
+		let ta2: vec3;
+
+		let bta0: vec3;
+		let bta1: vec3;
+		let bta2: vec3;
 		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
 			const i0 = faces[vertexIndex + 0]!;
 			const i1 = faces[vertexIndex + 1]!;
@@ -279,6 +312,26 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 			const n0 = new Float32Array(vertexNormal.buffer, i0 * 4 * 3, 3);
 			const n1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
 			const n2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
+
+			if (vertexTangent) {
+				ta0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 3, 3);
+				ta1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 3, 3);
+				ta2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 3, 3);
+			} else {
+				ta0 = vec3.create();
+				ta1 = vec3.create();
+				ta2 = vec3.create();
+			}
+
+			if (vertexBitangent) {
+				bta0 = new Float32Array(vertexBitangent.buffer, i0 * 4 * 3, 3);
+				bta1 = new Float32Array(vertexBitangent.buffer, i1 * 4 * 3, 3);
+				bta2 = new Float32Array(vertexBitangent.buffer, i2 * 4 * 3, 3);
+			} else {
+				bta0 = vec3.create();
+				bta1 = vec3.create();
+				bta2 = vec3.create();
+			}
 
 			const t0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
 			const t1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
@@ -295,6 +348,12 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 				n0,
 				n1,
 				n2,
+				ta0,
+				ta1,
+				ta2,
+				bta0,
+				bta1,
+				bta2,
 				t0,
 				t1,
 				t2,
