@@ -424,20 +424,13 @@ async function getTextureDescriptor(context: RayTracingContext, texture: Texture
 
 async function addToGlobalTextureData(context: RayTracingContext, texture: Texture): Promise<RtTextureDescriptor> {
 	const offset = context.textures.length;
-	const growth = texture.width * texture.height * texture.elementsPerTexel;
+	const datas = await texture.getDatas();
 
 	const old = context.textures;
-	context.textures = new Float32Array(context.textures.length + growth);
+	context.textures = new Float32Array(context.textures.length + datas.length);
 	context.textures.set(old);
 
-	/*
-	const datas = new Float32Array(growth);
-	for (let i = 0; i < datas.length; i++) {
-		datas[i] = 1;
-	}
-	*/
-
-	context.textures.set(await texture.getDatas(), old.length);
+	context.textures.set(datas, old.length);
 
 	let repeat = 0;
 	if (texture.wrapS === GL_REPEAT) {
