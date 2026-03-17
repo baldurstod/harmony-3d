@@ -184,7 +184,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 				},
 				format: webGPUFormat,
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-				textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
+				//textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
 			},
 			webgpuSamplerDescriptor: {
 				addressModeU: vtf.getAddressModeU(),
