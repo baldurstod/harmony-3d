@@ -87,7 +87,9 @@ async function getTextureCubeData(texture: Texture): Promise<Float32Array> {// T
 	if (Graphics.isWebGLAny) {
 		throw new Error('This method is only available in WebGPU mode');
 	}
-	const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4 * 6;
+	const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4;
+	const destBufferSize = bufferSize * 6;// 6 faces
+
 	const material = new ShaderMaterial({
 		shaderSource: 'texture_cube_datas',
 		uniforms: {
@@ -108,8 +110,8 @@ async function getTextureCubeData(texture: Texture): Promise<Float32Array> {// T
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});
 
-	const stagingBuffer = WebGPUInternal.device.createBuffer({
-		size: bufferSize,
+	const destinationBuffer = WebGPUInternal.device.createBuffer({
+		size: destBufferSize,
 		usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 	});
 
@@ -126,24 +128,24 @@ async function getTextureCubeData(texture: Texture): Promise<Float32Array> {// T
 				commandEncoder.copyBufferToBuffer(
 					outputBuffer,
 					0, // Source offset
-					stagingBuffer,
-					0, // Destination offset
+					destinationBuffer,
+					bufferSize * i, // Destination offset
 					bufferSize
 				);
 			}
 		);
 	}
 
-	await stagingBuffer.mapAsync(
+	await destinationBuffer.mapAsync(
 		GPUMapMode.READ,
 		0, // Offset
-		bufferSize // Length
+		destBufferSize // Length
 	);
 
-	const copyArrayBuffer = stagingBuffer.getMappedRange(0, bufferSize);
+	const copyArrayBuffer = destinationBuffer.getMappedRange(0, destBufferSize);
 	const data = new Float32Array(copyArrayBuffer.slice());
 	console.info(data);
-	stagingBuffer.unmap();
+	destinationBuffer.unmap();
 
 	material.dispose();
 

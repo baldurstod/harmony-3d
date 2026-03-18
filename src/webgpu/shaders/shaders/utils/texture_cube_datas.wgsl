@@ -12,7 +12,7 @@ override layer: u32;
 	@builtin(global_invocation_id) id : vec3u
 )
 {
-	if (any(id.xy >= size) || size.x * size.y * elements * 6 > arrayLength(&output)) {
+	if (any(id.xy >= size) || size.x * size.y * elements > arrayLength(&output)) {
 		return;
 	}
 
