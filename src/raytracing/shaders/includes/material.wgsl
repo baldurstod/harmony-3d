@@ -97,7 +97,7 @@ struct Material {
       scatterDirection = (*hitRec).normal;
     }
     (*scattered) = Ray((*hitRec).p, scatterDirection);
-    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;
 
     return true;
   }
@@ -115,19 +115,22 @@ struct Material {
     if (nearZero(scatterDirection)) {
       scatterDirection = (*hitRec).normal;
     }
-    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+    let texelColor = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+    (*attenuation) = texelColor.rgb;
     let normalTexture = (*material).textures[1];
     let cubeMap = (*material).textures[3];
 
+    var texelNormal = vec4f(0.5, 0.5, 1.0, 0.0);
+
     if (normalTexture.offset != 0xffffffff) {
-      let pixelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y) * 2 - 1;
-      scatterDirection = normalize((*hitRec).tbn * pixelNormal);
+      texelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y);
+      scatterDirection = normalize((*hitRec).tbn * (texelNormal.rgb * 2 - 1));
     }
 
     if (cubeMap.offset != 0xffffffff) {
       let cubeValue = textureCubeLookup(cubeMap, scatterDirection);
       //scatterDirection = normalize((*hitRec).tbn * pixelNormal);
-      (*attenuation) = cubeValue;
+      (*attenuation) = cubeValue * texelColor.a + texelColor.rgb;
     }
 
     scatterDirection += randomUnitVec3(rngState);
@@ -153,14 +156,14 @@ struct Material {
       scatterDirection = (*hitRec).normal;
     }
     (*scattered) = Ray((*hitRec).p, scatterDirection);
-    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;
 
     return true;
   }
 
-  fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec3<f32> {
+  fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec4<f32> {
     if (desc.offset == 0xffffffff) {
-      return vec3f(0.0);
+      return vec4f(0.0);
     }
     let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);
     let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);
@@ -170,10 +173,11 @@ struct Material {
     let idx = (i * desc.width + j) * desc.elements;
 
     let elem = textures[desc.offset + idx];
-    return vec3f(
+    return vec4f(
       textures[desc.offset + idx + 0],
       textures[desc.offset + idx + 1],
       textures[desc.offset + idx + 2],
+      select(0., textures[desc.offset + idx + 3], desc.elements >= 4)
     ) / 255.;
   }
 
