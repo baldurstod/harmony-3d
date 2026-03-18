@@ -6,6 +6,7 @@ struct TextureDescriptor {
 	offset: u32,
 	elements: u32,
 	repeat: u32,
+	layers: u32,
 }
 
 struct Material {

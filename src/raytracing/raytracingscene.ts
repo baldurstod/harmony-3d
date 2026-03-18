@@ -14,6 +14,7 @@ export type RtTextureDescriptor = {
 	offset: uint32,
 	elements: uint32,
 	repeat: uint32,
+	layers: uint32,
 };
 
 export const emptyTexture: RtTextureDescriptor = {
@@ -22,6 +23,7 @@ export const emptyTexture: RtTextureDescriptor = {
 	offset: 0xffffffff,
 	elements: 0,
 	repeat: 0,
+	layers: 0,
 }
 
 type RtTextureDescriptors = [RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor, RtTextureDescriptor];
@@ -447,5 +449,6 @@ async function addToGlobalTextureData(context: RayTracingContext, texture: Textu
 		offset,
 		elements: texture.elementsPerTexel,
 		repeat,
+		layers: texture.isCube ? 6 : 1,
 	}
 }
