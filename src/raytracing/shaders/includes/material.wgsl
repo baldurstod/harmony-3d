@@ -117,10 +117,17 @@ struct Material {
     }
     (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);
     let normalTexture = (*material).textures[1];
+    let cubeMap = (*material).textures[3];
 
     if (normalTexture.offset != 0xffffffff) {
       let pixelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y) * 2 - 1;
       scatterDirection = normalize((*hitRec).tbn * pixelNormal);
+    }
+
+    if (cubeMap.offset != 0xffffffff) {
+      let cubeValue = textureCubeLookup(cubeMap, scatterDirection);
+      //scatterDirection = normalize((*hitRec).tbn * pixelNormal);
+      (*attenuation) = cubeValue;
     }
 
     scatterDirection += randomUnitVec3(rngState);
@@ -162,8 +169,30 @@ struct Material {
     let i = u32(v2 * f32(desc.height - 1));
     let idx = (i * desc.width + j) * desc.elements;
 
-    //return abs(vec3f(vec2f(u2, v2), 0.));
-    //return abs(vec3f(f32(j) / f32(desc.width)));
+    let elem = textures[desc.offset + idx];
+    return vec3f(
+      textures[desc.offset + idx + 0],
+      textures[desc.offset + idx + 1],
+      textures[desc.offset + idx + 2],
+    ) / 255.;
+  }
+
+  fn textureCubeLookup(desc: TextureDescriptor, dir: vec3f) -> vec3<f32> {
+    if (desc.offset == 0xffffffff || desc.layers < 6) {
+      return vec3f(0.0);
+    }
+
+    let coords = sampleCube(dir);
+    let u = coords.x;
+    let v = coords.y;
+    let faceIndex = coords.z;
+
+    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);
+    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);
+
+    let j = u32(u2 * f32(desc.width - 1));
+    let i = u32(v2 * f32(desc.height - 1));
+    let idx = (i * desc.width + j) * desc.elements + u32(faceIndex) * desc.height * desc.width * desc.elements;
 
     let elem = textures[desc.offset + idx];
     return vec3f(
@@ -171,4 +200,28 @@ struct Material {
       textures[desc.offset + idx + 1],
       textures[desc.offset + idx + 2],
     ) / 255.;
+  }
+
+  // See https://gamedev.net/forums/topic/687535
+  fn sampleCube(v: vec3f) -> vec3f {
+    let vAbs = abs(v);
+    var ma: f32;
+    var faceIndex: f32;
+    var uv: vec2f;
+
+    if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {
+      faceIndex = select(4., 5., v.z < 0.0);
+      ma = 0.5 / vAbs.z;
+      uv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);
+    }
+    else if(vAbs.y >= vAbs.x) {
+      faceIndex = select(2., 3., v.y < 0.0);
+      ma = 0.5 / vAbs.y;
+      uv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));
+    } else {
+      faceIndex = select(0., 1., v.z < 0.0);
+      ma = 0.5 / vAbs.x;
+      uv = vec2f(select(-v.z, v.z, v.x < 0.0), -v.y);
+    }
+    return vec3f(uv * ma + 0.5, faceIndex);
   }
