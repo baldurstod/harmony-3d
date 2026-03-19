@@ -2,12 +2,12 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { RediBlock } from './redi';
 
 export class InputDependency implements RediBlock {
-	relativeFilename: string = '';
-	searchPath: string = '';
-	fileCrc: number = 0;
-	optional: boolean = false;
-	exists: boolean = false;
-	isGameFile: boolean = false;
+	relativeFilename = '';
+	searchPath = '';
+	fileCrc = 0;
+	optional = false;
+	exists = false;
+	isGameFile = false;
 
 	getLength(): number {
 		return 4 * 4;

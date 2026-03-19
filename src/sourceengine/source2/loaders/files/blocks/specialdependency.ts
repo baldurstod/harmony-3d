@@ -2,10 +2,10 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { RediBlock } from './redi';
 
 export class SpecialDependency implements RediBlock {
-	string: string = '';
-	compilerIdentifier: string = '';
-	fingerprint: number = 0;
-	userData: number = 0;
+	string = '';
+	compilerIdentifier = '';
+	fingerprint = 0;
+	userData = 0;
 
 	getLength(): number {
 		return 4 * 4;

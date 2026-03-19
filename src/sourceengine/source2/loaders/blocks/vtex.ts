@@ -1,12 +1,12 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { SpriteSheet } from '../../../../textures/spritesheet';
 import { decodeLz4 } from '../../../../utils/lz4';
-import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BGRA8888 } from '../../constants';
+import { VTEX_FLAG_CUBE_TEXTURE } from '../../constants';
 import { Source2Texture, VtexImageFormat } from '../../textures/source2texture';
 import { Source2VtexBlock } from '../source2fileblock';
-import { SpriteSheet } from '../../../../textures/spritesheet';
 
-export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file: Source2Texture) {
-	const DATA_UNKNOWN = 0;
+export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file: Source2Texture): void {
+	//const DATA_UNKNOWN = 0;
 	const DATA_FALLBACK_BITS = 1;
 	const DATA_SHEET = 2;
 	const DATA_FILL_TO_POWER_OF_TWO = 3;
@@ -25,7 +25,7 @@ export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file
 	block.numMipLevels = reader.getUint8();
 	block.picmip0Res = reader.getUint32();
 
-	const extraDataOffset = reader.tell() + reader.getUint32();
+	/*TODO: use this value const extraDataOffset = reader.tell() + */reader.getUint32();
 	const extraDataCount = reader.getUint32();
 
 	let nonPow2Width = 0;
@@ -57,12 +57,14 @@ export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file
 					reader.seek(offset + size);
 					break;
 				case DATA_FILL_TO_POWER_OF_TWO:
-					const unk = reader.getUint16();
+					/*TODO: use this value const unk = */reader.getUint16();
 					const nw = reader.getUint16();
 					const nh = reader.getUint16();
 					if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
 						console.error('code me');
+						// eslint-disable-next-line @typescript-eslint/no-unused-vars
 						nonPow2Width = nw;
+						// eslint-disable-next-line @typescript-eslint/no-unused-vars
 						nonPow2Height = nh;
 					}
 					break;
@@ -78,13 +80,13 @@ export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file
 					console.warn(`compressed mips : ${unk1} ${unk2} ${mips}`, compressedMips);
 					break;
 				case DATA_SHEET:
-					loadVtexSpriteSheet(reader, block, offset, size);
+					loadVtexSpriteSheet(reader, block, offset/*, size*/);
 					/*if (TESTING) {
 						SaveFile(new File([new Blob([reader.getBytes(size, offset)])], 'block_' + size + '_' + offset));
 					}*/
 					break;
 				case DATA_CUBEMAP_RADIANCE:
-					loadVtexCubemapRadiance(reader, block, offset, size);
+					loadVtexCubemapRadiance(reader, block, offset/*, size*/);
 					break;
 				default:
 					/*if (TESTING) {
@@ -98,7 +100,7 @@ export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file
 	loadDataVtexImageData(reader, file, block, compressedMips);
 }
 
-function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block: Source2VtexBlock, compressedMips: number[] | null) {
+function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block: Source2VtexBlock, compressedMips: number[] | null): void {
 	let faceCount = 1;
 	if ((block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE) { // Handle cube texture
 		faceCount = 6;
@@ -133,7 +135,7 @@ function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block
 	}
 }
 
-function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: VtexImageFormat, compressedLength: number | null) {
+function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: VtexImageFormat, compressedLength: number | null): Uint8Array {
 	let entrySize = 0;
 	switch (imageFormat) {
 		case VtexImageFormat.Dxt1:
@@ -186,7 +188,7 @@ function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: numbe
 		}
 	}
 
-	if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
+	if (imageDatas && imageFormat == VtexImageFormat.BGRA8888) {
 		for (let i = 0, l = imageDatas.length; i < l; i += 4) {
 			const b = imageDatas[i]!;
 			imageDatas[i] = imageDatas[i + 2]!;
@@ -198,9 +200,9 @@ function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: numbe
 }
 
 
-function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offset: number, size: number) {
+function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offset: number/*TODO: use this value, size: number*/): void {
 	reader.seek(offset);
-	const version = reader.getUint32();
+	/*TODO: use this valueconst version = */reader.getUint32();
 	let sequenceCount = reader.getUint32();
 
 	let headerOffset = reader.tell();
@@ -209,15 +211,15 @@ function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offs
 
 	while (sequenceCount--) {
 		const spriteSheetSequence = spriteSheet.addSequence();
-		const sequenceId = reader.getUint32(headerOffset);
-		const unknown1 = reader.getUint32();//1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
+		/*TODO: use this value const sequenceId = */reader.getUint32(headerOffset);
+		/*TODO: use this value const unknown1 = */reader.getUint32();//1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
 		//unknown1 is most likely 2 uint16 -> see dota2 texture materials/particle/smoke3/smoke3b
 		const sequenceDataOffset = reader.tell() + reader.getUint32();
 		const frameCount = reader.getUint32();
 		spriteSheetSequence.duration = reader.getFloat32();
-		const unknown2 = reader.getUint32();//offset to 'CDmeSheetSequence'
-		const unknown3 = reader.getUint32();//0
-		const unknown4 = reader.getUint32();//0
+		/*TODO: use this value const unknown2 = */reader.getUint32();//offset to 'CDmeSheetSequence'
+		/*TODO: use this value const unknown3 = */reader.getUint32();//0
+		/*TODO: use this value const unknown4 = */reader.getUint32();//0
 		headerOffset = reader.tell();
 
 		reader.seek(sequenceDataOffset);
@@ -228,7 +230,7 @@ function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offs
 			const spriteSheetFrame = spriteSheetSequence.addFrame();
 			spriteSheetFrame.duration = reader.getFloat32(frameHeaderOffset);
 			const frameOffset = reader.tell() + reader.getUint32();
-			const frameCoords = reader.getUint32();
+			/*TODO: use this value const frameCoords = */reader.getUint32();
 			frameHeaderOffset = reader.tell();
 
 			reader.seek(frameOffset);
@@ -249,7 +251,7 @@ function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offs
 	//console.error(version, sequenceCount);
 }
 
-function loadVtexCubemapRadiance(reader: BinaryReader, block: Source2VtexBlock, offset: number, size: number) {
+function loadVtexCubemapRadiance(reader: BinaryReader, block: Source2VtexBlock, offset: number/*TODO: use this value, size: number*/): void {
 	reader.seek(offset);
 	const coeffOffset = reader.getUint32();
 	const coeffCount = reader.getUint32();

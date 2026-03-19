@@ -5,6 +5,10 @@ export interface RediBlock {
 	fromReader: (reader: BinaryReader) => void;
 }
 
+/*
 export interface RediBlockConstructor {
 	new(): RediBlock;
 }
+*/
+
+export type RediBlockConstructor = new() => RediBlock;

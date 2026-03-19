@@ -2,10 +2,10 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { RediBlock } from './redi';
 
 export class ArgumentDependency implements RediBlock {
-	parameterName: string = '';
-	parameterType: string = '';
-	fingerprint: number = 0;
-	fingerprintDefault: number = 0;
+	parameterName = '';
+	parameterType = '';
+	fingerprint = 0;
+	fingerprintDefault = 0;
 
 	getLength(): number {
 		return 4 * 4;
