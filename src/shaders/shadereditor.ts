@@ -55,37 +55,42 @@ export class ShaderEditor extends HTMLElement {
 		this.#initialized = true;
 
 		//this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
-		this.#htmlShaderNameSelect = createElement('select') as HTMLSelectElement;
-		this.#htmlShaderNameSelect.addEventListener('input', (event) => {
-			const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
-			if (selectedOption) {
-				if (selectedOption.getAttribute('data-shader')) {
-					this.setEditorShaderName((event.target as HTMLSelectElement).value);
-				}
-				if (selectedOption.getAttribute('data-include')) {
-					this.setEditorIncludeName((event.target as HTMLSelectElement).value);
+		this.#htmlShaderNameSelect = createElement('select', {
+			parent: this.#shadowRoot,
+			$input: (event: Event) => {
+				const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
+				if (selectedOption) {
+					if (selectedOption.getAttribute('data-shader')) {
+						this.setEditorShaderName((event.target as HTMLSelectElement).value);
+					}
+					if (selectedOption.getAttribute('data-include')) {
+						this.setEditorIncludeName((event.target as HTMLSelectElement).value);
+					}
 				}
 			}
-		});
+		}) as HTMLSelectElement;
 
-		this.#htmlShaderRenderMode = createElement('input') as HTMLInputElement;
-		this.#htmlShaderRenderMode.addEventListener('input', (event) => {
-			const n = Number((event.target as HTMLInputElement).value);
-			if (Number.isNaN(n)) {
-				Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
-			} else {
-				Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+		this.#htmlShaderRenderMode = createElement('input', {
+			parent: this.#shadowRoot,
+			$input: (event: Event) => {
+				const n = Number((event.target as HTMLInputElement).value);
+				if (Number.isNaN(n)) {
+					Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
+				} else {
+					Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+				}
 			}
-		});
+		}) as HTMLInputElement;
 
-		const htmlCustomShaderButtons = createElement('div');
+		const htmlCustomShaderButtons = createElement('div', {
+			parent: this.#shadowRoot,
+		});
 		if (options.displayCustomShaderButtons) {
 			const htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
 			const htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
 			const htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
 
 			htmlCustomShaderButtons.append(htmlButtonSaveCustomShader, htmlButtonLoadCustomShader, htmlButtonRemoveCustomShader);
-			this.#shadowRoot.append(htmlCustomShaderButtons);
 
 			htmlButtonSaveCustomShader.addEventListener('click', () => this.#saveCustomShader());
 			htmlButtonLoadCustomShader.addEventListener('click', () => this.#loadCustomShader());
@@ -93,11 +98,13 @@ export class ShaderEditor extends HTMLElement {
 		}
 
 
-		const c = createElement('div', { style: 'flex:1;' });
+		const c = createElement('div', {
+			parent: this.#shadowRoot,
+			style: 'flex:1;'
+		});
 		if (!TESTING) {
 			hide(this.#htmlShaderRenderMode);
 		}
-		this.#shadowRoot.append(this.#htmlShaderNameSelect, this.#htmlShaderRenderMode, htmlCustomShaderButtons, c);
 
 		if (aceScript == '') {
 			this.#initEditor2(options, c);
