@@ -31,6 +31,7 @@ export class ShaderEditor extends HTMLElement {
 	#shadowRoot?: ShadowRoot;
 	#shaderEditor?: Ace.Editor/*TODO: fix type*/;
 	#htmlShaderNameSelect?: HTMLSelectElement;
+	#htmlExpandSourceButton?: HTMLButtonElement;
 	#htmlShaderRenderMode?: HTMLInputElement;
 	#recompileTimeout?: number;
 	#editorShaderName: string = '';
@@ -55,29 +56,54 @@ export class ShaderEditor extends HTMLElement {
 		this.#initialized = true;
 
 		//this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
-		this.#htmlShaderNameSelect = createElement('select', {
+		createElement('div', {
+			class: 'buttons',
 			parent: this.#shadowRoot,
-			$input: (event: Event) => {
-				const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
-				if (selectedOption) {
-					if (selectedOption.getAttribute('data-shader')) {
-						this.setEditorShaderName((event.target as HTMLSelectElement).value);
+			childs: [
+				this.#htmlShaderNameSelect = createElement('select', {
+					$input: (event: Event) => {
+						const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
+						if (selectedOption) {
+							if (selectedOption.getAttribute('data-shader')) {
+								this.setEditorShaderName((event.target as HTMLSelectElement).value);
+							}
+							if (selectedOption.getAttribute('data-include')) {
+								this.setEditorIncludeName((event.target as HTMLSelectElement).value);
+							}
+						}
 					}
-					if (selectedOption.getAttribute('data-include')) {
-						this.setEditorIncludeName((event.target as HTMLSelectElement).value);
+				}) as HTMLSelectElement,
+				this.#htmlExpandSourceButton = createElement('button', {
+					i18n: '#expand_source',
+					$click: () => {
+						const selectedOption = this.#htmlShaderNameSelect!.selectedOptions[0];
+						if (selectedOption) {
+							if (selectedOption.getAttribute('data-shader')) {
+								const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
+								if (source) {
+									const compileSource = source.getCompileSource(new Map());
+									const expandedName = this.#editorShaderName + '_expanded';
+									ShaderManager.setCustomSource(ShaderType.Vertex, expandedName, source.getCompileSource(new Map()));
+									this.#reloadGLSLList();
+									this.setEditorShaderName(expandedName);
+								}
+							}
+						}
 					}
-				}
-			}
-		}) as HTMLSelectElement;
+				}) as HTMLButtonElement,
+			],
+		})
 
 		this.#htmlShaderRenderMode = createElement('input', {
 			parent: this.#shadowRoot,
 			$input: (event: Event) => {
 				const n = Number((event.target as HTMLInputElement).value);
 				if (Number.isNaN(n)) {
-					Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
+					//Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
+					Graphics.removeDefine('RENDER_MODE');
 				} else {
-					Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+					//Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+					Graphics.setDefine('RENDER_MODE', `${n}`);
 				}
 			}
 		}) as HTMLInputElement;
@@ -211,9 +237,15 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 		if (shaderName) {
+			if (this.#htmlExpandSourceButton) {
+				this.#htmlExpandSourceButton.disabled = false;
+			}
 			this.#editorShaderName = shaderName;
 			this.#editorIncludeName = '';
 			const editSession = this.#getSession(shaderName);
+			if (this.#htmlShaderNameSelect) {
+				this.#htmlShaderNameSelect.value = shaderName;
+			}
 
 			this.#shaderEditor.setSession(editSession);
 			const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
@@ -239,6 +271,9 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 		if (includeName && (this.#editorIncludeName != includeName || force)) {
+			if (this.#htmlExpandSourceButton) {
+				this.#htmlExpandSourceButton.disabled = true;
+			}
 			const editSession = this.#getSession(includeName);
 			this.#shaderEditor.setSession(editSession);
 			this.#editorShaderName = '';

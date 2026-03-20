@@ -11,3 +11,11 @@
 	background: yellow;
 	opacity: 30%;
 }
+
+.buttons {
+	display: flex;
+}
+
+.buttons select {
+	flex: 1;
+}

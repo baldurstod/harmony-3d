@@ -125,8 +125,8 @@ export class ShaderManager {
 	}
 
 
-	static get shaderList() {
-		return this.#shaderList.keys();
+	static get shaderList(): Set<string> {
+		return new Set([...this.#shaderList.keys(), ...this.#customShaderList.keys()]);
 	}
 
 	static resetShadersSource() {
