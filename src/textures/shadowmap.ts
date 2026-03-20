@@ -29,7 +29,7 @@ export class ShadowMap {
 		WebGLRenderingState.disable(GL_SCISSOR_TEST);
 		WebGLRenderingState.enable(GL_DEPTH_TEST);
 		WebGLRenderingState.clearColor(CLEAR_COLOR);
-		Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
+		Graphics.setDefine('WRITE_DEPTH_TO_COLOR');
 
 		let renderTarget;
 		let shadowViewport;
@@ -42,7 +42,12 @@ export class ShadowMap {
 					vec2.copy(mapSize, shadow.textureSize);
 					Graphics.pushRenderTarget(renderTarget);
 					WebGLRenderingState.clear(true, true, true);
-					Graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
+					if ((light as PointLight).isPointLight) {
+						//Graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
+						Graphics.setDefine('IS_POINT_LIGHT');
+					} else {
+						Graphics.removeDefine('IS_POINT_LIGHT');
+					}
 					for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
 						shadowViewport = shadow.viewPorts[viewPortIndex]!;
 						vec4.set(viewPort,
@@ -82,6 +87,7 @@ export class ShadowMap {
 
 
 		WebGLRenderingState.clearColor(a);
-		Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+		//Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+		Graphics.removeDefine('WRITE_DEPTH_TO_COLOR');
 	}
 }

@@ -552,13 +552,13 @@ async function renderMaterial(material: Material, materialsParams: DynamicParams
 	const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
 	const previousClearColor = Graphics.getClearColor();
 	Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
-	Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-	Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-	Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+	Graphics.setDefine('EXPORT_TEXTURES');
+	Graphics.setDefine('SKIP_PROJECTION');
+	Graphics.setDefine('SKIP_LIGHTING');
 
 	switch (renderMode) {
 		case RenderMode.Normal:
-			Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+			Graphics.setDefine('RENDER_MODE', '12');
 			break;
 	}
 
@@ -569,10 +569,10 @@ async function renderMaterial(material: Material, materialsParams: DynamicParams
 
 	const imgContent = await Graphics.toBlob();
 
-	Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-	Graphics.setIncludeCode('SKIP_PROJECTION', '');
-	Graphics.setIncludeCode('SKIP_LIGHTING', '');
-	Graphics.removeIncludeCode('RENDER_MODE');
+	Graphics.removeDefine('EXPORT_TEXTURES');
+	Graphics.removeDefine('SKIP_PROJECTION');
+	Graphics.removeDefine('SKIP_LIGHTING');
+	Graphics.removeDefine('RENDER_MODE');
 	Graphics.setSize(previousWidth, previousHeight);
 	Graphics.clearColor(previousClearColor);
 

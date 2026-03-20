@@ -42,13 +42,13 @@ export class Program {
 		}
 	}
 
-	validate(includeCode: string): boolean {//TODO: remove include code
+	validate(defines: Map<string, string>): boolean {//TODO: remove include code
 		const vertexShaderScript = ShaderManager.getShaderSource(ShaderType.Vertex, this.#vertexShaderName);
 		const fragmentShaderScript = ShaderManager.getShaderSource(ShaderType.Fragment, this.#fragmentShaderName);
 
 		if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
-			const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
-			const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, includeCode);
+			const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, defines);
+			const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, defines);
 			if (fsOk) {
 				this.#glContext.linkProgram(this.#program);
 
@@ -122,12 +122,12 @@ export class Program {
 		}
 	}
 
-	#compileShader(shader: WebGLShader, shaderName: string, shaderSource: WebGLShaderSource, includeCode: string): boolean {
+	#compileShader(shader: WebGLShader, shaderName: string, shaderSource: WebGLShaderSource, defines: Map<string, string>): boolean {
 		if (!shaderSource || !shaderSource.isValid()) {
 			return false;
 		}
 
-		const compileSource = shaderSource.getCompileSource(includeCode);
+		const compileSource = shaderSource.getCompileSource(defines);
 		this.#glContext.shaderSource(shader, compileSource);
 		this.#glContext.compileShader(shader);
 
@@ -138,7 +138,7 @@ export class Program {
 
 			ShaderManager.setCompileError(shaderName, shaderInfoLog as string);
 
-			shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader) as string, includeCode);
+			shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader) as string, defines);
 			return false;
 		}
 		return true;

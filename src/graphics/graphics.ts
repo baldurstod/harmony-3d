@@ -270,8 +270,8 @@ class Graphics {
 	static autoClearColor = false;
 	static autoClearDepth = true;
 	static autoClearStencil = true;
-	static #includeCode = new Map<string, string>();
-	static #globalIncludeCode = '';
+	static #defines = new Map<string, string>();
+	//static #globalIncludeCode = '';
 	static speed = 1.0;
 	static #timeOrigin = performance.now();
 	static #time = 0;
@@ -325,10 +325,12 @@ class Graphics {
 
 
 		if (TESTING) {
-			this.setIncludeCode('TESTING', '#define TESTING');
+			//this.setIncludeCode('TESTING', '#define TESTING');
+			this.setDefine('TESTING');
 		}
 
-		this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
+		//this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
+		this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
 	}
 
 	static async initCanvas(contextAttributes: GraphicsInitOptions = {}): Promise<typeof Graphics> {
@@ -485,11 +487,11 @@ class Graphics {
 	static async pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null> {
 		if (this.isWebGLAny) {
 			const gl = this.glContext;
-			this.setIncludeCode('pickingMode', '#define PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
+			this.setDefine('PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 			this.#allowTransfertBitmap = false;
 			GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
 			this.#allowTransfertBitmap = true;
-			this.setIncludeCode('pickingMode', '#undef PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
+			this.removeDefine('PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 
 			const pixels = new Uint8Array(4);
 			this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
@@ -861,7 +863,7 @@ class Graphics {
 					this.isWebGL2 = true;
 					this.isWebGLAny = true;
 					WebGLShaderSource.isWebGL2 = true;
-					this.setIncludeCode('WEBGL2', '#define WEBGL2');
+					this.setDefine('WEBGL2');
 				} else {
 					throw 'no webgl2';
 				}
@@ -870,7 +872,7 @@ class Graphics {
 				if (this.glContext instanceof WebGLRenderingContext) {
 					this.isWebGL = true;
 					this.isWebGLAny = true;
-					this.setIncludeCode('WEBGL1', '#define WEBGL1');
+					this.setDefine('WEBGL1');
 
 					//TODO: put this in a separate function and alert the user in case of failure
 					//these extensions are important
@@ -1002,25 +1004,38 @@ class Graphics {
 	static setShaderPrecision(shaderPrecision: ShaderPrecision) {
 		switch (shaderPrecision) {
 			case ShaderPrecision.Low:
-				this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
+				this.setDefine('LOW_PRECISION');
 				break;
 			case ShaderPrecision.Medium:
-				this.setIncludeCode('SHADER_PRECISION', '#define MEDIUM_PRECISION');
+				this.setDefine('MEDIUM_PRECISION');
 				break;
 			case ShaderPrecision.High:
-				this.setIncludeCode('SHADER_PRECISION', '#define HIGH_PRECISION');
+				this.setDefine('HIGH_PRECISION');
 				break;
 		}
 	}
 
 	static setShaderQuality(shaderQuality: ShaderQuality) {
-		this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
+		this.setDefine('SHADER_QUALITY', `${shaderQuality}`);
 	}
 
 	static setShaderDebugMode(shaderDebugMode: ShaderDebugMode) {
-		this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
+		this.setDefine('SHADER_DEBUG_MODE', `${shaderDebugMode}`);
 	}
 
+	static setDefine(name: string, value = ''): void {
+		this.#defines.set(name, value);
+	}
+
+	static removeDefine(define: string): void {
+		this.#defines.delete(define);
+	}
+
+	static getDefines(): Map<string, string> {
+		return this.#defines;
+	}
+
+	/*
 	static setIncludeCode(key: string, code: string) {
 		this.#includeCode.set(key, code);
 		this.#refreshIncludeCode();
@@ -1042,6 +1057,7 @@ class Graphics {
 	static getIncludeCode() {
 		return this.#globalIncludeCode;
 	}
+	*/
 
 	/**
 	 * Invalidate all shader (force recompile)
@@ -1440,7 +1456,11 @@ class Graphics {
 	}
 
 	static useLogDepth(use: boolean) {
-		this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
+		if (use) {
+			this.setDefine('USE_LOG_DEPTH');
+		} else {
+			this.removeDefine('USE_LOG_DEPTH');
+		}
 	}
 
 	static getTime() {

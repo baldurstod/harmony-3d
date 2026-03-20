@@ -25,9 +25,9 @@ export class ObjExporter {
 
 	async #renderMeshes(files: Set<File>, meshes: Set<Entity>): Promise<void> {
 		const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
-		Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-		Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-		Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+		Graphics.setDefine('EXPORT_TEXTURES');
+		Graphics.setDefine('SKIP_PROJECTION');
+		Graphics.setDefine('SKIP_LIGHTING');
 
 		const previousClearColor = Graphics.getClearColor();
 		Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
@@ -55,9 +55,9 @@ export class ObjExporter {
 
 			++meshId;
 		}
-		Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-		Graphics.setIncludeCode('SKIP_PROJECTION', '');
-		Graphics.setIncludeCode('SKIP_LIGHTING', '');
+		Graphics.removeDefine('EXPORT_TEXTURES');
+		Graphics.removeDefine('SKIP_PROJECTION');
+		Graphics.removeDefine('SKIP_LIGHTING');
 		Graphics.setSize(previousWidth, previousHeight);
 		Graphics.clearColor(previousClearColor);
 		await Promise.all(promises);

@@ -128,10 +128,10 @@ export class OutlinePass extends Pass {
 		//renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
 
 		this.changeVisibilityOfNonSelectedObjects(false);
-		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
-		Graphics.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
+		Graphics.setDefine('SILHOUETTE_MODE');
+		Graphics.setDefine('SILHOUETTE_COLOR', 'vec4(1.0)');
 		Graphics.render(this.outlineScene, this.camera!, 0, context);
-		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
+		Graphics.removeDefine('SILHOUETTE_MODE');
 		this.changeVisibilityOfNonSelectedObjects(true);
 		Graphics.popRenderTarget();
 

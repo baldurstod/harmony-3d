@@ -2,6 +2,7 @@ import { WgslPreprocessor } from 'amandine';
 import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
 import { ShaderType } from './types';
+import { getIncludeCode } from '../utils/defines';
 
 function getHeader(type: ShaderType): string {
 	switch (type) {
@@ -48,9 +49,6 @@ export class WebGLShaderSource {
 	#compilationInfo: GPUCompilationInfo | null = null;
 
 	constructor(name: string, type: ShaderType, source: string) {
-		if (DEBUG && type === undefined) {
-			throw new Error('error : type must be defined in WebGLShaderSource');
-		}
 		this.#name = name;
 		this.#type = type;
 		this.setSource(source);
@@ -180,22 +178,8 @@ export class WebGLShaderSource {
 		return outArray;
 	}
 
-	getCompileSource(includeCode = ''): string {
-		function getDefineValue(defineName: string, includeCode = ''): string {
-			const sourceLineArray = includeCode.split('\n');
-			const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
-			for (const line of sourceLineArray) {
-				const regexResult = definePattern.exec(line);
-				if (regexResult && defineName) {
-					if (regexResult[1] == defineName) {
-						return regexResult[2]!;
-					}
-				}
-			}
-			return defineName;
-		}
-
-		function unrollLoops(source: string, includeCode = ''): string {
+	getCompileSource(defines: Map<string, string>): string {
+		function unrollLoops(source: string, defines: Map<string, string>): string {
 			let nextUnroll = Infinity;
 			let unrollSubstring;
 			const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
@@ -246,8 +230,8 @@ export class WebGLShaderSource {
 						if (loopSnippet) {
 							const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
 							const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
-							const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
-							const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
+							const startLoopIndex = Number.parseInt(defines.get(startLoopName) ?? startLoopName);
+							const endLoopIndex = Number.parseInt(defines.get(endLoopName) ?? endLoopName);
 							let unrolled = '';
 							for (let i = startLoopIndex; i < endLoopIndex; i++) {
 								unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
@@ -262,9 +246,9 @@ export class WebGLShaderSource {
 		}
 
 		if (this.#type == ShaderType.Wgsl) {
-			return WgslPreprocessor.preprocessWgsl(includeCode + this.#compileSource);
+			return WgslPreprocessor.preprocessWgsl(this.#compileSource, defines);
 		} else {
-			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
+			return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + getIncludeCode(defines) + unrollLoops(this.#compileSource, defines);
 		}
 	}
 
@@ -281,8 +265,8 @@ export class WebGLShaderSource {
 		return sourceLineArray.join('\n');
 	}
 
-	setCompileError(error: string, includeCode = ''): void {
-		let lineDelta = ((includeCode).match(/\n/g) || []).length;
+	setCompileError(error: string, defines: Map<string, string>): void {
+		let lineDelta = defines.size;
 		if (this.#type == ShaderType.Fragment || this.#type == ShaderType.Vertex) {
 			lineDelta += 1;//#version line
 		}

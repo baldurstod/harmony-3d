@@ -30,6 +30,7 @@ import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray, StorageValueStruct } from './storage';
+import { getDefines } from '../utils/defines';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -127,7 +128,7 @@ export class WebGPURenderer implements Renderer {
 
 	setToneMapping(toneMapping: ToneMapping): void {
 		this.#toneMapping = toneMapping;
-		Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+		Graphics.setDefine('TONE_MAPPING', `${toneMapping}`);
 	}
 
 	getToneMapping(): ToneMapping {
@@ -136,7 +137,7 @@ export class WebGPURenderer implements Renderer {
 
 	setToneMappingExposure(exposure: number): void {
 		this.#toneMappingExposure = exposure;
-		Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+		Graphics.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
 	}
 
 	getToneMappingExposure(): number {
@@ -262,7 +263,7 @@ export class WebGPURenderer implements Renderer {
 		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
 
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
-		defines.set('MAX_PARTICLES_IN_A_SYSTEM', String(MAX_PARTICLES_IN_A_SYSTEM));
+		defines.set('MAX_PARTICLES_IN_A_SYSTEM', `${MAX_PARTICLES_IN_A_SYSTEM}`);
 
 		if (pick) {
 			defines.set('PICKING_MODE', '');
@@ -1532,13 +1533,6 @@ export class WebGPURenderer implements Renderer {
 					break;
 			}
 		}
-	}
-}
-
-
-export function getDefines(meshOrMaterial: Material | Mesh, defines: Map<string, string>): void {
-	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
-		defines.set(name, value as string);
 	}
 }
 
