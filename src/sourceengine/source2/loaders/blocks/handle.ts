@@ -1,6 +1,6 @@
 import { BinaryReader } from 'harmony-binary-reader';
 
-export function readHandle(reader: BinaryReader) {
+export function readHandle(reader: BinaryReader): string {
 	let str = '';
 	let c;
 	let hex;

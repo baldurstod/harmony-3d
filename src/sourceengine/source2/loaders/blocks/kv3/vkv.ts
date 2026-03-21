@@ -12,10 +12,10 @@ export function loadDataVkv(reader: BinaryReader, block: Source2FileBlock): void
 	reader.seek(block.offset);
 	reader.skip(4);//TODO: improve detection
 	const encoding = reader.getString(16);
-	const format = reader.getString(16);
+	/*const format = TODO: use format*/reader.getString(16);
 
-	let decodeLength, sa;
-	decodeLength = reader.getUint32();
+	let sa;
+	const decodeLength = reader.getUint32();
 
 
 	if ((decodeLength >>> 24) == 0x80) {
@@ -45,8 +45,8 @@ export function loadDataVkv(reader: BinaryReader, block: Source2FileBlock): void
 
 function ab2str(arrayBuf: Uint8Array): string {
 	let s = '';
-	for (let i = 0; i < arrayBuf.length; i++) {
-		s += String.fromCharCode(arrayBuf[i]!);
+	for (const a of arrayBuf) {
+		s += String.fromCharCode(a);
 	}
 	return s;
 }

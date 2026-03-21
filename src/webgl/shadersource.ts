@@ -1,8 +1,7 @@
 import { WgslPreprocessor } from 'amandine';
-import { DEBUG } from '../buildoptions';
 import { getIncludeSource } from '../shaders/includemanager';
-import { ShaderType } from './types';
 import { getIncludeCode } from '../utils/defines';
+import { ShaderType } from './types';
 
 function getHeader(type: ShaderType): string {
 	switch (type) {

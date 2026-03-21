@@ -1,6 +1,6 @@
 import { BinaryReader } from 'harmony-binary-reader';
 
-export function decodeBlockCompressed(reader: BinaryReader, sa: Uint8Array, decodeLength: number) {
+export function decodeBlockCompressed(reader: BinaryReader, sa: Uint8Array, decodeLength: number): void {
 	let mask = null;
 
 	let outputIndex = 0;

@@ -13,7 +13,7 @@ const FIELD_SIZE = [0, 0/*STRUCT*/, 0/*ENUM*/, 8/*HANDLE*/, 0, 0, 0, 0, 0, 0,
 const DATA_TYPE_STRUCT = 1;
 const DATA_TYPE_ENUM = 2;
 const DATA_TYPE_HANDLE = 3;
-const DATA_TYPE_STRING = 4;
+//const DATA_TYPE_STRING = 4;
 const DATA_TYPE_BYTE = 10;
 const DATA_TYPE_UBYTE = 11;
 const DATA_TYPE_SHORT = 12;
@@ -27,7 +27,7 @@ const DATA_TYPE_VECTOR2 = 21;
 const DATA_TYPE_VECTOR3 = 22;
 const DATA_TYPE_VECTOR4 = 23;
 const DATA_TYPE_QUATERNION = 25;
-const DATA_TYPE_COLOR = 28;
+//const DATA_TYPE_COLOR = 28;
 const DATA_TYPE_BOOLEAN = 30;
 const DATA_TYPE_NAME = 31;
 
@@ -49,11 +49,11 @@ export function loadStruct(reader: BinaryReader, reference: Source2RerlBlock, st
 
 	const fieldList = struct.fields;
 
-	for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
-		const field = fieldList[fieldIndex]!;
+	for (const field of fieldList) {
+		//const field = fieldList[fieldIndex]!;
 		if (field.count) {
 			const data: number[] = /*dataStruct[field.name]*/[];
-			const fieldSize = FIELD_SIZE[field.type2];
+			///const fieldSize = FIELD_SIZE[field.type2];
 			for (let i = 0; i < field.count; i++) {
 				data.push(255);//TODOv3 dafuck ?
 			}
@@ -71,7 +71,7 @@ export function loadStruct(reader: BinaryReader, reference: Source2RerlBlock, st
 	return element;
 }
 
-function getStruct(block: Source2NtroBlock, structId: number) {
+function getStruct(block: Source2NtroBlock, structId: number): Source2FileStruct | undefined {
 	return block.structs?.[structId];
 }
 
@@ -80,20 +80,20 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 	fieldOffset = startOffset + fieldOffset;
 
 	if (fieldLevel > 0) {
-		const indirectionType = reader.getInt8(fieldOffset);
+		/*const indirectionType = TODO: use variable*/reader.getInt8(fieldOffset);
 		if (fieldIndirectionByte == 3) { // Pointer
 			if (INFO) {
 				console.log('indirect type 3', fieldOffset);
 			}
-			var struct = introspection.structs?.[field.type];
+			const struct = introspection.structs?.[field.type];
 			if (struct) {
-				var pos = reader.getUint32(fieldOffset);
+				const pos = reader.getUint32(fieldOffset);
 				return loadStruct(reader, reference, struct, null, fieldOffset + pos, introspection, depth + 1);
 			} else {
 				console.log('Unknown struct ' + field.type, fieldOffset);
 			}
 			console.log(fieldOffset);
-			throw 'check this code loadField1';
+			throw new Error('check this code loadField1');
 			return new Kv3Value(Kv3Type.Int32, fieldOffset);
 			//return fieldOffset;
 		} else if (fieldIndirectionByte == 4) { // Array
@@ -109,8 +109,8 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						if (struct) {
 
 							const values: Kv3Element[] = [];
-							for (var i = 0; i < arrayCount; i++) {
-								var pos = arrayOffset + struct.discSize * i;
+							for (let i = 0; i < arrayCount; i++) {
+								const pos = arrayOffset + struct.discSize * i;
 								//reader.seek(reader.getUint32(pos) + pos);
 								reader.seek(pos);
 								//var name = reader.getNullString();
@@ -123,10 +123,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						}
 					} else if (field.type2 == DATA_TYPE_HANDLE) { // HANDLE
 						// Handle to an external ressource in the RERL block
-						for (var i = 0; i < arrayCount; i++) {
-							var pos = arrayOffset + 8 * i;
+						for (let i = 0; i < arrayCount; i++) {
+							const pos = arrayOffset + 8 * i;
 							reader.seek(pos);
-							var handle = readHandle(reader);
+							const handle = readHandle(reader);
 							values[i] = reference.externalFiles[handle] ?? '';
 						}
 						//reader.seek(fieldOffset);
@@ -134,7 +134,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						//return values;//this.reference.externalFiles[handle];
 						return new Kv3Value(Kv3Type.TypedArray, values, Kv3Flag.None, Kv3Type.String);
 					} else {
-						console.log('Unknown struct type for array ' + field, fieldOffset);
+						console.log('Unknown struct type for array ' + JSON.stringify(field), fieldOffset);
 					}
 				} else {
 					// single field
@@ -144,7 +144,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						//console.log(field.type2);//TODOV2
 						const arr = new Uint8Array(arrayCount);
 
-						for (var i = 0; i < arrayCount; i++) {
+						for (let i = 0; i < arrayCount; i++) {
 							arr[i] = reader.getUint8(arrayOffset + i);
 						}
 
@@ -156,8 +156,8 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						const arr: string[] = new Array(arrayCount);
 
 						for (let i = 0; i < arrayCount; i++) {
-							let pos = arrayOffset + fieldSize * i;
-							let strOffset = reader.getInt32(pos);
+							const pos = arrayOffset + fieldSize * i;
+							const strOffset = reader.getInt32(pos);
 							reader.seek(pos + strOffset);
 
 							arr[i] = reader.getNullString(pos + strOffset);
@@ -165,8 +165,8 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 
 						return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Flag.None, Kv3Type.String);
 					}
-					for (var i = 0; i < arrayCount; i++) {
-						var pos = arrayOffset + fieldSize * i;
+					for (let i = 0; i < arrayCount; i++) {
+						const pos = arrayOffset + fieldSize * i;
 						/*reader.seek(reader.getUint32(pos) + pos);
 						var name = reader.getNullString();*/
 
@@ -196,12 +196,12 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				console.log(fieldOffset);
 				return null;
 			case DATA_TYPE_ENUM://2
-				throw 'fix me';
+				throw new Error('fix me')
 			//return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
 			case DATA_TYPE_HANDLE://3
 				// Handle to an external ressource in the RERL block
 				reader.seek(fieldOffset);
-				var handle = readHandle(reader);
+				const handle = readHandle(reader);
 				//return reference ? reference.externalFiles[handle] : null;
 				return new Kv3Value(Kv3Type.String, reference.externalFiles[handle] ?? '', Kv3Flag.ResourceName);
 			case DATA_TYPE_BYTE://10
@@ -209,10 +209,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 			case DATA_TYPE_UBYTE://11
 				return new Kv3Value(Kv3Type.UnsignedInt32/*TODO: check if there is a better type*/, reader.getUint8(fieldOffset));
 			case DATA_TYPE_SHORT://12
-				throw 'fix me';
+				throw new Error('fix me');
 			//return reader.getInt16(fieldOffset);
 			case DATA_TYPE_USHORT://13
-				throw 'fix me';
+				throw new Error('fix me');
 			//return reader.getUint16(fieldOffset);
 			case DATA_TYPE_INTEGER://14
 				return new Kv3Value(Kv3Type.Int32, reader.getInt32(fieldOffset));
@@ -232,10 +232,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				//return reader.getFloat32(fieldOffset);
 				return new Kv3Value(Kv3Type.Float, reader.getFloat32(fieldOffset));
 			case DATA_TYPE_VECTOR2://21
-				throw 'fix me';
+				throw new Error('fix me');
 			//return reader.getVector2(fieldOffset);
 			case DATA_TYPE_VECTOR3://22
-				throw 'fix me';
+				throw new Error('fix me');
 			//return reader.getVector3(fieldOffset);
 			case DATA_TYPE_VECTOR4://23
 				//return reader.getVector4(fieldOffset);
@@ -244,11 +244,11 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				//return reader.getVector4(fieldOffset);
 				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Flag.None, Kv3Type.Float);
 			case DATA_TYPE_BOOLEAN://30
-				throw 'fix me';
+				throw new Error('fix me');
 			//return (reader.getInt8(fieldOffset)) ? true : false;
 			case DATA_TYPE_NAME://31
-				var strStart = fieldOffset;//reader.tell();
-				var strOffset = reader.getInt32(fieldOffset);
+				//let strStart = fieldOffset;//reader.tell();
+				const strOffset = reader.getInt32(fieldOffset);
 				/*if ((strOffset<0) || (strOffset>10000)) {
 					console.log(strOffset);
 				}*/
@@ -257,7 +257,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 
 				return new Kv3Value(Kv3Type.String, reader.getNullString());
 			case 40: //DATA_TYPE_VECTOR4://40
-				throw 'fix me';
+				throw new Error('fix me');
 			//return reader.getVector4(fieldOffset);
 			default:
 				console.error(`Unknown field type: ${field.type2}`);
