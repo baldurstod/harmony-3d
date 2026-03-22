@@ -510,6 +510,7 @@ export class SceneExplorer {
 
 	showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity) {
 		this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+		this.selectEntity(entity);
 	}
 
 	editMaterial(material: Material) {
