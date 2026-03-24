@@ -1,6 +1,18 @@
-import { vec4 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 
-export type StorageValueArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec4;
+export type StorageValueArray =
+	Int8Array |
+	Uint8Array |
+	Uint8ClampedArray |
+	Int16Array |
+	Uint16Array |
+	Int32Array |
+	Uint32Array |
+	Float32Array |
+	StorageValueStruct[] |
+	vec2 |
+	vec3 |
+	vec4;
 export type StorageValueStruct = { [key: string]: StorageValue | number };
 export type StorageValue = StorageValueArray | StorageValueStruct;
 

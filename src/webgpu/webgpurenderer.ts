@@ -1395,13 +1395,14 @@ export class WebGPURenderer implements Renderer {
 					{
 						const storageTexture = (material.uniforms[storage.name] as (Texture | undefined)[] | Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
-							if (Array.isArray(storageTexture)) {
+							if (storage.isArray) {
+								console.error("check this branch");
 
 								let isCube = false;
 								let visibility: GPUShaderStageFlags | undefined = undefined;
 								let format: GPUTextureFormat = 'rgba8unorm';
 
-								for (const texture of storageTexture) {
+								for (const texture of storageTexture as Texture[]) {
 									// TODO: find a better way to do this
 									if (texture) {
 										isCube = texture.isCube;
@@ -1411,9 +1412,11 @@ export class WebGPURenderer implements Renderer {
 									}
 								}
 
-								groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture, access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
+								groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture as Texture[], access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
+							} else if (storage.isStruct) {
+								throw new Error('this should be a storage ' + storage.name);
 							} else {
-								groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility, viewDimension: getViewDimension(storage) });
+								groups.set(storage.group, storage.binding, { storageTexture: storageTexture as Texture, access, visibility: (storageTexture as Texture).gpuVisibility, viewDimension: getViewDimension(storage) });
 							}
 						} else {
 							const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
