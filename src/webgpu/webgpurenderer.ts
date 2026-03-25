@@ -885,7 +885,10 @@ export class WebGPURenderer implements Renderer {
 				}
 
 				if (binding.buffer) {
-					entry.buffer = { type: binding.bufferType ?? 'uniform' };
+					entry.buffer = {
+						type: binding.bufferType ?? 'uniform',
+						// TODO: add minBindingSize ?
+					};
 				}
 
 				if (binding.texture) {
@@ -1441,10 +1444,24 @@ export class WebGPURenderer implements Renderer {
 									}
 								} else if (storage.isStruct) {
 									// TODO: handle nested structs
+
+									// TODO: Do this every time there is a struct
+									// Compute the size of the struct if the last member is a dynamically sized array
+									let size = storage.size;
+									const members = (storage.type as StructInfo).members;
+									const lastMember = members[members.length - 1]!;
+
+									if (lastMember.isArray && lastMember.size === 0) {
+										const value = (storageBuffer.value as StorageValueStruct)?.[lastMember.name];
+										if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+											size += value.length * (lastMember.type as ArrayInfo).stride;
+										}
+									}
+
 									if (!storageBuffer.buffer) {
 										storageBuffer.buffer = device.createBuffer({
 											label: storage.name,
-											size: storage.size,
+											size,
 											usage,
 										});
 									}
