@@ -2,7 +2,7 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2File } from '../loaders/source2file';
 import { Source2Animation } from '../models/source2animation';
 import { Source2AnimationDesc } from '../models/source2animationdesc';
-import { Source2AnimGroup } from '../models/source2animgroup';
+import { Source2AnimeDecoder, Source2AnimGroup } from '../models/source2animgroup';
 import { Source2Activity } from './source2activity';
 import { Source2Sequence } from './source2sequence';
 
@@ -20,7 +20,7 @@ export class Source2SeqGroup {
 		this.#animGroup = animGroup;
 	}
 
-	setFile(sourceFile: Source2File) {
+	setFile(sourceFile: Source2File): void {
 		this.file = sourceFile;
 
 		const sequenceGroupResourceData_t = sourceFile.getBlockStructAsElement('DATA', 'structs.SequenceGroupResourceData_t'/*TODO: check that*/);
@@ -66,7 +66,7 @@ export class Source2SeqGroup {
 		return this.#animNames.get(name);
 	}
 
-	#processSeqDesc(m_localS1SeqDescArray: Kv3Element[], localSequenceNameArray: string[]) {
+	#processSeqDesc(m_localS1SeqDescArray: Kv3Element[], localSequenceNameArray: string[]): void {
 		for (const sequence of m_localS1SeqDescArray) {
 			//const sequence = m_localS1SeqDescArray[i];
 			const activities = [];
@@ -101,18 +101,18 @@ export class Source2SeqGroup {
 		}
 	}
 
-	matchActivity(activity: string, modifiers: string[]) {
+	matchActivity(activity: string, modifiers: string[]): string | null {
 		for (const sequence of this.sequences) {
 			if (sequence.matchActivity(activity, modifiers)) {
-				return sequence.animNames[0];//TODO
+				return sequence.animNames[0]!;//TODO
 			}
 		}
 		return null;
 	}
 
-	getAnimationsByActivity(activityName: string) {
+	getAnimationsByActivity(activityName: string): Source2AnimationDesc[] {
 		const anims = [];
-		for (const [animName, animDesc] of this.#animNames) {
+		for (const [/*animName*/, animDesc] of this.#animNames) {
 			if (animDesc.matchActivity(activityName)) {
 				anims.push(animDesc);
 			}
@@ -120,15 +120,15 @@ export class Source2SeqGroup {
 		return anims;
 	}
 
-	getDecodeKey() {
+	getDecodeKey(): Kv3Element | undefined {
 		return this.#animGroup.getDecodeKey();
 	}
 
-	getDecoderArray() {
+	getDecoderArray(): Source2AnimeDecoder[] {
 		return this.#animGroup.decoderArray;
 	}
 
-	get localSequenceNameArray() {
+	get localSequenceNameArray(): string[] | null {
 		return this.#localSequenceNameArray;
 	}
 }

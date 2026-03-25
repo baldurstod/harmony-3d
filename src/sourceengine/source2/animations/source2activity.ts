@@ -11,10 +11,10 @@ export class Source2Activity {
 		this.activity = activity;
 
 		if (flags != 0) {
-			throw 'Check this: flags != 0';
+			throw new Error('Check this: flags != 0');
 		}
 		if (activity != 0) {
-			throw 'Check this: activity != 0';
+			throw new Error('Check this: activity != 0');
 		}
 	}
 }

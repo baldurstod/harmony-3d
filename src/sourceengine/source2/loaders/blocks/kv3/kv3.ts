@@ -23,13 +23,13 @@ Follows the compressed blobs
 */
 
 export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, version: number): Promise<void> {
-	const KV3_ENCODING_BLOCK_COMPRESSED = '\x46\x1A\x79\x95\xBC\x95\x6C\x4F\xA7\x0B\x05\xBC\xA1\xB7\xDF\xD2';
-	const KV3_ENCODING_BLOCK_COMPRESSED_LZ4 = '\x8A\x34\x47\x68\xA1\x63\x5C\x4F\xA1\x97\x53\x80\x6F\xD9\xB1\x19';
-	const KV3_ENCODING_BLOCK_COMPRESSED_UNKNOWN = '\x7C\x16\x12\x74\xE9\x06\x98\x46\xAF\xF2\xE6\x3E\xB5\x90\x37\xE7';
+	//const KV3_ENCODING_BLOCK_COMPRESSED = '\x46\x1A\x79\x95\xBC\x95\x6C\x4F\xA7\x0B\x05\xBC\xA1\xB7\xDF\xD2';
+	//const KV3_ENCODING_BLOCK_COMPRESSED_LZ4 = '\x8A\x34\x47\x68\xA1\x63\x5C\x4F\xA1\x97\x53\x80\x6F\xD9\xB1\x19';
+	//const KV3_ENCODING_BLOCK_COMPRESSED_UNKNOWN = '\x7C\x16\x12\x74\xE9\x06\x98\x46\xAF\xF2\xE6\x3E\xB5\x90\x37\xE7';
 
 	reader.seek(block.offset);
 
-	const method = 1;
+	//const method = 1;
 	let bufferCount: 1 | 2 = 1;
 	const uncompressedBufferSize: number[] = [];
 	const compressedBufferSize: number[] = [];
@@ -41,12 +41,12 @@ export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock,
 	const arrayCount: number[] = [];
 
 	reader.skip(4);
-	const format = reader.getString(16);
+	/*const format = TODO: use format*/reader.getString(16);
 	const compressionMethod = reader.getUint32();
 	let compressionDictionaryId;
 	let compressionFrameSize = 0;
 	let dictionaryTypeLength = 0, unknown3, unknown4, blobCount = 0, totalUncompressedBlobSize = 0;
-	let unknown5: number, unknown6: number, unknown7: number, unknown8: number;
+	//let unknown5: number, unknown6: number, unknown7: number, unknown8: number;
 	if (version >= 2) {
 		compressionDictionaryId = reader.getUint16();
 		compressionFrameSize = reader.getUint16();
@@ -75,8 +75,8 @@ export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock,
 	}
 
 	if (version >= 4) {
-		unknown5 = reader.getUint32();
-		unknown6 = reader.getUint32();
+		/*unknown5 = */reader.getUint32();
+		/*unknown6 = */reader.getUint32();
 	}
 
 	if (version >= 5) {
@@ -91,10 +91,10 @@ export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock,
 		bytesBufferSize8.push(reader.getUint32());
 
 		// TODO: use those values
-		unknown7 = reader.getUint32();
+		/*unknown7 = */reader.getUint32();
 		objectCount.push(reader.getUint32());
 		arrayCount.push(reader.getUint32());
-		unknown8 = reader.getUint32();
+		/*unknown8 = */reader.getUint32();
 
 		//console.info(block.type, block, uncompressedBufferSize, compressedBufferSize, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8)
 	} else {
@@ -111,7 +111,7 @@ export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock,
 		switch (compressionMethod) {
 			case 0:
 				if (TESTING && version >= 2 && (compressionDictionaryId != 0 || compressionFrameSize != 0)) {
-					throw 'Error compression method doesn\'t match';
+					throw new Error('Error compression method doesn\'t match');
 				}
 				sa = reader.getBytes(uncompressedBufferSize[i]!);
 				break;
@@ -165,7 +165,7 @@ export async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock,
 
 				break;
 			default:
-				throw 'Unknown kv3 compressionMethod ' + compressionMethod;
+				throw new Error('Unknown kv3 compressionMethod ' + compressionMethod);
 				return;
 		}
 		if (version >= 5) {

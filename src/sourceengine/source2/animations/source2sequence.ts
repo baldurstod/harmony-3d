@@ -3,9 +3,9 @@ export class Source2Sequence {
 	fps: number;
 	frameCount: number;
 	activities;
-	animNames;
+	animNames: string[];
 
-	constructor(name: string, params: any = {}) {
+	constructor(name: string, params: any/*TODO: create type*/ = {}) {
 		this.name = name;
 		this.fps = params.fps ?? 30;
 		this.frameCount = params.frameCount ?? 0;
@@ -13,12 +13,10 @@ export class Source2Sequence {
 		if (params.activities) {
 			this.activities = params.activities;
 		}
-		if (params.animNames) {
-			this.animNames = params.animNames;
-		}
+		this.animNames = params.animNames ?? [];
 	}
 
-	matchActivity(activity: string, modifiers: string[]) {
+	matchActivity(activity: string, modifiers: string[]): boolean {
 		if (modifiers) {
 			if (this.activities.length == modifiers.length + 1) {
 				if (this.activities[0].name == activity) {
@@ -41,5 +39,6 @@ export class Source2Sequence {
 				return true;
 			}
 		}
+		return false;
 	}
 }

@@ -6,7 +6,7 @@ const DELTA_BYTES_PER_BONE = 2 * 3;
 
 let baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
 
-export function decodeCCompressedDeltaVector3(reader: BinaryReader, elementCount: number, elementIndex: number, frame: number) {
+export function decodeCCompressedDeltaVector3(reader: BinaryReader, elementCount: number, elementIndex: number, frame: number): vec3 {
 	baseX = reader.getFloat32(8 + elementCount * 2 + elementIndex * BASE_BYTES_PER_BONE);
 	baseY = reader.getFloat32();
 	baseZ = reader.getFloat32();
