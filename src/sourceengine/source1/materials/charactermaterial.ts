@@ -18,7 +18,7 @@ export class CharacterMaterial extends Source1Material {
 		//"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
 		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
-			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+			this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		} else {
 			this.removeDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
@@ -26,7 +26,7 @@ export class CharacterMaterial extends Source1Material {
 
 		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
-			this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+			this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
 		} else {
 			this.removeDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
@@ -94,13 +94,13 @@ export class CharacterMaterial extends Source1Material {
 
 		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
-			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+			this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
-			this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+			this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
 		}
 

@@ -65,7 +65,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		}
 
 		if (parameters['$maskstexture']) {
-			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+			this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 

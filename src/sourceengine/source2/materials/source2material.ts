@@ -40,13 +40,13 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tColorB', ['colorBMap', 'USE_COLOR_B_MAP']],
 	['g_tColorC', ['colorCMap', 'USE_COLOR_C_MAP']],
 	['g_tColor1', ['color1Map', 'USE_COLOR_1_MAP']],
-	['g_tMask', ['maskMap', 'USE_MASK_MAP']],
+	['g_tMask', ['maskTexture', 'USE_MASK_MAP']],
 	['g_tNormalA', ['normalAMap', 'USE_NORMAL_A_MAP']],
 	['g_tEmissiveB', ['emissiveBMap', 'USE_EMISSIVE_B_MAP']],
 	['g_tEmissiveC', ['emissiveCMap', 'USE_EMISSIVE_C_MAP']],
 
-	['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
-	['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
+	['g_tMasks1', ['mask1Texture', 'USE_MASK1_MAP']],
+	['g_tMasks2', ['mask2Texture', 'USE_MASK2_MAP']],
 	['g_tDetail', ['detail1Texture', 'USE_DETAIL1_MAP']],
 	['g_tDetail2', ['detail2Texture', 'USE_DETAIL2_MAP']],
 
@@ -167,6 +167,17 @@ export class Source2Material extends Material {
 		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale;
 		this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
+
+		this.uniforms['detailTextures'] = {
+			g_vDetailTexCoordScale: this.uniforms['g_vDetailTexCoordScale'],
+			g_vDetailTexCoordOffset: this.uniforms['g_vDetailTexCoordOffset'],
+			g_vDetail1ColorTint: this.uniforms['g_vDetail1ColorTint'],
+
+			g_vDetail2TexCoordScale: this.#detailTexCoordOffset,// TODO: use actual value
+			g_vDetail2TexCoordOffset: this.#detailTexCoordScale,// TODO: use actual value
+			g_vDetail2ColorTint: this.uniforms['g_vDetail2ColorTint'],
+		};
+
 		this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
 
 		this.initFloatUniforms();
@@ -253,12 +264,12 @@ export class Source2Material extends Material {
 		/*
 				let g_tMasks1 = this.getTextureByName('g_tMasks1');
 				if (g_tMasks1) {
-					this.uniforms['mask1Map'] = Source2TextureManager.getTexture(this.repository, g_tMasks1, 0);//TODOv3: rename uniform
+					this.uniforms['mask1Texture'] = Source2TextureManager.getTexture(this.repository, g_tMasks1, 0);//TODOv3: rename uniform
 				}
 
 				let g_tMasks2 = this.getTextureByName('g_tMasks2');
 				if (g_tMasks2) {
-					this.uniforms['mask2Map'] = Source2TextureManager.getTexture(this.repository, g_tMasks2, 0);//TODOv3: rename uniform
+					this.uniforms['mask2Texture'] = Source2TextureManager.getTexture(this.repository, g_tMasks2, 0);//TODOv3: rename uniform
 				}
 
 				let g_tDetail = this.getTextureByName('g_tDetail');
