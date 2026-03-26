@@ -73,7 +73,7 @@ export class RenderModels extends Operator {
 		return '';
 	}
 
-	#getModel(repository: string, modelName: string): Source2ModelInstance | null {
+	async #getModel(repository: string, modelName: string): Promise<Source2ModelInstance | null> {
 		for (const [model, datas] of this.#allModels) {
 			if (!datas.used && (datas.modelName == modelName) && (datas.repository == repository)) {
 				//this.#allModels.delete(model);
@@ -82,7 +82,7 @@ export class RenderModels extends Operator {
 			}
 		}
 
-		const model = Source2ModelManager.createInstance(repository, modelName, this.#animated);
+		const model = await Source2ModelManager.createInstance(repository, modelName, this.#animated);
 
 		if (model) {
 			this.#allModels.set(model, { repository: repository, modelName: modelName, used: true });
@@ -103,7 +103,7 @@ export class RenderModels extends Operator {
 
 	}
 
-	#updateParticle(particleSystem: Source2ParticleSystem, particleIndex: number, particle: Source2Particle, activityName: string, activityModifiers: string[]): void {
+	async #updateParticle(particleSystem: Source2ParticleSystem, particleIndex: number, particle: Source2Particle, activityName: string, activityModifiers: string[]): Promise<void> {
 		let model;
 
 		if (!particle.modelName) {
@@ -111,7 +111,7 @@ export class RenderModels extends Operator {
 			particle.modelName = modelName;
 
 			this.#returnModel(particle);
-			model = this.#getModel(particleSystem.repository, particle.modelName);
+			model = await this.#getModel(particleSystem.repository, particle.modelName);
 
 			if (model) {
 				this.#models.set(particle, model);

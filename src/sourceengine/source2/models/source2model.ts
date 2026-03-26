@@ -81,12 +81,14 @@ export class Source2Model {
 		}
 	}
 
+	/*
 	matchActivity(activity: string, modifiers: string[]): null {
 		if (this.#seqGroup) {
 			return this.#seqGroup.matchActivity(activity, modifiers);
 		}
 		return null;
 	}
+	*/
 
 	addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void {
 		if (bodyPartName !== undefined) {

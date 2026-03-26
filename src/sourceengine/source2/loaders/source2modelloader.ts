@@ -1,5 +1,6 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
+import { Map2 } from 'harmony-utils';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { VERBOSE } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
@@ -21,28 +22,22 @@ import { Source2FileLoader } from './source2fileloader';
 const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelLoader {
-	static #loadPromisesPerRepo: Record<string, any> = {};//TODO: create map
+	static #loadPromisesPerRepo = new Map2<string, string, Promise<Source2Model | null>>;
 
 	static {
 		defaultMaterial.addUser(Source2ModelLoader);
 	}
 
-	load(repository: string, path: string): Source2Model | null {
+	load(repository: string, path: string): Promise<Source2Model | null> {
 		// Cleanup filename
 		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 
-		let repoPromises = Source2ModelLoader.#loadPromisesPerRepo[repository];
-		if (!repoPromises) {
-			repoPromises = {};
-			Source2ModelLoader.#loadPromisesPerRepo[repository] = repoPromises;
-		}
-
-		let promise = repoPromises[path];
+		let promise = Source2ModelLoader.#loadPromisesPerRepo.get(repository, path);
 		if (promise) {
 			return promise;
 		}
 
-		promise = new Promise(resolve => {
+		promise = new Promise<Source2Model | null>(resolve => {
 			const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c') as Promise<Source2File | null>;
 			vmdlPromise.then(
 				async (source2File: Source2File | null) => {
@@ -54,7 +49,7 @@ export class Source2ModelLoader {
 						return;
 					}
 					const newSourceModel = new Source2Model(repository, source2File);
-					this.#loadIncludeModels(newSourceModel);
+					await this.#loadIncludeModels(newSourceModel);
 					await this.testProcess2(source2File, newSourceModel, repository);
 					newSourceModel.loadAnimGroups();
 					resolve(newSourceModel);
@@ -62,7 +57,9 @@ export class Source2ModelLoader {
 			)
 			return;
 		});
-		repoPromises[path] = promise;
+
+		Source2ModelLoader.#loadPromisesPerRepo.set(repository, path, promise);
+
 		return promise;
 	}
 
@@ -547,10 +544,10 @@ export class Source2ModelLoader {
 		await Promise.all(promises);
 	}
 
-	#loadIncludeModels(model: Source2Model): void {
+	async #loadIncludeModels(model: Source2Model): Promise<void> {
 		const includeModels = model.getIncludeModels();
 		for (const includeModel of includeModels) {
-			const refModel = new Source2ModelLoader().load(model.repository, includeModel);
+			const refModel = await new Source2ModelLoader().load(model.repository, includeModel);
 			if (refModel) {
 				model.addIncludeModel(refModel);
 			}

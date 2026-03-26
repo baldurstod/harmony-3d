@@ -104,12 +104,14 @@ export class Source2AnimGroup {
 		return null;
 	}
 
+	/*
 	matchActivity(activity: string, modifiers: string[]): boolean {
 		if (this.directHSeqGroup) {
 			return this.directHSeqGroup.matchActivity(activity, modifiers);
 		}
 		return false;
 	}
+	*/
 
 	getAnims(): Set<Source2Animation> {
 		const anims = new Set<Source2Animation>();

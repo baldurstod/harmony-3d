@@ -284,7 +284,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 			let texCoordFilled = false;
 			let blendIndicesFilled = false;
 			let blendWeightFilled = false;
-			for (const header of s1.headers.length) {
+			for (const header of s1.headers) {
 				const headerName = header.name;
 				const headerType = header.type;
 				let tempValue: number[] | vec2 | vec3 | vec4;// = vec4.create();//TODO: optimize
