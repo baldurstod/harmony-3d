@@ -3,7 +3,7 @@ export default `
 	uniform vec4 g_vDetailTexCoordScale;
 	uniform vec4 g_vDetailTexCoordOffset;
 	uniform vec4 g_vDetail1ColorTint;
-	uniform sampler2D detail1Map;
+	uniform sampler2D detail1Texture;
 #endif
 #ifdef USE_DETAIL2_MAP
 	uniform vec4 g_vDetail2TexCoordScale;

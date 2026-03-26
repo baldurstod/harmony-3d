@@ -47,7 +47,7 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 
 	['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
 	['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
-	['g_tDetail', ['detail1Map', 'USE_DETAIL1_MAP']],
+	['g_tDetail', ['detail1Texture', 'USE_DETAIL1_MAP']],
 	['g_tDetail2', ['detail2Texture', 'USE_DETAIL2_MAP']],
 
 	['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
@@ -140,6 +140,7 @@ export class Source2Material extends Material {
 		if (this.getIntParam('F_ALPHA_TEST') == 1) {
 			this.setDefine('ALPHA_TEST');//TODOv3: set this automaticaly
 			this.uniforms['uAlphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
+			this.uniforms['alphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
 		}
 
 		if (this.getIntParam('F_SEPARATE_ALPHA_TRANSFORM')) {
@@ -262,10 +263,10 @@ export class Source2Material extends Material {
 
 				let g_tDetail = this.getTextureByName('g_tDetail');
 				if (g_tDetail) {
-					this.uniforms['detail1Map'] = Source2TextureManager.getTexture(this.repository, g_tDetail, 0);//TODOv3: rename uniform
+					this.uniforms['detail1Texture'] = Source2TextureManager.getTexture(this.repository, g_tDetail, 0);//TODOv3: rename uniform
 					this.setDefine('USE_DETAIL1_MAP');//TODOv3: set this automaticaly
 				} else {
-					//this.uniforms['detail1Map'] = TextureManager.createCheckerTexture();
+					//this.uniforms['detail1Texture'] = TextureManager.createCheckerTexture();
 					this.setDefine('USE_DETAIL1_MAP', false);//TODOv3: set this automaticaly
 				}
 
