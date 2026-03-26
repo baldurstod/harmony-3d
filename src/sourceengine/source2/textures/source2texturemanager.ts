@@ -14,16 +14,16 @@ import { Source2VtexBlock } from '../loaders/source2fileblock';
 import { Source2TextureLoader } from '../loaders/source2textureloader';
 import { Source2Texture } from './source2texture';
 
-class Source2TextureManagerClass {
-	#vtexList = new Map2<string, string, Source2Texture>();
-	#texturesList = new Map<string, AnimatedTexture>();
-	#loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
-	#defaultTexture!: Texture;
-	WEBGL_compressed_texture_s3tc: any;
-	EXT_texture_compression_bptc: any;
-	EXT_texture_compression_rgtc: any;
+export class Source2TextureManager {
+	static #vtexList = new Map2<string, string, Source2Texture>();
+	static #texturesList = new Map<string, AnimatedTexture>();
+	static #loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
+	static #defaultTexture: Texture;
+	static WEBGL_compressed_texture_s3tc: any;
+	static EXT_texture_compression_bptc: any;
+	static EXT_texture_compression_rgtc: any;
 
-	constructor() {
+	static {
 		Graphics.ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture({
 				color: new Color(0.5, 0.75, 1),
@@ -40,13 +40,13 @@ class Source2TextureManagerClass {
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
-	async getTexture(repository: string, path: string, frame: number): Promise<Texture | null> {
+	static async getTexture(repository: string, path: string, frame: number): Promise<Texture | null> {
 		frame = Math.floor(frame);
 		const texture = await this.#getTexture(repository, path);
 		return texture ? texture.getFrame(frame) ?? null : this.#defaultTexture;//TODOv3
 	}
 
-	async getVtex(repository: string, path: string): Promise<Source2Texture | null> {
+	static async getVtex(repository: string, path: string): Promise<Source2Texture | null> {
 		// TODO: fix that concurent calls of the same texture will load it multiple times
 		let vtex: Source2Texture | null | undefined = this.#vtexList.get(repository, path);
 		if (vtex !== undefined) {
@@ -60,12 +60,12 @@ class Source2TextureManagerClass {
 		return vtex;
 	}
 
-	async getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null> {
+	static async getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null> {
 		const texture = await this.#getTexture(repository, path);
 		return texture.properties.get('sprite_sheet') ?? null;
 	}
 
-	async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
+	static async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
 		path = path.replace(/\.vtex_c$/, '').replace(/\.vtex$/, '');
 		path = path + '.vtex_c';
 		const fullPath = repository + path;
@@ -111,11 +111,11 @@ class Source2TextureManagerClass {
 		return this.#texturesList.get(fullPath)!;
 	}
 
-	setTexture(path: string, texture: AnimatedTexture): void {
+	static setTexture(path: string, texture: AnimatedTexture): void {
 		this.#texturesList.set(path, texture);
 	}
 
-	#initTexture(texture: Texture, vtexFile: Source2Texture): void {
+	static #initTexture(texture: Texture, vtexFile: Source2Texture): void {
 		const imageData = (vtexFile.blocks.DATA as Source2VtexBlock).imageData;
 		const imageFormat = vtexFile.getImageFormat();
 		if (imageData) {
@@ -138,7 +138,7 @@ class Source2TextureManagerClass {
 		}
 	}
 
-	#initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]): void {
+	static #initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]): void {
 		const glContext = Graphics.glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (formatCompression(imageFormat)) {
@@ -178,7 +178,7 @@ class Source2TextureManagerClass {
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 	}
 
-	#initFlatTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array]): void {
+	static #initFlatTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array]): void {
 		const glContext = Graphics.glContext;
 		if (TESTING) {
 			Graphics.cleanupGLError();
@@ -211,7 +211,7 @@ class Source2TextureManagerClass {
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void {
+	static fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void {
 		const gl = Graphics.glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
@@ -231,7 +231,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void {
+	static fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void {
 		const gl = Graphics.glContext;
 		const s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
@@ -274,7 +274,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
+	static #fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
 		const gl = Graphics.glContext;
 		const bptc = this.EXT_texture_compression_bptc;
 
@@ -308,7 +308,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
+	static #fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array): void {
 		const gl = Graphics.glContext;
 		const rgtc = this.EXT_texture_compression_rgtc;
 
@@ -339,7 +339,7 @@ class Source2TextureManagerClass {
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	#cleanup(): void {
+	static #cleanup(): void {
 		for (const [texturePath, texture] of this.#texturesList) {
 			if (texture.hasOnlyUser(this)) {
 				texture.removeUser(this);
@@ -348,5 +348,3 @@ class Source2TextureManagerClass {
 		}
 	}
 }
-
-export const Source2TextureManager = new Source2TextureManagerClass();
