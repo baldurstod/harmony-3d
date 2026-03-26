@@ -11,6 +11,15 @@ export type CreateTextureParams = Omit<TextureParams, 'format'> & {
 	needCubeMap?: boolean;
 };
 
+export const phonyWebGPUTextureDescriptor: HarmonyGPUTextureDescriptor = {
+	size: {
+		width: 0,
+		height: 0,
+	},
+	format: 'rgba8unorm',
+	usage: GPUTextureUsage.TEXTURE_BINDING,
+};
+
 export type CreateFlatTextureParams = CreateTextureParams & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptor;
 	color?: Color;

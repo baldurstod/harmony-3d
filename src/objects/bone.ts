@@ -1,4 +1,4 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, ReadonlyQuat, ReadonlyVec3, vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
@@ -53,6 +53,11 @@ export class Bone extends Entity implements Lockable {
 		this.dirty = true;
 	}
 
+	setPosition(position: ReadonlyVec3): void {
+		super.setPosition(position);
+		this.dirty = true;
+	}
+
 	get position() {
 		return vec3.clone(this._position);
 	}
@@ -97,6 +102,15 @@ export class Bone extends Entity implements Lockable {
 
 	set quaternion(quaternion) {
 		super.quaternion = quaternion;
+		this.dirty = true;
+	}
+
+	setQuaternion(quaternion: ReadonlyQuat): void {
+		this.setOrientation(quaternion);
+	}
+
+	setOrientation(quaternion: ReadonlyQuat): void {
+		super.setQuaternion(quaternion);
 		this.dirty = true;
 	}
 

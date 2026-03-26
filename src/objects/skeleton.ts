@@ -7,7 +7,7 @@ import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
 import { Texture } from '../textures/texture';
-import { TextureManager } from '../textures/texturemanager';
+import { phonyWebGPUTextureDescriptor, TextureManager } from '../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../webgl/constants';
 import { Bone } from './bone';
 
@@ -28,7 +28,7 @@ export class Skeleton extends Entity {
 
 		this.#createBoneMatrixArray();
 
-		if (!Graphics.isWebGPU) {
+		if (Graphics.isWebGLAny) {
 			this.#createBoneMatrixTexture();
 		}
 		this.dirty();
@@ -59,14 +59,8 @@ export class Skeleton extends Entity {
 
 	#createBoneMatrixTexture() {
 		this.#texture = TextureManager.createTexture({
-			webgpuDescriptor: {
-				size: {
-					width: 4/* matrix cols */,
-					height: MAX_HARDWARE_BONES,
-				},
-				format: 'rgba8unorm',
-				usage: GPUTextureUsage.TEXTURE_BINDING,
-			}
+			// Notice: this texture is not used in WebGPU
+			webgpuDescriptor: phonyWebGPUTextureDescriptor,
 		});
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);//TODOv3: pass param to texture and remove this
@@ -106,13 +100,9 @@ export class Skeleton extends Entity {
 			}
 		}
 
-		if (!Graphics.isWebGPU) {
+		if (Graphics.isWebGLAny) {
 			this.#updateBoneMatrixTexture();
 		}
-	}
-
-	set position(position) {
-		super.position = position;
 	}
 
 	get position() {
