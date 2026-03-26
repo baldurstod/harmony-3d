@@ -7,6 +7,7 @@ import { Detex } from '../../../textures/detex';
 import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '../../../textures/enums';
 import { SpriteSheet } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
+import { getWebGPUData } from '../../../textures/webgpu';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { errorOnce } from '../../../utils/console';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
@@ -608,44 +609,7 @@ export class Source1Vtf {
 	}
 
 	#getWebGPUData(data: Uint8Array | Float32Array): Uint8Array | Float32Array {
-		let rIndex: 0 | 1 | 2 = 0;
-		let gIndex: 0 | 1 | 2 = 1;
-		let bIndex: 0 | 1 | 2 = 2;
-		switch (this.highResImageFormat) {
-			case IMAGE_FORMAT_RGB888:
-			case IMAGE_FORMAT_RGB888_BLUESCREEN:
-				break;
-			case IMAGE_FORMAT_BGR888_BLUESCREEN:
-			case IMAGE_FORMAT_BGR888:
-				rIndex = 2;
-				bIndex = 0;
-				break;
-			case IMAGE_FORMAT_RGB565:
-				// TODO: handle this case. No test data yet
-				console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');
-				break;
-			default:
-				return data;
-		}
-
-		let rgba: Uint8Array | Float32Array;
-		let alphaValue: number;
-		if (data instanceof Uint8Array) {
-			rgba = new Uint8Array(data.length * 4 / 3);
-			alphaValue = 255;
-		} else {
-			rgba = new Float32Array(data.length * 4 / 3);
-			alphaValue = 1;
-		}
-
-		let j = 0;
-		for (let i = 0; i < data.length; i += 3) {
-			rgba[j++] = data[i + rIndex]!;
-			rgba[j++] = data[i + gIndex]!;
-			rgba[j++] = data[i + bIndex]!;
-			rgba[j++] = alphaValue;
-		}
-		return rgba;
+		return getWebGPUData(vtfToImageFormat(this.highResImageFormat), data);
 	}
 
 	#getClampS(): boolean {
@@ -826,16 +790,44 @@ function fillTextureDxt(glContext: WebGLAnyRenderingContext, texture: WebGLTextu
 };
 
 function vtfToImageFormat(vtfImageFormat: number): ImageFormat {
-	switch (vtfImageFormat) {
-		case IMAGE_FORMAT_DXT1:
-			return ImageFormat.Bc1;
-		case IMAGE_FORMAT_DXT3:
-			return ImageFormat.Bc2;
-		case IMAGE_FORMAT_DXT5:
-			return ImageFormat.Bc3;
-		default:
-			console.error('missing image format ' + vtfImageFormat)
-		//TODO: populate
+	const formats = new Map<number, ImageFormat>([
+		[IMAGE_FORMAT_NONE, ImageFormat.Unknown],
+		[IMAGE_FORMAT_RGBA8888, ImageFormat.RGBA8888],
+		[IMAGE_FORMAT_ABGR8888, ImageFormat.ABGR8888],
+		[IMAGE_FORMAT_RGB888, ImageFormat.RGB888],
+		[IMAGE_FORMAT_BGR888, ImageFormat.BGR888],
+		[IMAGE_FORMAT_RGB565, ImageFormat.RGB565],
+		[IMAGE_FORMAT_I8, ImageFormat.I8],
+		[IMAGE_FORMAT_IA88, ImageFormat.IA88],
+		[IMAGE_FORMAT_P8, ImageFormat.P8],
+		[IMAGE_FORMAT_A8, ImageFormat.A8],
+		[IMAGE_FORMAT_RGB888_BLUESCREEN, ImageFormat.RGB888_BLUESCREEN],
+		[IMAGE_FORMAT_BGR888_BLUESCREEN, ImageFormat.BGR888_BLUESCREEN],
+		[IMAGE_FORMAT_ARGB8888, ImageFormat.ARGB8888],
+		[IMAGE_FORMAT_BGRA8888, ImageFormat.BGRA8888],
+		[IMAGE_FORMAT_DXT1, ImageFormat.Bc1],
+		[IMAGE_FORMAT_DXT3, ImageFormat.Bc2],
+		[IMAGE_FORMAT_DXT5, ImageFormat.Bc3],
+		[IMAGE_FORMAT_BGRX8888, ImageFormat.BGRA8888],
+		[IMAGE_FORMAT_BGR565, ImageFormat.BGR565],
+		[IMAGE_FORMAT_BGRX5551, ImageFormat.BGRA5551],
+		[IMAGE_FORMAT_BGRA4444, ImageFormat.BGRA4444],
+		[IMAGE_FORMAT_DXT1_ONEBITALPHA, ImageFormat.Bc1],
+		[IMAGE_FORMAT_BGRA5551, ImageFormat.BGRA5551],
+		[IMAGE_FORMAT_UV88, ImageFormat.UV88],
+		[IMAGE_FORMAT_UVWQ8888, ImageFormat.UVWQ8888],
+		[IMAGE_FORMAT_RGBA16161616F, ImageFormat.RGBA16161616F],
+		[IMAGE_FORMAT_RGBA16161616, ImageFormat.RGBA16161616],
+		[IMAGE_FORMAT_UVLX8888, ImageFormat.UVLX8888],
+	]);
+
+
+	const format = formats.get(vtfImageFormat);
+
+	if (format) {
+		return format;
+	} else {
+		errorOnce(`missing image format: ${vtfImageFormat} in vtfToImageFormat`);
+		return ImageFormat.Unknown;
 	}
-	return ImageFormat.Unknown;
 }

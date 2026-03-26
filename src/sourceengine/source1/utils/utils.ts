@@ -1,6 +1,6 @@
 import { LZMA } from './lzma';
 
-export function stringStrip(s: string) {
+export function stringStrip(s: string): string {
 	return s.replace(/^[\s\0]+/, '').replace(/[\s\0]+$/, '')
 }
 
@@ -9,7 +9,7 @@ export function DecompressLZMA(properties: Uint8Array, compressedDatas: Uint8Arr
 		data: compressedDatas,
 		offset: 0,
 		size: compressedDatas.length,
-		readByte: function () {
+		readByte: function (): number | undefined {
 			return this.data[this.offset++];
 		}
 	};
@@ -17,7 +17,7 @@ export function DecompressLZMA(properties: Uint8Array, compressedDatas: Uint8Arr
 		data: properties,
 		offset: 0,
 		size: properties.length,
-		readByte: function () {
+		readByte: function (): number | undefined {
 			return this.data[this.offset++];
 		}
 	};

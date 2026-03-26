@@ -11,3 +11,4 @@ export * from './textureconstants';
 export * from './texturedata';
 export * from './texturefactory';
 export { TextureManager } from './texturemanager';
+export * from './webgpu';
