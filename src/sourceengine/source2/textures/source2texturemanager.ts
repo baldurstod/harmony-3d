@@ -96,6 +96,8 @@ export class Source2TextureManager {
 						webgpuSamplerDescriptor: {
 							addressModeU: 'repeat',// TODO: set actual value
 							addressModeV: 'repeat',// TODO: set actual value
+							magFilter: 'linear',// TODO: set actual value
+							minFilter: 'linear',// TODO: set actual value
 						}
 					});//TODOv3: add params
 
