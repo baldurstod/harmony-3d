@@ -2,7 +2,7 @@ export default `
 
 #include declare_fragment_color_map
 uniform sampler2D displacementMaskMap;
-uniform sampler2D specularMap;
+uniform sampler2D specularTexture;
 uniform sampler2D spiralNormalMap;
 uniform sampler2D spiralOverlayMap;
 
@@ -33,7 +33,7 @@ void main(void) {
 	vec4 displacementMask = vec4(1.0);
 #endif
 #ifdef USE_SPECULAR_MAP
-	vec4 specularColor = texture2D(specularMap, vTextureCoord.xy);
+	vec4 specularColor = texture2D(specularTexture, vTextureCoord.xy);
 #else
 	vec4 specularColor = vec4(1.0);
 #endif

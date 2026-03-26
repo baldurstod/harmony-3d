@@ -53,7 +53,7 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
 
 	['g_tDisplacementMask', ['displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
-	['g_tSpecular', ['specularMap', 'USE_SPECULAR_MAP']],
+	['g_tSpecular', ['specularTexture', 'USE_SPECULAR_MAP']],
 	['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
 	['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
 
@@ -123,10 +123,10 @@ export class Source2Material extends Material {
 		}
 
 		if (this.getIntParam('F_MASKS_1')) {
-			this.setDefine('USE_MASK1_MAP');
+			this.setDefine('F_MASKS_1');
 		}
 		if (this.getIntParam('F_MASKS_2')) {
-			this.setDefine('USE_MASK2_MAP');
+			this.setDefine('F_MASKS_2');
 		}
 		if (this.getIntParam('F_ENABLE_CLOAK')) {
 			this.setDefine('ENABLE_CLOAK');
@@ -138,9 +138,7 @@ export class Source2Material extends Material {
 		}
 
 		if (this.getIntParam('F_ALPHA_TEST') == 1) {
-			this.setDefine('ALPHA_TEST');//TODOv3: set this automaticaly
-			this.uniforms['uAlphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
-			this.uniforms['alphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
+			this.setAlphaTestReference((this.#getParam('g_flAlphaTestReference') as number) ?? DEFAULT_ALPHA_TEST_REFERENCE);
 		}
 
 		if (this.getIntParam('F_SEPARATE_ALPHA_TRANSFORM')) {

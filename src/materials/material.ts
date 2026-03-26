@@ -436,6 +436,7 @@ export class Material {
 	}
 
 	setAlphaTestReference(alphaTestReference: number) {
+		this.#alphaTest = true;
 		this.#alphaTestReference = alphaTestReference;
 		this.#setAlphaTest();
 	}
@@ -451,6 +452,7 @@ export class Material {
 		if (this.#alphaTest) {
 			this.setDefine('ALPHA_TEST');
 			this.uniforms['uAlphaTestReference'] = this.#alphaTestReference ?? 0.5;
+			this.uniforms['alphaTestReference'] = this.#alphaTestReference ?? 0.5;
 			this.depthMask = true;
 		} else {
 			this.removeDefine('ALPHA_TEST');

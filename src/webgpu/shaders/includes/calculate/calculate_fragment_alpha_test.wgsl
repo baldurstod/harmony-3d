@@ -1,6 +1,6 @@
 #ifndef EXPORT_TEXTURES
 	#ifdef ALPHA_TEST
-		if (diffuseColor.a < uAlphaTestReference) {
+		if (diffuseColor.a < alphaTestReference) {
 			discard;
 		}
 	#endif

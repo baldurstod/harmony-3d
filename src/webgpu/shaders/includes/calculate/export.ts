@@ -24,6 +24,15 @@ addWgslInclude('calculate_fragment_lights', calculate_fragment_lights);
 import calculate_fragment_log_depth from './calculate_fragment_log_depth.wgsl';
 addWgslInclude('calculate_fragment_log_depth', calculate_fragment_log_depth);
 
+import calculate_fragment_mask_map from './calculate_fragment_mask_map.wgsl';
+addWgslInclude('calculate_fragment_mask_map', calculate_fragment_mask_map);
+
+import calculate_fragment_mask1_map from './calculate_fragment_mask1_map.wgsl';
+addWgslInclude('calculate_fragment_mask1_map', calculate_fragment_mask1_map);
+
+import calculate_fragment_mask2_map from './calculate_fragment_mask2_map.wgsl';
+addWgslInclude('calculate_fragment_mask2_map', calculate_fragment_mask2_map);
+
 import calculate_fragment_normal_map from './calculate_fragment_normal_map.wgsl';
 addWgslInclude('calculate_fragment_normal_map', calculate_fragment_normal_map);
 
@@ -32,6 +41,9 @@ addWgslInclude('calculate_fragment_normal', calculate_fragment_normal);
 
 import calculate_fragment_phong_exponent_map from './calculate_fragment_phong_exponent_map.wgsl';
 addWgslInclude('calculate_fragment_phong_exponent_map', calculate_fragment_phong_exponent_map);
+
+import calculate_fragment_specular_map from './calculate_fragment_specular_map.wgsl';
+addWgslInclude('calculate_fragment_specular_map', calculate_fragment_specular_map);
 
 import calculate_fragment_standard from './calculate_fragment_standard.wgsl';
 addWgslInclude('calculate_fragment_standard', calculate_fragment_standard);
