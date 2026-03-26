@@ -363,14 +363,12 @@ export class NodeGui {
 				class: 'copy-button',
 				parent: paramHtml,
 				innerHTML: contentCopySVG,
-				events: {
-					click: async () => {
-						await navigator.clipboard.writeText(valueHtml.value);
-						valueHtml.classList.add('flash');
-						await setTimeoutPromise(1500);
-						valueHtml.classList.remove('flash');
-					},
-				}
+				$click: async () => {
+					await navigator.clipboard.writeText(valueHtml.value);
+					valueHtml.classList.add('flash');
+					await setTimeoutPromise(1500);
+					valueHtml.classList.remove('flash');
+				},
 			});
 			this.#htmlParamsValue.set(paramHtml, valueHtml);
 		}
