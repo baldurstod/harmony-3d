@@ -1188,6 +1188,7 @@ export class WebGPURenderer implements Renderer {
 									0,
 									new Float32Array([materialUniform as number]),
 								);
+								break;
 							case 'u32':
 								device.queue.writeBuffer(
 									uniformBuffer,
