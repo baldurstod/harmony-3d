@@ -251,11 +251,16 @@ export class Entity {
 		return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
 	}
 
-	// TODO: deprecate setQuaternion, getQuaternion
+	/**
+	 * @deprecated Please use `setOrientation` instead.
+	 */
 	setQuaternion(quaternion: ReadonlyQuat): void {
 		this.setOrientation(quaternion);
 	}
 
+	/**
+	 * @deprecated Please use `getOrientation` instead.
+	 */
 	getQuaternion(quaternion: quat = quat.create()): quat {
 		return this.getOrientation(quaternion);
 	}

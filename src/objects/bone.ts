@@ -48,6 +48,9 @@ export class Bone extends Entity implements Lockable {
 		this.#skeleton = params.skeleton ?? null;
 	}
 
+	/**
+	 * @deprecated Please use `setPosition` instead.
+	 */
 	set position(position) {
 		super.position = position;
 		this.dirty = true;
@@ -100,17 +103,24 @@ export class Bone extends Entity implements Lockable {
 		return quaternion;
 	}
 
+	/**
+	 * @deprecated Please use `setOrientation` instead.
+	 */
 	set quaternion(quaternion) {
 		super.quaternion = quaternion;
 		this.dirty = true;
 	}
 
+	/**
+	 * @deprecated Please use `setOrientation` instead.
+	 */
 	setQuaternion(quaternion: ReadonlyQuat): void {
-		this.setOrientation(quaternion);
+		super.setQuaternion(quaternion);
+		this.dirty = true;
 	}
 
 	setOrientation(quaternion: ReadonlyQuat): void {
-		super.setQuaternion(quaternion);
+		super.setOrientation(quaternion);
 		this.dirty = true;
 	}
 
