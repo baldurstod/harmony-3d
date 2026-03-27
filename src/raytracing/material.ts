@@ -10,6 +10,8 @@ export enum RtMaterial {
 	Source1Material,// fallback for all source 1 materials
 	Source1VertexLitGeneric,
 	Source1LightMappedGeneric,
+
+	Source2Material,// fallback for all source 2 materials
 }
 
 export type RaytracingMaterial = {

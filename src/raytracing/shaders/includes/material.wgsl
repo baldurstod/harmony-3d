@@ -161,6 +161,25 @@ struct Material {
     return true;
   }
 
+  @must_use
+  fn scatterSource2Material(
+    material: ptr<function, Material>,
+    ray: ptr<function, Ray>,
+    scattered: ptr<function, Ray>,
+    hitRec: ptr<function, HitRecord>,
+    attenuation: ptr<function, vec3f>,
+    rngState: ptr<function, u32>
+  ) -> bool {
+    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);
+    if (nearZero(scatterDirection)) {
+      scatterDirection = (*hitRec).normal;
+    }
+    (*scattered) = Ray((*hitRec).p, scatterDirection);
+    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;
+
+    return true;
+  }
+
   fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec4<f32> {
     if (desc.offset == 0xffffffff) {
       return vec4f(0.0);
@@ -217,8 +236,7 @@ struct Material {
       faceIndex = select(4., 5., v.z < 0.0);
       ma = 0.5 / vAbs.z;
       uv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);
-    }
-    else if(vAbs.y >= vAbs.x) {
+    } else if(vAbs.y >= vAbs.x) {
       faceIndex = select(2., 3., v.y < 0.0);
       ma = 0.5 / vAbs.y;
       uv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));

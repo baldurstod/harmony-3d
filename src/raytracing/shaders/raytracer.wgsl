@@ -146,6 +146,16 @@
           }
           break;
         }
+        case 7: {// Source2Material
+          var scatters = scatterSource2Material(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
+          if (i < commonUniforms.maxBounces) {
+            i++;
+            r = scattered;
+          } else {
+            bLoop = false;
+          }
+          break;
+        }
         default: {
           // ...
           bLoop = false;

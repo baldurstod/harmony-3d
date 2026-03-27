@@ -1,9 +1,11 @@
-import { vec4 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { DEBUG } from '../../../buildoptions';
 import { DynamicParams } from '../../../entities/entity';
 import { RenderFace } from '../../../materials/constants';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL } from '../../../materials/material';
 import { Mesh } from '../../../objects/mesh';
+import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
+import { Texture } from '../../../textures/texture';
 import { UniformValue } from '../../../webgl/uniform';
 import { Source2File } from '../loaders/source2file';
 import { Source2TextureManager } from '../textures/source2texturemanager';
@@ -542,5 +544,24 @@ export class Source2Material extends Material {
 
 	getTextureParams(): Map<string, string> | null {
 		return this.#getParams('m_textureParams', false, false, true) as Map<string, string>;
+	}
+
+	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		return {
+			index,
+			materialType: RtMaterial.Source2Material,
+			reflectionRatio: 0.1,
+			reflectionGloss: 1,
+			refractionIndex: 0.1,
+			albedo: vec3.fromValues(
+				0.901960015296936,
+				0.49411699175834656,
+				0.1333329975605011,
+			),// TODO: set actual value
+			textures: new Map([
+				[0, this.uniforms.colorMap as Texture],
+			]),
+			flatShading: false,
+		}
 	}
 }
