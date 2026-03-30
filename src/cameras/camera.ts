@@ -343,6 +343,10 @@ export class Camera extends Entity {
 		return this.#projectionMatrixInverse;
 	}
 
+	getViewProjectionMatrix(out: mat4 = mat4.create()): mat4 {
+		return mat4.mul(out, this.projectionMatrix, this.cameraMatrix);
+	}
+
 	get worldMatrixInverse() {
 		//TODO: optimize
 		mat4.invert(this.#worldMatrixInverse, this.worldMatrix);
