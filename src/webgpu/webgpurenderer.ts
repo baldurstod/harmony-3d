@@ -26,11 +26,11 @@ import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { Texture } from '../textures/texture';
 import { errorOnce } from '../utils/console';
+import { getDefines } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray, StorageValueStruct } from './storage';
-import { getDefines } from '../utils/defines';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -1499,7 +1499,9 @@ export class WebGPURenderer implements Renderer {
 										let baseOffset = 0;
 										for (const s of storageBuffer.value as StorageValueStruct[]) {
 
-											writeStruct(device.queue, storageBuffer.buffer, (storage.format as StructInfo).members, s, baseOffset);
+											if (s) {
+												writeStruct(device.queue, storageBuffer.buffer, (storage.format as StructInfo).members, s, baseOffset);
+											}
 											baseOffset += (storage.type as ArrayInfo).stride;
 											/*
 											for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {

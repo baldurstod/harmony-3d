@@ -38,7 +38,7 @@ type RtMaterial = {
 };
 
 type RayTracingScene = {
-	materials: RtMaterial[],
+	materials: (RtMaterial | null)[],
 	faces: Uint8ClampedArray,
 	facesCount: number,
 	aabbsCount: number,
@@ -82,7 +82,7 @@ interface ParsedModel {
 export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	const entitites = scene.getRenderableList();
 	const meshes: Mesh[] = [];
-	const materials = new Map<Material, RaytracingMaterial>();
+	const materials = new Map<Material, RaytracingMaterial | null>();
 	let materialIndex = 0;
 
 	for (const entity of entitites) {
@@ -92,9 +92,7 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 			const material = (entity as Mesh).getMaterial();
 			if (!materials.has(material)) {
 				let rtMaterials = material.getRaytracingMaterial(materialIndex++);
-				if (rtMaterials) {
-					materials.set(material, rtMaterials);
-				}
+				materials.set(material, rtMaterials);
 			}
 		}
 	}
@@ -115,14 +113,14 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	);
 }
 
-async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial>): Promise<RayTracingScene> {
+async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial | null>): Promise<RayTracingScene> {
 	const sceneModels = parseModel(meshes, sceneMaterials);
 
 	context.MODELS_COUNT = sceneModels.length;
 
 	let faces: Uint8ClampedArray;
 	let aabbs: Uint8ClampedArray;
-	const materials: RtMaterial[] = [];
+	const materials: (RtMaterial | null)[] = [];
 	// Prepare faces buffer
 	{
 		context.MAX_NUM_FACES_PER_MESH = sceneModels.reduce(
@@ -258,6 +256,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 			const numFloatsPerMaterial = 8;
 
 			for (const [, mtl] of sceneMaterials) {
+				if (!mtl) {
+					materials.push(null);
+					continue;
+				}
 				const textures: RtTextureDescriptors = [emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture];
 				if (mtl.textures) {
 					for (const [id, tex] of mtl.textures) {
@@ -274,7 +276,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 					refractionIndex: mtl.refractionIndex,
 					albedo: mtl.albedo,
 					textures,
-				})
+				});
 			}
 		}
 	}
@@ -291,7 +293,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	}
 }
 
-function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>): ParsedModel[] {
+function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial | null>): ParsedModel[] {
 	const fn = vec3.create();
 	const p1p0Diff = vec3.create();
 	const p2p0Diff = vec3.create();

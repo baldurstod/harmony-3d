@@ -67,7 +67,6 @@ fn vertex_main(
   } else if (lineInstanceIdx == 11) {
     pos = mix(a7, a4, fVertexIndex);
   }
-  //return viewProjectionMatrix * vec4(pos, 1);
   return matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1);
 }
 

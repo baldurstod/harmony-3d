@@ -3248,7 +3248,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4580,7 +4580,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | string[] | null;
+                          getValue(paramName: string): string | number | boolean | string[] | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
@@ -5479,7 +5479,7 @@ declare class Channel {
                           pause(): void;
                           getOutputTexture(): Texture | null;
                           getMaterial(): ShaderMaterial;
-                          debugBvh(debug: false): void;
+                          debugBvh(debug: boolean): void;
                           dispose(): void;
                       }
 
@@ -6021,7 +6021,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
+                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 
@@ -6815,7 +6815,7 @@ declare class Channel {
                               animate: {
                                   i18n: string;
                                   selected: boolean;
-                                  f: () => 0 | 1;
+                                  f: () => 1 | 0;
                               };
                               frame: {
                                   i18n: string;
