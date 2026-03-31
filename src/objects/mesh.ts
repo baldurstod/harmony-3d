@@ -34,6 +34,7 @@ const uv = vec2.create();
 export type MeshParameters = EntityParameters & {
 	geometry?: BufferGeometry,
 	material?: Material,
+	topology?: GPUPrimitiveTopology;
 };
 
 const meshDefaultBufferGeometry = new BufferGeometry();
@@ -58,11 +59,13 @@ export class Mesh extends Entity {
 	readonly storage: Record<string, StorageBuffer> = {};
 	defines = Object.create(null);
 	isMesh = true;
+	topology: GPUPrimitiveTopology;
 
 	constructor(params: MeshParameters) {
 		super(params);
 		this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
 		this.setMaterial(params.material ?? meshDefaultMaterial);
+		this.topology = params.topology ?? 'triangle-list';
 		this.#desaturate(this.getAttribute('desaturate'));
 	}
 

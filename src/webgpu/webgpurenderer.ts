@@ -447,7 +447,7 @@ export class WebGPURenderer implements Renderer {
 				}]
 			},
 			primitive: {
-				topology: 'triangle-list',
+				topology: object.topology,
 				cullMode: material.getWebGPUCullMode(),
 			},
 			depthStencil: {
