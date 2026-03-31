@@ -33,7 +33,13 @@ type FbxBoneData = { bi: Map<number, number[]>, bw: Map<number, number[]> };
 export async function exportToBinaryFBX(entity: Entity): Promise<ArrayBuffer> {
 	const fbxManager = new FBXManager();
 	const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
-	return new FBXExporter().exportBinary(fbxFile);
+	return FBXExporter.exportBinary(fbxFile);
+}
+
+export async function exportFbxToText(entity: Entity): Promise<string> {
+	const fbxManager = new FBXManager();
+	const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
+	return FBXExporter.exportText(fbxFile);
 }
 
 export async function entityToFBXScene(fbxManager: FBXManager, entity: Entity): Promise<FBXScene> {
