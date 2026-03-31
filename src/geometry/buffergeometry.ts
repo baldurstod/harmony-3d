@@ -4,13 +4,21 @@ import { Properties } from '../utils/properties';
 import { GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
 import { BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from './bufferattribute';
 
+export type BufferGeometryParameters = {
+	count?: number,
+};
+
 export class BufferGeometry {
 	#elementArrayType: GLenum = GL_UNSIGNED_INT;
 	#users = new Set<any>();
 	attributes = new Map<string, BufferAttribute>();
 	dirty = true;
-	count = 0;
+	count: number;
 	readonly properties = new Properties()//new Map<string, any>();
+
+	constructor(params: BufferGeometryParameters = {}) {
+		this.count = params.count ?? 0;
+	}
 
 	getAttribute(name: string) {
 		return this.attributes.get(name);
