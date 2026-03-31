@@ -9,7 +9,7 @@ import { RaytracingMaterial } from '../raytracing/material';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { UniformValue } from '../webgl/uniform';
-import { StorageBuffer, StorageValue, StorageValueArray } from '../webgpu/storage';
+import { StorageBuffer, StorageValueArray } from '../webgpu/storage';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 
@@ -607,7 +607,7 @@ export class Material {
 		}
 	}
 
-	getRaytracingMaterial(index: number): RaytracingMaterial {
+	getRaytracingMaterial(index: number): RaytracingMaterial | null {
 		throw new Error('override this function');
 	}
 }

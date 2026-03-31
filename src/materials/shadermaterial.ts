@@ -1,6 +1,6 @@
 import { ShaderManager } from '../managers/shadermanager';
 import { ShaderType } from '../webgl/types';
-import { Material, MaterialParams, MaterialUniform } from './material';
+import { Material, MaterialParams } from './material';
 
 let id = 0;
 
@@ -37,5 +37,9 @@ export class ShaderMaterial extends Material {
 
 	override getShaderSource(): string {
 		return this.#shaderSource;
+	}
+
+	override getRaytracingMaterial(index: number): null {
+		return null;
 	}
 }

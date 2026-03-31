@@ -90,7 +90,10 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 
 			const material = (entity as Mesh).getMaterial();
 			if (!materials.has(material)) {
-				materials.set(material, material.getRaytracingMaterial(materialIndex++));
+				let rtMaterials = material.getRaytracingMaterial(materialIndex++);
+				if (rtMaterials) {
+					materials.set(material, rtMaterials);
+				}
 			}
 		}
 	}
@@ -291,9 +294,14 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 	const p1p0Diff = vec3.create();
 	const p2p0Diff = vec3.create();
 
-	return meshes.map((mesh, i) => {
+	const models: ParsedModel[] = [];
+
+	for (const mesh of meshes) {
 		const obj = mesh.exportObj(true);
-		const rtMaterial = materials.get(mesh.getMaterial())!;
+		const rtMaterial = materials.get(mesh.getMaterial());
+		if (!rtMaterial) {
+			continue;
+		}
 
 		const outFaces: Face[] = [];
 		const faces = obj.f;
@@ -408,11 +416,12 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial>
 
 		outAABBs.push(bv);
 		bv.subdivide(outFaces, outAABBs);
-		return {
+		models.push({
 			faces: outFaces,
 			AABBs: outAABBs,
-		};
-	});
+		});
+	};
+	return models;
 }
 
 async function getTextureDescriptor(context: RayTracingContext, texture: Texture): Promise<RtTextureDescriptor> {
