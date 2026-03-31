@@ -50,6 +50,8 @@ export type MaterialParams = {
 	gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines?: Record<string, string>;
 	workgroupSize?: vec3;
+
+	blendingMode?: BlendingMode;
 };
 
 export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -133,6 +135,10 @@ export class Material {
 
 		if (params.gpuConstants) {
 			this.gpuConstants = params.gpuConstants;
+		}
+
+		if (params.blendingMode) {
+			this.setBlending(params.blendingMode/*TODO: add premultipliedAlpha param*/);
 		}
 	}
 
