@@ -49,7 +49,7 @@ export interface EntityParameters {
 	childs?: Entity[];
 	position?: vec3;
 	quaternion?: quat;
-	scale?: vec3;
+	scale?: vec3 | number;
 	hideInExplorer?: boolean;
 	castShadow?: boolean;
 	receiveShadow?: boolean;
@@ -124,7 +124,11 @@ export class Entity {
 			this.setQuaternion(parameters.quaternion);
 		}
 		if (parameters.scale) {
-			this.scale = parameters.scale;
+			if (typeof parameters.scale === 'number') {
+				this.scale = vec3.fromValues(parameters.scale, parameters.scale, parameters.scale);
+			} else {
+				this.scale = parameters.scale;
+			}
 		}
 		if (parameters.hideInExplorer) {
 			this.hideInExplorer = parameters.hideInExplorer;
