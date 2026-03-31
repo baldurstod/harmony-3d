@@ -577,9 +577,6 @@ function errorOnce(message, max = 1) {
     }
 }
 
-const __DISABLE_WEBGL2__ = false;
-const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
-
 var ShaderType;
 (function (ShaderType) {
     ShaderType["Vertex"] = "vertex";
@@ -661,6 +658,19 @@ function getIncludeList() {
 function addWgslInclude(name, source) {
     WgslIncludes.set(name, source);
     WgslPreprocessor.setWgslInclude(name, source);
+}
+
+function getDefines(meshOrMaterial, defines) {
+    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
+        defines.set(name, value);
+    }
+}
+function getIncludeCode(defines) {
+    let includeCode = '';
+    for (const define of defines) {
+        includeCode += `#define ${define[0]} ${define[1]}\n`;
+    }
+    return includeCode;
 }
 
 function getHeader(type) {
@@ -811,21 +821,8 @@ class WebGLShaderSource {
         allIncludes.add(includeName);
         return outArray;
     }
-    getCompileSource(includeCode = '') {
-        function getDefineValue(defineName, includeCode = '') {
-            const sourceLineArray = includeCode.split('\n');
-            const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
-            for (const line of sourceLineArray) {
-                const regexResult = definePattern.exec(line);
-                if (regexResult && defineName) {
-                    if (regexResult[1] == defineName) {
-                        return regexResult[2];
-                    }
-                }
-            }
-            return defineName;
-        }
-        function unrollLoops(source, includeCode = '') {
+    getCompileSource(defines) {
+        function unrollLoops(source, defines) {
             let nextUnroll = Infinity;
             let unrollSubstring;
             const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
@@ -873,8 +870,8 @@ class WebGLShaderSource {
                         if (loopSnippet) {
                             const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
                             const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
-                            const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
-                            const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
+                            const startLoopIndex = Number.parseInt(defines.get(startLoopName) ?? startLoopName);
+                            const endLoopIndex = Number.parseInt(defines.get(endLoopName) ?? endLoopName);
                             let unrolled = '';
                             for (let i = startLoopIndex; i < endLoopIndex; i++) {
                                 unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
@@ -887,10 +884,10 @@ class WebGLShaderSource {
             return source;
         }
         if (this.#type == ShaderType.Wgsl) {
-            return WgslPreprocessor.preprocessWgsl(includeCode + this.#compileSource);
+            return WgslPreprocessor.preprocessWgsl(this.#compileSource, defines);
         }
         else {
-            return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
+            return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + getIncludeCode(defines) + unrollLoops(this.#compileSource, defines);
         }
     }
     getCompileSourceWebGPU(defines) {
@@ -904,8 +901,8 @@ class WebGLShaderSource {
         }
         return sourceLineArray.join('\n');
     }
-    setCompileError(error, includeCode = '') {
-        let lineDelta = ((includeCode).match(/\n/g) || []).length;
+    setCompileError(error, defines) {
+        let lineDelta = defines.size;
         if (this.#type == ShaderType.Fragment || this.#type == ShaderType.Vertex) {
             lineDelta += 1; //#version line
         }
@@ -1150,7 +1147,7 @@ class ShaderManager {
         return errorArray;
     }
     static get shaderList() {
-        return this.#shaderList.keys();
+        return new Set([...this.#shaderList.keys(), ...this.#customShaderList.keys()]);
     }
     static resetShadersSource() {
         for (const source of this.#shaderList.values()) {
@@ -1170,6 +1167,9 @@ class ShaderManager {
         return;
     }
 }
+
+const __DISABLE_WEBGL2__ = false;
+const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
 
 const entities$1 = new Map();
 function registerEntity(ent) {
@@ -1617,7 +1617,7 @@ const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 class Material {
     id = '';
     name = '';
-    #renderFace = RenderFace.Front;
+    #renderFace;
     #renderLights = true;
     #color = vec4.create();
     #alphaTest = false;
@@ -1658,6 +1658,7 @@ class Material {
         this.modeRGB = GL_FUNC_ADD;
         this.modeAlpha = GL_FUNC_ADD;
         //this.culling = parameters.culling ?? DEFAULT_CULLING_MODE;
+        this.renderFace(params.renderFace ?? RenderFace.Front);
         this.color = DEFAULT_COLOR;
         this.polygonOffset = params.polygonOffset ?? false;
         this.polygonOffsetFactor = params.polygonOffsetFactor ?? -5;
@@ -1681,6 +1682,9 @@ class Material {
         }
         if (params.gpuConstants) {
             this.gpuConstants = params.gpuConstants;
+        }
+        if (params.blendingMode) {
+            this.setBlending(params.blendingMode /*TODO: add premultipliedAlpha param*/);
         }
     }
     get transparent() {
@@ -1946,6 +1950,7 @@ class Material {
         this.setAlphaTest(alphaTest);
     }
     setAlphaTestReference(alphaTestReference) {
+        this.#alphaTest = true;
         this.#alphaTestReference = alphaTestReference;
         this.#setAlphaTest();
     }
@@ -1959,6 +1964,7 @@ class Material {
         if (this.#alphaTest) {
             this.setDefine('ALPHA_TEST');
             this.uniforms['uAlphaTestReference'] = this.#alphaTestReference ?? 0.5;
+            this.uniforms['alphaTestReference'] = this.#alphaTestReference ?? 0.5;
             this.depthMask = true;
         }
         else {
@@ -2044,6 +2050,7 @@ class Material {
                 this.#disposeUniform(uniform);
             }
         }
+        // TODO: destroy gpu buffers
     }
     static getEntityName() {
         return 'Material';
@@ -2072,11 +2079,11 @@ class Material {
             this.storage.set(name, { value: null, size: value });
         }
         else {
-            if (value.value) {
-                this.storage.set(name, value);
+            if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
+                this.storage.set(name, { value: value });
             }
             else {
-                this.storage.set(name, { value: value });
+                this.storage.set(name, value);
             }
         }
     }
@@ -2086,6 +2093,9 @@ class Material {
             sto.buffer?.destroy();
             sto.buffer = null;
         }
+    }
+    getRaytracingMaterial(index) {
+        throw new Error('override this function');
     }
 }
 registerEntity(Material);
@@ -2111,6 +2121,9 @@ class ShaderMaterial extends Material {
     }
     getShaderSource() {
         return this.#shaderSource;
+    }
+    getRaytracingMaterial(index) {
+        return null;
     }
 }
 
@@ -2156,6 +2169,18 @@ class JSONLoader {
     }
 }
 
+var RtMaterial;
+(function (RtMaterial) {
+    RtMaterial[RtMaterial["Emissive"] = 0] = "Emissive";
+    RtMaterial[RtMaterial["Reflective"] = 1] = "Reflective";
+    RtMaterial[RtMaterial["Dielectric"] = 2] = "Dielectric";
+    RtMaterial[RtMaterial["Lambertian"] = 3] = "Lambertian";
+    RtMaterial[RtMaterial["Source1Material"] = 4] = "Source1Material";
+    RtMaterial[RtMaterial["Source1VertexLitGeneric"] = 5] = "Source1VertexLitGeneric";
+    RtMaterial[RtMaterial["Source1LightMappedGeneric"] = 6] = "Source1LightMappedGeneric";
+    RtMaterial[RtMaterial["Source2Material"] = 7] = "Source2Material";
+})(RtMaterial || (RtMaterial = {}));
+
 class MeshBasicMaterial extends Material {
     map = null;
     lightMap = null;
@@ -2180,6 +2205,17 @@ class MeshBasicMaterial extends Material {
     }
     getShaderSource() {
         return 'meshbasic';
+    }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Lambertian,
+            reflectionRatio: 0,
+            reflectionGloss: 1,
+            refractionIndex: 1,
+            albedo: vec3.fromValues(6, 6, 6), // TODO: set actual value
+            flatShading: false,
+        };
     }
     toJSON() {
         const json = super.toJSON();
@@ -2681,7 +2717,12 @@ class Entity {
             this.setQuaternion(parameters.quaternion);
         }
         if (parameters.scale) {
-            this.scale = parameters.scale;
+            if (typeof parameters.scale === 'number') {
+                this.scale = vec3.fromValues(parameters.scale, parameters.scale, parameters.scale);
+            }
+            else {
+                this.scale = parameters.scale;
+            }
         }
         if (parameters.hideInExplorer) {
             this.hideInExplorer = parameters.hideInExplorer;
@@ -2797,10 +2838,15 @@ class Entity {
     get positionAsString() {
         return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
     }
-    // TODO: deprecate setQuaternion, getQuaternion
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
     setQuaternion(quaternion) {
         this.setOrientation(quaternion);
     }
+    /**
+     * @deprecated Please use `getOrientation` instead.
+     */
     getQuaternion(quaternion = quat.create()) {
         return this.getOrientation(quaternion);
     }
@@ -3152,7 +3198,7 @@ class Entity {
         }
         this.setQuaternion(tempQuat$c);
     }
-    getMeshList() {
+    getRenderableList() {
         const meshList = new Set();
         const treated = new WeakSet();
         let currentEntity = this;
@@ -3895,8 +3941,11 @@ class BufferGeometry {
     #users = new Set();
     attributes = new Map();
     dirty = true;
-    count = 0;
+    count;
     properties = new Properties(); //new Map<string, any>();
+    constructor(params = {}) {
+        this.count = params.count ?? 0;
+    }
     getAttribute(name) {
         return this.attributes.get(name);
     }
@@ -5030,10 +5079,12 @@ class Mesh extends Entity {
     storage = {};
     defines = Object.create(null);
     isMesh = true;
+    topology;
     constructor(params) {
         super(params);
         this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
         this.setMaterial(params.material ?? meshDefaultMaterial);
+        this.topology = params.topology ?? 'triangle-list';
         this.#desaturate(this.getAttribute('desaturate'));
     }
     /**
@@ -5096,6 +5147,7 @@ class Mesh extends Entity {
         return this.storage[name];
     }
     setStorage(name, value) {
+        // TODO: copy the behavior of material setStorage
         this.storage[name] = { value };
     }
     deleteStorage(name) {
@@ -5111,25 +5163,43 @@ class Mesh extends Entity {
     removeDefine(define) {
         delete this.defines[define];
     }
-    exportObj() {
+    /**
+     * Export mesh as obj
+     * @param worldSpace Export mesh in world space. Default to false
+     * @returns Exported mesh
+     */
+    exportObj(worldSpace = false) {
         //const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
         const ret = {};
-        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', tangent: 'aVertexTangent' };
         const geometry = this.#geometry;
         for (const objAttribute in attributes) {
             const geometryAttribute = attributes[objAttribute];
             if (geometry?.getAttribute(geometryAttribute)) {
                 const webglAttrib = geometry.getAttribute(geometryAttribute);
                 if (webglAttrib) {
-                    ret[objAttribute] = webglAttrib._array;
+                    ret[objAttribute] = webglAttrib._array?.slice();
                 }
             }
             else {
                 if (objAttribute == 'f') {
                     ret['f'] = new Uint8Array();
                 }
-                else {
-                    ret[objAttribute] = new Float32Array();
+            }
+        }
+        if (worldSpace) {
+            const vertexArray = ret['v'];
+            if (vertexArray) {
+                const worldMatrix = this.worldMatrix;
+                const vec = vec3.create();
+                for (let i = 0; i < vertexArray.length; i += 3) {
+                    vec[0] = vertexArray[i + 0];
+                    vec[1] = vertexArray[i + 1];
+                    vec[2] = vertexArray[i + 2];
+                    vec3.transformMat4(vec, vec, worldMatrix);
+                    vertexArray[i + 0] = vec[0];
+                    vertexArray[i + 1] = vec[1];
+                    vertexArray[i + 2] = vec[2];
                 }
             }
         }
@@ -5988,6 +6058,9 @@ class Camera extends Entity {
         }
         return this.#projectionMatrixInverse;
     }
+    getViewProjectionMatrix(out = mat4.create()) {
+        return mat4.mul(out, this.projectionMatrix, this.cameraMatrix);
+    }
     get worldMatrixInverse() {
         //TODO: optimize
         mat4.invert(this.#worldMatrixInverse, this.worldMatrix);
@@ -6237,6 +6310,118 @@ class WebGPUInternal {
     static device;
     static format;
     static depthTexture;
+}
+
+const COMPUTE_WORKGROUP_SIZE_X$1 = 16;
+const COMPUTE_WORKGROUP_SIZE_Y$1 = 16;
+/**
+ * [WebGPU only] Get the texture pixel data.
+ * @param texture The texture to retrieve the pixels from.
+ * @returns A Float32Array containing th epixel data.
+ */
+async function getTextureData(texture) {
+    if (texture.isCube) {
+        return getTextureCubeData(texture);
+    }
+    else {
+        return getTexture2dData(texture);
+    }
+}
+async function getTexture2dData(texture) {
+    if (Graphics$1.isWebGLAny) {
+        throw new Error('This method is only available in WebGPU mode');
+    }
+    const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4;
+    const material = new ShaderMaterial({
+        shaderSource: 'texturedatas',
+        uniforms: {
+            input: texture,
+            size: vec2.fromValues(texture.width, texture.height),
+            elements: texture.elementsPerTexel,
+        },
+        storages: {
+            output: {
+                size: bufferSize,
+                usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
+            },
+        },
+        gpuConstants: {
+            WORKGROUP_SIZE_X: COMPUTE_WORKGROUP_SIZE_X$1,
+            WORKGROUP_SIZE_Y: COMPUTE_WORKGROUP_SIZE_Y$1,
+        },
+        workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X$1, COMPUTE_WORKGROUP_SIZE_Y$1, 1),
+    });
+    const stagingBuffer = WebGPUInternal.device.createBuffer({
+        size: bufferSize,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+    });
+    Graphics$1.compute(material, {
+        workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
+        workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
+    }, (commandEncoder) => {
+        const outputBuffer = material.getStorage('output').buffer;
+        commandEncoder.copyBufferToBuffer(outputBuffer, 0, // Source offset
+        stagingBuffer, 0, // Destination offset
+        bufferSize);
+    });
+    await stagingBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
+    bufferSize // Length
+    );
+    const copyArrayBuffer = stagingBuffer.getMappedRange(0, bufferSize);
+    const data = new Float32Array(copyArrayBuffer.slice());
+    material.dispose();
+    return data;
+}
+async function getTextureCubeData(texture) {
+    if (Graphics$1.isWebGLAny) {
+        throw new Error('This method is only available in WebGPU mode');
+    }
+    const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4;
+    const destBufferSize = bufferSize * 6; // 6 faces
+    const material = new ShaderMaterial({
+        shaderSource: 'texture_cube_datas',
+        uniforms: {
+            input: texture,
+            size: vec2.fromValues(texture.width, texture.height),
+            elements: texture.elementsPerTexel,
+        },
+        storages: {
+            output: {
+                size: bufferSize,
+                usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
+            },
+        },
+        gpuConstants: {
+            WORKGROUP_SIZE_X: COMPUTE_WORKGROUP_SIZE_X$1,
+            WORKGROUP_SIZE_Y: COMPUTE_WORKGROUP_SIZE_Y$1,
+        },
+        workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X$1, COMPUTE_WORKGROUP_SIZE_Y$1, 1),
+    });
+    const destinationBuffer = WebGPUInternal.device.createBuffer({
+        size: destBufferSize,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+    });
+    for (let i = 0; i < 6; ++i) {
+        material.gpuConstants.layer = i;
+        Graphics$1.compute(material, {
+            workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
+            workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
+        }, (commandEncoder) => {
+            const outputBuffer = material.getStorage('output').buffer;
+            commandEncoder.copyBufferToBuffer(outputBuffer, 0, // Source offset
+            destinationBuffer, bufferSize * i, // Destination offset
+            bufferSize);
+        });
+    }
+    await destinationBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
+    destBufferSize // Length
+    );
+    const copyArrayBuffer = destinationBuffer.getMappedRange(0, destBufferSize);
+    const data = new Float32Array(copyArrayBuffer.slice());
+    console.info(data);
+    destinationBuffer.unmap();
+    material.dispose();
+    return data;
 }
 
 function fillCheckerTextureWebGPU(/*byteArray: Uint8Array, */ texture, color, width, height, needCubeMap) {
@@ -6550,7 +6735,10 @@ class Texture {
     isCube = false; // TODO: remove. Cube maps should be using CubeTexture
     gpuFormat;
     gpuVisibility;
+    #datas;
+    elementsPerTexel = 4; // TODO: set param
     //readonly webgpuDescriptor: HarmonyGPUTextureDescriptor;
+    isSrgb = false;
     constructor(textureParams = { gpuFormat: 'rgba8unorm', gpuVisibility: GPUShaderStage.COMPUTE | GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT }) {
         //this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
         this.image = textureParams.image;
@@ -6657,6 +6845,15 @@ class Texture {
     getHeight() {
         return this.height;
     }
+    async getDatas() {
+        if (!this.#datas) {
+            this.#datas = await getTextureData(this);
+        }
+        if (this.#datas instanceof Float32Array) {
+            return this.#datas;
+        }
+        return new Float32Array(this.#datas);
+    }
     is(type) {
         return type === 'Texture';
     }
@@ -6707,7 +6904,11 @@ class CrosshatchPass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -6754,7 +6955,11 @@ class GrainPass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -6781,7 +6986,11 @@ class OldMoviePass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -6929,6 +7138,14 @@ class Color {
     }
 }
 
+const phonyWebGPUTextureDescriptor = {
+    size: {
+        width: 0,
+        height: 0,
+    },
+    format: 'rgba8unorm',
+    usage: GPUTextureUsage.TEXTURE_BINDING,
+};
 class TextureManager {
     static #texturesList = new Map();
     static setTexture(path, texture) {
@@ -7214,10 +7431,10 @@ class OutlinePass extends Pass {
         this.changeVisibilityOfSelectedObjects(true);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         this.changeVisibilityOfNonSelectedObjects(false);
-        Graphics$1.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
-        Graphics$1.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
+        Graphics$1.setDefine('SILHOUETTE_MODE');
+        Graphics$1.setDefine('SILHOUETTE_COLOR', 'vec4(1.0)');
         Graphics$1.render(this.outlineScene, this.camera, 0, context);
-        Graphics$1.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
+        Graphics$1.removeDefine('SILHOUETTE_MODE');
         this.changeVisibilityOfNonSelectedObjects(true);
         Graphics$1.popRenderTarget();
         /**************/
@@ -7268,7 +7485,11 @@ class PalettePass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -7305,7 +7526,11 @@ class PixelatePass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -7402,7 +7627,11 @@ class RayTracingPass extends Pass {
             if (this.material) {
                 this.material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
                 this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-                Graphics$1.compute(this.material, context, Math.ceil(context.width / (this.material.workgroupSize?.[0] ?? 1)), Math.ceil(context.height / (this.material.workgroupSize?.[1] ?? 1)));
+                Graphics$1.compute(this.material, {
+                    ...context,
+                    workgroupCountX: Math.ceil(context.width / (this.material.workgroupSize?.[0] ?? 1)),
+                    workgroupCountY: Math.ceil(context.height / (this.material.workgroupSize?.[1] ?? 1)),
+                });
             }
         }
     }
@@ -7452,7 +7681,11 @@ class SaturatePass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -7479,7 +7712,11 @@ class SketchPass extends Pass {
         else {
             this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, context, context.width, context.height);
+            Graphics$1.compute(this.#material, {
+                ...context,
+                workgroupCountX: context.width,
+                workgroupCountY: context.height,
+            });
         }
     }
 }
@@ -9055,10 +9292,9 @@ registerEntity(LineMaterial);
 
 class InstancedBufferGeometry extends BufferGeometry {
     instanceCount;
-    constructor(count = 0) {
-        super();
-        this.instanceCount = count;
-        return this;
+    constructor(params = {}) {
+        super(params);
+        this.instanceCount = params.instanceCount ?? 1;
     }
 }
 
@@ -10482,7 +10718,7 @@ const tempMat4$3 = mat4.create();
 async function exportToBinaryFBX(entity) {
     const fbxManager = new FBXManager();
     const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
-    return new FBXExporter().exportBinary(fbxFile);
+    return FBXExporter.exportBinary(fbxFile);
 }
 async function entityToFBXScene(fbxManager, entity) {
     const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
@@ -10888,22 +11124,22 @@ async function renderMaterial(material, materialsParams, renderMode) {
     const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
     const previousClearColor = Graphics$1.getClearColor();
     Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
-    Graphics$1.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-    Graphics$1.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-    Graphics$1.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+    Graphics$1.setDefine('EXPORT_TEXTURES');
+    Graphics$1.setDefine('SKIP_PROJECTION');
+    Graphics$1.setDefine('SKIP_LIGHTING');
     switch (renderMode) {
         case RenderMode$1.Normal:
-            Graphics$1.setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+            Graphics$1.setDefine('RENDER_MODE', '12');
             break;
     }
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
     Graphics$1.render(scene$1, camera$2, 0, { DisableToolRendering: true });
     const imgContent = await Graphics$1.toBlob();
-    Graphics$1.setIncludeCode('EXPORT_TEXTURES', '');
-    Graphics$1.setIncludeCode('SKIP_PROJECTION', '');
-    Graphics$1.setIncludeCode('SKIP_LIGHTING', '');
-    Graphics$1.removeIncludeCode('RENDER_MODE');
+    Graphics$1.removeDefine('EXPORT_TEXTURES');
+    Graphics$1.removeDefine('SKIP_PROJECTION');
+    Graphics$1.removeDefine('SKIP_LIGHTING');
+    Graphics$1.removeDefine('RENDER_MODE');
     Graphics$1.setSize(previousWidth, previousHeight);
     Graphics$1.clearColor(previousClearColor);
     return imgContent?.arrayBuffer() ?? null;
@@ -11156,7 +11392,7 @@ class ShadowMap {
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
         WebGLRenderingState.clearColor(CLEAR_COLOR);
-        Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
+        Graphics$1.setDefine('WRITE_DEPTH_TO_COLOR');
         let renderTarget;
         let shadowViewport;
         for (const light of lights) {
@@ -11168,7 +11404,13 @@ class ShadowMap {
                     vec2.copy(mapSize, shadow.textureSize);
                     Graphics$1.pushRenderTarget(renderTarget);
                     WebGLRenderingState.clear(true, true, true);
-                    Graphics$1.setIncludeCode('IS_POINT_LIGHT', light.isPointLight ? '#define IS_POINT_LIGHT' : '');
+                    if (light.isPointLight) {
+                        //Graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
+                        Graphics$1.setDefine('IS_POINT_LIGHT');
+                    }
+                    else {
+                        Graphics$1.removeDefine('IS_POINT_LIGHT');
+                    }
                     for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
                         shadowViewport = shadow.viewPorts[viewPortIndex];
                         vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
@@ -11199,7 +11441,8 @@ class ShadowMap {
             WebGLRenderingState.disable(GL_DEPTH_TEST);
         }
         WebGLRenderingState.clearColor(a$7);
-        Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+        //Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+        Graphics$1.removeDefine('WRITE_DEPTH_TO_COLOR');
     }
 }
 
@@ -11496,12 +11739,12 @@ class Program {
             uniform.setValue(this.#glContext, value);
         }
     }
-    validate(includeCode) {
+    validate(defines) {
         const vertexShaderScript = ShaderManager.getShaderSource(ShaderType.Vertex, this.#vertexShaderName);
         const fragmentShaderScript = ShaderManager.getShaderSource(ShaderType.Fragment, this.#fragmentShaderName);
         if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
-            const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
-            const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, includeCode);
+            const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, defines);
+            const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, defines);
             if (fsOk) {
                 this.#glContext.linkProgram(this.#program);
                 if (!this.#glContext.getProgramParameter(this.#program, this.#glContext.LINK_STATUS)) {
@@ -11566,11 +11809,11 @@ class Program {
             this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
         }
     }
-    #compileShader(shader, shaderName, shaderSource, includeCode) {
+    #compileShader(shader, shaderName, shaderSource, defines) {
         if (!shaderSource || !shaderSource.isValid()) {
             return false;
         }
-        const compileSource = shaderSource.getCompileSource(includeCode);
+        const compileSource = shaderSource.getCompileSource(defines);
         this.#glContext.shaderSource(shader, compileSource);
         this.#glContext.compileShader(shader);
         if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
@@ -11578,7 +11821,7 @@ class Program {
             const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
             console.warn(m, shaderSource.getCompileSourceLineNumber(compileSource), m);
             ShaderManager.setCompileError(shaderName, shaderInfoLog);
-            shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
+            shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), defines);
             return false;
         }
         return true;
@@ -11656,7 +11899,7 @@ class ForwardRenderer {
     #frame = 0;
     #materialsProgram = new Map();
     #glContext;
-    #globalIncludeCode = '';
+    //#globalIncludeCode = '';
     #toneMapping = ToneMapping.None;
     #toneMappingExposure = 1.;
     #defines = new Map();
@@ -11798,17 +12041,19 @@ class ForwardRenderer {
         if (renderLights) {
             this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
             if (!object.receiveShadow) {
-                Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+                Graphics$1.removeDefine('USE_SHADOW_MAPPING');
             }
         }
         else {
             this.#unsetLights();
         }
+        Graphics$1.removeDefine('IS_PERSPECTIVE_CAMERA');
+        Graphics$1.removeDefine('IS_ORTHOGRAPHIC_CAMERA');
         if (camera.projection == CameraProjection.Perspective) {
-            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
+            Graphics$1.setDefine('IS_PERSPECTIVE_CAMERA');
         }
         else {
-            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
+            Graphics$1.setDefine('IS_ORTHOGRAPHIC_CAMERA');
         }
         const program = this.#getProgram(object, material);
         if (program.isValid()) {
@@ -11962,27 +12207,32 @@ class ForwardRenderer {
         WebGLRenderingState.clear(color, depth, stencil);
     }
     #setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
-        Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
-        Graphics$1.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
-        Graphics$1.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
-        Graphics$1.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
-        Graphics$1.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
-        Graphics$1.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
+        Graphics$1.setDefine('USE_SHADOW_MAPPING');
+        Graphics$1.setDefine('NUM_POINT_LIGHTS', `${pointLights}`);
+        Graphics$1.setDefine('NUM_PBR_LIGHTS', `${pointLights}`);
+        Graphics$1.setDefine('NUM_SPOT_LIGHTS', `${spotLights}`);
+        Graphics$1.setDefine('NUM_POINT_LIGHT_SHADOWS', `${pointLightShadows}`);
+        Graphics$1.setDefine('NUM_SPOT_LIGHT_SHADOWS', `${spotLightShadows}`);
         //TODO: other lights of disable lighting all together
     }
     #unsetLights() {
-        Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-        Graphics$1.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
-        Graphics$1.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
-        Graphics$1.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
-        Graphics$1.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
+        Graphics$1.removeDefine('USE_SHADOW_MAPPING');
+        Graphics$1.setDefine('NUM_POINT_LIGHTS', '0');
+        Graphics$1.setDefine('NUM_PBR_LIGHTS', '0');
+        Graphics$1.setDefine('NUM_SPOT_LIGHTS', '0');
+        Graphics$1.setDefine('NUM_POINT_LIGHT_SHADOWS', '0');
+        Graphics$1.setDefine('NUM_SPOT_LIGHT_SHADOWS', '0');
         //TODO: other lights of disable lighting all together
     }
     #getProgram(mesh, material) {
-        let includeCode = Graphics$1.getIncludeCode();
-        includeCode += this.#globalIncludeCode;
+        const graphicsDefines = Graphics$1.getDefines();
+        let includeCode = getIncludeCode(graphicsDefines);
+        const defines = new Map(graphicsDefines); // TODO: don't create one each time
+        //includeCode += this.#globalIncludeCode;
         includeCode += getDefinesAsString(mesh);
         includeCode += getDefinesAsString(material);
+        getDefines(mesh, defines);
+        getDefines(material, defines);
         const includeCodeWithShaderName = includeCode + material.getShaderSource();
         let program = this.#materialsProgram.get(includeCodeWithShaderName);
         if (!program) {
@@ -11991,7 +12241,7 @@ class ForwardRenderer {
             this.#materialsProgram.set(includeCodeWithShaderName, program);
         }
         if (!program.isValid()) {
-            program.validate(includeCode);
+            program.validate(defines);
             material._dirtyProgram = false;
         }
         return program;
@@ -12027,14 +12277,16 @@ class ForwardRenderer {
     }
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
-        Graphics$1.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+        //Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+        Graphics$1.setDefine('TONE_MAPPING', `${toneMapping}`);
     }
     getToneMapping() {
         return this.#toneMapping;
     }
     setToneMappingExposure(exposure) {
         this.#toneMappingExposure = exposure;
-        Graphics$1.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+        //Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+        Graphics$1.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
     }
     getToneMappingExposure() {
         return this.#toneMappingExposure;
@@ -12125,14 +12377,14 @@ class WebGPURenderer {
     }
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
-        Graphics$1.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+        Graphics$1.setDefine('TONE_MAPPING', `${toneMapping}`);
     }
     getToneMapping() {
         return this.#toneMapping;
     }
     setToneMappingExposure(exposure) {
         this.#toneMappingExposure = exposure;
-        Graphics$1.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+        Graphics$1.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
     }
     getToneMappingExposure() {
         return this.#toneMappingExposure;
@@ -12235,13 +12487,10 @@ class WebGPURenderer {
         }
         const geometryAttributes = geometry.attributes;
         const indexAttribute = geometryAttributes.get('index');
-        if (!indexAttribute) {
-            return;
-        }
         const pick = context.renderContext.pick;
         material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
         const defines = new Map(this.#defines); // TODO: don't create one each time
-        defines.set('MAX_PARTICLES_IN_A_SYSTEM', String(MAX_PARTICLES_IN_A_SYSTEM$1));
+        defines.set('MAX_PARTICLES_IN_A_SYSTEM', `${MAX_PARTICLES_IN_A_SYSTEM$1}`);
         if (pick) {
             defines.set('PICKING_MODE', '');
         }
@@ -12261,12 +12510,9 @@ class WebGPURenderer {
             return;
         }
         const device = WebGPUInternal.device;
-        const indices = indexAttribute._array;
-        if (!indices) {
-            return;
-        }
-        let indexBuffer = indexAttribute.gpuBuffer;
-        if (indexAttribute.dirty || !indexAttribute.gpuBuffer) {
+        const indices = indexAttribute?._array;
+        let indexBuffer = indexAttribute?.gpuBuffer;
+        if (indexAttribute && indices && (indexAttribute.dirty || !indexAttribute.gpuBuffer)) {
             const size = Math.ceil(indices.length / 2) * 4;
             if (indexBuffer) {
                 indexBuffer.destroy();
@@ -12341,7 +12587,9 @@ class WebGPURenderer {
             passEncoder.setViewport(x, y, w, h, viewport.minDepth, viewport.maxDepth);
             passEncoder.setScissorRect(x, y, w, h);
         }
-        passEncoder.setIndexBuffer(indexBuffer, 'uint16'); // TODO: this could also be uint32
+        if (indexBuffer) {
+            passEncoder.setIndexBuffer(indexBuffer, 'uint16'); // TODO: this could also be uint32
+        }
         const vertexBuffers = [];
         for (const [, attribute] of geometryAttributes) {
             const location = shaderModule.attributes.get(attribute.wgslName);
@@ -12392,7 +12640,7 @@ class WebGPURenderer {
                     }]
             },
             primitive: {
-                topology: 'triangle-list',
+                topology: object.topology,
                 cullMode: material.getWebGPUCullMode(),
             },
             depthStencil: {
@@ -12451,11 +12699,11 @@ class WebGPURenderer {
         */
         this.#createBindGroups(groups, renderPipeline, passEncoder);
         passEncoder.setPipeline(renderPipeline);
-        if (geometry.instanceCount === undefined) {
-            passEncoder.drawIndexed(geometry.count);
+        if (indexBuffer) {
+            passEncoder.drawIndexed(geometry.count, geometry.instanceCount);
         }
         else {
-            passEncoder.drawIndexed(geometry.count, geometry.instanceCount);
+            passEncoder.draw(geometry.count, geometry.instanceCount);
         }
         // End the render pass
         passEncoder.end();
@@ -12713,7 +12961,7 @@ class WebGPURenderer {
     removeDefine(define) {
         this.#defines.delete(define);
     }
-    compute(material, context, workgroupCountX, workgroupCountY, workgroupCountZ) {
+    compute(material, context, postCompute) {
         const defines = new Map(this.#defines); // TODO: don't create one each time
         getDefines(material, defines);
         const shaderModule = this.#getShaderModule(material, defines);
@@ -12737,12 +12985,13 @@ class WebGPURenderer {
         };
         const computePipeline = device.createComputePipeline(pipelineDescriptor);
         const encoder = device.createCommandEncoder({ label: 'compute encoder' });
-        const pass = encoder.beginComputePass({});
-        pass.setPipeline(computePipeline);
+        const passEncoder = encoder.beginComputePass({});
+        passEncoder.setPipeline(computePipeline);
         //pass.setBindGroup(0, bindGroup);
-        this.#createBindGroups(groups, computePipeline, pass);
-        pass.dispatchWorkgroups(workgroupCountX, workgroupCountY, workgroupCountZ);
-        pass.end();
+        this.#createBindGroups(groups, computePipeline, passEncoder);
+        passEncoder.dispatchWorkgroups(context.renderContext.workgroupCountX ?? 1, context.renderContext.workgroupCountY ?? 1, context.renderContext.workgroupCountZ ?? 1);
+        passEncoder.end();
+        postCompute?.(encoder);
         const commandBuffer = encoder.finish();
         device.queue.submit([commandBuffer]);
     }
@@ -12758,11 +13007,14 @@ class WebGPURenderer {
                     //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
                 };
                 if (binding.buffer) {
-                    entry.buffer = { type: binding.bufferType ?? 'uniform' };
+                    entry.buffer = {
+                        type: binding.bufferType ?? 'uniform',
+                        // TODO: add minBindingSize ?
+                    };
                 }
                 if (binding.texture) {
                     entry.texture = {
-                        viewDimension: binding.texture.isCube ? 'cube' : '2d',
+                        viewDimension: binding.viewDimension,
                     };
                 }
                 if (binding.textureArray) {
@@ -12811,11 +13063,14 @@ class WebGPURenderer {
                 }
                 const uniformTexture = uniformBuffer.texture ?? uniformBuffer.storageTexture;
                 if (uniformTexture) {
+                    if (!uniformBuffer.viewDimension) {
+                        throw new Error(`missing viewDimension for texture ${uniformBuffer}`);
+                    }
                     if (uniformTexture.isCube) {
                         entries.push({
                             binding: bindingId, // corresponds to @binding
                             resource: uniformTexture.texture.createView({
-                                dimension: 'cube',
+                                dimension: uniformBuffer.viewDimension,
                             }),
                         });
                     }
@@ -12832,7 +13087,7 @@ class WebGPURenderer {
                         entries.push({
                             binding: bindingId, // corresponds to @binding
                             resource: uniformTextureArray[0].texture.createView({
-                                dimension: '2d-array',
+                                dimension: uniformBuffer.viewDimension,
                             }),
                         });
                     }
@@ -13009,6 +13264,9 @@ class WebGPURenderer {
                             case 'f32':
                                 device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
                                 break;
+                            case 'u32':
+                                device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([materialUniform]));
+                                break;
                             case 'mat3x3f':
                                 // In WGSL, mat3x3 actually are mat4x3
                                 const m = new Float32Array([
@@ -13023,6 +13281,10 @@ class WebGPURenderer {
                             case 'vec3f':
                             case 'vec4f':
                                 device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
+                                break;
+                            case 'vec2u':
+                                const vec2uArray = new Uint32Array([materialUniform[0], materialUniform[1]]);
+                                device.queue.writeBuffer(uniformBuffer, 0, vec2uArray);
                                 break;
                             case 'vec4':
                                 switch (uniform.type.format?.name) {
@@ -13079,14 +13341,14 @@ class WebGPURenderer {
                 case 'colorTexture':
                     const texture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
                     if (texture) {
-                        groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                        groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
                     }
                     break;
                 case 'color2Texture':
                     {
                         const texture = material.uniforms.color2Map; //?.texture as GPUTexture | undefined;
                         if (texture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                            groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
                         }
                     }
                     break;
@@ -13094,7 +13356,7 @@ class WebGPURenderer {
                     {
                         const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
                         if (texture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { texture });
+                            groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: getViewDimension(shaderTexture) });
                         }
                         else {
                             errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -13160,7 +13422,7 @@ class WebGPURenderer {
                 case 'colorTexture':
                     const storageTexture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
                     if (storageTexture) {
-                        groups.set(storage.group, storage.binding, { storageTexture, access });
+                        groups.set(storage.group, storage.binding, { storageTexture, access, viewDimension: '2d', });
                     }
                     break;
                 case 'pickedPrimitive':
@@ -13178,7 +13440,8 @@ class WebGPURenderer {
                     {
                         const storageTexture = material.uniforms[storage.name]; //?.texture as GPUTexture | undefined;
                         if (storageTexture) {
-                            if (Array.isArray(storageTexture)) {
+                            if (storage.isArray) {
+                                console.error("check this branch");
                                 let isCube = false;
                                 let visibility = undefined;
                                 let format = 'rgba8unorm';
@@ -13193,14 +13456,17 @@ class WebGPURenderer {
                                 }
                                 groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture, access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
                             }
+                            else if (storage.isStruct) {
+                                throw new Error('this should be a storage ' + storage.name);
+                            }
                             else {
-                                groups.set(storage.group, storage.binding, { storageTexture, access, visibility: storageTexture.gpuVisibility });
+                                groups.set(storage.group, storage.binding, { storageTexture: storageTexture, access, visibility: storageTexture.gpuVisibility, viewDimension: getViewDimension(storage) });
                             }
                         }
                         else {
                             const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
                             if (storageBuffer) {
-                                const usage = GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
+                                const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
                                 if (storageBuffer.raw) {
                                     if (!storageBuffer.buffer) {
                                         storageBuffer.buffer = device.createBuffer({
@@ -13215,10 +13481,21 @@ class WebGPURenderer {
                                 }
                                 else if (storage.isStruct) {
                                     // TODO: handle nested structs
+                                    // TODO: Do this every time there is a struct
+                                    // Compute the size of the struct if the last member is a dynamically sized array
+                                    let size = storage.size;
+                                    const members = storage.type.members;
+                                    const lastMember = members[members.length - 1];
+                                    if (lastMember.isArray && lastMember.size === 0) {
+                                        const value = storageBuffer.value?.[lastMember.name];
+                                        if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+                                            size += value.length * lastMember.type.stride;
+                                        }
+                                    }
                                     if (!storageBuffer.buffer) {
                                         storageBuffer.buffer = device.createBuffer({
                                             label: storage.name,
-                                            size: storage.size,
+                                            size,
                                             usage,
                                         });
                                     }
@@ -13239,7 +13516,7 @@ class WebGPURenderer {
                                                 usage,
                                             });
                                         }
-                                        if (storageBuffer.value !== null) {
+                                        if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
                                             device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
                                         }
                                     }
@@ -13288,7 +13565,7 @@ class WebGPURenderer {
                                                 usage,
                                             });
                                         }
-                                        if (storageBuffer.value !== null) {
+                                        if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
                                             device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
                                         }
                                     }
@@ -13306,11 +13583,6 @@ class WebGPURenderer {
                     break;
             }
         }
-    }
-}
-function getDefines(meshOrMaterial, defines) {
-    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
-        defines.set(name, value);
     }
 }
 function writePrimitive(queue, buffer, member, value, baseOffset) {
@@ -13345,7 +13617,7 @@ function writeStruct(queue, buffer, members, struct, baseOffset) {
             }
         }
         else if (member.isArray) {
-            throw new Error('code me');
+            writeArray(queue, buffer, member.type, structValue, baseOffset + member.offset);
         }
         else {
             // primitive
@@ -13356,23 +13628,6 @@ function writeStruct(queue, buffer, members, struct, baseOffset) {
                 errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
             }
         }
-        /*
-        const source = struct[member.name];
-        if (source !== undefined) {
-            if (typeof source === 'number') {
-                writeNumber(queue, buffer, member, source);
-            } else if (ArrayBuffer.isView(source)) {
-                queue.writeBuffer(
-                    buffer,
-                    member.offset,
-                    source as BufferSource,
-                );
-            } else {
-                // nested struct
-                //writeStruct(queue, buffer,)
-            }
-        }
-        */
     }
 }
 function writeTemplate(queue, buffer, type, value, offset) {
@@ -13383,6 +13638,38 @@ function writeTemplate(queue, buffer, type, value, offset) {
         default:
             throw new Error(`code this type ${type.name}`);
     }
+}
+function writeArray(queue, buffer, type, value, baseOffset) {
+    if (type.format.isStruct) {
+        for (let i = 0; i < type.count; ++i) {
+            writeStruct(queue, buffer, type.format.members, value[i], baseOffset + i * type.stride);
+        }
+    }
+    else if (type.format.isArray) {
+        throw new Error('code me');
+    }
+    else {
+        throw new Error('code me');
+    }
+}
+const VIEW_DIMENSIONS = {
+    texture_1d: '1d',
+    texture_2d: '2d',
+    texture_2d_array: '2d-array',
+    texture_cube: 'cube',
+    texture_cube_array: 'cube-array',
+    texture_3d: '3d',
+    texture_storage_1d: '1d',
+    texture_storage_2d: '2d',
+    texture_storage_2d_array: '2d-array',
+    texture_storage_3d: '3d',
+};
+function getViewDimension(info) {
+    const dim = VIEW_DIMENSIONS[info.type.name];
+    if (!dim) {
+        throw new Error(`unknwon texture type ${info.type.name}`);
+    }
+    return dim;
 }
 
 /**
@@ -13545,8 +13832,8 @@ class Graphics {
     static autoClearColor = false;
     static autoClearDepth = true;
     static autoClearStencil = true;
-    static #includeCode = new Map();
-    static #globalIncludeCode = '';
+    static #defines = new Map();
+    //static #globalIncludeCode = '';
     static speed = 1.0;
     static #timeOrigin = performance.now();
     static #time = 0;
@@ -13589,7 +13876,8 @@ class Graphics {
         this.setShaderPrecision(ShaderPrecision.Medium);
         this.setShaderQuality(ShaderQuality.Medium);
         this.setShaderDebugMode(ShaderDebugMode.None);
-        this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
+        //this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
+        this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
     }
     static async initCanvas(contextAttributes = {}) {
         if (contextAttributes.useOffscreenCanvas) {
@@ -13734,11 +14022,11 @@ class Graphics {
     static async pickEntity(canvas, x, y) {
         if (this.isWebGLAny) {
             this.glContext;
-            this.setIncludeCode('pickingMode', '#define PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
+            this.setDefine('PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
             this.#allowTransfertBitmap = false;
             GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
             this.#allowTransfertBitmap = true;
-            this.setIncludeCode('pickingMode', '#undef PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
+            this.removeDefine('PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
             const pixels = new Uint8Array(4);
             this.glContext?.readPixels(x, canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
             const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
@@ -13861,8 +14149,12 @@ class Graphics {
             this.#bipmapContext.transferFromImageBitmap(bitmap);
         }
     }
-    static compute(material, context, workgroupCountX, workgroupCountY, workgroupCountZ) {
-        this.#forwardRenderer.compute(material, { renderContext: context, width: context.width, height: context.height }, workgroupCountX, workgroupCountY, workgroupCountZ);
+    static compute(material, context, postCompute) {
+        this.#forwardRenderer.compute(material, {
+            renderContext: context,
+            width: context.width,
+            height: context.height,
+        }, postCompute);
     }
     static renderMultiCanvas(delta, context = {}) {
         // TODO: mutualize with the method render()
@@ -14029,7 +14321,7 @@ class Graphics {
                     this.isWebGL2 = true;
                     this.isWebGLAny = true;
                     WebGLShaderSource.isWebGL2 = true;
-                    this.setIncludeCode('WEBGL2', '#define WEBGL2');
+                    this.setDefine('WEBGL2');
                 }
                 else {
                     throw 'no webgl2';
@@ -14040,7 +14332,7 @@ class Graphics {
                 if (this.glContext instanceof WebGLRenderingContext) {
                     this.isWebGL = true;
                     this.isWebGLAny = true;
-                    this.setIncludeCode('WEBGL1', '#define WEBGL1');
+                    this.setDefine('WEBGL1');
                     //TODO: put this in a separate function and alert the user in case of failure
                     //these extensions are important
                     // activate UNSIGNED_INT indices in drawElements
@@ -14151,30 +14443,42 @@ class Graphics {
     static setShaderPrecision(shaderPrecision) {
         switch (shaderPrecision) {
             case ShaderPrecision.Low:
-                this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
+                this.setDefine('LOW_PRECISION');
                 break;
             case ShaderPrecision.Medium:
-                this.setIncludeCode('SHADER_PRECISION', '#define MEDIUM_PRECISION');
+                this.setDefine('MEDIUM_PRECISION');
                 break;
             case ShaderPrecision.High:
-                this.setIncludeCode('SHADER_PRECISION', '#define HIGH_PRECISION');
+                this.setDefine('HIGH_PRECISION');
                 break;
         }
     }
     static setShaderQuality(shaderQuality) {
-        this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
+        this.setDefine('SHADER_QUALITY', `${shaderQuality}`);
     }
     static setShaderDebugMode(shaderDebugMode) {
-        this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
+        this.setDefine('SHADER_DEBUG_MODE', `${shaderDebugMode}`);
     }
-    static setIncludeCode(key, code) {
+    static setDefine(name, value = '') {
+        this.#defines.set(name, value);
+    }
+    static removeDefine(define) {
+        this.#defines.delete(define);
+    }
+    static getDefines() {
+        return this.#defines;
+    }
+    /*
+    static setIncludeCode(key: string, code: string) {
         this.#includeCode.set(key, code);
         this.#refreshIncludeCode();
     }
-    static removeIncludeCode(key) {
+
+    static removeIncludeCode(key: string) {
         this.#includeCode.delete(key);
         this.#refreshIncludeCode();
     }
+
     static #refreshIncludeCode() {
         // TODO: remove this function and move this to getIncludeCode
         this.#globalIncludeCode = '';
@@ -14182,9 +14486,11 @@ class Graphics {
             this.#globalIncludeCode += code + '\n';
         }
     }
+
     static getIncludeCode() {
         return this.#globalIncludeCode;
     }
+    */
     /**
      * Invalidate all shader (force recompile)
      */
@@ -14516,7 +14822,12 @@ class Graphics {
         }
     }
     static useLogDepth(use) {
-        this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
+        if (use) {
+            this.setDefine('USE_LOG_DEPTH');
+        }
+        else {
+            this.removeDefine('USE_LOG_DEPTH');
+        }
     }
     static getTime() {
         return this.#time;
@@ -16454,6 +16765,57 @@ class FontManager {
     }
 }
 
+class EmissiveMaterial extends Material {
+    map = null;
+    lightMap = null;
+    lightMapIntensity = 1.0;
+    aoMap = null;
+    aoMapIntensity = 1.0;
+    specularMap = null;
+    alphaMap = null;
+    envMap = null;
+    combine = 0 /*MultiplyOperation*/;
+    reflectivity = 1;
+    refractionRatio = 0.98;
+    wireframe = false;
+    wireframeLinewidth = 1;
+    wireframeLinecap = 'round';
+    wireframeLinejoin = 'round';
+    skinning = false;
+    morphTargets = false;
+    getShaderSource() {
+        return 'meshbasic';
+    }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Emissive,
+            reflectionRatio: 0,
+            reflectionGloss: 1,
+            refractionIndex: 1,
+            albedo: vec3.fromValues(6, 6, 6), // TODO: set actual value
+            flatShading: false,
+        };
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.skinning = this.skinning;
+        return json;
+    }
+    static async constructFromJSON(json) {
+        return new EmissiveMaterial();
+    }
+    fromJSON(json) {
+        super.fromJSON(json);
+        this.skinning = json.skinning;
+    }
+    static getEntityName() {
+        return 'EmissiveMaterial';
+    }
+}
+Material.materialList['MeshBasic'] = EmissiveMaterial;
+registerEntity(EmissiveMaterial);
+
 class GridMaterial extends Material {
     constructor(params = {}) {
         super(params);
@@ -16551,7 +16913,7 @@ class MeshBasicPbrMaterial extends Material {
     setRoughnessTexture(roughnessTexture) {
         this.setParameterValue('roughness_texture', roughnessTexture);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'meshbasicpbr';
     }
     toJSON() {
@@ -16661,7 +17023,7 @@ for(var i = 0; i < rawLength; i++) {
   }
 }
 
-function loopSubdivision(imports){return _loadWasmModule(0, null, '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KAIAIAFGQQJ0aigCAARAA0AgBigCECIBKAIAIgIgAigCACABRkECdGooAgAiBigCECIBKAIAIgIgAigCACABRkECdGooAgANAAsLIAYoAhAhASARKAJIIgYiAigCACIHIAcoAgAgAkZBAnRqKAIAIgIEfyACKAIMBUEACwRAA0AgBigCECICKAIAIgYgBigCACACRkECdGooAgAiBiICKAIAIgcgBygCACACRkECdGooAgAiAgR/IAIoAgwFQQALDQALCyARKwMQISYgASgCCCIBKwMQIScgBigCDCgCCCICKwMQISggESsDGCEpIAErAxghKiACKwMYISsgFyARKwMIRAAAAAAAAOg/oiACKwMIIAErAwigRAAAAAAAAMA/oqA5AwggFyApRAAAAAAAAOg/oiArICqgRAAAAAAAAMA/oqA5AxggFyAmRAAAAAAAAOg/oiAoICegRAAAAAAAAMA/oqA5AxAMAQtBACEGIA1BADYCCCARKAJIIQdBACEKQQAhEEEAIQICQAJAAkADQCACIRUgBygCDCgCCCECAkAgBiAQRwRAIBAgAikDCDcDACAQIAIpAxg3AxAgECACKQMQNwMIIBBBGGohEAwBCyAGIAprQRhtIgFBAWoiCEGr1arVAE8NAiABQQF0IgsgCCAIIAtJG0Gq1arVACABQdWq1SpJGyIIBH8gCEGr1arVAE8NBCAIQRhsEDwFQQALIgsgAUEYbGoiASACKQMINwMAIAEgAikDGDcDECABIAIpAxA3AwggASECIAYgCkcEQANAIAJBGGsiAiAGQRhrIgYpAwA3AwAgAiAGKQMQNwMQIAIgBikDCDcDCCAGIApHDQALCyABQRhqIRAgDSALIAhBGGxqIgY2AgggCgRAIAoQPQsgAiEKCyAVQQFqIQIgBygCECIBKAIAIgcgBygCACABRkECdGooAgAiByARKAJIRw0AC0MAAEA+IQUgFUEDTwRAIwBBEGsiFCQAAn1D2w/JQCACsiIulSIFvCIGQf////8HcSIBQdqfpPoDTQRAQwAAgD8gAUGAgIDMA0kNARogBbsQJQwBCyABQdGn7YMETQRAIAFB5JfbgARPBEBEGC1EVPshCUBEGC1EVPshCcAgBkEASBsgBbugECWMDAILIAW7ISYgBkEASARAICZEGC1EVPsh+T+gECYMAgtEGC1EVPsh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AkEMaiIHRwRAA0AgCSgCCCIEKAIEIQYgAyADNgIEIAMhAEEAIQgDQCAGKAIQIQZBDBA8IgEgBjYCCCABIAA2AgAgASADNgIEIAAgATYCBCAIQQFqIQggASEAIAYgBCgCBEcNAAsgAyAINgIIIAMgADYCAAJAIAMgAygCBCIARwR/A0AgACgCCCIBBEAgASwAI0EASARAIAEoAhgQPQsgARA9CyAAKAIEIgAgA0cNAAsgAygCCAUgCAtFDQAgAygCBCIAKAIAIgEgAygCACIGKAIENgIEIAYoAgQgATYCACADQQA2AgggACADRg0AA0AgACgCBCEBIAAQPSABIgAgA0cNAAsLIAQsABdBAEgEQCAEKAIMED0LIAQQPQJAIAMoAghFDQAgAygCBCIAKAIAIgEgAygCACIEKAIENgIEIAQoAgQgATYCACADQQA2AgggACADRg0AA0AgACgCBCEBIAAQPSABIgAgA0cNAAsLIAkoAgQiCSAHRw0ACwsCQCACKAIURQ0AIAIoAhAiACgCACIBIAIoAgwiBCgCBDYCBCAEKAIEIAE2AgAgAkEANgIUIAAgB0YNAANAIAAoAgQhASAAED0gASIAIAdHDQALCyACIAIoAgQiAEcEQANAIAAoAggiAQRAIAEsABdBAEgEQCABKAIMED0LIAEQPQsgACgCBCIAIAJHDQALCwJAIAIoAghFDQAgAigCBCIAKAIAIgEgAigCACIEKAIENgIEIAQoAgQgATYCACACQQA2AgggACACRg0AA0AgACgCBCEBIAAQPSABIgAgAkcNAAsLIAJBJGoiASACQShqIgAoAgAQESACIAA2AiQgAkIANwIoIAJBMGoiBCACQTRqIgAoAgAQEiACIAA2AjAgAkIANwI0IAJBPGoiBiACQUBrIgAoAgAQEyACIAA2AjwgAEIANwIAIAZBABATIAQgAigCNBASIAEgAigCKBARAkAgAigCIEUNACACKAIcIgAoAgAiASACKAIYIgQoAgQ2AgQgBCgCBCABNgIAIAJBADYCICAAIAVGDQADQCAAKAIEIQEgABA9IAEiACAFRw0ACwsCQCACKAIURQ0AIAIoAhAiACgCACIBIAIoAgwiBSgCBDYCBCAFKAIEIAE2AgAgAkEANgIUIAAgB0YNAANAIAAoAgQhASAAED0gASIAIAdHDQALCwJAIAIoAghFDQAgAigCBCIAKAIAIgEgAigCACIFKAIENgIEIAUoAgQgATYCACACQQA2AgggACACRg0AA0AgACgCBCEBIAAQPSABIgAgAkcNAAsLIANBEGokACACEDkLCxMAIABBDGpBACABKAIEQYgJRhsLBgAgABA9Cx0AIAEEQCAAIAEoAgAQESAAIAEoAgQQESABEDkLCx0AIAEEQCAAIAEoAgAQEiAAIAEoAgQQEiABEDkLCx0AIAEEQCAAIAEoAgAQEyAAIAEoAgQQEyABEDkLC5ECAQR/QeAAEDwiBEEIakEAQcUAECcgBEIANwNYIARCADcDUCAEIAE2AgBBDBA8IgMgAEEYajYCBCADIAQ2AgggAyAAKAIYIgI2AgAgAiADNgIEIAAgAzYCGCAAIAAoAiBBAWo2AiAgAEEoaiIFIQMCQAJAIAAoAigiAkUNAANAIAEgAiIDKAIQIgJIBEAgAyEFIAMoAgAiAg0BDAILIAEgAkwNAiADKAIEIgINAAsgA0EEaiEFC0EYEDwiAiABNgIQIAIgAzYCCCACQgA3AgAgAiAENgIUIAUgAjYCACAAKAIkKAIAIgEEQCAAIAE2AiQgBSgCACECCyAAKAIoIAIQFSAAIAAoAixBAWo2AiwLIAQLlAQBA38gASAAIAFGIgI6AAwCQCACDQADQCABKAIIIgItAAwNAQJAIAIgAigCCCIDKAIAIgRGBEACQCADKAIEIgRFDQAgBC0ADA0ADAILAkAgASACKAIARgRAIAIhAQwBCyACIAIoAgQiASgCACIANgIEIAEgAAR/IAAgAjYCCCACKAIIBSADCzYCCCACKAIIIgAgACgCACACR0ECdGogATYCACABIAI2AgAgAiABNgIIIAEoAggiAygCACECCyABQQE6AAwgA0EAOgAMIAMgAigCBCIANgIAIAAEQCAAIAM2AggLIAIgAygCCDYCCCADKAIIIgAgACgCACADR0ECdGogAjYCACACIAM2AgQgAyACNgIIDwsCQCAERQ0AIAQtAAwNAAwBCwJAIAEgAigCAEcEQCACIQEMAQsgAiABKAIEIgA2AgAgASAABH8gACACNgIIIAIoAggFIAMLNgIIIAIoAggiACAAKAIAIAJHQQJ0aiABNgIAIAEgAjYCBCACIAE2AgggASgCCCEDCyABQQE6AAwgA0EAOgAMIAMgAygCBCIAKAIAIgE2AgQgAQRAIAEgAzYCCAsgACADKAIINgIIIAMoAggiASABKAIAIANHQQJ0aiAANgIAIAAgAzYCACADIAA2AggMAgsgBEEMaiEBIAJBAToADCADIAAgA0Y6AAwgAUEBOgAAIAMiASAARw0ACwsLlAoBCX8jAEEwayIIJAAgAEEwaiEEAn8gCEEYaiEDIAEoAgghBQJAIAEoAgAiBygCACIKIAEoAgQiBigCACILRg0AIAsgBSgCACIJRg0AIAkgCkYNACAKIAtIBEAgCSALSgRAIAMgBjYCBCADIAc2AgAgAyAFNgIIIAMMAwsgCSAKSgRAIAMgBTYCBCADIAc2AgAgAyAGNgIIIAMMAwsgAyAHNgIEIAMgBTYCACADIAY2AgggAwwCCwJAIAkgC0oEQCADIAY2AgAgCSAKSgRAIAMgBzYCBCADIAU2AgggAwwECyADIAU2AgQMAQsgAyAGNgIEIAMgBTYCAAsgAyAHNgIIIAMMAQtB0QtBhgpBIEG6CRAhAAshAwJAAkAgAEE0aiIHKAIAIgZFDQAgByEFA0AgBSAGIAZBEGogAxAfIgkbIQUgBkEEaiAGIAkbKAIAIgYNAAsgBSAHRg0AIAMgBUEQahAfDQAgBEEEaiECAkACQCAEKAIEIgFFBEAgAiEADAELA0AgAyABIgBBEGoiARAfBEAgACICKAIAIgENAQwCCyABIAMQHwRAIABBBGohAiAAKAIEIgENAQwCCwsgAigCACIBDQELQSAQPCIBIAMoAgg2AhggASADKQIANwIQIAFBADYCHCABIAA2AgggAUIANwIAIAIgATYCACABIQAgBCgCACgCACIDBEAgBCADNgIAIAIoAgAhAAsgBCgCBCAAEBUgBCAEKAIIQQFqNgIICyABQRxqKAIAGgwBC0EYEDwiBkIANwIEIAYgAjYCACAGQQA2AhQgBkIANwIMQQwQPCICIABBDGo2AgQgAiAGNgIIIAIgACgCDCIFNgIAIAUgAjYCBCAAIAI2AgwgACAAKAIUQQFqNgIUIAggAygCCDYCECAIIAMpAgA3AwggCCAGNgIUIAhBCGohByAEIgVBBGohAyAIAn8CQCAEKAIEIgRFBEAgAyECDAELA0AgByAEIgJBEGoiBBAfBEAgAiIDKAIAIgQNAQwCCyAEIAcQHwRAIAJBBGohAyACKAIEIgQNAQwCCwtBACADKAIAIgQNARoLQSAQPCIEIAcoAgg2AhggBCAHKQIANwIQIAcoAgwhByAEIAI2AgggBEIANwIAIAQgBzYCHCADIAQ2AgAgBCECIAUoAgAoAgAiBwRAIAUgBzYCACADKAIAIQILIAUoAgQgAhAVIAUgBSgCCEEBajYCCEEBCzoALCAIIAQ2AihBJBA8IgRCADcCACAEQQA2AiAgBEIANwIYIARCADcCECAEQgA3AgggBCABKAIAIgI2AgggAiAENgJIQSQQPCIDQgA3AgAgA0EANgIgIANCADcCGCADQgA3AhAgA0IANwIIIAMgASgCBCICNgIIIAIgAzYCSEEkEDwiAkIANwIAIAJBADYCICACQgA3AhggAkIANwIQIAJCADcCCCACIAEoAggiBTYCCCAFIAI2AkggBCACNgIMIAQgAzYCECADIAQ2AgwgAyACNgIQIAIgAzYCDCACIAQ2AhAgBCAGNgIEIAMgBjYCBCACIAY2AgQgBiACNgIEIAAgASgCACABKAIIEBkiBSAFKAIAQQBHQQJ0aiAENgIAIAQgBTYCACAAIAEoAgQgASgCABAZIgQgBCgCAEEAR0ECdGogAzYCACADIAQ2AgAgACABKAIIIAEoAgQQGSIAIAAoAgBBAEdBAnRqIAI2AgAgAiAANgIACyAIQTBqJAALjwsBC38jAEEQayIGJAACQCAAKAIEIgUgAEYNAANAIAUoAggiAigCACIBBEAgASgCCCEDAkAgAigCBCIEBEAgAygCACABKAIMKAIIKAIATg0BIAIgATYCBCACIAQ2AgAMAQsgA0EBOgBMIAEoAgwoAghBAToATAsgBSgCBCIFIABHDQEMAgsLQaYLQeYJQaQCQf8KECEACyMAQSBrIgQkACAEQQA2AhggBCAEQRBqIgE2AhQgBCABNgIQAkAgACgCHCIBIABBGGoiBUYNACAEQRBqIQMDQCABKAIIIggoAkhFBEBBDBA8IgIgCDYCCCACIAM2AgAgAiAEQRBqNgIEIAMgAjYCBCAEIAdBAWoiBzYCGCAEIAI2AhAgAiEDCyABKAIEIgEgBUcNAAsgBCgCFCIBIARBEGpHBH8DQCAEIAEoAgg2AgwgBSAEQQxqEBsgBCgCDCICBEAgAiwAX0EASARAIAIoAlQQPQsgAhA9CyABKAIEIgEgBEEQakcNAAsgBCgCGAUgBwtFDQAgBCgCFCIBKAIAIgIgBCgCECIDKAIENgIEIAMoAgQgAjYCACAEQQA2AhggASAEQRBqRg0AA0AgASgCBCECIAEQPSACIgEgBEEQakcNAAsLIARBIGokACAAKAIcIgggAEEYaiILRwRAIAZBBHIhBANAIAgoAggiCS0ATARAIAkoAkghBSAGIAQ2AgAgBkIANwIEAkAgBSgCACIAIAUgACgCAEZBAnRqKAIARQRAQQAhAAwBCwNAIAUoAgAiACAAKAIAIAVGQQJ0aigCACIABH8gACgCDAVBAAshBSAGKAIEIgAhAiAEIgEhAwJAAkAgAEUNAANAIAEiAyACIgcgAigCECAFSSIKGyEBIAJBBGogAiAKGygCACICDQALIAEgBEcEQCAFIAMgByAKGygCEE8NBAsDQCAAIgMoAhAiACAFSwRAIAMiASgCACIADQEMAgsgACAFTw0CIAMoAgQiAA0ACyADQQRqIQELQRQQPCICIAM2AgggAkIANwIAIAIgBTYCECABIAI2AgAgBigCACgCACIABEAgBiAANgIAIAEoAgAhAgsgAiACIAYoAgQiB0YiADoADAJAIAANAANAIAIoAggiAS0ADA0BAkAgASABKAIIIgMoAgAiAEYEQAJAIAMoAgQiAEUNACAALQAMDQAMAgsCQCACIAEoAgBGBEAgASECDAELIAEgASgCBCICKAIAIgA2AgQgAiAABH8gACABNgIIIAEoAggFIAMLNgIIIAEoAggiACAAKAIAIAFHQQJ0aiACNgIAIAIgATYCACABIAI2AgggAigCCCIDKAIAIQELIAJBAToADCADQQA6AAwgAyABKAIEIgA2AgAgAARAIAAgAzYCCAsgASADKAIINgIIIAMoAggiACAAKAIAIANHQQJ0aiABNgIAIAEgAzYCBCADIAE2AggMAwsCQCAARQ0AIAAtAAwNAAwBCwJAIAIgASgCAEcEQCABIQIMAQsgASACKAIEIgA2AgAgAiAABH8gACABNgIIIAEoAggFIAMLNgIIIAEoAggiACAAKAIAIAFHQQJ0aiACNgIAIAIgATYCBCABIAI2AgggAigCCCEDCyACQQE6AAwgA0EAOgAMIAMgAygCBCIAKAIAIgE2AgQgAQRAIAEgAzYCCAsgACADKAIINgIIIAMoAggiASABKAIAIANH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ACADIARKBEBBAA8LIAAoAgQoAgAiAyABKAIEKAIAIgRIDQBBACECIAMgBEoNACAAKAIIKAIAIAEoAggoAgBIIQILIAILhAEBBH9B9C1B/Cw2AgBBrC1BKjYCACMAQRBrIgAkAAJAIABBDGogAEEIahAARQRAIAAgACgCDEECdCICQRNqQXBxayIBJAAgASAAKAIIQQ9qQXBxayIDJAAgASACakEANgIAIAEgAxABDQEgACgCDBoDQAwACwALQccAEAIAC0HHABACAAuCAwECfyMAQRBrIgQkACAEIAI2AgwgBCADNgIIIAQgATYCBCAEIAA2AgAjAEEQayICJAAgAiAENgIMQQAhASMAQdABayIAJAAgACAENgLMASAAQaABaiIDQQBBKBAnIAAgACgCzAE2AsgBAkBBACAAQcgBaiAAQdAAaiADEC9BAEgNAEH0KygCAEEATiEEQagrKAIAIQNB8CsoAgBBAEwEQEGoKyADQV9xNgIACwJ/AkACQEHYKygCAEUEQEHYK0HQADYCAEHEK0EANgIAQbgrQgA3AwBB1CsoAgAhAUHUKyAANgIADAELQbgrKAIADQELQX9BqCsQLA0BGgtBqCsgAEHIAWogAEHQAGogAEGgAWoQLwshBSABBH9BqCtBAEEAQcwrKAIAEQUAGkHYK0EANgIAQdQrIAE2AgBBxCtBADYCAEG8KygCABpBuCtCADcDAEEABSAFCxpBqCtBqCsoAgAgA0EgcXI2AgAgBEUNAAsgAEHQAWokACACQRBqJAAQIwAL5AMBA38gACACaiEDAkACQAJAIAAgAXNBA3FFBEAgAEEDcUUNASACQQBMDQEgACECA0AgAiABLQAAOgAAIAFBAWohASACQQFqIgJBA3FFDQMgAiADSQ0ACwwCCwJAIANBBEkNACADQQRrIgQgAEkNACAAIQIDQCACIAEtAAA6AAAgAiABLQABOgABIAIgAS0AAjoAAiACIAEtAAM6AAMgAUEEaiEBIAJBBGoiAiAETQ0ACwwDCyAAIQIMAgsgACECCwJAIANBfHEiBEHAAEkNACACIARBQGoiBUsNAANAIAIgASgCADYCACACIAEoAgQ2AgQgAiABKAIINgIIIAIgASgCDDYCDCACIAEoAhA2AhAgAiABKAIUNgIUIAIgASgCGDYCGCACIAEoAhw2AhwgAiABKAIgNgIgIAIgASgCJDYCJCACIAEoAig2AiggAiABKAIsNgIsIAIgASgCMDYCMCACIAEoAjQ2AjQgAiABKAI4NgI4IAIgASgCPDYCPCABQUBrIQEgAkFAayICIAVNDQALCyACIARPDQADQCACIAEoAgA2AgAgAUEEaiEBIAJBBGoiAiAESQ0ACwsgAiADSQRAA0AgAiABLQAAOgAAIAFBAWohASACQQFqIgIgA0cNAAsLIAALBwBBARACAAsFAEHQLAtPAQF8IAAgAKIiACAAIACiIgGiIABEaVDu4EKT+T6iRCceD+iHwFa/oKIgAURCOgXhU1WlP6IgAESBXgz9///fv6JEAAAAAAAA8D+goKC2C0sBAnwgACAAoiIBIACiIgIgASABoqIgAUSnRjuMh83GPqJEdOfK4vkAKr+goiACIAFEsvtuiRARgT+iRHesy1RVVcW/oKIgAKCgtgvwAgICfwF+AkAgAkUNACAAIAE6AAAgACACaiIDQQFrIAE6AAAgAkEDSQ0AIAAgAToAAiAAIAE6AAEgA0EDayABOgAAIANBAmsgAToAACACQQdJDQAgACABOgADIANBBGsgAToAACACQQlJDQAgAEEAIABrQQNxIgRqIgMgAUH/AXFBgYKECGwiADYCACADIAIgBGtBfHEiAmoiAUEEayAANgIAIAJBCUkNACADIAA2AgggAyAANgIEIAFBCGsgADYCACABQQxrIAA2AgAgAkEZSQ0AIAMgADYCGCADIAA2AhQgAyAANgIQIAMgADYCDCABQRBrIAA2AgAgAUEUayAANgIAIAFBGGsgADYCACABQRxrIAA2AgAgAiADQQRxQRhyIgFrIgJBIEkNACAArUKBgICAEH4hBSABIANqIQEDQCABIAU3AxggASAFNwMQIAEgBTcDCCABIAU3AwAgAUEgaiEBIAJBIGsiAkEfSw0ACwsLAwABC04BAX8gACgCPCEDIwBBEGsiACQAIAMgASACQf8BcSAAQQhqEAYiAgR/QdAsIAI2AgBBfwVBAAshAiAAKQMIIQEgAEEQaiQAQn8gASACGwv0AgEHfyMAQSBrIgMkACADIAAoAhwiBDYCECAAKAIUIQUgAyACNgIcIAMgATYCGCADIAUgBGsiATYCFCABIAJqIQVBAiEHAn8CQAJAAkAgACgCPCADQRBqIgFBAiADQQxqEAQi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EDQgACANIAUQMCAAQSAgAiADIARBgMAAcxA0IAMgAiACIANIGyEJCyALQbAEaiQAIAkLiQUCBn4BfyABIAEoAgBBB2pBeHEiAUEQajYCACAAAnwgASkDACEEIAEpAwghBSMAQSBrIgAkAAJAIAVC////////////AIMiA0KAgICAgIDAgDx9IANCgICAgICAwP/DAH1UBEAgBUIEhiAEQjyIhCEDIARC//////////8PgyIEQoGAgICAgICACFoEQCADQoGAgICAgICAwAB8IQIMAgsgA0KAgICAgICAgEB9IQIgBEKAgICAgICAgAhSDQEgAiADQgGDfCECDAELIARQIANCgICAgICAwP//AFQgA0KAgICAgIDA//8AURtFBEAgBUIEhiAEQjyIhEL/////////A4NCgICAgICAgPz/AIQhAgwBC0KAgICAgICA+P8AIQIgA0L///////+//8MAVg0AQgAhAiADQjCIpyIBQZH3AEkNACAEIQIgBUL///////8/g0KAgICAgIDAAIQiAyEGAkAgAUGB9wBrIghBwABxBEAgAiAIQUBqrYYhBkIAIQIMAQsgCEUNACAGIAitIgeGIAJBwAAgCGutiIQhBiACIAeGIQILIAAgAjcDECAAIAY3AxgCQEGB+AAgAWsiAUHAAHEEQCADIAFBQGqtiCEEQgAhAwwBCyABRQ0AIANBwAAgAWuthiAEIAGtIgKIhCEEIAMgAoghAwsgACAENwMAIAAgAzcDCCAAKQMIQgSGIAApAwAiBEI8iIQhAiAAKQMQIAApAxiEQgBSrSAEQv//////////D4OEIgRCgYCAgICAgIAIWgRAIAJCAXwhAgwBCyAEQoCAgICAgICACFINACACQgGDIAJ8IQILIABBIGokACACIAVCgICAgICAgICAf4OEvws5AwALlwIAIABFBEBBAA8LAn8CQCAABH8gAUH/AE0NAQJAQfQtKAIAKAIARQRAIAFBgH9xQYC/A0YNAwwBCyABQf8PTQRAIAAgAUE/cUGAAXI6AAEgACABQQZ2QcABcjoAAEECDAQLIAFBgEBxQYDAA0cgAUGAsANPcUUEQCAAIAFBP3FBgAFyOgACIAAgAUEMdkHgAXI6AAAgACABQQZ2QT9xQYABcjoAAUEDDAQLIAFBgIAEa0H//z9NBEAgACABQT9xQYABcjoA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', imports)}
+function loopSubdivision(imports){return _loadWasmModule(0, null, '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DgsgDkUNACALKAIUIgcoAgAiACALKAIQIgIoAgQ2AgQgAigCBCAANgIAIAtBADYCGCAHIAtBEGpGDQADQCAHKAIEIQAgBxA9IAAiByALQRBqRw0ACwsgC0EgaiQACwJAIARFBEAgAyECDAELQQAhAANAIBUgAzYCDCAVIAE2AgggAyADKAIEQQFqNgIEIBUgFSkDCDcDAEEAIQdBACEaIwBBIGsiDCQAIAwgFSgCACILIgE2AghBfyABKAIgIgZBBXQiCEEIciAGQf///z9xIAZHGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQQdxIgoEQANAIAFCADcDACABQQA6ABwgAUIANwMIIAFCADcDECABQSBqIQEgB0EBaiIHIApHDQALCyAGQQFrQf///z9xQQdJDQAgAiAIaiEGA0AgAUIANwMAIAFBADoAHCABQgA3AyAgAUIANwNAIAFCADcDYCABQgA3A4ABIAFCADcDCCABQgA3AxAgAUEAOgA8IAFCADcDKCABQgA3AzAgAUEAOgBcIAFCADcDSCABQgA3A1AgAUEAOgB8IAFCADcDaCABQgA3A3AgAUEAOgCcASABQgA3A5ABIAFCADcDiAEgAUIANwOgASABQQA6ALwBIAFCADcDqAEgAUIANwOwASABQQA6ANwBIAFCADcDwAEgAUIANwPIASABQgA3A9ABIAFBADoA/AEgAUIANwPgASABQgA3A+gBIAFCADcD8AEgAUGAAmoiASAGRw0ACwsgDCACNgIMIAwoAggiAigCHCIBIAJBGGpHBEBBACEHA0AgASgCCCAMKAIMIAdBBXRqNgJQIAdBAWohByABKAIEIgEgDCgCCCICQRhqRw0ACwtBfyACKAIIIgatQjB+IiynQQhyICxCIIinGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQTBsIgZBMGsiCEEwbkEBakEHcSIKBEBBACEHA0AgAUIANwMgIAFCADcDCCABQQA2AiggAUIANwMQIAFCADcAFSABQTBqIQEgB0EBaiIHIApHDQALCyAIQdACSQ0AIAIgBmohBgNAIAFCADcDICABQgA3AwggAUEANgIoIAFCADcDECABQgA3ABUgAUIANwNQIAFBADYCWCABQgA3AzggAUFAa0IANwMAIAFCADcARSABQgA3A4ABIAFB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IABBKGoiBSEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBSADKAIAIgINAQwCCyABIAJMDQIgAygCBCICDQALIANBBGohBQtBGBA8IgIgATYCECACIAM2AgggAkIANwIAIAIgBDYCFCAFIAI2AgAgACgCJCgCACIBBEAgACABNgIkIAUoAgAhAgsgACgCKCACEBUgACAAKAIsQQFqNgIsCyAEC5QEAQN/IAEgACABRiICOgAMAkAgAg0AA0AgASgCCCICLQAMDQECQCACIAIoAggiAygCACIERgRAAkAgAygCBCIERQ0AIAQtAAwNAAwCCwJAIAEgAigCAEYEQCACIQEMAQsgAiACKAIEIgEoAgAiADYCBCABIAAEfyAAIAI2AgggAigCCAUgAws2AgggAigCCCIAIAAoAgAgAkdBAnRqIAE2AgAgASACNgIAIAIgATYCCCABKAIIIgMoAgAhAgsgAUEBOgAMIANBADoADCADIAIoAgQiADYCACAABEAgACADNgIICyACIAMoAgg2AgggAygCCCIAIAAoAgAgA0dBAnRqIAI2AgAgAiADNgIEIAMgAjYCCA8LAkAgBEUNACAELQAMDQAMAQsCQCABIAIoAgBHBEAgAiEBDAELIAIgASgCBCIANgIAIAEgAAR/IAAgAjYCCCACKAIIBSADCzYCCCACKAIIIgAgACgCACACR0ECdGogATYCACABIAI2AgQgAiABNgIIIAEoAgghAwsgAUEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIARBDGohASACQQE6AAwgAyAAIANGOgAMIAFBAToAACADIgEgAEcNAAsLC5QKAQl/IwBBMGsiCCQAIABBMGohBAJ/IAhBGGohAyABKAIIIQUCQCABKAIAIgcoAgAiCiABKAIEIgYoAgAiC0YNACALIAUoAgAiCUYNACAJIApGDQAgCiALSARAIAkgC0oEQCADIAY2AgQgAyAHNgIAIAMgBTYCCCADDAMLIAkgCkoEQCADIAU2AgQgAyAHNgIAIAMgBjYCCCADDAMLIAMgBzYCBCADIAU2AgAgAyAGNgIIIAMMAgsCQCAJIAtKBEAg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ChsoAhBPDQQLA0AgACIDKAIQIgAgBUsEQCADIgEoAgAiAA0BDAILIAAgBU8NAiADKAIEIgANAAsgA0EEaiEBC0EUEDwiAiADNgIIIAJCADcCACACIAU2AhAgASACNgIAIAYoAgAoAgAiAARAIAYgADYCACABKAIAIQILIAIgAiAGKAIEIgdGIgA6AAwCQCAADQADQCACKAIIIgEtAAwNAQJAIAEgASgCCCIDKAIAIgBGBEACQCADKAIEIgBFDQAgAC0ADA0ADAILAkAgAiABKAIARgRAIAEhAgwBCyABIAEoAgQiAigCACIANgIEIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgAgASACNgIIIAIoAggiAygCACEBCyACQQE6AAwgA0EAOgAMIAMgASgCBCIANgIAIAAEQCAAIAM2AggLIAEgAygCCDYCCCADKAIIIgAgACgCACADR0ECdGogATYCACABIAM2AgQgAyABNgIIDAMLAkAgAEUNACAALQAMDQAMAQsCQCACIAEoAgBHBEAgASECDAELIAEgAigCBCIANgIAIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgQgASACNgIIIAIoAgghAwsgAkEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIAFBAToADCADIAMgB0Y6AAwgAEEBOgAMIAcgAyICRw0ACwsgBiAGKAIIQQFqNgIICyAFKAIAIgAgACgCACAFRkECdGooAgANAAsgBigCBCEACyAJIAU2AkggBiAAEBoLIAgoAgQiCCALRw0ACwsgBkEQaiQAC70BAQN/IABBKGoiBCEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBCADKAIAIgINAQwCCyABIAJMBEAgAyECDAMLIAMoAgQiAg0ACyADQQRqIQQLQRgQPCICIAE2AhAgAiADNgIIIAJCADcCACACQQA2AhQgBCACNgIAIAIhAyAAKAIkKAIAIgEEQCAAIAE2AiQgBCgCACEDCyAAKAIo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CwsgAEEwIAxBEmpBEkEAEDQgACAPIBEgD2sQMAwCCyAMIQYLIABBMCAGQQlqQQlBABA0CyAAQSAgAiAFIARBgMAAcxA0IAUgAiACIAVIGyEJDAELIBMgBUEadEEfdUEJcWohDAJAIANBC0sNAEEMIANrIQZEAAAAAAAAMEAhGANAIBhEAAAAAAAAMECiIRggBkEBayIGDQALIAwtAABBLUYEQCAYIAGaIBihoJohAQwBCyABIBigIBihIQELIBEgCygCLCIGIAZBH3UiBnMgBmutIBEQMyIGRgRAIAtBMDoADyALQQ9qIQYLIBBBAnIhCiAFQSBxIQggCygCLCEHIAZBAmsiDSAFQQ9qOgAAIAZBAWtBLUErIAdBAEgbOgAAIARBCHEhBiALQRBqIQcDQCAHIgUCfyABmUQAAAAAAADgQWMEQCABqgwBC0GAgICAeAsiB0HQJmotAAAgCHI6AAAgASAHt6FEAAAAAAAAMECiIQECQCAFQQFqIgcgC0EQamtBAUcNAAJAIAYNACADQQBKDQAgAUQAAAAAAAAAAGENAQsgBUEuOgABIAVBAmohBwsgAUQAAAAAAAAAAGINAAtBfyEJQf3///8HIAogESANayIFaiIGayADSA0AIABBICACIAYCfwJAIANFDQAgByALQRBqayIIQQJrIANODQAgA0ECagwBCyAHIAtBEGprIggLIgdqIgMgBBA0IAAgDCAKEDAgAEEwIAIgAyAEQYCABHMQNCAAIAtBEGogCBAwIABBMCAHIAhrQQBBABA0IAAgDSAFEDAgAEEgIAIgAyAEQYDAAHMQNCADIAIgAiADSBshCQsgC0GwBGokACAJC4kFAgZ+AX8gASABKAIAQQdqQXhxIgFBEGo2AgAgAAJ8IAEpAwAhBCABKQMIIQUjAEEgayIAJAACQCAFQv///////////wCDIgNCgICAgICAwIA8fSADQoCAgICAgMD/wwB9VARAIAVCBIYgBEI8iIQhAyAEQv//////////D4MiBEKBgICAgICAgAhaBEAgA0KBgICAgICAgMAAfCECDAILIANCgICAgICAgIBAfSECIARCgICAgICAgIAIUg0BIAIgA0IBg3whAgwBCyAEUCADQoCAgICAgMD//wBUIANCgICAgICAwP//AFEbRQRAIAVCBIYgBEI8iIRC/////////wODQoCAgICAgID8/wCEIQIMAQtCgICAgICAgPj/ACECIANC////////v//DAFYNAEIAIQIgA0IwiKciAUGR9wBJDQAgBCECIAVC////////P4NCgICAgICAwACEIgMhBgJAIAFBgfcAayIIQcAAcQRAIAIgCEFAaq2GIQZCACECDAELIAhFDQAgBiAIrSIHhiACQcAAIAhrrYiEIQYgAiAHhiECCyAAIAI3AxAgACAGNwMYAkBBgfgAIAFrIgFBwABxBEAgAyABQUBqrYghBEIAIQMMAQsgAUUNACADQcAAIAFrrYYgBCABrSICiIQhBCADIAKIIQMLIAAgBDcDACAAIAM3AwggACkDCEIEhiAAKQMAIgRCPIiEIQIgACkDECAAKQMYhEIAUq0gBEL//////////w+DhCIEQoGAgICAgICACFoEQCACQgF8IQIMAQsgBEKAgICAgICAgAhSDQAgAkIBgyACfCECCyAAQSBqJAAgAiAFQoCAgICAgICAgH+DhL8LOQMAC5cCACAARQRAQQAPCwJ/AkAgAAR/IAFB/wBNDQECQEH0LSgCACgCAEUEQCABQYB/cUGAvwNGDQMMAQsgAUH/D00EQCAAIAFBP3FBgAFyOgABIAAgAUEGdkHAAXI6AABBAgwECyABQYBAcUGAwANHIAFBgLADT3FFBEAgACABQT9xQYABcjoAAiAAIAFBDHZB4AFyOgAAIAAgAUEGdkE/cUGAAXI6AAFBAwwECyABQYCABGtB//8/TQRAIAAgAUE/cUGAAXI6AAMgACABQRJ2QfABcjoAACAAIAFBBnZBP3FBgAFyOgACIAAgAUEMdkE/cUGAAXI6AAFBBAwECwtB0CxBGTYCAEF/BUEBCwwBCyAAIAE6AABBAQsL8iwBC38jAEEQayILJAACQAJAAkACQAJAAkACQAJAAkACQAJAIABB9AFNBEBBlC4oAgAiBUEQIABBC2pBeHEgAEELSRsiBkEDdiIAdiIBQQNxBEACQCABQX9zQQFxIABqIgJBA3QiAUG8LmoiACABQcQuaigCACIBKAIIIgNGBEBBlC4gBUF+IAJ3cTYCAAwBCyADIAA2AgwgACADNgIICyABQQhqIQAgASACQQN0IgJBA3I2AgQgASACaiIBIAEoAgRBAXI2AgQMDAsgBkGcLigCACIHTQ0BIAEEQAJAQQIgAHQi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AEF/CzcBAX8CQCAAQQhqIgEoAgAEQCABIAEoAgBBAWsiATYCACABQX9HDQELIAAgACgCACgCEBEAAAsLMgEBfyAAQQEgABshAAJAA0AgABA4IgENAUGEMigCACIBBEAgAREIAAwBCwsQIwALIAELBgAgABA5C3QBAX8gAkUEQCAAKAIEIAEoAgRGDwsgACABRgRAQQEPCyABKAIEIgItAAAhAQJAIAAoAgQiAy0AACIARQ0AIAAgAUcNAANAIAItAAEhASADLQABIgBFDQEgAkEBaiECIANBAWohAyAAIAFGDQALCyAAIAFGC80DAQR/IwBBQGoiBCQAAn9BASAAIAFBABA+DQAaQQAgAUUNABojAEFAaiIDJAAgASgCACIFQQRrKAIAIQYgBUEIaygCACEFIANCADcDICADQgA3AyggA0IANwMwIANCADcANyADQgA3AxggA0EANgIUIANB4Cc2AhAgAyABNgIMIANBkCg2AgggASAFaiEBQQAhBQJAIAZBkChBABA+BEAgA0EBNgI4IAYgA0EIaiABIAFBAUEAIAYoAgAoAhQRBwAgAUEAIAMoAiBBAUYbIQUMAQsgBiADQQhqIAFBAUEAIAYoAgAoAhgRBgACQAJAIAMoAiwOAgABAgsgAygCHEEAIAMoAihBAUYbQQAgAygCJEEBRhtBACADKAIwQQFGGyEFDAELIAMoAiBBAUcEQCADKAIwDQEgAygCJEEBRw0BIAMoAihBAUcNAQsgAygCGCEFCyADQUBrJABBACAFIgFFDQAaIARBCGoiA0EEckEAQTQQJyAEQQE2AjggBEF/NgIUIAQgADYCECAEIAE2AgggASADIAIoAgBBASABKAIAKAIcEQIAIAQoAiAiAEEBRgRAIAIgBCgCGDYCAAsgAEEBRgshACAEQUBrJAAgAAtdAQF/IAAoAhAiA0UEQCAAQQE2AiQgACACNgIYIAAgATYCEA8LAkAgASADRgRAIAAoAhhBAkcNASAAIAI2AhgPCyAAQQE6ADYgAEECNgIYIAAgACgCJEEBajYCJAsLGAAgACABKAIIQQAQPgRAIAEgAiADEEALCzEAIAAgASgCCEEAED4EQCABIAIgAxBADwsgACgCCCIAIAEgAiADIAAoAgAoAhwRAgALUgEBfyAAKAIEIQQgACgCACIAIAECf0EAIAJFDQAaIARB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', imports)}
 
 class LoopSubdivision {
     static #instance;
@@ -18246,14 +18608,12 @@ class NodeGui {
                 class: 'copy-button',
                 parent: paramHtml,
                 innerHTML: contentCopySVG,
-                events: {
-                    click: async () => {
-                        await navigator.clipboard.writeText(valueHtml.value);
-                        valueHtml.classList.add('flash');
-                        await setTimeoutPromise(1500);
-                        valueHtml.classList.remove('flash');
-                    },
-                }
+                $click: async () => {
+                    await navigator.clipboard.writeText(valueHtml.value);
+                    valueHtml.classList.add('flash');
+                    await setTimeoutPromise(1500);
+                    valueHtml.classList.remove('flash');
+                },
             });
             this.#htmlParamsValue.set(paramHtml, valueHtml);
         }
@@ -19070,7 +19430,10 @@ class CombineLerp extends Node {
             });
         }
         this.material.uniforms['outTexture'] = this.#outputTexture;
-        Graphics$1.compute(this.material, {}, this.#textureSize, this.#textureSize);
+        Graphics$1.compute(this.material, {
+            workgroupCountX: this.#textureSize,
+            workgroupCountY: this.#textureSize,
+        });
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#outputTexture;
@@ -19266,7 +19629,10 @@ class Select extends Node {
         }
         this.material.uniforms['outTexture'] = this.#outputTexture;
         //this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.compute(this.material, {}, this.#textureSize, this.#textureSize);
+        Graphics$1.compute(this.material, {
+            workgroupCountX: this.#textureSize,
+            workgroupCountY: this.#textureSize,
+        });
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#outputTexture;
@@ -19680,7 +20046,7 @@ addWgslInclude('nodeimageeditor_declare_functions', nodeimageeditor_declare_func
 
 var applysticker = "#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var inputTexture: texture_2d<f32>;\n@group(0) @binding(x) var inputSampler: sampler;\n@group(0) @binding(x) var stickerTexture: texture_2d<f32>;\n@group(0) @binding(x) var stickerSampler: sampler;\n#ifdef USE_STICKER_SPECULAR\n\t@group(0) @binding(x) var stickerSpecularTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var stickerSpecularSampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n#ifdef TRANSFORM_TEX_COORD\n\t@group(0) @binding(x) var<uniform> transformTexCoord0: mat3x3f;\n#endif\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec4f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), vec4f(texCoord.xy, vec3(transformTexCoord0 * vec3(texCoord.xy, 1.0)).xy));\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tlet inputColor: vec4f = textureSample(inputTexture, inputSampler, fragInput.vTextureCoord.xy);\n\tlet stickerColor: vec4f = textureSample(stickerTexture, stickerSampler, fragInput.vTextureCoord.zw);\n#ifdef USE_STICKER_SPECULAR\n\tlet specularColor: vec4f = textureSample(stickerSpecularTexture, stickerSpecularSampler, fragInput.vTextureCoord.zw);\n#else\n\tlet specularColor: vec4f = vec4(1.);\n#endif\n\tlet color: vec4f = vec4((1.0 - stickerColor.a) * inputColor.xyz + stickerColor.a * stickerColor.xyz,\n\t\t\t\t\t\t(1.0 - stickerColor.a) * inputColor.a + stickerColor.a * specularColor.r);\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord.xy * commonUniforms.resolution.xy), color);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
-var combinelerp = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n@group(0) @binding(x) var input0: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var input1: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var inputWeight: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color1: vec4f = textureLoad(input0, id.xy);\n\tlet color2: vec4f = textureLoad(input1, id.xy);\n\tlet color3: vec4f = textureLoad(inputWeight, id.xy);\n\n\ttextureStore(outTexture, id.xy, mix(color1, color2, color3.rrrr));\n}\n";
+var combinelerp = "@group(0) @binding(x) var input0: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var input1: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var inputWeight: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet color1: vec4f = textureLoad(input0, id.xy);\n\tlet color2: vec4f = textureLoad(input1, id.xy);\n\tlet color3: vec4f = textureLoad(inputWeight, id.xy);\n\n\ttextureStore(outTexture, id.xy, mix(color1, color2, color3.rrrr));\n}\n";
 
 var combineadd = "//#define INPUT_COUNT 8\n\n#include matrix_uniforms\n#include common_uniforms\n\n// Note: at the time of writing, texture arrays does not exist in webgpu\n#if INPUT_COUNT > 0\n\t@group(0) @binding(x) var input0Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input0Sampler: sampler;\n#endif\n#if INPUT_COUNT > 1\n\t@group(0) @binding(x) var input1Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input1Sampler: sampler;\n#endif\n#if INPUT_COUNT > 2\n\t@group(0) @binding(x) var input2Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input2Sampler: sampler;\n#endif\n#if INPUT_COUNT > 3\n\t@group(0) @binding(x) var input3Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input3Sampler: sampler;\n#endif\n#if INPUT_COUNT > 4\n\t@group(0) @binding(x) var input4Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input4Sampler: sampler;\n#endif\n#if INPUT_COUNT > 5\n\t@group(0) @binding(x) var input5Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input5Sampler: sampler;\n#endif\n#if INPUT_COUNT > 6\n\t@group(0) @binding(x) var input6Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input6Sampler: sampler;\n#endif\n#if INPUT_COUNT > 7\n\t@group(0) @binding(x) var input7Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var input7Sampler: sampler;\n#endif\n\n@group(0) @binding(x) var outTexture: texture_storage_2d<rgba8unorm, write>;\n//@group(0) @binding(x) var<uniform> used: array<i32, INPUT_COUNT>;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar out: vec4f = vec4(0.0);\n\tfor (var i: i32 = 0; i < INPUT_COUNT; i++) {\n\t\t//if (used[i] > 0)\n\t\t{\n\t\t\tswitch i {\n#if INPUT_COUNT > 0\n\t\t\t\tcase 0: {\n\t\t\t\t\tout += textureSample(input0Texture, input0Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 1\n\t\t\t\tcase 1: {\n\t\t\t\t\tout += textureSample(input1Texture, input1Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 2\n\t\t\t\tcase 2: {\n\t\t\t\t\tout += textureSample(input2Texture, input2Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 3\n\t\t\t\tcase 3: {\n\t\t\t\t\tout += textureSample(input3Texture, input3Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 4\n\t\t\t\tcase 4: {\n\t\t\t\t\tout += textureSample(input4Texture, input4Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 5\n\t\t\t\tcase 5: {\n\t\t\t\t\tout += textureSample(input5Texture, input5Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 6\n\t\t\t\tcase 6: {\n\t\t\t\t\tout += textureSample(input6Texture, input6Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n#if INPUT_COUNT > 7\n\t\t\t\tcase 7: {\n\t\t\t\t\tout += textureSample(input7Texture, input7Sampler, fragInput.vTextureCoord);\n\t\t\t\t}\n#endif\n\t\t\t\tdefault: {\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n\n\ttextureStore(outTexture, vec2<u32>(fragInput.vTextureCoord * commonUniforms.resolution.xy), out);\n\treturn FragmentOutput(vec4(1.0));\n}\n";
 
@@ -20294,8 +20660,15 @@ class Bone extends Entity {
         this.#boneId = params.boneId ?? -1;
         this.#skeleton = params.skeleton ?? null;
     }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
     set position(position) {
         super.position = position;
+        this.dirty = true;
+    }
+    setPosition(position) {
+        super.setPosition(position);
         this.dirty = true;
     }
     get position() {
@@ -20335,8 +20708,22 @@ class Bone extends Entity {
         }
         return quaternion;
     }
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
     set quaternion(quaternion) {
         super.quaternion = quaternion;
+        this.dirty = true;
+    }
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
+    setQuaternion(quaternion) {
+        super.setQuaternion(quaternion);
+        this.dirty = true;
+    }
+    setOrientation(quaternion) {
+        super.setOrientation(quaternion);
         this.dirty = true;
     }
     get quaternion() {
@@ -20830,18 +21217,21 @@ class SkeletalMesh extends Mesh {
     exportObj() {
         const ret = {};
         const skeletonBones = this.skeleton._bones;
-        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', 'tangent': 'aVertexTangent' };
         const geometry = this.getGeometry();
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
         const skinnedVertexPosition = new Float32Array(vertexCount * 3);
         const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const skinnedVertexTangent = new Float32Array(vertexCount * 4);
         const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexTangent = geometry.getAttribute('aVertexTangent')?._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
         const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
         const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
         const tempVertex = vec3.create();
         const tempVertexNormal = vec3.create();
+        const tempVertexTangent = vec4.create();
         const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
@@ -20865,6 +21255,11 @@ class SkeletalMesh extends Mesh {
                 tempVertexNormal[0] = vertexNormal?.[vertexArrayIndex + 0] ?? 0;
                 tempVertexNormal[1] = vertexNormal?.[vertexArrayIndex + 1] ?? 0;
                 tempVertexNormal[2] = vertexNormal?.[vertexArrayIndex + 2] ?? 0;
+                const vertexArrayIndexTangent = vertexIndex * 4;
+                tempVertexTangent[0] = vertexTangent?.[vertexArrayIndexTangent + 0] ?? 0;
+                tempVertexTangent[1] = vertexTangent?.[vertexArrayIndexTangent + 1] ?? 0;
+                tempVertexTangent[2] = vertexTangent?.[vertexArrayIndexTangent + 2] ?? 0;
+                tempVertexTangent[3] = vertexTangent?.[vertexArrayIndexTangent + 3] ?? 0;
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
                     const boneArrayIndex2 = boneArrayIndex + boneIndex;
                     const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
@@ -20896,6 +21291,10 @@ class SkeletalMesh extends Mesh {
                 skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
                 skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
                 skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
+                skinnedVertexTangent[vertexArrayIndex + 0] = tempVertexTangent[0];
+                skinnedVertexTangent[vertexArrayIndex + 1] = tempVertexTangent[1];
+                skinnedVertexTangent[vertexArrayIndex + 2] = tempVertexTangent[2];
+                skinnedVertexTangent[vertexArrayIndex + 3] = tempVertexTangent[3];
             }
         }
         for (const objAttribute in attributes) {
@@ -20906,6 +21305,9 @@ class SkeletalMesh extends Mesh {
                 }
                 else if (geometryAttribute == 'aVertexNormal') {
                     ret[objAttribute] = skinnedVertexNormal;
+                }
+                else if (geometryAttribute == 'aVertexTangent') {
+                    ret[objAttribute] = skinnedVertexTangent;
                 }
                 else {
                     const webglAttrib = geometry.getAttribute(geometryAttribute);
@@ -21258,7 +21660,7 @@ class Skeleton extends Entity {
         super(params);
         //this.bones = Object.create(null);//TODOv3: rename
         this.#createBoneMatrixArray();
-        if (!Graphics$1.isWebGPU) {
+        if (Graphics$1.isWebGLAny) {
             this.#createBoneMatrixTexture();
         }
         this.dirty();
@@ -21284,14 +21686,8 @@ class Skeleton extends Entity {
     }
     #createBoneMatrixTexture() {
         this.#texture = TextureManager.createTexture({
-            webgpuDescriptor: {
-                size: {
-                    width: 4 /* matrix cols */,
-                    height: MAX_HARDWARE_BONES,
-                },
-                format: 'rgba8unorm',
-                usage: GPUTextureUsage.TEXTURE_BINDING,
-            }
+            // Notice: this texture is not used in WebGPU
+            webgpuDescriptor: phonyWebGPUTextureDescriptor,
         });
         const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
@@ -21327,12 +21723,9 @@ class Skeleton extends Entity {
                 imgData[index++] = pose[k];
             }
         }
-        if (!Graphics$1.isWebGPU) {
+        if (Graphics$1.isWebGLAny) {
             this.#updateBoneMatrixTexture();
         }
-    }
-    set position(position) {
-        super.position = position;
     }
     get position() {
         if (this._parent) {
@@ -22388,17 +22781,17 @@ class Triangles extends Mesh {
     }
 }
 
-var camera$1 = "  struct Camera {\n    viewportSize: vec2u,\n    imageWidth: f32,\n    imageHeight: f32,\n    pixel00Loc: vec3<f32>,\n    pixelDeltaU: vec3<f32>,\n    pixelDeltaV: vec3<f32>,\n\n    aspectRatio: f32,\n    center: vec3<f32>,\n    vfov: f32,\n\n    lookFrom: vec3f,\n    lookAt: vec3f,\n    vup: vec3f,\n\n    defocusAngle: f32,\n    focusDist: f32,\n\n    defocusDiscU: vec3f,\n    defocusDiscV: vec3f\n  }\n\n  fn initCamera(camera: ptr<function, Camera>) {\n    (*camera).imageHeight = (*camera).imageWidth / (*camera).aspectRatio;\n    (*camera).imageHeight = select((*camera).imageHeight, 1, (*camera).imageHeight < 1);\n\n    (*camera).center = (*camera).lookFrom;\n\n    let theta = ((*camera).vfov);\n    let h = tan(theta * 0.5);\n    let viewportHeight = 2.0 * h * (*camera).focusDist;\n    let viewportWidth = viewportHeight * ((*camera).imageWidth / (*camera).imageHeight);\n\n    let w = normalize((*camera).lookFrom - (*camera).lookAt);\n    let u = normalize(cross((*camera).vup, w));\n    let v = cross(w, u);\n\n    let viewportU = viewportWidth * u;\n    let viewportV = viewportHeight * -v;\n\n    (*camera).pixelDeltaU = viewportU / (*camera).imageWidth;\n    (*camera).pixelDeltaV = viewportV / (*camera).imageHeight;\n\n    let viewportUpperLeft = (*camera).center - ((*camera).focusDist * w) - viewportU / 2 - viewportV / 2;\n    (*camera).pixel00Loc = viewportUpperLeft + 0.5 * ((*camera).pixelDeltaU + (*camera).pixelDeltaV);\n\n    let defocusRadius = (*camera).focusDist * tan(radians((*camera).defocusAngle * 0.5));\n    (*camera).defocusDiscU = u * defocusRadius;\n    (*camera).defocusDiscV = v * defocusRadius;\n  }\n";
+var camera$1 = "  struct Camera {\n    viewportSize: vec2u,\n    imageWidth: f32,\n    imageHeight: f32,\n    pixel00Loc: vec3<f32>,\n    pixelDeltaU: vec3<f32>,\n    pixelDeltaV: vec3<f32>,\n\n    aspectRatio: f32,\n    center: vec3<f32>,\n    vfov: f32,\n\n    lookFrom: vec3f,\n    lookAt: vec3f,\n    vup: vec3f,\n\n    defocusAngle: f32,\n    focusDist: f32,\n\n    defocusDiscU: vec3f,\n    defocusDiscV: vec3f\n  }\n\n  fn initCamera(camera: ptr<function, Camera>) {\n    (*camera).imageHeight = (*camera).imageWidth / (*camera).aspectRatio;\n    (*camera).imageHeight = select((*camera).imageHeight, 1, (*camera).imageHeight < 1);\n\n    (*camera).center = (*camera).lookFrom;\n\n    let theta = ((*camera).vfov);\n    let h = tan(theta * 0.5);\n    let viewportHeight = 2.0 * h * (*camera).focusDist;\n    let viewportWidth = viewportHeight * ((*camera).imageWidth / (*camera).imageHeight);\n\n    let w = normalize((*camera).lookFrom - (*camera).lookAt);\n    let u = normalize(cross((*camera).vup, w));\n    let v = cross(w, u);\n\n    let viewportU = viewportWidth * u;\n    let viewportV = viewportHeight * -v;\n\n    (*camera).pixelDeltaU = viewportU / (*camera).imageWidth;\n    (*camera).pixelDeltaV = viewportV / (*camera).imageHeight;\n\n    let viewportUpperLeft = (*camera).center - ((*camera).focusDist * w) - viewportU / 2 - viewportV / 2;\n    (*camera).pixel00Loc = viewportUpperLeft + 0.5 * ((*camera).pixelDeltaU + (*camera).pixelDeltaV);\n\n    let defocusRadius = (*camera).focusDist * tan((*camera).defocusAngle * 0.5);\n    (*camera).defocusDiscU = u * defocusRadius;\n    (*camera).defocusDiscV = v * defocusRadius;\n  }\n";
 
 var color$1 = "  // Narkowicz 2015, \"ACES Filmic Tone Mapping Curve\"\n  @must_use\n  fn aces(x: vec3f) -> vec3f {\n    let a = 2.51;\n    let b = 0.03;\n    let c = 2.43;\n    let d = 0.59;\n    let e = 0.14;\n    return saturate(x * (a * x + b)) / (x * (c * x + d) + e);\n  }\n\n  // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/\n  @must_use\n  fn filmic(x: vec3f) -> vec3f {\n    let X = max(vec3f(0.0), x - 0.004);\n    let result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);\n    return pow(result, vec3(2.2));\n  }\n\n  // Lottes 2016, \"Advanced Techniques and Optimization of HDR Color Pipelines\"\n  @must_use\n  fn lottes(x: vec3f) -> vec3f {\n    let a = vec3f(1.6);\n    let d = vec3f(0.977);\n    let hdrMax = vec3f(8.0);\n    let midIn = vec3f(0.18);\n    let midOut = vec3f(0.267);\n\n    let b =\n        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n    let c =\n        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n\n    return pow(x, a) / (pow(x, a * d) * b + c);\n  }\n\n  @must_use\n  fn reinhard(x: vec3f) -> vec3f {\n    return x / (1.0 + x);\n  }\n";
 
-var common = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    faceNormal: vec3f,\n    materialIdx: u32\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
+var common = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32,\n    debugColor: u32,\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    tbn: mat3x3f,\n    coord: vec2f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    ta0: vec4f,\n    ta1: vec4f,\n    ta2: vec4f,\n\n    bta0: vec3f,\n    bta1: vec3f,\n    bta2: vec3f,\n\n    t0: vec2f,\n    t1: vec2f,\n    t2: vec2f,\n\n    faceNormal: vec3f,\n    materialIdx: u32,\n    flatShading: u32,\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
 
 var interval = "  struct Interval {\n    min: f32,\n    max: f32,\n  };\n\n  @must_use\n  fn intervalContains(interval: Interval, x: f32) -> bool {\n    return interval.min <= x && x <= interval.max;\n  }\n\n  @must_use\n  fn intervalSurrounds(interval: Interval, x: f32) -> bool {\n    return interval.min < x && x < interval.max;\n  }\n\n  @must_use\n  fn intervalClamp(interval: Interval, x: f32) -> f32 {\n    var out = x;\n    if (x < interval.min) {\n      out = interval.min;\n    }\n    if (x > interval.max) {\n      out = interval.max;\n    }\n    return out;\n  }\n\n  const emptyInterval = Interval(f32max, f32min);\n  const universeInterval = Interval(f32min, f32max);\n  const positiveUniverseInterval = Interval(EPSILON, f32max);\n";
 
-var material$1 = "  struct Material {\n    materialType: u32,\n    reflectionRatio: f32,\n    reflectionGloss: f32,\n    refractionIndex: f32,\n    albedo: vec3f,\n  };\n\n  @must_use\n  fn scatterLambertian(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = (*material).albedo;\n    return true;\n  }\n\n  @must_use\n  fn scatterMetal(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    let reflected = reflect(normalize((*ray).direction), (*hitRec).normal);\n    (*scattered) = Ray((*hitRec).p, reflected + (*material).reflectionGloss * randomUnitVec3(rngState));\n    (*attenuation) = (*material).albedo;\n    return (dot((*scattered).direction, (*hitRec).normal) >= 0);\n  }\n\n  @must_use\n  fn scatterDielectric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    *attenuation = vec3f(1);\n    let refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, (*hitRec).frontFace);\n    let unitDirection = normalize((*ray).direction);\n    let cosTheta = dot(-unitDirection, (*hitRec).normal);\n    let sinTheta = sqrt(1.0 - cosTheta * cosTheta);\n    let cannotRefract = refractRatio * sinTheta > 1.0;\n    let direction = select(\n      refract(unitDirection, (*hitRec).normal, refractRatio),\n      reflect(unitDirection, (*hitRec).normal),\n      cannotRefract || reflectance(cosTheta, refractRatio) > rngNextFloat(rngState)\n    );\n    (*scattered) = Ray((*hitRec).p, direction);\n    return true;\n  }\n\n  @must_use\n  fn reflectance(cosine: f32, refractionIndex: f32) -> f32 {\n    // Use Schlick's approximation for reflectance.\n    var r0 = (1.0 - refractionIndex) / (1.0 + refractionIndex);\n    r0 *= r0;\n    return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);\n  }\n";
+var material$1 = "#include math::modulo\n\nstruct TextureDescriptor {\n\twidth: u32,\n\theight: u32,\n\toffset: u32,\n\telements: u32,\n\trepeat: u32,\n\tlayers: u32,\n}\n\nstruct Material {\n    materialType: u32,\n    reflectionRatio: f32,\n    reflectionGloss: f32,\n    refractionIndex: f32,\n    albedo: vec3f,\n    textures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures\n  };\n\n  @must_use\n  fn scatterLambertian(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = (*material).albedo;\n    return true;\n  }\n\n  @must_use\n  fn scatterMetal(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    let reflected = reflect(normalize((*ray).direction), (*hitRec).normal);\n    (*scattered) = Ray((*hitRec).p, reflected + (*material).reflectionGloss * randomUnitVec3(rngState));\n    (*attenuation) = (*material).albedo;\n    return (dot((*scattered).direction, (*hitRec).normal) >= 0);\n  }\n\n  @must_use\n  fn scatterDielectric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    *attenuation = vec3f(1);\n    let refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, (*hitRec).frontFace);\n    let unitDirection = normalize((*ray).direction);\n    let cosTheta = dot(-unitDirection, (*hitRec).normal);\n    let sinTheta = sqrt(1.0 - cosTheta * cosTheta);\n    let cannotRefract = refractRatio * sinTheta > 1.0;\n    let direction = select(\n      refract(unitDirection, (*hitRec).normal, refractRatio),\n      reflect(unitDirection, (*hitRec).normal),\n      cannotRefract || reflectance(cosTheta, refractRatio) > rngNextFloat(rngState)\n    );\n    (*scattered) = Ray((*hitRec).p, direction);\n    return true;\n  }\n\n  @must_use\n  fn reflectance(cosine: f32, refractionIndex: f32) -> f32 {\n    // Use Schlick's approximation for reflectance.\n    var r0 = (1.0 - refractionIndex) / (1.0 + refractionIndex);\n    r0 *= r0;\n    return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);\n  }\n\n  @must_use\n  fn scatterSource1(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  @must_use\n  fn scatterSource1VertexLitGeneric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal;\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    let texelColor = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);\n    (*attenuation) = texelColor.rgb;\n    let normalTexture = (*material).textures[1];\n    let cubeMap = (*material).textures[3];\n\n    var texelNormal = vec4f(0.5, 0.5, 1.0, 0.0);\n\n    if (normalTexture.offset != 0xffffffff) {\n      texelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y);\n      scatterDirection = normalize((*hitRec).tbn * (texelNormal.rgb * 2 - 1));\n    }\n\n    if (cubeMap.offset != 0xffffffff) {\n      let cubeValue = textureCubeLookup(cubeMap, scatterDirection);\n      //scatterDirection = normalize((*hitRec).tbn * pixelNormal);\n      (*attenuation) = cubeValue * texelColor.a + texelColor.rgb;\n    }\n\n    scatterDirection += randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    return true;\n  }\n\n  @must_use\n  fn scatterSource1LightMappedGeneric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  @must_use\n  fn scatterSource2Material(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec4<f32> {\n    if (desc.offset == 0xffffffff) {\n      return vec4f(0.0);\n    }\n    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);\n    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);\n\n    let j = u32(u2 * f32(desc.width - 1));\n    let i = u32(v2 * f32(desc.height - 1));\n    let idx = (i * desc.width + j) * desc.elements;\n\n    let elem = textures[desc.offset + idx];\n    return vec4f(\n      textures[desc.offset + idx + 0],\n      textures[desc.offset + idx + 1],\n      textures[desc.offset + idx + 2],\n      select(0., textures[desc.offset + idx + 3], desc.elements >= 4)\n    ) / 255.;\n  }\n\n  fn textureCubeLookup(desc: TextureDescriptor, dir: vec3f) -> vec3<f32> {\n    if (desc.offset == 0xffffffff || desc.layers < 6) {\n      return vec3f(0.0);\n    }\n\n    let coords = sampleCube(dir);\n    let u = coords.x;\n    let v = coords.y;\n    let faceIndex = coords.z;\n\n    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);\n    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);\n\n    let j = u32(u2 * f32(desc.width - 1));\n    let i = u32(v2 * f32(desc.height - 1));\n    let idx = (i * desc.width + j) * desc.elements + u32(faceIndex) * desc.height * desc.width * desc.elements;\n\n    let elem = textures[desc.offset + idx];\n    return vec3f(\n      textures[desc.offset + idx + 0],\n      textures[desc.offset + idx + 1],\n      textures[desc.offset + idx + 2],\n    ) / 255.;\n  }\n\n  // See https://gamedev.net/forums/topic/687535\n  fn sampleCube(v: vec3f) -> vec3f {\n    let vAbs = abs(v);\n    var ma: f32;\n    var faceIndex: f32;\n    var uv: vec2f;\n\n    if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {\n      faceIndex = select(4., 5., v.z < 0.0);\n      ma = 0.5 / vAbs.z;\n      uv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);\n    } else if(vAbs.y >= vAbs.x) {\n      faceIndex = select(2., 3., v.y < 0.0);\n      ma = 0.5 / vAbs.y;\n      uv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));\n    } else {\n      faceIndex = select(0., 1., v.z < 0.0);\n      ma = 0.5 / vAbs.x;\n      uv = vec2f(select(-v.z, v.z, v.x < 0.0), -v.y);\n    }\n    return vec3f(uv * ma + 0.5, faceIndex);\n  }\n";
 
-var ray$1 = "  struct Ray {\n    origin: vec3f,\n    direction: vec3f,\n  };\n\n  @must_use\n  fn rayAt(ray: ptr<function, Ray>, t: f32) -> vec3f {\n    return (*ray).origin + (*ray).direction * t;\n  }\n\n  @must_use\n  fn rayIntersectFace(\n    ray: ptr<function, Ray>,\n    face: ptr<function, Face>,\n    rec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n    // Mäller-Trumbore algorithm\n    // https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm\n\n    // let fnDotRayDir = dot((*face).faceNormal, (*ray).direction);\n    // if (abs(fnDotRayDir) < EPSILON) {\n    //   return false; // ray direction almost parallel\n    // }\n\n    let e1 = (*face).p1 - (*face).p0;\n    let e2 = (*face).p2 - (*face).p0;\n\n    let h = cross((*ray).direction, e2);\n    let det = dot(e1, h);\n\n    if det > -0.00001 && det < 0.00001 {\n      return false;\n    }\n\n    let invDet = 1.0f / det;\n    let s = (*ray).origin - (*face).p0;\n    let u = invDet * dot(s, h);\n\n    if u < 0.0f || u > 1.0f {\n      return false;\n    }\n\n    let q = cross(s, e1);\n    let v = invDet * dot((*ray).direction, q);\n\n    if v < 0.0f || u + v > 1.0f {\n      return false;\n    }\n\n    let t = invDet * dot(e2, q);\n\n    if t > interval.min && t < interval.max {\n      // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html\n\n      let p = (*face).p0 + u * e1 + v * e2;\n      // *hit = TriangleHit(offsetRay(p, n), b, t);\n      (*rec).t = t;\n      (*rec).p = p;\n      (*rec).materialIdx = (*face).materialIdx;\n      if (commonUniforms.flatShading == 1u) {\n        (*rec).normal = (*face).faceNormal;\n      } else {\n        let b = vec3f(1f - u - v, u, v);\n        let n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;\n        (*rec).normal = n;\n      }\n      return true;\n    } else {\n      return false;\n    }\n  }\n\n\n  @must_use\n  fn rayIntersectBV(ray: ptr<function, Ray>, aabb: ptr<function, AABB>) -> bool {\n    let t0 = ((*aabb).min - (*ray).origin) / (*ray).direction;\n    let t1 = ((*aabb).max - (*ray).origin) / (*ray).direction;\n    let tmin = min(t0, t1);\n    let tmax = max(t0, t1);\n    let maxMinT = max(tmin.x, max(tmin.y, tmin.z));\n    let minMaxT = min(tmax.x, min(tmax.y, tmax.z));\n    return maxMinT < minMaxT;\n  }\n\n  @must_use\n  fn rayIntersectBVH(\n    ray: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n\n    var current: HitRecord;\n    var didIntersect = false;\n    var stack: array<i32, BV_MAX_STACK_DEPTH>;\n\n    (*hitRec).t = f32max;\n\n    var top: i32;\n\n    for (var objIdx = 0u; objIdx < OBJECTS_COUNT_IN_SCENE; objIdx++) {\n      top = 0;\n      stack[0] = 0;\n\n      while (top > -1) {\n        var bvIdx = stack[top];\n        top--;\n        var aabb = AABBs[u32(bvIdx) + objIdx * MAX_BVs_COUNT_PER_MESH];\n\n        if (rayIntersectBV(ray, &aabb)) {\n          if (aabb.leftChildIdx != -1) {\n            top++;\n            stack[top] = aabb.leftChildIdx;\n          }\n          if (aabb.rightChildIdx != -1) {\n            top++;\n            stack[top] = aabb.rightChildIdx;\n          }\n\n          if (aabb.faceIdx0 != -1) {\n            var face = faces[u32(aabb.faceIdx0) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n\n          if (aabb.faceIdx1 != -1) {\n            var face = faces[u32(aabb.faceIdx1) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n        }\n      }\n    }\n    return didIntersect;\n  }\n\n  @must_use\n  fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n    let pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n    let pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n    let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n    let rayDirection = pixelSample - rayOrigin;\n    return Ray(rayOrigin, rayDirection);\n  }\n\n  @must_use\n  fn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n    let p = randomVec3InUnitDisc(rngState);\n    return (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n  }\n\n  @must_use\n  fn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n    let px = -0.5 + rngNextFloat(rngState);\n    let py = -0.5 + rngNextFloat(rngState);\n    return (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n  }\n";
+var ray$1 = "  struct Ray {\n    origin: vec3f,\n    direction: vec3f,\n  };\n\n  @must_use\n  fn rayAt(ray: ptr<function, Ray>, t: f32) -> vec3f {\n    return (*ray).origin + (*ray).direction * t;\n  }\n\n  @must_use\n  fn rayIntersectFace(\n    ray: ptr<function, Ray>,\n    face: ptr<function, Face>,\n    rec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n    // Mäller-Trumbore algorithm\n    // https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm\n\n    // let fnDotRayDir = dot((*face).faceNormal, (*ray).direction);\n    // if (abs(fnDotRayDir) < EPSILON) {\n    //   return false; // ray direction almost parallel\n    // }\n\n    let e1 = (*face).p1 - (*face).p0;\n    let e2 = (*face).p2 - (*face).p0;\n\n    let t1 = (*face).t1 - (*face).t0;\n    let t2 = (*face).t2 - (*face).t0;\n\n    let h = cross((*ray).direction, e2);\n    let det = dot(e1, h);\n\n    if det > -0.00001 && det < 0.00001 {\n      return false;\n    }\n\n    let invDet = 1.0f / det;\n    let s = (*ray).origin - (*face).p0;\n    let u = invDet * dot(s, h);\n\n    if u < 0.0f || u > 1.0f {\n      return false;\n    }\n\n    let q = cross(s, e1);\n    let v = invDet * dot((*ray).direction, q);\n\n    if v < 0.0f || u + v > 1.0f {\n      return false;\n    }\n\n    let t = invDet * dot(e2, q);\n\n    if t > interval.min && t < interval.max {\n      // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html\n\n      let p = (*face).p0 + u * e1 + v * e2;\n      let coord = (*face).t0 + u * t1 + v * t2;\n      // *hit = TriangleHit(offsetRay(p, n), b, t);\n      (*rec).t = t;\n      (*rec).p = p;\n      (*rec).coord = coord;\n      (*rec).materialIdx = (*face).materialIdx;\n\n      var tangent: vec3f;\n      var bitangent: vec3f;\n\n      if (commonUniforms.flatShading == 1u) {\n        (*rec).normal = abs((*face).faceNormal);\n      } else {\n        var n: vec3f;\n        if ((*face).flatShading == 0) {\n          let b = vec3f(1f - u - v, u, v);\n          n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;\n          tangent = b[0] * (*face).ta0.xyz + b[1] * (*face).ta1.xyz + b[2] * (*face).ta2.xyz;\n          bitangent = b[0] * (*face).bta0.xyz + b[1] * (*face).bta1.xyz + b[2] * (*face).bta2.xyz;\n        } else {\n          n = ((*face).faceNormal);\n          tangent = vec3f(1, 0, 0);// TODO: compute actual tangent\n          bitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent\n        }\n        (*rec).normal = n;\n        (*rec).tbn = mat3x3f(tangent, bitangent, n);\n      }\n      return true;\n    } else {\n      return false;\n    }\n  }\n\n\n  @must_use\n  fn rayIntersectBV(ray: ptr<function, Ray>, aabb: ptr<function, AABB>) -> bool {\n    let t0 = ((*aabb).min - (*ray).origin) / (*ray).direction;\n    let t1 = ((*aabb).max - (*ray).origin) / (*ray).direction;\n    let tmin = min(t0, t1);\n    let tmax = max(t0, t1);\n    let maxMinT = max(tmin.x, max(tmin.y, tmin.z));\n    let minMaxT = min(tmax.x, min(tmax.y, tmax.z));\n    return maxMinT < minMaxT;\n  }\n\n  @must_use\n  fn rayIntersectBVH(\n    ray: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n\n    var current: HitRecord;\n    var didIntersect = false;\n    var stack: array<i32, BV_MAX_STACK_DEPTH>;\n\n    (*hitRec).t = f32max;\n\n    var top: i32;\n\n    for (var objIdx = 0u; objIdx < OBJECTS_COUNT_IN_SCENE; objIdx++) {\n      top = 0;\n      stack[0] = 0;\n\n      while (top > -1) {\n        var bvIdx = stack[top];\n        top--;\n        var aabb = AABBs[u32(bvIdx) + objIdx * MAX_BVs_COUNT_PER_MESH];\n\n        if (rayIntersectBV(ray, &aabb)) {\n          if (aabb.leftChildIdx != -1) {\n            top++;\n            stack[top] = aabb.leftChildIdx;\n          }\n          if (aabb.rightChildIdx != -1) {\n            top++;\n            stack[top] = aabb.rightChildIdx;\n          }\n\n          if (aabb.faceIdx0 != -1) {\n            var face = faces[u32(aabb.faceIdx0) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n\n          if (aabb.faceIdx1 != -1) {\n            var face = faces[u32(aabb.faceIdx1) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n        }\n      }\n    }\n    return didIntersect;\n  }\n\n  @must_use\n  fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n    let pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n    let pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n    let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n    let rayDirection = pixelSample - rayOrigin;\n    return Ray(rayOrigin, rayDirection);\n  }\n\n  @must_use\n  fn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n    let p = randomVec3InUnitDisc(rngState);\n    return (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n  }\n\n  @must_use\n  fn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n    let px = -0.5 + rngNextFloat(rngState);\n    let py = -0.5 + rngNextFloat(rngState);\n    return (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n  }\n";
 
 var utils = "  const f32min = 0x1p-126f;\n  const f32max = 0x1.fffffep+127;\n\n  const pi = 3.1415927f;\n\n  @must_use\n  fn rngNextFloat(state: ptr<function, u32>) -> f32 {\n    rngNextInt(state);\n    return f32(*state) / f32(0xffffffffu);\n  }\n\n  fn rngNextInt(state: ptr<function, u32>) {\n    // PCG random number generator\n    // Based on https://www.shadertoy.com/view/XlGcRh\n\n    let oldState = *state + 747796405u + 2891336453u;\n    let word = ((oldState >> ((oldState >> 28u) + 4u)) ^ oldState) * 277803737u;\n    *state = (word >> 22u) ^ word;\n  }\n\n  @must_use\n  fn randInRange(min: f32, max: f32, state: ptr<function, u32>) -> f32 {\n    return min + rngNextFloat(state) * (max - min);\n  }\n";
 
@@ -22416,15 +22809,458 @@ addWgslInclude('raytracer::utils', utils);
 addWgslInclude('raytracer::vec', vec$9);
 addWgslInclude('raytracer::vertex', vertex);
 
+var bitangent_prepass = "  #include raytracer::common\n\n  @group(0) @binding(0) var<storage, read_write> faces: array<Face>;\n\n  override WORKGROUP_SIZE_X: u32;\n  /**\n   * compute the bitangent for each vertex\n   */\n  @compute @workgroup_size(WORKGROUP_SIZE_X, 1)\n  fn compute_main(@builtin(global_invocation_id) id : vec3<u32>,) {\n    if (id.x > arrayLength(&faces)) {\n      return;\n    }\n\n    let face = &faces[id.x];\n\n    face.bta0 = cross(face.n0, face.ta0.xyz) * face.ta0.w;\n    face.bta1 = cross(face.n1, face.ta1.xyz) * face.ta1.w;\n    face.bta2 = cross(face.n2, face.ta2.xyz) * face.ta2.w;\n  }\n";
+
+var debug_bvh = "#include matrix_uniforms\n#include raytracer::common\n\n@group(0) @binding(x) var<storage, read> AABBs: array<AABB>;\n@group(0) @binding(x) var<uniform> viewProjectionMatrix: mat4x4f;\n\nconst EDGES_PER_CUBE = 12u;\n\n@vertex\nfn vertex_main(\n  @builtin(instance_index) instanceIndex: u32,\n  @builtin(vertex_index) vertexIndex: u32\n) -> @builtin(position) vec4f {\n  let lineInstanceIdx = instanceIndex % EDGES_PER_CUBE;\n  let aabbInstanceIdx = instanceIndex / EDGES_PER_CUBE;\n  let a = AABBs[aabbInstanceIdx];\n  var pos: vec3f;\n  let fVertexIndex = f32(vertexIndex);\n\n  //        a7 _______________ a6\n  //         / |             /|\n  //        /  |            / |\n  //    a4 /   |       a5  /  |\n  //      /____|__________/   |\n  //      |    |__________|___|\n  //      |   / a3        |   / a2\n  //      |  /            |  /\n  //      | /             | /\n  //      |/______________|/\n  //      a0              a1\n\n  let dx = a.max.x - a.min.x;\n  let dy = a.max.y - a.min.y;\n  let dz = a.max.z - a.min.z;\n\n  let a0 = a.min;\n  let a1 = vec3f(a.min.x + dx, a.min.y,      a.min.z     );\n  let a2 = vec3f(a.min.x + dx, a.min.y,      a.min.z + dz);\n  let a3 = vec3f(a.min.x,      a.min.y,      a.min.z + dz);\n  let a4 = vec3f(a.min.x,      a.min.y + dy, a.min.z     );\n  let a5 = vec3f(a.min.x + dx, a.min.y + dy, a.min.z     );\n  let a6 = a.max;\n  let a7 = vec3f(a.min.x,      a.min.y + dy, a.min.z + dz);\n\n  if (lineInstanceIdx == 0) {\n    pos = mix(a0, a1, fVertexIndex);\n  } else if (lineInstanceIdx == 1) {\n    pos = mix(a1, a2, fVertexIndex);\n  } else if (lineInstanceIdx == 2) {\n    pos = mix(a2, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 3) {\n    pos = mix(a0, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 4) {\n    pos = mix(a0, a4, fVertexIndex);\n  } else if (lineInstanceIdx == 5) {\n    pos = mix(a1, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 6) {\n    pos = mix(a2, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 7) {\n    pos = mix(a3, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 8) {\n    pos = mix(a4, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 9) {\n    pos = mix(a5, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 10) {\n    pos = mix(a6, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 11) {\n    pos = mix(a7, a4, fVertexIndex);\n  }\n  //return viewProjectionMatrix * vec4(pos, 1);\n  return matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1);\n}\n\n@fragment\nfn fragment_main() -> @location(0) vec4f {\n  return vec4f(1, 1, 1, 0.1);\n}\n";
+
 var presentation = "@group(0) @binding(x) var inTexture: texture_2d<f32>;\n@group(0) @binding(x) var inSampler: sampler;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tlet color1: vec4f = textureSample(inTexture, inSampler, vec2f(fragInput.vTextureCoord.x, 1.0 - fragInput.vTextureCoord.y));\n\treturn FragmentOutput(color1);\n}\n";
 
-var raytracer = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::ray\n#include raytracer::vec\n#include raytracer::interval\n#include raytracer::camera\n#include raytracer::color\n#include raytracer::material\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  @group(1) @binding(2) var<storage, read> materials: array<Material>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    if (any(globalInvocationId.xy > cameraUniforms.viewportSize)) {\n      return;\n    }\n\n    let pos = globalInvocationId.xy;\n    let x = f32(pos.x);\n    let y = f32(pos.y);\n    let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n    var rngState = rngStateBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      rngState = idx;\n    }\n\n    var camera = cameraUniforms;\n    initCamera(&camera);\n\n    var hitRec: HitRecord;\n\n    var r = getCameraRay(&camera, x, y, &rngState);\n\n    var color = vec3f(0);\n\n    var mtlStack: array<Material, 16>;\n    var bLoop = true;\n    var i = 0u;\n\n    while(bLoop && rayIntersectBVH(&r, &hitRec, positiveUniverseInterval)) {\n      var scattered: Ray;\n      var material = materials[hitRec.materialIdx];\n      var albedo = material.albedo;\n\n      mtlStack[i] = material;\n\n      if (commonUniforms.debugNormals == 1u) {\n        color = (hitRec.normal + 1) * 0.5;\n        break;\n      }\n\n      switch material.materialType {\n        case 0: {\n          color = material.albedo;\n          bLoop = false;\n          break;\n        }\n        case 1: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            if (scatters) {\n              i++;\n              r = scattered;\n            } else {\n              color = vec3f(0);\n              bLoop = false;\n              i = 0u;\n            }\n          } else {\n            color = material.albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 2: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            r = scattered;\n            i++;\n          } else {\n            color = mtlStack[i].albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 3: {\n          var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        default: {\n          // ...\n        }\n      }\n    }\n\n\n    while (i > 0) {\n      i--;\n      color *= mtlStack[i].albedo;\n    }\n\n    var pixel = raytraceImageBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      pixel = vec3f(0);\n    }\n\n    pixel += color;\n    raytraceImageBuffer[idx] = pixel;\n\n\n    textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n    rngStateBuffer[idx] = rngState;\n  }\n";
+var raytracer = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::ray\n#include raytracer::vec\n#include raytracer::interval\n#include raytracer::camera\n#include raytracer::color\n#include raytracer::material\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  @group(1) @binding(2) var<storage, read> materials: array<Material>;\n  @group(1) @binding(3) var<storage, read> textures: array<f32>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    if (any(globalInvocationId.xy > cameraUniforms.viewportSize)) {\n      return;\n    }\n\n    let pos = globalInvocationId.xy;\n    let x = f32(pos.x);\n    let y = f32(pos.y);\n    let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n    var rngState = rngStateBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      rngState = idx;\n    }\n\n    var camera = cameraUniforms;\n    initCamera(&camera);\n\n    var hitRec: HitRecord;\n\n    var r = getCameraRay(&camera, x, y, &rngState);\n\n    var color = vec3f(0);\n\n    var mtlStack: array<vec3f, 16>;\n    var bLoop = true;\n    var i = 0u;\n\n    while(bLoop && rayIntersectBVH(&r, &hitRec, positiveUniverseInterval)) {\n      var scattered: Ray;\n      var material = materials[hitRec.materialIdx];\n      var albedo = material.albedo;\n\n      mtlStack[i] = material.albedo;\n\n      if (commonUniforms.debugNormals == 1u) {\n        color = abs(hitRec.normal);\n        break;\n      }\n\n\n      var i2 = i;\n\n      switch material.materialType {\n        case 0: {\n          color = material.albedo;\n          bLoop = false;\n          break;\n        }\n        case 1: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            if (scatters) {\n              i++;\n              r = scattered;\n            } else {\n              color = vec3f(0);\n              bLoop = false;\n              i = 0u;\n            }\n          } else {\n            color = material.albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 2: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            r = scattered;\n            i++;\n          } else {\n            color = mtlStack[i];\n            bLoop = false;\n          }\n          break;\n        }\n        case 3: {\n          var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 4: {// Source1Material\n          var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 5: {// Source1VertexLitGeneric\n          var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 6: {// LightMappedGeneric\n          var scatters = scatterSource1LightMappedGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 7: {// Source2Material\n          var scatters = scatterSource2Material(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        default: {\n          // ...\n          bLoop = false;\n        }\n      }\n      if (commonUniforms.debugColor == 1) {\n        i = i2;\n        break;\n      }\n    }\n\n\n    if (commonUniforms.debugColor == 1) {\n        color = mtlStack[i];\n    } else {\n      while (i > 0) {\n        i--;\n        color *= mtlStack[i];\n      }\n    }\n\n    var pixel = raytraceImageBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      pixel = vec3f(0);\n    }\n\n    pixel += color;\n    raytraceImageBuffer[idx] = pixel;\n\n\n    textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n    rngStateBuffer[idx] = rngState;\n  }\n";
 
 var test = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
+Shaders['bitangent_prepass.wgsl'] = bitangent_prepass;
+Shaders['debug_bvh.wgsl'] = debug_bvh;
 Shaders['presentation.wgsl'] = presentation;
 Shaders['raytracer.wgsl'] = raytracer;
 Shaders['test.wgsl'] = test;
+
+class BV {
+    min;
+    max;
+    static BV_MIN_DELTA = 0.01;
+    static X_AXIS = 0;
+    static Y_AXIS = 1;
+    static Z_AXIS = 2;
+    lt; // left child BV index
+    rt; // right child BV index
+    fi; // face indices
+    constructor(min, max) {
+        this.min = min;
+        this.max = max;
+        this.lt = -1;
+        this.rt = -1;
+        this.fi = [-1, -1];
+    }
+    subdivide(faces, AABBs) {
+        if (faces.length <= this.fi.length) {
+            for (let i = 0; i < faces.length; i++) {
+                this.fi[i] = faces[i].fi;
+            }
+        }
+        else {
+            const dx = Math.abs(this.max[0] - this.min[0]);
+            const dy = Math.abs(this.max[1] - this.min[1]);
+            const dz = Math.abs(this.max[2] - this.min[2]);
+            const largestDelta = Math.max(dx, dy, dz);
+            if (largestDelta === dx) {
+                this.splitAcross(BV.X_AXIS, faces, AABBs);
+            }
+            else if (largestDelta === dy) {
+                this.splitAcross(BV.Y_AXIS, faces, AABBs);
+            }
+            else {
+                this.splitAcross(BV.Z_AXIS, faces, AABBs);
+            }
+        }
+    }
+    splitAcross(axis, faces, AABBs) {
+        const sorted = [...faces].sort((faceA, faceB) => {
+            const a0 = faceA.p0[axis];
+            const a1 = faceA.p1[axis];
+            const a2 = faceA.p2[axis];
+            const b0 = faceB.p0[axis];
+            const b1 = faceB.p1[axis];
+            const b2 = faceB.p2[axis];
+            return (a0 + a1 + a2) / 3 - (b0 + b1 + b2) / 3;
+        });
+        const h = sorted.length / 2;
+        const l = sorted.length;
+        const ltFaces = sorted.slice(0, h); // left faces
+        const rtFaces = sorted.slice(h, l); // right faces
+        let ltBV;
+        let rtBV;
+        if (ltFaces.length) {
+            const min = vec4.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 1);
+            const max = vec4.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, 1);
+            for (const face of ltFaces) {
+                min[0] = Math.min(min[0], face.p0[0], face.p1[0], face.p2[0]);
+                min[1] = Math.min(min[1], face.p0[1], face.p1[1], face.p2[1]);
+                min[2] = Math.min(min[2], face.p0[2], face.p1[2], face.p2[2]);
+                max[0] = Math.max(max[0], face.p0[0], face.p1[0], face.p2[0]);
+                max[1] = Math.max(max[1], face.p0[1], face.p1[1], face.p2[1]);
+                max[2] = Math.max(max[2], face.p0[2], face.p1[2], face.p2[2]);
+            }
+            if (max[0] - min[0] < BV.BV_MIN_DELTA) {
+                max[0] += BV.BV_MIN_DELTA;
+            }
+            if (max[1] - min[1] < BV.BV_MIN_DELTA) {
+                max[1] += BV.BV_MIN_DELTA;
+            }
+            if (max[2] - min[2] < BV.BV_MIN_DELTA) {
+                max[2] += BV.BV_MIN_DELTA;
+            }
+            this.lt = AABBs.length;
+            ltBV = new BV(min, max);
+            AABBs.push(ltBV);
+        }
+        if (rtFaces.length) {
+            const min = vec4.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 1);
+            const max = vec4.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, 1);
+            for (const face of rtFaces) {
+                min[0] = Math.min(min[0], face.p0[0], face.p1[0], face.p2[0]);
+                min[1] = Math.min(min[1], face.p0[1], face.p1[1], face.p2[1]);
+                min[2] = Math.min(min[2], face.p0[2], face.p1[2], face.p2[2]);
+                max[0] = Math.max(max[0], face.p0[0], face.p1[0], face.p2[0]);
+                max[1] = Math.max(max[1], face.p0[1], face.p1[1], face.p2[1]);
+                max[2] = Math.max(max[2], face.p0[2], face.p1[2], face.p2[2]);
+            }
+            if (max[0] - min[0] < BV.BV_MIN_DELTA) {
+                max[0] += BV.BV_MIN_DELTA;
+            }
+            if (max[1] - min[1] < BV.BV_MIN_DELTA) {
+                max[1] += BV.BV_MIN_DELTA;
+            }
+            if (max[2] - min[2] < BV.BV_MIN_DELTA) {
+                max[2] += BV.BV_MIN_DELTA;
+            }
+            this.rt = AABBs.length;
+            rtBV = new BV(min, max);
+            AABBs.push(rtBV);
+        }
+        if (ltBV) {
+            ltBV.subdivide(ltFaces, AABBs);
+        }
+        if (rtBV) {
+            rtBV.subdivide(rtFaces, AABBs);
+        }
+    }
+}
+
+const emptyTexture = {
+    width: 0,
+    height: 0,
+    offset: 0xffffffff,
+    elements: 0,
+    repeat: 0,
+    layers: 0,
+};
+async function sceneToRtScene(scene) {
+    const entitites = scene.getRenderableList();
+    const meshes = [];
+    const materials = new Map();
+    let materialIndex = 0;
+    for (const entity of entitites) {
+        if (entity.isMesh) {
+            meshes.push(entity);
+            const material = entity.getMaterial();
+            if (!materials.has(material)) {
+                let rtMaterials = material.getRaytracingMaterial(materialIndex++);
+                if (rtMaterials) {
+                    materials.set(material, rtMaterials);
+                }
+            }
+        }
+    }
+    return loadModels({
+        MODELS_COUNT: 0,
+        facesCount: 0,
+        MAX_NUM_FACES_PER_MESH: 0,
+        MATERIALS_COUNT: 0,
+        MAX_NUM_BVs_PER_MESH: 0,
+        AABBS_COUNT: 0,
+        textures: new Float32Array(),
+        textureDescriptors: new Map(),
+    }, meshes, materials);
+}
+async function loadModels(context, meshes, sceneMaterials) {
+    const sceneModels = parseModel(meshes, sceneMaterials);
+    context.MODELS_COUNT = sceneModels.length;
+    let faces;
+    let aabbs;
+    const materials = [];
+    // Prepare faces buffer
+    {
+        context.MAX_NUM_FACES_PER_MESH = sceneModels.reduce((max, obj) => Math.max(max, obj.faces.length), 0);
+        context.facesCount = sceneModels.reduce((value, obj) => value + obj.faces.length, 0);
+        const numFloatsPerFace = 64;
+        faces = new Uint8ClampedArray(numFloatsPerFace *
+            Float32Array.BYTES_PER_ELEMENT *
+            context.MAX_NUM_FACES_PER_MESH * // TODO: fix that: variable faces per mesh
+            context.MODELS_COUNT);
+        const faceData = new Float32Array(faces.buffer);
+        const faceColorData = new Uint32Array(faces.buffer);
+        for (let i = 0; i < context.MODELS_COUNT; i++) {
+            const modelFaces = sceneModels[i].faces;
+            let idx = i * numFloatsPerFace * context.MAX_NUM_FACES_PER_MESH;
+            for (const face of modelFaces) {
+                faceData[idx + 0] = face.p0[0];
+                faceData[idx + 1] = face.p0[1];
+                faceData[idx + 2] = face.p0[2];
+                // idx + 3 padding
+                faceData[idx + 4] = face.p1[0];
+                faceData[idx + 5] = face.p1[1];
+                faceData[idx + 6] = face.p1[2];
+                // idx + 7 padding
+                faceData[idx + 8] = face.p2[0];
+                faceData[idx + 9] = face.p2[1];
+                faceData[idx + 10] = face.p2[2];
+                // idx + 11 padding
+                faceData[idx + 12] = face.n0[0];
+                faceData[idx + 13] = face.n0[1];
+                faceData[idx + 14] = face.n0[2];
+                // idx + 15 padding
+                faceData[idx + 16] = face.n1[0];
+                faceData[idx + 17] = face.n1[1];
+                faceData[idx + 18] = face.n1[2];
+                // idx + 19 padding
+                faceData[idx + 20] = face.n2[0];
+                faceData[idx + 21] = face.n2[1];
+                faceData[idx + 22] = face.n2[2];
+                // idx + 23 padding
+                faceData[idx + 24] = face.ta0[0];
+                faceData[idx + 25] = face.ta0[1];
+                faceData[idx + 26] = face.ta0[2];
+                // idx + 27 padding
+                faceData[idx + 28] = face.ta1[0];
+                faceData[idx + 29] = face.ta1[1];
+                faceData[idx + 30] = face.ta1[2];
+                // idx + 31 padding
+                faceData[idx + 32] = face.ta2[0];
+                faceData[idx + 33] = face.ta2[1];
+                faceData[idx + 34] = face.ta2[2];
+                // idx + 35 padding
+                // idx + 36 bitangent
+                // idx + 37 bitangent
+                // idx + 38 bitangent
+                // idx + 39 padding
+                // idx + 40 bitangent
+                // idx + 41 bitangent
+                // idx + 42 bitangent
+                // idx + 43 padding
+                // idx + 44 bitangent
+                // idx + 45 bitangent
+                // idx + 46 bitangent
+                // idx + 47 padding
+                faceData[idx + 48] = face.t0[0];
+                faceData[idx + 49] = face.t0[1];
+                faceData[idx + 50] = face.t1[0];
+                faceData[idx + 51] = face.t1[1];
+                faceData[idx + 52] = face.t2[0];
+                faceData[idx + 53] = face.t2[1];
+                // idx + 44 padding
+                // idx + 55 padding
+                faceData[idx + 56] = face.fn[0];
+                faceData[idx + 57] = face.fn[1];
+                faceData[idx + 58] = face.fn[2];
+                faceColorData[idx + 59] = face.mi;
+                faceColorData[idx + 60] = face.flatShading ? 1 : 0;
+                idx += numFloatsPerFace;
+            }
+        }
+    }
+    // Prepare AABBS buffer
+    {
+        context.MAX_NUM_BVs_PER_MESH = sceneModels.reduce((val, obj) => Math.max(val, obj.AABBs.length), 0);
+        const numFloatsPerBV = 12;
+        context.AABBS_COUNT = context.MAX_NUM_BVs_PER_MESH * context.MODELS_COUNT;
+        aabbs = new Uint8ClampedArray(numFloatsPerBV * Float32Array.BYTES_PER_ELEMENT * context.AABBS_COUNT);
+        const aabbPosData = new Float32Array(aabbs.buffer);
+        const aabbIdxData = new Int32Array(aabbs.buffer);
+        for (let i = 0; i < context.MODELS_COUNT; i++) {
+            const modelAABBs = sceneModels[i].AABBs;
+            let idx = numFloatsPerBV * context.MAX_NUM_BVs_PER_MESH * i;
+            for (const aabb of modelAABBs) {
+                aabbPosData[idx + 0] = aabb.min[0];
+                aabbPosData[idx + 1] = aabb.min[1];
+                aabbPosData[idx + 2] = aabb.min[2];
+                aabbPosData[idx + 3] = 1;
+                aabbPosData[idx + 4] = aabb.max[0];
+                aabbPosData[idx + 5] = aabb.max[1];
+                aabbPosData[idx + 6] = aabb.max[2];
+                aabbIdxData[idx + 7] = aabb.lt;
+                aabbIdxData[idx + 8] = aabb.rt;
+                aabbIdxData[idx + 9] = aabb.fi[0];
+                aabbIdxData[idx + 10] = aabb.fi[1];
+                aabbIdxData[idx + 11] = 0; // padding
+                idx += numFloatsPerBV;
+            }
+        }
+        // Prepare materials buffer
+        {
+            context.MATERIALS_COUNT = sceneMaterials.size;
+            for (const [, mtl] of sceneMaterials) {
+                const textures = [emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture];
+                if (mtl.textures) {
+                    for (const [id, tex] of mtl.textures) {
+                        if (tex) {
+                            textures[id] = await getTextureDescriptor(context, tex);
+                        }
+                    }
+                }
+                materials.push({
+                    materialType: mtl.materialType,
+                    reflectionRatio: mtl.reflectionRatio,
+                    reflectionGloss: mtl.reflectionGloss,
+                    refractionIndex: mtl.refractionIndex,
+                    albedo: mtl.albedo,
+                    textures,
+                });
+            }
+        }
+    }
+    return {
+        materials,
+        faces,
+        facesCount: context.facesCount,
+        aabbs,
+        aabbsCount: context.AABBS_COUNT,
+        textures: context.textures,
+        MODELS_COUNT: context.MODELS_COUNT,
+        MAX_NUM_BVs_PER_MESH: context.MAX_NUM_BVs_PER_MESH,
+        MAX_NUM_FACES_PER_MESH: context.MAX_NUM_FACES_PER_MESH,
+    };
+}
+function parseModel(meshes, materials) {
+    const fn = vec3.create();
+    const p1p0Diff = vec3.create();
+    const p2p0Diff = vec3.create();
+    const models = [];
+    for (const mesh of meshes) {
+        const obj = mesh.exportObj(true);
+        const rtMaterial = materials.get(mesh.getMaterial());
+        if (!rtMaterial) {
+            continue;
+        }
+        const outFaces = [];
+        const faces = obj.f;
+        const vertexPos = obj.v;
+        const vertexNormal = obj.vn;
+        const vertexTangent = obj.tangent;
+        const vertexBitangent = obj.bitangent;
+        const vertexCoord = obj.vt;
+        let ta0;
+        let ta1;
+        let ta2;
+        for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
+            const i0 = faces[vertexIndex + 0];
+            const i1 = faces[vertexIndex + 1];
+            const i2 = faces[vertexIndex + 2];
+            const p0 = new Float32Array(vertexPos.buffer, i0 * 4 * 3, 3);
+            const p1 = new Float32Array(vertexPos.buffer, i1 * 4 * 3, 3);
+            const p2 = new Float32Array(vertexPos.buffer, i2 * 4 * 3, 3);
+            const n0 = new Float32Array(vertexNormal.buffer, i0 * 4 * 3, 3);
+            const n1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
+            const n2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
+            if (vertexTangent) {
+                ta0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 3, 3);
+                ta1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 3, 3);
+                ta2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 3, 3);
+            }
+            else {
+                ta0 = vec3.create();
+                ta1 = vec3.create();
+                ta2 = vec3.create();
+            }
+            if (vertexBitangent) {
+                new Float32Array(vertexBitangent.buffer, i0 * 4 * 3, 3);
+                new Float32Array(vertexBitangent.buffer, i1 * 4 * 3, 3);
+                new Float32Array(vertexBitangent.buffer, i2 * 4 * 3, 3);
+            }
+            else {
+                vec3.create();
+                vec3.create();
+                vec3.create();
+            }
+            const t0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
+            const t1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
+            const t2 = new Float32Array(vertexCoord.buffer, i2 * 4 * 2, 2);
+            vec3.sub(p1p0Diff, p1, p0);
+            vec3.sub(p2p0Diff, p2, p0);
+            vec3.cross(fn, p1p0Diff, p2p0Diff);
+            vec3.normalize(fn, fn);
+            outFaces.push({
+                p0,
+                p1,
+                p2,
+                n0,
+                n1,
+                n2,
+                ta0,
+                ta1,
+                ta2,
+                t0,
+                t1,
+                t2,
+                fn: vec3.clone(fn),
+                fi: outFaces.length,
+                mi: rtMaterial.index,
+                flatShading: rtMaterial.flatShading,
+            });
+        }
+        const outAABBs = [];
+        // find root BV dimensions
+        const min = vec4.fromValues(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER, 1);
+        const max = vec4.fromValues(Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER, 1);
+        for (const face of outFaces) {
+            // calculate min/max for root AABB bounding volume
+            min[0] = Math.min(min[0], face.p0[0], face.p1[0], face.p2[0]);
+            min[1] = Math.min(min[1], face.p0[1], face.p1[1], face.p2[1]);
+            min[2] = Math.min(min[2], face.p0[2], face.p1[2], face.p2[2]);
+            max[0] = Math.max(max[0], face.p0[0], face.p1[0], face.p2[0]);
+            max[1] = Math.max(max[1], face.p0[1], face.p1[1], face.p2[1]);
+            max[2] = Math.max(max[2], face.p0[2], face.p1[2], face.p2[2]);
+        }
+        if (max[0] - min[0] < BV.BV_MIN_DELTA) {
+            max[0] += BV.BV_MIN_DELTA;
+        }
+        if (max[1] - min[1] < BV.BV_MIN_DELTA) {
+            max[1] += BV.BV_MIN_DELTA;
+        }
+        if (max[2] - min[2] < BV.BV_MIN_DELTA) {
+            max[2] += BV.BV_MIN_DELTA;
+        }
+        const bv = new BV(min, max);
+        outAABBs.push(bv);
+        bv.subdivide(outFaces, outAABBs);
+        models.push({
+            faces: outFaces,
+            AABBs: outAABBs,
+        });
+    }
+    return models;
+}
+async function getTextureDescriptor(context, texture) {
+    let descriptor = context.textureDescriptors.get(texture);
+    if (!descriptor) {
+        descriptor = await addToGlobalTextureData(context, texture);
+        context.textureDescriptors.set(texture, descriptor);
+    }
+    return descriptor;
+}
+async function addToGlobalTextureData(context, texture) {
+    const offset = context.textures.length;
+    const datas = await texture.getDatas();
+    const old = context.textures;
+    context.textures = new Float32Array(context.textures.length + datas.length);
+    context.textures.set(old);
+    context.textures.set(datas, old.length);
+    let repeat = 0;
+    if (texture.wrapS === GL_REPEAT) {
+        repeat += 1;
+    }
+    if (texture.wrapT === GL_REPEAT) {
+        repeat += 2;
+    }
+    return {
+        width: texture.width,
+        height: texture.height,
+        offset,
+        elements: texture.elementsPerTexel,
+        repeat,
+        layers: texture.isCube ? 6 : 1,
+    };
+}
 
 const COMPUTE_WORKGROUP_SIZE_X = 16;
 const COMPUTE_WORKGROUP_SIZE_Y = 16;
@@ -22442,6 +23278,7 @@ class Raytracer {
                 flatShading: 0,
                 maxBounces: 4,
                 debugNormals: 0,
+                debugColor: 0,
             },
             cameraUniforms: {
                 // TODO: remove the fake uniforms from the shader
@@ -22462,31 +23299,83 @@ class Raytracer {
         },
         workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
     });
+    #prepassMaterial = new ShaderMaterial({
+        shaderSource: 'bitangent_prepass',
+        gpuConstants: {
+            WORKGROUP_SIZE_X: 256,
+        },
+    });
+    #debugBvhMaterial = new ShaderMaterial({
+        shaderSource: 'debug_bvh',
+        blendingMode: BlendingMode.Normal,
+    });
+    #debugBvhGeometry = new InstancedBufferGeometry({ count: 2 });
+    #debugBvhMesh = new Mesh({
+        geometry: this.#debugBvhGeometry,
+        material: this.#debugBvhMaterial,
+        topology: 'line-list',
+        scale: 10,
+    });
+    //#debugBvhCamera?: Camera;
     #outputTexture = null;
+    #prepassDone = false;
+    #debugBvh = true;
+    #facesCount = 0;
     constructor() {
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
         this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm' /*WebGPUInternal.format*/);
     }
-    configure(scene, width, height, materials, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH) {
+    async configure(scene, width, height) {
         const activeCamera = scene.activeCamera;
         if (!activeCamera) {
             return false;
         }
+        //this.#debugBvhCamera = activeCamera;
         this.#width = width;
         this.#height = height;
+        this.#prepassDone = false;
+        const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount } = await sceneToRtScene(scene);
+        this.#facesCount = facesCount;
         this.#reset();
+        this.#debugBvhGeometry.instanceCount = aabbsCount * 12;
+        /*
+                const indices = //[0, 2, 1];
+                    [0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5, 8, 10, 9, 10, 11, 9, 12, 14, 13, 14, 15, 13, 16, 18, 17, 18, 19, 17, 20, 22, 21, 22, 23, 21];
+                const vertices = //[0, 0, 0, 0, 1, 0, 1, 0, 0];
+                    [0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5];
+                const normals = //[0, 0, 0, 0, 1, 0, 1, 0, 0];
+                    [1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]
+                */
+        //const geometry = this.#debugBvhGeometry;
+        //geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        //geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        //geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        //geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(vertices, 3, 'texCoord'));
+        //geometry.count = 2;
+        const lookFrom = activeCamera.getWorldPosition();
+        const cameraQuat = activeCamera.getWorldQuaternion();
+        const lookAt = vec3.fromValues(0, 0, -1);
+        vec3.transformQuat(lookAt, lookAt, cameraQuat);
+        vec3.add(lookAt, lookFrom, lookAt);
+        const vup = vec3.fromValues(0, 1, 0);
+        vec3.transformQuat(vup, vup, cameraQuat);
+        vec3.add(vup, vup, vup);
         this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
         this.#material.uniforms.cameraUniforms.viewportSize = new Uint32Array([width, height]);
         this.#material.uniforms.cameraUniforms.imageWidth = width;
         this.#material.uniforms.cameraUniforms.imageHeight = height;
         this.#material.uniforms.cameraUniforms.aspectRatio = width / height;
         this.#material.uniforms.cameraUniforms.vfov = activeCamera.getVerticalFov();
-        this.#material.uniforms.cameraUniforms.lookFrom = vec3.fromValues(0, 0, 2);
-        this.#material.uniforms.cameraUniforms.lookAt = vec3.create();
-        this.#material.uniforms.cameraUniforms.vup = vec3.fromValues(0, 1, 0); // TODO: set an actual value
+        this.#material.uniforms.cameraUniforms.lookFrom = lookFrom;
+        this.#material.uniforms.cameraUniforms.lookAt = lookAt;
+        this.#material.uniforms.cameraUniforms.vup = vup;
         this.#material.uniforms.cameraUniforms.defocusAngle = 0; // TODO: set an actual value
         this.#material.uniforms.cameraUniforms.focusDist = 3.4; //activeCamera.focus;
         this.#material.setStorage('faces', {
+            value: faces,
+            raw: true,
+        });
+        this.#prepassMaterial.setStorage('faces', {
             value: faces,
             raw: true,
         });
@@ -22495,9 +23384,15 @@ class Raytracer {
             raw: true,
         });
         this.#material.setStorage('materials', materials);
+        this.#material.setStorage('textures', textures);
         this.#material.gpuConstants.OBJECTS_COUNT_IN_SCENE = MODELS_COUNT;
         this.#material.gpuConstants.MAX_BVs_COUNT_PER_MESH = MAX_NUM_BVs_PER_MESH;
         this.#material.gpuConstants.MAX_FACES_COUNT_PER_MESH = MAX_NUM_FACES_PER_MESH;
+        this.#debugBvhMaterial.setStorage('AABBs', {
+            value: aabbs,
+            raw: true,
+        });
+        //this.#debugBvhMaterial.uniforms.viewProjectionMatrix = activeCamera.getViewProjectionMatrix();
         if (this.#outputTexture) {
             if (this.#outputTexture.width !== width ||
                 this.#outputTexture.height !== height) {
@@ -22520,6 +23415,13 @@ class Raytracer {
             });
         }
         this.#material.uniforms['outTexture'] = this.#outputTexture;
+        const rtCanvas = Graphics$1.getCanvas('rt_canvas');
+        rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
+        /*
+        rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(
+            new Box({ width: 100 })
+        );
+        */
         return true;
     }
     play() {
@@ -22539,13 +23441,37 @@ class Raytracer {
         }
         this.#material.uniforms['commonUniforms'].frameCounter = this.#frameId++;
         //this.#material.uniforms['outTexture'] = getCurrentTexture();
-        Graphics$1.compute(this.#material, {
-            width: this.#width,
-            height: this.#height,
-        }, Math.ceil(this.#width / (this.#material.workgroupSize?.[0] ?? 1)), Math.ceil(this.#height / (this.#material.workgroupSize?.[1] ?? 1)));
+        if (!this.#prepassDone) {
+            Graphics$1.compute(this.#prepassMaterial, {
+                width: this.#facesCount,
+                height: 1,
+                // TODO: fix that: we can hit the limit of 65536 workgroup * 256 workgroup size
+                // if we have more than 16M triangles
+                workgroupCountX: Math.ceil(this.#facesCount / 256),
+            });
+            this.#prepassDone = true;
+            this.#material.getStorage('faces').buffer = this.#prepassMaterial.getStorage('faces').buffer;
+        }
+        //this.#debugBvhMaterial.uniforms.viewProjectionMatrix = this.#debugBvhCamera?.getViewProjectionMatrix();
+        /*
+        Graphics.compute(this.#material,
+            {
+                width: this.#width,
+                height: this.#height,
+                workgroupCountX: Math.ceil(this.#width! / COMPUTE_WORKGROUP_SIZE_X),
+                workgroupCountY: Math.ceil(this.#height! / COMPUTE_WORKGROUP_SIZE_Y),
+            }
+        );
+        */
     }
     getOutputTexture() {
         return this.#outputTexture;
+    }
+    getMaterial() {
+        return this.#material;
+    }
+    debugBvh(debug) {
+        this.#debugBvh = debug;
     }
     dispose() {
         GraphicsEvents.removeEventListener(GraphicsEvent.Tick, this.#tick);
@@ -24265,8 +25191,14 @@ var ImageFormat;
     ImageFormat["RGBA8888"] = "RGBA8888";
     ImageFormat["ABGR8888"] = "ABGR8888";
     ImageFormat["ARGB8888"] = "ARGB8888";
+    ImageFormat["UVWQ8888"] = "UVWQ8888";
+    ImageFormat["UVLX8888"] = "UVLX8888";
+    ImageFormat["RGBA16161616"] = "RGBA16161616";
+    ImageFormat["RGBA16161616F"] = "RGBA16161616F";
     ImageFormat["RGB888"] = "RGB888";
+    ImageFormat["RGB888_BLUESCREEN"] = "RGB888_BLUESCREEN";
     ImageFormat["BGR888"] = "BGR888";
+    ImageFormat["BGR888_BLUESCREEN"] = "BGR888_BLUESCREEN";
     ImageFormat["RGB565"] = "RGB565";
     ImageFormat["BGR565"] = "BGR565";
     ImageFormat["BGRA5551"] = "BGRA5551";
@@ -24275,6 +25207,7 @@ var ImageFormat;
     ImageFormat["IA88"] = "IA88";
     ImageFormat["P8"] = "P8";
     ImageFormat["A8"] = "A8";
+    ImageFormat["UV88"] = "UV88";
     ImageFormat["PngR8G8B8A8Uint"] = "PngR8G8B8A8Uint";
     ImageFormat["PngDXT5"] = "PngDXT5";
 })(ImageFormat || (ImageFormat = {}));
@@ -24442,6 +25375,111 @@ class Detex {
     }
     static #initHeap() {
         this.#HEAPU8 = new Uint8Array(this.#webAssembly.instance.exports.memory.buffer);
+    }
+}
+
+function getWebGPUData(imageFormat, data) {
+    let rIndex = 0;
+    let gIndex = 1;
+    let bIndex = 2;
+    switch (imageFormat) {
+        case ImageFormat.RGB888:
+        case ImageFormat.RGB888_BLUESCREEN:
+            break;
+        case ImageFormat.BGR888:
+        case ImageFormat.BGR888_BLUESCREEN:
+            break;
+        case ImageFormat.RGB565:
+            // TODO: handle this case. No test data yet
+            errorOnce('Code getWebGPUData for IMAGE_FORMAT_RGB565');
+            break;
+        case ImageFormat.Bc1:
+        case ImageFormat.Bc2:
+        case ImageFormat.Bc3:
+        case ImageFormat.BGRA8888: // Not to sure about this one
+            // Do nothing, return the data as is
+            return data;
+        default:
+            errorOnce(`unsupported image format in getWebGPUData: ${imageFormat}`);
+            return data;
+    }
+    let rgba;
+    let alphaValue;
+    if (data instanceof Uint8Array) {
+        rgba = new Uint8Array(data.length * 4 / 3);
+        alphaValue = 255;
+    }
+    else {
+        rgba = new Float32Array(data.length * 4 / 3);
+        alphaValue = 1;
+    }
+    let j = 0;
+    for (let i = 0; i < data.length; i += 3) {
+        rgba[j++] = data[i + rIndex];
+        rgba[j++] = data[i + gIndex];
+        rgba[j++] = data[i + bIndex];
+        rgba[j++] = alphaValue;
+    }
+    return rgba;
+}
+function getWebGPUFormat(imageFormat, srgb) {
+    // TODO: add other formats
+    switch (imageFormat) {
+        case ImageFormat.Bc1:
+            return srgb ? 'bc1-rgba-unorm-srgb' : 'bc1-rgba-unorm';
+        case ImageFormat.Bc2:
+            return srgb ? 'bc2-rgba-unorm-srgb' : 'bc2-rgba-unorm';
+        case ImageFormat.Bc3:
+            return srgb ? 'bc3-rgba-unorm-srgb' : 'bc3-rgba-unorm';
+        default:
+            errorOnce(`getWebGPUFormat: unknown format: ${imageFormat}`);
+            break;
+    }
+    return 'rgba8unorm';
+}
+function getWebGPUBytesPerRow(imageFormat, width) {
+    // TODO: fix the format: add bc3 / bc5 , srgb, non rgba...
+    // TODO: set up a map to do that
+    switch (imageFormat) {
+        case ImageFormat.RGBA16161616F:
+        case ImageFormat.RGBA16161616:
+            return width * 8;
+        case ImageFormat.RGBA8888:
+        case ImageFormat.ABGR8888:
+        case ImageFormat.ARGB8888:
+        case ImageFormat.BGRA8888:
+        case ImageFormat.UVWQ8888:
+        case ImageFormat.UVLX8888:
+        // The following case are remapped to rgba, rgb doesn't exist in webgpu
+        case ImageFormat.RGB888:
+        case ImageFormat.BGR888:
+        case ImageFormat.RGB888_BLUESCREEN:
+        case ImageFormat.BGR888_BLUESCREEN:
+            return width * 4;
+        case ImageFormat.BGRA5551:
+            return width * 3;
+        case ImageFormat.IA88:
+        case ImageFormat.RGB565:
+        case ImageFormat.BGR565:
+        case ImageFormat.BGRA4444:
+        case ImageFormat.BGRA5551:
+        case ImageFormat.UV88:
+            return width * 2;
+        case ImageFormat.A8:
+        case ImageFormat.I8:
+        case ImageFormat.P8:
+            return width;
+        case ImageFormat.Bc1:
+            return width * 2;
+        case ImageFormat.Bc2:
+            // TODO: check the result
+            return width;
+        case ImageFormat.Bc3:
+            // TODO: check the result
+            return width * 4;
+        default:
+            errorOnce(`WebGPU: unknown vtf format: ${imageFormat}`);
+            return width * 4;
     }
 }
 
@@ -24629,6 +25667,7 @@ class Source1Vtf {
         const clampT = this.#getClampT(); //(this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         texture.width = mipmap.width;
         texture.height = mipmap.height;
+        texture.isSrgb = srgb;
         const data = mipmap.frames[frame]?.[face];
         if (data) {
             if (Graphics$1.isWebGPU) {
@@ -24958,43 +25997,7 @@ class Source1Vtf {
         }
     }
     #getWebGPUData(data) {
-        let rIndex = 0;
-        let gIndex = 1;
-        let bIndex = 2;
-        switch (this.highResImageFormat) {
-            case IMAGE_FORMAT_RGB888:
-            case IMAGE_FORMAT_RGB888_BLUESCREEN:
-                break;
-            case IMAGE_FORMAT_BGR888_BLUESCREEN:
-            case IMAGE_FORMAT_BGR888:
-                rIndex = 2;
-                bIndex = 0;
-                break;
-            case IMAGE_FORMAT_RGB565:
-                // TODO: handle this case. No test data yet
-                console.error('Code getWebGPUData for IMAGE_FORMAT_RGB565');
-                break;
-            default:
-                return data;
-        }
-        let rgba;
-        let alphaValue;
-        if (data instanceof Uint8Array) {
-            rgba = new Uint8Array(data.length * 4 / 3);
-            alphaValue = 255;
-        }
-        else {
-            rgba = new Float32Array(data.length * 4 / 3);
-            alphaValue = 1;
-        }
-        let j = 0;
-        for (let i = 0; i < data.length; i += 3) {
-            rgba[j++] = data[i + rIndex];
-            rgba[j++] = data[i + gIndex];
-            rgba[j++] = data[i + bIndex];
-            rgba[j++] = alphaValue;
-        }
-        return rgba;
+        return getWebGPUData(vtfToImageFormat(this.highResImageFormat), data);
     }
     #getClampS() {
         return (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
@@ -25058,6 +26061,8 @@ export const IMAGE_FORMAT_UVLX8888 = 26;*/
         }
     }
 }
+// TODO: remove thses consts
+const IMAGE_FORMAT_NONE = -1;
 const IMAGE_FORMAT_RGBA8888 = 0;
 const IMAGE_FORMAT_ABGR8888 = 1;
 const IMAGE_FORMAT_RGB888 = 2;
@@ -25156,18 +26161,44 @@ function fillTextureDxt(glContext, texture, target, width, height, dxtLevel, dat
     glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 }
 function vtfToImageFormat(vtfImageFormat) {
-    switch (vtfImageFormat) {
-        case IMAGE_FORMAT_DXT1:
-            return ImageFormat.Bc1;
-        case IMAGE_FORMAT_DXT3:
-            return ImageFormat.Bc2;
-        case IMAGE_FORMAT_DXT5:
-            return ImageFormat.Bc3;
-        default:
-            console.error('missing image format ' + vtfImageFormat);
-        //TODO: populate
+    const formats = new Map([
+        [IMAGE_FORMAT_NONE, ImageFormat.Unknown],
+        [IMAGE_FORMAT_RGBA8888, ImageFormat.RGBA8888],
+        [IMAGE_FORMAT_ABGR8888, ImageFormat.ABGR8888],
+        [IMAGE_FORMAT_RGB888, ImageFormat.RGB888],
+        [IMAGE_FORMAT_BGR888, ImageFormat.BGR888],
+        [IMAGE_FORMAT_RGB565, ImageFormat.RGB565],
+        [IMAGE_FORMAT_I8, ImageFormat.I8],
+        [IMAGE_FORMAT_IA88, ImageFormat.IA88],
+        [IMAGE_FORMAT_P8, ImageFormat.P8],
+        [IMAGE_FORMAT_A8, ImageFormat.A8],
+        [IMAGE_FORMAT_RGB888_BLUESCREEN, ImageFormat.RGB888_BLUESCREEN],
+        [IMAGE_FORMAT_BGR888_BLUESCREEN, ImageFormat.BGR888_BLUESCREEN],
+        [IMAGE_FORMAT_ARGB8888, ImageFormat.ARGB8888],
+        [IMAGE_FORMAT_BGRA8888, ImageFormat.BGRA8888],
+        [IMAGE_FORMAT_DXT1, ImageFormat.Bc1],
+        [IMAGE_FORMAT_DXT3, ImageFormat.Bc2],
+        [IMAGE_FORMAT_DXT5, ImageFormat.Bc3],
+        [IMAGE_FORMAT_BGRX8888, ImageFormat.BGRA8888],
+        [IMAGE_FORMAT_BGR565, ImageFormat.BGR565],
+        [IMAGE_FORMAT_BGRX5551, ImageFormat.BGRA5551],
+        [IMAGE_FORMAT_BGRA4444, ImageFormat.BGRA4444],
+        [IMAGE_FORMAT_DXT1_ONEBITALPHA, ImageFormat.Bc1],
+        [IMAGE_FORMAT_BGRA5551, ImageFormat.BGRA5551],
+        [IMAGE_FORMAT_UV88, ImageFormat.UV88],
+        [IMAGE_FORMAT_UVWQ8888, ImageFormat.UVWQ8888],
+        [IMAGE_FORMAT_RGBA16161616F, ImageFormat.RGBA16161616F],
+        [IMAGE_FORMAT_RGBA16161616, ImageFormat.RGBA16161616],
+        [IMAGE_FORMAT_UVLX8888, ImageFormat.UVLX8888],
+    ]);
+    const format = formats.get(vtfImageFormat);
+    if (format) {
+        return format;
     }
-    return ImageFormat.Unknown;
+    else {
+        errorOnce(`missing image format: ${vtfImageFormat} in vtfToImageFormat`);
+        return ImageFormat.Unknown;
+    }
 }
 
 const VTEX_FLAG_CUBE_TEXTURE = 0x10;
@@ -26002,6 +27033,33 @@ getBoneWeight(bufferId: number): number[] | null {
         return outArr;
     }
 }
+/*
+function DecompressNormal(inputNormal: vec4): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
+    const fOne = 1.0;
+    const outputNormal = vec3.create();
+
+    //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
+    const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0));				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
+    //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
+    const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]);		// 0..127
+    //float2 xySigns		= (xyAbs - 64.0) < 0;						// sign bits for xs and ys (1 or 0)
+    const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0));						// sign bits for xs and ys (1 or 0)
+    //outputNormal.xy		= (abs(xyAbs - 64.0) - xySigns) / 63.0;	// abs({nX, nY})
+    outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0;	// abs({nX, nY})
+    outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0;	// abs({nX, nY})
+
+    //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
+    outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1];		// Project onto x+y+z=1
+    //outputNormal.xyz	= normalize(outputNormal.xyz);				// Normalize onto unit sphere
+    vec3.normalize(outputNormal, outputNormal);
+
+    //outputNormal.xy	 *= lerp(fOne.xx, -fOne.xx, xySigns);			// Restore x and y signs
+    //outputNormal.z	 *= lerp(fOne.x, -fOne.x, ztSigns.x);			// Restore z sign
+    outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
+    outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
+    return vec3.normalize(outputNormal, outputNormal);
+}
+*/
 
 const TEXTURE_COMPILER = 'CompileTexture';
 const TEXTURE_YCOCG = 'Texture Compiler Version Image YCoCg Conversion';
@@ -26840,7 +27898,7 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
         return elementType & 0x7f;
     }
     elementType = elementType ?? shiftArray();
-    if (elementType == undefined) {
+    if (elementType === undefined) {
         return null;
     }
     //let count;
@@ -26969,7 +28027,7 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
                     }
                     else {
                         //should not happend
-                        throw 'Missing reader';
+                        throw new Error('Missing reader');
                     }
                 }
             }
@@ -27004,7 +28062,7 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
                 const typesArrayElements = new Array(typedArrayCount);
                 for (let i = 0; i < typedArrayCount; i++) {
                     const value = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0);
-                    if (value && value.isKv3Value) {
+                    if (value !== null) {
                         typesArrayElements[i] = value.getValue() /*TODO: check that*/;
                     }
                     else {
@@ -27157,12 +28215,12 @@ function readElement(reader, stringDictionary, occurences) {
 
 
         86: resource(len 1 + 4, index to string dict)*/
-        case 0:
+        case Kv3Type.Unknown:
             break;
-        case 1:
+        case Kv3Type.Null:
             //return null;
             return new Kv3Value(type, null);
-        case 2: // Bool
+        case Kv3Type.Bool:
             if (occurences) {
                 const arr = [];
                 for (let i = 0; i < occurences; i++) {
@@ -27175,7 +28233,7 @@ function readElement(reader, stringDictionary, occurences) {
                 //return reader.getUint8() ? true : false;//new SE2Kv3Value(type, reader.getUint8() ? true:false);
                 return new Kv3Value(type, reader.getUint8() ? true : false);
             }
-        case 3: // Int 64
+        case Kv3Type.Int64:
             if (occurences) {
                 const arr = [];
                 for (let i = 0; i < occurences; i++) {
@@ -27190,7 +28248,7 @@ function readElement(reader, stringDictionary, occurences) {
                 //return int64;//(int64.hi << 32) + int64.lo;//new SE2Kv3Value(type, (int64.hi << 32) + int64.lo);
                 return new Kv3Value(type, int64);
             }
-        case 5: // Float 64
+        case Kv3Type.Double:
             if (occurences) {
                 const arr = [];
                 for (let i = 0; i < occurences; i++) {
@@ -27203,38 +28261,37 @@ function readElement(reader, stringDictionary, occurences) {
                 //return reader.getFloat64();//new SE2Kv3Value(type, reader.getFloat64());
                 return new Kv3Value(type, reader.getFloat64());
             }
-        case 6: // String
+        case Kv3Type.String:
             if (occurences) {
                 const arr = [];
                 for (let i = 0; i < occurences; i++) {
-                    propertyIndex = reader.getUint32();
-                    propertyName = stringDictionary[propertyIndex];
+                    const propertyIndex = reader.getUint32();
+                    const propertyName = stringDictionary[propertyIndex];
                     arr.push(propertyName ?? '');
                 }
                 //return arr;//new SE2Kv3Value(type, arr);
                 return new Kv3Value(type, arr);
             }
             else {
-                propertyIndex = reader.getUint32();
-                propertyName = stringDictionary[propertyIndex];
+                const propertyIndex = reader.getUint32();
+                const propertyName = stringDictionary[propertyIndex];
                 //return propertyName;//new SE2Kv3Value(type, propertyName);
                 return new Kv3Value(type, propertyName ?? '');
             }
-        case 0x07: // byte array
-            var propertiesCount = reader.getUint32();
-            var element = new Uint8Array(propertiesCount); //new Kv3Array();
-            for (let i = 0; i < propertiesCount; i++) {
-                element[i] = reader.getUint8();
+        case Kv3Type.Blob:
+            {
+                const propertiesCount = reader.getUint32();
+                const element = new Uint8Array(propertiesCount); //new Kv3Array();
+                for (let i = 0; i < propertiesCount; i++) {
+                    element[i] = reader.getUint8();
+                }
+                //return element;
+                return new Kv3Value(type, element);
             }
-            //return element;
-            return new Kv3Value(type, element);
-        case 8: // Array
-            var propertiesCount = reader.getUint32();
-            var elementArray = new Array(propertiesCount);
-            var propertyName = null;
-            var propertyIndex = null;
-            var property = null;
-            for (var i = 0; i < propertiesCount; i++) {
+        case Kv3Type.Array:
+            const propertiesCount = reader.getUint32();
+            const elementArray = new Array(propertiesCount);
+            for (let i = 0; i < propertiesCount; i++) {
                 //propertyIndex = reader.getUint32();
                 //propertyName = stringDictionary(propertyIndex);
                 //property = readElement(reader, stringDictionary);
@@ -27243,19 +28300,16 @@ function readElement(reader, stringDictionary, occurences) {
             }
             //return elementArray;
             return new Kv3Value(type, elementArray);
-        case 9: // Element
+        case Kv3Type.Element:
             if (occurences) {
                 const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
                     const propertiesCount = reader.getUint32();
                     const element = new Kv3Element();
-                    var propertyName = null;
-                    var propertyIndex = null;
-                    var property = null;
                     for (let ii = 0; ii < propertiesCount; ii++) {
-                        propertyIndex = reader.getUint32();
-                        propertyName = stringDictionary[propertyIndex];
-                        property = readElement(reader, stringDictionary);
+                        const propertyIndex = reader.getUint32();
+                        const propertyName = stringDictionary[propertyIndex];
+                        const property = readElement(reader, stringDictionary);
                         if (propertyName !== undefined) {
                             element.setProperty(propertyName, property);
                         }
@@ -27266,15 +28320,12 @@ function readElement(reader, stringDictionary, occurences) {
                 return new Kv3Value(type, arr);
             }
             else {
-                var propertiesCount = reader.getUint32();
+                const propertiesCount = reader.getUint32();
                 const element = new Kv3Element();
-                var propertyName = null;
-                var propertyIndex = null;
-                var property = null;
-                for (var i = 0; i < propertiesCount; i++) {
-                    propertyIndex = reader.getUint32();
-                    propertyName = stringDictionary[propertyIndex];
-                    property = readElement(reader, stringDictionary);
+                for (let i = 0; i < propertiesCount; i++) {
+                    const propertyIndex = reader.getUint32();
+                    const propertyName = stringDictionary[propertyIndex];
+                    const property = readElement(reader, stringDictionary);
                     if (propertyName !== undefined) {
                         element.setProperty(propertyName, property);
                     }
@@ -27282,7 +28333,7 @@ function readElement(reader, stringDictionary, occurences) {
                 //return element;
                 return new Kv3Value(type, element);
             }
-        case 0x0A: // vector
+        case Kv3Type.TypedArray:
             if (occurences) {
                 const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
@@ -27296,7 +28347,7 @@ function readElement(reader, stringDictionary, occurences) {
                 const count = reader.getUint32();
                 return readElement(reader, stringDictionary, count);
             }
-        case 0x0B: // int32
+        case Kv3Type.Int32:
             if (occurences) {
                 const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
@@ -27409,7 +28460,11 @@ V2 only : uint16 * blobCount array
 Follows the compressed blobs
 */
 async function loadDataKv3(reader, block, version) {
+    //const KV3_ENCODING_BLOCK_COMPRESSED = '\x46\x1A\x79\x95\xBC\x95\x6C\x4F\xA7\x0B\x05\xBC\xA1\xB7\xDF\xD2';
+    //const KV3_ENCODING_BLOCK_COMPRESSED_LZ4 = '\x8A\x34\x47\x68\xA1\x63\x5C\x4F\xA1\x97\x53\x80\x6F\xD9\xB1\x19';
+    //const KV3_ENCODING_BLOCK_COMPRESSED_UNKNOWN = '\x7C\x16\x12\x74\xE9\x06\x98\x46\xAF\xF2\xE6\x3E\xB5\x90\x37\xE7';
     reader.seek(block.offset);
+    //const method = 1;
     let bufferCount = 1;
     const uncompressedBufferSize = [];
     const compressedBufferSize = [];
@@ -27420,10 +28475,11 @@ async function loadDataKv3(reader, block, version) {
     const objectCount = [];
     const arrayCount = [];
     reader.skip(4);
-    reader.getString(16);
+    /*const format = TODO: use format*/ reader.getString(16);
     const compressionMethod = reader.getUint32();
     let compressionFrameSize = 0;
     let dictionaryTypeLength = 0, blobCount = 0, totalUncompressedBlobSize = 0;
+    //let unknown5: number, unknown6: number, unknown7: number, unknown8: number;
     if (version >= 2) {
         reader.getUint16();
         compressionFrameSize = reader.getUint16();
@@ -27446,8 +28502,8 @@ async function loadDataKv3(reader, block, version) {
         totalUncompressedBlobSize = reader.getUint32();
     }
     if (version >= 4) {
-        reader.getUint32();
-        reader.getUint32();
+        /*unknown5 = */ reader.getUint32();
+        /*unknown6 = */ reader.getUint32();
     }
     if (version >= 5) {
         bufferCount = 2;
@@ -27460,10 +28516,10 @@ async function loadDataKv3(reader, block, version) {
         bytesBufferSize4.push(reader.getUint32());
         bytesBufferSize8.push(reader.getUint32());
         // TODO: use those values
-        reader.getUint32();
+        /*unknown7 = */ reader.getUint32();
         objectCount.push(reader.getUint32());
         arrayCount.push(reader.getUint32());
-        reader.getUint32();
+        /*unknown8 = */ reader.getUint32();
         //console.info(block.type, block, uncompressedBufferSize, compressedBufferSize, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8)
     }
     else {
@@ -27520,7 +28576,7 @@ async function loadDataKv3(reader, block, version) {
                 //SaveFile(new File([new Blob([sa])], 'zstd'));
                 break;
             default:
-                throw 'Unknown kv3 compressionMethod ' + compressionMethod;
+                throw new Error('Unknown kv3 compressionMethod ' + compressionMethod);
         }
         const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
         if (version >= 5 && i == 0) {
@@ -27587,9 +28643,9 @@ function loadDataVkv(reader, block) {
     reader.seek(block.offset);
     reader.skip(4); //TODO: improve detection
     const encoding = reader.getString(16);
-    reader.getString(16);
-    let decodeLength, sa;
-    decodeLength = reader.getUint32();
+    /*const format = TODO: use format*/ reader.getString(16);
+    let sa;
+    const decodeLength = reader.getUint32();
     if ((decodeLength >>> 24) == 0x80) {
         sa = reader.getBytes(decodeLength & 0xFF);
         //sa = reader.getBytes(undefined, 0);
@@ -27616,8 +28672,8 @@ function loadDataVkv(reader, block) {
 }
 function ab2str(arrayBuf) {
     let s = '';
-    for (let i = 0; i < arrayBuf.length; i++) {
-        s += String.fromCharCode(arrayBuf[i]);
+    for (const a of arrayBuf) {
+        s += String.fromCharCode(a);
     }
     return s;
 }
@@ -27669,6 +28725,7 @@ const FIELD_SIZE = [0, 0 /*STRUCT*/, 0 /*ENUM*/, 8 /*HANDLE*/, 0, 0, 0, 0, 0, 0,
 const DATA_TYPE_STRUCT = 1;
 const DATA_TYPE_ENUM = 2;
 const DATA_TYPE_HANDLE = 3;
+//const DATA_TYPE_STRING = 4;
 const DATA_TYPE_BYTE = 10;
 const DATA_TYPE_UBYTE = 11;
 const DATA_TYPE_SHORT = 12;
@@ -27682,6 +28739,7 @@ const DATA_TYPE_VECTOR2 = 21;
 const DATA_TYPE_VECTOR3 = 22;
 const DATA_TYPE_VECTOR4 = 23;
 const DATA_TYPE_QUATERNION = 25;
+//const DATA_TYPE_COLOR = 28;
 const DATA_TYPE_BOOLEAN = 30;
 const DATA_TYPE_NAME = 31;
 function loadStruct(reader, reference, struct, block, startOffset, introspection, depth) {
@@ -27701,11 +28759,11 @@ function loadStruct(reader, reference, struct, block, startOffset, introspection
         element = new Kv3Element();
     }
     const fieldList = struct.fields;
-    for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
-        const field = fieldList[fieldIndex];
+    for (const field of fieldList) {
+        //const field = fieldList[fieldIndex]!;
         if (field.count) {
             const data = /*dataStruct[field.name]*/ [];
-            FIELD_SIZE[field.type2];
+            ///const fieldSize = FIELD_SIZE[field.type2];
             for (let i = 0; i < field.count; i++) {
                 data.push(255); //TODOv3 dafuck ?
             }
@@ -27728,18 +28786,18 @@ function getStruct(block, structId) {
 function loadField(reader, reference, field, block, startOffset, introspection, fieldOffset, fieldIndirectionByte, fieldLevel, depth) {
     fieldOffset = startOffset + fieldOffset;
     if (fieldLevel > 0) {
-        reader.getInt8(fieldOffset);
+        /*const indirectionType = TODO: use variable*/ reader.getInt8(fieldOffset);
         if (fieldIndirectionByte == 3) { // Pointer
-            var struct = introspection.structs?.[field.type];
+            const struct = introspection.structs?.[field.type];
             if (struct) {
-                var pos = reader.getUint32(fieldOffset);
+                const pos = reader.getUint32(fieldOffset);
                 return loadStruct(reader, reference, struct, null, fieldOffset + pos, introspection);
             }
             else {
                 console.log('Unknown struct ' + field.type, fieldOffset);
             }
             console.log(fieldOffset);
-            throw 'check this code loadField1';
+            throw new Error('check this code loadField1');
             //return fieldOffset;
         }
         else if (fieldIndirectionByte == 4) { // Array
@@ -27754,8 +28812,8 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                         const struct = introspection.structs?.[field.type];
                         if (struct) {
                             const values = [];
-                            for (var i = 0; i < arrayCount; i++) {
-                                var pos = arrayOffset + struct.discSize * i;
+                            for (let i = 0; i < arrayCount; i++) {
+                                const pos = arrayOffset + struct.discSize * i;
                                 //reader.seek(reader.getUint32(pos) + pos);
                                 reader.seek(pos);
                                 //var name = reader.getNullString();
@@ -27770,10 +28828,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                     }
                     else if (field.type2 == DATA_TYPE_HANDLE) { // HANDLE
                         // Handle to an external ressource in the RERL block
-                        for (var i = 0; i < arrayCount; i++) {
-                            var pos = arrayOffset + 8 * i;
+                        for (let i = 0; i < arrayCount; i++) {
+                            const pos = arrayOffset + 8 * i;
                             reader.seek(pos);
-                            var handle = readHandle(reader);
+                            const handle = readHandle(reader);
                             values[i] = reference.externalFiles[handle] ?? '';
                         }
                         //reader.seek(fieldOffset);
@@ -27782,7 +28840,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                         return new Kv3Value(Kv3Type.TypedArray, values, Kv3Flag.None, Kv3Type.String);
                     }
                     else {
-                        console.log('Unknown struct type for array ' + field, fieldOffset);
+                        console.log('Unknown struct type for array ' + JSON.stringify(field), fieldOffset);
                     }
                 }
                 else {
@@ -27792,7 +28850,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                     if (field.type2 == 11) {
                         //console.log(field.type2);//TODOV2
                         const arr = new Uint8Array(arrayCount);
-                        for (var i = 0; i < arrayCount; i++) {
+                        for (let i = 0; i < arrayCount; i++) {
                             arr[i] = reader.getUint8(arrayOffset + i);
                         }
                         return new Kv3Value(Kv3Type.Blob, arr);
@@ -27801,15 +28859,15 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                     if (field.type2 == DATA_TYPE_NAME) {
                         const arr = new Array(arrayCount);
                         for (let i = 0; i < arrayCount; i++) {
-                            let pos = arrayOffset + fieldSize * i;
-                            let strOffset = reader.getInt32(pos);
+                            const pos = arrayOffset + fieldSize * i;
+                            const strOffset = reader.getInt32(pos);
                             reader.seek(pos + strOffset);
                             arr[i] = reader.getNullString(pos + strOffset);
                         }
                         return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Flag.None, Kv3Type.String);
                     }
-                    for (var i = 0; i < arrayCount; i++) {
-                        var pos = arrayOffset + fieldSize * i;
+                    for (let i = 0; i < arrayCount; i++) {
+                        const pos = arrayOffset + fieldSize * i;
                         /*reader.seek(reader.getUint32(pos) + pos);
                         var name = reader.getNullString();*/
                         values[i] = loadField(reader, reference, field, null, pos, introspection, 0, 0, 0);
@@ -27840,12 +28898,12 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 console.log(fieldOffset);
                 return null;
             case DATA_TYPE_ENUM: //2
-                throw 'fix me';
+                throw new Error('fix me');
             //return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
             case DATA_TYPE_HANDLE: //3
                 // Handle to an external ressource in the RERL block
                 reader.seek(fieldOffset);
-                var handle = readHandle(reader);
+                const handle = readHandle(reader);
                 //return reference ? reference.externalFiles[handle] : null;
                 return new Kv3Value(Kv3Type.String, reference.externalFiles[handle] ?? '', Kv3Flag.ResourceName);
             case DATA_TYPE_BYTE: //10
@@ -27853,10 +28911,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
             case DATA_TYPE_UBYTE: //11
                 return new Kv3Value(Kv3Type.UnsignedInt32 /*TODO: check if there is a better type*/, reader.getUint8(fieldOffset));
             case DATA_TYPE_SHORT: //12
-                throw 'fix me';
+                throw new Error('fix me');
             //return reader.getInt16(fieldOffset);
             case DATA_TYPE_USHORT: //13
-                throw 'fix me';
+                throw new Error('fix me');
             //return reader.getUint16(fieldOffset);
             case DATA_TYPE_INTEGER: //14
                 return new Kv3Value(Kv3Type.Int32, reader.getInt32(fieldOffset));
@@ -27876,10 +28934,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 //return reader.getFloat32(fieldOffset);
                 return new Kv3Value(Kv3Type.Float, reader.getFloat32(fieldOffset));
             case DATA_TYPE_VECTOR2: //21
-                throw 'fix me';
+                throw new Error('fix me');
             //return reader.getVector2(fieldOffset);
             case DATA_TYPE_VECTOR3: //22
-                throw 'fix me';
+                throw new Error('fix me');
             //return reader.getVector3(fieldOffset);
             case DATA_TYPE_VECTOR4: //23
                 //return reader.getVector4(fieldOffset);
@@ -27888,10 +28946,11 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 //return reader.getVector4(fieldOffset);
                 return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Flag.None, Kv3Type.Float);
             case DATA_TYPE_BOOLEAN: //30
-                throw 'fix me';
+                throw new Error('fix me');
             //return (reader.getInt8(fieldOffset)) ? true : false;
             case DATA_TYPE_NAME: //31
-                var strOffset = reader.getInt32(fieldOffset);
+                //let strStart = fieldOffset;//reader.tell();
+                const strOffset = reader.getInt32(fieldOffset);
                 /*if ((strOffset<0) || (strOffset>10000)) {
                     console.log(strOffset);
                 }*/
@@ -27899,7 +28958,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 //return reader.getNullString();
                 return new Kv3Value(Kv3Type.String, reader.getNullString());
             case 40: //DATA_TYPE_VECTOR4://40
-                throw 'fix me';
+                throw new Error('fix me');
             //return reader.getVector4(fieldOffset);
             default:
                 console.error(`Unknown field type: ${field.type2}`);
@@ -27965,6 +29024,7 @@ class SpriteSheet {
 }
 
 function loadDataVtex(reader, block, file) {
+    //const DATA_UNKNOWN = 0;
     const DATA_FALLBACK_BITS = 1;
     const DATA_SHEET = 2;
     const DATA_FILL_TO_POWER_OF_TWO = 3;
@@ -27980,7 +29040,7 @@ function loadDataVtex(reader, block, file) {
     file.setImageFormat(reader.getUint8());
     block.numMipLevels = reader.getUint8();
     block.picmip0Res = reader.getUint32();
-    reader.tell() + reader.getUint32();
+    /*TODO: use this value const extraDataOffset = reader.tell() + */ reader.getUint32();
     const extraDataCount = reader.getUint32();
     let compressedMips = null; //new Uint32Array(mips);
     if (extraDataCount) {
@@ -28005,7 +29065,7 @@ function loadDataVtex(reader, block, file) {
                     reader.seek(offset + size);
                     break;
                 case DATA_FILL_TO_POWER_OF_TWO:
-                    reader.getUint16();
+                    /*TODO: use this value const unk = */ reader.getUint16();
                     const nw = reader.getUint16();
                     const nh = reader.getUint16();
                     if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
@@ -28023,13 +29083,13 @@ function loadDataVtex(reader, block, file) {
                     console.warn(`compressed mips : ${unk1} ${unk2} ${mips}`, compressedMips);
                     break;
                 case DATA_SHEET:
-                    loadVtexSpriteSheet(reader, block, offset);
+                    loadVtexSpriteSheet(reader, block, offset /*, size*/);
                     /*if (TESTING) {
                         SaveFile(new File([new Blob([reader.getBytes(size, offset)])], 'block_' + size + '_' + offset));
                     }*/
                     break;
                 case DATA_CUBEMAP_RADIANCE:
-                    loadVtexCubemapRadiance(reader, block, offset);
+                    loadVtexCubemapRadiance(reader, block, offset /*, size*/);
                     break;
                 default:
                     /*if (TESTING) {
@@ -28115,7 +29175,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
             console.error('error decoding texture: wrong decompressed size: ', start, compressedLength, entrySize);
         }
     }
-    if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
+    if (imageDatas && imageFormat == VtexImageFormat.BGRA8888) {
         for (let i = 0, l = imageDatas.length; i < l; i += 4) {
             const b = imageDatas[i];
             imageDatas[i] = imageDatas[i + 2];
@@ -28124,24 +29184,24 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
     }
     return imageDatas;
 }
-function loadVtexSpriteSheet(reader, block, offset, size) {
+function loadVtexSpriteSheet(reader, block, offset /*TODO: use this value, size: number*/) {
     reader.seek(offset);
-    reader.getUint32();
+    /*TODO: use this valueconst version = */ reader.getUint32();
     let sequenceCount = reader.getUint32();
     let headerOffset = reader.tell();
     const spriteSheet = new SpriteSheet();
     block.spriteSheet = spriteSheet;
     while (sequenceCount--) {
         const spriteSheetSequence = spriteSheet.addSequence();
-        reader.getUint32(headerOffset);
-        reader.getUint32(); //1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
+        /*TODO: use this value const sequenceId = */ reader.getUint32(headerOffset);
+        /*TODO: use this value const unknown1 = */ reader.getUint32(); //1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
         //unknown1 is most likely 2 uint16 -> see dota2 texture materials/particle/smoke3/smoke3b
         const sequenceDataOffset = reader.tell() + reader.getUint32();
         const frameCount = reader.getUint32();
         spriteSheetSequence.duration = reader.getFloat32();
-        reader.getUint32(); //offset to 'CDmeSheetSequence'
-        reader.getUint32(); //0
-        reader.getUint32(); //0
+        /*TODO: use this value const unknown2 = */ reader.getUint32(); //offset to 'CDmeSheetSequence'
+        /*TODO: use this value const unknown3 = */ reader.getUint32(); //0
+        /*TODO: use this value const unknown4 = */ reader.getUint32(); //0
         headerOffset = reader.tell();
         reader.seek(sequenceDataOffset);
         let frameHeaderOffset = reader.tell();
@@ -28150,7 +29210,7 @@ function loadVtexSpriteSheet(reader, block, offset, size) {
             const spriteSheetFrame = spriteSheetSequence.addFrame();
             spriteSheetFrame.duration = reader.getFloat32(frameHeaderOffset);
             const frameOffset = reader.tell() + reader.getUint32();
-            reader.getUint32();
+            /*TODO: use this value const frameCoords = */ reader.getUint32();
             frameHeaderOffset = reader.tell();
             reader.seek(frameOffset);
             //while (frameCoords--) we should use all coords but they are identical ? probably one per channel
@@ -28167,7 +29227,7 @@ function loadVtexSpriteSheet(reader, block, offset, size) {
     }
     //console.error(version, sequenceCount);
 }
-function loadVtexCubemapRadiance(reader, block, offset, size) {
+function loadVtexCubemapRadiance(reader, block, offset /*TODO: use this value, size: number*/) {
     reader.seek(offset);
     const coeffOffset = reader.getUint32();
     const coeffCount = reader.getUint32();
@@ -28347,8 +29407,8 @@ const Source2BlockLoader = new (function () {
                     loadVbib(reader, block, context.meshIndex++);
                     break;
                 case 'SNAP':
-                    let decodeLength, sa;
-                    decodeLength = reader.getUint32(block.offset);
+                    let sa;
+                    const decodeLength = reader.getUint32(block.offset);
                     if ((decodeLength >>> 24) == 0x80) {
                         //no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
                         sa = reader.getBytes(decodeLength & 0xFFFFFF);
@@ -28400,13 +29460,13 @@ function loadNtro(reader, block) {
     block.firstStruct = null;
     for (let structIndex = 0; structIndex < structCount; structIndex++) {
         reader.seek(block.offset + ntroOffset + 4 + _NTRO_STRUCT_LENGTH_ * structIndex);
-        const ntroStruct = {};
+        const ntroStruct /*TODO: make an actual NTRO type*/ = {};
         ntroStruct.version = reader.getInt32();
         //console.log(ntroStruct.version);
         ntroStruct._offset = reader.tell();
         ntroStruct.id = reader.getUint32();
-        var strStart = reader.tell();
-        var strOffset = reader.getInt32();
+        const strStart = reader.tell();
+        const strOffset = reader.getInt32();
         ntroStruct.crc = reader.getInt32();
         ntroStruct.unknown1 = reader.getInt32();
         ntroStruct.discSize = reader.getInt16();
@@ -28425,8 +29485,8 @@ function loadNtro(reader, block) {
             reader.seek(fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex);
             const field = {};
             field._offset = fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex;
-            var strStart = reader.tell();
-            var strOffset = reader.getInt32();
+            const strStart = reader.tell();
+            const strOffset = reader.getInt32();
             field.count = reader.getInt16();
             field.offset = reader.getInt16();
             const indStart = reader.tell();
@@ -28486,7 +29546,7 @@ function loadVbib(reader, block, meshIndex) {
     const blockIndices = [];
     block.file.vertices.set(meshIndex, blockVertices);
     block.file.indices.set(meshIndex, blockIndices);
-    for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
+    for (let i = 0; i < vertexCount; i++) { // header size: 24 bytes
         reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
         const s1 /*TODO: fix typer*/ = {};
         s1.vertexCount = reader.getInt32();
@@ -28530,17 +29590,18 @@ function loadVbib(reader, block, meshIndex) {
         const s1BoneWeight = new Float32Array(s1.boneWeight);
         for (let vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
             vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex);
+            //var vertex = {};
             let positionFilled = false; //TODOv3: remove this
             let normalFilled = false;
             let tangentFilled = false;
             let texCoordFilled = false;
             let blendIndicesFilled = false;
             let blendWeightFilled = false;
-            for (let headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
-                const headerName = s1.headers[headerIndex].name;
-                const headerType = s1.headers[headerIndex].type;
+            for (const header of s1.headers) {
+                const headerName = header.name;
+                const headerType = header.type;
                 let tempValue; // = vec4.create();//TODO: optimize
-                vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex + s1.headers[headerIndex].offset);
+                vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex + header.offset);
                 switch (headerType) {
                     case DXGI_FORMAT_R32G32B32A32_FLOAT:
                         tempValue = vec4.create(); //TODO: optimize
@@ -28694,7 +29755,7 @@ function loadVbib(reader, block, meshIndex) {
         blockVertices.push(s1);
     }
     //console.log(block.vertices);
-    for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
+    for (let i = 0; i < indexCount; i++) { // header size: 24 bytes
         reader.seek(indexOffset + i * INDEX_HEADER_SIZE);
         const s2 = {};
         s2.indexCount = reader.getInt32();
@@ -28715,6 +29776,7 @@ function loadVbib(reader, block, meshIndex) {
         const s2Indices = new Uint32Array(s2.indices);
         for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
             indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
+            //var vertex = {};
             //s2.indices.push(indexReader.getUint16());
             if (s2.bytesPerIndex == 2) {
                 s2Indices[indicesIndex] = indexReader.getUint16();
@@ -29683,10 +30745,10 @@ class Source2Activity {
         this.flags = flags;
         this.activity = activity;
         if (flags != 0) {
-            throw 'Check this: flags != 0';
+            throw new Error('Check this: flags != 0');
         }
         if (activity != 0) {
-            throw 'Check this: activity != 0';
+            throw new Error('Check this: activity != 0');
         }
     }
 }
@@ -29704,9 +30766,7 @@ class Source2Sequence {
         if (params.activities) {
             this.activities = params.activities;
         }
-        if (params.animNames) {
-            this.animNames = params.animNames;
-        }
+        this.animNames = params.animNames ?? [];
     }
     matchActivity(activity, modifiers) {
         if (modifiers) {
@@ -29732,6 +30792,7 @@ class Source2Sequence {
                 return true;
             }
         }
+        return false;
     }
 }
 
@@ -29826,7 +30887,7 @@ class Source2SeqGroup {
     }
     getAnimationsByActivity(activityName) {
         const anims = [];
-        for (const [animName, animDesc] of this.#animNames) {
+        for (const [/*animName*/ , animDesc] of this.#animNames) {
             if (animDesc.matchActivity(activityName)) {
                 anims.push(animDesc);
             }
@@ -29925,12 +30986,14 @@ class Source2AnimGroup {
         }
         return null;
     }
-    matchActivity(activity, modifiers) {
+    /*
+    matchActivity(activity: string, modifiers: string[]): boolean {
         if (this.directHSeqGroup) {
             return this.directHSeqGroup.matchActivity(activity, modifiers);
         }
         return false;
     }
+    */
     getAnims() {
         const anims = new Set();
         for (const anim of this._changemyname) {
@@ -30112,6 +31175,7 @@ async function loadVanim(repository, fileName, anim) {
     //this.fileLoaded(model);TODOv3
 }
 
+//const loadingSlot = 100;//TODO
 const pending = {};
 async function loadAnimGroup(source2Model, repository, animGroupName) {
     animGroupName = animGroupName.toLowerCase();
@@ -30704,12 +31768,14 @@ class Source2Model {
             }
         }
     }
-    matchActivity(activity, modifiers) {
+    /*
+    matchActivity(activity: string, modifiers: string[]): null {
         if (this.#seqGroup) {
             return this.#seqGroup.matchActivity(activity, modifiers);
         }
         return null;
     }
+    */
     addGeometry(geometry, bodyPartName, bodyPartModelId) {
         if (bodyPartName !== undefined) {
             let bodyPart = this.bodyParts.get(bodyPartName);
@@ -30985,19 +32051,14 @@ class Source2Model {
 var _a$3;
 const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelLoader {
-    static #loadPromisesPerRepo = {}; //TODO: create map
+    static #loadPromisesPerRepo = new Map2;
     static {
         defaultMaterial$1.addUser(_a$3);
     }
     load(repository, path) {
         // Cleanup filename
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
-        let repoPromises = _a$3.#loadPromisesPerRepo[repository];
-        if (!repoPromises) {
-            repoPromises = {};
-            _a$3.#loadPromisesPerRepo[repository] = repoPromises;
-        }
-        let promise = repoPromises[path];
+        let promise = _a$3.#loadPromisesPerRepo.get(repository, path);
         if (promise) {
             return promise;
         }
@@ -31009,14 +32070,14 @@ class Source2ModelLoader {
                     return;
                 }
                 const newSourceModel = new Source2Model(repository, source2File);
-                this.#loadIncludeModels(newSourceModel);
+                await this.#loadIncludeModels(newSourceModel);
                 await this.testProcess2(source2File, newSourceModel, repository);
                 newSourceModel.loadAnimGroups();
                 resolve(newSourceModel);
             });
             return;
         });
-        repoPromises[path] = promise;
+        _a$3.#loadPromisesPerRepo.set(repository, path, promise);
         return promise;
     }
     async testProcess2 /*TODO: rename*/(vmdl, model, repository) {
@@ -31456,10 +32517,10 @@ class Source2ModelLoader {
         }
         await Promise.all(promises);
     }
-    #loadIncludeModels(model) {
+    async #loadIncludeModels(model) {
         const includeModels = model.getIncludeModels();
         for (const includeModel of includeModels) {
-            const refModel = new _a$3().load(model.repository, includeModel);
+            const refModel = await new _a$3().load(model.repository, includeModel);
             if (refModel) {
                 model.addIncludeModel(refModel);
             }
@@ -31473,7 +32534,7 @@ class Source2ModelManager {
     static #modelsPerRepository = {}; //TODO: use a map2
     static #modelList = new Map();
     static instances = new Set();
-    static #createModel(repository, path) {
+    static async #createModel(repository, path) {
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
         /*let fullPath = repository + fileName;
         let model = this.#modelList.get(fullPath);*/
@@ -31481,7 +32542,7 @@ class Source2ModelManager {
         if (model) {
             return model;
         }
-        model = new Source2ModelLoader().load(repository, path);
+        model = await new Source2ModelLoader().load(repository, path);
         if (model) {
             this.#modelsPerRepository[repository][path] = model;
         }
@@ -31507,7 +32568,7 @@ class Source2ModelManager {
         }
         return this.#modelsPerRepository[repository][path] ?? null;
     }
-    static createInstance(repository, fileName, dynamic) {
+    static async createInstance(repository, fileName, dynamic) {
         if (!repository) {
             //try to get repository from filename
             for (const repo in this.#modelListPerRepository) {
@@ -31518,7 +32579,7 @@ class Source2ModelManager {
                 }
             }
         }
-        const model = this.#createModel(repository, fileName);
+        const model = await this.#createModel(repository, fileName);
         if (model) {
             const instance = model.createInstance(dynamic);
             return instance;
@@ -32465,6 +33526,7 @@ class SceneExplorer {
     }
     showContextMenu(contextMenu, x, y, entity) {
         this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+        this.selectEntity(entity);
     }
     editMaterial(material) {
         const materialEditor = getMaterialEditor();
@@ -32645,19 +33707,19 @@ var compute_fragment_diffuse = `
 
 var compute_fragment_mask_map = `
 #ifdef USE_MASK_MAP
-	vec4 texelMask = texture2D(maskMap, vTextureCoord.xy);
+	vec4 texelMask = texture2D(maskTexture, vTextureCoord.xy);
 #endif
 `;
 
 var compute_fragment_mask1_map = `
 #ifdef USE_MASK1_MAP
-	vec4 texelMask1 = texture2D(mask1Map, vTextureCoord.xy);
+	vec4 texelMask1 = texture2D(mask1Texture, vTextureCoord.xy);
 #endif
 `;
 
 var compute_fragment_mask2_map = `
 #ifdef USE_MASK2_MAP
-	vec4 texelMask2 = texture2D(mask2Map, vTextureCoord.xy);
+	vec4 texelMask2 = texture2D(mask2Texture, vTextureCoord.xy);
 #endif
 `;
 
@@ -32692,7 +33754,7 @@ var compute_fragment_phong_exponent_map = `
 
 var compute_fragment_specular_map = `
 #ifdef USE_SPECULAR_MAP
-	vec4 texelSpecular = texture2D(specularMap, vTextureCoord.xy);
+	vec4 texelSpecular = texture2D(specularTexture, vTextureCoord.xy);
 #endif
 `;
 
@@ -34056,15 +35118,15 @@ var declare_fragment_ibl = `
 #endif
 `;
 
-var declare_fragment_mask_map = `
+var declare_fragment_mask_map$1 = `
 #ifdef USE_MASK_MAP
-	uniform sampler2D maskMap;
+	uniform sampler2D maskTexture;
 #endif
 #ifdef USE_MASK1_MAP
-	uniform sampler2D mask1Map;
+	uniform sampler2D mask1Texture;
 #endif
 #ifdef USE_MASK2_MAP
-	uniform sampler2D mask2Map;
+	uniform sampler2D mask2Texture;
 #endif
 `;
 
@@ -34080,9 +35142,9 @@ var declare_fragment_phong_exponent_map$1 = `
 #endif
 `;
 
-var declare_fragment_specular_map = `
+var declare_fragment_specular_map$1 = `
 #ifdef USE_SPECULAR_MAP
-	uniform sampler2D specularMap;
+	uniform sampler2D specularTexture;
 #endif
 `;
 
@@ -34127,10 +35189,10 @@ Includes['declare_fragment_cube_map'] = declare_fragment_cube_map$1;
 Includes['declare_fragment_detail_map'] = declare_fragment_detail_map$1;
 Includes['declare_fragment_diffuse'] = declare_fragment_diffuse$1;
 Includes['declare_fragment_ibl'] = declare_fragment_ibl;
-Includes['declare_fragment_mask_map'] = declare_fragment_mask_map;
+Includes['declare_fragment_mask_map'] = declare_fragment_mask_map$1;
 Includes['declare_fragment_normal_map'] = declare_fragment_normal_map$1;
 Includes['declare_fragment_phong_exponent_map'] = declare_fragment_phong_exponent_map$1;
-Includes['declare_fragment_specular_map'] = declare_fragment_specular_map;
+Includes['declare_fragment_specular_map'] = declare_fragment_specular_map$1;
 Includes['declare_fragment_standard'] = declare_fragment_standard$1;
 Includes['declare_fragment_tone_mapping'] = declare_fragment_tone_mapping;
 Includes['declare_fragment_uniforms'] = declare_fragment_uniforms;
@@ -34486,7 +35548,7 @@ varying vec2 vUv;
 
 Includes['varying_line'] = varying_line;
 
-var shaderEditorCSS = ":host {\n\tdisplay: flex;\n\tflex-direction: column;\n\theight: 100%;\n\twidth: 100%;\n}\n\n.ace_link_marker {\n\tposition: absolute;\n\tborder-bottom: 3px solid red;\n\tbackground: yellow;\n\topacity: 30%;\n}\n";
+var shaderEditorCSS = ":host {\n\tdisplay: flex;\n\tflex-direction: column;\n\theight: 100%;\n\twidth: 100%;\n}\n\n.ace_link_marker {\n\tposition: absolute;\n\tborder-bottom: 3px solid red;\n\tbackground: yellow;\n\topacity: 30%;\n}\n\n.buttons {\n\tdisplay: flex;\n}\n\n.buttons select {\n\tflex: 1;\n}\n";
 
 const EDIT_MODE_SHADER = 0;
 const EDIT_MODE_INCLUDE = 1;
@@ -34498,6 +35560,7 @@ class ShaderEditor extends HTMLElement {
     #shadowRoot;
     #shaderEditor;
     #htmlShaderNameSelect;
+    #htmlExpandSourceButton;
     #htmlShaderRenderMode;
     #recompileTimeout;
     #editorShaderName = '';
@@ -34517,54 +35580,86 @@ class ShaderEditor extends HTMLElement {
         const aceScript = options.aceUrl ?? ACE_EDITOR_URI;
         this.#initialized = true;
         //this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
-        this.#htmlShaderNameSelect = createElement('select');
-        this.#htmlShaderNameSelect.addEventListener('input', (event) => {
-            const selectedOption = event.target.selectedOptions[0];
-            if (selectedOption) {
-                if (selectedOption.getAttribute('data-shader')) {
-                    this.setEditorShaderName(event.target.value);
+        createElement('div', {
+            class: 'buttons',
+            parent: this.#shadowRoot,
+            childs: [
+                this.#htmlShaderNameSelect = createElement('select', {
+                    $input: (event) => {
+                        const selectedOption = event.target.selectedOptions[0];
+                        if (selectedOption) {
+                            if (selectedOption.getAttribute('data-shader')) {
+                                this.setEditorShaderName(event.target.value);
+                            }
+                            if (selectedOption.getAttribute('data-include')) {
+                                this.setEditorIncludeName(event.target.value);
+                            }
+                        }
+                    }
+                }),
+                this.#htmlExpandSourceButton = createElement('button', {
+                    i18n: '#expand_source',
+                    $click: () => {
+                        const selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
+                        if (selectedOption) {
+                            if (selectedOption.getAttribute('data-shader')) {
+                                const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
+                                if (source) {
+                                    source.getCompileSource(new Map());
+                                    const expandedName = this.#editorShaderName + '_expanded';
+                                    ShaderManager.setCustomSource(ShaderType.Vertex, expandedName, source.getCompileSource(new Map()));
+                                    this.#reloadGLSLList();
+                                    this.setEditorShaderName(expandedName);
+                                }
+                            }
+                        }
+                    }
+                }),
+            ],
+        });
+        this.#htmlShaderRenderMode = createElement('input', {
+            parent: this.#shadowRoot,
+            $input: (event) => {
+                const n = Number(event.target.value);
+                if (Number.isNaN(n)) {
+                    //Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
+                    Graphics$1.removeDefine('RENDER_MODE');
                 }
-                if (selectedOption.getAttribute('data-include')) {
-                    this.setEditorIncludeName(event.target.value);
+                else {
+                    //Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+                    Graphics$1.setDefine('RENDER_MODE', `${n}`);
                 }
             }
         });
-        this.#htmlShaderRenderMode = createElement('input');
-        this.#htmlShaderRenderMode.addEventListener('input', (event) => {
-            const n = Number(event.target.value);
-            if (Number.isNaN(n)) {
-                Graphics$1.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
-            }
-            else {
-                Graphics$1.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
-            }
+        const htmlCustomShaderButtons = createElement('div', {
+            parent: this.#shadowRoot,
         });
-        const htmlCustomShaderButtons = createElement('div');
         if (options.displayCustomShaderButtons) {
             const htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
             const htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
             const htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
             htmlCustomShaderButtons.append(htmlButtonSaveCustomShader, htmlButtonLoadCustomShader, htmlButtonRemoveCustomShader);
-            this.#shadowRoot.append(htmlCustomShaderButtons);
             htmlButtonSaveCustomShader.addEventListener('click', () => this.#saveCustomShader());
             htmlButtonLoadCustomShader.addEventListener('click', () => this.#loadCustomShader());
             htmlButtonRemoveCustomShader.addEventListener('click', () => this.#removeCustomShader());
         }
-        const c = createElement('div', { style: 'flex:1;' });
+        const c = createElement('div', {
+            parent: this.#shadowRoot,
+            style: 'flex:1;'
+        });
         {
             hide(this.#htmlShaderRenderMode);
         }
-        this.#shadowRoot.append(this.#htmlShaderNameSelect, this.#htmlShaderRenderMode, htmlCustomShaderButtons, c);
         if (aceScript == '') {
-            this.#initEditor2(c);
+            this.#initEditor2(options, c);
         }
         else {
-            loadScript(aceScript).then(() => this.#initEditor2(c));
+            loadScript(aceScript).then(() => this.#initEditor2(options, c));
         }
         ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
         ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
     }
-    #initEditor2(id) {
+    #initEditor2(options, id) {
         this.#shaderEditor = globalThis.ace.edit(id);
         this.#shaderEditor.renderer.attachToShadowRoot();
         //this.#shaderEditor.$blockScrolling = Infinity;
@@ -34583,6 +35678,20 @@ class ShaderEditor extends HTMLElement {
         });
         this.#initEditorEvents();
         this.#reloadGLSLList();
+        const defaultShader = options.defaultShader;
+        if (defaultShader) {
+            this.openShader(defaultShader);
+        }
+    }
+    openShader(name) {
+        if (name.endsWith('fs') || name.endsWith('vs') || name.endsWith('wgsl')) {
+            this.setEditorShaderName(name);
+        }
+        else {
+            if (name.endsWith('glsl')) {
+                this.setEditorIncludeName(name);
+            }
+        }
     }
     #reloadGLSLList() {
         if (!this.#shaderEditor) {
@@ -34634,9 +35743,15 @@ class ShaderEditor extends HTMLElement {
             return;
         }
         if (shaderName) {
+            if (this.#htmlExpandSourceButton) {
+                this.#htmlExpandSourceButton.disabled = false;
+            }
             this.#editorShaderName = shaderName;
             this.#editorIncludeName = '';
             const editSession = this.#getSession(shaderName);
+            if (this.#htmlShaderNameSelect) {
+                this.#htmlShaderNameSelect.value = shaderName;
+            }
             this.#shaderEditor.setSession(editSession);
             const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
             if (source) {
@@ -34658,6 +35773,9 @@ class ShaderEditor extends HTMLElement {
             return;
         }
         if (includeName && (this.#editorIncludeName != includeName || force)) {
+            if (this.#htmlExpandSourceButton) {
+                this.#htmlExpandSourceButton.disabled = true;
+            }
             const editSession = this.#getSession(includeName);
             this.#shaderEditor.setSession(editSession);
             this.#editorShaderName = '';
@@ -46349,9 +47467,9 @@ class SourceBSP extends World {
     funcBrushesRemoveMe = [];
     partialLoading = false;
     eventTarget = new EventTarget(); //TODOv3
-    staticProps = new Group({ name: 'Static props' });
-    dynamicProps = new Group({ name: 'Dynamic props' });
-    mapFaces = new Group({ name: 'World geometry' });
+    #staticProps = new Group({ name: 'Static props' });
+    #dynamicProps = new Group({ name: 'Dynamic props' });
+    #mapFaces = new Group({ name: 'World geometry' });
     #characterSpawn;
     #geometries = {}; //TODO: turn into map
     //loader;
@@ -46362,9 +47480,9 @@ class SourceBSP extends World {
         this.bspTree = new Source1BspTree(this);
         //this.loadFile(root, fileName);
         //BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
-        this.addChild(this.staticProps);
-        this.addChild(this.dynamicProps);
-        this.addChild(this.mapFaces);
+        this.addChild(this.#staticProps);
+        this.addChild(this.#dynamicProps);
+        this.addChild(this.#mapFaces);
     }
     initMap() {
         this.#initGeometry();
@@ -46398,7 +47516,7 @@ class SourceBSP extends World {
                 }
                 Source1ModelManager.createInstance(this.repository, propName, true).then((model) => {
                     if (model) {
-                        this.staticProps.addChild(model);
+                        this.#staticProps.addChild(model);
                         model.position = prop.position;
                         model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
                         model.skin = String(prop.skin);
@@ -46791,7 +47909,7 @@ class SourceBSP extends World {
             }
             const bufferGeometry = new BufferGeometry();
             const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3, 'position');
-            const vertexNormal = new Float32BufferAttribute(geometry.vertices, 3, 'normal');
+            const vertexNormal = new Float32BufferAttribute(geometry.normals, 3, 'normal');
             const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1, 'alpha');
             const textureCoord = new Float32BufferAttribute(geometry.coords, 2, 'texCoord');
             bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1, 'index'));
@@ -46807,7 +47925,7 @@ class SourceBSP extends World {
                     staticMesh.setMaterial(material);
                 }
             });
-            this.mapFaces.addChild(staticMesh);
+            this.#mapFaces.addChild(staticMesh);
         }
     }
     #addEntity(entity) {
@@ -46875,6 +47993,9 @@ class SourceBSP extends World {
             }
         }
         return vec3.sub(vec3.create(), max, min);
+    }
+    addDynamicProp(prop) {
+        this.#dynamicProps.addChild(prop);
     }
     static getEntityName() {
         return 'BSP Map';
@@ -51350,7 +52471,9 @@ class PropDynamic extends MapEntity {
         /*model.position = this.position;
         model.quaternion = this._quaternion;*/
         this.#model = model;
-        this.map.dynamicProps.addChild(model);
+        if (model) {
+            this.map.addDynamicProp(model);
+        }
         /*.then(
             (model) => {
                 this.map.dynamicProps.addChild(model);
@@ -52074,7 +53197,7 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
                 },
                 format: webGPUFormat,
                 usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
-                textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
+                //textureBindingViewDimension: vtf.isCubeMap() ? 'cube' : '2d',
             },
             webgpuSamplerDescriptor: {
                 addressModeU: vtf.getAddressModeU(),
@@ -52936,6 +54059,20 @@ class Source1Material extends Material {
             this.variables.set(key, value);
         }
     }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source1Material,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.uniforms.colorMap],
+            ]),
+            flatShading: false,
+        };
+    }
     clone() {
         return new Source1Material(this.repository, this.path, this.vmt, this.parameters);
     }
@@ -53085,7 +54222,7 @@ class CharacterMaterial extends Source1Material {
         //"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
         const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
-            this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         else {
@@ -53093,7 +54230,7 @@ class CharacterMaterial extends Source1Material {
         }
         const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
-            this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+            this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
         }
         else {
@@ -53152,12 +54289,12 @@ class CharacterMaterial extends Source1Material {
         }
         const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
-            this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
-            this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+            this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
         }
         //uniform vec4 g_vPackedConst6;
@@ -53168,7 +54305,7 @@ class CharacterMaterial extends Source1Material {
     clone() {
         return new CharacterMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_character'; //TODO: setup proper shader
     }
 }
@@ -53222,7 +54359,7 @@ class CustomWeaponMaterial extends Source1Material {
             this.setDefine('USE_SHEEN_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$maskstexture']) {
-            this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$pattern']) {
@@ -53390,7 +54527,7 @@ class CustomWeaponMaterial extends Source1Material {
     clone() {
         return new CustomWeaponMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_customweapon';
     }
 }
@@ -53485,7 +54622,7 @@ class EyeRefractMaterial extends Source1Material {
     clone() {
         return new EyeRefractMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_eyerefract';
     }
 }
@@ -53497,6 +54634,20 @@ class LightMappedGenericMaterial extends Source1Material {
     }
     getShaderSource() {
         return 'source1_lightmappedgeneric';
+    }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source1LightMappedGeneric,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.uniforms.colorMap],
+            ]),
+            flatShading: true,
+        };
     }
 }
 Source1VmtLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMaterial);
@@ -54355,7 +55506,7 @@ class SpriteCardMaterial extends Source1Material {
     clone() {
         return new SpriteCardMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_spritecard';
     }
 }
@@ -54431,7 +55582,7 @@ class SpriteMaterial extends Source1Material {
     clone() {
         return new SpriteMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_sprite';
     }
 }
@@ -54462,7 +55613,7 @@ class UnlitGenericMaterial extends Source1Material {
     clone() {
         return new UnlitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         //Note: this is vertexlitgeneric without lighting
         return 'source1_unlitgeneric';
     }
@@ -54499,7 +55650,7 @@ class UnlitTwoTextureMaterial extends Source1Material {
     clone() {
         return new UnlitTwoTextureMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_unlittwotexture';
     }
     afterProcessProxies() {
@@ -54599,8 +55750,24 @@ class VertexLitGenericMaterial extends Source1Material {
     clone() {
         return new VertexLitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_vertexlitgeneric';
+    }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source1VertexLitGeneric,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.uniforms.colorMap],
+                [1, this.uniforms.normalTexture],
+                [3, this.uniforms.cubeTexture],
+            ]),
+            flatShading: false,
+        };
     }
 }
 Source1VmtLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
@@ -54671,7 +55838,7 @@ class WeaponDecalMaterial extends Source1Material {
             this.setDefine('USE_SHEEN_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$maskstexture']) {
-            this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$pattern']) {
@@ -54828,7 +55995,7 @@ class WeaponDecalMaterial extends Source1Material {
     clone() {
         return new WeaponDecalMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
-    get shaderSource() {
+    getShaderSource() {
         return 'source1_weapondecal';
     }
 }
@@ -62183,7 +63350,7 @@ addWgslInclude('source1_declare_sheen', source1_declare_sheen);
 
 var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_camera_position\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_selfillum\n\n#include declare_lights\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n@group(0) @binding(x) var<uniform> uEyeOrigin: vec3f;\n@group(0) @binding(x) var<uniform> uIrisProjectionU: vec4f;\n@group(0) @binding(x) var<uniform> uIrisProjectionV: vec4f;\n\n@group(0) @binding(x) var corneaTexture: texture_2d<f32>;\n@group(0) @binding(x) var corneaSampler: sampler;\n\n/*#include varying_standard**/\n/*\nstruct EyeRefractOut {\n\tstdOut: VertexOut,\n\n\t//vWorldPosition_ProjPosZ: vec4f,\n\tvTangentViewVector: vec3f,\n\tvWorldNormal: vec3f,\n\tvWorldTangent: vec3f,\n\tvWorldBinormal: vec3f,\n}\n*/\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\n\t@location(y) vWorldPosition_ProjPosZ: vec3f,\n\t@location(y) vTangentViewVector: vec3f,\n\t@location(y) vWorldNormal: vec3f,\n\t@location(y) vWorldTangent: vec3f,\n\t@location(y) vWorldBinormal: vec3f,\n}\n\n\n#define g_flEyeballRadius\t5.51\n#define g_flParallaxStrength 0.25\n\nfn Vec3WorldToTangent( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\tvar vTangentVector: vec3f;\n\tvTangentVector.x = dot( iWorldVector.xyz, iWorldTangent.xyz );\n\tvTangentVector.y = dot( iWorldVector.xyz, iWorldBinormal.xyz );\n\tvTangentVector.z = dot( iWorldVector.xyz, iWorldNormal.xyz );\n\treturn vTangentVector; // Return without normalizing\n}\nfn Vec3WorldToTangentNormalized( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\treturn normalize( Vec3WorldToTangent( iWorldVector, iWorldNormal, iWorldTangent, iWorldBinormal ) );\n}\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output: VertexOut =  VertexOut();\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\n/********************************************/\n\toutput.vWorldPosition_ProjPosZ = vertexPositionWorldSpace.xyz;\n\n\tlet cViewProj: mat4x4f = matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix;\n\tlet vProjPos: vec4f = cViewProj * vertexPositionWorldSpace;//mul( vec4( vertexPositionWorldSpace, 1.0 ), cViewProj );\n\t//o.projPos = vProjPos;\n\t//vProjPos.z = dot(vertexPositionWorldSpace, cViewProjZ );\n\t//o.vWorldPosition_ProjPosZ.w = vProjPos.z;\n\n\tlet vEyeSocketUpVector: vec3f = normalize( -uIrisProjectionV.xyz );\n\tlet vEyeSocketLeftVector: vec3f = normalize( -uIrisProjectionU.xyz );\n\n\t//vEyeSocketUpVector = -vec3(0.0, 1.0, 0.0);\n\t//vEyeSocketLeftVector = -vec3(0.0, 0.0, 1.0);\n\n\toutput.vWorldNormal = normalize( vertexPositionWorldSpace.xyz - uEyeOrigin.xyz );\n\toutput.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );\n\toutput.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );\n\n\tlet vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);\n\toutput.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);\n\t//vTangentViewVector.xyz = vWorldViewVector;\n\t//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;\n\t//vTangentViewVector.xyz = vWorldBinormal;\n\n/********************************************/\n\n\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tfragColor = vec4f(1.0);\n\tfragColor = vec4f(abs(fragInput.vTangentViewVector), 1.0);\n\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t//#include compute_fragment_color_map_mod1\n\n\t#ifdef USE_COLOR_MAP\n\t\tvar texelColor: vec4f = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\t\tdiffuseColor *= texelColor;\n\t#endif\n\t#include compute_fragment_alpha_test\n\t\t//texelColor.a = 1.0;\n\t\t//fragColor = texelColor;\n#ifndef IS_TRANSLUCENT\n\tfragColor.a = 1.0;\n#endif\n\t//fragColor = vec4(vTextureCoord/2.0, 0.0, 1.0);\n\n\n\n/********************************************/\n\t//let vWorldPosition: vec3f = fragInput.vWorldPosition_ProjPosZ.xyz;\n\tvar vCorneaUv: vec2f; // Note: Cornea texture is a cropped version of the iris texture\n\tvCorneaUv.x = dot( uIrisProjectionU, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tvCorneaUv.y = dot( uIrisProjectionV, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tlet vSphereUv: vec2f = ( vCorneaUv.xy * 0.5 ) + 0.25;\n\n\tlet corneaColor: vec4f = textureSample(corneaTexture, corneaSampler, vCorneaUv);\n\tlet fIrisOffset: f32 = corneaColor.b;\n\n\tvar vParallaxVector: vec2f = ( fragInput.vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - fragInput.vTangentViewVector.z ); // Note: 0.25 is a magic number\n\tvParallaxVector = ( fragInput.vTangentViewVector.xy* g_flParallaxStrength) / ( 1.0 - fragInput.vTangentViewVector.z );\n\tvParallaxVector.x = -vParallaxVector.x; //Need to flip x...not sure why.\n\tvParallaxVector = vec2(0.0);\n\n\tlet vIrisUv: vec2f = vSphereUv.xy - vParallaxVector.xy;\n#ifdef USE_COLOR_MAP\n\tvar cIrisColor: vec4f = textureSample(colorTexture, colorSampler, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );\n#else\n\tvar cIrisColor: vec4f = vec4(1.0);\n#endif\n\t//cIrisColor = pow(cIrisColor, vec4(1./2.2));\n\tcIrisColor.a = 1.0;\n\tfragColor = cIrisColor;\n/********************************************/\n\t#include compute_fragment_standard\n\n#ifdef SKIP_PROJECTION\n#ifdef USE_COLOR_MAP\n\tfragColor = texture2D(colorTexture, mod(vTextureCoord.xy, 1.0));\n#else\n\tvec4 fragColor = vec4(1.0);\n#endif\n\tfragColor.a = 1.;\n#endif\n\t#include compute_fragment_render_mode\n\n\n\n\n\t#include output_fragment\n}\n";
 
-var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
+var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\tfragColor = vec4(albedo, fragColor.a);\n\n\n\t#include output_fragment\n}\n";
 
 var source1_sprite = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = color;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= fragInput.vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * fragInput.vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * fragInput.vColor.rgb * fragInput.vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
@@ -62193,7 +63360,7 @@ var source1_unlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n
 
 var source1_unlittwotexture = "#define USE_COLOR_2_MAP\n\n#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t#include declare_vertex_standard_params\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n) -> VertexOut\n{\n#ifndef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\tlet normal: vec3f = vec3(1., 0., 0.);\n#endif\n\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = aVertexColor;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_uv2\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\n\tfragColor = texelColor * texelColor.a * texel2Color * texel2Color.a;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
-var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
+var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4f(albedo, fragColor.a);\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
 Shaders['source1_eyerefract.wgsl'] = source1_eyerefract;
 Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
@@ -64690,15 +65857,15 @@ class Source2TextureLoader {
     }
 }
 
-class Source2TextureManagerClass {
-    #vtexList = new Map2();
-    #texturesList = new Map();
-    #loadingTexturesList = new Map();
-    #defaultTexture;
-    WEBGL_compressed_texture_s3tc;
-    EXT_texture_compression_bptc;
-    EXT_texture_compression_rgtc;
-    constructor() {
+class Source2TextureManager {
+    static #vtexList = new Map2();
+    static #texturesList = new Map();
+    static #loadingTexturesList = new Map();
+    static #defaultTexture;
+    static WEBGL_compressed_texture_s3tc;
+    static EXT_texture_compression_bptc;
+    static EXT_texture_compression_rgtc;
+    static {
         Graphics$1.ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture({
                 color: new Color(0.5, 0.75, 1),
@@ -64711,12 +65878,12 @@ class Source2TextureManagerClass {
         });
         setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
     }
-    async getTexture(repository, path, frame) {
+    static async getTexture(repository, path, frame) {
         frame = Math.floor(frame);
         const texture = await this.#getTexture(repository, path);
         return texture ? texture.getFrame(frame) ?? null : this.#defaultTexture; //TODOv3
     }
-    async getVtex(repository, path) {
+    static async getVtex(repository, path) {
         // TODO: fix that concurent calls of the same texture will load it multiple times
         let vtex = this.#vtexList.get(repository, path);
         if (vtex !== undefined) {
@@ -64728,11 +65895,11 @@ class Source2TextureManagerClass {
         }
         return vtex;
     }
-    async getTextureSheet(repository, path) {
+    static async getTextureSheet(repository, path) {
         const texture = await this.#getTexture(repository, path);
         return texture.properties.get('sprite_sheet') ?? null;
     }
-    async #getTexture(repository, path) {
+    static async #getTexture(repository, path) {
         path = path.replace(/\.vtex_c$/, '').replace(/\.vtex$/, '');
         path = path + '.vtex_c';
         const fullPath = repository + path;
@@ -64751,9 +65918,16 @@ class Source2TextureManagerClass {
                             size: {
                                 width: vtex?.getWidth() ?? 1,
                                 height: vtex?.getHeight() ?? 1,
+                                depthOrArrayLayers: vtex?.isCubeTexture() ? 6 : 1,
                             },
-                            format: 'rgba8unorm',
+                            format: getWebGPUFormat(vtex?.getImageFormat() ?? ImageFormat.Unknown, false /*TODO: check srgb param*/),
                             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+                        },
+                        webgpuSamplerDescriptor: {
+                            addressModeU: 'repeat', // TODO: set actual value
+                            addressModeV: 'repeat', // TODO: set actual value
+                            magFilter: 'linear', // TODO: set actual value
+                            minFilter: 'linear', // TODO: set actual value
                         }
                     }); //TODOv3: add params
                     if (vtex) {
@@ -64773,19 +65947,19 @@ class Source2TextureManagerClass {
         }
         return this.#texturesList.get(fullPath);
     }
-    setTexture(path, texture) {
+    static setTexture(path, texture) {
         this.#texturesList.set(path, texture);
     }
-    #initTexture(texture, vtexFile) {
+    static #initTexture(texture, vtexFile) {
         const imageData = vtexFile.blocks.DATA.imageData;
         const imageFormat = vtexFile.getImageFormat();
         if (imageData) {
             if (vtexFile.isCubeTexture()) {
                 texture.isCube = true;
-                this.#initCubeTexture(texture.texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
+                this.#initCubeTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
             }
             else {
-                this.#initFlatTexture(texture.texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
+                this.#initFlatTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
                 /*if (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) {
                     this.fillTextureDxt(texture, vtexFile.getWidth(), vtexFile.getHeight(), vtexFile.getDxtLevel(), imageData[0]);
                 } else {
@@ -64798,25 +65972,33 @@ class Source2TextureManagerClass {
             texture.defines.set('NORMALIZE_NORMALS', 'NORMALIZE_NORMALS');
         }
     }
-    #initCubeTexture(texture, imageFormat, width, height, imageData) {
+    static #initCubeTexture(texture, imageFormat, width, height, imageData) {
+        if (Graphics$1.isWebGPU) {
+            this.#initCubeTextureWebGPU(texture, imageFormat, width, height, imageData);
+        }
+        else {
+            this.#initCubeTextureWebGL(texture.texture, imageFormat, width, height, imageData);
+        }
+    }
+    static #initCubeTextureWebGL(texture, imageFormat, width, height, imageData) {
         const glContext = Graphics$1.glContext;
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
-                this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-                this.fillTexture(imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-                this.fillTexture(imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-                this.fillTexture(imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-                this.fillTexture(imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
-                this.fillTexture(imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
                 break;
             case TextureCompressionMethod.St3c:
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
                 break;
             case TextureCompressionMethod.Bptc:
                 throw new Error('TODO');
@@ -64829,21 +66011,35 @@ class Source2TextureManagerClass {
         //glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, clampT ? GL_CLAMP_TO_EDGE : GL_REPEAT);
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
     }
-    #initFlatTexture(texture, imageFormat, width, height, imageData) {
+    static #initCubeTextureWebGPU(texture, imageFormat, width, height, imageData) {
+        for (let i = 0; i < 6; ++i) {
+            WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[i]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width: width, height: height });
+        }
+        WebGPUInternal.device.queue.submit([]);
+    }
+    static #initFlatTexture(texture, imageFormat, width, height, imageData) {
+        if (Graphics$1.isWebGPU) {
+            this.#initFlatTextureWebGPU(texture, imageFormat, width, height, imageData);
+        }
+        else {
+            this.#initFlatTextureWebGL(texture.texture, imageFormat, width, height, imageData);
+        }
+    }
+    static #initFlatTextureWebGL(texture, imageFormat, width, height, imageData) {
         const glContext = Graphics$1.glContext;
         glContext.bindTexture(GL_TEXTURE_2D, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
-                this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
+                this.#fillTextureWebGL(imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
                 break;
             case TextureCompressionMethod.St3c:
-                this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
+                this.#fillTextureDxtWebGL(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
                 break;
             case TextureCompressionMethod.Bptc:
-                this.#fillTextureBptc(texture, width, height, imageData[0]);
+                this.#fillTextureBptcWebGL(texture, width, height, imageData[0]);
                 break;
             case TextureCompressionMethod.Rgtc:
-                this.#fillTextureRgtc(texture, width, height, imageData[0]);
+                this.#fillTextureRgtcWebGL(texture, width, height, imageData[0]);
                 break;
         }
         //glContext.bindTexture(GL_TEXTURE_2D, texture);
@@ -64851,7 +66047,7 @@ class Source2TextureManagerClass {
         glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glContext.bindTexture(GL_TEXTURE_2D, null);
     }
-    fillTexture(imageFormat, width, height, datas, target) {
+    static #fillTextureWebGL(imageFormat, width, height, datas, target) {
         const gl = Graphics$1.glContext;
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
         switch (imageFormat) {
@@ -64865,7 +66061,7 @@ class Source2TextureManagerClass {
         }
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
-    fillTextureDxt(texture, imageFormat, width, height, datas, target) {
+    static #fillTextureDxtWebGL(texture, imageFormat, width, height, datas, target) {
         const gl = Graphics$1.glContext;
         const s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -64902,7 +66098,7 @@ class Source2TextureManagerClass {
         }
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
-    #fillTextureBptc(texture, width, height, datas) {
+    static #fillTextureBptcWebGL(texture, width, height, datas) {
         const gl = Graphics$1.glContext;
         const bptc = this.EXT_texture_compression_bptc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -64930,7 +66126,7 @@ class Source2TextureManagerClass {
         //gl.bindTexture(GL_TEXTURE_2D, null);
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
-    #fillTextureRgtc(texture, width, height, datas) {
+    static #fillTextureRgtcWebGL(texture, width, height, datas) {
         const gl = Graphics$1.glContext;
         const rgtc = this.EXT_texture_compression_rgtc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -64955,7 +66151,11 @@ class Source2TextureManagerClass {
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
-    #cleanup() {
+    static #initFlatTextureWebGPU(texture, imageFormat, width, height, imageData) {
+        WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[0]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width: width, height: height });
+        WebGPUInternal.device.queue.submit([]);
+    }
+    static #cleanup() {
         for (const [texturePath, texture] of this.#texturesList) {
             if (texture.hasOnlyUser(this)) {
                 texture.removeUser(this);
@@ -64964,7 +66164,6 @@ class Source2TextureManagerClass {
         }
     }
 }
-const Source2TextureManager = new Source2TextureManagerClass();
 
 /**
  * DynamicExpression
@@ -65089,7 +66288,7 @@ function executeDynamicExpression(byteCode, renderAttributes) {
                 divide();
                 break;
             case 23: // %
-                modulo();
+                modulo$1();
                 break;
             case 24: // negate
                 negation();
@@ -65393,7 +66592,7 @@ function divide() {
     a[3] = b[3] / a[3];
     stack.push(a);
 }
-function modulo() {
+function modulo$1() {
     const a = stack.pop();
     const b = stack.pop();
     a[0] = b[0] % a[0];
@@ -66093,17 +67292,17 @@ const TEXTURE_UNIFORMS = new Map([
     ['g_tColorB', ['colorBMap', 'USE_COLOR_B_MAP']],
     ['g_tColorC', ['colorCMap', 'USE_COLOR_C_MAP']],
     ['g_tColor1', ['color1Map', 'USE_COLOR_1_MAP']],
-    ['g_tMask', ['maskMap', 'USE_MASK_MAP']],
+    ['g_tMask', ['maskTexture', 'USE_MASK_MAP']],
     ['g_tNormalA', ['normalAMap', 'USE_NORMAL_A_MAP']],
     ['g_tEmissiveB', ['emissiveBMap', 'USE_EMISSIVE_B_MAP']],
     ['g_tEmissiveC', ['emissiveCMap', 'USE_EMISSIVE_C_MAP']],
-    ['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
-    ['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
-    ['g_tDetail', ['detail1Map', 'USE_DETAIL1_MAP']],
+    ['g_tMasks1', ['mask1Texture', 'USE_MASK1_MAP']],
+    ['g_tMasks2', ['mask2Texture', 'USE_MASK2_MAP']],
+    ['g_tDetail', ['detail1Texture', 'USE_DETAIL1_MAP']],
     ['g_tDetail2', ['detail2Texture', 'USE_DETAIL2_MAP']],
     ['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
     ['g_tDisplacementMask', ['displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
-    ['g_tSpecular', ['specularMap', 'USE_SPECULAR_MAP']],
+    ['g_tSpecular', ['specularTexture', 'USE_SPECULAR_MAP']],
     ['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
     ['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
     ['g_tCubeMap', ['cubeTexture', 'USE_CUBE_MAP']],
@@ -66158,10 +67357,10 @@ class Source2Material extends Material {
             this.setDefine('IS_TRANSLUCENT');
         }
         if (this.getIntParam('F_MASKS_1')) {
-            this.setDefine('USE_MASK1_MAP');
+            this.setDefine('F_MASKS_1');
         }
         if (this.getIntParam('F_MASKS_2')) {
-            this.setDefine('USE_MASK2_MAP');
+            this.setDefine('F_MASKS_2');
         }
         if (this.getIntParam('F_ENABLE_CLOAK')) {
             this.setDefine('ENABLE_CLOAK');
@@ -66171,8 +67370,7 @@ class Source2Material extends Material {
             this.setDefine('IS_TRANSLUCENT');
         }
         if (this.getIntParam('F_ALPHA_TEST') == 1) {
-            this.setDefine('ALPHA_TEST'); //TODOv3: set this automaticaly
-            this.uniforms['uAlphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
+            this.setAlphaTestReference(this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE);
         }
         if (this.getIntParam('F_SEPARATE_ALPHA_TRANSFORM')) {
             this.setDefine('USE_SEPARATE_ALPHA_TRANSFORM');
@@ -66194,6 +67392,14 @@ class Source2Material extends Material {
         this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale;
         this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
         this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
+        this.uniforms['detailTextures'] = {
+            g_vDetailTexCoordScale: this.uniforms['g_vDetailTexCoordScale'],
+            g_vDetailTexCoordOffset: this.uniforms['g_vDetailTexCoordOffset'],
+            g_vDetail1ColorTint: this.uniforms['g_vDetail1ColorTint'],
+            g_vDetail2TexCoordScale: this.#detailTexCoordOffset, // TODO: use actual value
+            g_vDetail2TexCoordOffset: this.#detailTexCoordScale, // TODO: use actual value
+            g_vDetail2ColorTint: this.uniforms['g_vDetail2ColorTint'],
+        };
         this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
         this.initFloatUniforms();
         this.initVectorUniforms();
@@ -66264,26 +67470,27 @@ class Source2Material extends Material {
         this._afterProcessProxies(proxyParams);
         this.afterProcessProxies(proxyParams);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _afterProcessProxies(proxyParams) {
         //this.setupUniforms();
         this.initTextureUniforms(); //TODO : do this only once
         /*
                 let g_tMasks1 = this.getTextureByName('g_tMasks1');
                 if (g_tMasks1) {
-                    this.uniforms['mask1Map'] = Source2TextureManager.getTexture(this.repository, g_tMasks1, 0);//TODOv3: rename uniform
+                    this.uniforms['mask1Texture'] = Source2TextureManager.getTexture(this.repository, g_tMasks1, 0);//TODOv3: rename uniform
                 }
 
                 let g_tMasks2 = this.getTextureByName('g_tMasks2');
                 if (g_tMasks2) {
-                    this.uniforms['mask2Map'] = Source2TextureManager.getTexture(this.repository, g_tMasks2, 0);//TODOv3: rename uniform
+                    this.uniforms['mask2Texture'] = Source2TextureManager.getTexture(this.repository, g_tMasks2, 0);//TODOv3: rename uniform
                 }
 
                 let g_tDetail = this.getTextureByName('g_tDetail');
                 if (g_tDetail) {
-                    this.uniforms['detail1Map'] = Source2TextureManager.getTexture(this.repository, g_tDetail, 0);//TODOv3: rename uniform
+                    this.uniforms['detail1Texture'] = Source2TextureManager.getTexture(this.repository, g_tDetail, 0);//TODOv3: rename uniform
                     this.setDefine('USE_DETAIL1_MAP');//TODOv3: set this automaticaly
                 } else {
-                    //this.uniforms['detail1Map'] = TextureManager.createCheckerTexture();
+                    //this.uniforms['detail1Texture'] = TextureManager.createCheckerTexture();
                     this.setDefine('USE_DETAIL1_MAP', false);//TODOv3: set this automaticaly
                 }
 
@@ -66315,8 +67522,12 @@ class Source2Material extends Material {
             }
         }
     }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
     afterProcessProxies(proxyParams) {
     }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/no-empty-function */
     setUniform(uniformName, uniformValue) {
         this.uniforms[uniformName] = uniformValue;
     }
@@ -66513,6 +67724,20 @@ class Source2Material extends Material {
     }
     getTextureParams() {
         return this.#getParams('m_textureParams', false, false, true);
+    }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source2Material,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.uniforms.colorMap],
+            ]),
+            flatShading: false,
+        };
     }
 }
 
@@ -74090,7 +75315,7 @@ class RenderTrails extends RenderBase {
 }
 RegisterSource2ParticleOperator('C_OP_RenderTrails', RenderTrails);
 
-var source2_decode_texture = `
+var source2_decode_texture$1 = `
 
 vec4 vectorToColor(vec4 vec) {
 	return ((vec * 0.5) + 0.5);
@@ -74109,7 +75334,7 @@ vec4 normalizeNormals(vec4 normal) {
 }
 `;
 
-Includes['source2_decode_texture'] = source2_decode_texture;
+Includes['source2_decode_texture'] = source2_decode_texture$1;
 
 var source2_fragment_compute_cs2_stickers = `
 	#pragma unroll
@@ -74238,7 +75463,7 @@ Includes['source2_varying_vr_simple'] = source2_varying_vr_simple;
 Includes['source2_varying_vr_skin'] = source2_varying_vr_skin;
 Includes['source2_varying_vr_xen_foliage'] = source2_varying_vr_xen_foliage;
 
-var source2_detail_blend = `
+var source2_detail_blend$1 = `
 
 #define DETAIL_BLEND_MODE_ADD 1
 #define DETAIL_BLEND_MODE_ADD_SELF_ILLUM 2
@@ -74271,7 +75496,7 @@ var source2_detail_blend = `
 var source2_fragment_compute_detail = `
 #ifdef USE_DETAIL1_MAP
 	vec2 detail1Coord = vTextureCoord.xy * g_vDetailTexCoordScale.xy + g_vDetailTexCoordOffset.xy;
-	vec4 detail1Color = g_vDetail1ColorTint * texture2D(detail1Map, detail1Coord);
+	vec4 detail1Color = g_vDetail1ColorTint * texture2D(detail1Texture, detail1Coord);
 #endif
 #ifdef USE_DETAIL2_MAP
 	vec2 detail2Coord = vTextureCoord.xy * g_vDetail2TexCoordOffset.xy + g_vDetail2TexCoordOffset.xy;
@@ -74302,12 +75527,12 @@ var source2_fragment_compute_separate_alpha_transform = `
 #endif
 `;
 
-var source2_fragment_declare_detail_map = `
+var source2_fragment_declare_detail_map$1 = `
 #ifdef USE_DETAIL1_MAP
 	uniform vec4 g_vDetailTexCoordScale;
 	uniform vec4 g_vDetailTexCoordOffset;
 	uniform vec4 g_vDetail1ColorTint;
-	uniform sampler2D detail1Map;
+	uniform sampler2D detail1Texture;
 #endif
 #ifdef USE_DETAIL2_MAP
 	uniform vec4 g_vDetail2TexCoordScale;
@@ -74317,18 +75542,18 @@ var source2_fragment_declare_detail_map = `
 #endif
 `;
 
-var source2_fragment_declare_separate_alpha_transform = `
+var source2_fragment_declare_separate_alpha_transform$1 = `
 #ifdef USE_SEPARATE_ALPHA_TRANSFORM
 	uniform vec4 g_vAlphaTexCoordOffset;
 #endif
 `;
 
-Includes['source2_detail_blend'] = source2_detail_blend;
+Includes['source2_detail_blend'] = source2_detail_blend$1;
 Includes['source2_fragment_compute_detail'] = source2_fragment_compute_detail;
 Includes['source2_fragment_compute_mask'] = source2_fragment_compute_mask;
 Includes['source2_fragment_compute_separate_alpha_transform'] = source2_fragment_compute_separate_alpha_transform;
-Includes['source2_fragment_declare_detail_map'] = source2_fragment_declare_detail_map;
-Includes['source2_fragment_declare_separate_alpha_transform'] = source2_fragment_declare_separate_alpha_transform;
+Includes['source2_fragment_declare_detail_map'] = source2_fragment_declare_detail_map$1;
+Includes['source2_fragment_declare_separate_alpha_transform'] = source2_fragment_declare_separate_alpha_transform$1;
 
 var source2_color_correction_fs = `
 
@@ -74773,7 +75998,7 @@ var source2_hero_fluid_fs = `
 
 #include declare_fragment_color_map
 uniform sampler2D displacementMaskMap;
-uniform sampler2D specularMap;
+uniform sampler2D specularTexture;
 uniform sampler2D spiralNormalMap;
 uniform sampler2D spiralOverlayMap;
 
@@ -74804,7 +76029,7 @@ void main(void) {
 	vec4 displacementMask = vec4(1.0);
 #endif
 #ifdef USE_SPECULAR_MAP
-	vec4 specularColor = texture2D(specularMap, vTextureCoord.xy);
+	vec4 specularColor = texture2D(specularTexture, vTextureCoord.xy);
 #else
 	vec4 specularColor = vec4(1.0);
 #endif
@@ -76408,6 +77633,33 @@ Shaders['source2_spritecard.vs'] = source2_spritecard_vs;
 Shaders['source2_ui.fs'] = source2_ui_fs;
 Shaders['source2_ui.vs'] = source2_ui_vs;
 
+var source2_decode_texture = "fn vectorToColor(vec: vec4f) -> vec4f {\r\n\treturn ((vec * 0.5) + 0.5);\r\n}\r\n\r\nfn colorToVector(color: vec2f) -> vec2f {\r\n\treturn ((color * 2.0) - 1.0);\r\n}\r\n\r\nfn normalizeNormals(normal: vec4f) -> vec4f {\r\n\tvar normal2 = vec4f(colorToVector(normal.ag), normal.ba);\r\n\tnormal2.g = -normal.g;\r\n\tnormal2.b = sqrt(1.0 - dot(normal.rg, normal.rg));\r\n\r\n\treturn vectorToColor(normal2);\r\n}\r\n";
+
+addWgslInclude('source2_decode_texture', source2_decode_texture);
+
+var source2_detail_blend = "#define DETAIL_BLEND_MODE_ADD 1\n#define DETAIL_BLEND_MODE_ADD_SELF_ILLUM 2\n#define DETAIL_BLEND_MODE_MOD2X 3\n#define DETAIL_BLEND_MODE_WHAT 4\n\n#ifdef USE_DETAIL1_MAP\n\t#ifdef DETAIL_BLEND_MODE\n\t\tvar detailColor: vec4f;\n\t\t#if DETAIL_BLEND_MODE == DETAIL_BLEND_MODE_ADD\n\t\t\t//diffuseColor = diffuseColor + detail1Color * g_flDetailBlendFactor * texelMask1.r;\n\t\t\tdetailColor = diffuseColor + detail1Color;\n\t\t#elif DETAIL_BLEND_MODE == DETAIL_BLEND_MODE_ADD_SELF_ILLUM\n\t\t\t//diffuseColor = diffuseColor + detail1Color * g_flDetailBlendFactor * texelMask1.r;//TODO selfillum\n\t\t\tdetailColor = diffuseColor + detail1Color;//TODO selfillum\n\t\t#elif DETAIL_BLEND_MODE == DETAIL_BLEND_MODE_MOD2X\n\t\t\t//diffuseColor = mix(diffuseColor, diffuseColor * detail1Color * g_flDetailBlendFactor, texelMask1.r);//TODO: this is not quite right\n\t\t\tdetailColor = 2.0 * diffuseColor * detail1Color;//TODO: this is not quite right\n\t\t#elif DETAIL_BLEND_MODE == DETAIL_BLEND_MODE_WHAT\n\t\t\tdetailColor = (diffuseColor + detail1Color) * 0.5;\n\t\t#endif\n\n\t\t//diffuseColor = mix(diffuseColor, diffuseColor * detail1Color * g_flDetailBlendFactor, texelMask1.r);//TODO: this is not quite right\n\n\t\tdiffuseColor = mix(diffuseColor, detailColor, g_flDetailBlendFactor * texelMask1.r);\n\t#endif\n#endif\n";
+
+var source2_fragment_calculate_detail = "#ifdef USE_DETAIL1_MAP\n\tlet detail1Coord: vec2f = fragInput.vTextureCoord.xy * detailTextures.g_vDetailTexCoordScale.xy + detailTextures.g_vDetailTexCoordOffset.xy;\n\tlet detail1Color: vec4f = detailTextures.g_vDetail1ColorTint * textureSample(detail1Texture, detail1Sampler, detail1Coord);\n#endif\n#ifdef USE_DETAIL2_MAP\n\tlet detail2Coord: vec2f = fragInput.vTextureCoord.xy * detailTextures.g_vDetail2TexCoordOffset.xy + detailTextures.g_vDetail2TexCoordOffset.xy;\n\tlet detail2Color: vec4f = detailTextures.g_vDetail2ColorTint * textureSample(detail2Texture, detail2Sampler, detail2Coord);\n#endif\n";
+
+var source2_fragment_calculate_mask = "#include calculate_fragment_mask_map\n#include calculate_fragment_mask1_map\n#include calculate_fragment_mask2_map\n#ifndef USE_MASK_MAP\n\tconst texelMask = vec4(1.0);\n#endif\n#ifndef USE_MASK1_MAP\n\tconst texelMask1 = vec4(1.0);\n#endif\n#ifndef USE_MASK2_MAP\n\tconst texelMask2 = vec4(1.0);\n#endif\n";
+
+var source2_fragment_calculate_separate_alpha_transform = "#ifdef USE_SEPARATE_ALPHA_TRANSFORM\n\t#ifdef USE_COLOR_MAP\n\t\ttexelColor.a = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy + g_vAlphaTexCoordOffset.xy).a;\n\t#endif\n#endif\n";
+
+var source2_fragment_declare_detail_map = "#if defined(USE_DETAIL1_MAP) || defined(USE_DETAIL2_MAP)\n\tstruct DetailTextures {\n\t\t#ifdef USE_DETAIL1_MAP\n\t\t\tg_vDetailTexCoordScale: vec4f,\n\t\t\tg_vDetailTexCoordOffset: vec4f,\n\t\t\tg_vDetail1ColorTint: vec4f,\n\t\t#endif\n\t\t#ifdef USE_DETAIL2_MAP\n\t\t\tg_vDetail2TexCoordScale: vec4f,\n\t\t\tg_vDetail2TexCoordOffset: vec4f,\n\t\t\tg_vDetail2ColorTint: vec4f,\n\t\t#endif\n\t}\n\n\t@group(0) @binding(x) var<uniform> detailTextures: DetailTextures;\n#endif\n\n#ifdef USE_DETAIL1_MAP\n\t@group(0) @binding(x) var detail1Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var detail1Sampler: sampler;\n#endif\n#ifdef USE_DETAIL2_MAP\n\t@group(0) @binding(x) var detail2Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var detail2Sampler: sampler;\n#endif\n";
+
+var source2_fragment_declare_separate_alpha_transform = "#ifdef USE_SEPARATE_ALPHA_TRANSFORM\n\t@group(0) @binding(x) var<uniform> g_vAlphaTexCoordOffset: vec4f;\n#endif\n";
+
+addWgslInclude('source2_detail_blend', source2_detail_blend);
+addWgslInclude('source2_fragment_calculate_detail', source2_fragment_calculate_detail);
+addWgslInclude('source2_fragment_calculate_mask', source2_fragment_calculate_mask);
+addWgslInclude('source2_fragment_calculate_separate_alpha_transform', source2_fragment_calculate_separate_alpha_transform);
+addWgslInclude('source2_fragment_declare_detail_map', source2_fragment_declare_detail_map);
+addWgslInclude('source2_fragment_declare_separate_alpha_transform', source2_fragment_declare_separate_alpha_transform);
+
+var source2_hero = "#include matrix_uniforms\n#include common_uniforms\n\n//#include declare_texture_transform\n//#include declare_vertex_detail_uv\n//#include declare_vertex_skinning\n//\n//#include declare_fragment_standard\n//#include declare_fragment_color_map\n//#include declare_fragment_detail_map\n//#include declare_fragment_normal_map\n//#include declare_fragment_phong_exponent_map\n//#include declare_fragment_alpha_test\n//#include source1_declare_phong\n//#include source1_declare_sheen\n//#include source1_declare_selfillum\n//#include declare_fragment_cube_map\n//#include math::modulo\n\n#include declare_vertex_skinning\n#include declare_fragment_standard\n\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_fragment_alpha_test\n#include declare_fragment_mask_map\n#include declare_fragment_specular_map\n#include source2_fragment_declare_detail_map\n#include declare_fragment_cube_map\n#include source2_decode_texture\n\n#include source2_fragment_declare_separate_alpha_transform\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> g_flDetailBlendFactor: f32;\n//@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\tvar diffuseColor: vec4f = vec4f(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_cube_map\n\t#include source2_fragment_calculate_separate_alpha_transform\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_specular_map\n\t#include source2_fragment_calculate_mask\n\t#include source2_fragment_calculate_detail\n\tdiffuseColor *= texelColor;\n\n\t#include calculate_fragment_normal\n\n\t#ifdef USE_NORMAL_MAP\n\t\tlet normal: vec3f = normalize(vec3f(texelNormal.ga * 2.0 - 1.0, 1.0));\n\t\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * vec3(normal));\n\t#endif\n\n\t#include calculate_fragment_alpha_test\n\n\t#include source2_detail_blend\n\n\n\n\tfragColor = diffuseColor;\n\n\n\t//fragColor = vec4f(modulo_vec2f(fragInput.vTextureCoord.xy, vec2f(1.0)), 0.0, 1.0);\n\n\t#include output_fragment\n}\n";
+
+Shaders['source2_hero.wgsl'] = source2_hero;
+
 class CubeTexture extends Texture {
     isCubeTexture;
     #images;
@@ -77251,9 +78503,9 @@ class ObjExporter {
     }
     async #renderMeshes(files, meshes) {
         const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
-        Graphics$1.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-        Graphics$1.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-        Graphics$1.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+        Graphics$1.setDefine('EXPORT_TEXTURES');
+        Graphics$1.setDefine('SKIP_PROJECTION');
+        Graphics$1.setDefine('SKIP_LIGHTING');
         const previousClearColor = Graphics$1.getClearColor();
         Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
         let meshId = 0;
@@ -77277,9 +78529,9 @@ class ObjExporter {
             await promise;
             ++meshId;
         }
-        Graphics$1.setIncludeCode('EXPORT_TEXTURES', '');
-        Graphics$1.setIncludeCode('SKIP_PROJECTION', '');
-        Graphics$1.setIncludeCode('SKIP_LIGHTING', '');
+        Graphics$1.removeDefine('EXPORT_TEXTURES');
+        Graphics$1.removeDefine('SKIP_PROJECTION');
+        Graphics$1.removeDefine('SKIP_LIGHTING');
         Graphics$1.setSize(previousWidth, previousHeight);
         Graphics$1.clearColor(previousClearColor);
         await Promise.all(promises);
@@ -77460,7 +78712,7 @@ class RenderTargetViewer {
     }
 }
 
-var calculate_fragment_alpha_test = "#ifndef EXPORT_TEXTURES\n\t#ifdef ALPHA_TEST\n\t\tif (diffuseColor.a < uAlphaTestReference) {\n\t\t\tdiscard;\n\t\t}\n\t#endif\n#endif\n";
+var calculate_fragment_alpha_test = "#ifndef EXPORT_TEXTURES\n\t#ifdef ALPHA_TEST\n\t\tif (diffuseColor.a < alphaTestReference) {\n\t\t\tdiscard;\n\t\t}\n\t#endif\n#endif\n";
 
 var calculate_fragment_color_map = "#ifdef USE_COLOR_MAP\n\tvar<function> texelColor: vec4<f32> = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n#else\n\tvar<function> texelColor: vec4<f32> = vec4(1.0);\n#endif\n#ifdef USE_COLOR_2_MAP\n\tvar<function> texel2Color: vec4<f32> = textureSample(color2Texture, color2Sampler, fragInput.vTexture2Coord.xy);\n#else\n\tvar<function> texel2Color: vec4<f32> = vec4(1.0);\n#endif\n";
 
@@ -77476,11 +78728,19 @@ var calculate_fragment_lights = "#if NUM_POINT_LIGHTS > 0\n\t#if defined(USE_SHA
 
 var calculate_fragment_log_depth = "#ifdef USE_LOG_DEPTH\n\t#ifdef IS_PERSPECTIVE_CAMERA\n\t\tgl_FragDepthEXT = log2(vFragDepth) * uProjectionLogDepth * 0.5;\n\t#endif\n\t#ifdef IS_ORTHOGRAPHIC_CAMERA\n\t\tgl_FragDepthEXT = gl_FragCoord.z;\n\t#endif\n#endif\n";
 
+var calculate_fragment_mask_map = "#ifdef USE_MASK_MAP\n\tlet texelMask = textureSample(maskTexture, maskSampler, fragInput.vTextureCoord.xy);\n#endif\n";
+
+var calculate_fragment_mask1_map = "#ifdef USE_MASK1_MAP\n\tlet texelMask1 = textureSample(mask1Texture, mask1Sampler, fragInput.vTextureCoord.xy);\n#endif\n";
+
+var calculate_fragment_mask2_map = "#ifdef USE_MASK2_MAP\n\tlet texelMask2 = textureSample(mask2Texture, mask2Sampler, fragInput.vTextureCoord.xy);\n#endif\n";
+
 var calculate_fragment_normal_map = "#ifdef USE_NORMAL_MAP\n\tlet texelNormal: vec4f = textureSample(normalTexture, normalSampler, fragInput.vTextureCoord.xy);\n#else\n\tlet texelNormal: vec4f = vec4(0.5, 0.5, 1.0, 0.0);\n#endif\n";
 
 var calculate_fragment_normal = "#ifdef FLAT_SHADING\n\tlet fdx:vec3f = dpdx(fragInput.vVertexPositionCameraSpace).xyz;\n\tlet fdy:vec3f = -dpdy(fragInput.vVertexPositionCameraSpace).xyz;\n\tlet fragmentNormalCameraSpace:vec3f = normalize(cross(fdx, fdy));\n\tlet fragmentTangentCameraSpace:vec3f = normalize(fdx);\n\tlet fragmentBitangentCameraSpace:vec3f = normalize(fdy);\n#else\n\tvar<function> fragmentNormalCameraSpace: vec3f = normalize(fragInput.vVertexNormalCameraSpace.xyz);\n\tvar<function> fragmentTangentCameraSpace: vec3f = normalize(fragInput.vVertexTangentCameraSpace.xyz);\n\tvar<function> fragmentBitangentCameraSpace: vec3f = normalize(fragInput.vVertexBitangentCameraSpace.xyz);\n#endif\nvar<function> TBNMatrixCameraSpace: mat3x3<f32> = mat3x3(fragmentTangentCameraSpace, fragmentBitangentCameraSpace, fragmentNormalCameraSpace);\n";
 
 var calculate_fragment_phong_exponent_map = "#ifdef USE_PHONG_EXPONENT_MAP\n\tlet texelPhongExponent: vec4f = textureSample(phongExponentTexture, phongExponentSampler, fragInput.vTextureCoord.xy);\n#endif\n";
+
+var calculate_fragment_specular_map = "#ifdef USE_SPECULAR_MAP\r\n\tlet texelSpecular: vec4f = textureSample(specularTexture, specularSampler, fragInput.vTextureCoord.xy);\r\n#endif\r\n";
 
 var calculate_fragment_standard = "#include calculate_fragment_depth\n#include calculate_silhouette_color\n#ifdef PICKING_MODE\n\tif (length(fragInput.position.xy - commonUniforms.pointerCoord) < 1.)  {\n\t\tpickedPrimitive.x = 1.0;\n\t\tpickedPrimitive.y = fragDepth;\n\t}\n#endif\n#ifdef WRITE_DEPTH_TO_COLOR\n\t#ifdef IS_POINT_LIGHT\n\t\tfloat dist = length( vVertexPositionWorldSpace.xyz - uLightPosition );\n\t\tdist = ( dist - uLightNear ) / ( uLightFar - uLightNear );\n\t\tfragColor = PackDepth32(saturate(dist));\n\t#else\n\t\tfragColor = PackDepth32(0.5 * vPosition.z / vPosition.w + 0.5);\n\t#endif\n#endif\n#ifdef RENDER_HIGHLIGHT\n\t#ifdef HIGHLIGHT\n\t\tfragColor = vec4(fragColor.rgb * 1.5, fragColor.a);\n\t#endif\n#endif\n#ifdef UNPACK_DEPTH_COLOR\n\tfragColor = vec4(vec3(1.0 - UnpackDepth32(texelColor)), 1.0);\n#endif\n#ifdef DESATURATE\n\tfloat luminance = 0.2126 * fragColor.r + 0.7152 * fragColor.g + 0.0722 * fragColor.b * 0.0;\n\tfragColor = vec4(vec3(luminance), fragColor.a);\n#endif\n#if defined(TONE_MAPPING) && TONE_MAPPING > 0\n\tfragColor = vec4(ToneMapping(fragColor.rgb), fragColor.a);\n#endif\n";
 
@@ -77516,9 +78776,13 @@ addWgslInclude('calculate_fragment_detail_map', calculate_fragment_detail_map);
 addWgslInclude('calculate_fragment_diffuse', calculate_fragment_diffuse);
 addWgslInclude('calculate_fragment_lights', calculate_fragment_lights);
 addWgslInclude('calculate_fragment_log_depth', calculate_fragment_log_depth);
+addWgslInclude('calculate_fragment_mask_map', calculate_fragment_mask_map);
+addWgslInclude('calculate_fragment_mask1_map', calculate_fragment_mask1_map);
+addWgslInclude('calculate_fragment_mask2_map', calculate_fragment_mask2_map);
 addWgslInclude('calculate_fragment_normal_map', calculate_fragment_normal_map);
 addWgslInclude('calculate_fragment_normal', calculate_fragment_normal);
 addWgslInclude('calculate_fragment_phong_exponent_map', calculate_fragment_phong_exponent_map);
+addWgslInclude('calculate_fragment_specular_map', calculate_fragment_specular_map);
 addWgslInclude('calculate_fragment_standard', calculate_fragment_standard);
 addWgslInclude('calculate_lights_setup_vars', calculate_lights_setup_vars);
 addWgslInclude('calculate_silhouette_color', calculate_silhouette_color);
@@ -77545,9 +78809,13 @@ var declare_fragment_diffuse = "#ifdef USE_MESH_COLOR\n\t@group(0) @binding(x) v
 
 var declare_fragment_light_warp = "#ifndef SKIP_LIGHT_WARP\n\t#ifdef USE_LIGHT_WARP_MAP\n\t\t@group(0) @binding(x) var lightWarpTexture: texture_2d<f32>;\n\t\t@group(0) @binding(x) var lightWarpSampler: sampler;\n\n\t\tfn getLightWarp(value: f32) -> vec3f {\n\t\t\treturn textureSample(lightWarpTexture, lightWarpSampler, vec2(value, 0.5)).rgb;\n\t\t}\n\t#endif\n#endif\n";
 
+var declare_fragment_mask_map = "#ifdef USE_MASK_MAP\n\t@group(0) @binding(x) var maskTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var maskSampler: sampler;\n#endif\n#ifdef USE_MASK1_MAP\n\t@group(0) @binding(x) var mask1Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var mask1Sampler: sampler;\n#endif\n#ifdef USE_MASK2_MAP\n\t@group(0) @binding(x) var mask2Texture: texture_2d<f32>;\n\t@group(0) @binding(x) var mask2Sampler: sampler;\n#endif\n";
+
 var declare_fragment_normal_map = "#ifdef USE_NORMAL_MAP\n\t@group(0) @binding(x) var normalTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var normalSampler: sampler;\n#endif\n";
 
 var declare_fragment_phong_exponent_map = "#ifdef USE_PHONG_EXPONENT_MAP\n\t@group(0) @binding(x) var phongExponentTexture: texture_2d<f32>;\n\t@group(0) @binding(x) var phongExponentSampler: sampler;\n#endif\n";
+
+var declare_fragment_specular_map = "#ifdef USE_SPECULAR_MAP\r\n\t@group(0) @binding(x) var specularTexture: texture_2d<f32>;\r\n\t@group(0) @binding(x) var specularSampler: sampler;\r\n#endif\r\n";
 
 var declare_fragment_standard = "#if defined(ALWAYS_ON_TOP) || defined(ALWAYS_BEHIND)\n\t#define SET_FRAG_DEPTH\n#endif\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n#ifdef SET_FRAG_DEPTH\n\t@builtin(frag_depth) depth: f32,\n#endif\n};\n";
 
@@ -77571,8 +78839,10 @@ addWgslInclude('declare_fragment_cube_map', declare_fragment_cube_map);
 addWgslInclude('declare_fragment_detail_map', declare_fragment_detail_map);
 addWgslInclude('declare_fragment_diffuse', declare_fragment_diffuse);
 addWgslInclude('declare_fragment_light_warp', declare_fragment_light_warp);
+addWgslInclude('declare_fragment_mask_map', declare_fragment_mask_map);
 addWgslInclude('declare_fragment_normal_map', declare_fragment_normal_map);
 addWgslInclude('declare_fragment_phong_exponent_map', declare_fragment_phong_exponent_map);
+addWgslInclude('declare_fragment_specular_map', declare_fragment_specular_map);
 addWgslInclude('declare_fragment_standard', declare_fragment_standard);
 addWgslInclude('declare_lights', declare_lights);
 addWgslInclude('declare_log_depth', declare_log_depth);
@@ -77588,9 +78858,12 @@ addWgslInclude('rotation_matrix', rotation_matrix);
 
 var mat4_from_quat = "#pragma once\n/**\n * Calculates a 4x4 matrix from the given quaternion\n *\n * @param {ReadonlyQuat} q Quaternion to create matrix from\n *\n * @returns {mat4} out\n */\n\nfn mat4FromQuat(q: vec4f) -> mat4x4f {\n\tlet x: f32 = q.x;\n\tlet y: f32 = q.y;\n\tlet z: f32 = q.z;\n\tlet w: f32 = q.w;\n\n\tlet x2: f32 = x + x;\n\tlet y2: f32 = y + y;\n\tlet z2: f32 = z + z;\n\tlet xx: f32 = x * x2;\n\tlet yx: f32 = y * x2;\n\tlet yy: f32 = y * y2;\n\tlet zx: f32 = z * x2;\n\tlet zy: f32 = z * y2;\n\tlet zz: f32 = z * z2;\n\tlet wx: f32 = w * x2;\n\tlet wy: f32 = w * y2;\n\tlet wz: f32 = w * z2;\n\n\treturn mat4x4f(1. - yy - zz, yx + wz, zx - wy, 0., yx - wz, 1. - xx - zz, zy + wx, 0., zx + wy, zy - wx, 1. - xx - yy, 0., 0., 0., 0., 1.,);\n}\n";
 
+var modulo = "#pragma once\n\n/**\n * Calculate the true modulo. Always output a positive value\n * Similar to glsl mod(x, y)\n */\nfn modulo_f32(x: f32, y: f32) -> f32 {\n\treturn x - y * floor(x / y);\n}\n\nfn modulo_vec2f(x: vec2f, y: vec2f) -> vec2f {\n\treturn x - y * floor(x / y);\n}\n";
+
 var vec3_transform_quat = "/**\n * Transforms the vec4 with a quat\n *\n * @param {vec4} out the receiving vector\n * @param {vec4} a the vector to transform\n * @param {quat} q quaternion to transform with\n * @returns {vec4} out\n */\nfn vec3_transformQuat(a: vec3f, q: vec4f) -> vec3f {\n\tlet qx: f32 = q.x;\n\tlet qy: f32 = q.y;\n\tlet qz: f32 = q.z;\n\tlet qw: f32 = q.w;\n\n\tlet x: f32 = a.x;\n\tlet y: f32 = a.y;\n\tlet z: f32 = a.z;\n\n\tvar uvx: f32 = qy * z - qz * y;\n\tvar uvy: f32 = qz * x - qx * z;\n\tvar uvz: f32 = qx * y - qy * x;\n\n\tvar uuvx: f32 = qy * uvz - qz * uvy;\n\tvar uuvy: f32 = qz * uvx - qx * uvz;\n\tvar uuvz: f32 = qx * uvy - qy * uvx;\n\n\tlet w2: f32 = qw * 2.0;\n\tuvx *= w2;\n\tuvy *= w2;\n\tuvz *= w2;\n\n\tuuvx *= 2.0;\n\tuuvy *= 2.0;\n\tuuvz *= 2.0;\n\n\treturn vec3f(x + uvx + uuvx, y + uvy + uuvy, z + uvz + uuvz);\n}\n";
 
 addWgslInclude('mat4_from_quat', mat4_from_quat);
+addWgslInclude('math::modulo', modulo);
 addWgslInclude('vec3_transform_quat', vec3_transform_quat);
 
 var luminance = "fn luminance(color: vec3f) -> f32 {\n\treturn dot(color, vec3f(0.299, 0.587, 0.114));\n}\n";
@@ -77617,7 +78890,7 @@ var matrix_uniforms = "struct MatrixUniforms {\n\tmodelMatrix : mat4x4f,\n\tview
 addWgslInclude('common_uniforms', common_uniforms);
 addWgslInclude('matrix_uniforms', matrix_uniforms);
 
-var meshbasic = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n#ifdef USE_VERTEX_TANGENT\n\t@location(x) tangent: vec4f,\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n#if defined(SKELETAL_MESH) && defined(HARDWARE_SKINNING)\n\t@location(x) boneWeights: vec3f,\n\t@location(x) boneIndices: vec3<u32>,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\tfragColor = diffuseColor;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n\t//return FragmentOutput(fragColor, fragDepth);\n}\n";
+var meshbasic = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef USE_VERTEX_TANGENT\n\t@location(x) tangent: vec4f,\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n#if defined(SKELETAL_MESH) && defined(HARDWARE_SKINNING)\n\t@location(x) boneWeights: vec3f,\n\t@location(x) boneIndices: vec3<u32>,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\tfragColor = diffuseColor;\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n\t//return FragmentOutput(fragColor, fragDepth);\n}\n";
 
 var meshphong = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n/*struct VertexOut {\n\t@builtin(position) position : vec4f,\n}\n*/\n#include varying_standard\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) normal: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\t#include calculate_fragment_diffuse\n\t#include calculate_fragment_color_map\n#ifdef USE_COLOR_MAP\n\tdiffuseColor *= texelColor;\n#endif\n\t#include calculate_fragment_alpha_test\n\t#include calculate_fragment_normal\n\n\t/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\tvar fragColor: vec4f;\n\n\tvar material = BlinnPhongMaterial();\n\tmaterial.diffuseColor = diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n#include calculate_fragment_render_mode\n/* TEST SHADING BEGIN*/\nfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n//fragColor.a = diffuseColor.a;\n/* TEST SHADING END*/\n\n\n\t#ifdef SKIP_LIGHTING\n\t\tfragColor = diffuseColor;\n\t#else\n\t\tfragColor = vec4f((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), diffuseColor.a);\n\t#endif\n\t//fragColor.a = diffuseColor.a;\n\n\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t//fragColor = vec4(abs(normalize(fragInput.vVertexNormalCameraSpace.xyz)), fragColor.a);\n\n\t#include output_fragment\n\t//return fragColor;\n\t//return vec4f( abs(normalize(pointLights[0].range)), fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vVertexNormalModelSpace.xyz)),fragColor.a);\n\t//return vec4f( abs(normalize(fragInput.vTextureCoord.xy)),0.0, fragColor.a);\n\t//return vec4f( normalize(fragInput.position.xyz), fragColor.a);\n\t//return vec4f(ambientLight, fragColor.a);\n\t//return fragData.color;\n\t//return vec4<f32>(1.0, 1.0, 1.0, 1.0);\n}\n";
 
@@ -77631,7 +78904,7 @@ var line = "#include matrix_uniforms\n#include common_uniforms\n\n//@group(0) @b
 Shaders['grid.wgsl'] = grid;
 Shaders['line.wgsl'] = line;
 
-var crosshatch = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\nfn mymod(x: f32, y: f32) -> f32 {\n\treturn x - y * floor(x / y);\n}\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet lum: f32 = length(textureLoad(colorTexture, id.xy).rgb);\n\n\tvar fragColor: vec4f = vec4(1.0);\n\n\tif (lum < 1.00) {\n\t\tif (mymod(f32(id.x) + f32(id.y), 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.75) {\n\t\tif (mymod(f32(id.x) - f32(id.y), 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.50) {\n\t\tif (mymod(f32(id.x) + f32(id.y) - 5.0, 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.3) {\n\t\tif (mymod(f32(id.x) - f32(id.y) - 5.0, 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\ttextureStore(outTexture, id.xy, fragColor);\n}\n";
+var crosshatch = "#include common_uniforms\n#include math::modulo\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet lum: f32 = length(textureLoad(colorTexture, id.xy).rgb);\n\n\tvar fragColor: vec4f = vec4(1.0);\n\n\tif (lum < 1.00) {\n\t\tif (modulo_f32(f32(id.x) + f32(id.y), 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.75) {\n\t\tif (modulo_f32(f32(id.x) - f32(id.y), 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.50) {\n\t\tif (modulo_f32(f32(id.x) + f32(id.y) - 5.0, 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\tif (lum < 0.3) {\n\t\tif (modulo_f32(f32(id.x) - f32(id.y) - 5.0, 10.0) == 0.0) {\n\t\t\tfragColor = vec4(0.0, 0.0, 0.0, 1.0);\n\t\t}\n\t}\n\n\ttextureStore(outTexture, id.xy, fragColor);\n}\n";
 
 var grain = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n@group(0) @binding(x) var<uniform> uGrainIntensity: f32;\n\nfn rand(co: vec2f) -> f32 {\n\tconst a: f32 = 12.9898;\n\tconst b: f32 = 78.233;\n\tconst c: f32 = 43758.5453;\n\tlet dt: f32 = dot(co.xy ,vec2(a,b));\n\tlet sn: f32 = dt % 3.14;\n\treturn fract(sin(sn) * c);\n}\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\n\tlet grain: f32 = 1.0 - rand(vec2f(id.xy)) * uGrainIntensity;\n\n\tvar v = textureLoad(colorTexture, id.xy);\n\n\ttextureStore(outTexture, id.xy, v * vec4(grain, grain, grain, 1.0));\n}\n";
 
@@ -77639,7 +78912,7 @@ var oldmovie = "#include common_uniforms\n\nconst pi = 3.14159265359;\nconst tau
 
 var palette = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n@group(0) @binding(x) var<uniform> uGrainIntensity: f32;\n\n// short version of \"random pixel sprites\" by stb. https://shadertoy.com/view/3ttfzl ( 2371ch )\n// Inspired by https://www.youtube.com/watch?v=8wOUe32Pt-E\n\n// What power of 2 the pixel cell sizes are increased to\nconst pixel_scale: i32 = 1;\n\n// https://lospec.com/palette-list/oil-6\n// Should be sorted in increasing order by perceived luminance for best results\n// Can work with up to 256 distinct colors\nconst palette = array(\nvec4(39./255., 39./255., 68./255., 1.),\nvec4(73./255., 77./255., 126./255., 1.),\nvec4(139./255., 109./255., 156./255.,1.),\nvec4(198./255., 159./255., 165./255., 1.),\nvec4(242./255., 211./255., 171./255., 1.),\nvec4(251./255., 245./255., 239./255., 1.));\n\n// Amount of colors in the palette\n// Changing this is not recommended\nconst colors: i32 = 6;//i32(arrayLength(palette));\n\n// How much the dither effect spreads. By default it is set to decrease as the amount of colors increases.\n// Set to 0 to disable the dithering effect for flat color areas.\nconst dither_spread: f32 = 1./f32(colors);\n\n// Precomputed threshold map for dithering\nconst threshold: mat4x4f = mat4x4f(0., 8., 2., 10.,\n                                12., 4., 14., 6.,\n                                3.,11.,1.,9.,\n                                15.,7.,13., 5.);\n\nfn applyPalette(lum: f32) -> vec4f\n{\n\tlet l: f32 = floor(lum * f32(colors));\n\treturn palette[i32(l)];\n}\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\t// https://luka712.github.io/2018/07/01/Pixelate-it-Shadertoy-Unity/\n\tlet pixelSizeX: f32 = 1.0 / commonUniforms.resolution.x;\n\tlet pixelSizeY: f32 = 1.0 / commonUniforms.resolution.y;\n\tlet cellSizeX: f32 = pow(2., f32(pixel_scale)) * pixelSizeX;\n\tlet cellSizeY: f32 = pow(2., f32(pixel_scale)) * pixelSizeY;\n\n\t// Normalized pixel coordinates (from 0 to 1)\n\tlet uv: vec2f = vec2f(id.xy) / commonUniforms.resolution.xy;\n\n\t// Convert pixel coordinates to cell coordinates\n\tlet u: f32 = cellSizeX * floor(uv.x / cellSizeX);\n\tlet v: f32 = cellSizeY * floor(uv.y / cellSizeY);\n\n\t// get pixel information from the cell coordinates\n\tvar col: vec4f = textureLoad(colorTexture, id.xy);\n\n\t// https://en.wikipedia.org/wiki/Ordered_dithering\n\tlet x: i32 = i32(u / cellSizeX) % 4;\n\tlet y: i32 = i32(v / cellSizeY) % 4;\n\tcol.r = col.r + (dither_spread * ((threshold[x][y]/16.) -.5));\n\tcol.g = col.g + (dither_spread * ((threshold[x][y]/16.) -.5));\n\tcol.b = col.b + (dither_spread * ((threshold[x][y]/16.) -.5));\n\tcol.r = floor(col.r * f32(colors-1) + .5)/f32(colors-1);\n\tcol.g = floor(col.g * f32(colors-1) + .5)/f32(colors-1);\n\tcol.b = floor(col.b * f32(colors-1) + .5)/f32(colors-1);\n\n\t// Calculate luminance\n\tlet lum: f32 = (0.299*col.r + 0.587*col.g + 0.114*col.b);\n\n\t// Apply the new color palette\n\tcol = applyPalette(lum);\n\n\t// Output to screen\n\t//fragColor = vec4(col);\n\tif (col.r <= 0.2) {\n\t\t//fragColor.a = 0.0;\n\t}\n\n\ttextureStore(outTexture, id.xy, col);\n}\n/*\n{\n\tlet grain: f32 = 1.0 - rand(vec2f(id.xy)) * uGrainIntensity;\n\n\tvar v = textureLoad(colorTexture, id.xy);\n\n\ttextureStore(outTexture, id.xy, v * vec4(grain, grain, grain, 1.0));\n}\n*/\n";
 
-var pixelate = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n//@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> uHorizontalTiles: f32;\n\nfn mymod(x: vec2f, y: vec2f) -> vec2f {\n\treturn x - y * floor(x / y);\n}\n\nfn lum(pix: vec4f) -> f32 {\n\treturn dot( pix, vec4(.3,.59,.11,0));\n}\n\n\nfn computeSquarePixel(pos: vec2u) {\n\tlet sizef: vec2f = vec2f(commonUniforms.resolution.xy);\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * sizef.xy) / sizef.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / sizef.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep , rep) - hrep;\n\tlet hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= sizef.y / sizef.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n\nfn computeDiamondPixel(pos: vec2u) {\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / commonUniforms.resolution.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod(uv - hrep,  rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2u(0), vec2u(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn computeRoundPixel1(pos: vec2u) {\n\tlet div: vec2f = vec2(uHorizontalTiles) * commonUniforms.resolution.xy / commonUniforms.resolution.y;\n\n\n\tlet uv: vec2f = vec2f(pos)/commonUniforms.resolution.xy;\n\tlet uv2: vec2f = floor(uv*div)/div;\n\n\tlet diff: vec2f = (uv-uv2)*div;\n\n\tvar pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * commonUniforms.resolution.xy));\n\n\tif ( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0) > 0.25) {\n\n\t\tvar pmax: vec4f;\n\t\tvar pmin: vec4f;\n\t\tvar v2: vec2f  = 1.0 / div;\n\n\t\tif (diff.x<0.5) { v2.x = -v2.x; }\n\t\tif (diff.y<0.5) { v2.y = -v2.y; }\n\n\t\tlet p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * commonUniforms.resolution.xy));\n\t\tlet p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * commonUniforms.resolution.xy));\n\t\tlet p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * commonUniforms.resolution.xy));\n\n\t\tif ( lum(p1) > lum(p2) ) {\n\t\t\tpmax = p1;\n\t\t\tpmin = p2;\n\t\t} else {\n\t\t\tpmax = p2;\n\t\t\tpmin = p1;\n\t\t}\n\n\t\tif ( lum(p3) < lum(pmin) ) {\n\t\t\tpmin = p3;\n\t\t}\n\n\t\tif ( lum(pix) > lum(pmax) ) {\n\t\t\tpix = pmax;\n\t\t} else if ( lum(pmin) > lum(pix) ) {\n\t\t\tpix = pmin;\n\t\t}\n\t}\n\n\ttextureStore(outTexture, pos, pix);\n\t//textureStore(outTexture, pos, vec4f(vec2f(diff), 0.0, 1.0));\n\t//textureStore(outTexture, pos, vec4f( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0), 0.0, 0.0, 1.0));\n}\n\nfn computeRoundPixel2(pos: vec2u) {\n\tlet pixelSize: f32 = commonUniforms.resolution.y / uHorizontalTiles;\n\tlet U: vec2f = vec2f(pos) / pixelSize;\n\tlet div: vec2f = pixelSize / commonUniforms.resolution.xy;\n\tlet uv2: vec2f = floor(U)*div;\n\tlet diff: vec2f = fract(U);\n\n\t//checkerboard pattern : half of the pixels are not changed\n\tif (fract( dot(floor(U),vec2(.5)) ) < .5)\n\t{\n\t\t//fragColor = T(0,0);\n\t\tvar v = textureLoad(colorTexture, vec2i(uv2 * commonUniforms.resolution.xy));\n\t\ttextureStore(outTexture, pos, v);\n\t\treturn;\n\t}\n\n\t// neighbors\n\tlet pix: mat4x4f = mat4x4f(\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t);\n\n\t//where is the biggest contrast ?\n\tlet comp: i32 = i32 ( abs( lum(pix[0]) - lum(pix[2]) )\n\t> abs( lum(pix[1]) - lum(pix[3]) ) );\n\tlet d: vec2f = abs(diff-.5) - vec2(f32(1-comp),f32(comp)); // offset = 0,1 or 1,0\n\tlet v: vec2i = vec2i( vec2(3.5,2.5) - diff*2. );\n\n\t/*\n\tfragColor = dot(d,d) < .5\n\t? pix[ v[comp] ]\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t: mix( pix[comp+2], pix[comp] , diff[1-comp] ); // a gradient in between\n\t*/\n\ttextureStore(outTexture, pos, select(\n\t\tmix( pix[comp+2], pix[comp] , diff[1-comp]), // a gradient in between\n\t\tpix[ v[comp] ],\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t\tdot(d,d) < .5\n\t\t));\n}\n\nfn hexDist(p: vec2f) -> f32 {\n\tlet edgeDist: f32 = dot(abs(p), normalize(vec2(1.0, 1.73)));\n\treturn max(edgeDist, abs(p.x));\n}\n\nfn computeHexagonPixel(pos: vec2u) {\n\tlet uv: vec2f = (vec2f(pos) - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;\n\tlet unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;\n\n\tconst rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = mymod(uv , rep) - hrep;\n\tlet b: vec2f = mymod((uv - hrep) , rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;\n\t//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy)).rgb, vec3(1.0 / 3.0));\n\t//fragColor = vec4(1.0);//vec4(smoothstep(unit, 0.0, hexDist(hexUv) - brightness * 0.5));\n\t//fragColor.rgb *=textureLoad(colorTexture, sampleUv + 0.5).rgb;\n\tvar v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn hash2( p: vec2f ) -> vec2f {\n\treturn fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);\n}\n\nfn computeVoronoiPixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;\n\n\tlet pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));\n\n\tuv = (uv-0.5)/pixelating;\n\n\tlet n: vec2f = floor(uv);\n\tlet f: vec2f = fract(uv);\n\n\t//----------------------------------\n\t// regular voronoi from Inigo Quilez,\n\t// https://www.shadertoy.com/view/ldl3W8\n\t//----------------------------------\n\tvar mg: vec2f;\n\tvar mr: vec2f;\n\n\t// best distance\n\tvar md: f32 = 8.0;\n\t// best delta vector\n\tvar mv: vec2f;\n\tfor(var j: i32=-1;j<=1;j++) {\n\t\tfor(var i: i32=-1;i<=1;i++) {\n\t\t\tlet g: vec2f = vec2(f32(i),f32(j));\n\t\t\tlet o: vec2f = hash2(n + g);\n\t\t\t#ifdef ANIMATE_VORONOI\n\t\t\to = 0.5 + 0.5*sin(iTime + 6.2831*o);\n\t\t\t#endif\n\t\t\tlet r: vec2f = g + o - f;\n\t\t\tlet d: f32 = dot(r,r);\n\t\t\tif(d < md) {\n\t\t\t\tmd = d;\n\t\t\t\tmv = r;\n\t\t\t}\n\t\t}\n\t}\n\n\tuv += mv;\n\n\tuv = uv * pixelating+0.5;\n\n\t//fragColor = textureLoad(colorTexture, uv);\n\tvar v = textureLoad(colorTexture, clamp(vec2i(uv * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n\n}\nfn computeTrianglePixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;\n\n\tlet pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;\n\n\tuv = (uv - 0.5) / pixelating;\n\tvar uvTriangleSpace: vec2f = mat2x2f(1.0, 1.0, 0.6, -0.6) * uv;\n\tuvTriangleSpace = fract(uvTriangleSpace);\n\tif(uvTriangleSpace.x > uvTriangleSpace.y) {\n\t\tuvTriangleSpace.x -= 0.5;\n\t}\n\tuv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);\n\n\tlet v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n#ifndef PIXEL_STYLE\n\t#define PIXEL_STYLE 0\n#endif\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet size = textureDimensions(outTexture);\n\t//let center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t#if (PIXEL_STYLE == 0)\n\t\tcomputeSquarePixel(pos);\n\t#elif (PIXEL_STYLE == 1)\n\t\tcomputeDiamondPixel(pos);\n\t#elif (PIXEL_STYLE == 2)\n\t\tcomputeRoundPixel1(pos);\n\t#elif (PIXEL_STYLE == 3)\n\t\tcomputeRoundPixel2(pos);\n\t#elif (PIXEL_STYLE == 4)\n\t\tcomputeHexagonPixel(pos);\n\t#elif (PIXEL_STYLE == 5)\n\t\tcomputeVoronoiPixel(pos);\n\t#elif (PIXEL_STYLE == 6)\n\t\tcomputeTrianglePixel(pos);\n\t#endif\n\n}\n";
+var pixelate = "#include common_uniforms\n#include math::modulo\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n//@group(0) @binding(x) var<uniform> resolution : vec4f;\n@group(0) @binding(x) var<uniform> uHorizontalTiles: f32;\n\nfn lum(pix: vec4f) -> f32 {\n\treturn dot( pix, vec4(.3,.59,.11,0));\n}\n\n\nfn computeSquarePixel(pos: vec2u) {\n\tlet sizef: vec2f = vec2f(commonUniforms.resolution.xy);\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / sizef.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * sizef.xy) / sizef.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / sizef.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = modulo_vec2f(uv , rep) - hrep;\n\tlet b: vec2f = modulo_vec2f(uv - hrep , rep) - hrep;\n\tlet hexUv: vec2f = b;//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= sizef.y / sizef.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2i((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n\nfn computeDiamondPixel(pos: vec2u) {\n\tlet posf: vec2f = vec2f(pos);\n\n\tlet pixelWH: vec2f = vec2(uHorizontalTiles / commonUniforms.resolution.xy);\n\n\tlet xy: vec2f = floor(posf / uHorizontalTiles) * pixelWH + pixelWH / 2.0;\n\n\tlet uv: vec2f = (posf - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;\n\n\tlet unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;\n\n\tlet rep: vec2f = vec2(1.0, 1.); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = modulo_vec2f(uv , rep) - hrep;\n\tlet b: vec2f = modulo_vec2f(uv - hrep,  rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;\n\n\tvar v = textureLoad(colorTexture, clamp(vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy), vec2u(0), vec2u(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn computeRoundPixel1(pos: vec2u) {\n\tlet div: vec2f = vec2(uHorizontalTiles) * commonUniforms.resolution.xy / commonUniforms.resolution.y;\n\n\n\tlet uv: vec2f = vec2f(pos)/commonUniforms.resolution.xy;\n\tlet uv2: vec2f = floor(uv*div)/div;\n\n\tlet diff: vec2f = (uv-uv2)*div;\n\n\tvar pix: vec4f = textureLoad(colorTexture, vec2u(uv2 * commonUniforms.resolution.xy));\n\n\tif ( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0) > 0.25) {\n\n\t\tvar pmax: vec4f;\n\t\tvar pmin: vec4f;\n\t\tvar v2: vec2f  = 1.0 / div;\n\n\t\tif (diff.x<0.5) { v2.x = -v2.x; }\n\t\tif (diff.y<0.5) { v2.y = -v2.y; }\n\n\t\tlet p1: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( 0.0, v2.y )) * commonUniforms.resolution.xy));\n\t\tlet p2: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, 0.0 )) * commonUniforms.resolution.xy));\n\t\tlet p3: vec4f = textureLoad(colorTexture, vec2u((uv2 + vec2( v2.x, v2.y )) * commonUniforms.resolution.xy));\n\n\t\tif ( lum(p1) > lum(p2) ) {\n\t\t\tpmax = p1;\n\t\t\tpmin = p2;\n\t\t} else {\n\t\t\tpmax = p2;\n\t\t\tpmin = p1;\n\t\t}\n\n\t\tif ( lum(p3) < lum(pmin) ) {\n\t\t\tpmin = p3;\n\t\t}\n\n\t\tif ( lum(pix) > lum(pmax) ) {\n\t\t\tpix = pmax;\n\t\t} else if ( lum(pmin) > lum(pix) ) {\n\t\t\tpix = pmin;\n\t\t}\n\t}\n\n\ttextureStore(outTexture, pos, pix);\n\t//textureStore(outTexture, pos, vec4f(vec2f(diff), 0.0, 1.0));\n\t//textureStore(outTexture, pos, vec4f( pow(diff.x - 0.5,2.0) + pow(diff.y - 0.5,2.0), 0.0, 0.0, 1.0));\n}\n\nfn computeRoundPixel2(pos: vec2u) {\n\tlet pixelSize: f32 = commonUniforms.resolution.y / uHorizontalTiles;\n\tlet U: vec2f = vec2f(pos) / pixelSize;\n\tlet div: vec2f = pixelSize / commonUniforms.resolution.xy;\n\tlet uv2: vec2f = floor(U)*div;\n\tlet diff: vec2f = fract(U);\n\n\t//checkerboard pattern : half of the pixels are not changed\n\tif (fract( dot(floor(U),vec2(.5)) ) < .5)\n\t{\n\t\t//fragColor = T(0,0);\n\t\tvar v = textureLoad(colorTexture, vec2i(uv2 * commonUniforms.resolution.xy));\n\t\ttextureStore(outTexture, pos, v);\n\t\treturn;\n\t}\n\n\t// neighbors\n\tlet pix: mat4x4f = mat4x4f(\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(0, -div.y)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t\ttextureLoad( colorTexture, clamp(vec2i((uv2 + vec2(-div.x, 0)) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0)))),\n\t);\n\n\t//where is the biggest contrast ?\n\tlet comp: i32 = i32 ( abs( lum(pix[0]) - lum(pix[2]) )\n\t> abs( lum(pix[1]) - lum(pix[3]) ) );\n\tlet d: vec2f = abs(diff-.5) - vec2(f32(1-comp),f32(comp)); // offset = 0,1 or 1,0\n\tlet v: vec2i = vec2i( vec2(3.5,2.5) - diff*2. );\n\n\t/*\n\tfragColor = dot(d,d) < .5\n\t? pix[ v[comp] ]\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t: mix( pix[comp+2], pix[comp] , diff[1-comp] ); // a gradient in between\n\t*/\n\ttextureStore(outTexture, pos, select(\n\t\tmix( pix[comp+2], pix[comp] , diff[1-comp]), // a gradient in between\n\t\tpix[ v[comp] ],\t\t\t\t\t\t\t\t // 2 circles on the borders\n\t\tdot(d,d) < .5\n\t\t));\n}\n\nfn hexDist(p: vec2f) -> f32 {\n\tlet edgeDist: f32 = dot(abs(p), normalize(vec2(1.0, 1.73)));\n\treturn max(edgeDist, abs(p.x));\n}\n\nfn computeHexagonPixel(pos: vec2u) {\n\tlet uv: vec2f = (vec2f(pos) - 0.5 * commonUniforms.resolution.xy) / commonUniforms.resolution.y * uHorizontalTiles;\n\tlet unit: f32 = 2.0 * uHorizontalTiles / commonUniforms.resolution.y;\n\n\tconst rep: vec2f = vec2(1.0, 1.73); // 1.73 ~ sqrt(3)\n\tlet hrep: vec2f = 0.5 * rep;\n\tlet a: vec2f = modulo_vec2f(uv , rep) - hrep;\n\tlet b: vec2f = modulo_vec2f((uv - hrep) , rep) - hrep;\n\tlet hexUv: vec2f = select(b, a, dot(a, a) < dot(b, b));//dot(a, a) < dot(b, b) ? a : b;\n\tlet cellId: vec2f = uv - hexUv;\n\n\tvar sampleUv: vec2f = cellId / uHorizontalTiles;\n\tsampleUv.x *= commonUniforms.resolution.y / commonUniforms.resolution.x;\n\t//let brightness: f32 = dot(textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy)).rgb, vec3(1.0 / 3.0));\n\t//fragColor = vec4(1.0);//vec4(smoothstep(unit, 0.0, hexDist(hexUv) - brightness * 0.5));\n\t//fragColor.rgb *=textureLoad(colorTexture, sampleUv + 0.5).rgb;\n\tvar v = textureLoad(colorTexture, vec2u((sampleUv + 0.5) * commonUniforms.resolution.xy));\n\ttextureStore(outTexture, pos, v);\n}\n\nfn hash2( p: vec2f ) -> vec2f {\n\treturn fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);\n}\n\nfn computeVoronoiPixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;\n\n\tlet pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;//mix(0.03, 0.005, pow(cos(0.0), 2.0));\n\n\tuv = (uv-0.5)/pixelating;\n\n\tlet n: vec2f = floor(uv);\n\tlet f: vec2f = fract(uv);\n\n\t//----------------------------------\n\t// regular voronoi from Inigo Quilez,\n\t// https://www.shadertoy.com/view/ldl3W8\n\t//----------------------------------\n\tvar mg: vec2f;\n\tvar mr: vec2f;\n\n\t// best distance\n\tvar md: f32 = 8.0;\n\t// best delta vector\n\tvar mv: vec2f;\n\tfor(var j: i32=-1;j<=1;j++) {\n\t\tfor(var i: i32=-1;i<=1;i++) {\n\t\t\tlet g: vec2f = vec2(f32(i),f32(j));\n\t\t\tlet o: vec2f = hash2(n + g);\n\t\t\t#ifdef ANIMATE_VORONOI\n\t\t\to = 0.5 + 0.5*sin(iTime + 6.2831*o);\n\t\t\t#endif\n\t\t\tlet r: vec2f = g + o - f;\n\t\t\tlet d: f32 = dot(r,r);\n\t\t\tif(d < md) {\n\t\t\t\tmd = d;\n\t\t\t\tmv = r;\n\t\t\t}\n\t\t}\n\t}\n\n\tuv += mv;\n\n\tuv = uv * pixelating+0.5;\n\n\t//fragColor = textureLoad(colorTexture, uv);\n\tvar v = textureLoad(colorTexture, clamp(vec2i(uv * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n\n}\nfn computeTrianglePixel(pos: vec2u) {\n\tvar uv: vec2f = vec2f(pos) / commonUniforms.resolution.xy;\n\n\tlet pixelating: vec2f = commonUniforms.resolution.yx / commonUniforms.resolution.y / uHorizontalTiles;\n\n\tuv = (uv - 0.5) / pixelating;\n\tvar uvTriangleSpace: vec2f = mat2x2f(1.0, 1.0, 0.6, -0.6) * uv;\n\tuvTriangleSpace = fract(uvTriangleSpace);\n\tif(uvTriangleSpace.x > uvTriangleSpace.y) {\n\t\tuvTriangleSpace.x -= 0.5;\n\t}\n\tuv -= mat2x2f(0.5, 0.833, 0.5, -0.833) * uvTriangleSpace + vec2(-0.25, 0.25);\n\n\tlet v: vec4f = textureLoad(colorTexture, clamp(vec2i((uv * pixelating + 0.5) * commonUniforms.resolution.xy), vec2i(0), vec2i(commonUniforms.resolution.xy - vec2(1.0))));\n\ttextureStore(outTexture, pos, v);\n}\n\n#ifndef PIXEL_STYLE\n\t#define PIXEL_STYLE 0\n#endif\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tlet size = textureDimensions(outTexture);\n\t//let center = vec2f(size) / 2.0;\n\n\t// the pixel we're going to write to\n\tlet pos = id.xy;\n\n\t#if (PIXEL_STYLE == 0)\n\t\tcomputeSquarePixel(pos);\n\t#elif (PIXEL_STYLE == 1)\n\t\tcomputeDiamondPixel(pos);\n\t#elif (PIXEL_STYLE == 2)\n\t\tcomputeRoundPixel1(pos);\n\t#elif (PIXEL_STYLE == 3)\n\t\tcomputeRoundPixel2(pos);\n\t#elif (PIXEL_STYLE == 4)\n\t\tcomputeHexagonPixel(pos);\n\t#elif (PIXEL_STYLE == 5)\n\t\tcomputeVoronoiPixel(pos);\n\t#elif (PIXEL_STYLE == 6)\n\t\tcomputeTrianglePixel(pos);\n\t#endif\n\n}\n";
 
 var saturate = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n@group(0) @binding(x) var<uniform> uSaturation: f32;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\tvar texelColor = textureLoad(colorTexture, id.xy);\n\n\tlet luminance: f32 = 0.2126 * texelColor.r + 0.7152 * texelColor.g + 0.0722 * texelColor.b;\n\n\ttextureStore(outTexture, id.xy, mix(vec4(luminance), texelColor, vec4f(vec3f(uSaturation), 1.0)));\n}\n";
 
@@ -77653,4 +78926,11 @@ Shaders['pixelate.wgsl'] = pixelate;
 Shaders['saturate.wgsl'] = saturate;
 Shaders['sketch.wgsl'] = sketch;
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+var texture_cube_datas = "@group(0) @binding(0) var input: texture_2d_array<f32>;\n@group(0) @binding(1) var<storage, read_write> output: array<f32>;// TODO: handle uint textures\n@group(0) @binding(2) var<uniform> size: vec2u;\n@group(0) @binding(3) var<uniform> elements: u32;\n\noverride WORKGROUP_SIZE_X: u32 = 16;\noverride WORKGROUP_SIZE_Y: u32 = 16;\n// Cube map layer, 1 for each face\noverride layer: u32;\n\n@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n)\n{\n\tif (any(id.xy >= size) || size.x * size.y * elements > arrayLength(&output)) {\n\t\treturn;\n\t}\n\n\tlet idx = (id.x + id.y * size.x) * elements;\n\n\tvar color: vec4f = textureLoad(input, vec2u(id.xy), layer, 0);\n\n\tcolor *= 255;// TODO: handle uint textures\n\n\toutput[idx + 0] = color.r;\n\toutput[idx + 1] = color.g;\n\toutput[idx + 2] = color.b;\n\tif (elements == 4) {\n\t\toutput[idx + 3] = color.a;\n\t}\n}\n";
+
+var texturedatas = "@group(0) @binding(0) var input: texture_2d<f32>;\n@group(0) @binding(1) var<storage, read_write> output: array<f32>;// TODO: handle uint textures\n@group(0) @binding(2) var<uniform> size: vec2u;\n@group(0) @binding(3) var<uniform> elements: u32;\n\noverride WORKGROUP_SIZE_X: u32 = 16;\noverride WORKGROUP_SIZE_Y: u32 = 16;\n\n@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n)\n{\n\tif (any(id.xy >= size) || size.x * size.y * elements > arrayLength(&output)) {\n\t\treturn;\n\t}\n\n\tlet idx = (id.x + id.y * size.x) * elements;\n\n\tvar color: vec4f = textureLoad(input, vec2u(id.xy), 0);\n\n\tcolor *= 255;// TODO: handle uint textures\n\n\toutput[idx + 0] = color.r;\n\toutput[idx + 1] = color.g;\n\toutput[idx + 2] = color.b;\n\tif (elements == 4) {\n\t\toutput[idx + 3] = color.a;\n\t}\n}\n";
+
+Shaders['texture_cube_datas.wgsl'] = texture_cube_datas;
+Shaders['texturedatas.wgsl'] = texturedatas;
+
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

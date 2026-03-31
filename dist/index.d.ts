@@ -21,7 +21,6 @@ import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
 import { Shape } from './shape';
 import { Source1ModelInstance as Source1ModelInstance_2 } from '../export';
-import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { TypedArrayNumber } from 'harmony-types';
@@ -366,14 +365,26 @@ export declare class Bone extends Entity implements Lockable {
     readonly _initialQuaternion: quat;
     readonly _initialPosition: vec3;
     constructor(params: BoneParameters);
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
     set position(position: vec3);
+    setPosition(position: ReadonlyVec3): void;
     get position(): vec3;
     setWorldPosition(position: vec3): void;
     set refPosition(refPosition: vec3);
     get refPosition(): vec3;
     getTotalRefPosition(position?: vec3): vec3;
     getTotalRefQuaternion(quaternion?: quat): quat;
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
     set quaternion(quaternion: vec4);
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
+    setQuaternion(quaternion: ReadonlyQuat): void;
+    setOrientation(quaternion: ReadonlyQuat): void;
     get quaternion(): vec4;
     set refQuaternion(refQuaternion: vec4);
     get refQuaternion(): vec4;
@@ -516,6 +527,7 @@ export declare class BufferGeometry {
     dirty: boolean;
     count: number;
     readonly properties: Properties;
+    constructor(params?: BufferGeometryParameters);
     getAttribute(name: string): BufferAttribute | undefined;
     setAttribute(name: string, attribute: BufferAttribute): void;
     hasAttribute(name: string): boolean;
@@ -532,6 +544,10 @@ export declare class BufferGeometry {
     hasOnlyUser(user: any): boolean;
     dispose(): void;
 }
+
+declare type BufferGeometryParameters = {
+    count?: number;
+};
 
 declare enum BufferUsage {
     StaticDraw = 35044,
@@ -615,6 +631,7 @@ export declare class Camera extends Entity {
     get cameraMatrix(): mat4;
     get projectionMatrix(): mat4;
     get projectionMatrixInverse(): mat4;
+    getViewProjectionMatrix(out?: mat4): mat4;
     get worldMatrixInverse(): mat4;
     distanceFrom(point: vec3): number;
     set position(position: vec3);
@@ -888,7 +905,7 @@ declare class Channel {
         constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
         afterProcessProxies(proxyParams?: DynamicParams): void;
         clone(): CharacterMaterial;
-        get shaderSource(): string;
+        getShaderSource(): string;
     }
 
     export declare function checkRepositoryName(name: string): void;
@@ -1490,7 +1507,7 @@ declare class Channel {
                       set color3(color: string);
                       setPatternScale(scale: number): void;
                       clone(): CustomWeaponMaterial;
-                      get shaderSource(): string;
+                      getShaderSource(): string;
                   }
 
                   export declare class Cylinder extends Mesh {
@@ -1631,6 +1648,32 @@ declare class Channel {
 
                   declare type DynamicParams = Record<string, DynamicParam>;
 
+                  export declare class EmissiveMaterial extends Material {
+                      map: null;
+                      lightMap: null;
+                      lightMapIntensity: number;
+                      aoMap: null;
+                      aoMapIntensity: number;
+                      specularMap: null;
+                      alphaMap: null;
+                      envMap: null;
+                      combine: number;
+                      reflectivity: number;
+                      refractionRatio: number;
+                      wireframe: boolean;
+                      wireframeLinewidth: number;
+                      wireframeLinecap: string;
+                      wireframeLinejoin: string;
+                      skinning: boolean;
+                      morphTargets: boolean;
+                      getShaderSource(): string;
+                      getRaytracingMaterial(index: number): RaytracingMaterial;
+                      toJSON(): any;
+                      static constructFromJSON(json: JSONObject): Promise<EmissiveMaterial>;
+                      fromJSON(json: JSONObject): void;
+                      static getEntityName(): string;
+                  }
+
                   export declare class EmitContinuously extends Source1ParticleOperator {
                       static functionName: string;
                       remainder: number;
@@ -1713,7 +1756,13 @@ declare class Channel {
                       setWorldQuaternion(quaternion: ReadonlyQuat): void;
                       getWorldScale(vec?: vec3): vec3;
                       get positionAsString(): string;
+                      /**
+                       * @deprecated Please use `setOrientation` instead.
+                       */
                       setQuaternion(quaternion: ReadonlyQuat): void;
+                      /**
+                       * @deprecated Please use `getOrientation` instead.
+                       */
                       getQuaternion(quaternion?: quat): quat;
                       setOrientation(quaternion: ReadonlyQuat): void;
                       getOrientation(quaternion?: quat): quat;
@@ -1785,7 +1834,7 @@ declare class Channel {
                            * @return {void}.
                            */
                        lookAt(target: vec3, upVector?: vec3): void;
-                       getMeshList(): Set<Entity>;
+                       getRenderableList(): Set<Entity>;
                        showOutline(show: boolean, color?: vec4): void;
                        getAllChilds(includeSelf: boolean): Set<Entity>;
                        getBoundsModelSpace(min?: vec3, max?: vec3): void;
@@ -1903,7 +1952,7 @@ declare class Channel {
                           childs?: Entity[];
                           position?: vec3;
                           quaternion?: quat;
-                          scale?: vec3;
+                          scale?: vec3 | number;
                           hideInExplorer?: boolean;
                           castShadow?: boolean;
                           receiveShadow?: boolean;
@@ -1952,7 +2001,7 @@ declare class Channel {
                           afterProcessProxies(): void;
                           beforeRender(camera: Camera): void;
                           clone(): EyeRefractMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                       }
 
                       export declare class FadeAndKill extends Operator {
@@ -2134,7 +2183,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
+                      export declare function getHelper(type: Entity): CameraFrustum | PointLightHelper | SpotLightHelper | Grid | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -2145,6 +2194,19 @@ declare class Channel {
                       export declare function getRandomInt(max: int): int;
 
                       export declare function getSceneExplorer(): SceneExplorer;
+
+                      /**
+                       * [WebGPU only] Get the texture pixel data.
+                       * @param texture The texture to retrieve the pixels from.
+                       * @returns A Float32Array containing th epixel data.
+                       */
+                      export declare function getTextureData(texture: Texture): Promise<Float32Array>;
+
+                      export declare function getWebGPUBytesPerRow(imageFormat: ImageFormat, width: number): number;
+
+                      export declare function getWebGPUData(imageFormat: ImageFormat, data: Uint8Array | Float32Array): Uint8Array | Float32Array;
+
+                      export declare function getWebGPUFormat(imageFormat: ImageFormat, srgb: boolean): GPUTextureFormat;
 
                       export declare const GL_ALPHA = 6406;
 
@@ -2759,7 +2821,7 @@ declare class Channel {
                           static pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null>;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-                          static compute(material: Material, context: RenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32): void;
+                          static compute(material: Material, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
                           /**
                            * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
@@ -2777,9 +2839,9 @@ declare class Channel {
                           static setShaderPrecision(shaderPrecision: ShaderPrecision): void;
                           static setShaderQuality(shaderQuality: ShaderQuality): void;
                           static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
-                          static setIncludeCode(key: string, code: string): void;
-                          static removeIncludeCode(key: string): void;
-                          static getIncludeCode(): string;
+                          static setDefine(name: string, value?: string): void;
+                          static removeDefine(define: string): void;
+                          static getDefines(): Map<string, string>;
                           /**
                            * Invalidate all shader (force recompile)
                            */
@@ -3020,8 +3082,14 @@ declare class Channel {
                           RGBA8888 = "RGBA8888",
                           ABGR8888 = "ABGR8888",
                           ARGB8888 = "ARGB8888",
+                          UVWQ8888 = "UVWQ8888",
+                          UVLX8888 = "UVLX8888",
+                          RGBA16161616 = "RGBA16161616",
+                          RGBA16161616F = "RGBA16161616F",
                           RGB888 = "RGB888",
+                          RGB888_BLUESCREEN = "RGB888_BLUESCREEN",
                           BGR888 = "BGR888",
+                          BGR888_BLUESCREEN = "BGR888_BLUESCREEN",
                           RGB565 = "RGB565",
                           BGR565 = "BGR565",
                           BGRA5551 = "BGRA5551",
@@ -3030,6 +3098,7 @@ declare class Channel {
                           IA88 = "IA88",
                           P8 = "P8",
                           A8 = "A8",
+                          UV88 = "UV88",
                           PngR8G8B8A8Uint = "PngR8G8B8A8Uint",
                           PngDXT5 = "PngDXT5"
                       }
@@ -3179,7 +3248,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -3440,6 +3509,7 @@ declare class Channel {
                       export declare class LightMappedGenericMaterial extends Source1Material {
                           clone(): LightMappedGenericMaterial;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare type LightParameters = EntityParameters & {
@@ -3787,8 +3857,9 @@ declare class Channel {
                           getShaderSource(): string;
                           getWebGPUShader(): string;
                           getStorage(name: string): StorageBuffer | undefined;
-                          setStorage(name: string, value: StorageValue | number | StorageBuffer): void;
+                          setStorage(name: string, value: StorageValueArray | number | StorageBuffer): void;
                           deleteStorage(name: string): void;
+                          getRaytracingMaterial(index: number): RaytracingMaterial | null;
                       }
 
                       export declare const MATERIAL_BLENDING_NONE = 0;
@@ -3818,10 +3889,11 @@ declare class Channel {
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
                           uniforms?: MaterialUniform;
-                          storages?: Record<string, StorageValue | number | StorageBuffer>;
+                          storages?: Record<string, StorageValueArray | number | StorageBuffer>;
                           gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines?: Record<string, string>;
                           workgroupSize?: vec3;
+                          blendingMode?: BlendingMode;
                       };
 
                       declare type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -4231,6 +4303,7 @@ declare class Channel {
                           readonly storage: Record<string, StorageBuffer>;
                           defines: any;
                           isMesh: boolean;
+                          topology: GPUPrimitiveTopology;
                           constructor(params: MeshParameters);
                           /**
                            * @deprecated Please use `setMaterial` instead.
@@ -4256,7 +4329,12 @@ declare class Channel {
                           deleteStorage(name: string): void;
                           setDefine(define: string, value?: string | number): void;
                           removeDefine(define: string): void;
-                          exportObj(): ObjDatas;
+                          /**
+                           * Export mesh as obj
+                           * @param worldSpace Export mesh in world space. Default to false
+                           * @returns Exported mesh
+                           */
+                          exportObj(worldSpace?: boolean): ObjDatas;
                           dispose(): void;
                           toString(): string;
                           getBoundsModelSpace(min?: vec3, max?: vec3): void;
@@ -4287,6 +4365,7 @@ declare class Channel {
                           morphTargets: boolean;
                           constructor(params?: any);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                           toJSON(): any;
                           static constructFromJSON(json: JSONObject): Promise<MeshBasicMaterial>;
                           fromJSON(json: JSONObject): void;
@@ -4303,7 +4382,7 @@ declare class Channel {
                           setNormalTexture(normalTexture: Texture): void;
                           setMetalnessTexture(metalnessTexture: Texture): void;
                           setRoughnessTexture(roughnessTexture: Texture): void;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                           toJSON(): any;
                           static constructFromJSON(json: JSONObject): Promise<MeshBasicPbrMaterial>;
                           fromJSON(json: JSONObject): void;
@@ -4318,6 +4397,7 @@ declare class Channel {
                       declare type MeshParameters = EntityParameters & {
                           geometry?: BufferGeometry;
                           material?: Material;
+                          topology?: GPUPrimitiveTopology;
                       };
 
                       export declare class MeshPhongMaterial extends Material {
@@ -4500,7 +4580,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | string[] | null;
                           setParams(params?: any): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
@@ -4668,10 +4748,12 @@ declare class Channel {
                       }
 
                       declare type ObjDatas = {
-                          f?: Uint8Array | Uint32Array;
+                          f: Uint8Array | Uint32Array;
                           v?: Float32Array;
                           vn?: Float32Array;
                           vt?: Float32Array;
+                          tangent?: Float32Array;
+                          bitangent?: Float32Array;
                       };
 
                       export declare class ObjExporter {
@@ -5038,10 +5120,15 @@ declare class Channel {
                       }
 
                       declare type PlaneParameters = MeshParameters & {
+                          /** Plane width. Default to 1 */
                           width?: number;
+                          /** Plane height. Default to width */
                           height?: number;
+                          /** Segments along plane width. Default to 1 */
                           widthSegments?: number;
+                          /** Segments along plane height. Default to 1 */
                           heightSegments?: number;
+                          /** Plane material */
                           material?: Material;
                       };
 
@@ -5165,7 +5252,7 @@ declare class Channel {
                           uniforms: Map<string, Uniform>;
                           constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string);
                           setUniformValue(name: string, value: UniformValue): void;
-                          validate(includeCode: string): boolean;
+                          validate(defines: Map<string, string>): boolean;
                           invalidate(): void;
                           isValid(): boolean;
                           getProgram(): WebGLProgram;
@@ -5387,12 +5474,25 @@ declare class Channel {
                       export declare class Raytracer {
                           #private;
                           constructor();
-                          configure(scene: Scene, width: number, height: number, materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray, MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number): boolean;
+                          configure(scene: Scene, width: number, height: number): Promise<boolean>;
                           play(): void;
                           pause(): void;
                           getOutputTexture(): Texture | null;
+                          getMaterial(): ShaderMaterial;
+                          debugBvh(debug: false): void;
                           dispose(): void;
                       }
+
+                      declare type RaytracingMaterial = {
+                          index: number;
+                          materialType: RtMaterial;
+                          textures?: Map<number, Texture | null>;
+                          reflectionRatio: float32;
+                          reflectionGloss: float32;
+                          refractionIndex: float32;
+                          albedo: vec3;
+                          flatShading: boolean;
+                      };
 
                       export declare class RayTracingPass extends Pass {
                           #private;
@@ -5639,6 +5739,12 @@ declare class Channel {
                               /** For WebGPU context. Picking is done asynchronously */
                               resolve?: (value: Entity | null) => void;
                           };
+                          /** Compute shaders only. X dimension of the grid of workgroups to dispatch. Default to 1 */
+                          workgroupCountX?: GPUSize32;
+                          /** Compute shaders only. Y dimension of the grid of workgroups to dispatch. Default to 1 */
+                          workgroupCountY?: GPUSize32;
+                          /** Compute shaders only. Z dimension of the grid of workgroups to dispatch. Default to 1 */
+                          workgroupCountZ?: GPUSize32;
                       }
 
                       export declare class RenderDeferredLight extends RenderBase {
@@ -5661,7 +5767,7 @@ declare class Channel {
                           clearColor: (clearColor: vec4) => void;
                           setDefine: (define: string, value?: string) => void;
                           removeDefine: (define: string) => void;
-                          compute: (material: Material, context: InternalRenderContext, workgroupCountX: GPUSize32, workgroupCountY?: GPUSize32, workgroupCountZ?: GPUSize32) => void;
+                          compute: (material: Material, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void) => void;
                       }
 
                       export declare enum RenderFace {
@@ -6014,6 +6120,17 @@ declare class Channel {
                           doInit(particle: Source1Particle, elapsedTime: number): void;
                       }
 
+                      declare enum RtMaterial {
+                          Emissive = 0,
+                          Reflective = 1,
+                          Dielectric = 2,
+                          Lambertian = 3,
+                          Source1Material = 4,// fallback for all source 1 materials
+                          Source1VertexLitGeneric = 5,
+                          Source1LightMappedGeneric = 6,
+                          Source2Material = 7
+                      }
+
                       export declare function sanitizeRepositoryName(name: string): string;
 
                       export declare class SaturatePass extends Pass {
@@ -6348,7 +6465,8 @@ declare class Channel {
 
                       export declare class ShaderEditor extends HTMLElement {
                           #private;
-                          initEditor(options?: any): void;
+                          initEditor(options?: ShaderEditorInit): void;
+                          openShader(name: string): void;
                           getEditorShaderName(): string;
                           setEditorShaderName(shaderName: string): void;
                           getEditorIncludeName(): string;
@@ -6358,6 +6476,14 @@ declare class Channel {
                           set annotationsDelay(delay: number);
                       }
 
+                      declare type ShaderEditorInit = {
+                          /** Provide an url for ACE editor. Default to a cdn script. */
+                          aceUrl?: string;
+                          displayCustomShaderButtons?: boolean;
+                          /** Name of the shader to open */
+                          defaultShader?: string;
+                      };
+
                       export declare class ShaderManager {
                           #private;
                           static addSource(type: ShaderType, name: string, source: string): void;
@@ -6365,7 +6491,7 @@ declare class Channel {
                           static setCustomSource(type: ShaderType, name: string, source: string): void;
                           static getCustomSourceAnnotations(name: string): Annotation[];
                           static getIncludeAnnotations(includeName: string): Annotation[];
-                          static get shaderList(): MapIterator<string>;
+                          static get shaderList(): Set<string>;
                           static resetShadersSource(): void;
                           static set displayCompileError(displayCompileError: boolean);
                           static get displayCompileError(): boolean;
@@ -6376,6 +6502,7 @@ declare class Channel {
                           #private;
                           constructor(params?: ShaderMaterialParams);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): null;
                       }
 
                       declare type ShaderMaterialParams = MaterialParams & {
@@ -6478,7 +6605,6 @@ declare class Channel {
                           dirty(): void;
                           getTexture(): Texture;
                           setBonesMatrix(): void;
-                          set position(position: vec3);
                           get position(): vec3;
                           set quaternion(quaternion: vec4);
                           get quaternion(): vec4;
@@ -6575,6 +6701,7 @@ declare class Channel {
                           getDefaultParameters(): VmtParameters;
                           sanitizeValue(parameterName: string, value: any): any;
                           setKeyValue(key: string, value: any): void;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                           clone(): Source1Material;
                           dispose(): void;
                       }
@@ -7260,7 +7387,6 @@ declare class Channel {
                           setAnimationGroupResourceData(localAnimArray: string[] | null, decodeKey: Kv3Element): void;
                           getAnim(animIndex: number): Source2Animation | null;
                           getAnimDesc(name: string): Source2AnimationDesc | null;
-                          matchActivity(activity: string, modifiers: string[]): boolean;
                           getAnims(): Set<Source2Animation>;
                           getAnimationsByActivity(activityName: string): Source2AnimationDesc[];
                           getDecodeKey(): Kv3Element | undefined;
@@ -7489,6 +7615,7 @@ declare class Channel {
                           getDecompiledDynamicParam(name: string): [string | null, Uint8Array] | null;
                           getDynamicParams(): Map<string, [string | null, Uint8Array]> | null;
                           getTextureParams(): Map<string, string> | null;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       export declare class Source2MaterialManager {
@@ -7515,7 +7642,6 @@ declare class Channel {
                           bodyGroups: Set<string>;
                           bodyGroupsChoices: Set<BodyGroupChoice>;
                           constructor(repository: string, vmdl: Source2File);
-                          matchActivity(activity: string, modifiers: string[]): null;
                           addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void;
                           createInstance(isDynamic: boolean): Source2ModelInstance;
                           getBones(): Kv3Element | null;
@@ -7597,14 +7723,14 @@ declare class Channel {
 
                       export declare class Source2ModelLoader {
                           #private;
-                          load(repository: string, path: string): Source2Model | null;
+                          load(repository: string, path: string): Promise<Source2Model | null>;
                           testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity>;
                       }
 
                       export declare class Source2ModelManager {
                           #private;
                           static instances: Set<never>;
-                          static createInstance(repository: string, fileName: string, dynamic: boolean): Source2ModelInstance | null;
+                          static createInstance(repository: string, fileName: string, dynamic: boolean): Promise<Source2ModelInstance | null>;
                           static loadManifest(repository: string): void;
                           static getModelList(): Promise<FileSelectorFile>;
                       }
@@ -7890,10 +8016,10 @@ declare class Channel {
                           constructor(animGroup: Source2AnimGroup);
                           setFile(sourceFile: Source2File): void;
                           getAnimDesc(name: string): Source2AnimationDesc | undefined;
-                          matchActivity(activity: string, modifiers: string[]): any;
+                          matchActivity(activity: string, modifiers: string[]): string | null;
                           getAnimationsByActivity(activityName: string): Source2AnimationDesc[];
                           getDecodeKey(): Kv3Element | undefined;
-                          getDecoderArray(): Source2AnimeDecoder_2[];
+                          getDecoderArray(): Source2AnimeDecoder[];
                           get localSequenceNameArray(): string[] | null;
                       }
 
@@ -7902,9 +8028,9 @@ declare class Channel {
                           fps: number;
                           frameCount: number;
                           activities: any;
-                          animNames: any;
+                          animNames: string[];
                           constructor(name: string, params?: any);
-                          matchActivity(activity: string, modifiers: string[]): boolean | undefined;
+                          matchActivity(activity: string, modifiers: string[]): boolean;
                       }
 
                       export declare class Source2SetControlPointPositions extends Operator {
@@ -7968,20 +8094,15 @@ declare class Channel {
                           setSpecialDependency(compilerIdentifier: string, string: string): void;
                       }
 
-                      export declare const Source2TextureManager: Source2TextureManagerClass;
-
-                      declare class Source2TextureManagerClass {
+                      export declare class Source2TextureManager {
                           #private;
-                          WEBGL_compressed_texture_s3tc: any;
-                          EXT_texture_compression_bptc: any;
-                          EXT_texture_compression_rgtc: any;
-                          constructor();
-                          getTexture(repository: string, path: string, frame: number): Promise<Texture | null>;
-                          getVtex(repository: string, path: string): Promise<Source2Texture | null>;
-                          getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null>;
-                          setTexture(path: string, texture: AnimatedTexture): void;
-                          fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void;
-                          fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void;
+                          static WEBGL_compressed_texture_s3tc: any;
+                          static EXT_texture_compression_bptc: any;
+                          static EXT_texture_compression_rgtc: any;
+                          static getTexture(repository: string, path: string, frame: number): Promise<Texture | null>;
+                          static getVtex(repository: string, path: string): Promise<Source2Texture | null>;
+                          static getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null>;
+                          static setTexture(path: string, texture: AnimatedTexture): void;
                       }
 
                       export declare class Source2TwistAroundAxis extends Operator {
@@ -8084,15 +8205,13 @@ declare class Channel {
                           funcBrushesRemoveMe: FuncBrush[];
                           partialLoading: boolean;
                           eventTarget: EventTarget;
-                          staticProps: Group;
-                          dynamicProps: Group;
-                          mapFaces: Group;
                           constructor(params?: any);
                           initMap(): void;
                           addLump(lump: SourceBSPLump): void;
                           getLumpData(lumpType: number): LumpData | null;
                           addConnection(connection: MapEntityConnection): void;
                           getOBBSize(modelIndex: number): vec3 | null;
+                          addDynamicProp(prop: Source1ModelInstance): void;
                           static getEntityName(): string;
                       }
 
@@ -8647,7 +8766,7 @@ declare class Channel {
                           constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
                           init(): void;
                           clone(): SpriteCardMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                       }
 
                       export declare class SpriteMaterial extends Source1Material {
@@ -8655,7 +8774,7 @@ declare class Channel {
                           constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
                           init(): void;
                           clone(): SpriteMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                       }
 
                       export declare class SpriteSheet {
@@ -8714,9 +8833,11 @@ declare class Channel {
                       }
 
                       export declare type StorageBuffer = {
-                          value: StorageValue | null;
+                          value?: StorageValue | null;
                           buffer?: GPUBuffer | null;
                           size?: number;
+                          /** Buffer usage. Combination of GPUBufferUsage values. Default to UNIFORM | COPY_DST | STORAGE */
+                          usage?: number;
                           /** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
                           raw?: boolean;
                           /** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */
@@ -8744,7 +8865,7 @@ declare class Channel {
 
                       export declare type StorageValue = StorageValueArray | StorageValueStruct;
 
-                      export declare type StorageValueArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec4;
+                      export declare type StorageValueArray = Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | StorageValueStruct[] | vec2 | vec3 | vec4;
 
                       export declare type StorageValueStruct = {
                           [key: string]: StorageValue | number;
@@ -8857,6 +8978,8 @@ declare class Channel {
                           isCube: boolean;
                           gpuFormat: GPUTextureFormat;
                           gpuVisibility?: number;
+                          readonly elementsPerTexel = 4;
+                          isSrgb: boolean;
                           constructor(textureParams?: TextureParams);
                           setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
                           /**
@@ -8879,6 +9002,7 @@ declare class Channel {
                           hasAlphaChannel(): boolean;
                           getWidth(): number;
                           getHeight(): number;
+                          getDatas(): Promise<Float32Array>;
                           is(type: string): boolean;
                           addUser(user: any): void;
                           removeUser(user: any): void;
@@ -9274,14 +9398,14 @@ declare class Channel {
                           constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
                           init(): void;
                           clone(): UnlitGenericMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                       }
 
                       export declare class UnlitTwoTextureMaterial extends Source1Material {
                           #private;
                           init(): void;
                           clone(): UnlitTwoTextureMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                           afterProcessProxies(): void;
                       }
 
@@ -9348,7 +9472,8 @@ declare class Channel {
                           init(): void;
                           afterProcessProxies(proxyParams: DynamicParams): void;
                           clone(): VertexLitGenericMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       /**
@@ -9477,7 +9602,7 @@ declare class Channel {
                           setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number): void;
                           getDefaultParameters(): VmtParameters;
                           clone(): WeaponDecalMaterial;
-                          get shaderSource(): string;
+                          getShaderSource(): string;
                       }
 
                       export declare class WeaponInvis extends Proxy_2 {
@@ -9535,10 +9660,10 @@ declare class Channel {
                           isErroneous(): boolean;
                           getSource(): string;
                           getInclude(includeName: string, compileRow?: number, recursion?: Set<string>, allIncludes?: Set<string>): string[] | undefined | null;
-                          getCompileSource(includeCode?: string): string;
+                          getCompileSource(defines: Map<string, string>): string;
                           getCompileSourceWebGPU(defines: Map<string, string>): string;
                           getCompileSourceLineNumber(compileSource: string): string;
-                          setCompileError(error: string, includeCode?: string): void;
+                          setCompileError(error: string, defines: Map<string, string>): void;
                           setCompilationInfo(compilationInfo: GPUCompilationInfo, defines: Map<string, string>): void;
                           getCompileError(convertRows?: boolean): Annotation[];
                           getIncludeAnnotations(): Annotation[];

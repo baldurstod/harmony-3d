@@ -1,8 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
+import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
+import { BlendingMode } from '../materials/constants';
 import { ShaderMaterial } from '../materials/shadermaterial';
+import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
@@ -65,8 +68,21 @@ export class Raytracer {
 			WORKGROUP_SIZE_X: 256,
 		},
 	});
+	#debugBvhMaterial = new ShaderMaterial({
+		shaderSource: 'debug_bvh',
+		blendingMode: BlendingMode.Normal,
+	});
+	#debugBvhGeometry = new InstancedBufferGeometry({ count: 2 });
+	#debugBvhMesh = new Mesh({
+		geometry: this.#debugBvhGeometry,
+		material: this.#debugBvhMaterial,
+		topology: 'line-list',
+		scale: 10,
+	});
+	//#debugBvhCamera?: Camera;
 	#outputTexture: Texture | null = null;
 	#prepassDone = false;
+	#debugBvh = true;
 	#facesCount = 0;
 
 	constructor() {
@@ -83,13 +99,35 @@ export class Raytracer {
 			return false;
 		}
 
+		//this.#debugBvhCamera = activeCamera;
+
 		this.#width = width;
 		this.#height = height;
 		this.#prepassDone = false;
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount } = await sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount } = await sceneToRtScene(scene);
 		this.#facesCount = facesCount;
 		this.#reset();
+
+		this.#debugBvhGeometry.instanceCount = aabbsCount * 12;
+
+		/*
+				const indices = //[0, 2, 1];
+					[0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5, 8, 10, 9, 10, 11, 9, 12, 14, 13, 14, 15, 13, 16, 18, 17, 18, 19, 17, 20, 22, 21, 22, 23, 21];
+				const vertices = //[0, 0, 0, 0, 1, 0, 1, 0, 0];
+					[0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5];
+				const normals = //[0, 0, 0, 0, 1, 0, 1, 0, 0];
+					[1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1]
+				*/
+
+
+		//const geometry = this.#debugBvhGeometry;
+		//geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		//geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+		//geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+		//geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(vertices, 3, 'texCoord'));
+		//geometry.count = 2;
+
 
 		const lookFrom = activeCamera.getWorldPosition();
 
@@ -126,6 +164,8 @@ export class Raytracer {
 			value: aabbs,
 			raw: true,
 		});
+
+
 		this.#material.setStorage('materials', materials as StorageValueArray);
 		this.#material.setStorage('textures', textures);
 
@@ -133,6 +173,12 @@ export class Raytracer {
 		this.#material.gpuConstants!.MAX_BVs_COUNT_PER_MESH = MAX_NUM_BVs_PER_MESH;
 		this.#material.gpuConstants!.MAX_FACES_COUNT_PER_MESH = MAX_NUM_FACES_PER_MESH;
 
+
+		this.#debugBvhMaterial.setStorage('AABBs', {
+			value: aabbs,
+			raw: true,
+		});
+		//this.#debugBvhMaterial.uniforms.viewProjectionMatrix = activeCamera.getViewProjectionMatrix();
 
 		if (this.#outputTexture) {
 			if (this.#outputTexture.width !== width ||
@@ -158,6 +204,14 @@ export class Raytracer {
 		}
 
 		this.#material.uniforms['outTexture'] = this.#outputTexture;
+
+		const rtCanvas = Graphics.getCanvas('rt_canvas')!;
+		rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
+		/*
+		rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(
+			new Box({ width: 100 })
+		);
+		*/
 
 		return true;
 	}
@@ -200,6 +254,10 @@ export class Raytracer {
 			this.#material.getStorage('faces')!.buffer = this.#prepassMaterial.getStorage('faces')!.buffer;
 		}
 
+
+		//this.#debugBvhMaterial.uniforms.viewProjectionMatrix = this.#debugBvhCamera?.getViewProjectionMatrix();
+
+		/*
 		Graphics.compute(this.#material,
 			{
 				width: this.#width,
@@ -208,6 +266,7 @@ export class Raytracer {
 				workgroupCountY: Math.ceil(this.#height! / COMPUTE_WORKGROUP_SIZE_Y),
 			}
 		);
+		*/
 	}
 
 	getOutputTexture(): Texture | null {
@@ -216,6 +275,10 @@ export class Raytracer {
 
 	getMaterial(): ShaderMaterial {
 		return this.#material;
+	}
+
+	debugBvh(debug: false): void {
+		this.#debugBvh = debug;
 	}
 
 	dispose(): void {
