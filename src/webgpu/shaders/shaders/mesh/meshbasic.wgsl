@@ -17,7 +17,9 @@
 @vertex
 fn vertex_main(
 	@location(x) position: vec3f,
+#ifdef HAS_NORMALS
 	@location(x) normal: vec3f,
+#endif
 	@location(x) texCoord: vec2f,
 #ifdef USE_VERTEX_TANGENT
 	@location(x) tangent: vec4f,
