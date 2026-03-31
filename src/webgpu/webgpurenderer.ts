@@ -254,9 +254,6 @@ export class WebGPURenderer implements Renderer {
 
 		const geometryAttributes = geometry.attributes;
 		const indexAttribute = geometryAttributes.get('index');
-		if (!indexAttribute) {
-			return;
-		}
 
 		const pick = context.renderContext.pick;
 
@@ -289,13 +286,10 @@ export class WebGPURenderer implements Renderer {
 
 		const device = WebGPUInternal.device;
 
-		const indices = indexAttribute._array;
-		if (!indices) {
-			return;
-		}
+		const indices = indexAttribute?._array;
 
-		let indexBuffer: GPUBuffer | undefined = indexAttribute.gpuBuffer;
-		if (indexAttribute.dirty || !indexAttribute.gpuBuffer) {
+		let indexBuffer: GPUBuffer | undefined = indexAttribute?.gpuBuffer;
+		if (indexAttribute && indices && (indexAttribute.dirty || !indexAttribute.gpuBuffer)) {
 			const size = Math.ceil(indices.length / 2) * 4;
 
 			if (indexBuffer) {
@@ -390,7 +384,9 @@ export class WebGPURenderer implements Renderer {
 			passEncoder.setScissorRect(x, y, w, h);
 		}
 
-		passEncoder.setIndexBuffer(indexBuffer!, 'uint16');// TODO: this could also be uint32
+		if (indexBuffer) {
+			passEncoder.setIndexBuffer(indexBuffer, 'uint16');// TODO: this could also be uint32
+		}
 		const vertexBuffers: GPUVertexBufferLayout[] = [];
 		for (const [, attribute] of geometryAttributes) {
 			const location = shaderModule.attributes.get(attribute.wgslName);
@@ -510,10 +506,10 @@ export class WebGPURenderer implements Renderer {
 		this.#createBindGroups(groups, renderPipeline, passEncoder);
 
 		passEncoder.setPipeline(renderPipeline);
-		if ((geometry as InstancedBufferGeometry).instanceCount === undefined) {
-			passEncoder.drawIndexed(geometry.count);
-		} else {
+		if (indexBuffer) {
 			passEncoder.drawIndexed(geometry.count, (geometry as InstancedBufferGeometry).instanceCount);
+		} else {
+			passEncoder.draw(geometry.count, (geometry as InstancedBufferGeometry).instanceCount);
 		}
 
 		// End the render pass
