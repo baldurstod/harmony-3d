@@ -9,7 +9,14 @@ export class GridMaterial extends Material {
 		this.renderFace(RenderFace.Both);
 	}
 
+	/**
+	 * @deprecated Use setSpacing instead
+	 */
 	set spacing(spacing: number) {
+		this.setSpacing(spacing);
+	}
+
+	setSpacing(spacing: number): void {
 		this.setUniformValue('uSpacing', spacing);
 	}
 
