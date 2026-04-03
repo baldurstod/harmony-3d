@@ -198,7 +198,7 @@ export class WebGPURenderer implements Renderer {
 		const pickPromises: Promise<[Mesh, number] | null>[] = [];
 
 		for (const child of renderList.opaqueList) {
-			const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
+			const pickPromise = this.#renderObject(context, renderList, child, camera, clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
 			if (pickPromise) {
 				pickPromises.push(pickPromise);
 			}
@@ -208,7 +208,7 @@ export class WebGPURenderer implements Renderer {
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
+				const pickPromise = this.#renderObject(context, renderList, child, camera, clearColor, clearDepth, clearValue, renderLights/*, lightPos*/);
 				if (pickPromise) {
 					pickPromises.push(pickPromise);
 				}
@@ -236,13 +236,17 @@ export class WebGPURenderer implements Renderer {
 		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true/*, lightPos?: vec3*/): Promise<[Mesh, number] | null> | void {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, clearColor: boolean, clearDepth: boolean, clearValue?: GPUColorDict, renderLights = true/*, lightPos?: vec3*/): Promise<[Mesh, number] | null> | void {
 		if (!object.isRenderable) {
 			return;
 		}
 		if (object.isVisible() === false) {
 			return;
 		}
+
+		const geometry: BufferGeometry | InstancedBufferGeometry = object.getGeometry();
+		const material: Material = object.getMaterial();
+
 		if (geometry.count === 0) {
 			return;
 		}

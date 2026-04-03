@@ -158,24 +158,27 @@ export class ForwardRenderer implements Renderer {
 
 	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) {
 		for (const child of renderList.opaqueList) {
-			this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+			this.#renderObject(context, renderList, child, camera, renderLights, lightPos);
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+				this.#renderObject(context, renderList, child, camera, renderLights, lightPos);
 			}
 		}
 	}
 
-
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, renderLights = true, lightPos?: vec3) {
 		if (!object.isRenderable) {
 			return;
 		}
 		if (object.isVisible() === false) {
 			return;
 		}
+
+		const geometry: BufferGeometry | InstancedBufferGeometry = object.getGeometry();
+		const material: Material = object.getMaterial();
+
 		if (geometry.count === 0) {
 			return;
 		}
