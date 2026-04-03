@@ -14,8 +14,7 @@ export class SketchPass extends Pass {
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'sketch' });
-		material.addUser(this);
+		const material = new ShaderMaterial({ shaderSource: 'sketch', user: this });
 		material.depthTest = false;
 		this.#material = material;
 		this.scene = new Scene();

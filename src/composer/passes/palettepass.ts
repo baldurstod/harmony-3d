@@ -14,8 +14,7 @@ export class PalettePass extends Pass {
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'palette' });
-		material.addUser(this);
+		const material = new ShaderMaterial({ shaderSource: 'palette', user: this });
 		material.depthTest = false;
 		this.#material = material;
 		this.scene = new Scene();

@@ -6,7 +6,7 @@ import { LineMaterial } from '../materials/linematerial';
 import { Material, MaterialColorMode } from '../materials/material';
 
 export class Wireframe extends Entity {
-	#material: Material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
+	#material: Material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this });
 	#color: vec4 = vec4.fromValues(0, 0, 0, 1);
 	enumerable = false;
 	#meshes = new Set<Mesh>();
@@ -18,7 +18,6 @@ export class Wireframe extends Entity {
 
 		this.#material.setColorMode(MaterialColorMode.PerMesh);
 		this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-		this.#material.addUser(this);
 
 		//this.setParameters(params);
 	}
@@ -44,8 +43,7 @@ export class Wireframe extends Entity {
 			}
 
 			const segments: number[] = [];
-			const line = new LineSegmentsGeometry();
-			line.addUser(this);
+			const line = new LineSegmentsGeometry({ user: this });
 			const me = new Mesh({ geometry: line, material: this.#material });
 			this.#meshes.add(me);
 			this.addChild(me);

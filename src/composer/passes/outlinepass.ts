@@ -35,13 +35,11 @@ export class OutlinePass extends Pass {
 
 
 
-		this.#copyMaterial = new ShaderMaterial({ shaderSource: 'copy' });
-		this.#copyMaterial.addUser(this);
+		this.#copyMaterial = new ShaderMaterial({ shaderSource: 'copy', user: this });
 		this.#copyMaterial.depthTest = false;
 		this.#copyMaterial.setBlending(MATERIAL_BLENDING_ADDITIVE);
 
-		this.#edgedetectionMaterial = new ShaderMaterial({ shaderSource: 'edgedetection' });
-		this.#edgedetectionMaterial.addUser(this);
+		this.#edgedetectionMaterial = new ShaderMaterial({ shaderSource: 'edgedetection', user: this });
 
 
 		this.scene = new Scene();

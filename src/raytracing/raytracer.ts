@@ -72,7 +72,7 @@ export class Raytracer {
 		shaderSource: 'debug_bvh',
 		blendingMode: BlendingMode.Normal,
 	});
-	#debugBvhGeometry = new InstancedBufferGeometry({ count: 2 });
+	#debugBvhGeometry = new InstancedBufferGeometry({ count: 2, user: this });
 	#debugBvhMesh = new Mesh({
 		geometry: this.#debugBvhGeometry,
 		material: this.#debugBvhMaterial,

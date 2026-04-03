@@ -23,8 +23,7 @@ export class CombineLerp extends Node {
 		this.addInput('input1', IO_TYPE_TEXTURE_2D);
 		this.addInput('weight', IO_TYPE_TEXTURE_2D);
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_lerp' });
-		this.material.addUser(this);
+		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_lerp', user: this });
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 
 		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));

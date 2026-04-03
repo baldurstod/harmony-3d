@@ -7,6 +7,7 @@ import { BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from '.
 
 export type BufferGeometryParameters = {
 	count?: number,
+	user?: ObjectUser;
 };
 
 export class BufferGeometry implements HasUsers {
@@ -19,6 +20,10 @@ export class BufferGeometry implements HasUsers {
 
 	constructor(params: BufferGeometryParameters = {}) {
 		this.count = params.count ?? 0;
+
+		if (params.user) {
+			this.addUser(params.user);
+		}
 	}
 
 	getAttribute(name: string) {

@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
-import { InstancedBufferGeometry } from '../../geometry/instancedbuffergeometry';
+import { InstancedBufferGeometry, InstancedBufferGeometryParameters } from '../../geometry/instancedbuffergeometry';
 
 export class LineSegmentsGeometry extends InstancedBufferGeometry {
-	constructor() {
-		super();
+	constructor(params: InstancedBufferGeometryParameters = {}) {
+		super(params);
 		this.#setupGeometry();
 	}
 

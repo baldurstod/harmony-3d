@@ -15,9 +15,8 @@ export class SaturatePass extends Pass {
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'saturate' });
+		const material = new ShaderMaterial({ shaderSource: 'saturate', user: this });
 		this.#material = material;
-		material.addUser(this);
 		material.depthTest = false;
 		this.scene = new Scene();
 		this.quad = new FullScreenQuad({ material, parent: this.scene });

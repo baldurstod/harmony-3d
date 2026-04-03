@@ -12,9 +12,8 @@ export class CopyPass extends Pass {
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
+		const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false, user: this });
 		this.#material = material;
-		material.addUser(this);
 		this.scene = new Scene();
 		this.quad = new FullScreenQuad({ material, parent: this.scene });
 		this.camera = camera;

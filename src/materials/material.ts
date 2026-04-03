@@ -52,6 +52,8 @@ export type MaterialParams = {
 	defines?: Record<string, string>;
 	workgroupSize?: vec3;
 
+	user?: ObjectUser;
+
 	blendingMode?: BlendingMode;
 };
 
@@ -139,6 +141,10 @@ export class Material implements HasUsers {
 
 		if (params.blendingMode) {
 			this.setBlending(params.blendingMode/*TODO: add premultipliedAlpha param*/);
+		}
+
+		if (params.user) {
+			this.addUser(params.user);
 		}
 	}
 

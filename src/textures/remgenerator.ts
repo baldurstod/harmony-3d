@@ -268,9 +268,7 @@ export class RemGenerator {
 
 			({ sizeLods: this.#sizeLods, lodPlanes: this.#lodPlanes, sigmas: this.#sigmas } = createPlanes(this.#lodMax));
 
-			this.#blurMaterial = getBlurShader(this.#lodMax, width, height);
-			this.#blurMaterial.addUser(this);
-
+			this.#blurMaterial = this.#getBlurShader(this.#lodMax, width, height);
 		}
 
 		return cubeUVRenderTarget;
@@ -552,140 +550,35 @@ export class RemGenerator {
 
 	}
 
-}
+	#getBlurShader(lodMax: number, width: number, height: number): ShaderMaterial {
 
+		const weights = new Float32Array(MAX_SAMPLES);
+		const poleAxis = vec3.fromValues(0, 1, 0);
+		const shaderMaterial = new ShaderMaterial({
 
+			name: 'SphericalGaussianBlur',
 
-function createPlanes(lodMax: number): { lodPlanes: BufferGeometry[]; sizeLods: number[]; sigmas: number[]; } {
-	const lodPlanes: BufferGeometry[] = [];
-	const sizeLods: number[] = [];
-	const sigmas: number[] = [];
+			defines: {
+				'n': `${MAX_SAMPLES}`,
+				'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
+				'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
+				'CUBEUV_MAX_MIP': `${lodMax}.0`,
+			},
 
-	let lod = lodMax;
+			uniforms: {
+				'envMap': null,
+				'samples': 1,
+				'weights[0]': weights,
+				'latitudinal': false,
+				'dTheta': 0,
+				'mipInt': 0,
+				'poleAxis': poleAxis
+			},
 
-	const totalLods = lodMax - LOD_MIN + 1 + EXTRA_LOD_SIGMA.length;
+			glsl: {
+				vertex: getCommonVertexShader(),
 
-	for (let i = 0; i < totalLods; i++) {
-
-		const sizeLod = Math.pow(2, lod);
-		sizeLods.push(sizeLod);
-		let sigma = 1.0 / sizeLod;
-
-		if (i > lodMax - LOD_MIN) {
-
-			sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1]!;
-
-		} else if (i === 0) {
-
-			sigma = 0;
-
-		}
-
-		sigmas.push(sigma);
-
-		const texelSize = 1.0 / (sizeLod - 2);
-		const min = - texelSize;
-		const max = 1 + texelSize;
-		const uv1 = [min, min, max, min, max, max, min, min, max, max, min, max];
-
-		const cubeFaces = 6;
-		const vertices = 6;
-		const positionSize = 3;
-		const uvSize = 2;
-		const faceIndexSize = 1;
-
-
-		const indices: number[] = [];
-		const position = new Float32Array(positionSize * vertices * cubeFaces);
-		const uv = new Float32Array(uvSize * vertices * cubeFaces);
-		const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);
-
-		let index = 0;
-		for (let face = 0; face < cubeFaces; face++) {
-
-			const x = (face % 3) * 2 / 3 - 1;
-			const y = face > 2 ? 0 : - 1;
-			const coordinates = [
-				x, y, 0,
-				x + 2 / 3, y, 0,
-				x + 2 / 3, y + 1, 0,
-				x, y, 0,
-				x + 2 / 3, y + 1, 0,
-				x, y + 1, 0
-			];
-			indices.push(index++);
-			indices.push(index++);
-			indices.push(index++);
-			indices.push(index++);
-			indices.push(index++);
-			indices.push(index++);
-			position.set(coordinates, positionSize * vertices * face);
-			uv.set(uv1, uvSize * vertices * face);
-			const fill = [face, face, face, face, face, face];
-			faceIndex.set(fill, faceIndexSize * vertices * face);
-
-		}
-
-		const planes = new BufferGeometry();
-		planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-		planes.setAttribute('aVertexPosition', new Float32BufferAttribute(position, positionSize, 'position'));
-		planes.setAttribute('aTextureCoord', new Float32BufferAttribute(uv, uvSize, 'texCoord'));
-		planes.setAttribute('faceIndex', new Float32BufferAttribute(faceIndex, faceIndexSize, 'faceIndex'));
-		planes.count = indices.length;
-		lodPlanes.push(planes);
-
-		if (lod > LOD_MIN) {
-
-			lod--;
-
-		}
-
-	}
-
-	return { lodPlanes, sizeLods, sigmas };
-
-}
-
-function createRenderTarget(params: any): RenderTarget {
-	const cubeUVRenderTarget = new RenderTarget(params);
-	const renderTargetTexture = cubeUVRenderTarget.getTexture();
-	renderTargetTexture.mapping = TextureMapping.CubeUvMapping;
-	//cubeUVRenderTarget.texture.mapping = CubeUVReflectionMapping;
-	//cubeUVRenderTarget.getTexture().name = 'PMREM.cubeUv';
-	cubeUVRenderTarget.setScissorTest(true);
-	return cubeUVRenderTarget;
-
-}
-
-function getBlurShader(lodMax: number, width: number, height: number): ShaderMaterial {
-
-	const weights = new Float32Array(MAX_SAMPLES);
-	const poleAxis = vec3.fromValues(0, 1, 0);
-	const shaderMaterial = new ShaderMaterial({
-
-		name: 'SphericalGaussianBlur',
-
-		defines: {
-			'n': `${MAX_SAMPLES}`,
-			'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
-			'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
-			'CUBEUV_MAX_MIP': `${lodMax}.0`,
-		},
-
-		uniforms: {
-			'envMap': null,
-			'samples': 1,
-			'weights[0]': weights,
-			'latitudinal': false,
-			'dTheta': 0,
-			'mipInt': 0,
-			'poleAxis': poleAxis
-		},
-
-		glsl: {
-			vertex: getCommonVertexShader(),
-
-			fragment: /* glsl */`
+				fragment: /* glsl */`
 
 			precision mediump float;
 			precision mediump int;
@@ -857,15 +750,121 @@ function getBlurShader(lodMax: number, width: number, height: number): ShaderMat
 
 			}
 		`,
-		},
+			},
 
-		//blending: NoBlending,
-		depthTest: false,
-		depthWrite: false
+			//blending: NoBlending,
+			depthTest: false,
+			depthWrite: false,
 
-	});
+			user: this,
+		});
 
-	return shaderMaterial;
+		return shaderMaterial;
+
+	}
+
+}
+
+
+
+function createPlanes(lodMax: number): { lodPlanes: BufferGeometry[]; sizeLods: number[]; sigmas: number[]; } {
+	const lodPlanes: BufferGeometry[] = [];
+	const sizeLods: number[] = [];
+	const sigmas: number[] = [];
+
+	let lod = lodMax;
+
+	const totalLods = lodMax - LOD_MIN + 1 + EXTRA_LOD_SIGMA.length;
+
+	for (let i = 0; i < totalLods; i++) {
+
+		const sizeLod = Math.pow(2, lod);
+		sizeLods.push(sizeLod);
+		let sigma = 1.0 / sizeLod;
+
+		if (i > lodMax - LOD_MIN) {
+
+			sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1]!;
+
+		} else if (i === 0) {
+
+			sigma = 0;
+
+		}
+
+		sigmas.push(sigma);
+
+		const texelSize = 1.0 / (sizeLod - 2);
+		const min = - texelSize;
+		const max = 1 + texelSize;
+		const uv1 = [min, min, max, min, max, max, min, min, max, max, min, max];
+
+		const cubeFaces = 6;
+		const vertices = 6;
+		const positionSize = 3;
+		const uvSize = 2;
+		const faceIndexSize = 1;
+
+
+		const indices: number[] = [];
+		const position = new Float32Array(positionSize * vertices * cubeFaces);
+		const uv = new Float32Array(uvSize * vertices * cubeFaces);
+		const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);
+
+		let index = 0;
+		for (let face = 0; face < cubeFaces; face++) {
+
+			const x = (face % 3) * 2 / 3 - 1;
+			const y = face > 2 ? 0 : - 1;
+			const coordinates = [
+				x, y, 0,
+				x + 2 / 3, y, 0,
+				x + 2 / 3, y + 1, 0,
+				x, y, 0,
+				x + 2 / 3, y + 1, 0,
+				x, y + 1, 0
+			];
+			indices.push(index++);
+			indices.push(index++);
+			indices.push(index++);
+			indices.push(index++);
+			indices.push(index++);
+			indices.push(index++);
+			position.set(coordinates, positionSize * vertices * face);
+			uv.set(uv1, uvSize * vertices * face);
+			const fill = [face, face, face, face, face, face];
+			faceIndex.set(fill, faceIndexSize * vertices * face);
+
+		}
+
+		const planes = new BufferGeometry();
+		planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+		planes.setAttribute('aVertexPosition', new Float32BufferAttribute(position, positionSize, 'position'));
+		planes.setAttribute('aTextureCoord', new Float32BufferAttribute(uv, uvSize, 'texCoord'));
+		planes.setAttribute('faceIndex', new Float32BufferAttribute(faceIndex, faceIndexSize, 'faceIndex'));
+		planes.count = indices.length;
+		lodPlanes.push(planes);
+
+		if (lod > LOD_MIN) {
+
+			lod--;
+
+		}
+
+	}
+
+	return { lodPlanes, sizeLods, sigmas };
+
+}
+
+function createRenderTarget(params: any): RenderTarget {
+	const cubeUVRenderTarget = new RenderTarget(params);
+	const renderTargetTexture = cubeUVRenderTarget.getTexture();
+	renderTargetTexture.mapping = TextureMapping.CubeUvMapping;
+	//cubeUVRenderTarget.texture.mapping = CubeUVReflectionMapping;
+	//cubeUVRenderTarget.getTexture().name = 'PMREM.cubeUv';
+	cubeUVRenderTarget.setScissorTest(true);
+	return cubeUVRenderTarget;
 
 }
 

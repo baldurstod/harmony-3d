@@ -16,8 +16,7 @@ export class PixelatePass extends Pass {
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		this.#material = new ShaderMaterial({ shaderSource: 'pixelate' });
-		this.#material.addUser(this);
+		this.#material = new ShaderMaterial({ shaderSource: 'pixelate', user: this });
 		this.#material.depthTest = false;
 		this.scene = new Scene();
 		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });

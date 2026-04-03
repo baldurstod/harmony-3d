@@ -107,15 +107,14 @@ export class Mesh extends Entity {
 		return this.#geometry;
 	}
 
-	setMaterial(material: Material) {
+	setMaterial(material: Material): void {
 		if (this.#material != material) {
 			if (this.#material) {
 				this.#material.removeUser(this);
 			}
 
-			if (material) {
-				material.addUser(this);
-			}
+			material.addUser(this);
+
 			this.#material = material;
 		}
 	}

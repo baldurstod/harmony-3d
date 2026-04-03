@@ -24,8 +24,7 @@ export class CombineAdd extends Node {
 		}
 		//this.addInput('input', IO_TYPE_TEXTURE_2D, 8);
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add' });
-		this.material.addUser(this);
+		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add', user: this });
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 

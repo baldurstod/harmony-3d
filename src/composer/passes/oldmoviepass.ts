@@ -14,8 +14,7 @@ export class OldMoviePass extends Pass {
 
 	constructor(camera: Camera) {
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
-		material.addUser(this);
+		const material = new ShaderMaterial({ shaderSource: 'oldmovie', user: this });
 		material.depthTest = false;
 		this.#material = material;
 		this.scene = new Scene();

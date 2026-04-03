@@ -21,8 +21,7 @@ export class DrawCircle extends Node {
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
 		this.addOutput('perimeter', IO_TYPE_FLOAT);
 		this.addOutput('area', IO_TYPE_FLOAT);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'drawcircle' });
-		this.material.addUser(this);
+		this.material = new NodeImageEditorMaterial({ shaderName: 'drawcircle', user: this });
 		this.#textureSize = params.textureSize;
 	}
 

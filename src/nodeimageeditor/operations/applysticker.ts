@@ -30,10 +30,9 @@ export class ApplySticker extends Node {
 		this.addInput('specular', IO_TYPE_TEXTURE_2D);
 
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'applysticker' });
+		this.material = new NodeImageEditorMaterial({ shaderName: 'applysticker', user: this });
 		this.material.setDefine('TRANSFORM_TEX_COORD');
 		this.material.setDefine('NEED_TWO_TEX_COORDS');
-		this.material.addUser(this);
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 
 		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));

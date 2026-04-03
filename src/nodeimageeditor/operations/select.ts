@@ -23,9 +23,8 @@ export class Select extends Node {
 		this.addInput('input', IO_TYPE_TEXTURE_2D);
 		this.addInput('selectvalues', IO_TYPE_FLOAT, MAX_SELECTORS);
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'select' });
+		this.material = new NodeImageEditorMaterial({ shaderName: 'select', user: this });
 		this.material.setDefine('MAX_SELECTORS', String(MAX_SELECTORS));
-		this.material.addUser(this);
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 

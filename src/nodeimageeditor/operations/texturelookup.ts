@@ -23,9 +23,8 @@ export class TextureLookup extends Node {
 		super(editor, params);
 		this.hasPreview = true;
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'texturelookup' });
+		this.material = new NodeImageEditorMaterial({ shaderName: 'texturelookup', user: this });
 		this.material.setDefine('TRANSFORM_TEX_COORD');
-		this.material.addUser(this);
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 
 		/*this.params.adjustBlack = 0;

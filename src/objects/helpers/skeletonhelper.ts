@@ -1,5 +1,6 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Entity, EntityParameters } from '../../entities/entity';
+import { Graphics } from '../../graphics/graphics2';
 import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { HasSkeleton } from '../../interfaces/hasskeleton';
 import { LineMaterial } from '../../materials/linematerial';
@@ -11,7 +12,6 @@ import { Scene } from '../../scenes/scene';
 import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
 import { Bone } from '../bone';
 import { Skeleton } from '../skeleton';
-import { Graphics } from '../../graphics/graphics2';
 
 const tempVec3 = vec3.create();
 
@@ -36,19 +36,16 @@ export class SkeletonHelper extends Entity {
 	constructor(parameters: SkeletonHelperParameters) {
 		super(parameters);
 
-		this.#lineMaterial = new LineMaterial();
-		this.#lineMaterial.addUser(this);
+		this.#lineMaterial = new LineMaterial({ user: this });
 		this.#lineMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#lineMaterial.lineWidth = 3;
 
-		this.#highlitLineMaterial = new LineMaterial();
-		this.#highlitLineMaterial.addUser(this);
+		this.#highlitLineMaterial = new LineMaterial({ user: this });
 		this.#highlitLineMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#highlitLineMaterial.lineWidth = 3;
 		this.#highlitLineMaterial.setMeshColor([1, 0, 0, 1]);
 
-		this.#boneTipMaterial = new MeshBasicMaterial();
-		this.#boneTipMaterial.addUser(this);
+		this.#boneTipMaterial = new MeshBasicMaterial({ user: this });
 		this.#boneTipMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#boneTipMaterial.setMeshColor([1, 0, 1, 1]);
 

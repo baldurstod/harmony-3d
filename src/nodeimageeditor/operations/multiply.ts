@@ -25,8 +25,7 @@ export class Multiply extends Node {
 
 		//this.addInput('input', IO_TYPE_TEXTURE_2D, 8);
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({ shaderName: 'multiply' });
-		this.material.addUser(this);
+		this.material = new NodeImageEditorMaterial({ shaderName: 'multiply', user: this });
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 
