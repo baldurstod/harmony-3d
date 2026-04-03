@@ -595,18 +595,7 @@ export class Material {
 			}
 		}
 
-		if (typeof value === 'number') {
-			this.#uniforms.set(name, { value: null, size: value, dirty: true });
-		} else {
-			this.#uniforms.set(name, { value, dirty: true });
-			/*
-			if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
-				this.#uniforms.set(name, { value: value as StorageValueArray });
-			} else {
-				this.#uniforms.set(name, value as StorageBuffer);
-			}
-			*/
-		}
+		this.#uniforms.set(name, { value, dirty: true });
 	}
 
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
