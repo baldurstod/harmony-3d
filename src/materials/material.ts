@@ -4,6 +4,7 @@ import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { BlendingFactor, BlendingFactorWebGPU } from '../enums/blending';
+import { HasUsers, ObjectUser } from '../interfaces/hasusers';
 import { Mesh } from '../objects/mesh';
 import { RaytracingMaterial } from '../raytracing/material';
 import { Texture } from '../textures/texture';
@@ -54,7 +55,7 @@ export type MaterialParams = {
 	blendingMode?: BlendingMode;
 };
 
-export class Material {
+export class Material implements HasUsers {
 	id = '';
 	name = '';
 	#renderFace!: RenderFace;
@@ -62,7 +63,7 @@ export class Material {
 	#color = vec4.create();
 	#alphaTest = false;
 	#alphaTestReference = 0;
-	#users = new Set<any>();
+	#users = new Set<ObjectUser>();
 	#parameters = new Map<string, MateriaParameter>();
 	readonly #uniforms = new Map<string, UniformBuffer>();
 	// Storage bindings. Only for WebGPU.
@@ -528,17 +529,21 @@ export class Material {
 		this.renderFace(json.render_face as RenderFace ?? RenderFace.Front);
 	}
 
-	addUser(user: any) {
+	addUser(user: ObjectUser) {
 		this.#users.add(user);
 	}
 
-	removeUser(user: any) {
+	removeUser(user: ObjectUser) {
 		this.#users.delete(user);
 		this.dispose();
 	}
 
 	hasNoUser() {
 		return this.#users.size == 0;
+	}
+
+	hasOnlyUser(user: ObjectUser) {
+		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
 	#disposeUniform(uniform: UniformValue | Record<string, UniformValue>) {

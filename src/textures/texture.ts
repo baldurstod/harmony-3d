@@ -1,6 +1,7 @@
 import { TESTING } from '../buildoptions';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
+import { HasUsers, ObjectUser } from '../interfaces/hasusers';
 import { WebGLAnyRenderingContext } from '../types';
 import { errorOnce } from '../utils/console';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
@@ -19,9 +20,9 @@ export type TextureParams = {
 	gpuVisibility?: number;
 };
 
-export class Texture {
+export class Texture implements HasUsers {
 	mapping = TextureMapping.UvMapping;
-	#users = new Set<any>();
+	#users = new Set<ObjectUser>();
 	#alphaBits = 0;
 	image?: HTMLImageElement;
 	internalFormat: any;
@@ -203,11 +204,11 @@ export class Texture {
 		return type === 'Texture';
 	}
 
-	addUser(user: any): void {
+	addUser(user: ObjectUser): void {
 		this.#users.add(user);
 	}
 
-	removeUser(user: any): void {
+	removeUser(user: ObjectUser): void {
 		this.#users.delete(user);
 		this.dispose();
 	}
@@ -216,7 +217,7 @@ export class Texture {
 		return this.#users.size == 0;
 	}
 
-	hasOnlyUser(user: any): boolean {
+	hasOnlyUser(user: ObjectUser): boolean {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 

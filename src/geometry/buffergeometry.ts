@@ -1,4 +1,5 @@
 import { DEBUG, TESTING } from '../buildoptions';
+import { HasUsers, ObjectUser } from '../interfaces/hasusers';
 import { WebGLAnyRenderingContext } from '../types';
 import { Properties } from '../utils/properties';
 import { GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
@@ -8,9 +9,9 @@ export type BufferGeometryParameters = {
 	count?: number,
 };
 
-export class BufferGeometry {
+export class BufferGeometry implements HasUsers {
 	#elementArrayType: GLenum = GL_UNSIGNED_INT;
-	#users = new Set<any>();
+	#users = new Set<ObjectUser>();
 	attributes = new Map<string, BufferAttribute>();
 	dirty = true;
 	count: number;
@@ -183,11 +184,11 @@ export class BufferGeometry {
 		return clone;
 	}
 
-	addUser(user: any) {
+	addUser(user: ObjectUser) {
 		this.#users.add(user);
 	}
 
-	removeUser(user: any) {
+	removeUser(user: ObjectUser) {
 		this.#users.delete(user);
 		this.dispose();
 	}
@@ -196,7 +197,7 @@ export class BufferGeometry {
 		return this.#users.size == 0;
 	}
 
-	hasOnlyUser(user: any) {
+	hasOnlyUser(user: ObjectUser) {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
