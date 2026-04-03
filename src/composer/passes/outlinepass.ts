@@ -136,10 +136,10 @@ export class OutlinePass extends Pass {
 		Graphics.popRenderTarget();
 
 		/**************/
-		this.#edgedetectionMaterial.uniforms['colorMap'] = this.#renderTargetDepthBuffer.getTexture();//TODO: optiùmize this
-		this.#edgedetectionMaterial.uniforms['uTexSize'] = [this.width, this.height];
-		this.#edgedetectionMaterial.uniforms['uVisibleEdgeColor'] = [1, 1, 1];
-		this.#edgedetectionMaterial.uniforms['uHiddenEdgeColor'] = [0, 1, 0];
+		this.#edgedetectionMaterial.setUniformValue('colorMap', this.#renderTargetDepthBuffer.getTexture());//TODO: optiùmize this
+		this.#edgedetectionMaterial.setUniformValue('uTexSize', [this.width, this.height]);
+		this.#edgedetectionMaterial.setUniformValue('uVisibleEdgeColor', [1, 1, 1]);
+		this.#edgedetectionMaterial.setUniformValue('uHiddenEdgeColor', [0, 1, 0]);
 		this.quad!.setMaterial(this.#edgedetectionMaterial);
 		Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
 		Graphics.clear(true, true, false);
@@ -149,7 +149,7 @@ export class OutlinePass extends Pass {
 		/**************/
 
 
-		this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
+		this.#copyMaterial.setUniformValue('colorMap', readBuffer.getTexture());
 		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 		Graphics.clear(true, true, false);
@@ -159,7 +159,7 @@ export class OutlinePass extends Pass {
 
 		/***************/
 
-		this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
+		this.#copyMaterial.setUniformValue('colorMap', this.#renderTargetEdgeBuffer1.getTexture());
 		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 		Graphics.render(this.scene!, this.camera!, 0, context);

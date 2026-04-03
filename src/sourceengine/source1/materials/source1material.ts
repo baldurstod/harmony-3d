@@ -7,6 +7,7 @@ import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, Materia
 import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
 import { Mesh } from '../../../objects/mesh';
+import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { SpriteSheetCoord } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
@@ -17,7 +18,6 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Proxy } from './proxies/proxy';
 import { ProxyManager } from './proxies/proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
-import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -188,20 +188,20 @@ export class Source1Material extends Material {
 
 	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(params);
-		this.uniforms['uBlendTintColorOverBase'] = 0;
-		this.uniforms['uDetailBlendFactor'] = 0;
+		this.setUniformValue('uBlendTintColorOverBase', 0);
+		this.setUniformValue('uDetailBlendFactor', 0);
 		//this.uniforms['uPhongExponent'] = 0;
 		//this.uniforms['uPhongBoost'] = 0;
-		this.uniforms['phongUniforms'] = {
+		this.setUniformValue('phongUniforms', {
 			phongExponent: 0,
 			phongBoost: 0,
 			phongExponentFactor: 0,
-		};
-		this.uniforms['sheenUniforms'] = {
+		});
+		this.setUniformValue('sheenUniforms', {
 			g_vPackedConst6: vec4.create(),
 			g_vPackedConst7: vec4.create(),
 			g_cCloakColorTint: vec3.create(),
-		};
+		});
 		this.vmt = vmt;
 		this.repository = repository;
 		this.path = path;
@@ -321,9 +321,9 @@ export class Source1Material extends Material {
 
 		const envmaptint = variables.get('$envmaptint');
 		if (envmaptint) {
-			this.uniforms['uCubeMapTint'] = envmaptint;
+			this.setUniformValue('uCubeMapTint', envmaptint);
 		} else {
-			this.uniforms['uCubeMapTint'] = vec3.fromValues(1.0, 1.0, 1.0);
+			this.setUniformValue('uCubeMapTint', vec3.fromValues(1.0, 1.0, 1.0));
 		}
 
 		if (variables.get('$normalmapalphaenvmapmask') == 1) {
@@ -334,12 +334,12 @@ export class Source1Material extends Material {
 			this.setDefine('NO_DRAW');
 		}
 
-		this.uniforms['uTextureTransform'] = IDENTITY_MAT4;
+		this.setUniformValue('uTextureTransform', IDENTITY_MAT4);
 		if (vmt['$basetexturetransform']) {
 			const textureTransform = GetTextureTransform(vmt['$basetexturetransform']);
 			if (textureTransform) {
 				this.variables.set('$basetexturetransform', textureTransform);
-				this.uniforms['uTextureTransform'] = textureTransform;
+				this.setUniformValue('uTextureTransform', textureTransform);
 			}
 		}
 
@@ -357,11 +357,11 @@ export class Source1Material extends Material {
 			const phongExponentTexture = vmt['$phongexponenttexture'];
 			this.setTexture('phongExponentTexture', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
-				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
+				this.setUniformValue('uPhongExponentFactor', variables.get('$phongexponentfactor'));
 			}
 
-			this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-			this.uniforms['uPhongBoost'] = variables.get('$phongboost');
+			this.setUniformValue('uPhongExponent', variables.get('$phongexponent'));
+			this.setUniformValue('uPhongBoost', variables.get('$phongboost'));
 
 			if (vmt['$basemapalphaphongmask'] == 1) {
 				this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
@@ -393,9 +393,9 @@ export class Source1Material extends Material {
 
 			const selfIllumTint = variables.get('$selfillumtint');
 			if (selfIllumTint) {
-				this.uniforms['uSelfIllumTint'] = selfIllumTint;
+				this.setUniformValue('uSelfIllumTint', selfIllumTint);
 			} else {
-				this.uniforms['uSelfIllumTint'] = vec3.fromValues(1.0, 1.0, 1.0);
+				this.setUniformValue('uSelfIllumTint', vec3.fromValues(1.0, 1.0, 1.0));
 			}
 
 			const selfIllumMask = variables.get('$selfillummask');
@@ -417,7 +417,7 @@ export class Source1Material extends Material {
 				constScaleBiasExp[2] = flExp; // Exp
 				constScaleBiasExp[3] = flMax; // Brightness
 
-				this.uniforms['uSelfIllumScaleBiasExpBrightness'] = constScaleBiasExp;
+				this.setUniformValue('uSelfIllumScaleBiasExpBrightness', constScaleBiasExp);
 			}
 
 
@@ -466,11 +466,11 @@ export class Source1Material extends Material {
 	}
 
 	#initUniforms() {
-		this.uniforms['uDetailTextureTransform'] = this.#detailTextureTransform;
+		this.setUniformValue('uDetailTextureTransform', this.#detailTextureTransform);
 	}
 
 	getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): SpriteSheetCoord | null {
-		const texture = this.uniforms['colorMap'] as Texture;
+		const texture = this.getUniformValue('colorMap') as Texture;
 		if (!texture) {
 			return null;
 		}
@@ -525,7 +525,7 @@ export class Source1Material extends Material {
 	}
 
 	getFrameSpan(sequence: number) {
-		const texture = this.uniforms['colorMap'] as Texture;
+		const texture = this.getUniformValue('colorMap') as Texture;
 		if (!texture) {
 			return;
 		}
@@ -621,7 +621,7 @@ export class Source1Material extends Material {
 
 		const baseTextureTransform = variables.get('$basetexturetransform');
 		if (baseTextureTransform) {
-			this.uniforms['uTextureTransform'] = baseTextureTransform;
+			this.setUniformValue('uTextureTransform', baseTextureTransform);
 			this.setDefine('USE_TEXTURE_TRANSFORM');
 		}
 
@@ -638,7 +638,7 @@ export class Source1Material extends Material {
 		if (variables.get('$selfillum') == 1) {
 			const selfIllumTint = variables.get('$selfillumtint');
 			if (selfIllumTint) {
-				this.uniforms['uSelfIllumTint'] = selfIllumTint;
+				this.setUniformValue('uSelfIllumTint', selfIllumTint);
 			}
 
 			const selfIllumMask = variables.get('$selfillummask');
@@ -673,7 +673,7 @@ export class Source1Material extends Material {
 			}
 
 			this.setDefine('DETAIL_BLEND_MODE', variables.get('$detailblendmode') ?? 0);
-			this.uniforms['uDetailBlendFactor'] = variables.get('$detailblendfactor') ?? 0;
+			this.setUniformValue('uDetailBlendFactor', variables.get('$detailblendfactor') ?? 0);
 		}
 
 
@@ -766,7 +766,7 @@ export class Source1Material extends Material {
 				0.1333329975605011,
 			),// TODO: set actual value
 			textures: new Map([
-				[0, this.uniforms.colorMap as Texture],
+				[0, this.getUniformValue('colorMap') as Texture],
 			]),
 			flatShading: false,
 		}

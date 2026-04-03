@@ -9,8 +9,8 @@ export class MeshBasicPbrMaterial extends Material {
 	constructor(params: any/*TODO: create parameters type*/ = {}) {
 		super(params);
 		this.addParameter('color', MateriaParameterType.Color4, null, newValue => this.setColor4Uniform('uColor', newValue ?? DEFAULT_COLOR));
-		this.addParameter('metalness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.uniforms['uMetalness'] = newValue });
-		this.addParameter('roughness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.uniforms['uRoughness'] = newValue });
+		this.addParameter('metalness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.setUniformValue('uMetalness', newValue) });
+		this.addParameter('roughness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.setUniformValue('uRoughness', newValue) });
 		this.addParameter('color_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uColorTexture', newValue, 'USE_COLOR_TEXTURE'));
 		this.addParameter('normal_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uNormalTexture', newValue, 'USE_NORMAL_TEXTURE'));
 		this.addParameter('metalness_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uMetalnessTexture', newValue, 'USE_METALNESS_TEXTURE'));

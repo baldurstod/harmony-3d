@@ -26,8 +26,8 @@ export class Source2CsgoWeapon extends Source2Material {
 		}
 	}
 
-	getUniforms(): Map<string, string>[] {
-		const uniforms = super.getUniforms();
+	override getSource2Uniforms(): Map<string, string>[] {
+		const uniforms = super.getSource2Uniforms();
 		const m = new Map<string, string>();
 
 		for (let i = 0; i < STICKER_COUNT; i++) {

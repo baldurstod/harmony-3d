@@ -31,8 +31,8 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 		this.modeAlpha = GL_MAX;
 
 
-		this.uniforms['uTextureTransform'] = IDENTITY_MATRIX;
-		this.uniforms['uTexture2Transform'] = IDENTITY_MATRIX;
+		this.setUniformValue('uTextureTransform', IDENTITY_MATRIX);
+		this.setUniformValue('uTexture2Transform', IDENTITY_MATRIX);
 
 		this.setDefine('USE_TEXTURE_TRANSFORM');
 		this.setDefine('USE_TEXTURE2_TRANSFORM');
@@ -52,7 +52,7 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 		const parameters = this.vmt;
 		const texture2Transform = variables.get('$texture2transform');
 		if (texture2Transform) {
-			this.uniforms['uTexture2Transform'] = texture2Transform;
+			this.setUniformValue('uTexture2Transform', texture2Transform);
 		}
 
 

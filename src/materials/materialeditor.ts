@@ -1,17 +1,16 @@
-import { Entity } from '../entities/entity';
-import '../css/materialeditor.css';
-import { Material } from './material';
 import { createElement, createShadowRoot, hide, show } from 'harmony-ui';
-import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
+import '../css/materialeditor.css';
+import { Entity } from '../entities/entity';
 import { BlendingEquation, BlendingFactor } from '../enums/blending';
+import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
+import { UniformBuffer } from '../webgl/uniform';
+import { Material } from './material';
 
-function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*/) {
+function getUniformsHtml(uniforms: Map<string, UniformBuffer>): HTMLElement {
 	const htmlUniforms = createElement('div');
 
-	for (const uniformName in uniforms) {
-		const uniform = uniforms[uniformName];
-
-		htmlUniforms.append(addHtmlParameter(uniformName, uniform));
+	for (const [uniformName, uniform] of uniforms) {
+		htmlUniforms.append(addHtmlParameter(uniformName, uniform.value));
 	}
 
 	return htmlUniforms;
@@ -172,7 +171,7 @@ export class MaterialEditor {//TODO: turn into static class
 		}
 
 		//this.#htmlElement.innerHTML += this.material.name;
-		this.#htmlParams.append(getUniformsHtml(material.uniforms));
+		this.#htmlParams.append(getUniformsHtml(material.getUniforms()));
 
 	}
 

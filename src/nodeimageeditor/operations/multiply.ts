@@ -55,7 +55,7 @@ export class Multiply extends Node {
 
 		//this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
 		this.material.setTextureArray('uInput[0]', textureArray);
-		this.material.uniforms['uUsed[0]'] = usedArray;
+		this.material.setUniformValue('uUsed[0]', usedArray);
 		//this.material.uniforms['uInput1'] = await this.getInput('input1').value;
 
 		if (!this.#renderTarget) {
@@ -97,7 +97,7 @@ export class Multiply extends Node {
 
 			//this.material.setTexture(`inputTexture${i}`, texture);
 			if (texture) {
-				this.material.uniforms[`input${inputCount}Texture`] = texture;
+				this.material.setUniformValue(`input${inputCount}Texture`, texture);
 				++inputCount;
 			}
 		}
@@ -119,7 +119,7 @@ export class Multiply extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 		this.material.setDefine('INPUT_COUNT', String(inputCount));
 
 		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);

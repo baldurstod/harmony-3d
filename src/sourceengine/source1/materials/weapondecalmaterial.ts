@@ -1,10 +1,8 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
-import { Source1VmtLoader } from '../loaders/source1vmtloader';
-import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, Source1Material, TextureRole, VmtParameters, readColor } from './source1material';
-
 import { DynamicParams } from '../../../entities/entity';
 import { lerp } from '../../../math/functions';
-import { UniformValue } from '../../../webgl/uniform';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, Source1Material, TextureRole, VmtParameters, readColor } from './source1material';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 
@@ -28,7 +26,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
 		this.setDefine('DESATBASETINT', variables.get('$desatbasetint') ? '1' : '0');
 
-		this.uniforms['uTintLerpBase'] = variables.get('$desatbasetint');
+		this.setUniformValue('uTintLerpBase', variables.get('$desatbasetint'));
 
 		this.polygonOffset = true;
 		this.polygonOffsetFactor = -5;
@@ -44,69 +42,69 @@ export class WeaponDecalMaterial extends Source1Material {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.uniforms['colorMap'] = this.getTexture(TextureRole.Color, this.repository, baseTexture, 0);
+			this.setUniformValue('colorMap', this.getTexture(TextureRole.Color, this.repository, baseTexture, 0));
 			this.setDefine('USE_COLOR_MAP');//TODOv3: set this automaticaly
 		}
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+			this.setUniformValue('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame));
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
 			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
+			this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+			this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+			this.setUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+			this.setUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
 		}
 		if (parameters['$sheenmap']) {
-			this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
+			this.setUniformValue('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true));
 			this.setDefine('USE_SHEEN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$maskstexture']) {
-			this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+			this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0));
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$pattern']) {
-			this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
+			this.setUniformValue('patternMap', this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0));
 			this.setDefine('USE_PATTERN_MAP');//TODOv3: set this automaticaly
 		}
 
 		const aoTexture = variables.get('$aotexture');
 		if (aoTexture) {
-			this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, aoTexture, 0);
+			this.setUniformValue('aoMap', this.getTexture(TextureRole.Ao, this.repository, aoTexture, 0));
 			this.setDefine('USE_AO_MAP');//TODOv3: set this automaticaly
 		}
 
 		const wearTexture = variables.get('$weartexture');
 		if (wearTexture) {
-			this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, wearTexture, 0);
+			this.setUniformValue('scratchesMap', this.getTexture(TextureRole.Scratches, this.repository, wearTexture, 0));
 			this.setDefine('USE_SCRATCHES_MAP');//TODOv3: set this automaticaly
 		}
 
 		const grungeTexture = variables.get('$grungetexture');
 		if (grungeTexture) {
-			this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, grungeTexture, 0);
+			this.setUniformValue('grungeMap', this.getTexture(TextureRole.Grunge, this.repository, grungeTexture, 0));
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
-			this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
+			this.setUniformValue('exponentMap', this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0));
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
 		const holoMaskTexture = variables.get('$holomask');
 		if (holoMaskTexture) {
-			this.uniforms['holoMaskMap'] = this.getTexture(TextureRole.Holo, this.repository, holoMaskTexture, 0);
+			this.setUniformValue('holoMaskMap', this.getTexture(TextureRole.Holo, this.repository, holoMaskTexture, 0));
 			this.setDefine('USE_HOLO_MASK_MAP');//TODOv3: set this automaticaly
 		}
 
 		const holoSpectrumTexture = variables.get('$holospectrum');
 		if (holoSpectrumTexture) {
-			this.uniforms['holoSpectrumMap'] = this.getTexture(TextureRole.HoloSpectrum, this.repository, holoSpectrumTexture, 0);
+			this.setUniformValue('holoSpectrumMap', this.getTexture(TextureRole.HoloSpectrum, this.repository, holoSpectrumTexture, 0));
 			this.setDefine('USE_HOLO_SPECTRUM_MAP');//TODOv3: set this automaticaly
 		}
 
@@ -150,13 +148,13 @@ export class WeaponDecalMaterial extends Source1Material {
 					}	*/
 
 
-		this.uniforms['uColorTint'] = variables.get('$colortint');
-		this.uniforms['uColorTin2'] = variables.get('$colortint2');
-		this.uniforms['uColorTint3'] = variables.get('$colortin3');
-		this.uniforms['uColorTint4'] = variables.get('$colortint4');
+		this.setUniformValue('uColorTint', variables.get('$colortint'));
+		this.setUniformValue('uColorTin2', variables.get('$colortint2'));
+		this.setUniformValue('uColorTint3', variables.get('$colortin3'));
+		this.setUniformValue('uColorTint4', variables.get('$colortint4'));
 		// Todo: optimize
-		this.uniforms['uPhongParams'] = vec4.fromValues(4.0, 1.0, 1.0, 2.0);//TODO: set actual values
-		this.uniforms['uPhongFresnel'] = vec4.fromValues(1.0, 1.0, 1.0, 0.0);//TODO: set actual values
+		this.setUniformValue('uPhongParams', vec4.fromValues(4.0, 1.0, 1.0, 2.0));//TODO: set actual values
+		this.setUniformValue('uPhongFresnel', vec4.fromValues(1.0, 1.0, 1.0, 0.0));//TODO: set actual values
 
 		const wearProgress = proxyParams['WearProgress'] ?? 0.0;//TODO
 		const wearRemapMid = variables.get('$wearremapmid');
@@ -177,7 +175,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		const flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
 
 
-		this.uniforms['uWearParams'] = vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength'));
+		this.setUniformValue('uWearParams', vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength')));
 	}
 
 	set style(style: string) {
@@ -188,7 +186,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
-			this.uniforms[uniformName] = color;
+			this.setUniformValue(uniformName, color);
 		}
 	}
 
@@ -210,10 +208,10 @@ export class WeaponDecalMaterial extends Source1Material {
 
 	setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
 		const transformMatrix = this.#getTexCoordTransform(scale, translation, rotation);
-		this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
+		this.setUniformValue('g_patternTexCoordTransform[0]', new Float32Array([
 			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
 			transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
-		]);
+		]));
 	}
 
 	#getTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {

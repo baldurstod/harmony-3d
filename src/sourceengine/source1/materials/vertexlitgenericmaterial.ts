@@ -3,7 +3,6 @@ import { DynamicParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
 import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
 import { Texture } from '../../../textures/texture';
-import { UniformValue } from '../../../webgl/uniform';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, TextureRole } from './source1material';
 
@@ -25,8 +24,8 @@ export class VertexLitGenericMaterial extends Source1Material {
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
-		this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
+		this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0));//TODOv3
+		this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
 		if (btbba == 1) {
@@ -35,7 +34,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			if (this.variables.get('$selfillum') != 1) {
 				this.removeDefine('USE_SELF_ILLUM');
 				this.setDefine('BLEND_TINT_BY_BASE_ALPHA');
-				this.uniforms['uBlendTintColorOverBase'] = this.variables.get('$blendtintcoloroverbase') ?? 0;
+				this.setUniformValue('uBlendTintColorOverBase', this.variables.get('$blendtintcoloroverbase') ?? 0);
 
 				// TODO : properly set these variables
 				this.variables.set('$translucent', 0);
@@ -52,7 +51,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			this.removeDefine('BLEND_TINT_BY_BASE_ALPHA');
 		}
 
-		this.uniforms['g_cCloakColorTint'] = vec3.create();
+		this.setUniformValue('g_cCloakColorTint', vec3.create());
 
 
 		this.variables.set('$SheenMaskScaleX', 1.0);
@@ -72,23 +71,23 @@ export class VertexLitGenericMaterial extends Source1Material {
 
 			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
+			this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+			this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+			this.setSubUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+			this.setSubUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
 		}
 		if (parameters['$sheenmap']) {
 			this.setTexture('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true), 'USE_SHEEN_MAP');
 		}
 
 		if (proxyParams['SheenTintColor']) {
-			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+			this.setUniformValue('g_cCloakColorTint', proxyParams['SheenTintColor']);
+			this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', proxyParams['SheenTintColor']);
 		} else {
 			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
-				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
-				(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = sheenmaptint;
+				this.setUniformValue('g_cCloakColorTint', sheenmaptint);
+				this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', sheenmaptint);
 			}
 		}
 
@@ -98,7 +97,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 
 
 		//TODOv3: only do this if a variable is changed
-		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.#diffuseModulation);
+		this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.#diffuseModulation));
 	}
 
 	clone() {
@@ -122,9 +121,9 @@ export class VertexLitGenericMaterial extends Source1Material {
 				0.1333329975605011,
 			),// TODO: set actual value
 			textures: new Map([
-				[0, this.uniforms.colorMap as Texture],
-				[1, this.uniforms.normalTexture as Texture],
-				[3, this.uniforms.cubeTexture as Texture],
+				[0, this.getUniformValue('colorMap') as Texture],
+				[1, this.getUniformValue('normalTexture') as Texture],
+				[3, this.getUniformValue('cubeTexture') as Texture],
 			]),
 			flatShading: false,
 		}

@@ -25,24 +25,37 @@ export class PixelatePass extends Pass {
 		this.horizontalTiles = 10;
 	}
 
+	/**
+	 * @deprecated Use setHorizontalTiles instead
+	 */
 	set horizontalTiles(horizontalTiles: number) {
-		this.#horizontalTiles = horizontalTiles;
-		this.#material.uniforms['uHorizontalTiles'] = this.#horizontalTiles;
+		this.setHorizontalTiles(horizontalTiles);
 	}
 
+	setHorizontalTiles(horizontalTiles: number): void {
+		this.#horizontalTiles = horizontalTiles;
+		this.#material.setUniformValue('uHorizontalTiles', this.#horizontalTiles);
+	}
+
+	/**
+	 * @deprecated Use setPixelStyle instead
+	 */
 	set pixelStyle(pixelStyle: number/*TODO: creacte enum*/) {
+	}
+
+	setPixelStyle(pixelStyle: number/*TODO: creacte enum*/): void {
 		this.#pixelStyle = pixelStyle;
 		this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
 	}
 
 	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+		this.#material.setUniformValue('colorMap', readBuffer.getTexture());
 		if (Graphics.isWebGLAny) {
 			Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 			Graphics.render(this.scene!, this.camera!, 0, context);
 			Graphics.popRenderTarget();
 		} else {
-			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
 			Graphics.compute(this.#material, {
 				...context,

@@ -90,7 +90,7 @@ export class CombineAdd extends Node {
 		for (let i = 0; i < 8; ++i) {
 			const texture = await this.getInput('input' + i)?.getValue(context);
 			if (texture) {
-				this.material.uniforms[`input${inputCount}Texture`] = texture;
+				this.material.setUniformValue(`input${inputCount}Texture`, texture);
 				++inputCount;
 			}
 		}
@@ -110,7 +110,7 @@ export class CombineAdd extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 		this.material.setDefine('INPUT_COUNT', String(inputCount));
 
 		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);

@@ -45,7 +45,7 @@ export class Select extends Node {
 			return;
 		}
 		this.material.setTexture('uInputTexture', await this.getInput('input')?.getValue(context));
-		this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.getValue(context);
+		this.material.setUniformValue('uSelect[0]', await this.getInput('selectvalues')?.getValue(context));
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -71,7 +71,7 @@ export class Select extends Node {
 			return;
 		}
 		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
-		this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.getValue(context));
+		this.material.setUniformValue('select', new Float32Array(await this.getInput('selectvalues')?.getValue(context)));
 
 		if (!this.#outputTexture) {
 			this.#outputTexture = TextureManager.createTexture({
@@ -88,7 +88,7 @@ export class Select extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 
 		//this.editor.render(this.material, this.#textureSize, this.#textureSize);
 		Graphics.compute(this.material, {

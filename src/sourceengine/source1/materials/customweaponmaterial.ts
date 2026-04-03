@@ -1,6 +1,5 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
-import { UniformValue } from '../../../webgl/uniform';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole, readColor } from './source1material';
 
@@ -19,19 +18,19 @@ export class CustomWeaponMaterial extends Source1Material {
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
-		this.uniforms['g_PreviewPhongBoosts'] = vec4.fromValues(1, 1, 1, 1);
-		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
+		this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0));//TODOv3
+		this.setUniformValue('g_PreviewPhongBoosts', vec4.fromValues(1, 1, 1, 1));
+		this.setUniformValue('g_DiffuseModulation', this.diffuseModulation);
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
 		if (btbba && btbba == 1) {
 			this.setDefine('BLEND_TINT_BY_BASE_ALPHA');
-			this.uniforms['uBlendTintColorOverBase'] = this.variables.get('$blendtintcoloroverbase') ?? 0;
+			this.setUniformValue('uBlendTintColorOverBase', this.variables.get('$blendtintcoloroverbase') ?? 0);
 		} else {
 			this.removeDefine('BLEND_TINT_BY_BASE_ALPHA');
 		}
 
-		this.uniforms['g_cCloakColorTint'] = vec3.create();
+		this.setUniformValue('g_cCloakColorTint', vec3.create());
 
 
 		this.variables.set('$SheenMaskScaleX', 1.0);
@@ -47,61 +46,61 @@ export class CustomWeaponMaterial extends Source1Material {
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+			this.setUniformValue('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame));
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
 			const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-			this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-			this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst6']! = g_vPackedConst6;
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_vPackedConst7'] = g_vPackedConst7;
+			this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+			this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+			this.setSubUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+			this.setSubUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
 		}
 		if (parameters['$sheenmap']) {
-			this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
+			this.setUniformValue('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true));
 			this.setDefine('USE_SHEEN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$maskstexture']) {
-			this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+			this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0));
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$pattern']) {
-			this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
+			this.setUniformValue('patternMap', this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0));
 			this.setDefine('USE_PATTERN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$aotexture']) {
-			this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, parameters['$aotexture'], 0);
+			this.setUniformValue('aoMap', this.getTexture(TextureRole.Ao, this.repository, parameters['$aotexture'], 0));
 			this.setDefine('USE_AO_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$weartexture']) {
-			this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, parameters['$weartexture'], 0);
+			this.setUniformValue('scratchesMap', this.getTexture(TextureRole.Scratches, this.repository, parameters['$weartexture'], 0));
 			this.setDefine('USE_SCRATCHES_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$grungetexture']) {
-			this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, parameters['$grungetexture'], 0);
+			this.setUniformValue('grungeMap', this.getTexture(TextureRole.Grunge, this.repository, parameters['$grungetexture'], 0));
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
-			this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
+			this.setUniformValue('exponentMap', this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0));
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
 		const surfaceTexture = parameters['$surfacetexture'];
 		if (surfaceTexture) {
-			this.uniforms['surfaceMap'] = this.getTexture(TextureRole.Surface, this.repository, surfaceTexture, 0);
+			this.setUniformValue('surfaceMap', this.getTexture(TextureRole.Surface, this.repository, surfaceTexture, 0));
 			this.setDefine('USE_SURFACE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const posTexture = parameters['$postexture'];
 		if (posTexture) {
-			this.uniforms['posMap'] = this.getTexture(TextureRole.Pos, this.repository, posTexture, 0);
+			this.setUniformValue('posMap', this.getTexture(TextureRole.Pos, this.repository, posTexture, 0));
 			this.setDefine('USE_POS_MAP');//TODOv3: set this automaticaly
 		}
 
@@ -146,21 +145,21 @@ export class CustomWeaponMaterial extends Source1Material {
 
 
 		if (proxyParams['SheenTintColor']) {
-			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
-			(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+			this.setUniformValue('g_cCloakColorTint', proxyParams['SheenTintColor']);
+			this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', proxyParams['SheenTintColor']);
 		} else {
 			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
-				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
-				(this.uniforms['sheenUniforms'] as Record<string, UniformValue>)['g_cCloakColorTint'] = sheenmaptint;
+				this.setUniformValue('g_cCloakColorTint', sheenmaptint);
+				this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', sheenmaptint);
 			}
 		}
 
 		const wearProgress = proxyParams['WearProgress'] ?? 0;
 		if (wearProgress !== undefined) {
-			this.uniforms['uWearProgress'] = wearProgress;
+			this.setUniformValue('uWearProgress', wearProgress);
 		} else {
-			this.uniforms['uWearProgress'] = DEFAULT_WEAR_PROGRESS;
+			this.setUniformValue('uWearProgress', DEFAULT_WEAR_PROGRESS);
 		}
 
 
@@ -169,7 +168,7 @@ export class CustomWeaponMaterial extends Source1Material {
 
 
 		//TODOv3: only do this if a variable is changed
-		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
+		this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.diffuseModulation));
 	}
 
 	set style(style: string) {
@@ -180,7 +179,7 @@ export class CustomWeaponMaterial extends Source1Material {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
-			this.uniforms[uniformName] = color;
+			this.setUniformValue(uniformName, color);
 		}
 	}
 
@@ -222,7 +221,9 @@ export class CustomWeaponMaterial extends Source1Material {
 	*/
 
 	setPatternScale(scale: number) {
-		(this.uniforms['g_PreviewPhongBoosts'] as vec3)[2] = scale;
+		const v = this.getUniformValue('g_PreviewPhongBoosts');
+		(v as vec4)[2] = scale;
+		this.setUniformValue('g_PreviewPhongBoosts', v);
 	}
 
 	/*

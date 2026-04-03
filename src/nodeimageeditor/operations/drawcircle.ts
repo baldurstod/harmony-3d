@@ -45,11 +45,11 @@ export class DrawCircle extends Node {
 			area._value = Math.PI * radius ** 2;
 		}
 
-		this.material.uniforms['uRadius'] = radius;
-		this.material.uniforms['uCenter'] = center;
-		this.material.uniforms['uBorderColor'] = borderColor;
-		this.material.uniforms['uFillColor'] = fillColor;
-		this.material.uniforms['uBorder'] = border;
+		this.material.setUniformValue('uRadius', radius);
+		this.material.setUniformValue('uCenter', center);
+		this.material.setUniformValue('uBorderColor', borderColor);
+		this.material.setUniformValue('uFillColor', fillColor);
+		this.material.setUniformValue('uBorder', border);
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });

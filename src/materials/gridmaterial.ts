@@ -10,7 +10,7 @@ export class GridMaterial extends Material {
 	}
 
 	set spacing(spacing: number) {
-		this.uniforms['uSpacing'] = spacing;
+		this.setUniformValue('uSpacing', spacing);
 	}
 
 	override getShaderSource(): string {

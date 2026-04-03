@@ -91,7 +91,7 @@ export class CombineLerp extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 
 		Graphics.compute(this.material, {
 			workgroupCountX: this.#textureSize,

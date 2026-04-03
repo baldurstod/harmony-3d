@@ -8,7 +8,7 @@ import { Mesh } from '../objects/mesh';
 import { RaytracingMaterial } from '../raytracing/material';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
-import { UniformValue } from '../webgl/uniform';
+import { MaterialUniform, UniformBuffer, UniformValue } from '../webgl/uniform';
 import { StorageBuffer, StorageValueArray } from '../webgpu/storage';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
@@ -54,8 +54,6 @@ export type MaterialParams = {
 	blendingMode?: BlendingMode;
 };
 
-export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
-
 export class Material {
 	id = '';
 	name = '';
@@ -66,7 +64,8 @@ export class Material {
 	#alphaTestReference = 0;
 	#users = new Set<any>();
 	#parameters = new Map<string, MateriaParameter>();
-	uniforms: MaterialUniform = {};// TODO: transform to map ?
+	readonly #uniforms = new Map<string, UniformBuffer>();
+	// Storage bindings. Only for WebGPU.
 	readonly storage = new Map<string, StorageBuffer>();
 	readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
@@ -117,7 +116,7 @@ export class Material {
 
 		if (params.uniforms) {
 			for (const name in params.uniforms) {
-				this.uniforms[name] = params.uniforms[name];
+				this.setUniformValue(name, params.uniforms[name]!);
 			}
 		}
 
@@ -348,7 +347,7 @@ export class Material {
 
 	setColor(color: vec4) {
 		vec4.copy(this.#color, color);
-		this.uniforms['uColor'] = this.#color;
+		this.setUniformValue('uColor', this.#color);
 	}
 
 	set color(color) {
@@ -365,19 +364,19 @@ export class Material {
 	}
 
 	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string) {
-		const previousTexture = this.uniforms[uniformName] as Texture;
+		const previousTexture = this.getUniformValue(uniformName) as Texture;
 		if (previousTexture != texture) {
 			if (previousTexture) {
 				previousTexture.removeUser(this);
 			}
 			if (texture) {
 				texture.addUser(this);
-				this.uniforms[uniformName] = texture;
+				this.setUniformValue(uniformName, texture);
 				if (shaderDefine) {
 					this.setDefine(shaderDefine);
 				}
 			} else {
-				this.uniforms[uniformName] = null;
+				this.setUniformValue(uniformName, null);
 				if (shaderDefine) {
 					this.removeDefine(shaderDefine);
 				}
@@ -386,7 +385,7 @@ export class Material {
 	}
 
 	setTextureArray(uniformName: string, textureArray: Texture[]) {
-		const previousTextureArray: Texture[] | undefined = this.uniforms[uniformName] as Texture[];
+		const previousTextureArray: Texture[] | undefined = this.getUniformValue(uniformName) as Texture[];
 		const keepMe = new Set<Texture>();
 		if (textureArray) {
 			textureArray.forEach(texture => {
@@ -395,9 +394,9 @@ export class Material {
 					keepMe.add(texture);
 				}
 			});
-			this.uniforms[uniformName] = textureArray;
+			this.setUniformValue(uniformName, textureArray);
 		} else {
-			this.uniforms[uniformName] = null;
+			this.setUniformValue(uniformName, null);
 		}
 		if (previousTextureArray) {
 			previousTextureArray.forEach(texture => {
@@ -457,8 +456,8 @@ export class Material {
 	#setAlphaTest() {
 		if (this.#alphaTest) {
 			this.setDefine('ALPHA_TEST');
-			this.uniforms['uAlphaTestReference'] = this.#alphaTestReference ?? 0.5;
-			this.uniforms['alphaTestReference'] = this.#alphaTestReference ?? 0.5;
+			this.setUniformValue('uAlphaTestReference', this.#alphaTestReference ?? 0.5);
+			this.setUniformValue('alphaTestReference', this.#alphaTestReference ?? 0.5);
 			this.depthMask = true;
 		} else {
 			this.removeDefine('ALPHA_TEST');
@@ -495,7 +494,7 @@ export class Material {
 	}
 
 	setColor4Uniform(uniformName: string, value: UniformValue) {
-		this.uniforms[uniformName] = value;
+		this.setUniformValue(uniformName, value);
 	}
 
 	toJSON() {
@@ -555,11 +554,8 @@ export class Material {
 			if (TESTING) {
 				console.info('Material has no more users, deleting', this);
 			}
-			const uniforms = this.uniforms;
-			const uniformArray = Object.keys(uniforms);
-			for (const uniformName of uniformArray) {
-				const uniform = uniforms[uniformName]!;
-				this.#disposeUniform(uniform);
+			for (const [, uniform] of this.#uniforms) {
+				this.#disposeUniform(uniform.value);
 			}
 		}
 		// TODO: destroy gpu buffers
@@ -580,6 +576,68 @@ export class Material {
 
 	getWebGPUShader(): string {
 		throw new Error('Override this function');
+	}
+
+	getUniforms(): Map<string, UniformBuffer> {
+		return this.#uniforms;
+	}
+
+	getUniformValue(name: string): UniformValue | Record<string, UniformValue> {
+		return this.#uniforms.get(name)?.value;
+	}
+
+	setUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
+		const existingValue = this.#uniforms.get(name);
+		if (existingValue) {
+			if (existingValue.buffer) {
+				// TODO: only destroy is size is different
+				existingValue.buffer.destroy();
+			}
+		}
+
+		if (typeof value === 'number') {
+			this.#uniforms.set(name, { value: null, size: value, dirty: true });
+		} else {
+			this.#uniforms.set(name, { value, dirty: true });
+			/*
+			if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
+				this.#uniforms.set(name, { value: value as StorageValueArray });
+			} else {
+				this.#uniforms.set(name, value as StorageBuffer);
+			}
+			*/
+		}
+	}
+
+	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
+		const path = name.split('.');
+
+		let len = path.length;
+		if (len === 1) {
+			return this.setUniformValue(name, value);
+		}
+
+		const existingValue = this.#uniforms.get(name);
+		if (!existingValue) {
+			return;
+		}
+
+		let subValue = existingValue.value;
+		for (let i = 1; i < len - 1; i++) {
+			if (Object.prototype.toString.call(subValue) !== '[object Object]') {
+				return;
+			}
+
+			subValue = (subValue as Record<string, UniformValue>)[path[i]!];
+		}
+
+		(subValue as Record<string, UniformValue | Record<string, UniformValue>>)[path[len]!] = value;
+		existingValue.dirty = true;
+	}
+
+	deleteUniform(name: string): void {
+		// TODO: do some cleanup ?
+		this.#uniforms.delete(name);
 	}
 
 	getStorage(name: string): StorageBuffer | undefined {

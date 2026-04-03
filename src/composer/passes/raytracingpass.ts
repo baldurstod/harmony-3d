@@ -106,7 +106,7 @@ export class RayTracingPass extends Pass {
 			errorOnce('RayTracingPass is unavailable for webgl');
 		} else {
 			if (this.material) {
-				this.material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+				this.material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 				this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
 				Graphics.compute(this.material, {
 					...context,

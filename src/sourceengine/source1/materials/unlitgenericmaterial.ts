@@ -11,8 +11,8 @@ export class UnlitGenericMaterial extends Source1Material {
 		super(repository, path, vmt, params);
 		//this.useSrgb = false;
 
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
-		this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
+		this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0));//TODOv3
+		this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
 	}
 
 	init(): void {

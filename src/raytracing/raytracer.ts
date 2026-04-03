@@ -120,17 +120,33 @@ export class Raytracer {
 		vec3.transformQuat(vup, vup, cameraQuat);
 		vec3.add(vup, vup, vup);
 
-		this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
-		(this.#material.uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
+		this.#material.setUniformValue('camera', computeCamera(activeCamera, width, height));
+		/*
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
+		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
+		*/
+		this.#material.setUniformValue('cameraUniforms', {
+			viewportSize: new Uint32Array([width, height]),
+			imageWidth: width,
+			imageHeight: height,
+			aspectRatio: width / height,
+			vfov: activeCamera.getVerticalFov(),
+			lookFrom: lookFrom,
+			lookAt: lookAt,
+			vup: vup,
+			defocusAngle: 0,// TODO: set an actual value
+			focusDist: 3.4,//activeCamera.focus;
+		});
+
+
 		this.#material.setStorage('faces', {
 			value: faces,
 			raw: true,
@@ -181,7 +197,8 @@ export class Raytracer {
 			});
 		}
 
-		this.#material.uniforms['outTexture'] = this.#outputTexture;
+		//this.#material.#uniforms['outTexture'] = this.#outputTexture;
+		this.#material.setUniformValue('outTexture', this.#outputTexture);
 
 		const rtCanvas = Graphics.getCanvas('rt_canvas')!;
 		rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
@@ -209,7 +226,8 @@ export class Raytracer {
 			return;
 		}
 
-		(this.#material.uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
+		//(this.#material.#uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
+		this.#material.setSubUniformValue('commonUniforms.frameCounter', this.#frameId++);
 
 		if (!this.#prepassDone) {
 			Graphics.compute(this.#prepassMaterial,

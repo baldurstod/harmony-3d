@@ -163,22 +163,22 @@ export class Source2Material extends Material {
 
 
 
-		this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset) ?? this.#detailTexCoordOffset;
-		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale;
-		this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
-		this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
+		this.setUniformValue('g_vDetailTexCoordOffset', this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset) ?? this.#detailTexCoordOffset);
+		this.setUniformValue('g_vDetailTexCoordScale', this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale);
+		this.setUniformValue('g_vDetail1ColorTint', vec4.fromValues(1, 1, 1, 1));
+		this.setUniformValue('g_vDetail2ColorTint', vec4.fromValues(1, 1, 1, 1));
 
-		this.uniforms['detailTextures'] = {
-			g_vDetailTexCoordScale: this.uniforms['g_vDetailTexCoordScale'],
-			g_vDetailTexCoordOffset: this.uniforms['g_vDetailTexCoordOffset'],
-			g_vDetail1ColorTint: this.uniforms['g_vDetail1ColorTint'],
+		this.setUniformValue('detailTextures', {
+			g_vDetailTexCoordScale: this.getUniformValue('g_vDetailTexCoordScale') as UniformValue,
+			g_vDetailTexCoordOffset: this.getUniformValue('g_vDetailTexCoordOffset') as UniformValue,
+			g_vDetail1ColorTint: this.getUniformValue('g_vDetail1ColorTint') as UniformValue,
 
 			g_vDetail2TexCoordScale: this.#detailTexCoordOffset,// TODO: use actual value
 			g_vDetail2TexCoordOffset: this.#detailTexCoordScale,// TODO: use actual value
-			g_vDetail2ColorTint: this.uniforms['g_vDetail2ColorTint'],
-		};
+			g_vDetail2ColorTint: this.getUniformValue('g_vDetail2ColorTint') as UniformValue,
+		});
 
-		this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
+		this.setUniformValue('g_vColorTint', vec4.fromValues(1, 1, 1, 0));
 
 		this.initFloatUniforms();
 		this.initVectorUniforms();
@@ -218,7 +218,7 @@ export class Source2Material extends Material {
 			//console.error(uniformName);
 			const paramValue = this.#getParam(paramName);
 			if (paramValue) {
-				this.setUniform(uniformName, paramValue);
+				this.setUniformValue(uniformName, paramValue);
 			}
 		}
 	}
@@ -306,9 +306,9 @@ export class Source2Material extends Material {
 		const value = this.getDynamicParam(uniformName);
 		if (value) {
 			if (uniformName.startsWith('g_fl')) {
-				this.uniforms[uniformName] = value[0];
+				this.setUniformValue(uniformName, value[0]);
 			} else {
-				this.uniforms[uniformName] = value;
+				this.setUniformValue(uniformName, value);
 			}
 		}
 	}
@@ -321,9 +321,11 @@ export class Source2Material extends Material {
 	/* eslint-enable @typescript-eslint/no-unused-vars */
 	/* eslint-enable @typescript-eslint/no-empty-function */
 
-	setUniform(uniformName: string, uniformValue: UniformValue): void {
-		this.uniforms[uniformName] = uniformValue;
+	/*
+	setUniformValue(uniformName: string, uniformValue: UniformValue): void {
+		this.#uniforms[uniformName] = uniformValue;
 	}
+	*/
 
 	initFloatUniforms(): void {
 		if (this.#source2File) {
@@ -334,7 +336,7 @@ export class Source2Material extends Material {
 					const value = fl.getValueAsNumber('m_flValue');
 
 					if (name !== null && value !== null) {
-						this.setUniform(name, value);
+						this.setUniformValue(name, value);
 					}
 				}
 			}
@@ -350,14 +352,14 @@ export class Source2Material extends Material {
 					const value = vector.getValueAsVec4('m_value', vec4.create());
 
 					if (name !== null && value !== null) {
-						this.setUniform(name, value);
+						this.setUniformValue(name, value);
 					}
 				}
 			}
 		}
 	}
 
-	getUniforms(): Map<string, string>[] {
+	getSource2Uniforms(): Map<string, string>[] {
 		return [UNIFORMS];
 	}
 
@@ -559,7 +561,7 @@ export class Source2Material extends Material {
 				0.1333329975605011,
 			),// TODO: set actual value
 			textures: new Map([
-				[0, this.uniforms.colorMap as Texture],
+				[0, this.getUniformValue('colorMap') as Texture],
 			]),
 			flatShading: false,
 		}

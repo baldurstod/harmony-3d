@@ -24,14 +24,14 @@ export class SketchPass extends Pass {
 	}
 
 	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+		this.#material.setUniformValue('colorMap', readBuffer.getTexture());
 
 		if (Graphics.isWebGLAny) {
 			Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 			Graphics.render(this.scene!, this.camera!, 0, context);
 			Graphics.popRenderTarget();
 		} else {
-			this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
 			Graphics.compute(this.#material, {
 				...context,

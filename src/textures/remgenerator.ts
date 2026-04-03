@@ -384,7 +384,7 @@ export class RemGenerator {
 			if (!this.#cubemapMaterial) {
 				this.#cubemapMaterial = getCubemapMaterial();
 			}
-			this.#cubemapMaterial.uniforms.flipEnvMap = (texture.isRenderTargetTexture === false) ? - 1 : 1;
+			this.#cubemapMaterial.setUniformValue('flipEnvMap', (texture.isRenderTargetTexture === false) ? - 1 : 1);
 			material = this.#cubemapMaterial;
 		} else {
 			if (!this.#equirectMaterial) {
@@ -397,9 +397,9 @@ export class RemGenerator {
 		const scene = new Scene();
 		scene.addChild(mesh);
 
-		const uniforms = material.uniforms;
-
-		uniforms['envMap'] = texture;
+		//const uniforms = material.#uniforms;
+		//uniforms['envMap'] = texture;
+		material.setUniformValue('envMap', texture);
 
 		const size = this.#cubeSize;
 
@@ -480,7 +480,7 @@ export class RemGenerator {
 		const STANDARD_DEVIATIONS = 3;
 
 		const blurMesh = new Mesh({ geometry: this.#lodPlanes[lodOut], material: this.#blurMaterial });
-		const blurUniforms = this.#blurMaterial.uniforms;
+		//const blurUniforms = this.#blurMaterial.#uniforms;
 		const scene = new Scene();
 		scene.addChild(blurMesh);
 
@@ -522,19 +522,24 @@ export class RemGenerator {
 
 		}
 
-		blurUniforms['envMap'] = targetIn.getTexture();
-		blurUniforms['samples'] = samples;
-		blurUniforms['weights[0]'] = weights;
-		blurUniforms['latitudinal'] = direction === 'latitudinal';
+		//blurUniforms['envMap'] = targetIn.getTexture();
+		this.#blurMaterial.setUniformValue('envMap', targetIn.getTexture());
+		//blurUniforms['samples'] = samples;
+		this.#blurMaterial.setUniformValue('samples', samples);
+		//blurUniforms['weights[0]'] = weights;
+		this.#blurMaterial.setUniformValue('weights[0]', weights);
+		//blurUniforms['latitudinal'] = direction === 'latitudinal';
+		this.#blurMaterial.setUniformValue('latitudinal', direction === 'latitudinal');
 
 		if (poleAxis) {
-
-			blurUniforms['poleAxis'] = poleAxis;
-
+			//blurUniforms['poleAxis'] = poleAxis;
+			this.#blurMaterial.setUniformValue('poleAxis', poleAxis);
 		}
 
-		blurUniforms['dTheta'] = radiansPerPixel;
-		blurUniforms['mipInt'] = this.#lodMax - lodIn;
+		//blurUniforms['dTheta'] = radiansPerPixel;
+		this.#blurMaterial.setUniformValue('dTheta', radiansPerPixel);
+		//blurUniforms['mipInt'] = this.#lodMax - lodIn;
+		this.#blurMaterial.setUniformValue('mipInt', this.#lodMax - lodIn);
 
 		const outputSize = this.#sizeLods[lodOut]!;
 		const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);

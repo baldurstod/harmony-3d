@@ -1,6 +1,6 @@
-import { Material } from './material'
-import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
+import { registerEntity } from '../entities/entities';
+import { Material } from './material';
 
 export class LineMaterial extends Material {
 	#lineWidth = 1;
@@ -16,7 +16,7 @@ export class LineMaterial extends Material {
 
 	set lineWidth(lineWidth: number) {
 		this.#lineWidth = lineWidth;
-		this.uniforms['linewidth'] = lineWidth;
+		this.setUniformValue('linewidth', lineWidth);
 	}
 
 	toJSON() {

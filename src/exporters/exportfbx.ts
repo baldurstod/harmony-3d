@@ -499,7 +499,10 @@ export async function entitytoFBXFile(entity) {
 
 async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhong, materialsParams: DynamicParams) {
 	const fbxManager = fbxMaterial.manager;
-	if (material.uniforms['colorMap']) {
+
+
+	const colorMapUniform = material.getUniformValue('colorMap');
+	if (colorMapUniform) {
 		const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor') as FBXTexture;
 		const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo') as FBXVideo;
 		//fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????
@@ -517,7 +520,7 @@ async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhon
 		fbxMaterial.diffuse.connectSrcObject(fbxTexture);
 	}
 
-	if (material.uniforms['colorMap']) {
+	if (colorMapUniform) {
 		const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor') as FBXTexture;
 		const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo') as FBXVideo;
 		//fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????

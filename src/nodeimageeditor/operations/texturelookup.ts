@@ -61,13 +61,13 @@ export class TextureLookup extends Node {
 			return;
 		}
 		this.material.setTexture('uInput', this.inputTexture);
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+		this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
 		mat3.rotate(texTransform, texTransform, this.getValue('rotation') as number);
 		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u') as number, this.getValue('scale v') as number));
 		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u') as number, this.getValue('translate v') as number));
-		this.material.uniforms['uTransformTexCoord0'] = texTransform;
+		this.material.setUniformValue('uTransformTexCoord0', texTransform);
 
 		//console.error(this.params, this.testing);
 
@@ -92,13 +92,13 @@ export class TextureLookup extends Node {
 			return;
 		}
 		this.material.setTexture('inputTexture', this.inputTexture);
-		this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+		this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
 		mat3.rotate(texTransform, texTransform, this.getValue('rotation') as number);
 		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u') as number, this.getValue('scale v') as number));
 		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u') as number, this.getValue('translate v') as number));
-		this.material.uniforms['transformTexCoord0'] = texTransform;
+		this.material.setUniformValue('transformTexCoord0', texTransform);
 
 		if (!this.#outputTexture) {
 			this.#outputTexture = TextureManager.createTexture({
@@ -115,7 +115,7 @@ export class TextureLookup extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 
 		this.editor.render(this.material, this.#textureSize, this.#textureSize);
 

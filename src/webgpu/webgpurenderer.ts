@@ -1030,7 +1030,7 @@ export class WebGPURenderer implements Renderer {
 			const members = uniform.members;
 			if (members) {
 
-				const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+				const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
 				if (materialUniform) {
 					for (const member of members) {
 						let bufferSource: BufferSource | null = null;
@@ -1155,7 +1155,7 @@ export class WebGPURenderer implements Renderer {
 						}
 					}
 				} else {
-					const arrayUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+					const arrayUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
 					if (arrayUniform !== undefined) {
 						device.queue.writeBuffer(
 							uniformBuffer,
@@ -1175,7 +1175,7 @@ export class WebGPURenderer implements Renderer {
 						bufferSource,
 					);
 				} else {
-					const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+					const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
 					if (materialUniform !== undefined) {
 						switch (uniform.type.name) {
 							case 'f32':
@@ -1291,14 +1291,14 @@ export class WebGPURenderer implements Renderer {
 		for (const shaderTexture of shaderModule.reflection.textures) {
 			switch (shaderTexture.name) {
 				case 'colorTexture':
-					const texture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
+					const texture = (material.getUniformValue('colorMap') as Texture | undefined);//?.texture as GPUTexture | undefined;
 					if (texture) {
 						groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
 					}
 					break;
 				case 'color2Texture':
 					{
-						const texture = (material.uniforms.color2Map as Texture | undefined);//?.texture as GPUTexture | undefined;
+						const texture = (material.getUniformValue('color2Map') as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (texture) {
 							groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
 						}
@@ -1306,7 +1306,7 @@ export class WebGPURenderer implements Renderer {
 					break;
 				default:
 					{
-						const texture = (material.uniforms[shaderTexture.name] as Texture | undefined);//?.texture as GPUTexture | undefined;
+						const texture = (material.getUniformValue(shaderTexture.name) as Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (texture) {
 							groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: getViewDimension(shaderTexture) });
 						} else {
@@ -1321,14 +1321,14 @@ export class WebGPURenderer implements Renderer {
 		for (const shaderSampler of shaderModule.reflection.samplers) {
 			switch (shaderSampler.name) {
 				case 'colorSampler':
-					const sampler = (material.uniforms.colorMap as Texture | undefined)?.sampler;
+					const sampler = (material.getUniformValue('colorMap') as Texture | undefined)?.sampler;
 					if (sampler) {
 						groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
 					}
 					break;
 				case 'color2Sampler':
 					{
-						const sampler = (material.uniforms.color2Map as Texture | undefined)?.sampler;
+						const sampler = (material.getUniformValue('color2Map') as Texture | undefined)?.sampler;
 						if (sampler) {
 							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
 						}
@@ -1337,7 +1337,7 @@ export class WebGPURenderer implements Renderer {
 				default:
 					{
 						const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
-						const sampler = (material.uniforms[name] as Texture | undefined)?.sampler;
+						const sampler = (material.getUniformValue(name) as Texture | undefined)?.sampler;
 						if (sampler) {
 							groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
 						} else {
@@ -1373,7 +1373,7 @@ export class WebGPURenderer implements Renderer {
 
 			switch (storage.name) {
 				case 'colorTexture':
-					const storageTexture = (material.uniforms.colorMap as Texture | undefined);//?.texture as GPUTexture | undefined;
+					const storageTexture = (material.getUniformValue('colorMap') as Texture | undefined);//?.texture as GPUTexture | undefined;
 					if (storageTexture) {
 						groups.set(storage.group, storage.binding, { storageTexture, access, viewDimension: '2d', });
 					}
@@ -1393,7 +1393,7 @@ export class WebGPURenderer implements Renderer {
 					break;
 				default:
 					{
-						const storageTexture = (material.uniforms[storage.name] as (Texture | undefined)[] | Texture | undefined);//?.texture as GPUTexture | undefined;
+						const storageTexture = (material.getUniformValue(storage.name) as (Texture | undefined)[] | Texture | undefined);//?.texture as GPUTexture | undefined;
 						if (storageTexture) {
 							if (storage.isArray) {
 								console.error("check this branch");

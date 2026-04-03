@@ -22,9 +22,9 @@ export class EyeRefractMaterial extends Source1Material {
 
 		this.setTexture('corneaTexture', getDefaultTexture());
 
-		this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
-		this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
-		this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
+		this.setUniformValue('uIrisProjectionU', this.#irisProjectionU);
+		this.setUniformValue('uIrisProjectionV', this.#irisProjectionV);
+		this.setUniformValue('uEyeOrigin', this.#eyeOrigin);
 	}
 
 	init(): void {
@@ -98,9 +98,9 @@ export class EyeRefractMaterial extends Source1Material {
 					this.#irisProjectionU[3] = -vec3.dot(this.#eyeOrigin, (this.#irisProjectionU as vec3)) + 0.5;
 					this.#irisProjectionV[3] = -vec3.dot(this.#eyeOrigin, (this.#irisProjectionV as vec3)) + 0.5;
 
-					this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
-					this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
-					this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
+					this.setUniformValue('uIrisProjectionU', this.#irisProjectionU);
+					this.setUniformValue('uIrisProjectionV', this.#irisProjectionV);
+					this.setUniformValue('uEyeOrigin', this.#eyeOrigin);
 				}
 			}
 		}

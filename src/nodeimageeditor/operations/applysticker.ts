@@ -64,11 +64,11 @@ export class ApplySticker extends Node {
 		this.material.setTexture('uSticker', this.inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
 		this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+		this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
 		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left') as vec2, this.getValue('top left') as vec2, this.getValue('top right') as vec2);
-		this.material.uniforms['uTransformTexCoord0'] = texTransform;
+		this.material.setUniformValue('uTransformTexCoord0', texTransform);
 
 		/*texTransform = mat3.identity(texTransform);
 		mat3.rotate(texTransform, texTransform, this.params.rotation);
@@ -121,11 +121,11 @@ export class ApplySticker extends Node {
 		this.material.setTexture('stickerTexture', this.inputTexture);
 		this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
 		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
-		this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
+		this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
 		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left') as vec2, this.getValue('top left') as vec2, this.getValue('top right') as vec2);
-		this.material.uniforms['transformTexCoord0'] = texTransform;
+		this.material.setUniformValue('transformTexCoord0', texTransform);
 
 		if (!this.#outputTexture) {
 			this.#outputTexture = TextureManager.createTexture({
@@ -142,7 +142,7 @@ export class ApplySticker extends Node {
 			});
 		}
 
-		this.material.uniforms['outTexture'] = this.#outputTexture;
+		this.material.setUniformValue('outTexture', this.#outputTexture);
 
 		//Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
 		this.editor.render(this.material, this.#textureSize, this.#textureSize);

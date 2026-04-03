@@ -17,8 +17,8 @@ export class Source2SpriteCard extends Source2Material {
 		//this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 		this.renderFace(RenderFace.Both);
-		this.setUniform('uFinalTextureScale', vec2.fromValues(1, 1));
-		this.setUniform('uColorScale', vec3.fromValues(1, 1, 1));
+		this.setUniformValue('uFinalTextureScale', vec2.fromValues(1, 1));
+		this.setUniformValue('uColorScale', vec3.fromValues(1, 1, 1));
 
 		//this.setTransparency( GL_SRC_ALPHA, GL_ONE);
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

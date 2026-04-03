@@ -47,6 +47,24 @@ export type UniformValue = GLint | GLboolean | GLboolean[] | Uint32List | Int32L
 
 //export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;/
 
+export type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
+
+export type UniformBuffer = {
+	value?: UniformValue | Record<string, UniformValue> | null;
+	buffer?: GPUBuffer | null;
+	size?: number;
+	/** Buffer usage. Combination of GPUBufferUsage values. Default to UNIFORM | COPY_DST | STORAGE */
+	usage?: number;
+	/** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
+	raw?: boolean;
+	/** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */
+	rawOffset?: number;
+	/** If raw is true, Size of content to write from `value` to `buffer`.
+	 * Given in elements if `value` is a `TypedArray` and bytes otherwise. Default to `value` size. */
+	rawSize?: number;
+	dirty: boolean;
+};
+
 export class Uniform {
 	#activeInfo: WebGLActiveInfo;
 	#size: number

@@ -144,7 +144,7 @@ export class RenderTrails extends RenderBase {
 		this.mesh!.setVisible(Source2ParticleManager.visible);
 
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
-		this.material.setUniform('uFinalTextureScale', tempVec2);
+		this.material.setUniformValue('uFinalTextureScale', tempVec2);
 
 		//const uvs = geometry.attributes.get('aTextureCoord')!._array;
 		//const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
