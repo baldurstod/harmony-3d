@@ -374,6 +374,7 @@ export class Material implements HasUsers {
 		const previousTexture = this.getUniformValue(uniformName) as Texture;
 		if (previousTexture != texture) {
 			if (previousTexture) {
+				// TODO: case where the texture is on multiple uniforms (edge case)
 				previousTexture.removeUser(this);
 			}
 			if (texture) {

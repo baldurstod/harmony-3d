@@ -38,8 +38,6 @@ import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { Source1ParticleSystem } from '../particles/source1particlesystem';
 
-const defaultMaterial = new MeshBasicMaterial();
-
 export type Source1ModelSequences = Record<string, { frame?: number, startTime?: number, s?: MdlStudioSeqDesc }>/*TODO: improve type*/;
 export type Source1ModelAnimation = { name: string, weight: number }/*TODO: improve type*/;
 
@@ -73,10 +71,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	readonly frameframe: { bones: Record<string, any> } = { bones: {} };
 	static #animSpeed = 1.0;
 	hasHitBoxes = true as const;
-
-	static {
-		defaultMaterial.addUser(Source1ModelInstance);
-	}
+	static defaultMaterial = new MeshBasicMaterial({ user: this });
 
 	constructor(params?: any) {
 		super(params);
@@ -548,9 +543,9 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 						const geometry = modelMesh.geometry;
 						let mesh: Mesh | SkeletalMesh;
 						if (this.#skeleton) {
-							mesh = new SkeletalMesh({ geometry: geometry.clone(), material: defaultMaterial, skeleton: this.#skeleton });
+							mesh = new SkeletalMesh({ geometry: geometry.clone(), material: Source1ModelInstance.defaultMaterial, skeleton: this.#skeleton });
 						} else {
-							mesh = new Mesh({ geometry: geometry, material: defaultMaterial });
+							mesh = new Mesh({ geometry: geometry, material: Source1ModelInstance.defaultMaterial });
 						}
 						mesh.name = geometry.properties.getString('name') ?? '';
 						mesh.properties.setObject('sourceModelMesh', modelMesh.mesh);

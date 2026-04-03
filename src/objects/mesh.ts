@@ -90,9 +90,9 @@ export class Mesh extends Entity {
 		if (this.#geometry) {
 			this.#geometry.removeUser(this);
 		}
-		if (geometry) {
-			geometry.addUser(this);
-		}
+
+		geometry.addUser(this);
+
 		this.#geometry = geometry;
 	}
 

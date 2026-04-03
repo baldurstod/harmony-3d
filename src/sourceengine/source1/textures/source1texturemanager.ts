@@ -28,10 +28,11 @@ class Source1TextureManagerClass {
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), }));
+			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), user: Source1TextureManagerClass, }));
 			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
 				color: new Color(0.5, 0.75, 1),
 				needCubeMap: true,				//new Color(0.5, 0.75, 1), undefined, undefined, true
+				user: Source1TextureManagerClass,
 			}));
 			this.#defaultTexture.addUser(this);
 			this.#defaultTextureCube.addUser(this);

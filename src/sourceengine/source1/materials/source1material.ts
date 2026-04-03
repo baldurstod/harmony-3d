@@ -129,8 +129,8 @@ export function getDefaultTexture(): Texture {
 				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
 			},
 			color: new Color(1, 1, 1),
+			user: Source1Material,
 		});
-		defaultTexture.addUser(Source1Material);
 	}
 	return defaultTexture;
 }

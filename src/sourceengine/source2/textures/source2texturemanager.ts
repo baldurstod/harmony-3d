@@ -29,6 +29,7 @@ export class Source2TextureManager {
 		Graphics.ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture({
 				color: new Color(0.5, 0.75, 1),
+				user: Source2TextureManager,
 			});
 
 

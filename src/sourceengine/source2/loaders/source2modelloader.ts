@@ -19,14 +19,10 @@ import { Source2File } from './source2file';
 import { Source2FileBlock } from './source2fileblock';
 import { Source2FileLoader } from './source2fileloader';
 
-const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelLoader {
 	static #loadPromisesPerRepo = new Map2<string, string, Promise<Source2Model | null>>;
-
-	static {
-		defaultMaterial.addUser(Source2ModelLoader);
-	}
+	static defaultMaterial = new MeshBasicMaterial({ user: this });
 
 	load(repository: string, path: string): Promise<Source2Model | null> {
 		// Cleanup filename
@@ -476,7 +472,7 @@ export class Source2ModelLoader {
 					console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
 				}
 
-				const material = defaultMaterial;
+				const material = Source2ModelLoader.defaultMaterial;
 				const staticMesh = new Mesh({ geometry: geometry, material: material });
 				group.addChild(staticMesh);
 

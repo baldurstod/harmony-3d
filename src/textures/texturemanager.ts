@@ -1,6 +1,7 @@
 import { Color } from '../core/color';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
+import { ObjectUser } from '../interfaces/hasusers';
 import { createTexture, deleteTexture, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, HarmonyGPUTextureDescriptor, HarmonyGPUTextureDescriptorOptionalSize } from '../textures/texturefactory';
 import { Texture, TextureParams } from './texture';
 
@@ -23,6 +24,7 @@ export const phonyWebGPUTextureDescriptor: HarmonyGPUTextureDescriptor = {
 export type CreateFlatTextureParams = CreateTextureParams & {
 	webgpuDescriptor: HarmonyGPUTextureDescriptor;
 	color?: Color;
+	user?: ObjectUser;
 };
 
 export type CreateCheckerTextureParams = {
@@ -30,6 +32,7 @@ export type CreateCheckerTextureParams = {
 	height?: number,
 	color?: Color;
 	needCubeMap?: boolean;
+	user?: ObjectUser;
 };
 
 export type CreateNoiseTextureParams = CreateTextureParams;
@@ -71,6 +74,9 @@ export class TextureManager {
 	static createFlatTexture(textureParams: CreateFlatTextureParams/*, color: Color = new Color(1, 0, 1), needCubeMap = false*/): Texture {
 		const texture = this.createTexture(textureParams);
 		fillFlatTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.needCubeMap ?? false);
+		if (textureParams.user) {
+			texture.addUser(textureParams.user);
+		}
 		return texture;
 	}
 
@@ -84,6 +90,9 @@ export class TextureManager {
 		}
 		const texture = this.createTexture({ webgpuDescriptor: descriptor, gpuFormat: descriptor.format });
 		fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
+		if (textureParams.user) {
+			texture.addUser(textureParams.user);
+		}
 		return texture;
 	}
 
