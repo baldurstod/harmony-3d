@@ -30,64 +30,61 @@ export type Source2BlockLoaderContext = {
 	meshIndex: number;
 }
 
-export const Source2BlockLoader = new (function () {
-	class Source2BlockLoader {
+export class Source2BlockLoader {
 
-		async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean, context: Source2BlockLoaderContext): Promise<void> {//TODOv3 parseVtex
-			const introspection = file.blocks['NTRO'] as Source2NtroBlock;
-			const reference = file.blocks['RERL'] as Source2RerlBlock;
-			switch (block.type) {
-				case 'RERL':
-					loadRerl(reader, block as Source2RerlBlock);
-					break;
-				case 'NTRO':
-					loadNtro(reader, block as Source2NtroBlock);
-					break;
-				//case 'DATA':
-				case 'ANIM':
-				case 'CTRL':
-				case 'MRPH':
-				case 'MDAT':
-				case 'ASEQ':
-				case 'AGRP':
-				case 'PHYS':
-				case 'LaCo':
-					await loadData(reader, file, reference, block, introspection, false);
-					break;
-				case 'DATA':
-					await loadData(reader, file, reference, block, introspection, parseVtex);
-					break
-				case 'REDI':
-				case 'RED2':
-					await loadRedi(reader, file, block as Source2ResEditInfoBlock);
-					break;
-				case 'VBIB':
-				case 'MBUF':
-					loadVbib(reader, block, context.meshIndex++);
-					break;
-				case 'SNAP':
-					let sa;
-					const decodeLength = reader.getUint32(block.offset);
-					if ((decodeLength >>> 24) == 0x80) {
-						//no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
-						sa = reader.getBytes(decodeLength & 0xFFFFFF);
-					} else {
-						sa = new Uint8Array(new ArrayBuffer(decodeLength));
-						decodeBlockCompressed(reader, sa, decodeLength);
-					}
-					(block as Source2SnapBlock).datas = sa;
-					break;
-				case 'MVTX':
-				case 'MIDX':
-					// Loaded along CTRL block
-					break;
-				default:
-					console.info('Unknown block type ' + block.type, block.offset, block.length, block);
-			}
+	static async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean, context: Source2BlockLoaderContext): Promise<void> {//TODOv3 parseVtex
+		const introspection = file.blocks['NTRO'] as Source2NtroBlock;
+		const reference = file.blocks['RERL'] as Source2RerlBlock;
+		switch (block.type) {
+			case 'RERL':
+				loadRerl(reader, block as Source2RerlBlock);
+				break;
+			case 'NTRO':
+				loadNtro(reader, block as Source2NtroBlock);
+				break;
+			//case 'DATA':
+			case 'ANIM':
+			case 'CTRL':
+			case 'MRPH':
+			case 'MDAT':
+			case 'ASEQ':
+			case 'AGRP':
+			case 'PHYS':
+			case 'LaCo':
+				await loadData(reader, file, reference, block, introspection, false);
+				break;
+			case 'DATA':
+				await loadData(reader, file, reference, block, introspection, parseVtex);
+				break
+			case 'REDI':
+			case 'RED2':
+				await loadRedi(reader, file, block as Source2ResEditInfoBlock);
+				break;
+			case 'VBIB':
+			case 'MBUF':
+				loadVbib(reader, block, context.meshIndex++);
+				break;
+			case 'SNAP':
+				let sa;
+				const decodeLength = reader.getUint32(block.offset);
+				if ((decodeLength >>> 24) == 0x80) {
+					//no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
+					sa = reader.getBytes(decodeLength & 0xFFFFFF);
+				} else {
+					sa = new Uint8Array(new ArrayBuffer(decodeLength));
+					decodeBlockCompressed(reader, sa, decodeLength);
+				}
+				(block as Source2SnapBlock).datas = sa;
+				break;
+			case 'MVTX':
+			case 'MIDX':
+				// Loaded along CTRL block
+				break;
+			default:
+				console.info('Unknown block type ' + block.type, block.offset, block.length, block);
 		}
 	}
-	return Source2BlockLoader;
-}());
+}
 
 function loadRerl(reader: BinaryReader, block: Source2RerlBlock): void {
 	reader.seek(block.offset);

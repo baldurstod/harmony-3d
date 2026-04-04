@@ -12,184 +12,181 @@ interface Readers {
 	reader8: BinaryReader;
 }
 
-export const BinaryKv3Loader = new (function () {
-	class BinaryKv3Loader {
+export class BinaryKv3Loader {
 
-		getBinaryVkv3(binaryString: string): Kv3File {
-			const reader = new BinaryReader(binaryString);
-			const binaryKv3 = new Kv3File();
-			const stringDictionary: string[] = [];
+	static getBinaryVkv3(binaryString: string): Kv3File {
+		const reader = new BinaryReader(binaryString);
+		const binaryKv3 = new Kv3File();
+		const stringDictionary: string[] = [];
 
-			readStringDictionary(reader, stringDictionary);
-			const element = readElement(reader, stringDictionary);
-			if (element instanceof Kv3Element) {
-				binaryKv3.setRoot(element);
-			}
-			return binaryKv3;
+		readStringDictionary(reader, stringDictionary);
+		const element = readElement(reader, stringDictionary);
+		if (element instanceof Kv3Element) {
+			binaryKv3.setRoot(element);
 		}
-
-		getBinaryKv3(version: number, binaryString: string | Uint8Array, singleByteCount: number[], doubleByteCount: number[], quadByteCount: number[], eightByteCount: number[],
-			dictionaryTypeLength: number, blobCount: number, totalUncompressedBlobSize: number, compressedBlobReader: BinaryReader | undefined, uncompressedBlobReader: BinaryReader | undefined,
-			compressionFrameSize: number, bufferId: number, stringDictionary: string[] | undefined, objectCount: number, arrayCount: number/*TODO: use it*/, buffer0: Uint8Array): Kv3File | string[] {
-			const reader = new BinaryReader(binaryString);
-			if (!stringDictionary) {
-				stringDictionary = [];
-			}
-
-			//let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
-			let offset: number;
-			let byteCursor = 0;
-			if (version >= 5 && bufferId == 1) {
-				byteCursor = objectCount * 4;
-			}
-			const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]!) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
-			const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId]! * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
-			let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId]! * 4) / 8) * 8;
-
-			if (version >= 5 && eightByteCount[bufferId] == 0) {
-				// In this case, don't align cursor
-				eightCursor = quadCursor + quadByteCount[bufferId]! * 4;
-			}
-
-			//console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
-
-			let dictionaryOffset = eightCursor + eightByteCount[bufferId]! * 8;
-			if (version >= 5 && bufferId == 0) {
-				dictionaryOffset = 0;
-			}
-			let uncompressedBlobSizeReader: BinaryReader | undefined, compressedBlobSizeReader: BinaryReader | undefined;
-			const blobOffset = dictionaryOffset + dictionaryTypeLength;
-			if (version >= 2 && blobCount != 0) {
-				if (compressedBlobReader) {
-					const uncompressedLength = blobCount * 4;
-					uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
-					compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
-
-				} else {
-					if (uncompressedBlobReader) {
-						uncompressedBlobSizeReader = new BinaryReader(reader, reader.byteLength - blobCount * 4 - 4, blobCount * 4);
-					}
-				}
-			}
-
-			if (version == 1) {//v1
-				offset = reader.byteLength - 4;
-			} else if (version < 5) {//v2-v4
-				offset = blobOffset;
-			} else {
-				offset = 0/*TODO: check*/;
-			}
-
-			const typeArray = [];
-			const valueArray: Source2Kv3Value[] = [];
-
-			if (version < 5) {
-				do {
-					--offset;
-					const type = reader.getUint8(offset);
-					//typeArray.unshift(type);
-					if (type) {
-						typeArray.unshift(type);
-					} else {
-						break;
-					}
-				} while (offset >= 0)
-			} else {
-				if (bufferId == 1) {
-					reader.seek(dictionaryOffset);
-					for (let i = 0; i < dictionaryTypeLength; i++) {
-						const type = reader.getUint8();
-						if (type) {
-							typeArray.push(type);
-						}
-					}
-				}
-			}
-
-			const byteReader = new BinaryReader(reader);
-			const doubleReader = new BinaryReader(reader);
-			const quadReader = new BinaryReader(reader);
-			const eightReader = new BinaryReader(reader);
-
-			let byteReaderBuf0: BinaryReader;
-			let doubleReaderBuf0: BinaryReader;
-			let quadReaderBuf0: BinaryReader;
-			let eightReaderBuf0: BinaryReader;
-
-			byteReader.seek(byteCursor);
-			doubleReader.seek(doubleCursor);
-			quadReader.seek(quadCursor);
-			eightReader.seek(eightCursor);
-
-			reader.seek(); // skip blob data
-
-			const readers: Readers = {} as Readers;
-
-			let objectsSizeReader = quadReader;
-
-			if (bufferId == 0) {
-				// In v5, strings are in buffer 0
-				const stringCount = quadReader.getUint32();
-				reader.seek(dictionaryOffset);
-				readStringDictionary(reader, stringDictionary, stringCount);
-
-				if (version >= 5) {
-					return stringDictionary;
-				}
-			} else {
-				objectsSizeReader = new BinaryReader(reader);
-				const reader0 = new BinaryReader(buffer0);
-
-				const byteCursorBuf0 = 0;
-				const doubleCursorBuf0 = Math.ceil(singleByteCount[0]! / 2) * 2;
-				const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0]! * 2) / 4) * 4;
-				const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0]! * 4) / 8) * 8;
-				//console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
-
-				byteReaderBuf0 = new BinaryReader(reader0);
-				doubleReaderBuf0 = new BinaryReader(reader0);
-				quadReaderBuf0 = new BinaryReader(reader0);
-				eightReaderBuf0 = new BinaryReader(reader0);
-
-				byteReaderBuf0.seek(byteCursorBuf0);
-				doubleReaderBuf0.seek(doubleCursorBuf0);
-				quadReaderBuf0.seek(quadCursorBuf0 + 4);// Eat a quad (string dictionnary length)
-				eightReaderBuf0.seek(eightCursorBuf0);
-
-				readers.reader1 = byteReaderBuf0;
-				readers.reader2 = doubleReaderBuf0;
-				readers.reader4 = quadReaderBuf0;
-				readers.reader8 = eightReaderBuf0;
-			}
-
-			let decompressBlobBuffer;
-			let decompressBlobArray: DecompressBlobArray | undefined;
-
-			if (compressedBlobReader) {//if a compressed reader is provided, we have to uncompress the blobs
-				decompressBlobBuffer = new ArrayBuffer(totalUncompressedBlobSize);
-				decompressBlobArray =
-					{ array: new Uint8Array(decompressBlobBuffer), offset: 0 }
-					;
-				//decompressBlobArray.decompressOffset = 0;
-			}
-
-			const rootValue = readBinaryKv3Element({ dictionary: stringDictionary }, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader,
-				uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount,
-				decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader,
-				typeArray, valueArray, undefined, false, compressionFrameSize, readers);
-
-
-			// return it in a suitable format
-			const binaryKv3 = new Kv3File();
-			if (rootValue?.getType() == Kv3Type.Element) {
-				//binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
-				binaryKv3.setRoot(rootValue.getValue() as Kv3Element);
-			}
-			return binaryKv3;
-		}
+		return binaryKv3;
 	}
-	return BinaryKv3Loader;
-}());
+
+	static getBinaryKv3(version: number, binaryString: string | Uint8Array, singleByteCount: number[], doubleByteCount: number[], quadByteCount: number[], eightByteCount: number[],
+		dictionaryTypeLength: number, blobCount: number, totalUncompressedBlobSize: number, compressedBlobReader: BinaryReader | undefined, uncompressedBlobReader: BinaryReader | undefined,
+		compressionFrameSize: number, bufferId: number, stringDictionary: string[] | undefined, objectCount: number, arrayCount: number/*TODO: use it*/, buffer0: Uint8Array): Kv3File | string[] {
+		const reader = new BinaryReader(binaryString);
+		if (!stringDictionary) {
+			stringDictionary = [];
+		}
+
+		//let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
+		let offset: number;
+		let byteCursor = 0;
+		if (version >= 5 && bufferId == 1) {
+			byteCursor = objectCount * 4;
+		}
+		const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]!) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
+		const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId]! * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
+		let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId]! * 4) / 8) * 8;
+
+		if (version >= 5 && eightByteCount[bufferId] == 0) {
+			// In this case, don't align cursor
+			eightCursor = quadCursor + quadByteCount[bufferId]! * 4;
+		}
+
+		//console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
+
+		let dictionaryOffset = eightCursor + eightByteCount[bufferId]! * 8;
+		if (version >= 5 && bufferId == 0) {
+			dictionaryOffset = 0;
+		}
+		let uncompressedBlobSizeReader: BinaryReader | undefined, compressedBlobSizeReader: BinaryReader | undefined;
+		const blobOffset = dictionaryOffset + dictionaryTypeLength;
+		if (version >= 2 && blobCount != 0) {
+			if (compressedBlobReader) {
+				const uncompressedLength = blobCount * 4;
+				uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
+				compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
+
+			} else {
+				if (uncompressedBlobReader) {
+					uncompressedBlobSizeReader = new BinaryReader(reader, reader.byteLength - blobCount * 4 - 4, blobCount * 4);
+				}
+			}
+		}
+
+		if (version == 1) {//v1
+			offset = reader.byteLength - 4;
+		} else if (version < 5) {//v2-v4
+			offset = blobOffset;
+		} else {
+			offset = 0/*TODO: check*/;
+		}
+
+		const typeArray = [];
+		const valueArray: Source2Kv3Value[] = [];
+
+		if (version < 5) {
+			do {
+				--offset;
+				const type = reader.getUint8(offset);
+				//typeArray.unshift(type);
+				if (type) {
+					typeArray.unshift(type);
+				} else {
+					break;
+				}
+			} while (offset >= 0)
+		} else {
+			if (bufferId == 1) {
+				reader.seek(dictionaryOffset);
+				for (let i = 0; i < dictionaryTypeLength; i++) {
+					const type = reader.getUint8();
+					if (type) {
+						typeArray.push(type);
+					}
+				}
+			}
+		}
+
+		const byteReader = new BinaryReader(reader);
+		const doubleReader = new BinaryReader(reader);
+		const quadReader = new BinaryReader(reader);
+		const eightReader = new BinaryReader(reader);
+
+		let byteReaderBuf0: BinaryReader;
+		let doubleReaderBuf0: BinaryReader;
+		let quadReaderBuf0: BinaryReader;
+		let eightReaderBuf0: BinaryReader;
+
+		byteReader.seek(byteCursor);
+		doubleReader.seek(doubleCursor);
+		quadReader.seek(quadCursor);
+		eightReader.seek(eightCursor);
+
+		reader.seek(); // skip blob data
+
+		const readers: Readers = {} as Readers;
+
+		let objectsSizeReader = quadReader;
+
+		if (bufferId == 0) {
+			// In v5, strings are in buffer 0
+			const stringCount = quadReader.getUint32();
+			reader.seek(dictionaryOffset);
+			readStringDictionary(reader, stringDictionary, stringCount);
+
+			if (version >= 5) {
+				return stringDictionary;
+			}
+		} else {
+			objectsSizeReader = new BinaryReader(reader);
+			const reader0 = new BinaryReader(buffer0);
+
+			const byteCursorBuf0 = 0;
+			const doubleCursorBuf0 = Math.ceil(singleByteCount[0]! / 2) * 2;
+			const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0]! * 2) / 4) * 4;
+			const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0]! * 4) / 8) * 8;
+			//console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
+
+			byteReaderBuf0 = new BinaryReader(reader0);
+			doubleReaderBuf0 = new BinaryReader(reader0);
+			quadReaderBuf0 = new BinaryReader(reader0);
+			eightReaderBuf0 = new BinaryReader(reader0);
+
+			byteReaderBuf0.seek(byteCursorBuf0);
+			doubleReaderBuf0.seek(doubleCursorBuf0);
+			quadReaderBuf0.seek(quadCursorBuf0 + 4);// Eat a quad (string dictionnary length)
+			eightReaderBuf0.seek(eightCursorBuf0);
+
+			readers.reader1 = byteReaderBuf0;
+			readers.reader2 = doubleReaderBuf0;
+			readers.reader4 = quadReaderBuf0;
+			readers.reader8 = eightReaderBuf0;
+		}
+
+		let decompressBlobBuffer;
+		let decompressBlobArray: DecompressBlobArray | undefined;
+
+		if (compressedBlobReader) {//if a compressed reader is provided, we have to uncompress the blobs
+			decompressBlobBuffer = new ArrayBuffer(totalUncompressedBlobSize);
+			decompressBlobArray =
+				{ array: new Uint8Array(decompressBlobBuffer), offset: 0 }
+				;
+			//decompressBlobArray.decompressOffset = 0;
+		}
+
+		const rootValue = readBinaryKv3Element({ dictionary: stringDictionary }, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader,
+			uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount,
+			decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader,
+			typeArray, valueArray, undefined, false, compressionFrameSize, readers);
+
+
+		// return it in a suitable format
+		const binaryKv3 = new Kv3File();
+		if (rootValue?.getType() == Kv3Type.Element) {
+			//binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
+			binaryKv3.setRoot(rootValue.getValue() as Kv3Element);
+		}
+		return binaryKv3;
+	}
+}
 
 function readStringDictionary(reader: BinaryReader, stringDictionary: string[], stringCount?: number): void {
 	stringCount = stringCount ?? reader.getUint32();
