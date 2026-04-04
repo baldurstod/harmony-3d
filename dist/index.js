@@ -7,7 +7,7 @@ import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX
 import { WgslReflect } from 'wgsl_reflect';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 import { MeshoptDecoder } from 'meshoptimizer';
@@ -1624,7 +1624,8 @@ class Material {
     #alphaTestReference = 0;
     #users = new Set();
     #parameters = new Map();
-    uniforms = {}; // TODO: transform to map ?
+    #uniforms = new Map();
+    // Storage bindings. Only for WebGPU.
     storage = new Map();
     gpuConstants;
     defines = {}; //TODOv3: put defines in meshes too ? TODO: transform to map ?
@@ -1667,7 +1668,7 @@ class Material {
         this._dirtyProgram = true; //TODOv3 use another method
         if (params.uniforms) {
             for (const name in params.uniforms) {
-                this.uniforms[name] = params.uniforms[name];
+                this.setUniformValue(name, params.uniforms[name]);
             }
         }
         if (params.defines) {
@@ -1685,6 +1686,9 @@ class Material {
         }
         if (params.blendingMode) {
             this.setBlending(params.blendingMode /*TODO: add premultipliedAlpha param*/);
+        }
+        if (params.user) {
+            this.addUser(params.user);
         }
     }
     get transparent() {
@@ -1867,7 +1871,7 @@ class Material {
     }
     setColor(color) {
         vec4.copy(this.#color, color);
-        this.uniforms['uColor'] = this.#color;
+        this.setUniformValue('uColor', this.#color);
     }
     set color(color) {
         this.setColor(color);
@@ -1880,20 +1884,21 @@ class Material {
         this.color = color;
     }
     setTexture(uniformName, texture, shaderDefine) {
-        const previousTexture = this.uniforms[uniformName];
+        const previousTexture = this.getUniformValue(uniformName);
         if (previousTexture != texture) {
             if (previousTexture) {
+                // TODO: case where the texture is on multiple uniforms (edge case)
                 previousTexture.removeUser(this);
             }
             if (texture) {
                 texture.addUser(this);
-                this.uniforms[uniformName] = texture;
+                this.setUniformValue(uniformName, texture);
                 if (shaderDefine) {
                     this.setDefine(shaderDefine);
                 }
             }
             else {
-                this.uniforms[uniformName] = null;
+                this.setUniformValue(uniformName, null);
                 if (shaderDefine) {
                     this.removeDefine(shaderDefine);
                 }
@@ -1901,7 +1906,7 @@ class Material {
         }
     }
     setTextureArray(uniformName, textureArray) {
-        const previousTextureArray = this.uniforms[uniformName];
+        const previousTextureArray = this.getUniformValue(uniformName);
         const keepMe = new Set();
         if (textureArray) {
             textureArray.forEach(texture => {
@@ -1910,10 +1915,10 @@ class Material {
                     keepMe.add(texture);
                 }
             });
-            this.uniforms[uniformName] = textureArray;
+            this.setUniformValue(uniformName, textureArray);
         }
         else {
-            this.uniforms[uniformName] = null;
+            this.setUniformValue(uniformName, null);
         }
         if (previousTextureArray) {
             previousTextureArray.forEach(texture => {
@@ -1963,8 +1968,8 @@ class Material {
     #setAlphaTest() {
         if (this.#alphaTest) {
             this.setDefine('ALPHA_TEST');
-            this.uniforms['uAlphaTestReference'] = this.#alphaTestReference ?? 0.5;
-            this.uniforms['alphaTestReference'] = this.#alphaTestReference ?? 0.5;
+            this.setUniformValue('uAlphaTestReference', this.#alphaTestReference ?? 0.5);
+            this.setUniformValue('alphaTestReference', this.#alphaTestReference ?? 0.5);
             this.depthMask = true;
         }
         else {
@@ -1996,7 +2001,7 @@ class Material {
         }
     }
     setColor4Uniform(uniformName, value) {
-        this.uniforms[uniformName] = value;
+        this.setUniformValue(uniformName, value);
     }
     toJSON() {
         const json = {
@@ -2033,6 +2038,9 @@ class Material {
     hasNoUser() {
         return this.#users.size == 0;
     }
+    hasOnlyUser(user) {
+        return (this.#users.size == 1) && (this.#users.has(user));
+    }
     #disposeUniform(uniform) {
         if (Array.isArray(uniform)) {
             uniform.forEach((subValue) => this.#disposeUniform(subValue));
@@ -2043,11 +2051,8 @@ class Material {
     }
     dispose() {
         if (this.hasNoUser()) {
-            const uniforms = this.uniforms;
-            const uniformArray = Object.keys(uniforms);
-            for (const uniformName of uniformArray) {
-                const uniform = uniforms[uniformName];
-                this.#disposeUniform(uniform);
+            for (const [, uniform] of this.#uniforms) {
+                this.#disposeUniform(uniform.value);
             }
         }
         // TODO: destroy gpu buffers
@@ -2064,6 +2069,46 @@ class Material {
     }
     getWebGPUShader() {
         throw new Error('Override this function');
+    }
+    getUniforms() {
+        return this.#uniforms;
+    }
+    getUniformValue(name) {
+        return this.#uniforms.get(name)?.value;
+    }
+    setUniformValue(name, value) {
+        const existingValue = this.#uniforms.get(name);
+        if (existingValue) {
+            if (existingValue.buffer) {
+                // TODO: only destroy is size is different
+                existingValue.buffer.destroy();
+            }
+        }
+        this.#uniforms.set(name, { value, dirty: true });
+    }
+    setSubUniformValue(name, value) {
+        const path = name.split('.');
+        let len = path.length;
+        if (len === 1) {
+            return this.setUniformValue(name, value);
+        }
+        const existingValue = this.#uniforms.get(name);
+        if (!existingValue) {
+            return;
+        }
+        let subValue = existingValue.value;
+        for (let i = 1; i < len - 1; i++) {
+            if (Object.prototype.toString.call(subValue) !== '[object Object]') {
+                return;
+            }
+            subValue = subValue[path[i]];
+        }
+        subValue[path[len]] = value;
+        existingValue.dirty = true;
+    }
+    deleteUniform(name) {
+        // TODO: do some cleanup ?
+        this.#uniforms.delete(name);
     }
     getStorage(name) {
         return this.storage.get(name);
@@ -3945,6 +3990,9 @@ class BufferGeometry {
     properties = new Properties(); //new Map<string, any>();
     constructor(params = {}) {
         this.count = params.count ?? 0;
+        if (params.user) {
+            this.addUser(params.user);
+        }
     }
     getAttribute(name) {
         return this.attributes.get(name);
@@ -5080,6 +5128,8 @@ class Mesh extends Entity {
     defines = Object.create(null);
     isMesh = true;
     topology;
+    // Internal use
+    commandBuffer;
     constructor(params) {
         super(params);
         this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
@@ -5106,9 +5156,7 @@ class Mesh extends Entity {
         if (this.#geometry) {
             this.#geometry.removeUser(this);
         }
-        if (geometry) {
-            geometry.addUser(this);
-        }
+        geometry.addUser(this);
         this.#geometry = geometry;
     }
     /**
@@ -5125,9 +5173,7 @@ class Mesh extends Entity {
             if (this.#material) {
                 this.#material.removeUser(this);
             }
-            if (material) {
-                material.addUser(this);
-            }
+            material.addUser(this);
             this.#material = material;
         }
     }
@@ -6287,16 +6333,17 @@ class FullScreenQuad extends Mesh {
 }
 
 class CopyPass extends Pass {
+    #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
-        material.addUser(this);
+        const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false, user: this });
+        this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics$1.render(this.scene, this.camera, 0, context);
         Graphics$1.popRenderTarget();
@@ -6886,23 +6933,22 @@ class CrosshatchPass extends Pass {
     #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'crosshatch' });
-        material.addUser(this);
+        const material = new ShaderMaterial({ shaderSource: 'crosshatch', user: this });
         material.depthTest = false;
         this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -6920,40 +6966,36 @@ class GrainPass extends Pass {
     //#size;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'grain' });
-        material.addUser(this);
-        material.uniforms['uGrainParams'] = vec4.create();
+        const material = new ShaderMaterial({ shaderSource: 'grain', user: this });
+        material.setUniformValue('uGrainParams', vec4.create());
         material.depthTest = false;
         this.#material = material;
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
-        this.intensity = 0.2;
+        this.setIntensity(0.2);
         //this.density = 0.2;
         //this.size = 1.0;
     }
+    /**
+     * @deprecated Use setIntensity instead
+     */
     set intensity(intensity) {
+        this.setIntensity(intensity);
+    }
+    setIntensity(intensity) {
         this.#intensity = intensity;
-        this.#material.uniforms['uGrainIntensity'] = this.#intensity;
+        this.#material.setUniformValue('uGrainIntensity', this.#intensity);
     }
-    /*set density(density) {
-        this.#density = density;
-        this.quad.material.uniforms['uGrainParams'][1] = this.#density;
-    }
-
-    set size(size) {
-        this.#size = size;
-        this.quad.material.uniforms['uGrainParams'][2] = this.#size;
-    }*/
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -6968,8 +7010,7 @@ class OldMoviePass extends Pass {
     #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
-        material.addUser(this);
+        const material = new ShaderMaterial({ shaderSource: 'oldmovie', user: this });
         material.depthTest = false;
         this.#material = material;
         this.scene = new Scene();
@@ -6977,14 +7018,14 @@ class OldMoviePass extends Pass {
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -7174,6 +7215,9 @@ class TextureManager {
     static createFlatTexture(textureParams /*, color: Color = new Color(1, 0, 1), needCubeMap = false*/) {
         const texture = this.createTexture(textureParams);
         fillFlatTexture(texture, textureParams.color ?? new Color(1, 0, 1), textureParams.needCubeMap ?? false);
+        if (textureParams.user) {
+            texture.addUser(textureParams.user);
+        }
         return texture;
     }
     static createCheckerTexture(textureParams = {} /*, color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false*/) {
@@ -7186,6 +7230,9 @@ class TextureManager {
         };
         const texture = this.createTexture({ webgpuDescriptor: descriptor, gpuFormat: descriptor.format });
         fillCheckerTexture(texture, textureParams.color ?? new Color(1, 0, 1), width, height, textureParams.needCubeMap ?? false);
+        if (textureParams.user) {
+            texture.addUser(textureParams.user);
+        }
         return texture;
     }
     static createNoiseTexture(textureParams /*, width: number, height: number, needCubeMap = false*/) {
@@ -7353,12 +7400,10 @@ class OutlinePass extends Pass {
         this.outlineScene = outlineScene;
         this.camera = camera;
         this.#initRenderTargets();
-        this.#copyMaterial = new ShaderMaterial({ shaderSource: 'copy' });
-        this.#copyMaterial.addUser(this);
+        this.#copyMaterial = new ShaderMaterial({ shaderSource: 'copy', user: this });
         this.#copyMaterial.depthTest = false;
         this.#copyMaterial.setBlending(MATERIAL_BLENDING_ADDITIVE);
-        this.#edgedetectionMaterial = new ShaderMaterial({ shaderSource: 'edgedetection' });
-        this.#edgedetectionMaterial.addUser(this);
+        this.#edgedetectionMaterial = new ShaderMaterial({ shaderSource: 'edgedetection', user: this });
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ parent: this.scene });
         //this.quad.material = material;
@@ -7438,24 +7483,24 @@ class OutlinePass extends Pass {
         this.changeVisibilityOfNonSelectedObjects(true);
         Graphics$1.popRenderTarget();
         /**************/
-        this.#edgedetectionMaterial.uniforms['colorMap'] = this.#renderTargetDepthBuffer.getTexture(); //TODO: optiùmize this
-        this.#edgedetectionMaterial.uniforms['uTexSize'] = [this.width, this.height];
-        this.#edgedetectionMaterial.uniforms['uVisibleEdgeColor'] = [1, 1, 1];
-        this.#edgedetectionMaterial.uniforms['uHiddenEdgeColor'] = [0, 1, 0];
+        this.#edgedetectionMaterial.setUniformValue('colorMap', this.#renderTargetDepthBuffer.getTexture()); //TODO: optiùmize this
+        this.#edgedetectionMaterial.setUniformValue('uTexSize', [this.width, this.height]);
+        this.#edgedetectionMaterial.setUniformValue('uVisibleEdgeColor', [1, 1, 1]);
+        this.#edgedetectionMaterial.setUniformValue('uHiddenEdgeColor', [0, 1, 0]);
         this.quad.setMaterial(this.#edgedetectionMaterial);
         Graphics$1.pushRenderTarget(this.#renderTargetEdgeBuffer1);
         Graphics$1.clear(true, true, false);
         Graphics$1.render(this.scene, this.camera, 0, context);
         Graphics$1.popRenderTarget();
         /**************/
-        this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#copyMaterial.setUniformValue('colorMap', readBuffer.getTexture());
         this.quad.setMaterial(this.#copyMaterial);
         Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics$1.clear(true, true, false);
         Graphics$1.render(this.scene, this.camera, 0, context);
         Graphics$1.popRenderTarget();
         /***************/
-        this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
+        this.#copyMaterial.setUniformValue('colorMap', this.#renderTargetEdgeBuffer1.getTexture());
         this.quad.setMaterial(this.#copyMaterial);
         Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics$1.render(this.scene, this.camera, 0, context);
@@ -7467,8 +7512,7 @@ class PalettePass extends Pass {
     #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'palette' });
-        material.addUser(this);
+        const material = new ShaderMaterial({ shaderSource: 'palette', user: this });
         material.depthTest = false;
         this.#material = material;
         this.scene = new Scene();
@@ -7476,14 +7520,14 @@ class PalettePass extends Pass {
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -7500,31 +7544,41 @@ class PixelatePass extends Pass {
     #material;
     constructor(camera) {
         super();
-        this.#material = new ShaderMaterial({ shaderSource: 'pixelate' });
-        this.#material.addUser(this);
+        this.#material = new ShaderMaterial({ shaderSource: 'pixelate', user: this });
         this.#material.depthTest = false;
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
         this.horizontalTiles = 10;
     }
+    /**
+     * @deprecated Use setHorizontalTiles instead
+     */
     set horizontalTiles(horizontalTiles) {
-        this.#horizontalTiles = horizontalTiles;
-        this.#material.uniforms['uHorizontalTiles'] = this.#horizontalTiles;
+        this.setHorizontalTiles(horizontalTiles);
     }
+    setHorizontalTiles(horizontalTiles) {
+        this.#horizontalTiles = horizontalTiles;
+        this.#material.setUniformValue('uHorizontalTiles', this.#horizontalTiles);
+    }
+    /**
+     * @deprecated Use setPixelStyle instead
+     */
     set pixelStyle(pixelStyle /*TODO: creacte enum*/) {
+    }
+    setPixelStyle(pixelStyle /*TODO: creacte enum*/) {
         this.#pixelStyle = pixelStyle;
         this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -7625,7 +7679,7 @@ class RayTracingPass extends Pass {
         }
         else {
             if (this.material) {
-                this.material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+                this.material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
                 this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
                 Graphics$1.compute(this.material, {
                     ...context,
@@ -7658,28 +7712,33 @@ class SaturatePass extends Pass {
     #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'saturate' });
+        const material = new ShaderMaterial({ shaderSource: 'saturate', user: this });
         this.#material = material;
-        material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ material, parent: this.scene });
         this.camera = camera;
         this.saturation = 1.0;
     }
+    /**
+     * @deprecated Use setSaturation instead
+     */
     set saturation(saturation) {
+        this.setSaturation(saturation);
+    }
+    setSaturation(saturation) {
         this.#saturation = saturation;
-        this.quad.getMaterial().uniforms['uSaturation'] = this.#saturation;
+        this.#material.setUniformValue('uSaturation', this.#saturation);
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -7694,8 +7753,7 @@ class SketchPass extends Pass {
     #material;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'sketch' });
-        material.addUser(this);
+        const material = new ShaderMaterial({ shaderSource: 'sketch', user: this });
         material.depthTest = false;
         this.#material = material;
         this.scene = new Scene();
@@ -7703,14 +7761,14 @@ class SketchPass extends Pass {
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.#material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.#material.setUniformValue('colorMap', readBuffer.getTexture());
         if (Graphics$1.isWebGLAny) {
             Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
             Graphics$1.render(this.scene, this.camera, 0, context);
             Graphics$1.popRenderTarget();
         }
         else {
-            this.#material.uniforms['outTexture'] = renderToScreen ? getCurrentTexture() : writeBuffer.getTexture();
+            this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
             Graphics$1.compute(this.#material, {
                 ...context,
@@ -9269,7 +9327,7 @@ class LineMaterial extends Material {
     }
     set lineWidth(lineWidth) {
         this.#lineWidth = lineWidth;
-        this.uniforms['linewidth'] = lineWidth;
+        this.setUniformValue('linewidth', lineWidth);
     }
     toJSON() {
         const json = super.toJSON();
@@ -9299,8 +9357,8 @@ class InstancedBufferGeometry extends BufferGeometry {
 }
 
 class LineSegmentsGeometry extends InstancedBufferGeometry {
-    constructor() {
-        super();
+    constructor(params = {}) {
+        super(params);
         this.#setupGeometry();
     }
     #setupGeometry() {
@@ -11074,7 +11132,8 @@ export async function entitytoFBXFile(entity) {
 */
 async function configureMaterial(material, fbxMaterial, materialsParams) {
     const fbxManager = fbxMaterial.manager;
-    if (material.uniforms['colorMap']) {
+    const colorMapUniform = material.getUniformValue('colorMap');
+    if (colorMapUniform) {
         const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor');
         const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo');
         //fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????
@@ -11088,7 +11147,7 @@ async function configureMaterial(material, fbxMaterial, materialsParams) {
         //fbxMaterial.addTexture(fbxTexture);
         fbxMaterial.diffuse.connectSrcObject(fbxTexture);
     }
-    if (material.uniforms['colorMap']) {
+    if (colorMapUniform) {
         const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor');
         const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo');
         //fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????
@@ -11541,7 +11600,6 @@ const SAMPLERS = new Set([
     GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
     GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY
 ]);
-//export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;/
 class Uniform {
     #activeInfo;
     #size;
@@ -11951,8 +12009,8 @@ class ForwardRenderer {
                 break;
         }
         WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
-        for (const uniform in material.uniforms) {
-            program.setUniformValue(uniform, material.uniforms[uniform]);
+        for (const [uniformName, uniform] of material.getUniforms()) {
+            program.setUniformValue(uniformName, uniform.value);
         }
     }
     render(scene, camera, delta, context) {
@@ -12006,21 +12064,23 @@ class ForwardRenderer {
     }
     #renderRenderList(renderList, camera, renderLights, context, lightPos) {
         for (const child of renderList.opaqueList) {
-            this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+            this.#renderObject(context, renderList, child, camera, renderLights, lightPos);
         }
         if (renderLights) {
             for (const child of renderList.transparentList) {
-                this.#renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+                this.#renderObject(context, renderList, child, camera, renderLights, lightPos);
             }
         }
     }
-    #renderObject(context, renderList, object, camera, geometry, material, renderLights = true, lightPos) {
+    #renderObject(context, renderList, object, camera, renderLights = true, lightPos) {
         if (!object.isRenderable) {
             return;
         }
         if (object.isVisible() === false) {
             return;
         }
+        const geometry = object.getGeometry();
+        const material = object.getMaterial();
         if (geometry.count === 0) {
             return;
         }
@@ -12435,7 +12495,7 @@ class WebGPURenderer {
         let clearDepth = true;
         const pickPromises = [];
         for (const child of renderList.opaqueList) {
-            const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights /*, lightPos*/);
+            const pickPromise = this.#renderObject(context, renderList, child, camera, clearColor, clearDepth, clearValue, renderLights /*, lightPos*/);
             if (pickPromise) {
                 pickPromises.push(pickPromise);
             }
@@ -12444,7 +12504,7 @@ class WebGPURenderer {
         }
         if (renderLights) {
             for (const child of renderList.transparentList) {
-                const pickPromise = this.#renderObject(context, renderList, child, camera, child.getGeometry(), child.getMaterial(), clearColor, clearDepth, clearValue, renderLights /*, lightPos*/);
+                const pickPromise = this.#renderObject(context, renderList, child, camera, clearColor, clearDepth, clearValue, renderLights /*, lightPos*/);
                 if (pickPromise) {
                     pickPromises.push(pickPromise);
                 }
@@ -12470,13 +12530,15 @@ class WebGPURenderer {
             context.renderContext.pick?.resolve?.(null);
         }
     }
-    #renderObject(context, renderList, object, camera, geometry, material, clearColor, clearDepth, clearValue, renderLights = true /*, lightPos?: vec3*/) {
+    #renderObject(context, renderList, object, camera, clearColor, clearDepth, clearValue, renderLights = true /*, lightPos?: vec3*/) {
         if (!object.isRenderable) {
             return;
         }
         if (object.isVisible() === false) {
             return;
         }
+        const geometry = object.getGeometry();
+        const material = object.getMaterial();
         if (geometry.count === 0) {
             return;
         }
@@ -13129,7 +13191,7 @@ class WebGPURenderer {
             groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
             const members = uniform.members;
             if (members) {
-                const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+                const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
                 if (materialUniform) {
                     for (const member of members) {
                         let bufferSource = null;
@@ -13243,7 +13305,7 @@ class WebGPURenderer {
                     }
                 }
                 else {
-                    const arrayUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+                    const arrayUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
                     if (arrayUniform !== undefined) {
                         device.queue.writeBuffer(uniformBuffer, 0, arrayUniform);
                     }
@@ -13258,7 +13320,7 @@ class WebGPURenderer {
                     device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
                 }
                 else {
-                    const materialUniform = material.uniforms[uniform.name] ?? object?.uniforms[uniform.name];
+                    const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
                     if (materialUniform !== undefined) {
                         switch (uniform.type.name) {
                             case 'f32':
@@ -13339,14 +13401,14 @@ class WebGPURenderer {
         for (const shaderTexture of shaderModule.reflection.textures) {
             switch (shaderTexture.name) {
                 case 'colorTexture':
-                    const texture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
+                    const texture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
                     if (texture) {
                         groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
                     }
                     break;
                 case 'color2Texture':
                     {
-                        const texture = material.uniforms.color2Map; //?.texture as GPUTexture | undefined;
+                        const texture = material.getUniformValue('color2Map'); //?.texture as GPUTexture | undefined;
                         if (texture) {
                             groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
                         }
@@ -13354,7 +13416,7 @@ class WebGPURenderer {
                     break;
                 default:
                     {
-                        const texture = material.uniforms[shaderTexture.name]; //?.texture as GPUTexture | undefined;
+                        const texture = material.getUniformValue(shaderTexture.name); //?.texture as GPUTexture | undefined;
                         if (texture) {
                             groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: getViewDimension(shaderTexture) });
                         }
@@ -13369,14 +13431,14 @@ class WebGPURenderer {
         for (const shaderSampler of shaderModule.reflection.samplers) {
             switch (shaderSampler.name) {
                 case 'colorSampler':
-                    const sampler = material.uniforms.colorMap?.sampler;
+                    const sampler = material.getUniformValue('colorMap')?.sampler;
                     if (sampler) {
                         groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
                     }
                     break;
                 case 'color2Sampler':
                     {
-                        const sampler = material.uniforms.color2Map?.sampler;
+                        const sampler = material.getUniformValue('color2Map')?.sampler;
                         if (sampler) {
                             groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
                         }
@@ -13385,7 +13447,7 @@ class WebGPURenderer {
                 default:
                     {
                         const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
-                        const sampler = material.uniforms[name]?.sampler;
+                        const sampler = material.getUniformValue(name)?.sampler;
                         if (sampler) {
                             groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
                         }
@@ -13420,7 +13482,7 @@ class WebGPURenderer {
             }
             switch (storage.name) {
                 case 'colorTexture':
-                    const storageTexture = material.uniforms.colorMap; //?.texture as GPUTexture | undefined;
+                    const storageTexture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
                     if (storageTexture) {
                         groups.set(storage.group, storage.binding, { storageTexture, access, viewDimension: '2d', });
                     }
@@ -13438,7 +13500,7 @@ class WebGPURenderer {
                     break;
                 default:
                     {
-                        const storageTexture = material.uniforms[storage.name]; //?.texture as GPUTexture | undefined;
+                        const storageTexture = material.getUniformValue(storage.name); //?.texture as GPUTexture | undefined;
                         if (storageTexture) {
                             if (storage.isArray) {
                                 console.error("check this branch");
@@ -16825,8 +16887,14 @@ class GridMaterial extends Material {
         this.setBlending(MATERIAL_BLENDING_NORMAL);
         this.renderFace(RenderFace.Both);
     }
+    /**
+     * @deprecated Use setSpacing instead
+     */
     set spacing(spacing) {
-        this.uniforms['uSpacing'] = spacing;
+        this.setSpacing(spacing);
+    }
+    setSpacing(spacing) {
+        this.setUniformValue('uSpacing', spacing);
     }
     getShaderSource() {
         return 'grid';
@@ -16877,8 +16945,8 @@ class MeshBasicPbrMaterial extends Material {
     constructor(params = {}) {
         super(params);
         this.addParameter('color', MateriaParameterType.Color4, null, newValue => this.setColor4Uniform('uColor', newValue ?? DEFAULT_COLOR));
-        this.addParameter('metalness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.uniforms['uMetalness'] = newValue; });
-        this.addParameter('roughness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.uniforms['uRoughness'] = newValue; });
+        this.addParameter('metalness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.setUniformValue('uMetalness', newValue); });
+        this.addParameter('roughness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.setUniformValue('uRoughness', newValue); });
         this.addParameter('color_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uColorTexture', newValue, 'USE_COLOR_TEXTURE'));
         this.addParameter('normal_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uNormalTexture', newValue, 'USE_NORMAL_TEXTURE'));
         this.addParameter('metalness_texture', MateriaParameterType.Texture, null, newValue => this.setTexture('uMetalnessTexture', newValue, 'USE_METALNESS_TEXTURE'));
@@ -17129,7 +17197,7 @@ class LoopSubdivision {
     }
 }
 
-var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n\ttext-wrap: nowrap;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n\nharmony-toggle-button.sticker {\n\tmargin: 0.5rem;\n\tpadding: 0.2rem;\n\tborder-radius: 0.5rem;\n}\n\nharmony-toggle-button.sticker.on {\n\tbackground-color: green;\n}\n\nharmony-toggle-button.sticker.off {\n\tbackground-color: red;\n}\n";
+var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n\ttext-wrap: nowrap;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button, .reset-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n\nharmony-toggle-button.sticker {\n\tmargin: 0.5rem;\n\tpadding: 0.2rem;\n\tborder-radius: 0.5rem;\n}\n\nharmony-toggle-button.sticker.on {\n\tbackground-color: green;\n}\n\nharmony-toggle-button.sticker.off {\n\tbackground-color: red;\n}\n";
 
 const operations$1 = new Map();
 function registerOperation(name, ope) {
@@ -17705,6 +17773,7 @@ class Node extends MyEventTarget {
     editor;
     inputs = new Map();
     outputs = new Map();
+    #initialValues = new Map();
     params = new Map();
     previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
     previewSize = PREVIEW_PICTURE_SIZE;
@@ -17769,6 +17838,10 @@ class Node extends MyEventTarget {
             this.invalidate();
         }
     }
+    setInitialParamValue(origin, paramName, newValue, paramIndex) {
+        this.#initialValues.set(paramName, newValue);
+        this.setParam(origin, paramName, newValue, paramIndex);
+    }
     setParam(origin, paramName, newValue, paramIndex) {
         const p = this.params.get(paramName);
         if (p) {
@@ -17789,6 +17862,17 @@ class Node extends MyEventTarget {
                 newValue,
                 paramIndex,
             });
+        }
+    }
+    resetValue(origin, paramName, paramIndex) {
+        const value = this.#initialValues.get(paramName);
+        if (value !== undefined) {
+            this.setParam(origin, paramName, value, paramIndex);
+        }
+    }
+    resetAllValues(origin) {
+        for (const [name, initialValue] of this.#initialValues) {
+            this.setParam(origin, name, initialValue);
         }
     }
     setPredecessor(inputId, predecessor, predecessorOutputId) {
@@ -18033,10 +18117,9 @@ class ApplySticker extends Node {
         this.addInput('sticker', IO_TYPE_TEXTURE_2D);
         this.addInput('specular', IO_TYPE_TEXTURE_2D);
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'applysticker' });
+        this.material = new NodeImageEditorMaterial({ shaderName: 'applysticker', user: this });
         this.material.setDefine('TRANSFORM_TEX_COORD');
         this.material.setDefine('NEED_TWO_TEX_COORDS');
-        this.material.addUser(this);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
         this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
@@ -18063,10 +18146,10 @@ class ApplySticker extends Node {
         this.material.setTexture('uSticker', this.inputTexture);
         this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
         this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
-        this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+        this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0));
         const texTransform = mat3.create();
         ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
-        this.material.uniforms['uTransformTexCoord0'] = texTransform;
+        this.material.setUniformValue('uTransformTexCoord0', texTransform);
         /*texTransform = mat3.identity(texTransform);
         mat3.rotate(texTransform, texTransform, this.params.rotation);
         mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.params.translateU, this.params.translateV));
@@ -18110,10 +18193,10 @@ class ApplySticker extends Node {
         this.material.setTexture('stickerTexture', this.inputTexture);
         this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
         this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
-        this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+        this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0));
         const texTransform = mat3.create();
         ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
-        this.material.uniforms['transformTexCoord0'] = texTransform;
+        this.material.setUniformValue('transformTexCoord0', texTransform);
         if (!this.#outputTexture) {
             this.#outputTexture = TextureManager.createTexture({
                 webgpuDescriptor: {
@@ -18128,7 +18211,7 @@ class ApplySticker extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         //Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const output = this.getOutput('output');
@@ -18192,9 +18275,8 @@ class TextureLookup extends Node {
         super(editor, params);
         this.hasPreview = true;
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'texturelookup' });
+        this.material = new NodeImageEditorMaterial({ shaderName: 'texturelookup', user: this });
         this.material.setDefine('TRANSFORM_TEX_COORD');
-        this.material.addUser(this);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
         /*this.params.adjustBlack = 0;
         this.params.adjustWhite = 1.0;
@@ -18227,12 +18309,12 @@ class TextureLookup extends Node {
             return;
         }
         this.material.setTexture('uInput', this.inputTexture);
-        this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+        this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0));
         const texTransform = mat3.create();
         mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
         mat3.scale(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('scale u'), this.getValue('scale v')));
         mat3.translate(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('translate u'), this.getValue('translate v')));
-        this.material.uniforms['uTransformTexCoord0'] = texTransform;
+        this.material.setUniformValue('uTransformTexCoord0', texTransform);
         //console.error(this.params, this.testing);
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -18251,12 +18333,12 @@ class TextureLookup extends Node {
             return;
         }
         this.material.setTexture('inputTexture', this.inputTexture);
-        this.material.uniforms['adjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+        this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0));
         const texTransform = mat3.create();
         mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
         mat3.scale(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('scale u'), this.getValue('scale v')));
         mat3.translate(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('translate u'), this.getValue('translate v')));
-        this.material.uniforms['transformTexCoord0'] = texTransform;
+        this.material.setUniformValue('transformTexCoord0', texTransform);
         if (!this.#outputTexture) {
             this.#outputTexture = TextureManager.createTexture({
                 webgpuDescriptor: {
@@ -18271,7 +18353,7 @@ class TextureLookup extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
         const output = this.getOutput('output');
         if (output) {
@@ -18597,7 +18679,28 @@ class NodeGui {
     }
     #createParamHTML(param, index) {
         const paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-        const nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
+        createElement('div', {
+            parent: paramHtml,
+            childs: [
+                createElement('span', {
+                    class: 'reset-button',
+                    parent: paramHtml,
+                    innerHTML: resetWrenchSVG,
+                    $click: async () => {
+                        if (param.type === NodeParamType.StickerAdjust) {
+                            this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
+                            this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
+                            this.#node.resetValue(NodeParamOrigin.Gui, 'top right');
+                        }
+                        else {
+                            this.#node.resetValue(NodeParamOrigin.Gui, param.name);
+                        }
+                        this.#node.revalidate({ updatePreview: true });
+                    },
+                }),
+                createElement('span', { parent: paramHtml, class: 'name', innerText: param.name, }),
+            ]
+        });
         let valueHtml;
         if (param.type != NodeParamType.StickerAdjust) {
             valueHtml = createElement('input', {
@@ -18617,9 +18720,19 @@ class NodeGui {
                     valueHtml.classList.remove('flash');
                 },
             });
+            /*
+            createElement('span', {
+                class: 'reset-button',
+                parent: paramHtml,
+                innerHTML: resetWrenchSVG,
+                $click: async () => {
+                    this.#node.resetValue(NodeParamOrigin.Gui, param.name);
+                    this.#node.revalidate({ updatePreview: true });
+                },
+            });
+            */
             this.#htmlParamsValue.set(paramHtml, valueHtml);
         }
-        nameHtml.innerText = param.name;
         if (param.type == NodeParamType.StickerAdjust) {
             defineHarmony2dManipulator();
             defineHarmonyToggleButton();
@@ -18656,6 +18769,19 @@ class NodeGui {
                                     }),
                                 ]
                             }),
+                            /*
+                            createElement('span', {
+                                class: 'reset-button',
+                                parent: paramHtml,
+                                innerHTML: resetWrenchSVG,
+                                $click: async () => {
+                                    this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
+                                    this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
+                                    this.#node.resetValue(NodeParamOrigin.Gui, 'top right');
+                                    this.#node.revalidate({ updatePreview: true });
+                                },
+                            }),
+                            */
                         ],
                     }),
                     createElement('div', {
@@ -19207,8 +19333,7 @@ class DrawCircle extends Node {
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
         this.addOutput('perimeter', IO_TYPE_FLOAT);
         this.addOutput('area', IO_TYPE_FLOAT);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'drawcircle' });
-        this.material.addUser(this);
+        this.material = new NodeImageEditorMaterial({ shaderName: 'drawcircle', user: this });
         this.#textureSize = params.textureSize;
     }
     async operate(context) {
@@ -19228,11 +19353,11 @@ class DrawCircle extends Node {
         if (area) {
             area._value = Math.PI * radius ** 2;
         }
-        this.material.uniforms['uRadius'] = radius;
-        this.material.uniforms['uCenter'] = center;
-        this.material.uniforms['uBorderColor'] = borderColor;
-        this.material.uniforms['uFillColor'] = fillColor;
-        this.material.uniforms['uBorder'] = border;
+        this.material.setUniformValue('uRadius', radius);
+        this.material.setUniformValue('uCenter', center);
+        this.material.setUniformValue('uBorderColor', borderColor);
+        this.material.setUniformValue('uFillColor', fillColor);
+        this.material.setUniformValue('uBorder', border);
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
@@ -19271,8 +19396,7 @@ class CombineAdd extends Node {
         }
         //this.addInput('input', IO_TYPE_TEXTURE_2D, 8);
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add' });
-        this.material.addUser(this);
+        this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add', user: this });
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
@@ -19323,7 +19447,7 @@ class CombineAdd extends Node {
         for (let i = 0; i < 8; ++i) {
             const texture = await this.getInput('input' + i)?.getValue(context);
             if (texture) {
-                this.material.uniforms[`input${inputCount}Texture`] = texture;
+                this.material.setUniformValue(`input${inputCount}Texture`, texture);
                 ++inputCount;
             }
         }
@@ -19341,7 +19465,7 @@ class CombineAdd extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         this.material.setDefine('INPUT_COUNT', String(inputCount));
         //Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
@@ -19376,8 +19500,7 @@ class CombineLerp extends Node {
         this.addInput('input1', IO_TYPE_TEXTURE_2D);
         this.addInput('weight', IO_TYPE_TEXTURE_2D);
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'combine_lerp' });
-        this.material.addUser(this);
+        this.material = new NodeImageEditorMaterial({ shaderName: 'combine_lerp', user: this });
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
         this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
@@ -19431,7 +19554,7 @@ class CombineLerp extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         Graphics$1.compute(this.material, {
             workgroupCountX: this.#textureSize,
             workgroupCountY: this.#textureSize,
@@ -19468,8 +19591,7 @@ let Multiply$1 = class Multiply extends Node {
         }
         //this.addInput('input', IO_TYPE_TEXTURE_2D, 8);
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'multiply' });
-        this.material.addUser(this);
+        this.material = new NodeImageEditorMaterial({ shaderName: 'multiply', user: this });
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
@@ -19495,7 +19617,7 @@ let Multiply$1 = class Multiply extends Node {
         }
         //this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
         this.material.setTextureArray('uInput[0]', textureArray);
-        this.material.uniforms['uUsed[0]'] = usedArray;
+        this.material.setUniformValue('uUsed[0]', usedArray);
         //this.material.uniforms['uInput1'] = await this.getInput('input1').value;
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -19524,7 +19646,7 @@ let Multiply$1 = class Multiply extends Node {
             //usedArray[i] = texture != undefined ? 1 : 0;//.push(texture != undefined);
             //this.material.setTexture(`inputTexture${i}`, texture);
             if (texture) {
-                this.material.uniforms[`input${inputCount}Texture`] = texture;
+                this.material.setUniformValue(`input${inputCount}Texture`, texture);
                 ++inputCount;
             }
         }
@@ -19543,7 +19665,7 @@ let Multiply$1 = class Multiply extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         this.material.setDefine('INPUT_COUNT', String(inputCount));
         //Graphics.compute(this.material, {}, this.#textureSize, this.#textureSize);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
@@ -19578,9 +19700,8 @@ class Select extends Node {
         this.addInput('input', IO_TYPE_TEXTURE_2D);
         this.addInput('selectvalues', IO_TYPE_FLOAT, MAX_SELECTORS);
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
-        this.material = new NodeImageEditorMaterial({ shaderName: 'select' });
+        this.material = new NodeImageEditorMaterial({ shaderName: 'select', user: this });
         this.material.setDefine('MAX_SELECTORS', String(MAX_SELECTORS));
-        this.material.addUser(this);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
@@ -19596,7 +19717,7 @@ class Select extends Node {
             return;
         }
         this.material.setTexture('uInputTexture', await this.getInput('input')?.getValue(context));
-        this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.getValue(context);
+        this.material.setUniformValue('uSelect[0]', await this.getInput('selectvalues')?.getValue(context));
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
@@ -19614,7 +19735,7 @@ class Select extends Node {
             return;
         }
         this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
-        this.material.uniforms['select'] = new Float32Array(await this.getInput('selectvalues')?.getValue(context));
+        this.material.setUniformValue('select', new Float32Array(await this.getInput('selectvalues')?.getValue(context)));
         if (!this.#outputTexture) {
             this.#outputTexture = TextureManager.createTexture({
                 webgpuDescriptor: {
@@ -19629,7 +19750,7 @@ class Select extends Node {
                 minFilter: GL_LINEAR,
             });
         }
-        this.material.uniforms['outTexture'] = this.#outputTexture;
+        this.material.setUniformValue('outTexture', this.#outputTexture);
         //this.editor.render(this.material, this.#textureSize, this.#textureSize);
         Graphics$1.compute(this.material, {
             workgroupCountX: this.#textureSize,
@@ -20440,17 +20561,14 @@ class SkeletonHelper extends Entity {
     #displayJoints = true;
     constructor(parameters) {
         super(parameters);
-        this.#lineMaterial = new LineMaterial();
-        this.#lineMaterial.addUser(this);
+        this.#lineMaterial = new LineMaterial({ user: this });
         this.#lineMaterial.setDefine('ALWAYS_ON_TOP');
         this.#lineMaterial.lineWidth = 3;
-        this.#highlitLineMaterial = new LineMaterial();
-        this.#highlitLineMaterial.addUser(this);
+        this.#highlitLineMaterial = new LineMaterial({ user: this });
         this.#highlitLineMaterial.setDefine('ALWAYS_ON_TOP');
         this.#highlitLineMaterial.lineWidth = 3;
         this.#highlitLineMaterial.setMeshColor([1, 0, 0, 1]);
-        this.#boneTipMaterial = new MeshBasicMaterial();
-        this.#boneTipMaterial.addUser(this);
+        this.#boneTipMaterial = new MeshBasicMaterial({ user: this });
         this.#boneTipMaterial.setDefine('ALWAYS_ON_TOP');
         this.#boneTipMaterial.setMeshColor([1, 0, 1, 1]);
         this.hideInExplorer = true;
@@ -22364,7 +22482,7 @@ class Text3D extends Mesh {
 registerEntity(Text3D);
 
 class Wireframe extends Entity {
-    #material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
+    #material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this });
     #color = vec4.fromValues(0, 0, 0, 1);
     enumerable = false;
     #meshes = new Set();
@@ -22374,7 +22492,6 @@ class Wireframe extends Entity {
         //this.#material = material;
         this.#material.setColorMode(MaterialColorMode.PerMesh);
         this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-        this.#material.addUser(this);
         //this.setParameters(params);
     }
     setColor(color) {
@@ -22394,8 +22511,7 @@ class Wireframe extends Entity {
                 continue;
             }
             const segments = [];
-            const line = new LineSegmentsGeometry();
-            line.addUser(this);
+            const line = new LineSegmentsGeometry({ user: this });
             const me = new Mesh({ geometry: line, material: this.#material });
             this.#meshes.add(me);
             this.addChild(me);
@@ -22787,7 +22903,7 @@ var camera$1 = "  struct Camera {\n    viewportSize: vec2u,\n    imageWidth: f32
 
 var color$1 = "  // Narkowicz 2015, \"ACES Filmic Tone Mapping Curve\"\n  @must_use\n  fn aces(x: vec3f) -> vec3f {\n    let a = 2.51;\n    let b = 0.03;\n    let c = 2.43;\n    let d = 0.59;\n    let e = 0.14;\n    return saturate(x * (a * x + b)) / (x * (c * x + d) + e);\n  }\n\n  // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/\n  @must_use\n  fn filmic(x: vec3f) -> vec3f {\n    let X = max(vec3f(0.0), x - 0.004);\n    let result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);\n    return pow(result, vec3(2.2));\n  }\n\n  // Lottes 2016, \"Advanced Techniques and Optimization of HDR Color Pipelines\"\n  @must_use\n  fn lottes(x: vec3f) -> vec3f {\n    let a = vec3f(1.6);\n    let d = vec3f(0.977);\n    let hdrMax = vec3f(8.0);\n    let midIn = vec3f(0.18);\n    let midOut = vec3f(0.267);\n\n    let b =\n        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n    let c =\n        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n\n    return pow(x, a) / (pow(x, a * d) * b + c);\n  }\n\n  @must_use\n  fn reinhard(x: vec3f) -> vec3f {\n    return x / (1.0 + x);\n  }\n";
 
-var common$1 = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32,\n    debugColor: u32,\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    tbn: mat3x3f,\n    coord: vec2f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    ta0: vec4f,\n    ta1: vec4f,\n    ta2: vec4f,\n\n    bta0: vec3f,\n    bta1: vec3f,\n    bta2: vec3f,\n\n    t0: vec2f,\n    t1: vec2f,\n    t2: vec2f,\n\n    faceNormal: vec3f,\n    materialIdx: u32,\n    flatShading: u32,\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
+var common = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32,\n    debugColor: u32,\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    tbn: mat3x3f,\n    coord: vec2f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    ta0: vec4f,\n    ta1: vec4f,\n    ta2: vec4f,\n\n    bta0: vec3f,\n    bta1: vec3f,\n    bta2: vec3f,\n\n    t0: vec2f,\n    t1: vec2f,\n    t2: vec2f,\n\n    faceNormal: vec3f,\n    materialIdx: u32,\n    flatShading: u32,\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
 
 var interval = "  struct Interval {\n    min: f32,\n    max: f32,\n  };\n\n  @must_use\n  fn intervalContains(interval: Interval, x: f32) -> bool {\n    return interval.min <= x && x <= interval.max;\n  }\n\n  @must_use\n  fn intervalSurrounds(interval: Interval, x: f32) -> bool {\n    return interval.min < x && x < interval.max;\n  }\n\n  @must_use\n  fn intervalClamp(interval: Interval, x: f32) -> f32 {\n    var out = x;\n    if (x < interval.min) {\n      out = interval.min;\n    }\n    if (x > interval.max) {\n      out = interval.max;\n    }\n    return out;\n  }\n\n  const emptyInterval = Interval(f32max, f32min);\n  const universeInterval = Interval(f32min, f32max);\n  const positiveUniverseInterval = Interval(EPSILON, f32max);\n";
 
@@ -22803,39 +22919,13 @@ var vertex = "  struct VertexOutput {\n    @builtin(position) Position: vec4f,\n
 
 addWgslInclude('raytracer::camera', camera$1);
 addWgslInclude('raytracer::color', color$1);
-addWgslInclude('raytracer::common', common$1);
+addWgslInclude('raytracer::common', common);
 addWgslInclude('raytracer::interval', interval);
 addWgslInclude('raytracer::material', material$1);
 addWgslInclude('raytracer::ray', ray$1);
 addWgslInclude('raytracer::utils', utils);
 addWgslInclude('raytracer::vec', vec$9);
 addWgslInclude('raytracer::vertex', vertex);
-
-var common = "#pragma once\n\n/*\nstruct AABB {\n  min: vec3f,\n  max: vec3f,\n};\n*/\n\n/*\nstruct Ray {\n  origin: vec3f,\n  direction: vec3f,\n  tmin: f32,\n  tmax: f32,\n};\n*/\n\n// #define WEBRTX_SHADER_UNUSED (~0u)\n#define WEBRTX_SHADER_UNUSED (0xffu)\n\nstruct TlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  // for interior node, this is the offset in bvhTree for the second child\n  // for TLAS leaf node, this is the offset for the single BLAS referenced by\n  // current instance\n  //   TODO: can TLAS leaf node contain more than one BLAS when tree height is\n  //   restricted?\n  //   TODO: can TLAS be nested (but should not matter? since TLAS leaf has no\n  //   assumption, just set the offset for next node)\n  //      looks like it can\n  //      https://renderdoc.org/vkspec_chunked/chap37.html#VkAccelerationStructureInstanceKHR\n  // for BLAS leaf node, this is the offset for the primitive (either triangle\n  // or AABB) in global indices/aabbs buffer(s)\n  entry_index: u32,  // _or_primitive_id\n  exit_index: u32,\n  // uint axis;\n\n  // >0: leaf\n  is_leaf: u32,\n\n  // leaf data\n  mask: u32,\n  flags: u32,              // TODO: INSTANCE_FORCE_OPAQUE_BIT_KHR\n  instanceId: u32,         // used for gl_InstanceId\n  sbtInstanceOffset: u32,  // The start hitGroupId for all\n                           // geoms within this instance\n  instanceCustomIndex: i32,\n  transformToWorld: mat4x3f,  // column major\n  transformToObject: mat4x3f,\n  // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n  //transformToWorld: array<f32, 12>,  // column major\n  //transformToObject: array<f32, 12>,\n\n  // For traversal\n  blas_geometry_id_offset: u32,\n};\n\nstruct BlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  entry_index_or_primitive_id: u32,\n  exit_index: u32,\n  // uint axis;\n\n  // geometryId >= 0: BLAS leaf\n  // else: interior\n  geometryId: i32,\n  // TODO: geometry type? flags\n};\n";
-
-var geom = "#pragma once\n\n// clang-format off\n//#include \"layout.glsl\"\n#include raytracer::commonv2\n// clang-format on\n\n// TODO: share with bvh builder\nconst GEOM_TYPE_TRIANGLE = 0u;\nconst GEOM_TYPE_AABB = 1u;\n\n// Note: this is included so that user_prelude knows the type\n// one for each geometry\nstruct BvhGeometryDescriptor {\n  // vBuffer stores either vertex positions, or AABBs\n  vBufferIndex: u32,\n  // only for triangles, if indices are used (>=0), first look up this indices\n  // buffer\n  iBufferIndex: i32,\n  vboOffset: u32,\n  vboStride: u32,\n  vioOffset: u32,\n  vioStride: u32,\n  // note that geometry info are duplicated for vbo and vio buffer\n  owningGeometryType_todo_deprecate: u32,\n  owningGeometryFlags: u32,  // Geometry.OPAQUE etc\n};\n\n// this can be a uniform?\n//const bvhReferencedGeomBuffer: array<BvhGeometryDescriptor> = _CRT_USER_BVH_GEOM_BUFFERS_INITIALIZER_LIST;\n\n// each buffer is described by BvhGeometryDescriptor\n\n// from application\n// TODO: looks like array of buffers not supported??\n// layout(set = RT_RESOURCES_BIND_SET,\n//        binding = BP_GEOM_BUFFERS_START) readonly buffer BvhGeomBufferGeneral\n//        {\n//   float fword[];\n// }\n// bvhGeoBuffers[USER_NUM_TOTAL_GEOMETRY_RELATED_BUFFERS];\n// #define GET_VEC3_FROM_BUFFER(bi, wordi)        \\\n//   vec3(bvhGeoBuffers[(bi)].fword[(wordi)],     \\\n//        bvhGeoBuffers[(bi)].fword[(wordi) + 1], \\\n//        bvhGeoBuffers[(bi)].fword[(wordi) + 2])\n\nfn GET_VEC3_FROM_BUFFER(geoBufferIndex: u32, wordIndex: u32) -> vec3<f32> {\n    switch bitcast<i32>(geoBufferIndex) {\n        case 0: {\n            return vec3<f32>(\n              bvhGeoBuffers_0_.fword[wordIndex],\n              bvhGeoBuffers_0_.fword[(wordIndex + 1u)],\n              bvhGeoBuffers_0_.fword[(wordIndex + 2u)],\n            );\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertIndices(iBufferIndex: u32, offset: u32, stride: u32, primitiveId: u32) -> vec3u {\n  let vioWordOffset: u32 =\n      (offset + primitiveId * stride) / 4;  // byte offset => word offset\n  let f3: vec3f = GET_VEC3_FROM_BUFFER(iBufferIndex, vioWordOffset);\n  // return floatBitsToUint(f3);\n  return vec3u(bitcast<u32>(f3.x), bitcast<u32>(f3.y), bitcast<u32>(f3.z));\n}\n\nfn getTriVertPosition(vBufferIndex: u32, offset: u32, stride: u32, vindex: u32) -> vec3f {\n  let vboWordOffset: u32 = (offset + vindex * stride) / 4;  // byte offset => word offset\n  return GET_VEC3_FROM_BUFFER(vBufferIndex, vboWordOffset);\n}\n\nfn getTriangleVertexPositions(g: BvhGeometryDescriptor, primitiveId: u32) -> array<vec3f, 3> {\n  var indices: vec3u;\n  if (g.iBufferIndex >= 0) {\n    indices = getTriVertIndices(u32(g.iBufferIndex), g.vioOffset, g.vioStride, primitiveId);\n  } else {\n    indices = vec3u(primitiveId * 3, primitiveId * 3 + 1, primitiveId * 3 + 2);\n  }\n  return array<vec3f, 3>(\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[0]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[1]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[2]));\n}\n";
-
-var intersect = "#pragma once\n\n// https://tavianator.com/2011/ray_box.html\n// https://medium.com/@bromanz/another-view-on-the-classic-ray-aabb-intersection-algorithm-for-bvh-traversal-41125138b525\nfn intersect_aabb(rayOrigin: vec3f, invRayDir: vec3f,\n                    ray_tmin: f32, ray_tmax: f32,\n                    aabb: AABB) -> bool {\n  let t0: vec3f = (aabb.min - rayOrigin) * invRayDir;\n  let t1: vec3f = (aabb.max - rayOrigin) * invRayDir;\n  let tmin: vec3f = min(t0, t1);\n  let tmax: vec3f = max(t0, t1);\n  return max(ray_tmin, max(max(tmin.x, tmin.y), tmin.z)) <=\n         min(ray_tmax, min(min(tmax.x, tmax.y), tmax.z));\n}\n\nfn intersect_triangle_branchless(ray_origin: vec3f, ray_tmin: f32,\n                                   ray_dir: vec3f, ray_tmax: f32,\n                                   p0: vec3f, p1: vec3f, p2: vec3f,\n                                   n: ptr<function, vec3f>, t: ptr<function, f32>, beta: ptr<function, f32>,\n                                   gamma: ptr<function, f32>) -> bool {\n  let e0: vec3f = p1 - p0;\n  let e1: vec3f = p0 - p2;\n  *n = cross(e1, e0);\n\n  let e2: vec3f = (1.f / dot(*n, ray_dir)) * (p0 - ray_origin);\n  let i: vec3f = cross(ray_dir, e2);\n\n  *beta = dot(i, e1);\n  *gamma = dot(i, e0);\n  *t = dot(*n, e2);\n\n  return (*t < ray_tmax) &&\n    (*t > ray_tmin) &&\n    (*beta >= 0) &&\n    (*gamma >= 0) &&\n    (*beta + *gamma <= 1);\n}\n";
-
-var sbt = "//#pragma once\nstruct RtUniforms {\n  sbtStartRayGen: u32,\n  sbtStartRayMiss: u32,\n  sbtStrideRayMiss: u32,\n  sbtStartHit: u32,\n  sbtStrideHit: u32,\n  sbtStartCallable: u32,\n  sbtStrideCallable: u32,\n  webrtx_NumWorkGroups: vec3u,\n};\n\n\n\n\nfn sbtHitGroupIndex(instanceId: u32, geometryId: u32, num_ray_types: u32,\n                      ray_type: u32) -> u32 {\n  return rtUniformParams.sbtStartHit +\n         rtUniformParams.sbtStrideHit *\n             (instanceId + geometryId * num_ray_types + ray_type);\n}\n\nfn invokeShaderIndirect_closestHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>\n    // TODO: make these global for non-recursive ray tracing?\n    // ,int gl_PrimitiveID, int gl_InstanceID, int gl_InstanceCustomIndexEXT,\n    // int gl_GeometryIndexEXT\n) {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rchit: u32 = RCHit(hitShaderGroupIdentifier);\n  if (rchit == WEBRTX_SHADER_UNUSED) {\n    return;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  float _crt_HitTEXT = _crt_RayTmaxEXT;\n  _CRT_USER_RCHIT_TABLE\n}\n\n// TODO: unify hitgroup shaders: intersect, rchit, rahit\nfn invokeShaderIndirect_anyHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  //  uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> u32 {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rahit: u32 = RAHit(hitShaderGroupIdentifier);\n  if (rahit == WEBRTX_SHADER_UNUSED) {\n    // assume hit confirmed by default\n    return _CRT_HIT_REPORT_CONFIRMED;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  // TODO: alias\n  const _crt_HitTEXT: f32 = _crt_RayTmaxEXT;\n  // assume hit confirmed by default\n  let _CRT_INOUT_PARAM_HIT_REPORT: u32 = _CRT_HIT_REPORT_CONFIRMED;\n  // anyhit shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT`.\n  //_CRT_USER_RAHIT_TABLE\n  return _CRT_INOUT_PARAM_HIT_REPORT;\n}\n\n#define _CRT_SBT_BUFFER_NAME _crt_sbt_buf\n\n// TODO: move APIs to a central place\n// BUG: this is different from vk api, it's only allowed to be called once and\n// does not return a value (it's a statement not expression)\n// https://forums.developer.nvidia.com/t/about-two-functions-rtpotentialintersection-and-rtreportintersection/30607/8\n#define reportIntersectionEXT(hit_t, hit_kind) _CRT_POTENTIAL_HIT_T = (hit_t);\n\nfn invokeShaderIndirect_intersect(\n    sbtByteIndex: u32, crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_ObjectRayOriginEXT: vec3f, _CRT_POTENTIAL_HIT_T: ptr<function, f32>,\n    _crt_ObjectRayDirectionEXT: vec3f, _crt_WorldToObjectEXT: mat4x3f,\n    _crt_ObjectToWorldEXT: mat4x3f, _crt_GeometryIndexEXT: i32,\n    _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> bool {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: f32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rint: u32 = RInt(hitShaderGroupIdentifier);\n  if (rint == WEBRTX_SHADER_UNUSED) {\n    return false;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  _CRT_POTENTIAL_HIT_T = _crt_RayTminEXT - 1.0;\n  // TODO: uint potential_hit_kind;\n  // intersection shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT` and `const\n  // _crt_RayTmaxEXT` and `out hit_attributes` and `out _CRT_POTENTIAL_HIT_T`.\n\n  //_CRT_USER_RINT_TABLE\n\n  return (_CRT_POTENTIAL_HIT_T > _crt_RayTminEXT &&\n          _CRT_POTENTIAL_HIT_T < _crt_RayTmaxEXT);\n}\n";
-
-var traceray = "#pragma once\n#include raytracer::commonv2\n#include raytracer::geom\n\nstruct AABB {\n  min: vec3f,\n  max: vec3f,\n};\n\nstruct Ray {\n  origin: vec3f,\n  direction: vec3f,\n  tmin: f32,\n  tmax: f32,\n};\n\n// #define WEBRTX_SHADER_UNUSED (~0U)\n#define WEBRTX_SHADER_UNUSED (0xffu)\n#define _CRT_HIT_REPORT_IGNORE 1\n\n#define gl_HitKindFrontFacingTriangleEXT (0xFEu)\n#define gl_HitKindBackFacingTriangleEXT (0xFFu)\n\nstruct BvhGeomBuffer_0_ {\n    fword: array<f32>,\n}\n\n/*\nstruct TlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  // for interior node, this is the offset in bvhTree for the second child\n  // for TLAS leaf node, this is the offset for the single BLAS referenced by\n  // current instance\n  //   TODO: can TLAS leaf node contain more than one BLAS when tree height is\n  //   restricted?\n  //   TODO: can TLAS be nested (but should not matter? since TLAS leaf has no\n  //   assumption, just set the offset for next node)\n  //      looks like it can\n  //      https://renderdoc.org/vkspec_chunked/chap37.html#VkAccelerationStructureInstanceKHR\n  // for BLAS leaf node, this is the offset for the primitive (either triangle\n  // or AABB) in global indices/aabbs buffer(s)\n  entry_index: u32,  // _or_primitive_id\n  exit_index: u32,\n  // uint axis;\n\n  // >0: leaf\n  is_leaf: u32,\n\n  // leaf data\n  mask: u32,\n  flags: u32,              // TODO: INSTANCE_FORCE_OPAQUE_BIT_KHR\n  instanceId: u32,         // used for gl_InstanceId\n  sbtInstanceOffset: u32,  // The start hitGroupId for all\n                           // geoms within this instance\n  instanceCustomIndex: i32,\n  transformToWorld: mat4x3f,  // column major\n  transformToObject: mat4x3f,\n  // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n  //transformToWorld: array<f32, 12>,  // column major\n  //transformToObject: array<f32, 12>,\n\n  // For traversal\n  blas_geometry_id_offset: u32,\n};\n*/\n/*\nstruct BlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  entry_index_or_primitive_id: u32,\n  exit_index: u32,\n  // uint axis;\n\n  // geometryId >= 0: BLAS leaf\n  // else: interior\n  geometryId: i32,\n  // TODO: geometry type? flags\n};\n*/\n\n/*\nstruct BvhGeometryDescriptor {\n  // vBuffer stores either vertex positions, or AABBs\n  vBufferIndex: u32,\n  // only for triangles, if indices are used (>=0), first look up this indices\n  // buffer\n  iBufferIndex: i32,\n  vboOffset: u32,\n  vboStride: u32,\n  vioOffset: u32,\n  vioStride: u32,\n  // note that geometry info are duplicated for vbo and vio buffer\n  owningGeometryType_todo_deprecate: u32,\n  owningGeometryFlags: u32,  // Geometry.OPAQUE etc\n};\n*/\n\nstruct RtUniforms {\n  sbtStartRayGen: u32,\n  sbtStartRayMiss: u32,\n  sbtStrideRayMiss: u32,\n  sbtStartHit: u32,\n  sbtStrideHit: u32,\n  sbtStartCallable: u32,\n  sbtStrideCallable: u32,\n  webrtx_NumWorkGroups: vec3u,\n};\n\n\nfn sbtHitGroupIndex(instanceId: u32, geometryId: u32, num_ray_types: u32,\n                      ray_type: u32) -> u32 {\n  return rtUniformParams.sbtStartHit +\n         rtUniformParams.sbtStrideHit *\n             (instanceId + geometryId * num_ray_types + ray_type);\n}\n\n/*\nfn GET_VEC3_FROM_BUFFER(geoBufferIndex: u32, wordIndex: u32) -> vec3<f32> {\n    switch bitcast<i32>(geoBufferIndex) {\n        case 0: {\n            return vec3<f32>(\n              bvhGeoBuffers_0_.fword[wordIndex],\n              bvhGeoBuffers_0_.fword[(wordIndex + 1u)],\n              bvhGeoBuffers_0_.fword[(wordIndex + 2u)],\n            );\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n*/\n/*/\n\nfn getTriVertIndices(iBufferIndex: u32, offset: u32, stride: u32, primitiveId: u32) -> vec3u {\n  let vioWordOffset: u32 =\n      (offset + primitiveId * stride) / 4;  // byte offset => word offset\n  let f3: vec3f = GET_VEC3_FROM_BUFFER(iBufferIndex, vioWordOffset);\n  // return floatBitsToUint(f3);\n  return vec3u(bitcast<u32>(f3.x), bitcast<u32>(f3.y), bitcast<u32>(f3.z));\n}\n  */\n\n/*\nfn getTriVertPosition(vBufferIndex: u32, offset: u32, stride: u32, vindex: u32) -> vec3f {\n  let vboWordOffset: u32 = (offset + vindex * stride) / 4;  // byte offset => word offset\n  return GET_VEC3_FROM_BUFFER(vBufferIndex, vboWordOffset);\n}\n*/\n/*\nfn getTriangleVertexPositions(g: BvhGeometryDescriptor, primitiveId: u32) -> array<vec3f, 3> {\n  var indices: vec3u;\n  if (g.iBufferIndex >= 0) {\n    indices = getTriVertIndices(u32(g.iBufferIndex), g.vioOffset, g.vioStride, primitiveId);\n  } else {\n    indices = vec3u(primitiveId * 3, primitiveId * 3 + 1, primitiveId * 3 + 2);\n  }\n  return array<vec3f, 3>(\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[0]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[1]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[2]));\n}\n*/\n\n// https://tavianator.com/2011/ray_box.html\n// https://medium.com/@bromanz/another-view-on-the-classic-ray-aabb-intersection-algorithm-for-bvh-traversal-41125138b525\nfn intersect_aabb(rayOrigin: vec3f, invRayDir: vec3f,\n                    ray_tmin: f32, ray_tmax: f32,\n                    aabb: AABB) -> bool {\n  let t0: vec3f = (aabb.min - rayOrigin) * invRayDir;\n  let t1: vec3f = (aabb.max - rayOrigin) * invRayDir;\n  let tmin: vec3f = min(t0, t1);\n  let tmax: vec3f = max(t0, t1);\n  return max(ray_tmin, max(max(tmin.x, tmin.y), tmin.z)) <=\n         min(ray_tmax, min(min(tmax.x, tmax.y), tmax.z));\n}\n\nfn intersect_triangle_branchless(ray_origin: vec3f, ray_tmin: f32,\n                                   ray_dir: vec3f, ray_tmax: f32,\n                                   p0: vec3f, p1: vec3f, p2: vec3f,\n                                   n: ptr<function, vec3f>, t: ptr<function, f32>, beta: ptr<function, f32>,\n                                   gamma: ptr<function, f32>) -> bool {\n  let e0: vec3f = p1 - p0;\n  let e1: vec3f = p0 - p2;\n  *n = cross(e1, e0);\n\n  let e2: vec3f = (1.f / dot(*n, ray_dir)) * (p0 - ray_origin);\n  let i: vec3f = cross(ray_dir, e2);\n\n  *beta = dot(i, e1);\n  *gamma = dot(i, e0);\n  *t = dot(*n, e2);\n\n  return (*t < ray_tmax) &&\n    (*t > ray_tmin) &&\n    (*beta >= 0) &&\n    (*gamma >= 0) &&\n    (*beta + *gamma <= 1);\n}\nfn invokeShaderIndirect_intersect(\n    sbtByteIndex: u32, crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_ObjectRayOriginEXT: vec3f, _CRT_POTENTIAL_HIT_T: ptr<function, f32>,\n    _crt_ObjectRayDirectionEXT: vec3f, _crt_WorldToObjectEXT: mat4x3f,\n    _crt_ObjectToWorldEXT: mat4x3f, _crt_GeometryIndexEXT: i32,\n    _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5>>) -> bool {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: f32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rint: u32 = RInt(hitShaderGroupIdentifier);\n  if (rint == WEBRTX_SHADER_UNUSED) {\n    return false;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  _CRT_POTENTIAL_HIT_T = _crt_RayTminEXT - 1.0;\n  // TODO: uint potential_hit_kind;\n  // intersection shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT` and `const\n  // _crt_RayTmaxEXT` and `out hit_attributes` and `out _CRT_POTENTIAL_HIT_T`.\n\n  //_CRT_USER_RINT_TABLE\n\n  return (_CRT_POTENTIAL_HIT_T > _crt_RayTminEXT &&\n          _CRT_POTENTIAL_HIT_T < _crt_RayTmaxEXT);\n}\n\n\n\n// TODO: unify hitgroup shaders: intersect, rchit, rahit\nfn invokeShaderIndirect_anyHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  //  uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> u32 {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rahit: u32 = RAHit(hitShaderGroupIdentifier);\n  if (rahit == WEBRTX_SHADER_UNUSED) {\n    // assume hit confirmed by default\n    return _CRT_HIT_REPORT_CONFIRMED;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  // TODO: alias\n  const _crt_HitTEXT: f32 = _crt_RayTmaxEXT;\n  // assume hit confirmed by default\n  let _CRT_INOUT_PARAM_HIT_REPORT: u32 = _CRT_HIT_REPORT_CONFIRMED;\n  // anyhit shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT`.\n  //_CRT_USER_RAHIT_TABLE\n  return _CRT_INOUT_PARAM_HIT_REPORT;\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n@group(0) @binding(x) var<storage, read> tlasBvhTreeNodes: array<TlasBvhNode>;\n@group(0) @binding(x) var<storage, read> blasesBvhTreeNodes: array<BlasBvhNode>;\n@group(0) @binding(x) var<storage, read> bvhReferencedGeomBuffer: array<BvhGeometryDescriptor>;\n@group(0) @binding(x) var<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4) var<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n\n\nalias AccelerationStructureEXT = vec2u;\nconst _CRT_HIT_ATTRIBUTES_MAX_WORDS: u32 = 5;\nconst TRAVERSE_MAX_INT: u32 = 0xffffffffu;\n\nfn traceRayEXT(topLevel: AccelerationStructureEXT, rayFlags: u32,\n                 cullMask: u32,\n                 rayType: u32,      // a.k.a sbtRecordOffset,\n                 numRayTypes: u32,  // a.k.a sbtRecordStride,\n                 missIndex: u32,  _crt_WorldRayOriginEXT:vec3f,\n                 _crt_RayTminEXT: f32,\n                 _crt_WorldRayDirectionEXT: vec3f, _crt_RayTmaxEXT: f32,\n                 payload: u32) {\n  // float wgrt_RayTmaxEXT = RAY_TMAX;\n  // uint wgrt_HitKindEXT = 0;\n  let invWorldRayDir: vec3f = 1.0 / _crt_WorldRayDirectionEXT;\n\n  var buf_closestHitAttributes: array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>;\n\n  const closestSbtIndex: u32 = 0;\n  const localGeometryId: i32 = -1;\n  const localPrimitiveId: u32 = 0;\n  var _cur: u32 = 0;  // topLevel.handle\n  while (_cur < TRAVERSE_MAX_INT) {\n    const node: TlasBvhNode = tlasBvhTreeNodes[_cur];\n    if ((node.is_leaf > 0 && (node.mask & cullMask) == 0) ||\n        !intersect_aabb(_crt_WorldRayOriginEXT, invWorldRayDir, _crt_RayTminEXT,\n                        _crt_RayTmaxEXT, node.aabb)) {\n      _cur = node.exit_index;\n      continue;\n    }\n    if (node.is_leaf == 0) {  // interior node\n      // +offset if in blas tree\n      _cur = node.entry_index;\n      continue;\n    }\n\n    // TLAS leaf\n    let sbtInstanceOffset: u32 = node.sbtInstanceOffset;\n    let blas_geometry_id_offset: u32 = node.blas_geometry_id_offset;\n    // mat4x3 _crt_ObjectToWorldEXT = node.transformToWorld;\n    // mat4x3 _crt_WorldToObjectEXT = node.transformToObject;\n    // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n    let _crt_ObjectToWorldEXT: mat4x3f =\n        mat4x3f(vec3(node.transformToWorld[0], node.transformToWorld[1],\n                    node.transformToWorld[2]),\n               vec3(node.transformToWorld[3], node.transformToWorld[4],\n                    node.transformToWorld[5]),\n               vec3(node.transformToWorld[6], node.transformToWorld[7],\n                    node.transformToWorld[8]),\n               vec3(node.transformToWorld[9], node.transformToWorld[10],\n                    node.transformToWorld[11]));\n    let _crt_WorldToObjectEXT: mat4x3<f32> =\n        mat4x3f(vec3(node.transformToObject[0], node.transformToObject[1],\n                    node.transformToObject[2]),\n               vec3(node.transformToObject[3], node.transformToObject[4],\n                    node.transformToObject[5]),\n               vec3(node.transformToObject[6], node.transformToObject[7],\n                    node.transformToObject[8]),\n               vec3(node.transformToObject[9], node.transformToObject[10],\n                    node.transformToObject[11]));\n    // // transpose\n    // mat3x4 _crt_ObjectToWorld3x4EXT;\n    // mat3x4 _crt_WorldToObject3x4EXT;\n    let _crt_ObjectRayOriginEXT: vec3f =\n        _crt_WorldToObjectEXT * vec4(_crt_WorldRayOriginEXT, 1.0);\n    let _crt_ObjectRayDirectionEXT: vec3f =\n        _crt_WorldToObjectEXT * vec4(_crt_WorldRayDirectionEXT, 0.0);\n    let invObjectRayDir: vec3f = 1.0 / _crt_ObjectRayDirectionEXT;\n    // reset previous instanceId?\n\n    // entering blas tree\n    _cur = node.entry_index;\n    let blas_index_offset = _cur;\n    let instance_exit_index = node.exit_index;\n    while (_cur < TRAVERSE_MAX_INT) {\n      let node = blasesBvhTreeNodes[_cur];\n      // TODO: skip blas root if instance transform matrix is absent or identity\n      if (!intersect_aabb(_crt_ObjectRayOriginEXT, invObjectRayDir,\n                          _crt_RayTminEXT, _crt_RayTmaxEXT, node.aabb)) {\n        if (node.exit_index ==\n            TRAVERSE_MAX_INT) {  // leaving blas into tlas tree\n          _cur = instance_exit_index;\n          break;\n        } else {\n          _cur = node.exit_index + blas_index_offset;\n        }\n        continue;\n      } else if (node.geometryId < 0) {  // interior node\n        _cur = node.entry_index_or_primitive_id + blas_index_offset;\n        continue;\n      }\n\n      var buf_hitAttributes: array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS */>;\n      var t: f32 = _crt_RayTminEXT - 1.0;\n      var hitKind: u32 = 0;\n      // vBufferIndex always point to the geometry\n      let g: BvhGeometryDescriptor =\n          bvhReferencedGeomBuffer[u32(node.geometryId) + blas_geometry_id_offset];\n      let sbtIndex: u32 = sbtHitGroupIndex(sbtInstanceOffset, u32(node.geometryId),\n                                       numRayTypes, rayType);\n      let terminate_or_ignore: u32 = _CRT_HIT_REPORT_IGNORE;\n      // TODO: per spec, all instances in the leaf node should contain same\n      // geom type? if (node.geometryType == GEOM_TYPE_TRIANGLE) {\n      var hit = false;\n      if (g.owningGeometryType_todo_deprecate == GEOM_TYPE_TRIANGLE) {\n        let positions: array<vec3f, 3> =\n            getTriangleVertexPositions(g, node.entry_index_or_primitive_id);\n        var n: vec3f;\n        // TODO: use object ray instead?\n        hit = intersect_triangle_branchless(\n            _crt_ObjectRayOriginEXT, _crt_RayTminEXT,\n            _crt_ObjectRayDirectionEXT, _crt_RayTmaxEXT, positions[0],\n            positions[1], positions[2], &n, &t, &buf_hitAttributes[0],\n            &buf_hitAttributes[1]);\n        if (hit) {\n          n = normalize((n * _crt_WorldToObjectEXT).xyz);\n          buf_hitAttributes[2] = n.x;\n          buf_hitAttributes[3] = n.y;\n          buf_hitAttributes[4] = n.z;\n          hitKind = select(gl_HitKindBackFacingTriangleEXT, gl_HitKindFrontFacingTriangleEXT, dot(n, _crt_WorldRayDirectionEXT) > 0);\n        }\n      } else {\n        // skip duplicated AABB test if containing only one primitive\n        // TODO: or always skip this aabb test?\n        // TODO: aabb test tmax\n        // if (node.numPrimitives == 1 ||\n        //     intersect_aabb(_crt_WorldRayOriginEXT, invRayDir,\n        //     getGeometryAabb(g))) {\n        hit = invokeShaderIndirect_intersect(\n            sbtIndex, _crt_WorldRayOriginEXT, _crt_RayTminEXT,\n            _crt_WorldRayDirectionEXT, _crt_RayTmaxEXT, _crt_ObjectRayOriginEXT,\n            &t, _crt_ObjectRayDirectionEXT, _crt_WorldToObjectEXT,\n            _crt_ObjectToWorldEXT, node.geometryId,\n            node.entry_index_or_primitive_id, &buf_hitAttributes);\n        // }\n      }\n      // TODO: invoke more directly with identifier\n      // TODO: make sure hitT/rayTmax is correct here\n      if (hit) {\n        terminate_or_ignore = invokeShaderIndirect_anyHit(\n            sbtIndex, _crt_WorldRayOriginEXT, _crt_RayTminEXT,\n            _crt_WorldRayDirectionEXT, t /* _crt_RayTmaxEXT */, node.geometryId,\n            node.entry_index_or_primitive_id, &buf_hitAttributes);\n      }\n\n      if (terminate_or_ignore == _CRT_HIT_REPORT_TERMINATE) {\n        // TODO: need to invoke rchit?\n        // _cur = TRAVERSE_MAX_INT;\n        // break;\n        return;\n      }\n      // TODO(!!): this is wrong, skipping all hits\n      // opaque (or no anyhit shader)\n      // if ((g.owningGeometryFlags & GEOMETRY_OPAQUE_BIT) != 0)\n      if (terminate_or_ignore == _CRT_HIT_REPORT_CONFIRMED) {\n        // TODO(): make them global? if not supporting recursive call\n        // gl_HitKindEXT = hitKind;\n        closestSbtIndex = sbtIndex;\n        buf_closestHitAttributes = buf_hitAttributes;\n        _crt_RayTmaxEXT = t;\n        localGeometryId = node.geometryId;\n        localPrimitiveId = node.entry_index_or_primitive_id;\n      }\n\n      if (node.exit_index == TRAVERSE_MAX_INT) {\n        // leaving blas into tlas tree\n        _cur = instance_exit_index;\n        break;\n      } else {\n        _cur = node.exit_index + blas_index_offset;\n      }\n    }\n  }\n\n  // TODO: rchit should select ray payload based on the index\n  if (localGeometryId >= 0) {\n    invokeShaderIndirect_closestHit(closestSbtIndex, _crt_WorldRayOriginEXT,\n                                    _crt_RayTminEXT, _crt_WorldRayDirectionEXT,\n                                    _crt_RayTmaxEXT, localGeometryId,\n                                    localPrimitiveId, buf_closestHitAttributes);\n  } else {\n    invokeShaderIndirect_rayMiss(sbtRayMissIndex(missIndex),\n                                 _crt_WorldRayDirectionEXT);\n  }\n}\n";
-
-addWgslInclude('raytracer::commonv2', common);
-addWgslInclude('raytracer::geom', geom);
-addWgslInclude('raytracer::intersect', intersect);
-addWgslInclude('raytracer::sbt', sbt);
-addWgslInclude('raytracer::traceray', traceray);
-
-var raytracer_v2 = "struct BvhGeometryDescriptor {\n    vBufferIndex: u32,\n    iBufferIndex: i32,\n    vboOffset: u32,\n    vboStride: u32,\n    vioOffset: u32,\n    vioStride: u32,\n    owningGeometryType_todo_deprecate: u32,\n    owningGeometryFlags: u32,\n}\n\nstruct AABB {\n    min: vec3<f32>,\n    max: vec3<f32>,\n}\n\nstruct RtUniforms {\n    sbtStartRayGen: u32,\n    sbtStartRayMiss: u32,\n    sbtStrideRayMiss: u32,\n    sbtStartHit: u32,\n    sbtStrideHit: u32,\n    sbtStartCallable: u32,\n    sbtStrideCallable: u32,\n    webrtx_NumWorkGroups: vec3<u32>,\n}\n\nstruct BvhGeomBuffer_0_ {\n    fword: array<f32>,\n}\n\nstruct SBT {\n    _crt_sbt_buf: array<u32>,\n}\n\nstruct TlasBvhNode {\n    aabb: AABB,\n    entry_index: u32,\n    exit_index: u32,\n    is_leaf: u32,\n    mask: u32,\n    flags: u32,\n    instanceId: u32,\n    sbtInstanceOffset: u32,\n    instanceCustomIndex: i32,\n    transformToWorld: array<f32,12u>,\n    transformToObject: array<f32,12u>,\n    blas_geometry_id_offset: u32,\n}\n\nstruct TlasBvhTreeNodes {\n    tlasBvhTreeNodes: array<TlasBvhNode>,\n}\n\nstruct BlasBvhNode {\n    aabb: AABB,\n    entry_index_or_primitive_id: u32,\n    exit_index: u32,\n    geometryId: i32,\n}\n\nstruct BlasesBvhTreeNodes {\n    blasesBvhTreeNodes: array<BlasBvhNode>,\n}\n\nstruct SceneUniforms {\n    reset: u32,\n    mouse: vec4<f32>,\n}\n\nstruct _crt_AccelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\nstruct PixelBuffer {\n    pixels: array<vec4<f32>>,\n}\n\nvar<private> webrtx_LaunchIDEXT: vec3<u32>;\nvar<private> gl_GlobalInvocationID_1: vec3<u32>;\nvar<private> webrtx_LaunchSizeEXT: vec3<u32>;\n@group(1) @binding(0)\nvar<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4)\nvar<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n@group(1) @binding(1)\nvar<storage> unnamed: SBT;\n@group(1) @binding(2)\nvar<storage> unnamed_1: TlasBvhTreeNodes;\n@group(1) @binding(3)\nvar<storage> unnamed_2: BlasesBvhTreeNodes;\n@group(0) @binding(2)\nvar<uniform> uScene_notUsed: SceneUniforms;\nvar<private> _crt_ray_payload_loc_0_: vec3<f32>;\n@group(0) @binding(0)\nvar<uniform> unnamed_3: _crt_AccelerationStructureEXT;\n@group(0) @binding(1)\nvar<storage, read_write> pixelBuffer: PixelBuffer;\n\nfn invokeShaderIndirect_rayMissu1vf3_(sbtByteIndex: ptr<function, u32>, _crt_WorldRayDirectionEXT: vec3<f32>) {\n    var _crt_sr_wd_offset: u32;\n    var rmiss: u32;\n\n    let _e62 = (*sbtByteIndex);\n    _crt_sr_wd_offset = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rmiss = _e67;\n    let _e68 = rmiss;\n    if (_e68 == 255u) {\n        return;\n    }\n    let _e70 = _crt_sr_wd_offset;\n    _crt_sr_wd_offset = (_e70 + 1u);\n    return;\n}\n\nfn sbtRayMissIndexu1_(ray_type: ptr<function, u32>) -> u32 {\n    let _e60 = rtUniformParams.sbtStartRayMiss;\n    let _e61 = (*ray_type);\n    let _e63 = rtUniformParams.sbtStrideRayMiss;\n    return (_e60 + (_e61 * _e63));\n}\n\nfn _crt_user_rchit_0vf2u1_(baryCoord: ptr<function, vec2<f32>>, _crt_sr_wd_offset_1: ptr<function, u32>) {\n    let _e61 = (*baryCoord)[0u];\n    let _e64 = (*baryCoord)[1u];\n    let _e67 = (*baryCoord)[0u];\n    let _e69 = (*baryCoord)[1u];\n    _crt_ray_payload_loc_0_ = vec3<f32>(((1.0 - _e61) - _e64), _e67, _e69);\n    return;\n}\n\nfn invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_1: u32, _crt_WorldRayOriginEXT: vec3<f32>, _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT_1: vec3<f32>, _crt_RayTmaxEXT: f32, _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32, _crt_hattrs: array<f32,5u>) {\n    var _crt_sr_wd_offset_2: u32;\n    var hitShaderGroupIdentifier: u32;\n    var rchit: u32;\n    var _crt_HitTEXT: f32;\n    var baryCoord_1: vec2<f32>;\n    var param: vec2<f32>;\n    var param_1: u32;\n\n    _crt_sr_wd_offset_2 = (sbtByteIndex_1 / 4u);\n    let _e74 = _crt_sr_wd_offset_2;\n    let _e77 = unnamed._crt_sbt_buf[_e74];\n    hitShaderGroupIdentifier = _e77;\n    let _e78 = hitShaderGroupIdentifier;\n    rchit = ((_e78 & 65280u) >> bitcast<u32>(8));\n    let _e82 = rchit;\n    if (_e82 == 255u) {\n        return;\n    }\n    let _e84 = _crt_sr_wd_offset_2;\n    _crt_sr_wd_offset_2 = (_e84 + 1u);\n    _crt_HitTEXT = _crt_RayTmaxEXT;\n    baryCoord_1 = vec2<f32>(_crt_hattrs[0], _crt_hattrs[1]);\n    let _e89 = baryCoord_1;\n    param = _e89;\n    let _e90 = _crt_sr_wd_offset_2;\n    param_1 = _e90;\n    _crt_user_rchit_0vf2u1_((&param), (&param_1));\n    return;\n}\n\nfn invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_2: u32, _crt_WorldRayOriginEXT_1: vec3<f32>, _crt_RayTminEXT_1: f32, _crt_WorldRayDirectionEXT_2: vec3<f32>, _crt_RayTmaxEXT_1: f32, _crt_GeometryIndexEXT_1: i32, _crt_PrimitiveID_1: u32, _crt_hattrs_1: array<f32,5u>) -> u32 {\n    var _crt_sr_wd_offset_3: u32;\n    var hitShaderGroupIdentifier_1: u32;\n    var rahit: u32;\n    var _crt_HitTEXT_1: f32;\n    var _crt_hit_report: u32;\n\n    _crt_sr_wd_offset_3 = (sbtByteIndex_2 / 4u);\n    let _e72 = _crt_sr_wd_offset_3;\n    let _e75 = unnamed._crt_sbt_buf[_e72];\n    hitShaderGroupIdentifier_1 = _e75;\n    let _e76 = hitShaderGroupIdentifier_1;\n    rahit = ((_e76 & 16711680u) >> bitcast<u32>(16));\n    let _e80 = rahit;\n    if (_e80 == 255u) {\n        return 0u;\n    }\n    let _e82 = _crt_sr_wd_offset_3;\n    _crt_sr_wd_offset_3 = (_e82 + 1u);\n    _crt_HitTEXT_1 = _crt_RayTmaxEXT_1;\n    _crt_hit_report = 0u;\n    let _e84 = _crt_hit_report;\n    return _e84;\n}\n\nfn invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(sbtByteIndex_3: u32, _crt_WorldRayOriginEXT_2: vec3<f32>, _crt_RayTminEXT_2: f32, _crt_WorldRayDirectionEXT_3: vec3<f32>, _crt_RayTmaxEXT_2: f32, _crt_ObjectRayOriginEXT: vec3<f32>, _crt_potential_hit_t: ptr<function, f32>, _crt_ObjectRayDirectionEXT: vec3<f32>, _crt_WorldToObjectEXT: mat4x3<f32>, _crt_ObjectToWorldEXT: mat4x3<f32>, _crt_GeometryIndexEXT_2: i32, _crt_PrimitiveID_2: u32, _crt_hattrs_2: ptr<function, array<f32,5u>>) -> bool {\n    var _crt_sr_wd_offset_4: u32;\n    var hitShaderGroupIdentifier_2: u32;\n    var rint: u32;\n    var phi_545_: bool;\n\n    _crt_sr_wd_offset_4 = (sbtByteIndex_3 / 4u);\n    let _e75 = _crt_sr_wd_offset_4;\n    let _e78 = unnamed._crt_sbt_buf[_e75];\n    hitShaderGroupIdentifier_2 = _e78;\n    let _e79 = hitShaderGroupIdentifier_2;\n    rint = (_e79 & 255u);\n    let _e81 = rint;\n    if (_e81 == 255u) {\n        return false;\n    }\n    let _e83 = _crt_sr_wd_offset_4;\n    _crt_sr_wd_offset_4 = (_e83 + 1u);\n    (*_crt_potential_hit_t) = (_crt_RayTminEXT_2 - 1.0);\n    let _e86 = (*_crt_potential_hit_t);\n    let _e87 = (_e86 > _crt_RayTminEXT_2);\n    phi_545_ = _e87;\n    if _e87 {\n        let _e88 = (*_crt_potential_hit_t);\n        phi_545_ = (_e88 < _crt_RayTmaxEXT_2);\n    }\n    let _e91 = phi_545_;\n    return _e91;\n}\n\nfn intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(ray_origin: vec3<f32>, ray_tmin: f32, ray_dir: vec3<f32>, ray_tmax: f32, p0_: vec3<f32>, p1_: vec3<f32>, p2_: vec3<f32>, n: ptr<function, vec3<f32>>, t: ptr<function, f32>, beta: ptr<function, f32>, gamma: ptr<function, f32>) -> bool {\n    var e0_: vec3<f32>;\n    var e1_: vec3<f32>;\n    var e2_: vec3<f32>;\n    var i: vec3<f32>;\n    var phi_391_: bool;\n    var phi_396_: bool;\n    var phi_401_: bool;\n    var phi_408_: bool;\n\n    e0_ = (p1_ - p0_);\n    e1_ = (p0_ - p2_);\n    let _e75 = e1_;\n    let _e76 = e0_;\n    (*n) = cross(_e75, _e76);\n    let _e78 = (*n);\n    e2_ = ((p0_ - ray_origin) * (1.0 / dot(_e78, ray_dir)));\n    let _e83 = e2_;\n    i = cross(ray_dir, _e83);\n    let _e85 = i;\n    let _e86 = e1_;\n    (*beta) = dot(_e85, _e86);\n    let _e88 = i;\n    let _e89 = e0_;\n    (*gamma) = dot(_e88, _e89);\n    let _e91 = (*n);\n    let _e92 = e2_;\n    (*t) = dot(_e91, _e92);\n    let _e94 = (*t);\n    let _e95 = (_e94 < ray_tmax);\n    phi_391_ = _e95;\n    if _e95 {\n        let _e96 = (*t);\n        phi_391_ = (_e96 > ray_tmin);\n    }\n    let _e99 = phi_391_;\n    phi_396_ = _e99;\n    if _e99 {\n        let _e100 = (*beta);\n        phi_396_ = (_e100 >= 0.0);\n    }\n    let _e103 = phi_396_;\n    phi_401_ = _e103;\n    if _e103 {\n        let _e104 = (*gamma);\n        phi_401_ = (_e104 >= 0.0);\n    }\n    let _e107 = phi_401_;\n    phi_408_ = _e107;\n    if _e107 {\n        let _e108 = (*beta);\n        let _e109 = (*gamma);\n        phi_408_ = ((_e108 + _e109) <= 1.0);\n    }\n    let _e113 = phi_408_;\n    return _e113;\n}\n\nfn GET_VEC3_FROM_BUFFERu1u1_(geoBufferIndex: ptr<function, u32>, wordIndex: ptr<function, u32>) -> vec3<f32> {\n    let _e60 = (*geoBufferIndex);\n    switch bitcast<i32>(_e60) {\n        case 0: {\n            let _e62 = (*wordIndex);\n            let _e65 = bvhGeoBuffers_0_.fword[_e62];\n            let _e66 = (*wordIndex);\n            let _e70 = bvhGeoBuffers_0_.fword[(_e66 + 1u)];\n            let _e71 = (*wordIndex);\n            let _e75 = bvhGeoBuffers_0_.fword[(_e71 + 2u)];\n            return vec3<f32>(_e65, _e70, _e75);\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertPositionu1u1u1u1_(vBufferIndex: ptr<function, u32>, offset: ptr<function, u32>, stride: ptr<function, u32>, vindex: ptr<function, u32>) -> vec3<f32> {\n    var vboWordOffset: u32;\n    var param_2: u32;\n    var param_3: u32;\n\n    let _e65 = (*offset);\n    let _e66 = (*vindex);\n    let _e67 = (*stride);\n    vboWordOffset = ((_e65 + (_e66 * _e67)) / 4u);\n    let _e71 = (*vBufferIndex);\n    param_2 = _e71;\n    let _e72 = vboWordOffset;\n    param_3 = _e72;\n    let _e73 = GET_VEC3_FROM_BUFFERu1u1_((&param_2), (&param_3));\n    return _e73;\n}\n\nfn getTriVertIndicesu1u1u1u1_(iBufferIndex: ptr<function, u32>, offset_1: ptr<function, u32>, stride_1: ptr<function, u32>, primitiveId: ptr<function, u32>) -> vec3<u32> {\n    var vioWordOffset: u32;\n    var f3_: vec3<f32>;\n    var param_4: u32;\n    var param_5: u32;\n\n    let _e66 = (*offset_1);\n    let _e67 = (*primitiveId);\n    let _e68 = (*stride_1);\n    vioWordOffset = ((_e66 + (_e67 * _e68)) / 4u);\n    let _e72 = (*iBufferIndex);\n    param_4 = _e72;\n    let _e73 = vioWordOffset;\n    param_5 = _e73;\n    let _e74 = GET_VEC3_FROM_BUFFERu1u1_((&param_4), (&param_5));\n    f3_ = _e74;\n    let _e76 = f3_[0u];\n    let _e79 = f3_[1u];\n    let _e82 = f3_[2u];\n    return vec3<u32>(bitcast<u32>(_e76), bitcast<u32>(_e79), bitcast<u32>(_e82));\n}\n\nfn getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_(g: ptr<function, BvhGeometryDescriptor>, primitiveId_1: ptr<function, u32>) -> array<vec3<f32>,3u> {\n    var indices: vec3<u32>;\n    var param_6: u32;\n    var param_7: u32;\n    var param_8: u32;\n    var param_9: u32;\n    var param_10: u32;\n    var param_11: u32;\n    var param_12: u32;\n    var param_13: u32;\n    var param_14: u32;\n    var param_15: u32;\n    var param_16: u32;\n    var param_17: u32;\n    var param_18: u32;\n    var param_19: u32;\n    var param_20: u32;\n    var param_21: u32;\n\n    let _e78 = (*g).iBufferIndex;\n    if (_e78 >= 0) {\n        let _e81 = (*g).iBufferIndex;\n        param_6 = bitcast<u32>(_e81);\n        let _e84 = (*g).vioOffset;\n        param_7 = _e84;\n        let _e86 = (*g).vioStride;\n        param_8 = _e86;\n        let _e87 = (*primitiveId_1);\n        param_9 = _e87;\n        let _e88 = getTriVertIndicesu1u1u1u1_((&param_6), (&param_7), (&param_8), (&param_9));\n        indices = _e88;\n    } else {\n        let _e89 = (*primitiveId_1);\n        let _e91 = (*primitiveId_1);\n        let _e94 = (*primitiveId_1);\n        indices = vec3<u32>((_e89 * 3u), ((_e91 * 3u) + 1u), ((_e94 * 3u) + 2u));\n    }\n    let _e99 = (*g).vBufferIndex;\n    param_10 = _e99;\n    let _e101 = (*g).vboOffset;\n    param_11 = _e101;\n    let _e103 = (*g).vboStride;\n    param_12 = _e103;\n    let _e105 = indices[0u];\n    param_13 = _e105;\n    let _e106 = getTriVertPositionu1u1u1u1_((&param_10), (&param_11), (&param_12), (&param_13));\n    let _e108 = (*g).vBufferIndex;\n    param_14 = _e108;\n    let _e110 = (*g).vboOffset;\n    param_15 = _e110;\n    let _e112 = (*g).vboStride;\n    param_16 = _e112;\n    let _e114 = indices[1u];\n    param_17 = _e114;\n    let _e115 = getTriVertPositionu1u1u1u1_((&param_14), (&param_15), (&param_16), (&param_17));\n    let _e117 = (*g).vBufferIndex;\n    param_18 = _e117;\n    let _e119 = (*g).vboOffset;\n    param_19 = _e119;\n    let _e121 = (*g).vboStride;\n    param_20 = _e121;\n    let _e123 = indices[2u];\n    param_21 = _e123;\n    let _e124 = getTriVertPositionu1u1u1u1_((&param_18), (&param_19), (&param_20), (&param_21));\n    return array<vec3<f32>,3u>(_e106, _e115, _e124);\n}\n\nfn sbtHitGroupIndexu1i1u1u1_(instanceId: ptr<function, u32>, geometryId: ptr<function, i32>, num_ray_types: ptr<function, u32>, ray_type_1: ptr<function, u32>) -> u32 {\n    let _e63 = rtUniformParams.sbtStartHit;\n    let _e65 = rtUniformParams.sbtStrideHit;\n    let _e66 = (*instanceId);\n    let _e67 = (*geometryId);\n    let _e69 = (*num_ray_types);\n    let _e72 = (*ray_type_1);\n    return (_e63 + (_e65 * ((_e66 + (bitcast<u32>(_e67) * _e69)) + _e72)));\n}\n\nfn intersect_aabbvf3vf3f1f1structAABBvf3vf31_(rayOrigin: vec3<f32>, invRayDir: vec3<f32>, ray_tmin_1: f32, ray_tmax_1: f32, aabb: AABB) -> bool {\n    var t0_: vec3<f32>;\n    var t1_: vec3<f32>;\n    var tmin: vec3<f32>;\n    var tmax: vec3<f32>;\n\n    t0_ = ((aabb.min - rayOrigin) * invRayDir);\n    t1_ = ((aabb.max - rayOrigin) * invRayDir);\n    let _e73 = t0_;\n    let _e74 = t1_;\n    tmin = min(_e73, _e74);\n    let _e76 = t0_;\n    let _e77 = t1_;\n    tmax = max(_e76, _e77);\n    let _e80 = tmin[0u];\n    let _e82 = tmin[1u];\n    let _e85 = tmin[2u];\n    let _e89 = tmax[0u];\n    let _e91 = tmax[1u];\n    let _e94 = tmax[2u];\n    return (max(ray_tmin_1, max(max(_e80, _e82), _e85)) <= min(ray_tmax_1, min(min(_e89, _e91), _e94)));\n}\n\nfn traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_(topLevel: ptr<function, vec2<u32>>, rayFlags: ptr<function, u32>, cullMask: ptr<function, u32>, rayType: ptr<function, u32>, numRayTypes: ptr<function, u32>, missIndex: ptr<function, u32>, _crt_WorldRayOriginEXT_3: vec3<f32>, _crt_RayTminEXT_3: f32, _crt_WorldRayDirectionEXT_4: vec3<f32>, _crt_RayTmaxEXT_3: ptr<function, f32>, payload: ptr<function, i32>) {\n    var invWorldRayDir: vec3<f32>;\n    var closestSbtIndex: u32;\n    var localGeometryId: i32;\n    var localPrimitiveId: u32;\n    var _cur: u32;\n    var node: TlasBvhNode;\n    var sbtInstanceOffset: u32;\n    var blas_geometry_id_offset: u32;\n    var _crt_ObjectToWorldEXT_1: mat4x3<f32>;\n    var _crt_WorldToObjectEXT_1: mat4x3<f32>;\n    var _crt_ObjectRayOriginEXT_1: vec3<f32>;\n    var _crt_ObjectRayDirectionEXT_1: vec3<f32>;\n    var invObjectRayDir: vec3<f32>;\n    var blas_index_offset: u32;\n    var instance_exit_index: u32;\n    var node_1: BlasBvhNode;\n    var t_1: f32;\n    var hitKind: u32;\n    var g_1: BvhGeometryDescriptor;\n    var indexable: array<BvhGeometryDescriptor,1u>;\n    var sbtIndex: u32;\n    var param_22: u32;\n    var param_23: i32;\n    var param_24: u32;\n    var param_25: u32;\n    var terminate_or_ignore: u32;\n    var hit: bool;\n    var positions: array<vec3<f32>,3u>;\n    var param_26: BvhGeometryDescriptor;\n    var param_27: u32;\n    var n_1: vec3<f32>;\n    var buf_hitAttributes: array<f32,5u>;\n    var param_28: vec3<f32>;\n    var param_29: f32;\n    var param_30: f32;\n    var param_31: f32;\n    var param_32: f32;\n    var param_33: array<f32,5u>;\n    var buf_closestHitAttributes: array<f32,5u>;\n    var param_34: u32;\n    var param_35: u32;\n    var phi_673_: bool;\n    var phi_683_: bool;\n\n    invWorldRayDir = (vec3<f32>(1.0) / _crt_WorldRayDirectionEXT_4);\n    closestSbtIndex = 0u;\n    localGeometryId = -1;\n    localPrimitiveId = 0u;\n    _cur = 0u;\n    loop {\n        let _e112 = _cur;\n        if (_e112 < 4294967295u) {\n            let _e114 = _cur;\n            let _e117 = unnamed_1.tlasBvhTreeNodes[_e114];\n            node.aabb.min = _e117.aabb.min;\n            node.aabb.max = _e117.aabb.max;\n            node.entry_index = _e117.entry_index;\n            node.exit_index = _e117.exit_index;\n            node.is_leaf = _e117.is_leaf;\n            node.mask = _e117.mask;\n            node.flags = _e117.flags;\n            node.instanceId = _e117.instanceId;\n            node.sbtInstanceOffset = _e117.sbtInstanceOffset;\n            node.instanceCustomIndex = _e117.instanceCustomIndex;\n            node.transformToWorld[0] = _e117.transformToWorld[0];\n            node.transformToWorld[1] = _e117.transformToWorld[1];\n            node.transformToWorld[2] = _e117.transformToWorld[2];\n            node.transformToWorld[3] = _e117.transformToWorld[3];\n            node.transformToWorld[4] = _e117.transformToWorld[4];\n            node.transformToWorld[5] = _e117.transformToWorld[5];\n            node.transformToWorld[6] = _e117.transformToWorld[6];\n            node.transformToWorld[7] = _e117.transformToWorld[7];\n            node.transformToWorld[8] = _e117.transformToWorld[8];\n            node.transformToWorld[9] = _e117.transformToWorld[9];\n            node.transformToWorld[10] = _e117.transformToWorld[10];\n            node.transformToWorld[11] = _e117.transformToWorld[11];\n            node.transformToObject[0] = _e117.transformToObject[0];\n            node.transformToObject[1] = _e117.transformToObject[1];\n            node.transformToObject[2] = _e117.transformToObject[2];\n            node.transformToObject[3] = _e117.transformToObject[3];\n            node.transformToObject[4] = _e117.transformToObject[4];\n            node.transformToObject[5] = _e117.transformToObject[5];\n            node.transformToObject[6] = _e117.transformToObject[6];\n            node.transformToObject[7] = _e117.transformToObject[7];\n            node.transformToObject[8] = _e117.transformToObject[8];\n            node.transformToObject[9] = _e117.transformToObject[9];\n            node.transformToObject[10] = _e117.transformToObject[10];\n            node.transformToObject[11] = _e117.transformToObject[11];\n            node.blas_geometry_id_offset = _e117.blas_geometry_id_offset;\n            let _e195 = node.is_leaf;\n            let _e196 = (_e195 > 0u);\n            phi_673_ = _e196;\n            if _e196 {\n                let _e198 = node.mask;\n                let _e199 = (*cullMask);\n                phi_673_ = ((_e198 & _e199) == 0u);\n            }\n            let _e203 = phi_673_;\n            phi_683_ = _e203;\n            if !(_e203) {\n                let _e205 = invWorldRayDir;\n                let _e206 = (*_crt_RayTmaxEXT_3);\n                let _e208 = node.aabb;\n                let _e209 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_crt_WorldRayOriginEXT_3, _e205, _crt_RayTminEXT_3, _e206, _e208);\n                phi_683_ = !(_e209);\n            }\n            let _e212 = phi_683_;\n            if _e212 {\n                let _e214 = node.exit_index;\n                _cur = _e214;\n                continue;\n            }\n            let _e216 = node.is_leaf;\n            if (_e216 == 0u) {\n                let _e219 = node.entry_index;\n                _cur = _e219;\n                continue;\n            }\n            let _e221 = node.sbtInstanceOffset;\n            sbtInstanceOffset = _e221;\n            let _e223 = node.blas_geometry_id_offset;\n            blas_geometry_id_offset = _e223;\n            let _e226 = node.transformToWorld[0];\n            let _e229 = node.transformToWorld[1];\n            let _e232 = node.transformToWorld[2];\n            let _e233 = vec3<f32>(_e226, _e229, _e232);\n            let _e236 = node.transformToWorld[3];\n            let _e239 = node.transformToWorld[4];\n            let _e242 = node.transformToWorld[5];\n            let _e243 = vec3<f32>(_e236, _e239, _e242);\n            let _e246 = node.transformToWorld[6];\n            let _e249 = node.transformToWorld[7];\n            let _e252 = node.transformToWorld[8];\n            let _e253 = vec3<f32>(_e246, _e249, _e252);\n            let _e256 = node.transformToWorld[9];\n            let _e259 = node.transformToWorld[10];\n            let _e262 = node.transformToWorld[11];\n            let _e263 = vec3<f32>(_e256, _e259, _e262);\n            _crt_ObjectToWorldEXT_1 = mat4x3<f32>(vec3<f32>(_e233.x, _e233.y, _e233.z), vec3<f32>(_e243.x, _e243.y, _e243.z), vec3<f32>(_e253.x, _e253.y, _e253.z), vec3<f32>(_e263.x, _e263.y, _e263.z));\n            let _e283 = node.transformToObject[0];\n            let _e286 = node.transformToObject[1];\n            let _e289 = node.transformToObject[2];\n            let _e290 = vec3<f32>(_e283, _e286, _e289);\n            let _e293 = node.transformToObject[3];\n            let _e296 = node.transformToObject[4];\n            let _e299 = node.transformToObject[5];\n            let _e300 = vec3<f32>(_e293, _e296, _e299);\n            let _e303 = node.transformToObject[6];\n            let _e306 = node.transformToObject[7];\n            let _e309 = node.transformToObject[8];\n            let _e310 = vec3<f32>(_e303, _e306, _e309);\n            let _e313 = node.transformToObject[9];\n            let _e316 = node.transformToObject[10];\n            let _e319 = node.transformToObject[11];\n            let _e320 = vec3<f32>(_e313, _e316, _e319);\n            _crt_WorldToObjectEXT_1 = mat4x3<f32>(vec3<f32>(_e290.x, _e290.y, _e290.z), vec3<f32>(_e300.x, _e300.y, _e300.z), vec3<f32>(_e310.x, _e310.y, _e310.z), vec3<f32>(_e320.x, _e320.y, _e320.z));\n            let _e338 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayOriginEXT_1 = (_e338 * vec4<f32>(_crt_WorldRayOriginEXT_3.x, _crt_WorldRayOriginEXT_3.y, _crt_WorldRayOriginEXT_3.z, 1.0));\n            let _e344 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayDirectionEXT_1 = (_e344 * vec4<f32>(_crt_WorldRayDirectionEXT_4.x, _crt_WorldRayDirectionEXT_4.y, _crt_WorldRayDirectionEXT_4.z, 0.0));\n            let _e350 = _crt_ObjectRayDirectionEXT_1;\n            invObjectRayDir = (vec3<f32>(1.0) / _e350);\n            let _e354 = node.entry_index;\n            _cur = _e354;\n            let _e355 = _cur;\n            blas_index_offset = _e355;\n            let _e357 = node.exit_index;\n            instance_exit_index = _e357;\n            loop {\n                let _e358 = _cur;\n                if (_e358 < 4294967295u) {\n                    let _e360 = _cur;\n                    let _e363 = unnamed_2.blasesBvhTreeNodes[_e360];\n                    node_1.aabb.min = _e363.aabb.min;\n                    node_1.aabb.max = _e363.aabb.max;\n                    node_1.entry_index_or_primitive_id = _e363.entry_index_or_primitive_id;\n                    node_1.exit_index = _e363.exit_index;\n                    node_1.geometryId = _e363.geometryId;\n                    let _e376 = _crt_ObjectRayOriginEXT_1;\n                    let _e377 = invObjectRayDir;\n                    let _e378 = (*_crt_RayTmaxEXT_3);\n                    let _e380 = node_1.aabb;\n                    let _e381 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_e376, _e377, _crt_RayTminEXT_3, _e378, _e380);\n                    if !(_e381) {\n                        let _e384 = node_1.exit_index;\n                        if (_e384 == 4294967295u) {\n                            let _e386 = instance_exit_index;\n                            _cur = _e386;\n                            break;\n                        } else {\n                            let _e388 = node_1.exit_index;\n                            let _e389 = blas_index_offset;\n                            _cur = (_e388 + _e389);\n                        }\n                        continue;\n                    } else {\n                        let _e392 = node_1.geometryId;\n                        if (_e392 < 0) {\n                            let _e395 = node_1.entry_index_or_primitive_id;\n                            let _e396 = blas_index_offset;\n                            _cur = (_e395 + _e396);\n                            continue;\n                        }\n                    }\n                    t_1 = (_crt_RayTminEXT_3 - 1.0);\n                    hitKind = 0u;\n                    let _e400 = node_1.geometryId;\n                    let _e402 = blas_geometry_id_offset;\n                    indexable = array<BvhGeometryDescriptor,1u>(BvhGeometryDescriptor(0u, -1, 0u, 12u, 0u, 12u, 0u, 0u));\n                    let _e405 = indexable[(bitcast<u32>(_e400) + _e402)];\n                    g_1 = _e405;\n                    let _e406 = sbtInstanceOffset;\n                    param_22 = _e406;\n                    let _e408 = node_1.geometryId;\n                    param_23 = _e408;\n                    let _e409 = (*numRayTypes);\n                    param_24 = _e409;\n                    let _e410 = (*rayType);\n                    param_25 = _e410;\n                    let _e411 = sbtHitGroupIndexu1i1u1u1_((&param_22), (&param_23), (&param_24), (&param_25));\n                    sbtIndex = _e411;\n                    terminate_or_ignore = 1u;\n                    hit = false;\n                    let _e413 = g_1.owningGeometryType_todo_deprecate;\n                    if (_e413 == 0u) {\n                        let _e415 = g_1;\n                        param_26 = _e415;\n                        let _e417 = node_1.entry_index_or_primitive_id;\n                        param_27 = _e417;\n                        let _e418 = getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_((&param_26), (&param_27));\n                        positions = _e418;\n                        let _e419 = _crt_ObjectRayOriginEXT_1;\n                        let _e420 = _crt_ObjectRayDirectionEXT_1;\n                        let _e421 = (*_crt_RayTmaxEXT_3);\n                        let _e423 = positions[0];\n                        let _e425 = positions[1];\n                        let _e427 = positions[2];\n                        let _e428 = intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(_e419, _crt_RayTminEXT_3, _e420, _e421, _e423, _e425, _e427, (&param_28), (&param_29), (&param_30), (&param_31));\n                        let _e429 = param_28;\n                        n_1 = _e429;\n                        let _e430 = param_29;\n                        t_1 = _e430;\n                        let _e431 = param_30;\n                        buf_hitAttributes[0] = _e431;\n                        let _e433 = param_31;\n                        buf_hitAttributes[1] = _e433;\n                        hit = _e428;\n                        let _e435 = hit;\n                        if _e435 {\n                            let _e436 = n_1;\n                            let _e437 = _crt_WorldToObjectEXT_1;\n                            n_1 = normalize((_e436 * _e437).xyz);\n                            let _e442 = n_1[0u];\n                            buf_hitAttributes[2] = _e442;\n                            let _e445 = n_1[1u];\n                            buf_hitAttributes[3] = _e445;\n                            let _e448 = n_1[2u];\n                            buf_hitAttributes[4] = _e448;\n                            let _e450 = n_1;\n                            hitKind = select(255u, 254u, (dot(_e450, _crt_WorldRayDirectionEXT_4) > 0.0));\n                        }\n                    } else {\n                        let _e454 = sbtIndex;\n                        let _e455 = (*_crt_RayTmaxEXT_3);\n                        let _e456 = _crt_ObjectRayOriginEXT_1;\n                        let _e457 = _crt_ObjectRayDirectionEXT_1;\n                        let _e458 = _crt_WorldToObjectEXT_1;\n                        let _e459 = _crt_ObjectToWorldEXT_1;\n                        let _e461 = node_1.geometryId;\n                        let _e463 = node_1.entry_index_or_primitive_id;\n                        let _e464 = invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(_e454, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e455, _e456, (&param_32), _e457, _e458, _e459, _e461, _e463, (&param_33));\n                        let _e465 = param_32;\n                        t_1 = _e465;\n                        let _e466 = param_33;\n                        buf_hitAttributes = _e466;\n                        hit = _e464;\n                    }\n                    let _e467 = hit;\n                    if _e467 {\n                        let _e468 = sbtIndex;\n                        let _e469 = t_1;\n                        let _e471 = node_1.geometryId;\n                        let _e473 = node_1.entry_index_or_primitive_id;\n                        let _e474 = buf_hitAttributes;\n                        let _e475 = invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(_e468, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e469, _e471, _e473, _e474);\n                        terminate_or_ignore = _e475;\n                    }\n                    let _e476 = terminate_or_ignore;\n                    if (_e476 == 2u) {\n                        return;\n                    }\n                    let _e478 = terminate_or_ignore;\n                    if (_e478 == 0u) {\n                        let _e480 = sbtIndex;\n                        closestSbtIndex = _e480;\n                        let _e481 = buf_hitAttributes;\n                        buf_closestHitAttributes = _e481;\n                        let _e482 = t_1;\n                        (*_crt_RayTmaxEXT_3) = _e482;\n                        let _e484 = node_1.geometryId;\n                        localGeometryId = _e484;\n                        let _e486 = node_1.entry_index_or_primitive_id;\n                        localPrimitiveId = _e486;\n                    }\n                    let _e488 = node_1.exit_index;\n                    if (_e488 == 4294967295u) {\n                        let _e490 = instance_exit_index;\n                        _cur = _e490;\n                        break;\n                    } else {\n                        let _e492 = node_1.exit_index;\n                        let _e493 = blas_index_offset;\n                        _cur = (_e492 + _e493);\n                    }\n                    continue;\n                } else {\n                    break;\n                }\n            }\n            continue;\n        } else {\n            break;\n        }\n    }\n    let _e495 = localGeometryId;\n    if (_e495 >= 0) {\n        let _e497 = closestSbtIndex;\n        let _e498 = (*_crt_RayTmaxEXT_3);\n        let _e499 = localGeometryId;\n        let _e500 = localPrimitiveId;\n        let _e501 = buf_closestHitAttributes;\n        invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(_e497, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e498, _e499, _e500, _e501);\n    } else {\n        let _e502 = (*missIndex);\n        param_34 = _e502;\n        let _e503 = sbtRayMissIndexu1_((&param_34));\n        param_35 = _e503;\n        invokeShaderIndirect_rayMissu1vf3_((&param_35), _crt_WorldRayDirectionEXT_4);\n    }\n    return;\n}\n\nfn calcRayDirectionvf2_(pixel: vec2<f32>) -> vec3<f32> {\n    var aspectRatio: f32;\n    var imagePlaneSize: vec2<f32>;\n    var ixy: vec2<f32>;\n\n    let _e63 = webrtx_LaunchSizeEXT[0u];\n    let _e65 = webrtx_LaunchSizeEXT[1u];\n    aspectRatio = f32((_e63 / _e65));\n    let _e68 = aspectRatio;\n    imagePlaneSize = vec2<f32>((_e68 * 2.0), 2.0);\n    let _e71 = webrtx_LaunchSizeEXT;\n    let _e76 = imagePlaneSize;\n    ixy = ((vec2<f32>(-0.5, -0.5) + (pixel / vec2<f32>(_e71.xy))) * _e76);\n    let _e79 = ixy[0u];\n    let _e81 = ixy[1u];\n    return normalize(vec3<f32>(_e79, -(_e81), 1.0));\n}\n\nfn _crt_user_rgen_0u1_(_crt_sr_wd_offset_5: ptr<function, u32>) {\n    var rayDirection: vec3<f32>;\n    var rayTmax: f32;\n    var param_36: vec2<u32>;\n    var param_37: u32;\n    var param_38: u32;\n    var param_39: u32;\n    var param_40: u32;\n    var param_41: u32;\n    var param_42: f32;\n    var param_43: i32;\n    var pixelIndex: u32;\n\n    let _e70 = webrtx_LaunchIDEXT;\n    let _e71 = vec3<f32>(_e70);\n    let _e75 = calcRayDirectionvf2_(vec2<f32>(_e71.x, _e71.y));\n    rayDirection = _e75;\n    let _e78 = uScene_notUsed.mouse[0u];\n    rayTmax = max(100000.0, _e78);\n    _crt_ray_payload_loc_0_ = vec3<f32>(0.0, 0.0, 0.0);\n    let _e80 = rayDirection;\n    let _e82 = unnamed_3.topLevelAS;\n    param_36 = _e82;\n    param_37 = 1u;\n    param_38 = 255u;\n    param_39 = 0u;\n    param_40 = 1u;\n    param_41 = 0u;\n    let _e83 = rayTmax;\n    param_42 = _e83;\n    param_43 = 0;\n    traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_((&param_36), (&param_37), (&param_38), (&param_39), (&param_40), (&param_41), vec3<f32>(0.0, 0.0, -1.0), 0.0010000000474974513, _e80, (&param_42), (&param_43));\n    let _e85 = webrtx_LaunchIDEXT[1u];\n    let _e87 = webrtx_LaunchSizeEXT[0u];\n    let _e90 = webrtx_LaunchIDEXT[0u];\n    pixelIndex = ((_e85 * _e87) + _e90);\n    let _e92 = pixelIndex;\n    let _e93 = _crt_ray_payload_loc_0_;\n    pixelBuffer.pixels[_e92] = vec4<f32>(_e93.x, _e93.y, _e93.z, 1.0);\n    return;\n}\n\nfn invokeShaderIndirect_rayGenu1_(sbtByteIndex_4: ptr<function, u32>) {\n    var _crt_sr_wd_offset_6: u32;\n    var rgen: u32;\n    var param_44: u32;\n\n    let _e62 = (*sbtByteIndex_4);\n    _crt_sr_wd_offset_6 = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset_6;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rgen = _e67;\n    let _e68 = _crt_sr_wd_offset_6;\n    _crt_sr_wd_offset_6 = (_e68 + 1u);\n    let _e70 = _crt_sr_wd_offset_6;\n    param_44 = _e70;\n    _crt_user_rgen_0u1_((&param_44));\n    return;\n}\n\nfn main_1() {\n    var param_45: u32;\n\n    let _e59 = gl_GlobalInvocationID_1;\n    webrtx_LaunchIDEXT = _e59;\n    let _e61 = rtUniformParams.webrtx_NumWorkGroups;\n    webrtx_LaunchSizeEXT = (_e61 * vec3<u32>(8u, 8u, 1u));\n    let _e64 = rtUniformParams.sbtStartRayGen;\n    param_45 = _e64;\n    invokeShaderIndirect_rayGenu1_((&param_45));\n    return;\n}\n\n@compute @workgroup_size(8, 8, 1)\nfn compute_main(@builtin(global_invocation_id) gl_GlobalInvocationID: vec3<u32>) {\n    gl_GlobalInvocationID_1 = gl_GlobalInvocationID;\n    main_1();\n}\n";
-
-var raytracer_v3 = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n//#include raytracer::utils\n//#include raytracer::ray\n//#include raytracer::vec\n//#include raytracer::interval\n//#include raytracer::camera\n//#include raytracer::color\n//#include raytracer::material\n\n#include raytracer::commonv2\n#include raytracer::traceray\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  //@group(1) @binding(2) var<storage, read> materials: array<Material>;\n  @group(1) @binding(3) var<storage, read> textures: array<f32>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  struct SceneUniforms {\n    reset: u32,\n    mouse: vec4f,\n  }\n\nstruct accelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\n\n\n  @group(2) @binding(x) var<uniform> uScene_notUsed: SceneUniforms;\n  @group(2) @binding(x) var<uniform> topLevelAS: accelerationStructureEXT;\n\n#define gl_RayFlagsNoneEXT 0u\n#define gl_RayFlagsOpaqueEXT 1u\n#define gl_RayFlagsNoOpaqueEXT 2u\n#define gl_RayFlagsTerminateOnFirstHitEXT 4u\n#define gl_RayFlagsSkipClosestHitShaderEXT 8u\n#define gl_RayFlagsCullBackFacingTrianglesEXT 16u\n#define gl_RayFlagsCullFrontFacingTrianglesEXT 32u\n#define gl_RayFlagsCullOpaqueEXT 64u\n#define gl_RayFlagsCullNoOpaqueEXT 128u\n\nvar<private> payload: vec3f;\n\nfn calcRayDirection(pixel: vec2f) -> vec3f {\n  let aspectRatio: f32 = f32(cameraUniforms.viewportSize.x) / f32(cameraUniforms.viewportSize.y);\n  let imagePlaneSize: vec2f = vec2(aspectRatio * 2.0, 2.0);  // vertical fov: 45'\n  let ixy: vec2f = (vec2(-0.5, -0.5) + pixel / vec2f(cameraUniforms.viewportSize.xy)) * imagePlaneSize;\n  return normalize(vec3(ixy.x, -ixy.y, 1.0));\n}\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    const rayOrigin: vec3f = vec3f(0, 0, -1);\n  let rayDirection: vec3f = calcRayDirection(vec2f(globalInvocationId.xy));\n  const rayTmin: f32 = 1e-3;\n  // prevents uScene_notUsed binding being optimized out.\n  let rayTmax: f32 = max(1e5, uScene_notUsed.mouse.x);\n\n  payload = vec3(0.);\n  traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 1, 0, rayOrigin,\n              rayTmin, rayDirection, rayTmax, 0);\n\n  let pixelIndex: u32 = u32(globalInvocationId.y) * u32(cameraUniforms.viewportSize.x) + u32(globalInvocationId.x);\n  pixelBuffer.pixels[pixelIndex] = vec4(payload, 1.0);\n  }\n";
-
-var shadowray_triangle = "struct BvhGeometryDescriptor {\n    vBufferIndex: u32,\n    iBufferIndex: i32,\n    vboOffset: u32,\n    vboStride: u32,\n    vioOffset: u32,\n    vioStride: u32,\n    owningGeometryType_todo_deprecate: u32,\n    owningGeometryFlags: u32,\n}\n\nstruct AABB {\n    min: vec3<f32>,\n    max: vec3<f32>,\n}\n\nstruct RtUniforms {\n    sbtStartRayGen: u32,\n    sbtStartRayMiss: u32,\n    sbtStrideRayMiss: u32,\n    sbtStartHit: u32,\n    sbtStrideHit: u32,\n    sbtStartCallable: u32,\n    sbtStrideCallable: u32,\n    webrtx_NumWorkGroups: vec3<u32>,\n}\n\nstruct BvhGeomBuffer_0_ {\n    test1: f32,\n    fword: array<f32>,\n}\n\nstruct SBT {\n    _crt_sbt_buf: array<u32>,\n}\n\nstruct TlasBvhNode {\n    aabb: AABB,\n    entry_index: u32,\n    exit_index: u32,\n    is_leaf: u32,\n    mask: u32,\n    flags: u32,\n    instanceId: u32,\n    sbtInstanceOffset: u32,\n    instanceCustomIndex: i32,\n    transformToWorld: array<f32,12u>,\n    transformToObject: array<f32,12u>,\n    blas_geometry_id_offset: u32,\n}\n\nstruct TlasBvhTreeNodes {\n    tlasBvhTreeNodes: array<TlasBvhNode>,\n}\n\nstruct BlasBvhNode {\n    aabb: AABB,\n    entry_index_or_primitive_id: u32,\n    exit_index: u32,\n    geometryId: i32,\n}\n\nstruct BlasesBvhTreeNodes {\n    blasesBvhTreeNodes: array<BlasBvhNode>,\n}\n\nstruct SceneUniforms {\n    reset: u32,\n    mouse: vec4<f32>,\n}\n\nstruct _crt_AccelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\nstruct PixelBuffer {\n    pixels: array<vec4<f32>>,\n}\n\nvar<private> webrtx_LaunchIDEXT: vec3<u32>;\nvar<private> gl_GlobalInvocationID_1: vec3<u32>;\nvar<private> webrtx_LaunchSizeEXT: vec3<u32>;\nvar<private> _crt_ray_payload_loc_0_: vec3<f32>;\n\n\n\n\n@group(0) @binding(0)\nvar<uniform> unnamed_3: _crt_AccelerationStructureEXT;\n@group(0) @binding(1)\nvar<storage, read_write> raytraceImageBuffer: array<vec3f>;\n@group(0) @binding(2)\nvar<uniform> uScene_notUsed: SceneUniforms;\n@group(1) @binding(0)\nvar<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4)\nvar<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n@group(1) @binding(1)\nvar<storage> unnamed: SBT;\n@group(1) @binding(2)\nvar<storage> unnamed_1: TlasBvhTreeNodes;\n@group(1) @binding(3)\nvar<storage> unnamed_2: BlasesBvhTreeNodes;\n\nfn invokeShaderIndirect_rayMissu1vf3_(sbtByteIndex: ptr<function, u32>, _crt_WorldRayDirectionEXT: vec3<f32>) {\n    var _crt_sr_wd_offset: u32;\n    var rmiss: u32;\n\n    let _e62 = (*sbtByteIndex);\n    _crt_sr_wd_offset = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rmiss = _e67;\n    let _e68 = rmiss;\n    if (_e68 == 255u) {\n        return;\n    }\n    let _e70 = _crt_sr_wd_offset;\n    _crt_sr_wd_offset = (_e70 + 1u);\n    return;\n}\n\nfn sbtRayMissIndexu1_(ray_type: ptr<function, u32>) -> u32 {\n    let _e60 = rtUniformParams.sbtStartRayMiss;\n    let _e61 = (*ray_type);\n    let _e63 = rtUniformParams.sbtStrideRayMiss;\n    return (_e60 + (_e61 * _e63));\n}\n\nfn _crt_user_rchit_0vf2u1_(baryCoord: ptr<function, vec2<f32>>, _crt_sr_wd_offset_1: ptr<function, u32>) {\n    let _e61 = (*baryCoord)[0u];\n    let _e64 = (*baryCoord)[1u];\n    let _e67 = (*baryCoord)[0u];\n    let _e69 = (*baryCoord)[1u];\n    _crt_ray_payload_loc_0_ = vec3<f32>(((1.0 - _e61) - _e64), _e67, _e69);\n    return;\n}\n\nfn invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_1: u32, _crt_WorldRayOriginEXT: vec3<f32>, _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT_1: vec3<f32>, _crt_RayTmaxEXT: f32, _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32, _crt_hattrs: array<f32,5u>) {\n    var _crt_sr_wd_offset_2: u32;\n    var hitShaderGroupIdentifier: u32;\n    var rchit: u32;\n    var _crt_HitTEXT: f32;\n    var baryCoord_1: vec2<f32>;\n    var param: vec2<f32>;\n    var param_1: u32;\n\n    _crt_sr_wd_offset_2 = (sbtByteIndex_1 / 4u);\n    let _e74 = _crt_sr_wd_offset_2;\n    let _e77 = unnamed._crt_sbt_buf[_e74];\n    hitShaderGroupIdentifier = _e77;\n    let _e78 = hitShaderGroupIdentifier;\n    rchit = ((_e78 & 65280u) >> bitcast<u32>(8));\n    let _e82 = rchit;\n    if (_e82 == 255u) {\n        return;\n    }\n    let _e84 = _crt_sr_wd_offset_2;\n    _crt_sr_wd_offset_2 = (_e84 + 1u);\n    _crt_HitTEXT = _crt_RayTmaxEXT;\n    baryCoord_1 = vec2<f32>(_crt_hattrs[0], _crt_hattrs[1]);\n    let _e89 = baryCoord_1;\n    param = _e89;\n    let _e90 = _crt_sr_wd_offset_2;\n    param_1 = _e90;\n    _crt_user_rchit_0vf2u1_((&param), (&param_1));\n    return;\n}\n\nfn invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_2: u32, _crt_WorldRayOriginEXT_1: vec3<f32>, _crt_RayTminEXT_1: f32, _crt_WorldRayDirectionEXT_2: vec3<f32>, _crt_RayTmaxEXT_1: f32, _crt_GeometryIndexEXT_1: i32, _crt_PrimitiveID_1: u32, _crt_hattrs_1: array<f32,5u>) -> u32 {\n    var _crt_sr_wd_offset_3: u32;\n    var hitShaderGroupIdentifier_1: u32;\n    var rahit: u32;\n    var _crt_HitTEXT_1: f32;\n    var _crt_hit_report: u32;\n\n    _crt_sr_wd_offset_3 = (sbtByteIndex_2 / 4u);\n    let _e72 = _crt_sr_wd_offset_3;\n    let _e75 = unnamed._crt_sbt_buf[_e72];\n    hitShaderGroupIdentifier_1 = _e75;\n    let _e76 = hitShaderGroupIdentifier_1;\n    rahit = ((_e76 & 16711680u) >> bitcast<u32>(16));\n    let _e80 = rahit;\n    if (_e80 == 255u) {\n        return 0u;\n    }\n    let _e82 = _crt_sr_wd_offset_3;\n    _crt_sr_wd_offset_3 = (_e82 + 1u);\n    _crt_HitTEXT_1 = _crt_RayTmaxEXT_1;\n    _crt_hit_report = 0u;\n    let _e84 = _crt_hit_report;\n    return _e84;\n}\n\nfn invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(sbtByteIndex_3: u32, _crt_WorldRayOriginEXT_2: vec3<f32>, _crt_RayTminEXT_2: f32, _crt_WorldRayDirectionEXT_3: vec3<f32>, _crt_RayTmaxEXT_2: f32, _crt_ObjectRayOriginEXT: vec3<f32>, _crt_potential_hit_t: ptr<function, f32>, _crt_ObjectRayDirectionEXT: vec3<f32>, _crt_WorldToObjectEXT: mat4x3<f32>, _crt_ObjectToWorldEXT: mat4x3<f32>, _crt_GeometryIndexEXT_2: i32, _crt_PrimitiveID_2: u32, _crt_hattrs_2: ptr<function, array<f32,5u>>) -> bool {\n    var _crt_sr_wd_offset_4: u32;\n    var hitShaderGroupIdentifier_2: u32;\n    var rint: u32;\n    var phi_545_: bool;\n\n    _crt_sr_wd_offset_4 = (sbtByteIndex_3 / 4u);\n    let _e75 = _crt_sr_wd_offset_4;\n    let _e78 = unnamed._crt_sbt_buf[_e75];\n    hitShaderGroupIdentifier_2 = _e78;\n    let _e79 = hitShaderGroupIdentifier_2;\n    rint = (_e79 & 255u);\n    let _e81 = rint;\n    if (_e81 == 255u) {\n        return false;\n    }\n    let _e83 = _crt_sr_wd_offset_4;\n    _crt_sr_wd_offset_4 = (_e83 + 1u);\n    (*_crt_potential_hit_t) = (_crt_RayTminEXT_2 - 1.0);\n    let _e86 = (*_crt_potential_hit_t);\n    let _e87 = (_e86 > _crt_RayTminEXT_2);\n    phi_545_ = _e87;\n    if _e87 {\n        let _e88 = (*_crt_potential_hit_t);\n        phi_545_ = (_e88 < _crt_RayTmaxEXT_2);\n    }\n    let _e91 = phi_545_;\n    return _e91;\n}\n\nfn intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(ray_origin: vec3<f32>, ray_tmin: f32, ray_dir: vec3<f32>, ray_tmax: f32, p0_: vec3<f32>, p1_: vec3<f32>, p2_: vec3<f32>, n: ptr<function, vec3<f32>>, t: ptr<function, f32>, beta: ptr<function, f32>, gamma: ptr<function, f32>) -> bool {\n    var e0_: vec3<f32>;\n    var e1_: vec3<f32>;\n    var e2_: vec3<f32>;\n    var i: vec3<f32>;\n    var phi_391_: bool;\n    var phi_396_: bool;\n    var phi_401_: bool;\n    var phi_408_: bool;\n\n    e0_ = (p1_ - p0_);\n    e1_ = (p0_ - p2_);\n    let _e75 = e1_;\n    let _e76 = e0_;\n    (*n) = cross(_e75, _e76);\n    let _e78 = (*n);\n    e2_ = ((p0_ - ray_origin) * (1.0 / dot(_e78, ray_dir)));\n    let _e83 = e2_;\n    i = cross(ray_dir, _e83);\n    let _e85 = i;\n    let _e86 = e1_;\n    (*beta) = dot(_e85, _e86);\n    let _e88 = i;\n    let _e89 = e0_;\n    (*gamma) = dot(_e88, _e89);\n    let _e91 = (*n);\n    let _e92 = e2_;\n    (*t) = dot(_e91, _e92);\n    let _e94 = (*t);\n    let _e95 = (_e94 < ray_tmax);\n    phi_391_ = _e95;\n    if _e95 {\n        let _e96 = (*t);\n        phi_391_ = (_e96 > ray_tmin);\n    }\n    let _e99 = phi_391_;\n    phi_396_ = _e99;\n    if _e99 {\n        let _e100 = (*beta);\n        phi_396_ = (_e100 >= 0.0);\n    }\n    let _e103 = phi_396_;\n    phi_401_ = _e103;\n    if _e103 {\n        let _e104 = (*gamma);\n        phi_401_ = (_e104 >= 0.0);\n    }\n    let _e107 = phi_401_;\n    phi_408_ = _e107;\n    if _e107 {\n        let _e108 = (*beta);\n        let _e109 = (*gamma);\n        phi_408_ = ((_e108 + _e109) <= 1.0);\n    }\n    let _e113 = phi_408_;\n    return _e113;\n}\n\nfn GET_VEC3_FROM_BUFFERu1u1_(geoBufferIndex: ptr<function, u32>, wordIndex: ptr<function, u32>) -> vec3<f32> {\n    let _e60 = (*geoBufferIndex);\n    switch bitcast<i32>(_e60) {\n        case 0: {\n            let _e62 = (*wordIndex);\n            let _e65 = bvhGeoBuffers_0_.fword[_e62];\n            let _e66 = (*wordIndex);\n            let _e70 = bvhGeoBuffers_0_.fword[(_e66 + 1u)];\n            let _e71 = (*wordIndex);\n            let _e75 = bvhGeoBuffers_0_.fword[(_e71 + 2u)];\n            return vec3<f32>(_e65, _e70, _e75);\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertPositionu1u1u1u1_(vBufferIndex: ptr<function, u32>, offset: ptr<function, u32>, stride: ptr<function, u32>, vindex: ptr<function, u32>) -> vec3<f32> {\n    var vboWordOffset: u32;\n    var param_2: u32;\n    var param_3: u32;\n\n    let _e65 = (*offset);\n    let _e66 = (*vindex);\n    let _e67 = (*stride);\n    vboWordOffset = ((_e65 + (_e66 * _e67)) / 4u);\n    let _e71 = (*vBufferIndex);\n    param_2 = _e71;\n    let _e72 = vboWordOffset;\n    param_3 = _e72;\n    let _e73 = GET_VEC3_FROM_BUFFERu1u1_((&param_2), (&param_3));\n    return _e73;\n}\n\nfn getTriVertIndicesu1u1u1u1_(iBufferIndex: ptr<function, u32>, offset_1: ptr<function, u32>, stride_1: ptr<function, u32>, primitiveId: ptr<function, u32>) -> vec3<u32> {\n    var vioWordOffset: u32;\n    var f3_: vec3<f32>;\n    var param_4: u32;\n    var param_5: u32;\n\n    let _e66 = (*offset_1);\n    let _e67 = (*primitiveId);\n    let _e68 = (*stride_1);\n    vioWordOffset = ((_e66 + (_e67 * _e68)) / 4u);\n    let _e72 = (*iBufferIndex);\n    param_4 = _e72;\n    let _e73 = vioWordOffset;\n    param_5 = _e73;\n    let _e74 = GET_VEC3_FROM_BUFFERu1u1_((&param_4), (&param_5));\n    f3_ = _e74;\n    let _e76 = f3_[0u];\n    let _e79 = f3_[1u];\n    let _e82 = f3_[2u];\n    return vec3<u32>(bitcast<u32>(_e76), bitcast<u32>(_e79), bitcast<u32>(_e82));\n}\n\nfn getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_(g: ptr<function, BvhGeometryDescriptor>, primitiveId_1: ptr<function, u32>) -> array<vec3<f32>,3u> {\n    var indices: vec3<u32>;\n    var param_6: u32;\n    var param_7: u32;\n    var param_8: u32;\n    var param_9: u32;\n    var param_10: u32;\n    var param_11: u32;\n    var param_12: u32;\n    var param_13: u32;\n    var param_14: u32;\n    var param_15: u32;\n    var param_16: u32;\n    var param_17: u32;\n    var param_18: u32;\n    var param_19: u32;\n    var param_20: u32;\n    var param_21: u32;\n\n    let _e78 = (*g).iBufferIndex;\n    if (_e78 >= 0) {\n        let _e81 = (*g).iBufferIndex;\n        param_6 = bitcast<u32>(_e81);\n        let _e84 = (*g).vioOffset;\n        param_7 = _e84;\n        let _e86 = (*g).vioStride;\n        param_8 = _e86;\n        let _e87 = (*primitiveId_1);\n        param_9 = _e87;\n        let _e88 = getTriVertIndicesu1u1u1u1_((&param_6), (&param_7), (&param_8), (&param_9));\n        indices = _e88;\n    } else {\n        let _e89 = (*primitiveId_1);\n        let _e91 = (*primitiveId_1);\n        let _e94 = (*primitiveId_1);\n        indices = vec3<u32>((_e89 * 3u), ((_e91 * 3u) + 1u), ((_e94 * 3u) + 2u));\n    }\n    let _e99 = (*g).vBufferIndex;\n    param_10 = _e99;\n    let _e101 = (*g).vboOffset;\n    param_11 = _e101;\n    let _e103 = (*g).vboStride;\n    param_12 = _e103;\n    let _e105 = indices[0u];\n    param_13 = _e105;\n    let _e106 = getTriVertPositionu1u1u1u1_((&param_10), (&param_11), (&param_12), (&param_13));\n    let _e108 = (*g).vBufferIndex;\n    param_14 = _e108;\n    let _e110 = (*g).vboOffset;\n    param_15 = _e110;\n    let _e112 = (*g).vboStride;\n    param_16 = _e112;\n    let _e114 = indices[1u];\n    param_17 = _e114;\n    let _e115 = getTriVertPositionu1u1u1u1_((&param_14), (&param_15), (&param_16), (&param_17));\n    let _e117 = (*g).vBufferIndex;\n    param_18 = _e117;\n    let _e119 = (*g).vboOffset;\n    param_19 = _e119;\n    let _e121 = (*g).vboStride;\n    param_20 = _e121;\n    let _e123 = indices[2u];\n    param_21 = _e123;\n    let _e124 = getTriVertPositionu1u1u1u1_((&param_18), (&param_19), (&param_20), (&param_21));\n    return array<vec3<f32>,3u>(_e106, _e115, _e124);\n}\n\nfn sbtHitGroupIndexu1i1u1u1_(instanceId: ptr<function, u32>, geometryId: ptr<function, i32>, num_ray_types: ptr<function, u32>, ray_type_1: ptr<function, u32>) -> u32 {\n    let _e63 = rtUniformParams.sbtStartHit;\n    let _e65 = rtUniformParams.sbtStrideHit;\n    let _e66 = (*instanceId);\n    let _e67 = (*geometryId);\n    let _e69 = (*num_ray_types);\n    let _e72 = (*ray_type_1);\n    return (_e63 + (_e65 * ((_e66 + (bitcast<u32>(_e67) * _e69)) + _e72)));\n}\n\nfn intersect_aabbvf3vf3f1f1structAABBvf3vf31_(rayOrigin: vec3<f32>, invRayDir: vec3<f32>, ray_tmin_1: f32, ray_tmax_1: f32, aabb: AABB) -> bool {\n    var t0_: vec3<f32>;\n    var t1_: vec3<f32>;\n    var tmin: vec3<f32>;\n    var tmax: vec3<f32>;\n\n    t0_ = ((aabb.min - rayOrigin) * invRayDir);\n    t1_ = ((aabb.max - rayOrigin) * invRayDir);\n    let _e73 = t0_;\n    let _e74 = t1_;\n    tmin = min(_e73, _e74);\n    let _e76 = t0_;\n    let _e77 = t1_;\n    tmax = max(_e76, _e77);\n    let _e80 = tmin[0u];\n    let _e82 = tmin[1u];\n    let _e85 = tmin[2u];\n    let _e89 = tmax[0u];\n    let _e91 = tmax[1u];\n    let _e94 = tmax[2u];\n    return (max(ray_tmin_1, max(max(_e80, _e82), _e85)) <= min(ray_tmax_1, min(min(_e89, _e91), _e94)));\n}\n\nfn traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_(topLevel: ptr<function, vec2<u32>>, rayFlags: ptr<function, u32>, cullMask: ptr<function, u32>, rayType: ptr<function, u32>, numRayTypes: ptr<function, u32>, missIndex: ptr<function, u32>, _crt_WorldRayOriginEXT_3: vec3<f32>, _crt_RayTminEXT_3: f32, _crt_WorldRayDirectionEXT_4: vec3<f32>, _crt_RayTmaxEXT_3: ptr<function, f32>, payload: ptr<function, i32>) {\n    var invWorldRayDir: vec3<f32>;\n    var closestSbtIndex: u32;\n    var localGeometryId: i32;\n    var localPrimitiveId: u32;\n    var _cur: u32;\n    var node: TlasBvhNode;\n    var sbtInstanceOffset: u32;\n    var blas_geometry_id_offset: u32;\n    var _crt_ObjectToWorldEXT_1: mat4x3<f32>;\n    var _crt_WorldToObjectEXT_1: mat4x3<f32>;\n    var _crt_ObjectRayOriginEXT_1: vec3<f32>;\n    var _crt_ObjectRayDirectionEXT_1: vec3<f32>;\n    var invObjectRayDir: vec3<f32>;\n    var blas_index_offset: u32;\n    var instance_exit_index: u32;\n    var node_1: BlasBvhNode;\n    var t_1: f32;\n    var hitKind: u32;\n    var g_1: BvhGeometryDescriptor;\n    var indexable: array<BvhGeometryDescriptor,1u>;\n    var sbtIndex: u32;\n    var param_22: u32;\n    var param_23: i32;\n    var param_24: u32;\n    var param_25: u32;\n    var terminate_or_ignore: u32;\n    var hit: bool;\n    var positions: array<vec3<f32>,3u>;\n    var param_26: BvhGeometryDescriptor;\n    var param_27: u32;\n    var n_1: vec3<f32>;\n    var buf_hitAttributes: array<f32,5u>;\n    var param_28: vec3<f32>;\n    var param_29: f32;\n    var param_30: f32;\n    var param_31: f32;\n    var param_32: f32;\n    var param_33: array<f32,5u>;\n    var buf_closestHitAttributes: array<f32,5u>;\n    var param_34: u32;\n    var param_35: u32;\n    var phi_673_: bool;\n    var phi_683_: bool;\n\n    invWorldRayDir = (vec3<f32>(1.0) / _crt_WorldRayDirectionEXT_4);\n    closestSbtIndex = 0u;\n    localGeometryId = -1;\n    localPrimitiveId = 0u;\n    _cur = 0u;\n    loop {\n        let _e112 = _cur;\n        if (_e112 < 4294967295u) {\n            let _e114 = _cur;\n            let _e117 = unnamed_1.tlasBvhTreeNodes[_e114];\n            node.aabb.min = _e117.aabb.min;\n            node.aabb.max = _e117.aabb.max;\n            node.entry_index = _e117.entry_index;\n            node.exit_index = _e117.exit_index;\n            node.is_leaf = _e117.is_leaf;\n            node.mask = _e117.mask;\n            node.flags = _e117.flags;\n            node.instanceId = _e117.instanceId;\n            node.sbtInstanceOffset = _e117.sbtInstanceOffset;\n            node.instanceCustomIndex = _e117.instanceCustomIndex;\n            node.transformToWorld[0] = _e117.transformToWorld[0];\n            node.transformToWorld[1] = _e117.transformToWorld[1];\n            node.transformToWorld[2] = _e117.transformToWorld[2];\n            node.transformToWorld[3] = _e117.transformToWorld[3];\n            node.transformToWorld[4] = _e117.transformToWorld[4];\n            node.transformToWorld[5] = _e117.transformToWorld[5];\n            node.transformToWorld[6] = _e117.transformToWorld[6];\n            node.transformToWorld[7] = _e117.transformToWorld[7];\n            node.transformToWorld[8] = _e117.transformToWorld[8];\n            node.transformToWorld[9] = _e117.transformToWorld[9];\n            node.transformToWorld[10] = _e117.transformToWorld[10];\n            node.transformToWorld[11] = _e117.transformToWorld[11];\n            node.transformToObject[0] = _e117.transformToObject[0];\n            node.transformToObject[1] = _e117.transformToObject[1];\n            node.transformToObject[2] = _e117.transformToObject[2];\n            node.transformToObject[3] = _e117.transformToObject[3];\n            node.transformToObject[4] = _e117.transformToObject[4];\n            node.transformToObject[5] = _e117.transformToObject[5];\n            node.transformToObject[6] = _e117.transformToObject[6];\n            node.transformToObject[7] = _e117.transformToObject[7];\n            node.transformToObject[8] = _e117.transformToObject[8];\n            node.transformToObject[9] = _e117.transformToObject[9];\n            node.transformToObject[10] = _e117.transformToObject[10];\n            node.transformToObject[11] = _e117.transformToObject[11];\n            node.blas_geometry_id_offset = _e117.blas_geometry_id_offset;\n            let _e195 = node.is_leaf;\n            let _e196 = (_e195 > 0u);\n            phi_673_ = _e196;\n            if _e196 {\n                let _e198 = node.mask;\n                let _e199 = (*cullMask);\n                phi_673_ = ((_e198 & _e199) == 0u);\n            }\n            let _e203 = phi_673_;\n            phi_683_ = _e203;\n            if !(_e203) {\n                let _e205 = invWorldRayDir;\n                let _e206 = (*_crt_RayTmaxEXT_3);\n                let _e208 = node.aabb;\n                let _e209 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_crt_WorldRayOriginEXT_3, _e205, _crt_RayTminEXT_3, _e206, _e208);\n                phi_683_ = !(_e209);\n            }\n            let _e212 = phi_683_;\n            if _e212 {\n                let _e214 = node.exit_index;\n                _cur = _e214;\n                continue;\n            }\n            let _e216 = node.is_leaf;\n            if (_e216 == 0u) {\n                let _e219 = node.entry_index;\n                _cur = _e219;\n                continue;\n            }\n            let _e221 = node.sbtInstanceOffset;\n            sbtInstanceOffset = _e221;\n            let _e223 = node.blas_geometry_id_offset;\n            blas_geometry_id_offset = _e223;\n            let _e226 = node.transformToWorld[0];\n            let _e229 = node.transformToWorld[1];\n            let _e232 = node.transformToWorld[2];\n            let _e233 = vec3<f32>(_e226, _e229, _e232);\n            let _e236 = node.transformToWorld[3];\n            let _e239 = node.transformToWorld[4];\n            let _e242 = node.transformToWorld[5];\n            let _e243 = vec3<f32>(_e236, _e239, _e242);\n            let _e246 = node.transformToWorld[6];\n            let _e249 = node.transformToWorld[7];\n            let _e252 = node.transformToWorld[8];\n            let _e253 = vec3<f32>(_e246, _e249, _e252);\n            let _e256 = node.transformToWorld[9];\n            let _e259 = node.transformToWorld[10];\n            let _e262 = node.transformToWorld[11];\n            let _e263 = vec3<f32>(_e256, _e259, _e262);\n            _crt_ObjectToWorldEXT_1 = mat4x3<f32>(vec3<f32>(_e233.x, _e233.y, _e233.z), vec3<f32>(_e243.x, _e243.y, _e243.z), vec3<f32>(_e253.x, _e253.y, _e253.z), vec3<f32>(_e263.x, _e263.y, _e263.z));\n            let _e283 = node.transformToObject[0];\n            let _e286 = node.transformToObject[1];\n            let _e289 = node.transformToObject[2];\n            let _e290 = vec3<f32>(_e283, _e286, _e289);\n            let _e293 = node.transformToObject[3];\n            let _e296 = node.transformToObject[4];\n            let _e299 = node.transformToObject[5];\n            let _e300 = vec3<f32>(_e293, _e296, _e299);\n            let _e303 = node.transformToObject[6];\n            let _e306 = node.transformToObject[7];\n            let _e309 = node.transformToObject[8];\n            let _e310 = vec3<f32>(_e303, _e306, _e309);\n            let _e313 = node.transformToObject[9];\n            let _e316 = node.transformToObject[10];\n            let _e319 = node.transformToObject[11];\n            let _e320 = vec3<f32>(_e313, _e316, _e319);\n            _crt_WorldToObjectEXT_1 = mat4x3<f32>(vec3<f32>(_e290.x, _e290.y, _e290.z), vec3<f32>(_e300.x, _e300.y, _e300.z), vec3<f32>(_e310.x, _e310.y, _e310.z), vec3<f32>(_e320.x, _e320.y, _e320.z));\n            let _e338 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayOriginEXT_1 = (_e338 * vec4<f32>(_crt_WorldRayOriginEXT_3.x, _crt_WorldRayOriginEXT_3.y, _crt_WorldRayOriginEXT_3.z, 1.0));\n            let _e344 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayDirectionEXT_1 = (_e344 * vec4<f32>(_crt_WorldRayDirectionEXT_4.x, _crt_WorldRayDirectionEXT_4.y, _crt_WorldRayDirectionEXT_4.z, 0.0));\n            let _e350 = _crt_ObjectRayDirectionEXT_1;\n            invObjectRayDir = (vec3<f32>(1.0) / _e350);\n            let _e354 = node.entry_index;\n            _cur = _e354;\n            let _e355 = _cur;\n            blas_index_offset = _e355;\n            let _e357 = node.exit_index;\n            instance_exit_index = _e357;\n            loop {\n                let _e358 = _cur;\n                if (_e358 < 4294967295u) {\n                    let _e360 = _cur;\n                    let _e363 = unnamed_2.blasesBvhTreeNodes[_e360];\n                    node_1.aabb.min = _e363.aabb.min;\n                    node_1.aabb.max = _e363.aabb.max;\n                    node_1.entry_index_or_primitive_id = _e363.entry_index_or_primitive_id;\n                    node_1.exit_index = _e363.exit_index;\n                    node_1.geometryId = _e363.geometryId;\n                    let _e376 = _crt_ObjectRayOriginEXT_1;\n                    let _e377 = invObjectRayDir;\n                    let _e378 = (*_crt_RayTmaxEXT_3);\n                    let _e380 = node_1.aabb;\n                    let _e381 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_e376, _e377, _crt_RayTminEXT_3, _e378, _e380);\n                    if !(_e381) {\n                        let _e384 = node_1.exit_index;\n                        if (_e384 == 4294967295u) {\n                            let _e386 = instance_exit_index;\n                            _cur = _e386;\n                            break;\n                        } else {\n                            let _e388 = node_1.exit_index;\n                            let _e389 = blas_index_offset;\n                            _cur = (_e388 + _e389);\n                        }\n                        continue;\n                    } else {\n                        let _e392 = node_1.geometryId;\n                        if (_e392 < 0) {\n                            let _e395 = node_1.entry_index_or_primitive_id;\n                            let _e396 = blas_index_offset;\n                            _cur = (_e395 + _e396);\n                            continue;\n                        }\n                    }\n                    t_1 = (_crt_RayTminEXT_3 - 1.0);\n                    hitKind = 0u;\n                    let _e400 = node_1.geometryId;\n                    let _e402 = blas_geometry_id_offset;\n                    indexable = array<BvhGeometryDescriptor,1u>(BvhGeometryDescriptor(0u, -1, 0u, 12u, 0u, 12u, 0u, 0u));\n                    let _e405 = indexable[(bitcast<u32>(_e400) + _e402)];\n                    g_1 = _e405;\n                    let _e406 = sbtInstanceOffset;\n                    param_22 = _e406;\n                    let _e408 = node_1.geometryId;\n                    param_23 = _e408;\n                    let _e409 = (*numRayTypes);\n                    param_24 = _e409;\n                    let _e410 = (*rayType);\n                    param_25 = _e410;\n                    let _e411 = sbtHitGroupIndexu1i1u1u1_((&param_22), (&param_23), (&param_24), (&param_25));\n                    sbtIndex = _e411;\n                    terminate_or_ignore = 1u;\n                    hit = false;\n                    let _e413 = g_1.owningGeometryType_todo_deprecate;\n                    if (_e413 == 0u) {\n                        let _e415 = g_1;\n                        param_26 = _e415;\n                        let _e417 = node_1.entry_index_or_primitive_id;\n                        param_27 = _e417;\n                        let _e418 = getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_((&param_26), (&param_27));\n                        positions = _e418;\n                        let _e419 = _crt_ObjectRayOriginEXT_1;\n                        let _e420 = _crt_ObjectRayDirectionEXT_1;\n                        let _e421 = (*_crt_RayTmaxEXT_3);\n                        let _e423 = positions[0];\n                        let _e425 = positions[1];\n                        let _e427 = positions[2];\n                        let _e428 = intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(_e419, _crt_RayTminEXT_3, _e420, _e421, _e423, _e425, _e427, (&param_28), (&param_29), (&param_30), (&param_31));\n                        let _e429 = param_28;\n                        n_1 = _e429;\n                        let _e430 = param_29;\n                        t_1 = _e430;\n                        let _e431 = param_30;\n                        buf_hitAttributes[0] = _e431;\n                        let _e433 = param_31;\n                        buf_hitAttributes[1] = _e433;\n                        hit = _e428;\n                        let _e435 = hit;\n                        if _e435 {\n                            let _e436 = n_1;\n                            let _e437 = _crt_WorldToObjectEXT_1;\n                            n_1 = normalize((_e436 * _e437).xyz);\n                            let _e442 = n_1[0u];\n                            buf_hitAttributes[2] = _e442;\n                            let _e445 = n_1[1u];\n                            buf_hitAttributes[3] = _e445;\n                            let _e448 = n_1[2u];\n                            buf_hitAttributes[4] = _e448;\n                            let _e450 = n_1;\n                            hitKind = select(255u, 254u, (dot(_e450, _crt_WorldRayDirectionEXT_4) > 0.0));\n                        }\n                    } else {\n                        let _e454 = sbtIndex;\n                        let _e455 = (*_crt_RayTmaxEXT_3);\n                        let _e456 = _crt_ObjectRayOriginEXT_1;\n                        let _e457 = _crt_ObjectRayDirectionEXT_1;\n                        let _e458 = _crt_WorldToObjectEXT_1;\n                        let _e459 = _crt_ObjectToWorldEXT_1;\n                        let _e461 = node_1.geometryId;\n                        let _e463 = node_1.entry_index_or_primitive_id;\n                        let _e464 = invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(_e454, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e455, _e456, (&param_32), _e457, _e458, _e459, _e461, _e463, (&param_33));\n                        let _e465 = param_32;\n                        t_1 = _e465;\n                        let _e466 = param_33;\n                        buf_hitAttributes = _e466;\n                        hit = _e464;\n                    }\n                    let _e467 = hit;\n                    if _e467 {\n                        let _e468 = sbtIndex;\n                        let _e469 = t_1;\n                        let _e471 = node_1.geometryId;\n                        let _e473 = node_1.entry_index_or_primitive_id;\n                        let _e474 = buf_hitAttributes;\n                        let _e475 = invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(_e468, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e469, _e471, _e473, _e474);\n                        terminate_or_ignore = _e475;\n                    }\n                    let _e476 = terminate_or_ignore;\n                    if (_e476 == 2u) {\n                        return;\n                    }\n                    let _e478 = terminate_or_ignore;\n                    if (_e478 == 0u) {\n                        let _e480 = sbtIndex;\n                        closestSbtIndex = _e480;\n                        let _e481 = buf_hitAttributes;\n                        buf_closestHitAttributes = _e481;\n                        let _e482 = t_1;\n                        (*_crt_RayTmaxEXT_3) = _e482;\n                        let _e484 = node_1.geometryId;\n                        localGeometryId = _e484;\n                        let _e486 = node_1.entry_index_or_primitive_id;\n                        localPrimitiveId = _e486;\n                    }\n                    let _e488 = node_1.exit_index;\n                    if (_e488 == 4294967295u) {\n                        let _e490 = instance_exit_index;\n                        _cur = _e490;\n                        break;\n                    } else {\n                        let _e492 = node_1.exit_index;\n                        let _e493 = blas_index_offset;\n                        _cur = (_e492 + _e493);\n                    }\n                    continue;\n                } else {\n                    break;\n                }\n            }\n            continue;\n        } else {\n            break;\n        }\n    }\n    let _e495 = localGeometryId;\n    if (_e495 >= 0) {\n        let _e497 = closestSbtIndex;\n        let _e498 = (*_crt_RayTmaxEXT_3);\n        let _e499 = localGeometryId;\n        let _e500 = localPrimitiveId;\n        let _e501 = buf_closestHitAttributes;\n        invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(_e497, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e498, _e499, _e500, _e501);\n    } else {\n        let _e502 = (*missIndex);\n        param_34 = _e502;\n        let _e503 = sbtRayMissIndexu1_((&param_34));\n        param_35 = _e503;\n        invokeShaderIndirect_rayMissu1vf3_((&param_35), _crt_WorldRayDirectionEXT_4);\n    }\n    return;\n}\n\nfn calcRayDirectionvf2_(pixel: vec2<f32>) -> vec3<f32> {\n    var aspectRatio: f32;\n    var imagePlaneSize: vec2<f32>;\n    var ixy: vec2<f32>;\n\n    let _e63 = webrtx_LaunchSizeEXT[0u];\n    let _e65 = webrtx_LaunchSizeEXT[1u];\n    aspectRatio = f32((_e63 / _e65));\n    let _e68 = aspectRatio;\n    imagePlaneSize = vec2<f32>((_e68 * 2.0), 2.0);\n    let _e71 = webrtx_LaunchSizeEXT;\n    let _e76 = imagePlaneSize;\n    ixy = ((vec2<f32>(-0.5, -0.5) + (pixel / vec2<f32>(_e71.xy))) * _e76);\n    let _e79 = ixy[0u];\n    let _e81 = ixy[1u];\n    return normalize(vec3<f32>(_e79, -(_e81), 1.0));\n}\n\nfn _crt_user_rgen_0u1_(_crt_sr_wd_offset_5: ptr<function, u32>) {\n    var rayDirection: vec3<f32>;\n    var rayTmax: f32;\n    var param_36: vec2<u32>;\n    var param_37: u32;\n    var param_38: u32;\n    var param_39: u32;\n    var param_40: u32;\n    var param_41: u32;\n    var param_42: f32;\n    var param_43: i32;\n    var pixelIndex: u32;\n\n    let _e70 = webrtx_LaunchIDEXT;\n    let _e71 = vec3<f32>(_e70);\n    let _e75 = calcRayDirectionvf2_(vec2<f32>(_e71.x, _e71.y));\n    rayDirection = _e75;\n    let _e78 = uScene_notUsed.mouse[0u];\n    rayTmax = max(100000.0, _e78);\n    _crt_ray_payload_loc_0_ = vec3<f32>(0.0, 0.0, 0.0);\n    let _e80 = rayDirection;\n    let _e82 = unnamed_3.topLevelAS;\n    param_36 = _e82;\n    param_37 = 1u;\n    param_38 = 255u;\n    param_39 = 0u;\n    param_40 = 1u;\n    param_41 = 0u;\n    let _e83 = rayTmax;\n    param_42 = _e83;\n    param_43 = 0;\n    traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_((&param_36), (&param_37), (&param_38), (&param_39), (&param_40), (&param_41), vec3<f32>(0.0, 0.0, -1.0), 0.0010000000474974513, _e80, (&param_42), (&param_43));\n    let _e85 = webrtx_LaunchIDEXT[1u];\n    let _e87 = webrtx_LaunchSizeEXT[0u];\n    let _e90 = webrtx_LaunchIDEXT[0u];\n    pixelIndex = ((_e85 * _e87) + _e90);\n    let _e92 = pixelIndex;\n    let _e93 = _crt_ray_payload_loc_0_;\n    //raytraceImageBuffer[_e92] = vec4<f32>(_e93.x, _e93.y, _e93.z, 1.0);\n    raytraceImageBuffer[_e92] = vec3<f32>(_e93.x, _e93.y, _e93.z);\n    return;\n}\n\nfn invokeShaderIndirect_rayGenu1_(sbtByteIndex_4: ptr<function, u32>) {\n    var _crt_sr_wd_offset_6: u32;\n    var rgen: u32;\n    var param_44: u32;\n\n    let _e62 = (*sbtByteIndex_4);\n    _crt_sr_wd_offset_6 = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset_6;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rgen = _e67;\n    let _e68 = _crt_sr_wd_offset_6;\n    _crt_sr_wd_offset_6 = (_e68 + 1u);\n    let _e70 = _crt_sr_wd_offset_6;\n    param_44 = _e70;\n    _crt_user_rgen_0u1_((&param_44));\n    return;\n}\n\nfn main_1() {\n    var param_45: u32;\n\n    let _e59 = gl_GlobalInvocationID_1;\n    webrtx_LaunchIDEXT = _e59;\n    let _e61 = rtUniformParams.webrtx_NumWorkGroups;\n    webrtx_LaunchSizeEXT = (_e61 * vec3<u32>(8u, 8u, 1u));\n    let _e64 = rtUniformParams.sbtStartRayGen;\n    param_45 = _e64;\n    invokeShaderIndirect_rayGenu1_((&param_45));\n    return;\n}\n\n@compute @workgroup_size(8, 8, 1)\nfn compute_main(@builtin(global_invocation_id) gl_GlobalInvocationID: vec3<u32>) {\n    gl_GlobalInvocationID_1 = gl_GlobalInvocationID;\n    main_1();\n}\n";
-
-Shaders['raytracer_v2.wgsl'] = raytracer_v2;
-Shaders['raytracer_v3.wgsl'] = raytracer_v3;
-Shaders['shadowray_triangle.wgsl'] = shadowray_triangle;
 
 var bitangent_prepass = "  #include raytracer::common\n\n  @group(0) @binding(0) var<storage, read_write> faces: array<Face>;\n\n  override WORKGROUP_SIZE_X: u32;\n  /**\n   * compute the bitangent for each vertex\n   */\n  @compute @workgroup_size(WORKGROUP_SIZE_X, 1)\n  fn compute_main(@builtin(global_invocation_id) id : vec3<u32>,) {\n    if (id.x > arrayLength(&faces)) {\n      return;\n    }\n\n    let face = &faces[id.x];\n\n    face.bta0 = cross(face.n0, face.ta0.xyz) * face.ta0.w;\n    face.bta1 = cross(face.n1, face.ta1.xyz) * face.ta1.w;\n    face.bta2 = cross(face.n2, face.ta2.xyz) * face.ta2.w;\n  }\n";
 
@@ -23339,7 +23429,7 @@ class Raytracer {
         shaderSource: 'debug_bvh',
         blendingMode: BlendingMode.Normal,
     });
-    #debugBvhGeometry = new InstancedBufferGeometry({ count: 2 });
+    #debugBvhGeometry = new InstancedBufferGeometry({ count: 2, user: this });
     #debugBvhMesh = new Mesh({
         geometry: this.#debugBvhGeometry,
         material: this.#debugBvhMaterial,
@@ -23374,17 +23464,31 @@ class Raytracer {
         const vup = vec3.fromValues(0, 1, 0);
         vec3.transformQuat(vup, vup, cameraQuat);
         vec3.add(vup, vup, vup);
-        this.#material.uniforms.camera = computeCamera(activeCamera, width, height);
-        this.#material.uniforms.cameraUniforms.viewportSize = new Uint32Array([width, height]);
-        this.#material.uniforms.cameraUniforms.imageWidth = width;
-        this.#material.uniforms.cameraUniforms.imageHeight = height;
-        this.#material.uniforms.cameraUniforms.aspectRatio = width / height;
-        this.#material.uniforms.cameraUniforms.vfov = activeCamera.getVerticalFov();
-        this.#material.uniforms.cameraUniforms.lookFrom = lookFrom;
-        this.#material.uniforms.cameraUniforms.lookAt = lookAt;
-        this.#material.uniforms.cameraUniforms.vup = vup;
-        this.#material.uniforms.cameraUniforms.defocusAngle = 0; // TODO: set an actual value
-        this.#material.uniforms.cameraUniforms.focusDist = 3.4; //activeCamera.focus;
+        this.#material.setUniformValue('camera', computeCamera(activeCamera, width, height));
+        /*
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
+        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
+        */
+        this.#material.setUniformValue('cameraUniforms', {
+            viewportSize: new Uint32Array([width, height]),
+            imageWidth: width,
+            imageHeight: height,
+            aspectRatio: width / height,
+            vfov: activeCamera.getVerticalFov(),
+            lookFrom: lookFrom,
+            lookAt: lookAt,
+            vup: vup,
+            defocusAngle: 0, // TODO: set an actual value
+            focusDist: 3.4, //activeCamera.focus;
+        });
         this.#material.setStorage('faces', {
             value: faces,
             raw: true,
@@ -23427,7 +23531,8 @@ class Raytracer {
                 minFilter: GL_LINEAR,
             });
         }
-        this.#material.uniforms['outTexture'] = this.#outputTexture;
+        //this.#material.#uniforms['outTexture'] = this.#outputTexture;
+        this.#material.setUniformValue('outTexture', this.#outputTexture);
         const rtCanvas = Graphics$1.getCanvas('rt_canvas');
         rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
         return true;
@@ -23447,7 +23552,8 @@ class Raytracer {
         if (!this.#running) {
             return;
         }
-        this.#material.uniforms['commonUniforms'].frameCounter = this.#frameId++;
+        //(this.#material.#uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
+        this.#material.setSubUniformValue('commonUniforms.frameCounter', this.#frameId++);
         if (!this.#prepassDone) {
             Graphics$1.compute(this.#prepassMaterial, {
                 width: this.#facesCount,
@@ -24600,11 +24706,10 @@ class CubeEnvironment extends Environment {
 
 var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
-function getUniformsHtml(uniforms /*TODO: create a proper type for uniforms*/) {
+function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
-    for (const uniformName in uniforms) {
-        const uniform = uniforms[uniformName];
-        htmlUniforms.append(addHtmlParameter(uniformName, uniform));
+    for (const [uniformName, uniform] of uniforms) {
+        htmlUniforms.append(addHtmlParameter(uniformName, uniform.value));
     }
     return htmlUniforms;
 }
@@ -24744,7 +24849,7 @@ class MaterialEditor {
             hide(this.#htmlBlendFactors);
         }
         //this.#htmlElement.innerHTML += this.material.name;
-        this.#htmlParams.append(getUniformsHtml(material.uniforms));
+        this.#htmlParams.append(getUniformsHtml(material.getUniforms()));
     }
     getHTML() {
         return this.#shadowRoot.host;
@@ -31293,7 +31398,7 @@ const identityQuat = quat.create();
 const initSkeletonTempVec3 = vec3.create();
 const initSkeletonTempQuat = quat.create();
 let animSpeed = 1.0;
-const defaultMaterial$2 = new MeshBasicMaterial();
+const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelInstance extends Entity {
     isSource2ModelInstance = true;
     #skeleton = null;
@@ -31315,7 +31420,7 @@ class Source2ModelInstance extends Entity {
     hasAnimations = true;
     #bodyGroups = new Map();
     static {
-        defaultMaterial$2.addUser(Source2ModelInstance);
+        defaultMaterial$1.addUser(Source2ModelInstance);
     }
     constructor(sourceModel, isDynamic) {
         super();
@@ -31577,12 +31682,12 @@ class Source2ModelInstance extends Entity {
                     for (const geometry of model) {
                         let mesh;
                         if (this.#skeleton) {
-                            mesh = new SkeletalMesh({ geometry: geometry, material: defaultMaterial$2, skeleton: this.#skeleton });
+                            mesh = new SkeletalMesh({ geometry: geometry, material: defaultMaterial$1, skeleton: this.#skeleton });
                             mesh.name = bodyPartName;
                             mesh.bonesPerVertex = 4;
                         }
                         else {
-                            mesh = new Mesh({ geometry: geometry, material: defaultMaterial$2 });
+                            mesh = new Mesh({ geometry: geometry, material: defaultMaterial$1 });
                         }
                         if (geometry.hasAttribute('aVertexTangent')) {
                             mesh.setDefine('USE_VERTEX_TANGENT');
@@ -32051,12 +32156,9 @@ class Source2Model {
 }
 
 var _a$3;
-const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelLoader {
     static #loadPromisesPerRepo = new Map2;
-    static {
-        defaultMaterial$1.addUser(_a$3);
-    }
+    static defaultMaterial = new MeshBasicMaterial({ user: this });
     load(repository, path) {
         // Cleanup filename
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
@@ -32461,7 +32563,7 @@ class Source2ModelLoader {
                 else {
                     console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
                 }
-                const material = defaultMaterial$1;
+                const material = _a$3.defaultMaterial;
                 const staticMesh = new Mesh({ geometry: geometry, material: material });
                 group.addChild(staticMesh);
                 const materialPath = drawCall.getValueAsResource('m_material');
@@ -45361,7 +45463,6 @@ class Source1MaterialManager {
 }
 
 var _a$1;
-const defaultMaterial = new MeshBasicMaterial();
 class Source1ModelInstance extends Entity {
     isSource1ModelInstance = true;
     #poseParameters = new Map();
@@ -45392,9 +45493,7 @@ class Source1ModelInstance extends Entity {
     frameframe = { bones: {} };
     static #animSpeed = 1.0;
     hasHitBoxes = true;
-    static {
-        defaultMaterial.addUser(_a$1);
-    }
+    static defaultMaterial = new MeshBasicMaterial({ user: this });
     constructor(params) {
         super(params);
         this.sourceModel = params.sourceModel;
@@ -45807,10 +45906,10 @@ class Source1ModelInstance extends Entity {
                         const geometry = modelMesh.geometry;
                         let mesh;
                         if (this.#skeleton) {
-                            mesh = new SkeletalMesh({ geometry: geometry.clone(), material: defaultMaterial, skeleton: this.#skeleton });
+                            mesh = new SkeletalMesh({ geometry: geometry.clone(), material: _a$1.defaultMaterial, skeleton: this.#skeleton });
                         }
                         else {
-                            mesh = new Mesh({ geometry: geometry, material: defaultMaterial });
+                            mesh = new Mesh({ geometry: geometry, material: _a$1.defaultMaterial });
                         }
                         mesh.name = geometry.properties.getString('name') ?? '';
                         mesh.properties.setObject('sourceModelMesh', modelMesh.mesh);
@@ -53069,10 +53168,11 @@ class Source1TextureManagerClass {
     fallbackRepository = '';
     constructor() {
         Graphics$1.ready.then(() => {
-            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), }));
+            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), user: Source1TextureManagerClass, }));
             this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
                 color: new Color(0.5, 0.75, 1),
                 needCubeMap: true, //new Color(0.5, 0.75, 1), undefined, undefined, true
+                user: Source1TextureManagerClass,
             }));
             this.#defaultTexture.addUser(this);
             this.#defaultTextureCube.addUser(this);
@@ -53530,8 +53630,8 @@ function getDefaultTexture() {
                 usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
             },
             color: new Color(1, 1, 1),
+            user: Source1Material,
         });
-        defaultTexture.addUser(Source1Material);
     }
     return defaultTexture;
 }
@@ -53577,20 +53677,20 @@ class Source1Material extends Material {
     useSrgb = true;
     constructor(repository, path, vmt, params = {}) {
         super(params);
-        this.uniforms['uBlendTintColorOverBase'] = 0;
-        this.uniforms['uDetailBlendFactor'] = 0;
+        this.setUniformValue('uBlendTintColorOverBase', 0);
+        this.setUniformValue('uDetailBlendFactor', 0);
         //this.uniforms['uPhongExponent'] = 0;
         //this.uniforms['uPhongBoost'] = 0;
-        this.uniforms['phongUniforms'] = {
+        this.setUniformValue('phongUniforms', {
             phongExponent: 0,
             phongBoost: 0,
             phongExponentFactor: 0,
-        };
-        this.uniforms['sheenUniforms'] = {
+        });
+        this.setUniformValue('sheenUniforms', {
             g_vPackedConst6: vec4.create(),
             g_vPackedConst7: vec4.create(),
             g_cCloakColorTint: vec3.create(),
-        };
+        });
         this.vmt = vmt;
         this.repository = repository;
         this.path = path;
@@ -53700,10 +53800,10 @@ class Source1Material extends Material {
         }
         const envmaptint = variables.get('$envmaptint');
         if (envmaptint) {
-            this.uniforms['uCubeMapTint'] = envmaptint;
+            this.setUniformValue('uCubeMapTint', envmaptint);
         }
         else {
-            this.uniforms['uCubeMapTint'] = vec3.fromValues(1.0, 1.0, 1.0);
+            this.setUniformValue('uCubeMapTint', vec3.fromValues(1.0, 1.0, 1.0));
         }
         if (variables.get('$normalmapalphaenvmapmask') == 1) {
             this.setDefine('USE_NORMAL_ALPHA_AS_ENVMAP_MASK');
@@ -53711,12 +53811,12 @@ class Source1Material extends Material {
         if (variables.get('$no_draw')) {
             this.setDefine('NO_DRAW');
         }
-        this.uniforms['uTextureTransform'] = IDENTITY_MAT4$3;
+        this.setUniformValue('uTextureTransform', IDENTITY_MAT4$3);
         if (vmt['$basetexturetransform']) {
             const textureTransform = GetTextureTransform(vmt['$basetexturetransform']);
             if (textureTransform) {
                 this.variables.set('$basetexturetransform', textureTransform);
-                this.uniforms['uTextureTransform'] = textureTransform;
+                this.setUniformValue('uTextureTransform', textureTransform);
             }
         }
         if (vmt['$nocull'] == 1) {
@@ -53730,10 +53830,10 @@ class Source1Material extends Material {
             const phongExponentTexture = vmt['$phongexponenttexture'];
             this.setTexture('phongExponentTexture', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
             if (phongExponentTexture) {
-                this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
+                this.setUniformValue('uPhongExponentFactor', variables.get('$phongexponentfactor'));
             }
-            this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-            this.uniforms['uPhongBoost'] = variables.get('$phongboost');
+            this.setUniformValue('uPhongExponent', variables.get('$phongexponent'));
+            this.setUniformValue('uPhongBoost', variables.get('$phongboost'));
             if (vmt['$basemapalphaphongmask'] == 1) {
                 this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
             }
@@ -53759,10 +53859,10 @@ class Source1Material extends Material {
             }
             const selfIllumTint = variables.get('$selfillumtint');
             if (selfIllumTint) {
-                this.uniforms['uSelfIllumTint'] = selfIllumTint;
+                this.setUniformValue('uSelfIllumTint', selfIllumTint);
             }
             else {
-                this.uniforms['uSelfIllumTint'] = vec3.fromValues(1.0, 1.0, 1.0);
+                this.setUniformValue('uSelfIllumTint', vec3.fromValues(1.0, 1.0, 1.0));
             }
             const selfIllumMask = variables.get('$selfillummask');
             this.setTexture('uSelfIllumMaskTexture', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
@@ -53777,7 +53877,7 @@ class Source1Material extends Material {
                 constScaleBiasExp[0] = 1.0 - constScaleBiasExp[1]; // Scale
                 constScaleBiasExp[2] = flExp; // Exp
                 constScaleBiasExp[3] = flMax; // Brightness
-                this.uniforms['uSelfIllumScaleBiasExpBrightness'] = constScaleBiasExp;
+                this.setUniformValue('uSelfIllumScaleBiasExpBrightness', constScaleBiasExp);
             }
             /*
                         $selfillum
@@ -53818,10 +53918,10 @@ class Source1Material extends Material {
         return animated?.getFrame(frame) ?? null;
     }
     #initUniforms() {
-        this.uniforms['uDetailTextureTransform'] = this.#detailTextureTransform;
+        this.setUniformValue('uDetailTextureTransform', this.#detailTextureTransform);
     }
     getTexCoords(flCreationTime, flCurTime, flAgeScale, nSequence) {
-        const texture = this.uniforms['colorMap'];
+        const texture = this.getUniformValue('colorMap');
         if (!texture) {
             return null;
         }
@@ -53871,7 +53971,7 @@ class Source1Material extends Material {
         return null;
     }
     getFrameSpan(sequence) {
-        const texture = this.uniforms['colorMap'];
+        const texture = this.getUniformValue('colorMap');
         if (!texture) {
             return;
         }
@@ -53950,7 +54050,7 @@ class Source1Material extends Material {
         }
         const baseTextureTransform = variables.get('$basetexturetransform');
         if (baseTextureTransform) {
-            this.uniforms['uTextureTransform'] = baseTextureTransform;
+            this.setUniformValue('uTextureTransform', baseTextureTransform);
             this.setDefine('USE_TEXTURE_TRANSFORM');
         }
         //TODO: remove this
@@ -53963,7 +54063,7 @@ class Source1Material extends Material {
         if (variables.get('$selfillum') == 1) {
             const selfIllumTint = variables.get('$selfillumtint');
             if (selfIllumTint) {
-                this.uniforms['uSelfIllumTint'] = selfIllumTint;
+                this.setUniformValue('uSelfIllumTint', selfIllumTint);
             }
             const selfIllumMask = variables.get('$selfillummask');
             if (selfIllumMask) {
@@ -53996,7 +54096,7 @@ class Source1Material extends Material {
                 }
             }
             this.setDefine('DETAIL_BLEND_MODE', variables.get('$detailblendmode') ?? 0);
-            this.uniforms['uDetailBlendFactor'] = variables.get('$detailblendfactor') ?? 0;
+            this.setUniformValue('uDetailBlendFactor', variables.get('$detailblendfactor') ?? 0);
         }
     }
     afterProcessProxies(proxyParams = {} /*TODO: improve type*/) {
@@ -54070,7 +54170,7 @@ class Source1Material extends Material {
             refractionIndex: 0.1,
             albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
             textures: new Map([
-                [0, this.uniforms.colorMap],
+                [0, this.getUniformValue('colorMap')],
             ]),
             flatShading: false,
         };
@@ -54224,7 +54324,7 @@ class CharacterMaterial extends Source1Material {
         //"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
         const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
-            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+            this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0));
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         else {
@@ -54232,7 +54332,7 @@ class CharacterMaterial extends Source1Material {
         }
         const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
-            this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+            this.setUniformValue('mask2Texture', this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0));
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
         }
         else {
@@ -54243,17 +54343,17 @@ class CharacterMaterial extends Source1Material {
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
         float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-        this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
-        this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
+        this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0)); //TODOv3
+        this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
         const btbba = this.variables.get('$blendtintbybasealpha');
         if (btbba && btbba == 1) {
             this.setDefine('BLEND_TINT_BY_BASE_ALPHA');
-            this.uniforms['uBlendTintColorOverBase'] = this.variables.get('$blendtintcoloroverbase') ?? 0;
+            this.setUniformValue('uBlendTintColorOverBase', this.variables.get('$blendtintcoloroverbase') ?? 0);
         }
         else {
             this.removeDefine('BLEND_TINT_BY_BASE_ALPHA');
         }
-        this.uniforms['g_cCloakColorTint'] = vec3.create();
+        this.setUniformValue('g_cCloakColorTint', vec3.create());
         this.variables.set('$SheenMaskScaleX', 1.0);
         this.variables.set('$SheenMaskScaleY', 1.0);
         this.variables.set('$SheenMaskOffsetX', 0.0);
@@ -54265,44 +54365,44 @@ class CharacterMaterial extends Source1Material {
         const parameters = this.vmt;
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
-            this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+            this.setUniformValue('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame));
             this.setDefine('USE_SHEEN_MASK_MAP'); //TODOv3: set this automaticaly
             const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
             const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-            this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-            this.uniforms['sheenUniforms']['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['sheenUniforms']['g_vPackedConst7'] = g_vPackedConst7;
+            this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+            this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
         }
         if (parameters['$sheenmap']) {
-            this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
+            this.setUniformValue('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true));
             this.setDefine('USE_SHEEN_MAP'); //TODOv3: set this automaticaly
         }
         if (proxyParams['SheenTintColor']) {
-            this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
-            this.uniforms['sheenUniforms']['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+            this.setUniformValue('g_cCloakColorTint', proxyParams['SheenTintColor']);
+            this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', proxyParams['SheenTintColor']);
         }
         else {
             const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
-                this.uniforms['g_cCloakColorTint'] = sheenmaptint;
-                this.uniforms['sheenUniforms']['g_cCloakColorTint'] = sheenmaptint;
+                this.setUniformValue('g_cCloakColorTint', sheenmaptint);
+                this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', sheenmaptint);
             }
         }
         const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
-            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
+            this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0));
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
-            this.uniforms['mask2Texture'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
+            this.setUniformValue('mask2Texture', this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0));
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
         }
         //uniform vec4 g_vPackedConst6;
         //uniform vec4 g_vPackedConst7;
         //TODOv3: only do this if a variable is changed
-        this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.#diffuseModulation);
+        this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.#diffuseModulation));
     }
     clone() {
         return new CharacterMaterial(this.repository, this.path, this.vmt, this.parameters);
@@ -54324,18 +54424,18 @@ class CustomWeaponMaterial extends Source1Material {
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
         float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-        this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
-        this.uniforms['g_PreviewPhongBoosts'] = vec4.fromValues(1, 1, 1, 1);
-        this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
+        this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0)); //TODOv3
+        this.setUniformValue('g_PreviewPhongBoosts', vec4.fromValues(1, 1, 1, 1));
+        this.setUniformValue('g_DiffuseModulation', this.diffuseModulation);
         const btbba = this.variables.get('$blendtintbybasealpha');
         if (btbba && btbba == 1) {
             this.setDefine('BLEND_TINT_BY_BASE_ALPHA');
-            this.uniforms['uBlendTintColorOverBase'] = this.variables.get('$blendtintcoloroverbase') ?? 0;
+            this.setUniformValue('uBlendTintColorOverBase', this.variables.get('$blendtintcoloroverbase') ?? 0);
         }
         else {
             this.removeDefine('BLEND_TINT_BY_BASE_ALPHA');
         }
-        this.uniforms['g_cCloakColorTint'] = vec3.create();
+        this.setUniformValue('g_cCloakColorTint', vec3.create());
         this.variables.set('$SheenMaskScaleX', 1.0);
         this.variables.set('$SheenMaskScaleY', 1.0);
         this.variables.set('$SheenMaskOffsetX', 0.0);
@@ -54347,52 +54447,52 @@ class CustomWeaponMaterial extends Source1Material {
         const parameters = this.vmt;
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
-            this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+            this.setUniformValue('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame));
             this.setDefine('USE_SHEEN_MASK_MAP'); //TODOv3: set this automaticaly
             const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
             const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-            this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-            this.uniforms['sheenUniforms']['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['sheenUniforms']['g_vPackedConst7'] = g_vPackedConst7;
+            this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+            this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
         }
         if (parameters['$sheenmap']) {
-            this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
+            this.setUniformValue('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true));
             this.setDefine('USE_SHEEN_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$maskstexture']) {
-            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+            this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0));
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$pattern']) {
-            this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
+            this.setUniformValue('patternMap', this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0));
             this.setDefine('USE_PATTERN_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$aotexture']) {
-            this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, parameters['$aotexture'], 0);
+            this.setUniformValue('aoMap', this.getTexture(TextureRole.Ao, this.repository, parameters['$aotexture'], 0));
             this.setDefine('USE_AO_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$weartexture']) {
-            this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, parameters['$weartexture'], 0);
+            this.setUniformValue('scratchesMap', this.getTexture(TextureRole.Scratches, this.repository, parameters['$weartexture'], 0));
             this.setDefine('USE_SCRATCHES_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$grungetexture']) {
-            this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, parameters['$grungetexture'], 0);
+            this.setUniformValue('grungeMap', this.getTexture(TextureRole.Grunge, this.repository, parameters['$grungetexture'], 0));
             this.setDefine('USE_GRUNGE_MAP'); //TODOv3: set this automaticaly
         }
         const expTexture = parameters['$exptexture'];
         if (expTexture) {
-            this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
+            this.setUniformValue('exponentMap', this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0));
             this.setDefine('USE_EXPONENT_MAP'); //TODOv3: set this automaticaly
         }
         const surfaceTexture = parameters['$surfacetexture'];
         if (surfaceTexture) {
-            this.uniforms['surfaceMap'] = this.getTexture(TextureRole.Surface, this.repository, surfaceTexture, 0);
+            this.setUniformValue('surfaceMap', this.getTexture(TextureRole.Surface, this.repository, surfaceTexture, 0));
             this.setDefine('USE_SURFACE_MAP'); //TODOv3: set this automaticaly
         }
         const posTexture = parameters['$postexture'];
         if (posTexture) {
-            this.uniforms['posMap'] = this.getTexture(TextureRole.Pos, this.repository, posTexture, 0);
+            this.setUniformValue('posMap', this.getTexture(TextureRole.Pos, this.repository, posTexture, 0));
             this.setDefine('USE_POS_MAP'); //TODOv3: set this automaticaly
         }
         /*
@@ -54434,27 +54534,27 @@ class CustomWeaponMaterial extends Source1Material {
                         pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
                     }	*/
         if (proxyParams['SheenTintColor']) {
-            this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
-            this.uniforms['sheenUniforms']['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+            this.setUniformValue('g_cCloakColorTint', proxyParams['SheenTintColor']);
+            this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', proxyParams['SheenTintColor']);
         }
         else {
             const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
-                this.uniforms['g_cCloakColorTint'] = sheenmaptint;
-                this.uniforms['sheenUniforms']['g_cCloakColorTint'] = sheenmaptint;
+                this.setUniformValue('g_cCloakColorTint', sheenmaptint);
+                this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', sheenmaptint);
             }
         }
         const wearProgress = proxyParams['WearProgress'] ?? 0;
         if (wearProgress !== undefined) {
-            this.uniforms['uWearProgress'] = wearProgress;
+            this.setUniformValue('uWearProgress', wearProgress);
         }
         else {
-            this.uniforms['uWearProgress'] = DEFAULT_WEAR_PROGRESS;
+            this.setUniformValue('uWearProgress', DEFAULT_WEAR_PROGRESS);
         }
         //uniform vec4 g_vPackedConst6;
         //uniform vec4 g_vPackedConst7;
         //TODOv3: only do this if a variable is changed
-        this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
+        this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.diffuseModulation));
     }
     set style(style) {
         this.setDefine('PAINT_STYLE', style);
@@ -54463,7 +54563,7 @@ class CustomWeaponMaterial extends Source1Material {
         const color = readColor(value);
         if (color) {
             //vec3.scale(color, color, 1 / 255.0);
-            this.uniforms[uniformName] = color;
+            this.setUniformValue(uniformName, color);
         }
     }
     set color0(color) {
@@ -54500,7 +54600,9 @@ class CustomWeaponMaterial extends Source1Material {
         }
     */
     setPatternScale(scale) {
-        this.uniforms['g_PreviewPhongBoosts'][2] = scale;
+        const v = this.getUniformValue('g_PreviewPhongBoosts');
+        v[2] = scale;
+        this.setUniformValue('g_PreviewPhongBoosts', v);
     }
     /*
 
@@ -54548,9 +54650,9 @@ class EyeRefractMaterial extends Source1Material {
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
         this.setTexture('corneaTexture', getDefaultTexture());
-        this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
-        this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
-        this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
+        this.setUniformValue('uIrisProjectionU', this.#irisProjectionU);
+        this.setUniformValue('uIrisProjectionV', this.#irisProjectionV);
+        this.setUniformValue('uEyeOrigin', this.#eyeOrigin);
     }
     init() {
         if (this.#initialized) {
@@ -54614,9 +54716,9 @@ class EyeRefractMaterial extends Source1Material {
                     vec3.scale(this.#irisProjectionV, this.#eyeUp, -scale);
                     this.#irisProjectionU[3] = -vec3.dot(this.#eyeOrigin, this.#irisProjectionU) + 0.5;
                     this.#irisProjectionV[3] = -vec3.dot(this.#eyeOrigin, this.#irisProjectionV) + 0.5;
-                    this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
-                    this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
-                    this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
+                    this.setUniformValue('uIrisProjectionU', this.#irisProjectionU);
+                    this.setUniformValue('uIrisProjectionV', this.#irisProjectionV);
+                    this.setUniformValue('uEyeOrigin', this.#eyeOrigin);
                 }
             }
         }
@@ -54646,7 +54748,7 @@ class LightMappedGenericMaterial extends Source1Material {
             refractionIndex: 0.1,
             albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
             textures: new Map([
-                [0, this.uniforms.colorMap],
+                [0, this.getUniformValue('colorMap')],
             ]),
             flatShading: true,
         };
@@ -55495,13 +55597,13 @@ class SpriteCardMaterial extends Source1Material {
             this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
         }*/
         if (vmt['$addself'] !== undefined) {
-            this.uniforms['uAddSelf'] = Number.parseFloat(vmt['$addself']);
+            this.setUniformValue('uAddSelf', Number.parseFloat(vmt['$addself']));
             this.setDefine('ADD_SELF');
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         const overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
-        this.uniforms['uOverbrightFactor'] = overbrightFactor ?? 1.0;
+        this.setUniformValue('uOverbrightFactor', overbrightFactor ?? 1.0);
         //this.modeRGB = GL_MAX;
         this.modeAlpha = GL_MAX;
     }
@@ -55571,13 +55673,13 @@ class SpriteMaterial extends Source1Material {
             this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
         }*/
         if (vmt['$addself'] !== undefined) {
-            this.uniforms['uAddSelf'] = Number.parseFloat(vmt['$addself']);
+            this.setUniformValue('uAddSelf', Number.parseFloat(vmt['$addself']));
             this.setDefine('ADD_SELF');
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         const overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
-        this.uniforms['uOverbrightFactor'] = overbrightFactor ?? 1.0;
+        this.setUniformValue('uOverbrightFactor', overbrightFactor ?? 1.0);
         //this.modeRGB = GL_MAX;
         this.modeAlpha = GL_MAX;
     }
@@ -55596,8 +55698,8 @@ class UnlitGenericMaterial extends Source1Material {
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
         //this.useSrgb = false;
-        this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
-        this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
+        this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0)); //TODOv3
+        this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
     }
     init() {
         if (this.#initialized) {
@@ -55644,8 +55746,8 @@ class UnlitTwoTextureMaterial extends Source1Material {
             //this.setBlending('additive');
         }
         this.modeAlpha = GL_MAX;
-        this.uniforms['uTextureTransform'] = IDENTITY_MATRIX;
-        this.uniforms['uTexture2Transform'] = IDENTITY_MATRIX;
+        this.setUniformValue('uTextureTransform', IDENTITY_MATRIX);
+        this.setUniformValue('uTexture2Transform', IDENTITY_MATRIX);
         this.setDefine('USE_TEXTURE_TRANSFORM');
         this.setDefine('USE_TEXTURE2_TRANSFORM');
     }
@@ -55660,7 +55762,7 @@ class UnlitTwoTextureMaterial extends Source1Material {
         const parameters = this.vmt;
         const texture2Transform = variables.get('$texture2transform');
         if (texture2Transform) {
-            this.uniforms['uTexture2Transform'] = texture2Transform;
+            this.setUniformValue('uTexture2Transform', texture2Transform);
         }
         {
             if (parameters['$texture2']) {
@@ -55686,8 +55788,8 @@ class VertexLitGenericMaterial extends Source1Material {
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
         float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-        this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
-        this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
+        this.setUniformValue('g_ShaderControls', vec4.fromValues(1, 0, 1, 0)); //TODOv3
+        this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
         const btbba = this.variables.get('$blendtintbybasealpha');
         if (btbba == 1) {
             this.alphaTest = false;
@@ -55695,7 +55797,7 @@ class VertexLitGenericMaterial extends Source1Material {
             if (this.variables.get('$selfillum') != 1) {
                 this.removeDefine('USE_SELF_ILLUM');
                 this.setDefine('BLEND_TINT_BY_BASE_ALPHA');
-                this.uniforms['uBlendTintColorOverBase'] = this.variables.get('$blendtintcoloroverbase') ?? 0;
+                this.setUniformValue('uBlendTintColorOverBase', this.variables.get('$blendtintcoloroverbase') ?? 0);
                 // TODO : properly set these variables
                 this.variables.set('$translucent', 0);
                 this.removeDefine('ALPHA_TEST');
@@ -55710,7 +55812,7 @@ class VertexLitGenericMaterial extends Source1Material {
         else {
             this.removeDefine('BLEND_TINT_BY_BASE_ALPHA');
         }
-        this.uniforms['g_cCloakColorTint'] = vec3.create();
+        this.setUniformValue('g_cCloakColorTint', vec3.create());
         this.variables.set('$SheenMaskScaleX', 1.0);
         this.variables.set('$SheenMaskScaleY', 1.0);
         this.variables.set('$SheenMaskOffsetX', 0.0);
@@ -55725,29 +55827,29 @@ class VertexLitGenericMaterial extends Source1Material {
             this.setTexture('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame), 'USE_SHEEN_MASK_MAP');
             const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
             const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-            this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-            this.uniforms['sheenUniforms']['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['sheenUniforms']['g_vPackedConst7'] = g_vPackedConst7;
+            this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+            this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+            this.setSubUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
         }
         if (parameters['$sheenmap']) {
             this.setTexture('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true), 'USE_SHEEN_MAP');
         }
         if (proxyParams['SheenTintColor']) {
-            this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
-            this.uniforms['sheenUniforms']['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
+            this.setUniformValue('g_cCloakColorTint', proxyParams['SheenTintColor']);
+            this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', proxyParams['SheenTintColor']);
         }
         else {
             const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
-                this.uniforms['g_cCloakColorTint'] = sheenmaptint;
-                this.uniforms['sheenUniforms']['g_cCloakColorTint'] = sheenmaptint;
+                this.setUniformValue('g_cCloakColorTint', sheenmaptint);
+                this.setSubUniformValue('sheenUniforms.g_cCloakColorTint', sheenmaptint);
             }
         }
         //uniform vec4 g_vPackedConst6;
         //uniform vec4 g_vPackedConst7;
         //TODOv3: only do this if a variable is changed
-        this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.#diffuseModulation);
+        this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.#diffuseModulation));
     }
     clone() {
         return new VertexLitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
@@ -55764,9 +55866,9 @@ class VertexLitGenericMaterial extends Source1Material {
             refractionIndex: 0.1,
             albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
             textures: new Map([
-                [0, this.uniforms.colorMap],
-                [1, this.uniforms.normalTexture],
-                [3, this.uniforms.cubeTexture],
+                [0, this.getUniformValue('colorMap')],
+                [1, this.getUniformValue('normalTexture')],
+                [3, this.getUniformValue('cubeTexture')],
             ]),
             flatShading: false,
         };
@@ -55809,7 +55911,7 @@ class WeaponDecalMaterial extends Source1Material {
         const variables = this.variables;
         this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
         this.setDefine('DESATBASETINT', variables.get('$desatbasetint') ? '1' : '0');
-        this.uniforms['uTintLerpBase'] = variables.get('$desatbasetint');
+        this.setUniformValue('uTintLerpBase', variables.get('$desatbasetint'));
         this.polygonOffset = true;
         this.polygonOffsetFactor = -5;
         this.polygonOffsetUnits = -5;
@@ -55821,60 +55923,60 @@ class WeaponDecalMaterial extends Source1Material {
         this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0); //TODO: set this on variable change
         const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
-            this.uniforms['colorMap'] = this.getTexture(TextureRole.Color, this.repository, baseTexture, 0);
+            this.setUniformValue('colorMap', this.getTexture(TextureRole.Color, this.repository, baseTexture, 0));
             this.setDefine('USE_COLOR_MAP'); //TODOv3: set this automaticaly
         }
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
-            this.uniforms['sheenMaskTexture'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+            this.setUniformValue('sheenMaskTexture', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame));
             this.setDefine('USE_SHEEN_MASK_MAP'); //TODOv3: set this automaticaly
             const g_vPackedConst6 = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
             const g_vPackedConst7 = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
-            this.uniforms['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['g_vPackedConst7'] = g_vPackedConst7;
-            this.uniforms['sheenUniforms']['g_vPackedConst6'] = g_vPackedConst6;
-            this.uniforms['sheenUniforms']['g_vPackedConst7'] = g_vPackedConst7;
+            this.setUniformValue('g_vPackedConst6', g_vPackedConst6);
+            this.setUniformValue('g_vPackedConst7', g_vPackedConst7);
+            this.setUniformValue('sheenUniforms.g_vPackedConst6', g_vPackedConst6);
+            this.setUniformValue('sheenUniforms.g_vPackedConst7', g_vPackedConst7);
         }
         if (parameters['$sheenmap']) {
-            this.uniforms['sheenTexture'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
+            this.setUniformValue('sheenTexture', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true));
             this.setDefine('USE_SHEEN_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$maskstexture']) {
-            this.uniforms['mask1Texture'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
+            this.setUniformValue('mask1Texture', this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0));
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
         if (parameters['$pattern']) {
-            this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
+            this.setUniformValue('patternMap', this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0));
             this.setDefine('USE_PATTERN_MAP'); //TODOv3: set this automaticaly
         }
         const aoTexture = variables.get('$aotexture');
         if (aoTexture) {
-            this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, aoTexture, 0);
+            this.setUniformValue('aoMap', this.getTexture(TextureRole.Ao, this.repository, aoTexture, 0));
             this.setDefine('USE_AO_MAP'); //TODOv3: set this automaticaly
         }
         const wearTexture = variables.get('$weartexture');
         if (wearTexture) {
-            this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, wearTexture, 0);
+            this.setUniformValue('scratchesMap', this.getTexture(TextureRole.Scratches, this.repository, wearTexture, 0));
             this.setDefine('USE_SCRATCHES_MAP'); //TODOv3: set this automaticaly
         }
         const grungeTexture = variables.get('$grungetexture');
         if (grungeTexture) {
-            this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, grungeTexture, 0);
+            this.setUniformValue('grungeMap', this.getTexture(TextureRole.Grunge, this.repository, grungeTexture, 0));
             this.setDefine('USE_GRUNGE_MAP'); //TODOv3: set this automaticaly
         }
         const expTexture = parameters['$exptexture'];
         if (expTexture) {
-            this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
+            this.setUniformValue('exponentMap', this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0));
             this.setDefine('USE_EXPONENT_MAP'); //TODOv3: set this automaticaly
         }
         const holoMaskTexture = variables.get('$holomask');
         if (holoMaskTexture) {
-            this.uniforms['holoMaskMap'] = this.getTexture(TextureRole.Holo, this.repository, holoMaskTexture, 0);
+            this.setUniformValue('holoMaskMap', this.getTexture(TextureRole.Holo, this.repository, holoMaskTexture, 0));
             this.setDefine('USE_HOLO_MASK_MAP'); //TODOv3: set this automaticaly
         }
         const holoSpectrumTexture = variables.get('$holospectrum');
         if (holoSpectrumTexture) {
-            this.uniforms['holoSpectrumMap'] = this.getTexture(TextureRole.HoloSpectrum, this.repository, holoSpectrumTexture, 0);
+            this.setUniformValue('holoSpectrumMap', this.getTexture(TextureRole.HoloSpectrum, this.repository, holoSpectrumTexture, 0));
             this.setDefine('USE_HOLO_SPECTRUM_MAP'); //TODOv3: set this automaticaly
         }
         /*
@@ -55915,13 +56017,13 @@ class WeaponDecalMaterial extends Source1Material {
                     {
                         pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
                     }	*/
-        this.uniforms['uColorTint'] = variables.get('$colortint');
-        this.uniforms['uColorTin2'] = variables.get('$colortint2');
-        this.uniforms['uColorTint3'] = variables.get('$colortin3');
-        this.uniforms['uColorTint4'] = variables.get('$colortint4');
+        this.setUniformValue('uColorTint', variables.get('$colortint'));
+        this.setUniformValue('uColorTin2', variables.get('$colortint2'));
+        this.setUniformValue('uColorTint3', variables.get('$colortin3'));
+        this.setUniformValue('uColorTint4', variables.get('$colortint4'));
         // Todo: optimize
-        this.uniforms['uPhongParams'] = vec4.fromValues(4.0, 1.0, 1.0, 2.0); //TODO: set actual values
-        this.uniforms['uPhongFresnel'] = vec4.fromValues(1.0, 1.0, 1.0, 0.0); //TODO: set actual values
+        this.setUniformValue('uPhongParams', vec4.fromValues(4.0, 1.0, 1.0, 2.0)); //TODO: set actual values
+        this.setUniformValue('uPhongFresnel', vec4.fromValues(1.0, 1.0, 1.0, 0.0)); //TODO: set actual values
         const wearProgress = proxyParams['WearProgress'] ?? 0.0; //TODO
         variables.get('$wearremapmid');
         const flX = wearProgress;
@@ -55936,7 +56038,7 @@ class WeaponDecalMaterial extends Source1Material {
         //lerp wear width along wear progress
         //float flLerpedWearWidth = Lerp( variables[info.m_nWearProgress]->GetFloatValue(), variables[info.m_nWearWidthMin]->GetFloatValue(), variables[info.m_nWearWidthMax]->GetFloatValue() );
         const flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
-        this.uniforms['uWearParams'] = vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength'));
+        this.setUniformValue('uWearParams', vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength')));
     }
     set style(style) {
         this.setDefine('PAINT_STYLE', style);
@@ -55945,7 +56047,7 @@ class WeaponDecalMaterial extends Source1Material {
         const color = readColor(value);
         if (color) {
             //vec3.scale(color, color, 1 / 255.0);
-            this.uniforms[uniformName] = color;
+            this.setUniformValue(uniformName, color);
         }
     }
     set color0(color) {
@@ -55962,10 +56064,10 @@ class WeaponDecalMaterial extends Source1Material {
     }
     setPatternTexCoordTransform(scale, translation, rotation) {
         const transformMatrix = this.#getTexCoordTransform(scale, translation, rotation);
-        this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
+        this.setUniformValue('g_patternTexCoordTransform[0]', new Float32Array([
             transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
             transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
-        ]);
+        ]));
     }
     #getTexCoordTransform(scale, translation, rotation) {
         const transformMatrix = mat4.create();
@@ -63352,7 +63454,7 @@ addWgslInclude('source1_declare_sheen', source1_declare_sheen);
 
 var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_camera_position\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_selfillum\n\n#include declare_lights\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n@group(0) @binding(x) var<uniform> uEyeOrigin: vec3f;\n@group(0) @binding(x) var<uniform> uIrisProjectionU: vec4f;\n@group(0) @binding(x) var<uniform> uIrisProjectionV: vec4f;\n\n@group(0) @binding(x) var corneaTexture: texture_2d<f32>;\n@group(0) @binding(x) var corneaSampler: sampler;\n\n/*#include varying_standard**/\n/*\nstruct EyeRefractOut {\n\tstdOut: VertexOut,\n\n\t//vWorldPosition_ProjPosZ: vec4f,\n\tvTangentViewVector: vec3f,\n\tvWorldNormal: vec3f,\n\tvWorldTangent: vec3f,\n\tvWorldBinormal: vec3f,\n}\n*/\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\n\t@location(y) vWorldPosition_ProjPosZ: vec3f,\n\t@location(y) vTangentViewVector: vec3f,\n\t@location(y) vWorldNormal: vec3f,\n\t@location(y) vWorldTangent: vec3f,\n\t@location(y) vWorldBinormal: vec3f,\n}\n\n\n#define g_flEyeballRadius\t5.51\n#define g_flParallaxStrength 0.25\n\nfn Vec3WorldToTangent( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\tvar vTangentVector: vec3f;\n\tvTangentVector.x = dot( iWorldVector.xyz, iWorldTangent.xyz );\n\tvTangentVector.y = dot( iWorldVector.xyz, iWorldBinormal.xyz );\n\tvTangentVector.z = dot( iWorldVector.xyz, iWorldNormal.xyz );\n\treturn vTangentVector; // Return without normalizing\n}\nfn Vec3WorldToTangentNormalized( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\treturn normalize( Vec3WorldToTangent( iWorldVector, iWorldNormal, iWorldTangent, iWorldBinormal ) );\n}\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output: VertexOut =  VertexOut();\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\n/********************************************/\n\toutput.vWorldPosition_ProjPosZ = vertexPositionWorldSpace.xyz;\n\n\tlet cViewProj: mat4x4f = matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix;\n\tlet vProjPos: vec4f = cViewProj * vertexPositionWorldSpace;//mul( vec4( vertexPositionWorldSpace, 1.0 ), cViewProj );\n\t//o.projPos = vProjPos;\n\t//vProjPos.z = dot(vertexPositionWorldSpace, cViewProjZ );\n\t//o.vWorldPosition_ProjPosZ.w = vProjPos.z;\n\n\tlet vEyeSocketUpVector: vec3f = normalize( -uIrisProjectionV.xyz );\n\tlet vEyeSocketLeftVector: vec3f = normalize( -uIrisProjectionU.xyz );\n\n\t//vEyeSocketUpVector = -vec3(0.0, 1.0, 0.0);\n\t//vEyeSocketLeftVector = -vec3(0.0, 0.0, 1.0);\n\n\toutput.vWorldNormal = normalize( vertexPositionWorldSpace.xyz - uEyeOrigin.xyz );\n\toutput.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );\n\toutput.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );\n\n\tlet vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);\n\toutput.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);\n\t//vTangentViewVector.xyz = vWorldViewVector;\n\t//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;\n\t//vTangentViewVector.xyz = vWorldBinormal;\n\n/********************************************/\n\n\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tfragColor = vec4f(1.0);\n\tfragColor = vec4f(abs(fragInput.vTangentViewVector), 1.0);\n\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t//#include compute_fragment_color_map_mod1\n\n\t#ifdef USE_COLOR_MAP\n\t\tvar texelColor: vec4f = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\t\tdiffuseColor *= texelColor;\n\t#endif\n\t#include compute_fragment_alpha_test\n\t\t//texelColor.a = 1.0;\n\t\t//fragColor = texelColor;\n#ifndef IS_TRANSLUCENT\n\tfragColor.a = 1.0;\n#endif\n\t//fragColor = vec4(vTextureCoord/2.0, 0.0, 1.0);\n\n\n\n/********************************************/\n\t//let vWorldPosition: vec3f = fragInput.vWorldPosition_ProjPosZ.xyz;\n\tvar vCorneaUv: vec2f; // Note: Cornea texture is a cropped version of the iris texture\n\tvCorneaUv.x = dot( uIrisProjectionU, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tvCorneaUv.y = dot( uIrisProjectionV, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tlet vSphereUv: vec2f = ( vCorneaUv.xy * 0.5 ) + 0.25;\n\n\tlet corneaColor: vec4f = textureSample(corneaTexture, corneaSampler, vCorneaUv);\n\tlet fIrisOffset: f32 = corneaColor.b;\n\n\tvar vParallaxVector: vec2f = ( fragInput.vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - fragInput.vTangentViewVector.z ); // Note: 0.25 is a magic number\n\tvParallaxVector = ( fragInput.vTangentViewVector.xy* g_flParallaxStrength) / ( 1.0 - fragInput.vTangentViewVector.z );\n\tvParallaxVector.x = -vParallaxVector.x; //Need to flip x...not sure why.\n\tvParallaxVector = vec2(0.0);\n\n\tlet vIrisUv: vec2f = vSphereUv.xy - vParallaxVector.xy;\n#ifdef USE_COLOR_MAP\n\tvar cIrisColor: vec4f = textureSample(colorTexture, colorSampler, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );\n#else\n\tvar cIrisColor: vec4f = vec4(1.0);\n#endif\n\t//cIrisColor = pow(cIrisColor, vec4(1./2.2));\n\tcIrisColor.a = 1.0;\n\tfragColor = cIrisColor;\n/********************************************/\n\t#include compute_fragment_standard\n\n#ifdef SKIP_PROJECTION\n#ifdef USE_COLOR_MAP\n\tfragColor = texture2D(colorTexture, mod(vTextureCoord.xy, 1.0));\n#else\n\tvec4 fragColor = vec4(1.0);\n#endif\n\tfragColor.a = 1.;\n#endif\n\t#include compute_fragment_render_mode\n\n\n\n\n\t#include output_fragment\n}\n";
 
-var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\tfragColor = vec4(albedo, fragColor.a);\n\n\n\t#include output_fragment\n}\n";
+var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
 
 var source1_sprite = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = color;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= fragInput.vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * fragInput.vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * fragInput.vColor.rgb * fragInput.vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
@@ -65871,6 +65973,7 @@ class Source2TextureManager {
         Graphics$1.ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture({
                 color: new Color(0.5, 0.75, 1),
+                user: Source2TextureManager,
             });
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
@@ -67390,19 +67493,19 @@ class Source2Material extends Material {
         if (this.getIntParam('F_SELF_ILLUM') == 1) {
             this.setDefine('F_SELF_ILLUM');
         }
-        this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset) ?? this.#detailTexCoordOffset;
-        this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale;
-        this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
-        this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
-        this.uniforms['detailTextures'] = {
-            g_vDetailTexCoordScale: this.uniforms['g_vDetailTexCoordScale'],
-            g_vDetailTexCoordOffset: this.uniforms['g_vDetailTexCoordOffset'],
-            g_vDetail1ColorTint: this.uniforms['g_vDetail1ColorTint'],
+        this.setUniformValue('g_vDetailTexCoordOffset', this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset) ?? this.#detailTexCoordOffset);
+        this.setUniformValue('g_vDetailTexCoordScale', this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale);
+        this.setUniformValue('g_vDetail1ColorTint', vec4.fromValues(1, 1, 1, 1));
+        this.setUniformValue('g_vDetail2ColorTint', vec4.fromValues(1, 1, 1, 1));
+        this.setUniformValue('detailTextures', {
+            g_vDetailTexCoordScale: this.getUniformValue('g_vDetailTexCoordScale'),
+            g_vDetailTexCoordOffset: this.getUniformValue('g_vDetailTexCoordOffset'),
+            g_vDetail1ColorTint: this.getUniformValue('g_vDetail1ColorTint'),
             g_vDetail2TexCoordScale: this.#detailTexCoordOffset, // TODO: use actual value
             g_vDetail2TexCoordOffset: this.#detailTexCoordScale, // TODO: use actual value
-            g_vDetail2ColorTint: this.uniforms['g_vDetail2ColorTint'],
-        };
-        this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
+            g_vDetail2ColorTint: this.getUniformValue('g_vDetail2ColorTint'),
+        });
+        this.setUniformValue('g_vColorTint', vec4.fromValues(1, 1, 1, 0));
         this.initFloatUniforms();
         this.initVectorUniforms();
         //this.initTextureUniforms();
@@ -67439,7 +67542,7 @@ class Source2Material extends Material {
             //console.error(uniformName);
             const paramValue = this.#getParam(paramName);
             if (paramValue) {
-                this.setUniform(uniformName, paramValue);
+                this.setUniformValue(uniformName, paramValue);
             }
         }
     }
@@ -67517,10 +67620,10 @@ class Source2Material extends Material {
         const value = this.getDynamicParam(uniformName);
         if (value) {
             if (uniformName.startsWith('g_fl')) {
-                this.uniforms[uniformName] = value[0];
+                this.setUniformValue(uniformName, value[0]);
             }
             else {
-                this.uniforms[uniformName] = value;
+                this.setUniformValue(uniformName, value);
             }
         }
     }
@@ -67530,9 +67633,11 @@ class Source2Material extends Material {
     }
     /* eslint-enable @typescript-eslint/no-unused-vars */
     /* eslint-enable @typescript-eslint/no-empty-function */
-    setUniform(uniformName, uniformValue) {
-        this.uniforms[uniformName] = uniformValue;
+    /*
+    setUniformValue(uniformName: string, uniformValue: UniformValue): void {
+        this.#uniforms[uniformName] = uniformValue;
     }
+    */
     initFloatUniforms() {
         if (this.#source2File) {
             const floats = this.#source2File.getMaterialResourceData('m_floatParams');
@@ -67541,7 +67646,7 @@ class Source2Material extends Material {
                     const name = fl.getValueAsString('m_name');
                     const value = fl.getValueAsNumber('m_flValue');
                     if (name !== null && value !== null) {
-                        this.setUniform(name, value);
+                        this.setUniformValue(name, value);
                     }
                 }
             }
@@ -67555,13 +67660,13 @@ class Source2Material extends Material {
                     const name = vector.getValueAsString('m_name');
                     const value = vector.getValueAsVec4('m_value', vec4.create());
                     if (name !== null && value !== null) {
-                        this.setUniform(name, value);
+                        this.setUniformValue(name, value);
                     }
                 }
             }
         }
     }
-    getUniforms() {
+    getSource2Uniforms() {
         return [UNIFORMS];
     }
     getTextureUniforms() {
@@ -67736,7 +67841,7 @@ class Source2Material extends Material {
             refractionIndex: 0.1,
             albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
             textures: new Map([
-                [0, this.uniforms.colorMap],
+                [0, this.getUniformValue('colorMap')],
             ]),
             flatShading: false,
         };
@@ -67925,8 +68030,8 @@ class Source2CsgoWeapon extends Source2Material {
             //}
         }
     }
-    getUniforms() {
-        const uniforms = super.getUniforms();
+    getSource2Uniforms() {
+        const uniforms = super.getSource2Uniforms();
         const m = new Map();
         for (let i = 0; i < STICKER_COUNT; i++) {
             m.set(`g_flSticker${i}Rotation`, `g_flSticker${i}Rotation`);
@@ -68587,8 +68692,8 @@ class Source2SpriteCard extends Source2Material {
         //this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         this.setTransparency(GL_SRC_ALPHA, GL_ONE);
         this.renderFace(RenderFace.Both);
-        this.setUniform('uFinalTextureScale', vec2.fromValues(1, 1));
-        this.setUniform('uColorScale', vec3.fromValues(1, 1, 1));
+        this.setUniformValue('uFinalTextureScale', vec2.fromValues(1, 1));
+        this.setUniformValue('uColorScale', vec3.fromValues(1, 1, 1));
         //this.setTransparency( GL_SRC_ALPHA, GL_ONE);
         this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     }
@@ -75161,7 +75266,7 @@ class RenderTrails extends RenderBase {
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
         vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
-        this.material.setUniform('uFinalTextureScale', tempVec2);
+        this.material.setUniformValue('uFinalTextureScale', tempVec2);
         //const uvs = geometry.attributes.get('aTextureCoord')!._array;
         //const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
         //let index = 0;
@@ -77891,8 +77996,7 @@ class RemGenerator {
             }
             this.#pingPongRenderTarget = createRenderTarget(params);
             ({ sizeLods: this.#sizeLods, lodPlanes: this.#lodPlanes, sigmas: this.#sigmas } = createPlanes(this.#lodMax));
-            this.#blurMaterial = getBlurShader(this.#lodMax, width, height);
-            this.#blurMaterial.addUser(this);
+            this.#blurMaterial = this.#getBlurShader(this.#lodMax, width, height);
         }
         return cubeUVRenderTarget;
     }
@@ -77976,7 +78080,7 @@ class RemGenerator {
             if (!this.#cubemapMaterial) {
                 this.#cubemapMaterial = getCubemapMaterial();
             }
-            this.#cubemapMaterial.uniforms.flipEnvMap = (texture.isRenderTargetTexture === false) ? -1 : 1;
+            this.#cubemapMaterial.setUniformValue('flipEnvMap', (texture.isRenderTargetTexture === false) ? -1 : 1);
             material = this.#cubemapMaterial;
         }
         else {
@@ -77988,8 +78092,9 @@ class RemGenerator {
         const mesh = new Mesh({ geometry: this.#lodPlanes[0], material: material });
         const scene = new Scene();
         scene.addChild(mesh);
-        const uniforms = material.uniforms;
-        uniforms['envMap'] = texture;
+        //const uniforms = material.#uniforms;
+        //uniforms['envMap'] = texture;
+        material.setUniformValue('envMap', texture);
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
         Graphics$1.pushRenderTarget(cubeUVRenderTarget);
@@ -78032,7 +78137,7 @@ class RemGenerator {
         // Number of standard deviations at which to cut off the discrete approximation.
         const STANDARD_DEVIATIONS = 3;
         const blurMesh = new Mesh({ geometry: this.#lodPlanes[lodOut], material: this.#blurMaterial });
-        const blurUniforms = this.#blurMaterial.uniforms;
+        //const blurUniforms = this.#blurMaterial.#uniforms;
         const scene = new Scene();
         scene.addChild(blurMesh);
         const pixels = this.#sizeLods[lodIn] - 1;
@@ -78058,15 +78163,22 @@ class RemGenerator {
         for (let i = 0; i < weights.length; i++) {
             weights[i] = weights[i] / sum;
         }
-        blurUniforms['envMap'] = targetIn.getTexture();
-        blurUniforms['samples'] = samples;
-        blurUniforms['weights[0]'] = weights;
-        blurUniforms['latitudinal'] = direction === 'latitudinal';
+        //blurUniforms['envMap'] = targetIn.getTexture();
+        this.#blurMaterial.setUniformValue('envMap', targetIn.getTexture());
+        //blurUniforms['samples'] = samples;
+        this.#blurMaterial.setUniformValue('samples', samples);
+        //blurUniforms['weights[0]'] = weights;
+        this.#blurMaterial.setUniformValue('weights[0]', weights);
+        //blurUniforms['latitudinal'] = direction === 'latitudinal';
+        this.#blurMaterial.setUniformValue('latitudinal', direction === 'latitudinal');
         if (poleAxis) {
-            blurUniforms['poleAxis'] = poleAxis;
+            //blurUniforms['poleAxis'] = poleAxis;
+            this.#blurMaterial.setUniformValue('poleAxis', poleAxis);
         }
-        blurUniforms['dTheta'] = radiansPerPixel;
-        blurUniforms['mipInt'] = this.#lodMax - lodIn;
+        //blurUniforms['dTheta'] = radiansPerPixel;
+        this.#blurMaterial.setUniformValue('dTheta', radiansPerPixel);
+        //blurUniforms['mipInt'] = this.#lodMax - lodIn;
+        this.#blurMaterial.setUniformValue('mipInt', this.#lodMax - lodIn);
         const outputSize = this.#sizeLods[lodOut];
         const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);
         const y = 4 * (this.#cubeSize - outputSize);
@@ -78075,105 +78187,29 @@ class RemGenerator {
         renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: targetOut.getWidth(), height: targetOut.getHeight() });
         Graphics$1.popRenderTarget();
     }
-}
-function createPlanes(lodMax) {
-    const lodPlanes = [];
-    const sizeLods = [];
-    const sigmas = [];
-    let lod = lodMax;
-    const totalLods = lodMax - LOD_MIN + 1 + EXTRA_LOD_SIGMA.length;
-    for (let i = 0; i < totalLods; i++) {
-        const sizeLod = Math.pow(2, lod);
-        sizeLods.push(sizeLod);
-        let sigma = 1.0 / sizeLod;
-        if (i > lodMax - LOD_MIN) {
-            sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1];
-        }
-        else if (i === 0) {
-            sigma = 0;
-        }
-        sigmas.push(sigma);
-        const texelSize = 1.0 / (sizeLod - 2);
-        const min = -texelSize;
-        const max = 1 + texelSize;
-        const uv1 = [min, min, max, min, max, max, min, min, max, max, min, max];
-        const cubeFaces = 6;
-        const vertices = 6;
-        const positionSize = 3;
-        const uvSize = 2;
-        const faceIndexSize = 1;
-        const indices = [];
-        const position = new Float32Array(positionSize * vertices * cubeFaces);
-        const uv = new Float32Array(uvSize * vertices * cubeFaces);
-        const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);
-        let index = 0;
-        for (let face = 0; face < cubeFaces; face++) {
-            const x = (face % 3) * 2 / 3 - 1;
-            const y = face > 2 ? 0 : -1;
-            const coordinates = [
-                x, y, 0,
-                x + 2 / 3, y, 0,
-                x + 2 / 3, y + 1, 0,
-                x, y, 0,
-                x + 2 / 3, y + 1, 0,
-                x, y + 1, 0
-            ];
-            indices.push(index++);
-            indices.push(index++);
-            indices.push(index++);
-            indices.push(index++);
-            indices.push(index++);
-            indices.push(index++);
-            position.set(coordinates, positionSize * vertices * face);
-            uv.set(uv1, uvSize * vertices * face);
-            const fill = [face, face, face, face, face, face];
-            faceIndex.set(fill, faceIndexSize * vertices * face);
-        }
-        const planes = new BufferGeometry();
-        planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        planes.setAttribute('aVertexPosition', new Float32BufferAttribute(position, positionSize, 'position'));
-        planes.setAttribute('aTextureCoord', new Float32BufferAttribute(uv, uvSize, 'texCoord'));
-        planes.setAttribute('faceIndex', new Float32BufferAttribute(faceIndex, faceIndexSize, 'faceIndex'));
-        planes.count = indices.length;
-        lodPlanes.push(planes);
-        if (lod > LOD_MIN) {
-            lod--;
-        }
-    }
-    return { lodPlanes, sizeLods, sigmas };
-}
-function createRenderTarget(params) {
-    const cubeUVRenderTarget = new RenderTarget(params);
-    const renderTargetTexture = cubeUVRenderTarget.getTexture();
-    renderTargetTexture.mapping = TextureMapping.CubeUvMapping;
-    //cubeUVRenderTarget.texture.mapping = CubeUVReflectionMapping;
-    //cubeUVRenderTarget.getTexture().name = 'PMREM.cubeUv';
-    cubeUVRenderTarget.setScissorTest(true);
-    return cubeUVRenderTarget;
-}
-function getBlurShader(lodMax, width, height) {
-    const weights = new Float32Array(MAX_SAMPLES);
-    const poleAxis = vec3.fromValues(0, 1, 0);
-    const shaderMaterial = new ShaderMaterial({
-        name: 'SphericalGaussianBlur',
-        defines: {
-            'n': `${MAX_SAMPLES}`,
-            'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
-            'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
-            'CUBEUV_MAX_MIP': `${lodMax}.0`,
-        },
-        uniforms: {
-            'envMap': null,
-            'samples': 1,
-            'weights[0]': weights,
-            'latitudinal': false,
-            'dTheta': 0,
-            'mipInt': 0,
-            'poleAxis': poleAxis
-        },
-        glsl: {
-            vertex: getCommonVertexShader(),
-            fragment: /* glsl */ `
+    #getBlurShader(lodMax, width, height) {
+        const weights = new Float32Array(MAX_SAMPLES);
+        const poleAxis = vec3.fromValues(0, 1, 0);
+        const shaderMaterial = new ShaderMaterial({
+            name: 'SphericalGaussianBlur',
+            defines: {
+                'n': `${MAX_SAMPLES}`,
+                'CUBEUV_TEXEL_WIDTH': `${1.0 / width}`,
+                'CUBEUV_TEXEL_HEIGHT': `${1.0 / height}`,
+                'CUBEUV_MAX_MIP': `${lodMax}.0`,
+            },
+            uniforms: {
+                'envMap': null,
+                'samples': 1,
+                'weights[0]': weights,
+                'latitudinal': false,
+                'dTheta': 0,
+                'mipInt': 0,
+                'poleAxis': poleAxis
+            },
+            glsl: {
+                vertex: getCommonVertexShader(),
+                fragment: /* glsl */ `
 
 			precision mediump float;
 			precision mediump int;
@@ -78345,12 +78381,89 @@ function getBlurShader(lodMax, width, height) {
 
 			}
 		`,
-        },
-        //blending: NoBlending,
-        depthTest: false,
-        depthWrite: false
-    });
-    return shaderMaterial;
+            },
+            //blending: NoBlending,
+            depthTest: false,
+            depthWrite: false,
+            user: this,
+        });
+        return shaderMaterial;
+    }
+}
+function createPlanes(lodMax) {
+    const lodPlanes = [];
+    const sizeLods = [];
+    const sigmas = [];
+    let lod = lodMax;
+    const totalLods = lodMax - LOD_MIN + 1 + EXTRA_LOD_SIGMA.length;
+    for (let i = 0; i < totalLods; i++) {
+        const sizeLod = Math.pow(2, lod);
+        sizeLods.push(sizeLod);
+        let sigma = 1.0 / sizeLod;
+        if (i > lodMax - LOD_MIN) {
+            sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1];
+        }
+        else if (i === 0) {
+            sigma = 0;
+        }
+        sigmas.push(sigma);
+        const texelSize = 1.0 / (sizeLod - 2);
+        const min = -texelSize;
+        const max = 1 + texelSize;
+        const uv1 = [min, min, max, min, max, max, min, min, max, max, min, max];
+        const cubeFaces = 6;
+        const vertices = 6;
+        const positionSize = 3;
+        const uvSize = 2;
+        const faceIndexSize = 1;
+        const indices = [];
+        const position = new Float32Array(positionSize * vertices * cubeFaces);
+        const uv = new Float32Array(uvSize * vertices * cubeFaces);
+        const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);
+        let index = 0;
+        for (let face = 0; face < cubeFaces; face++) {
+            const x = (face % 3) * 2 / 3 - 1;
+            const y = face > 2 ? 0 : -1;
+            const coordinates = [
+                x, y, 0,
+                x + 2 / 3, y, 0,
+                x + 2 / 3, y + 1, 0,
+                x, y, 0,
+                x + 2 / 3, y + 1, 0,
+                x, y + 1, 0
+            ];
+            indices.push(index++);
+            indices.push(index++);
+            indices.push(index++);
+            indices.push(index++);
+            indices.push(index++);
+            indices.push(index++);
+            position.set(coordinates, positionSize * vertices * face);
+            uv.set(uv1, uvSize * vertices * face);
+            const fill = [face, face, face, face, face, face];
+            faceIndex.set(fill, faceIndexSize * vertices * face);
+        }
+        const planes = new BufferGeometry();
+        planes.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        planes.setAttribute('aVertexPosition', new Float32BufferAttribute(position, positionSize, 'position'));
+        planes.setAttribute('aTextureCoord', new Float32BufferAttribute(uv, uvSize, 'texCoord'));
+        planes.setAttribute('faceIndex', new Float32BufferAttribute(faceIndex, faceIndexSize, 'faceIndex'));
+        planes.count = indices.length;
+        lodPlanes.push(planes);
+        if (lod > LOD_MIN) {
+            lod--;
+        }
+    }
+    return { lodPlanes, sizeLods, sigmas };
+}
+function createRenderTarget(params) {
+    const cubeUVRenderTarget = new RenderTarget(params);
+    const renderTargetTexture = cubeUVRenderTarget.getTexture();
+    renderTargetTexture.mapping = TextureMapping.CubeUvMapping;
+    //cubeUVRenderTarget.texture.mapping = CubeUVReflectionMapping;
+    //cubeUVRenderTarget.getTexture().name = 'PMREM.cubeUv';
+    cubeUVRenderTarget.setScissorTest(true);
+    return cubeUVRenderTarget;
 }
 function getEquirectMaterial() {
     return new ShaderMaterial({

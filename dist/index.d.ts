@@ -521,7 +521,7 @@ export declare class BufferAttribute {
     getBuffer(): WebGLBuffer | null;
 }
 
-export declare class BufferGeometry {
+export declare class BufferGeometry implements HasUsers {
     #private;
     attributes: Map<string, BufferAttribute>;
     dirty: boolean;
@@ -538,15 +538,16 @@ export declare class BufferGeometry {
     update(glContext: WebGLAnyRenderingContext): void;
     computeVertexNormals(): void;
     clone(): BufferGeometry;
-    addUser(user: any): void;
-    removeUser(user: any): void;
+    addUser(user: ObjectUser): void;
+    removeUser(user: ObjectUser): void;
     hasNoUser(): boolean;
-    hasOnlyUser(user: any): boolean;
+    hasOnlyUser(user: ObjectUser): boolean;
     dispose(): void;
 }
 
 declare type BufferGeometryParameters = {
     count?: number;
+    user?: ObjectUser;
 };
 
 declare enum BufferUsage {
@@ -1320,6 +1321,7 @@ declare class Channel {
              };
 
              export declare class CopyPass extends Pass {
+                 #private;
                  constructor(camera: Camera);
                  render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
              }
@@ -1336,11 +1338,13 @@ declare class Channel {
                  height?: number;
                  color?: Color;
                  needCubeMap?: boolean;
+                 user?: ObjectUser;
              };
 
              declare type CreateFlatTextureParams = CreateTextureParams_2 & {
                  webgpuDescriptor: HarmonyGPUTextureDescriptor;
                  color?: Color;
+                 user?: ObjectUser;
              };
 
              export declare class CreateFromParentParticles extends Operator {
@@ -2183,7 +2187,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): CameraFrustum | PointLightHelper | SpotLightHelper | Grid | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -2767,7 +2771,11 @@ declare class Channel {
                       export declare class GrainPass extends Pass {
                           #private;
                           constructor(camera: Camera);
+                          /**
+                           * @deprecated Use setIntensity instead
+                           */
                           set intensity(intensity: number);
+                          setIntensity(intensity: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
@@ -2997,7 +3005,11 @@ declare class Channel {
 
                       export declare class GridMaterial extends Material {
                           constructor(params?: any);
+                          /**
+                           * @deprecated Use setSpacing instead
+                           */
                           set spacing(spacing: number);
+                          setSpacing(spacing: number): void;
                           getShaderSource(): string;
                       }
 
@@ -3030,13 +3042,20 @@ declare class Channel {
                       }
 
                       export declare interface HasMaterials {
-                          getSkins: () => Promise<Set<string>>;
-                          getMaterialsName: (skin: string) => Promise<[string, Set<string>]>;
+                          getSkins(): Promise<Set<string>>;
+                          getMaterialsName(skin: string): Promise<[string, Set<string>]>;
                           setSkin(skin: string): Promise<void>;
                       }
 
                       export declare interface HasSkeleton {
                           skeleton: Skeleton | null;
+                      }
+
+                      declare interface HasUsers {
+                          addUser(user: ObjectUser): void;
+                          removeUser(user: ObjectUser): void;
+                          hasNoUser(): boolean;
+                          hasOnlyUser(user: ObjectUser): boolean;
                       }
 
                       export declare class HeartbeatScale extends Proxy_2 {
@@ -3759,11 +3778,10 @@ declare class Channel {
 
                       declare type MapEntityValue = any;
 
-                      export declare class Material {
+                      export declare class Material implements HasUsers {
                           #private;
                           id: string;
                           name: string;
-                          uniforms: MaterialUniform;
                           readonly storage: Map<string, StorageBuffer>;
                           readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines: Record<string, any>;
@@ -3848,14 +3866,20 @@ declare class Channel {
                           toJSON(): any;
                           static constructFromJSON(json: JSONObject): Promise<Material>;
                           fromJSON(json: JSONObject): void;
-                          addUser(user: any): void;
-                          removeUser(user: any): void;
+                          addUser(user: ObjectUser): void;
+                          removeUser(user: ObjectUser): void;
                           hasNoUser(): boolean;
+                          hasOnlyUser(user: ObjectUser): boolean;
                           dispose(): void;
                           static getEntityName(): string;
                           get shaderSource(): string;
                           getShaderSource(): string;
                           getWebGPUShader(): string;
+                          getUniforms(): Map<string, UniformBuffer>;
+                          getUniformValue(name: string): UniformValue | Record<string, UniformValue>;
+                          setUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
+                          setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
+                          deleteUniform(name: string): void;
                           getStorage(name: string): StorageBuffer | undefined;
                           setStorage(name: string, value: StorageValueArray | number | StorageBuffer): void;
                           deleteStorage(name: string): void;
@@ -3893,6 +3917,7 @@ declare class Channel {
                           gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines?: Record<string, string>;
                           workgroupSize?: vec3;
+                          user?: ObjectUser;
                           blendingMode?: BlendingMode;
                       };
 
@@ -4304,6 +4329,7 @@ declare class Channel {
                           defines: any;
                           isMesh: boolean;
                           topology: GPUPrimitiveTopology;
+                          commandBuffer?: GPUCommandBuffer;
                           constructor(params: MeshParameters);
                           /**
                            * @deprecated Please use `setMaterial` instead.
@@ -4580,9 +4606,12 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | string[] | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
+                          setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
+                          resetValue(origin: NodeParamOrigin, paramName: string, paramIndex?: number): void;
+                          resetAllValues(origin: NodeParamOrigin): void;
                           setPredecessor(inputId: string, predecessor: Node_2, predecessorOutputId: string): void;
                           getParams(): Map<string, NodeParam>;
                           invalidate(context?: NodeContext): void;
@@ -4755,6 +4784,9 @@ declare class Channel {
                           tangent?: Float32Array;
                           bitangent?: Float32Array;
                       };
+
+                      declare interface ObjectUser {
+                      }
 
                       export declare class ObjExporter {
                           #private;
@@ -5081,8 +5113,16 @@ declare class Channel {
                       export declare class PixelatePass extends Pass {
                           #private;
                           constructor(camera: Camera);
+                          /**
+                           * @deprecated Use setHorizontalTiles instead
+                           */
                           set horizontalTiles(horizontalTiles: number);
+                          setHorizontalTiles(horizontalTiles: number): void;
+                          /**
+                           * @deprecated Use setPixelStyle instead
+                           */
                           set pixelStyle(pixelStyle: number);
+                          setPixelStyle(pixelStyle: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
@@ -6021,7 +6061,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 
@@ -6136,7 +6176,11 @@ declare class Channel {
                       export declare class SaturatePass extends Pass {
                           #private;
                           constructor(camera: Camera);
+                          /**
+                           * @deprecated Use setSaturation instead
+                           */
                           set saturation(saturation: number);
+                          setSaturation(saturation: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
@@ -6755,6 +6799,7 @@ declare class Channel {
                               bones: Record<string, any>;
                           };
                           hasHitBoxes: true;
+                          static defaultMaterial: MeshBasicMaterial;
                           constructor(params?: any);
                           get skeleton(): Skeleton | null;
                           set skeleton(skeleton: Skeleton | null);
@@ -6815,7 +6860,7 @@ declare class Channel {
                               animate: {
                                   i18n: string;
                                   selected: boolean;
-                                  f: () => 1 | 0;
+                                  f: () => 0 | 1;
                               };
                               frame: {
                                   i18n: string;
@@ -7455,7 +7500,7 @@ declare class Channel {
 
                       export declare class Source2CsgoWeapon extends Source2Material {
                           setupUniformsOnce(): void;
-                          getUniforms(): Map<string, string>[];
+                          getSource2Uniforms(): Map<string, string>[];
                           getTextureUniforms(): Map<string, [string, string]>[];
                           get shaderSource(): string;
                       }
@@ -7599,10 +7644,9 @@ declare class Channel {
                           _afterProcessProxies(proxyParams: DynamicParams): void;
                           setDynamicUniform(uniformName: string): void;
                           afterProcessProxies(proxyParams: DynamicParams): void;
-                          setUniform(uniformName: string, uniformValue: UniformValue): void;
                           initFloatUniforms(): void;
                           initVectorUniforms(): void;
-                          getUniforms(): Map<string, string>[];
+                          getSource2Uniforms(): Map<string, string>[];
                           getTextureUniforms(): Map<string, [string, string]>[];
                           initTextureUniforms(): Promise<void>;
                           getIntParam(intName: string): number | null;
@@ -7723,6 +7767,7 @@ declare class Channel {
 
                       export declare class Source2ModelLoader {
                           #private;
+                          static defaultMaterial: MeshBasicMaterial;
                           load(repository: string, path: string): Promise<Source2Model | null>;
                           testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity>;
                       }
@@ -8950,7 +8995,7 @@ declare class Channel {
                           style?: string;
                       };
 
-                      export declare class Texture {
+                      export declare class Texture implements HasUsers {
                           #private;
                           mapping: TextureMapping;
                           image?: HTMLImageElement;
@@ -9004,10 +9049,10 @@ declare class Channel {
                           getHeight(): number;
                           getDatas(): Promise<Float32Array>;
                           is(type: string): boolean;
-                          addUser(user: any): void;
-                          removeUser(user: any): void;
+                          addUser(user: ObjectUser): void;
+                          removeUser(user: ObjectUser): void;
                           hasNoUser(): boolean;
-                          hasOnlyUser(user: any): boolean;
+                          hasOnlyUser(user: ObjectUser): boolean;
                           dispose(): void;
                       }
 
@@ -9384,6 +9429,22 @@ declare class Channel {
                           isTextureSampler(): boolean;
                           getSize(): number;
                       }
+
+                      declare type UniformBuffer = {
+                          value?: UniformValue | Record<string, UniformValue> | null;
+                          buffer?: GPUBuffer | null;
+                          size?: number;
+                          /** Buffer usage. Combination of GPUBufferUsage values. Default to UNIFORM | COPY_DST | STORAGE */
+                          usage?: number;
+                          /** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
+                          raw?: boolean;
+                          /** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */
+                          rawOffset?: number;
+                          /** If raw is true, Size of content to write from `value` to `buffer`.
+                           * Given in elements if `value` is a `TypedArray` and bytes otherwise. Default to `value` size. */
+                          rawSize?: number;
+                          dirty: boolean;
+                      };
 
                       export declare class UniformNoiseProxy extends Proxy_2 {
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
