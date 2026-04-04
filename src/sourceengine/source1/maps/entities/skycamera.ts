@@ -7,11 +7,11 @@ import { MapEntity } from '../mapentity';
 export class SkyCamera extends MapEntity {
 	camera = new Camera();
 
-	setKeyValues(kvElement: KvElement) {
+	override setKeyValues(kvElement: KvElement): void {
 		super.setKeyValues(kvElement);
 		const scale = (kvElement as any/*TODO: fix that*/).scale;
 		this.camera.scale = vec3.fromValues(scale, scale, scale);
-		this.camera.position = this._position;
+		this.camera.setPosition(this._position);
 	}
 }
 MapEntities.registerEntity('sky_camera', SkyCamera);

@@ -1,10 +1,11 @@
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
-import { JSONObject } from 'harmony-types';
 import { CylinderBufferGeometry } from './geometries/cylinderbuffergeometry';
 
 export type CylinderParameters = MeshParameters & {
@@ -37,7 +38,7 @@ export class Cylinder extends Mesh {
 		(this.geometry as CylinderBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Cylinder_1: null,
 			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) { this.#radius = Number(radius); this.#updateGeometry(); } } },

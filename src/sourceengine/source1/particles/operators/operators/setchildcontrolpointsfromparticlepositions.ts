@@ -1,5 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { CDmxAttributeValue} from '../../../export';
+import { CDmxAttributeValue } from '../../../export';
 import { PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
@@ -22,7 +22,7 @@ export class SetChildControlPointsFromParticlePositions extends Source1ParticleO
 		this.addParam('First control point to set', PARAM_TYPE_INT, 0);
 	}
 
-	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
+	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void {
 		switch (name) {
 			case 'Set cp orientation for particles':
 				this.#setCpOrientation = param as boolean;//TODO: convert to boolean
@@ -41,7 +41,7 @@ export class SetChildControlPointsFromParticlePositions extends Source1ParticleO
 		}
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const number = this.getParameter('# of control points to set');
 		const first = this.getParameter('First control point to set');
 		//const v = vec3.clone(particle.position);

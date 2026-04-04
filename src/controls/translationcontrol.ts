@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity } from '../entities/entity';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { stringToVec3 } from '../utils/utils';
@@ -44,7 +45,7 @@ export class TranslationControl extends Entity {
 		}
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			TranslationControl_1: null,
 			speed: { i18n: '#speed', f: () => { const s = prompt('Speed', String(this.#speed)); if (s !== null) { this.#speed = Number(s); } } },

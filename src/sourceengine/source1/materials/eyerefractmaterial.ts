@@ -5,7 +5,7 @@ import { TextureManager } from '../../../textures/texturemanager';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { getDefaultTexture, Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
-const tempVec3 = vec3.create();
+//const tempVec3 = vec3.create();
 
 export class EyeRefractMaterial extends Source1Material {
 	#initialized = false;
@@ -43,8 +43,8 @@ export class EyeRefractMaterial extends Source1Material {
 		}
 	}
 
-	afterProcessProxies() {
-		const variables = this.variables;
+	override afterProcessProxies(): void {
+		//const variables = this.variables;
 		const parameters = this.vmt;
 		if (parameters['$iris']) {
 			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
@@ -70,7 +70,7 @@ export class EyeRefractMaterial extends Source1Material {
 	}
 
 
-	beforeRender(camera: Camera) {
+	beforeRender(camera: Camera): void {
 		const eyeballArray = this.properties.get('eyeballArray');
 		const skeleton = this.properties.get('skeleton') as Skeleton;
 		if (eyeballArray && skeleton) {//TODOv3: do this only once
@@ -80,7 +80,7 @@ export class EyeRefractMaterial extends Source1Material {
 				if (bone) {
 					bone.getWorldPosOffset(eyeBall.org, this.#eyeOrigin);
 					vec3.transformQuat(this.#eyeUp, eyeBall.up, bone.worldQuat);
-					vec3.sub(this.#eyeForward, camera.position, this.#eyeOrigin);
+					vec3.sub(this.#eyeForward, camera.getPosition(), this.#eyeOrigin);
 					vec3.cross(this.#eyeRight, this.#eyeForward, this.#eyeUp);
 					vec3.normalize(this.#eyeRight, this.#eyeRight);
 					vec3.scaleAndAdd(this.#eyeForward, this.#eyeForward, this.#eyeRight, eyeBall.zoffset);
@@ -106,7 +106,7 @@ export class EyeRefractMaterial extends Source1Material {
 		}
 	}
 
-	clone() {
+	override clone(): EyeRefractMaterial {
 		return new EyeRefractMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

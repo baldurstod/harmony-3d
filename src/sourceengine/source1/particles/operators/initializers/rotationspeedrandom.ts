@@ -23,7 +23,7 @@ export class RotationSpeedRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('randomly_flip_direction', '1', bool, m_bRandomlyFlipDirection)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const m_flDegrees = this.getParameter('rotation_speed_constant');
 		const m_flDegreesMin = this.getParameter('rotation_speed_random_min');
 		const m_flDegreesMax = this.getParameter('rotation_speed_random_max');

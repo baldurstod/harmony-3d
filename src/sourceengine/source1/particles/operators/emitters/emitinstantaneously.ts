@@ -28,7 +28,7 @@ export class EmitInstantaneously extends Source1ParticleOperator {
 
 	}
 
-	doEmit(elapsedTime: number) {
+	doEmit(elapsedTime: number): void {
 		if (this.#emitted) {
 			return;
 		}
@@ -48,11 +48,11 @@ export class EmitInstantaneously extends Source1ParticleOperator {
 		this.#emitted = true;
 	}
 
-	reset() {
+	reset(): void {
 		this.#emitted = false;
 	}
 
-	finished() {
+	finished(): boolean {
 		return this.#emitted;
 	}
 }

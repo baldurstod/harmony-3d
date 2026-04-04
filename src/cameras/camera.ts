@@ -1,13 +1,14 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import { DEBUG } from '../buildoptions';
-import { Entity, EntityParameters } from '../entities/entity';
-import { Scene } from '../scenes/scene';
-import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
-import { EntityObserver } from '../entities/entityobserver';
-import { registerEntity } from '../entities/entities';
 import { Degree, JSONObject, Radian } from 'harmony-types';
-import { vec3ToJSON } from '../utils/json';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
+import { DEBUG } from '../buildoptions';
+import { registerEntity } from '../entities/entities';
+import { Entity, EntityParameters } from '../entities/entity';
+import { EntityObserver } from '../entities/entityobserver';
+import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { ortho } from '../math/ortho';
+import { Scene } from '../scenes/scene';
+import { vec3ToJSON } from '../utils/json';
 
 export enum CameraProjection {
 	Perspective = 0,
@@ -400,7 +401,7 @@ export class Camera extends Entity {
 		}
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			camera1: null,
 			cameraPerspective: { i18n: '#perspective_camera', selected: this.isPerspective, f: () => this.setProjection(CameraProjection.Perspective) },

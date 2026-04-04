@@ -1,3 +1,4 @@
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
@@ -34,7 +35,7 @@ export class Cone extends Mesh {
 		(this.geometry as ConeBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Cone_1: null,
 			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) { this.#radius = Number(radius); this.#updateGeometry(); } } },

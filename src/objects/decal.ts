@@ -1,5 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
@@ -54,7 +55,7 @@ export class Decal extends Mesh {
 		}
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			StaticDecal_1: null,
 			size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) { this.setSize(stringToVec3(v)); } } },

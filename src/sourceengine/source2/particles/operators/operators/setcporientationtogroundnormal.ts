@@ -62,7 +62,7 @@ export class SetCPOrientationToGroundNormal extends Operator {
 		const outputCP = this.system.getControlPoint(this.#outputCP);
 		if (outputCP) {
 			quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
-			outputCP.setQuaternion(q);
+			outputCP.setOrientation(q);
 		}
 	}
 }

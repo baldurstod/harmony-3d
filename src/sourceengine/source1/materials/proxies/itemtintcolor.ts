@@ -9,11 +9,11 @@ import { ProxyManager } from './proxymanager';
 export class ItemTintColor extends Proxy {
 	#resultvar = '';
 
-	init() {
+	override init(): void {
 		this.#resultvar = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		variables.set(this.#resultvar, proxyParams.ItemTintColor);
 	}
 }

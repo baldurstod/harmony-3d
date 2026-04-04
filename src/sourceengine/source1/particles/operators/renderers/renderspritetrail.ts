@@ -41,7 +41,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			this.renderSpriteTrail(particleList[i], elapsedTime, material);
 		}
 	}*/
-	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void {
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
@@ -53,7 +53,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 
 		let index = 0;
 		for (const particle of particleList) {
-			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
+			const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
 			const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 			if (coords && uvs) {
 				//coords = coords.m_TextureCoordData[0];
@@ -83,7 +83,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		}
 	}
 
-	initRenderer() {
+	initRenderer():void {
 		const geometry = new BufferGeometry();
 		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
 		const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
@@ -117,7 +117,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.mesh.setUniform('uParticles', this.#texture!);
+		this.mesh.setUniform('uParticles', this.#texture);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
@@ -126,12 +126,12 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.setOrientationType(0);
 	}
 
-	createParticlesArray(maxParticles: number) {
+	createParticlesArray(maxParticles: number): void {
 		this.#imgData = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
-	#createParticlesTexture() {
+	#createParticlesTexture(): void {
 		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
 			webgpuDescriptor: {
 				size: {
@@ -150,7 +150,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#updateParticlesTexture(maxParticles: number, pixels: Float32Array) {
+	#updateParticlesTexture(maxParticles: number, pixels: Float32Array): void {
 		const gl = Graphics.glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
@@ -162,12 +162,13 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: Source1Particle[], maxParticles: number, elapsedTime: number) {
+	#setupParticlesTexture(particleList: Source1Particle[], maxParticles: number, elapsedTime: number): void {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
-		const rate = this.getParameter('animation rate') ?? 30;
-		const fit = this.getParameter('animation_fit_lifetime') ?? 0;
+		// TODO: use rate and fit parameters
+		//const rate = this.getParameter('animation rate') ?? 30;
+		//const fit = this.getParameter('animation_fit_lifetime') ?? 0;
 		/*
 				if (fit) {
 					rate = material.sequenceLength / particle.timeToLive;
@@ -179,7 +180,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		const a = this.#imgData!;
 		let index = 0;
 
-		const len = 0;
+		//const len = 0;
 		for (const particle of particleList) {
 			const flAge = particle.currentTime;
 			const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
@@ -285,7 +286,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 	*/
 
-	dispose() {
+	dispose(): void {
 		this.mesh?.dispose();
 		this.#texture?.removeUser(this);
 	}

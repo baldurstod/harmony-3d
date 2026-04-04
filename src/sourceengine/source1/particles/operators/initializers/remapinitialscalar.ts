@@ -24,7 +24,7 @@ export class RemapInitialScalar extends Source1ParticleOperator {
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const emitterStartTime = this.getParameter('emitter lifetime start time (seconds)');
 		const emitterEndTime = this.getParameter('emitter lifetime end time (seconds)');
 
@@ -53,7 +53,7 @@ export class RemapInitialScalar extends Source1ParticleOperator {
 
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

@@ -2,12 +2,11 @@ import { vec2 } from 'gl-matrix';
 
 import { Graphics } from '../../../../../graphics/graphics2';
 import { RenderFace } from '../../../../../materials/constants';
-import { DEG_TO_RAD } from '../../../../../math/constants';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
-import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
+import { GL_NEAREST, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
 import { MAX_PARTICLES_IN_A_SYSTEM, TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -37,24 +36,25 @@ export class RenderRope extends Source1ParticleOperator {
 		}
 	}
 		*/
-	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]/*, elapsedTime: number*/): void {
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
-		const subdivCount = this.getParameter('subdivision_count');
+		// TODO: use param subdivision_count
+		//const subdivCount = this.getParameter('subdivision_count');
 		const m_flTexelSizeInUnits = this.getParameter('texel_size');
 		const m_flTextureScrollRate = this.getParameter('texture_scroll_rate');
 		const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2)[1] * m_flTexelSizeInUnits);
 		const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
 
 		const geometry = this.geometry;
-		const vertices = [];
-		const indices = [];
-		const id = [];
+		//const vertices = [];
+		//const indices = [];
+		//const id = [];
 
 		const segments = [];
 
-		let particle;
+		//let particle;
 		let ropeLength = 0.0;
 		let previousSegment = null;
 		for (let i = 0, l = particleList.length; i < l; i++) {
@@ -77,7 +77,7 @@ export class RenderRope extends Source1ParticleOperator {
 		//this._initBuffers();
 	}
 
-	initRenderer() {
+	initRenderer(): void {
 		this.geometry = new BeamBufferGeometry();
 		this.mesh = new Mesh({ geometry: this.geometry, material: this.particleSystem.material });
 		this.mesh.serializable = false;
@@ -87,7 +87,7 @@ export class RenderRope extends Source1ParticleOperator {
 		if (Graphics.isWebGLAny) {
 			this.#createParticlesTexture();
 		}
-		this.mesh.setUniform('uParticles', this.#texture!);
+		this.mesh.setUniform('uParticles', this.#texture);
 
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
@@ -113,12 +113,12 @@ export class RenderRope extends Source1ParticleOperator {
 				}*/
 	}
 
-	#createParticlesArray() {
+	#createParticlesArray(): void {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
-	#createParticlesTexture() {
+	#createParticlesTexture(): void {
 		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
 			webgpuDescriptor: {
 				size: {
@@ -137,52 +137,7 @@ export class RenderRope extends Source1ParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#updateParticlesTexture() {// TODO: create a renderoperator class and put this method in it
-		const gl = Graphics.glContext;
-
-		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
-		if (Graphics.isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
-		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
-		}
-		gl.bindTexture(GL_TEXTURE_2D, null);
-	}
-
-	#setupParticlesTexture(particleList: Source1Particle[]) {
-		const a = this.#imgData!;
-
-		let index = 0;
-		for (const particle of particleList) {//TODOv3
-			/*let pose = bone.boneMat;
-			for (let k = 0; k < 16; ++k) {
-				a[index++] = pose[k];
-			}*/
-			a[index++] = particle.position[0];
-			a[index++] = particle.position[1];
-			a[index++] = particle.position[2];
-			index++;
-			a[index++] = particle.color.r;
-			a[index++] = particle.color.g;
-			a[index++] = particle.color.b;
-			a[index++] = particle.alpha;
-			a[index++] = particle.radius;
-			index++;
-			a[index++] = particle.rotationRoll;
-			a[index++] = particle.rotationYaw * DEG_TO_RAD;
-			index++;
-			index++;
-			index++;
-			index++;
-			index += 16;
-		}
-
-		if (Graphics.isWebGLAny) {
-			this.#updateParticlesTexture();
-		}
-	}
-
-	dispose() {
+	dispose(): void {
 		this.mesh?.dispose();
 		this.#texture?.removeUser(this);
 	}

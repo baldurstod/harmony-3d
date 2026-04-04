@@ -5,7 +5,7 @@ export class FlexController {
 	#controllers2: Record<string, number> = {};//TODO: turn into map
 	#controllerIndex = 0;
 
-	getController(name: string, min: number, max: number) {
+	getController(name: string, min: number, max: number): number {
 		if (!this.#controllers[name]) {
 			this.#controllers2[this.#controllerIndex] = 0;
 			this.#controllers[name] = { i: this.#controllerIndex++, min: min, max: max };

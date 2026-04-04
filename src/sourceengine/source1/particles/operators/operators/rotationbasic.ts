@@ -5,7 +5,7 @@ import { Source1ParticleOperator } from '../operator';
 export class RotationBasic extends Source1ParticleOperator {
 	static functionName = 'Rotation Basic';
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
 	}
 }

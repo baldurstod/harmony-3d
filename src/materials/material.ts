@@ -561,7 +561,7 @@ export class Material implements HasUsers {
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		if (this.hasNoUser()) {
 			if (TESTING) {
 				console.info('Material has no more users, deleting', this);

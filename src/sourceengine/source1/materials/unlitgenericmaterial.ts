@@ -30,7 +30,7 @@ export class UnlitGenericMaterial extends Source1Material {
 		}
 	}
 
-	clone() {
+	override clone(): UnlitGenericMaterial {
 		return new UnlitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

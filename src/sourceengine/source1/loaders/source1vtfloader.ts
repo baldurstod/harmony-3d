@@ -47,7 +47,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 		return vtf;
 	}
 
-	#parseHeader(reader: BinaryReader, vtf: Source1Vtf) {
+	#parseHeader(reader: BinaryReader, vtf: Source1Vtf): void {
 		reader.seek(4); //skip first 4 char TODO: check == 'VTF\0' ?
 
 		vtf.setVerionMaj(reader.getUint32());
@@ -78,15 +78,15 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseResEntries(reader: BinaryReader, vtf: Source1Vtf) {
-		const startOffset = reader.tell();
+	#parseResEntries(reader: BinaryReader, vtf: Source1Vtf): void {
+		//const startOffset = reader.tell();
 
-		for (let resIndex = 0; resIndex < vtf.resEntries.length; ++resIndex) {
-			this.#parseResEntry(reader, vtf, vtf.resEntries[resIndex]!);
+		for (const resEntry of vtf.resEntries) {
+			this.#parseResEntry(reader, vtf, resEntry);
 		}
 	}
 
-	#parseResEntry(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
+	#parseResEntry(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry): void {
 		switch (entry.type) {
 			case 1: // Low-res image data
 				//TODO
@@ -107,7 +107,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseImageData(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
+	#parseImageData(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry): void {
 		reader.seek(entry.resData);
 		let mipmapWidth = vtf.width * Math.pow(0.5, vtf.mipmapCount - 1);
 		let mipmapHeight = vtf.height * Math.pow(0.5, vtf.mipmapCount - 1);
@@ -120,18 +120,18 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseSheet(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
+	#parseSheet(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry): void {
 		reader.seek(entry.resData);
 		const sheet = new SpriteSheet();
 		vtf.sheet = sheet;
 
-		const length = reader.getUint32();// TODO: use length ?
+		/*const length = */reader.getUint32();// TODO: use length ?
 		const nVersion = reader.getUint32();
 		const nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
 
 		let nNumSequences = reader.getUint32();
 		//sheet.sequences = [];
-		let valuesCount = 16;
+		//let valuesCount = 16;
 		/*
 		if (sheet.format == 0) {//TODOv3 : where comes sheet.format ?
 			valuesCount = 4;
@@ -145,12 +145,12 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 			//group.m_pSamples = [];
 			//group.m_pSamples2 = [];
 			//sheet.sequences.push(group);
-			const nSequenceNumber = reader.getUint32();
+			/*const nSequenceNumber = */reader.getUint32();//TODO: use nSequenceNumber
 			group.clamp = reader.getUint32() != 0;
 			const frameCount = reader.getUint32();
 
-			const bSingleFrameSequence = (frameCount == 1);
-			const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
+			//const bSingleFrameSequence = (frameCount == 1);
+			//const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
 
 			//let m_pSample = [];
 			//sheet.m_pSamples[nSequenceNumber] = m_pSample;
@@ -233,40 +233,40 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 					SEQUENCE_SAMPLE_COUNT,
 					nIdx,
 					/*TODO* /false/*!group.clamp*//*,
-							&flIdxA, &flIdxB, &flInterp * /);
-		const sA = samples[result.pValueA];
-		const sB = samples[result.pValueB];
-		const oseq = group.frames[nIdx];
-		if (!sA || !sB) {
-			continue;
-		}
+&flIdxA, &flIdxB, &flInterp * /);
+const sA = samples[result.pValueA];
+const sB = samples[result.pValueB];
+const oseq = group.frames[nIdx];
+if (!sA || !sB) {
+continue;
+}
 
-		//oseq.m_fBlendFactor = result.pInterpolationValue;
-		/*
-		for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-			const src0 = sA.m_TextureCoordData[nImage];
-			const src1 = sB.m_TextureCoordData[nImage];
-			if (!src0 || !src1) {
-				continue;
-			}
+//oseq.m_fBlendFactor = result.pInterpolationValue;
+/*
+for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
+const src0 = sA.m_TextureCoordData[nImage];
+const src1 = sB.m_TextureCoordData[nImage];
+if (!src0 || !src1) {
+continue;
+}
 
-			const o = oseq.m_TextureCoordData[nImage];
-			o.m_fLeft_U0 = src0.m_fLeft_U0;
-			o.m_fTop_V0 = src0.m_fTop_V0;
-			o.m_fRight_U0 = src0.m_fRight_U0;
-			o.m_fBottom_V0 = src0.m_fBottom_V0;
-			o.m_fLeft_U1 = src1.m_fLeft_U0;
-			o.m_fTop_V1 = src1.m_fTop_V0;
-			o.m_fRight_U1 = src1.m_fRight_U0;
-			o.m_fBottom_V1 = src1.m_fBottom_V0;
+const o = oseq.m_TextureCoordData[nImage];
+o.m_fLeft_U0 = src0.m_fLeft_U0;
+o.m_fTop_V0 = src0.m_fTop_V0;
+o.m_fRight_U0 = src0.m_fRight_U0;
+o.m_fBottom_V0 = src0.m_fBottom_V0;
+o.m_fLeft_U1 = src1.m_fLeft_U0;
+o.m_fTop_V1 = src1.m_fTop_V0;
+o.m_fRight_U1 = src1.m_fRight_U0;
+o.m_fBottom_V1 = src1.m_fBottom_V0;
+}
+* /
+}
+*/
 		}
-		* /
 	}
-	*/
-		}
-	}
 
-	#parseMipMap(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry, mipmaplvl: number, mipmapWidth: number, mipmapHeight: number) {
+	#parseMipMap(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry, mipmaplvl: number, mipmapWidth: number, mipmapHeight: number): void {
 		//TODO: frame face, zlice
 		let startingByte = reader.tell();
 
@@ -357,7 +357,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 	}
 }
 
-function str2abRGBA16F(str: string) {
+function str2abRGBA16F(str: string): Float32Array {
 	const len = str.length / 2;
 	const buf = new ArrayBuffer(str.length * 2);
 	const bufView = new Float32Array(buf);
@@ -369,7 +369,7 @@ function str2abRGBA16F(str: string) {
 	return bufView;
 }
 
-function float16(byte1: number, byte2: number) {
+function float16(byte1: number, byte2: number): number {
 	const b = new Uint8Array([byte1, byte2]);
 
 	const sign = b[1]! >> 7;
@@ -386,11 +386,11 @@ function float16(byte1: number, byte2: number) {
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / TWO_POW_10));
 }
 
-function str2ab(reader: BinaryReader, start: number, length: number) {
+function str2ab(reader: BinaryReader, start: number, length: number): Uint8Array {
 	return new Uint8Array(reader.buffer.slice(start, start + length));
 }
 
-function str2abBGR(str: string) {
+function str2abBGR(str: string): Uint8Array {
 	// assume str.length is divisible by 3
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
@@ -402,7 +402,7 @@ function str2abBGR(str: string) {
 	return bufView;
 }
 
-function str2abBGRA(str: string) {
+function str2abBGRA(str: string): Uint8Array {
 	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
@@ -415,6 +415,7 @@ function str2abBGRA(str: string) {
 	return bufView;
 }
 
+/*
 function str2abARGB(str: string) {
 	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
@@ -427,6 +428,7 @@ function str2abARGB(str: string) {
 	}
 	return bufView;
 }
+*/
 /*
 function str2abABGR(reader, start, length) {
 // assume str.length is divisible by 4
@@ -442,7 +444,7 @@ function str2abABGR(reader, start, length) {
 }*/
 
 function str2abABGR(reader: BinaryReader, start: number, length: number): Uint8Array<ArrayBuffer> {
-	const arr = new Uint8Array(reader.buffer.slice(start, start + length));
+	const arr = new Uint8Array<ArrayBuffer>(reader.buffer.slice(start, start + length) as ArrayBuffer);
 	for (let i = 0, l = arr.length; i < l; i += 4) {
 		let temp = arr[i]!;
 		arr[i] = arr[i + 3]!;
@@ -452,5 +454,5 @@ function str2abABGR(reader: BinaryReader, start: number, length: number): Uint8A
 		arr[i + 1] = arr[i + 2]!;
 		arr[i + 2] = temp;
 	}
-	return arr as Uint8Array<ArrayBuffer>;
+	return arr;
 }

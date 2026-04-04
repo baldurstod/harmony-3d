@@ -9,14 +9,14 @@ const RESULT_VAR = '$basetexturetransform';
 
 // TODO: deprecate ?  afaik was only used for csgo
 export class WeaponLabelText extends Proxy {
-	#displayDigit: number = 0;
+	#displayDigit = 0;
 
-	init() {
+	override init(): void {
 		this.#displayDigit = this.datas['displaydigit'] ?? 0;
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
-		const text = proxyParams.WeaponLabelText || '';
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
+		const text = (proxyParams.WeaponLabelText as string) ?? '';
 		const car = text.charCodeAt(this.#displayDigit);
 		const mat = mat4.create();//TODOv3 optimize
 		// 96 ASCII characters starting from 0x20 (space)

@@ -6,9 +6,9 @@ import { Proxy } from './proxy';
 export class ProxyManager {
 	static #proxyList: Record<string, typeof Proxy> = {};//TODO: turn into map
 
-	static getProxy(proxyName: string) {
+	static getProxy(proxyName: string): Proxy | null {
 		if (!proxyName) {
-			return;
+			return null;
 		}
 		proxyName = proxyName.toLowerCase();
 		const proxy = this.#proxyList[proxyName];
@@ -18,7 +18,7 @@ export class ProxyManager {
 		return new proxy();
 	}
 
-	static registerProxy(proxyName: string, proxyClass: typeof Proxy) {
+	static registerProxy(proxyName: string, proxyClass: typeof Proxy): void {
 		if (!proxyClass) { return; }
 		const name = proxyName.toLowerCase();
 

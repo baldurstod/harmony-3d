@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
@@ -63,7 +64,7 @@ export class Sphere extends Mesh {
 		(this.getGeometry() as SphereBufferGeometry).updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Sphere_1: null,
 			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) { this.radius = Number(radius); this.updateGeometry(); } } },

@@ -206,7 +206,7 @@ export class BufferGeometry implements HasUsers {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
-	dispose() {
+	dispose(): void {
 		if (this.hasNoUser()) {
 			if (TESTING) {
 				console.info('BufferGeometry has no more users, deleting', this);

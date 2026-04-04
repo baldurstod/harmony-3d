@@ -16,7 +16,7 @@ export class EmitContinuously extends Source1ParticleOperator {
 
 	}
 
-	doEmit(elapsedTime: number) {
+	doEmit(elapsedTime: number): void {
 		const emission_start_time = this.getParameter('emission_start_time') || 0;
 		let emission_rate = this.getParameter('emission_rate') || 100;
 		const emission_duration = this.getParameter('emission_duration') || 0;
@@ -44,7 +44,7 @@ export class EmitContinuously extends Source1ParticleOperator {
 		}
 	}
 
-	finished() {
+	finished(): boolean {
 		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
 		const emission_duration = this.getParameter('emission_duration') ?? 0;
 		const currentTime = this.particleSystem.currentTime;

@@ -6,7 +6,7 @@ import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
 
-const gravity_const = 0.5;
+//const gravity_const = 0.5;
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
 const tempVec3_3 = vec3.create();
@@ -21,10 +21,11 @@ export class MovementBasic extends Source1ParticleOperator {
 		this.addParam('max constraint passes', PARAM_TYPE_INT, 3);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const drag = this.getParameter('drag');
 		const gravity = this.getParameter('gravity');
-		const maxConstraintPasses = this.getParameter('max constraint passes');//TODO
+		//TODO: use param max constraint passes
+		//const maxConstraintPasses = this.getParameter('max constraint passes');//TODO
 
 		//ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
 		//fltx4 adj_dt = ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));

@@ -66,7 +66,7 @@ export class SpriteCardMaterial extends Source1Material {
 
 	}
 
-	clone() {
+	override clone(): SpriteCardMaterial {
 		return new SpriteCardMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

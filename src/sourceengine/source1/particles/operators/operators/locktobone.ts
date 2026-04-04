@@ -17,7 +17,7 @@ export class LockToBone extends Source1ParticleOperator {
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
 		if (controlPoint) {
 			// TODO : Actually we should get the model parenting the control point

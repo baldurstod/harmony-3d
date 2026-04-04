@@ -12,8 +12,7 @@ export class BackGround {
 		return { clearColor: false };
 	}
 
-	dispose() {
-	}
+	dispose(): void { }
 
 	is(s: string): boolean {
 		return s == 'BackGround';

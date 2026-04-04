@@ -1,7 +1,8 @@
 import { quat, vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
+import { registerEntity } from '../entities/entities';
 import { Light } from './light';
 import { SpotLightShadow } from './spotlightshadow';
-import { registerEntity } from '../entities/entities';
 
 const DEFAULT_ANGLE = Math.PI / 4.0;
 const Z_VECTOR = vec3.fromValues(0, 0, 1);
@@ -61,7 +62,7 @@ export class SpotLight extends Light {
 		return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat));
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			angle: { i18n: '#angle', f: () => { const angle = prompt('Angle', String(this.angle)); if (angle !== null) { this.angle = Number(angle); } } },
 			inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) { this.innerAngle = Number(innerAngle); } } },

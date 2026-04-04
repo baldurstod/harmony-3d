@@ -8,13 +8,13 @@ export class AnimatedTextureProxy extends Proxy {
 	#animatedtextureframenumvar = '';
 	#animatedtextureframerate = 1;
 
-	init() {
+	override init(): void {
 		this.#animatedtexturevar = this.datas['animatedtexturevar'];
 		this.#animatedtextureframenumvar = this.datas['animatedtextureframenumvar'];
 		this.#animatedtextureframerate = this.datas['animatedtextureframerate'];
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
 		//TODO: use #animatedtexturevar
 		variables.set(this.#animatedtextureframenumvar, time * this.#animatedtextureframerate);
 	}

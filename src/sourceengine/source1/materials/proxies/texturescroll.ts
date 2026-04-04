@@ -5,7 +5,7 @@ import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
-function toNumber(string: string) {
+function toNumber(string: string): number | undefined {
 	const num = Number(string);
 	if (!Number.isNaN(num)) {
 		return num;
@@ -18,15 +18,15 @@ export class TextureScroll extends Proxy {
 	#textureScrollAngle = 0;
 	#textureScale = 1;
 
-	init(variables: Map<string, Source1MaterialVariables>) {
-		this.#textureScrollVar = (this.datas['texturescrollvar'] ?? '').toLowerCase();
+	override init(variables: Map<string, Source1MaterialVariables>): void {
+		this.#textureScrollVar = (this.datas['texturescrollvar'] as string ?? '').toLowerCase();
 		this.#textureScrollRate = toNumber(this.datas['texturescrollrate']) ?? 1;
 		this.#textureScrollAngle = toNumber(String(DEG_TO_RAD * (this.datas['texturescrollangle']))) ?? 0;
 		this.#textureScale = toNumber(this.datas['texturescale']) ?? 1;
 		variables.set(this.#textureScrollVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
 		const rate = this.#textureScrollRate;
 		const angle = this.#textureScrollAngle;
 		const scale = this.#textureScale;

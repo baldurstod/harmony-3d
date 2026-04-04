@@ -5,7 +5,7 @@ import { Source1ParticleOperator } from '../operator';
 export class LifespanDecay extends Source1ParticleOperator {
 	static functionName = 'Lifespan Decay';
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		if (particle.timeToLive < particle.currentTime) {
 			particle.die();
 		}

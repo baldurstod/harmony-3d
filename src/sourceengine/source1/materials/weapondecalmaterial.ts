@@ -4,12 +4,11 @@ import { lerp } from '../../../math/functions';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, Source1Material, TextureRole, VmtParameters, readColor } from './source1material';
 
-const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
-
-const DEFAULT_BASE_TEXTURE = 'models/weapons/customization/stickers/default/sticker_default';
-const DEFAULT_AO_TEXTURE = 'models/weapons/customization/stickers/default/ao_default';
-const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_paper';
-const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
+//const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
+//const DEFAULT_BASE_TEXTURE = 'models/weapons/customization/stickers/default/sticker_default';
+//const DEFAULT_AO_TEXTURE = 'models/weapons/customization/stickers/default/ao_default';
+//const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_paper';
+//const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
 
 //TODO: deprecate
 export class WeaponDecalMaterial extends Source1Material {
@@ -35,7 +34,7 @@ export class WeaponDecalMaterial extends Source1Material {
 
 	}
 
-	afterProcessProxies(proxyParams: DynamicParams) {
+	override afterProcessProxies(proxyParams: DynamicParams): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 		this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0);//TODO: set this on variable change
@@ -157,7 +156,8 @@ export class WeaponDecalMaterial extends Source1Material {
 		this.setUniformValue('uPhongFresnel', vec4.fromValues(1.0, 1.0, 1.0, 0.0));//TODO: set actual values
 
 		const wearProgress = proxyParams['WearProgress'] ?? 0.0;//TODO
-		const wearRemapMid = variables.get('$wearremapmid');
+		// TODO: use param wearRemapMid
+		//const wearRemapMid = variables.get('$wearremapmid');
 		const flX = wearProgress;
 		const flP = variables.get('$wearremapmid');
 		let flRemappedWear = 2.0 * (1.0 - flX) * flX * flP + (flX * flX);
@@ -182,7 +182,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		this.setDefine('PAINT_STYLE', style);
 	}
 
-	setColorUniform(uniformName: string, value: string) {
+	setColorUniform(uniformName: string, value: string): void {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
@@ -206,7 +206,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		this.setColorUniform('uCamoColor3', color);
 	}
 
-	setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
+	setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number): void {
 		const transformMatrix = this.#getTexCoordTransform(scale, translation, rotation);
 		this.setUniformValue('g_patternTexCoordTransform[0]', new Float32Array([
 			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
@@ -214,7 +214,7 @@ export class WeaponDecalMaterial extends Source1Material {
 		]));
 	}
 
-	#getTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
+	#getTexCoordTransform(scale: vec2, translation: vec2, rotation: number): mat4 {
 		const transformMatrix = mat4.create();
 		const tempMatrix = mat4.create();
 		const tempVec3 = vec3.create();
@@ -244,11 +244,11 @@ export class WeaponDecalMaterial extends Source1Material {
 		return transformMatrix;
 	}
 
-	getDefaultParameters() {
+	getDefaultParameters(): VmtParameters {
 		return WEAPON_DECAL_DEFAULT_PARAMETERS;
 	}
 
-	clone() {
+	override clone(): WeaponDecalMaterial {
 		return new WeaponDecalMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

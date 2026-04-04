@@ -24,7 +24,7 @@ export class PositionAlongPathSequential extends Source1ParticleOperator {
 		this.addParam('restart behavior (0 = bounce, 1 = loop )', PARAM_TYPE_BOOL, 1);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const startControlPointNumber = this.getParameter('start control point number');
 		const endControlPointNumber = this.getParameter('end control point number');
 
@@ -54,7 +54,7 @@ export class PositionAlongPathSequential extends Source1ParticleOperator {
 		}
 	}
 
-	reset() {
+	reset(): void {
 		this.#sequence = 0;
 	}
 }

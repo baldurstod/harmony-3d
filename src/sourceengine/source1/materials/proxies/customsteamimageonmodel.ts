@@ -10,7 +10,7 @@ import { ProxyManager } from './proxymanager';
 export class CustomSteamImageOnModel extends Proxy {
 	#defaultTexture = '';
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		if (!this.#defaultTexture) {
 			this.#defaultTexture = variables.get('$basetexture');
 		}

@@ -7,10 +7,10 @@ export class Sine extends Proxy {
 	//#delta;
 	//#mid;
 	#period = 1;
-	#sineperiod: number = 1;
-	#timeoffset: number = 1;
+	#sineperiod = 1;
+	#timeoffset = 1;
 
-	init() {
+	override init(): void {
 		this.#sineperiod = Number(this.datas['sineperiod'] ?? 1);
 		//this.sinemin = this.datas['sinemin']*1; //TODO: check number
 		//this.sinemax = this.datas['sinemax']*1;
@@ -21,7 +21,7 @@ export class Sine extends Proxy {
 		//this.#delta = 1.0;
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
 		//TODO: use timeoffset
 		const sineMin = this.getVariable(variables, 'sinemin') * 1;
 		const sineMax = this.getVariable(variables, 'sinemax') * 1;

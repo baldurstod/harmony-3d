@@ -1,5 +1,5 @@
-import { saveFile } from 'harmony-browser-utils';
 import { BinaryReader } from 'harmony-binary-reader';
+import { saveFile } from 'harmony-browser-utils';
 
 const LOW_RES_IMAGE = 0x01;
 const HIGH_RES_IMAGE = 0x30;
@@ -24,15 +24,15 @@ class VTFResource {
 		}
 	}
 
-	get type() {
+	get type(): number {
 		return this.#type;
 	}
 
-	get length() {
+	get length(): number {
 		return this.#length;
 	}
 
-	get flag() {
+	get flag(): number {
 		return this.#flag;
 	}
 }
@@ -88,6 +88,7 @@ export class VTFFile {
 		return this.#flags;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
 	get frames(): number {
 		return 1;//TODO
 	}
@@ -100,6 +101,7 @@ export class VTFFile {
 		return this.#highResImageFormat;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
 	get mipmapCount(): number {
 		return 1;//TODO
 	}
@@ -108,14 +110,17 @@ export class VTFFile {
 		return -1;//TODO
 	}
 
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
 	get lowResImageWidth(): number {
 		return 0;//TODO
 	}
 
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
 	get lowResImageHeight(): number {
 		return 0;//TODO
 	}
 
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
 	get depth(): number {
 		return 1;//TODO
 	}
@@ -142,6 +147,9 @@ export class VTFFile {
 }
 
 export class VTFWriter {
+	static readonly majorVersion = 7;
+	static readonly minorVersion = 5;
+
 	static writeAndSave(vtffile: VTFFile, filename: string): void {
 		const arrayBuffer = this.write(vtffile);
 		const dataView = new DataView(arrayBuffer);
@@ -154,7 +162,7 @@ export class VTFWriter {
 		//TODO: check vtffile
 		const writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
 		this.#writeHeader(writer, vtffile);
-		return writer.buffer;
+		return writer.buffer as ArrayBuffer;
 	}
 
 	static #computeLength(vtffile: VTFFile): number {
@@ -241,13 +249,5 @@ export class VTFWriter {
 		if (b) {
 			writer.setBytes(b);
 		}
-	}
-
-	static get majorVersion(): number {
-		return 7;
-	}
-
-	static get minorVersion(): number {
-		return 5;
 	}
 }

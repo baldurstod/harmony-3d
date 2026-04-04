@@ -12,14 +12,14 @@ export class SourceAnimation {
 	tempPos = vec3.create();
 	tempRot = vec3.create();
 
-	animate2(dynamicProp: Source1ModelInstance, poseParameters: Map<string, number>, position: vec3/*TODO: remove param*/, orientation: quat/*TODO: remove param*/, sequences: Source1ModelSequences/*, bonesScale*/) {
+	animate2(dynamicProp: Source1ModelInstance, poseParameters: Map<string, number>, position: vec3/*TODO: remove param*/, orientation: quat/*TODO: remove param*/, sequences: Source1ModelSequences/*, bonesScale*/): void {
 		const model: SourceModel = dynamicProp.sourceModel;
 
 		if (!model) { return };
 		const modelBones = model.getBones();
 		if (!modelBones) { return };// Ensure the bones are loaded
 
-		const parentModel = dynamicProp.parent;
+		//const parentModel = dynamicProp.parent;
 		const posRemoveMeTemp: vec3[] = [];
 		const quatRemoveMeTemp: quat[] = [];
 
@@ -143,7 +143,7 @@ export class SourceAnimation {
 			vec3.zero(this.position);
 			quat.identity(this.quaternion);
 
-			const found = false;
+			//const found = false;
 
 			for (let addIndex = 0; addIndex < blendLayers.length * 0; addIndex++) {
 				const layer = blendLayers[addIndex];
@@ -156,7 +156,7 @@ export class SourceAnimation {
 				} else {
 					//if (datas)
 					{
-						const weight = 1;
+						//const weight = 1;
 						const pos = this.tempPos;//vec3.create();
 						const rot = this.tempRot;//vec3.create();
 						vec3.zero(pos);
@@ -167,12 +167,14 @@ export class SourceAnimation {
 						//rot = bone.rot;
 						//if (model.animNumberAnimMdl)
 						{
-							const currentFrame = Math.floor((layer.fps) % layer.numframes);
-							const frameTODOV2 = layer.mdl?.getAnimFrame(dynamicProp, layer, currentFrame);
+							//const currentFrame = Math.floor((layer.fps) % layer.numframes);
+							//const frameTODOV2 = layer.mdl?.getAnimFrame(dynamicProp, layer, currentFrame);
+							/*
 							if (frameTODOV2) {
-								let frameBone = null;//frameTODOV2[bone.boneId];
+								//let frameBone = null;//frameTODOV2[bone.boneId];
 
-								frameBone = frameTODOV2.bones[bone.name];
+								//frameBone = frameTODOV2.bones[bone.name];
+								/*
 								if (frameBone) {
 									const pos = frameBone.pos;
 									const rot = frameBone.rot;
@@ -180,8 +182,9 @@ export class SourceAnimation {
 								} else {
 									//console.info(bone.name + ' not found in ' + layer.name);
 								}
-
+								* /
 							}
+							*/
 						}
 						//weight = 1;
 
@@ -229,8 +232,8 @@ export class SourceAnimation {
 			//bone.boneQuat = this.boneQuat;
 			//bone.position = this.position;
 
-			const parent = bone.parent;
-			const boneNameLowerCase = bone.lowcasename;
+			//const parent = bone.parent;
+			//const boneNameLowerCase = bone.lowcasename;
 
 			//const parentMergedBone = bone.parentMergedBone;
 
@@ -256,16 +259,18 @@ export class SourceAnimation {
 			}
 			*/
 
-			let b = dynamicPropBones[boneIndex];
+			const b = dynamicPropBones[boneIndex];
 			if (b) {
 				if (!b.lockPosition) {
-					b.position = posRemoveMeMe ?? b._initialPosition;
+					b.setPosition(posRemoveMeMe ?? b._initialPosition);
 				}
 				if (!b.lockRotation) {
-					b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
+					b.setOrientation(quatRemoveMeMe ?? b._initialQuaternion);
 				}
 			} else {
-				throw 'fix me';
+				throw new Error('fix me');
+
+
 				/*
 				b = new Bone(dynamicProp.skeleton);
 				dynamicProp.skeleton._bones[boneIndex] = b;

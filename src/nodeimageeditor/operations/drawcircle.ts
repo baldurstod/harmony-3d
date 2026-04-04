@@ -68,7 +68,7 @@ export class DrawCircle extends Node {
 		return 'draw circle';
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

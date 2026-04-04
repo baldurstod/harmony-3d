@@ -23,7 +23,7 @@ export class PositionAlongPathRandom extends Source1ParticleOperator {
 		this.addParam('maximum distance', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const startNumber = this.getParameter('start control point number') ?? 1;
 		const endNumber = this.getParameter('end control point number') ?? 2;
 
@@ -38,7 +38,7 @@ export class PositionAlongPathRandom extends Source1ParticleOperator {
 
 		const delta = startCP.deltaPosFrom(endCP);
 
-		const s = this.#sequence / nbPart;
+		//const s = this.#sequence / nbPart;
 		vec3.scale(delta, delta, Math.random());
 		vec3.add(particle.position, startCP.getWorldPosition(a), delta);
 		vec3.copy(particle.prevPosition, particle.position);
@@ -48,7 +48,7 @@ export class PositionAlongPathRandom extends Source1ParticleOperator {
 		}
 	}
 
-	reset() {
+	reset(): void {
 		this.#sequence = 0;
 	}
 }

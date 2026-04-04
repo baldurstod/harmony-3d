@@ -385,7 +385,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return ret.join('\n');
 	}
 
-	dispose() {
+	dispose(): void {
 		if (this.#previewRenderTarget) {
 			this.#previewRenderTarget.dispose();
 		}

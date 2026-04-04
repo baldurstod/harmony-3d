@@ -32,7 +32,7 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number) {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const m_flStartTime = this.getParameter('emitter lifetime start time (seconds)');
 		const m_flEndTime = this.getParameter('emitter lifetime end time (seconds)');
 
@@ -63,7 +63,7 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 		if (!cp) {
 			return;
 		}
-		if (m_nFieldOutput == 0 ) { // Position
+		if (m_nFieldOutput == 0) { // Position
 			if (!m_bLocalCoords) {
 				vec3.add(tempVec3, cp.getWorldPosition(tempVec3_2), tempVec3);
 			} else {
@@ -77,7 +77,7 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 			}
 		} else {
 
-			if ( m_bScaleInitialRange ){
+			if (m_bScaleInitialRange) {
 				//Vector vecScaleInitial;
 				//SetVectorFromAttribute ( vecScaleInitial, pOutput );
 				const vecScaleInitial = particle.getField(m_nFieldOutput, true);
@@ -89,7 +89,7 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 		}
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

@@ -953,7 +953,7 @@ export class WebGPURenderer implements Renderer {
 				const uniformTexture = uniformBuffer.texture ?? uniformBuffer.storageTexture;
 				if (uniformTexture) {
 					if (!uniformBuffer.viewDimension) {
-						throw new Error(`missing viewDimension for texture ${uniformBuffer}`);
+						throw new Error(`missing viewDimension for texture ${JSON.stringify(uniformBuffer)}`);
 					}
 					if (uniformTexture.isCube) {
 						entries.push({

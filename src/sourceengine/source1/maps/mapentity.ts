@@ -181,14 +181,18 @@ export class MapEntity extends Entity {
 		//console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
 	}
 
-	setInput(input: string, parameters: any/*TODO: improve type*/): void {
-	}
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
+	setInput(input: string, parameters: any/*TODO: improve type*/): void { }
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
+
 
 	getFlag(position: number): number {
 		return (this.f >> position) & 1;
 	}
 
-	move(delta: vec3) {
+	move(delta: vec3): void {
 		this.setPosition(vec3.add(vec3.create(), this._position, delta));//todo remove me
 	}
 
@@ -227,7 +231,7 @@ export class MapEntity extends Entity {
 	update(scene: Scene, camera: Camera, delta: number): void {
 		this.m_flLocalTime += delta
 		if (this.parentName) {
-			throw 'uncomment next line';
+			throw new Error('uncomment next line');
 			/*const parent = this.map.getEntityByTargetName(this.parentName);
 			if (parent) {
 				this.setParent(parent);
@@ -235,10 +239,10 @@ export class MapEntity extends Entity {
 			}
 			*/
 		}
-		this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta);//TODO removeme : optimize
+		this.setPosition(vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta));//TODO removeme : optimize
 	}
 
-	setParent(parent: MapEntity) {
+	setParent(parent: MapEntity): void {
 		//void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
 		const oldParent = this.parent;
 		this.#parentEntity = parent;
@@ -309,56 +313,58 @@ export class MapEntityConnection {
 		this.parameters = null;
 	}
 
-	fromString(stringDatas: string) {
+	fromString(stringDatas: string): void {
 		const parameters = stringDatas.split(',');
 		if (parameters && parameters.length == 5) {
 			this.parameters = parameters;
 		}
 	}
 
-	get outputName() {
+	get outputName(): string {
 		return this.name;
 	}
 
-	getTargetName() {
+	getTargetName(): string | undefined {
 		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[0];
 		}
 	}
 
-	getTargetInput() {
+	getTargetInput(): string | undefined {
 		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[1];
 		}
 	}
 
-	getTargetParameter() {
+	getTargetParameter(): string | undefined {
 		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[2];
 		}
 	}
 
-	getDelay() {
+	getDelay(): string | undefined {
 		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[3];
 		}
 	}
 
-	getFireOnlyOnce() {
+	getFireOnlyOnce(): string | undefined {
 		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[4];
 		}
 	}
 
-	fire(map: SourceBSP) {//TODO: delay, fire once
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	fire(map: SourceBSP): void {//TODO: delay, fire once
 		const parameters = this.parameters;
 		if (parameters) {
-			throw 'uncomment next line';
+			throw new Error('uncomment next line');
+
 			//map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
 		}
 	}

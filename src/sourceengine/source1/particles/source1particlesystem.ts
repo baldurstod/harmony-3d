@@ -23,7 +23,7 @@ import { Source1ParticleControler } from './source1particlecontroler';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 //const RESET_DELAY = 0;
-let systemNumber = 0;
+//let systemNumber = 0;
 
 export class ParamType {
 	param: string;
@@ -812,7 +812,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 			for (let cpId = first; cpId <= last; ++cpId) {
 				const cp = child.getOwnControlPoint(cpId);
 				if (cp) {
-					cp.setQuaternion(orientation);
+					cp.setOrientation(orientation);
 					//The control point is now world positioned
 					//Therefore we remove it from the hierarchy
 					//cp.remove();
@@ -995,7 +995,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		}
 	}
 
-	buildContextMenu(): HarmonyMenuItemsDict {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		const startStop = this.isRunning ? { i18n: '#stop', f: (): void => this.stop() } : { i18n: '#start', f: (): void => this.start() };
 
 		return Object.assign(super.buildContextMenu(), {

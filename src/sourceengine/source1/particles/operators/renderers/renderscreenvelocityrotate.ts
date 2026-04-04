@@ -23,19 +23,19 @@ export class RenderScreenVelocityRotate extends Source1ParticleOperator {
 		}
 	*/
 
-	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]/*, elapsedTime: number*/): void {
 		const m_flRotateRate = this.getParameter('rotate_rate(dps)') * DEG_TO_RAD;
 		const m_flForward = this.getParameter('forward_angle') * DEG_TO_RAD;
 
-		for (let i = 0; i < particleList.length; i++) {
-			const particle: Source1Particle = particleList[i]!;
+		for (const particle of particleList) {
+			//const particle: Source1Particle = particleList[i]!;
 			particle.renderScreenVelocityRotate = true;
 			particle.m_flRotateRate = m_flRotateRate;
 			particle.m_flForward = m_flForward;
 		}
 	}
 
-	initRenderer() {
+	initRenderer(): void {
 		// Nothing to do
 	}
 }

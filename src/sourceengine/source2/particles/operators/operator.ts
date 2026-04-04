@@ -598,11 +598,6 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	/*
-	doNothing() {
-	}
-	*/
-
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	reset(): void {
 	}

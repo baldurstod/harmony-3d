@@ -24,12 +24,12 @@ import { Source1MaterialVariables, Source1MaterialVmt } from '../source1material
  * Source engine material interface
  */
 export class Proxy {
-	protected datas: any = null;
+	protected datas: Source1MaterialVmt = {};
 
 	/**
 	 * TODO
 	 */
-	setParams(datas: Source1MaterialVmt/*TODO: improve type*/, variables: Map<string, Source1MaterialVariables>) {
+	setParams(datas: Source1MaterialVmt/*TODO: improve type*/, variables: Map<string, Source1MaterialVariables>): void {
 		this.datas = datas;
 		this.init(variables);
 	}
@@ -37,7 +37,7 @@ export class Proxy {
 	/**
 	 * TODO
 	 */
-	getData(name: string) {
+	getData(name: string): any {
 		const result = this.datas[name];
 		if (typeof result == 'string') {
 			return result.toLowerCase();
@@ -45,20 +45,15 @@ export class Proxy {
 		return result;
 	}
 
-	/**
-	 * Dummy function
-	 */
-	init(variables: Map<string, Source1MaterialVariables>) {
-	}
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
+	init(variables: Map<string, Source1MaterialVariables>): void { }
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void { }
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
 
-	/**
-	 * Dummy function
-	 */
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
-	}
-
-	setResult(variables: Map<string, Source1MaterialVariables>, value: any/*TODO: improve type*/) {
-		let resultVarName = this.getData('resultvar');
+	setResult(variables: Map<string, Source1MaterialVariables>, value: any/*TODO: improve type*/): void {
+		let resultVarName = this.getData('resultvar') as string;
 		if (resultVarName) {
 			resultVarName = resultVarName.toLowerCase();
 			if (resultVarName.indexOf('[') != -1) {
@@ -93,7 +88,7 @@ export class Proxy {
 		}
 	}
 
-	getVariable(variables: Map<string, Source1MaterialVariables>, name: string) {
+	getVariable(variables: Map<string, Source1MaterialVariables>, name: string): any {
 		const result = this.datas[name];
 		if (typeof result == 'string') {
 			if (result.startsWith('$')) {

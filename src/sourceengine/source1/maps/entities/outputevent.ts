@@ -10,7 +10,7 @@ export class OutputEvent {
 		this.outputName = outputName.toLowerCase();
 	}
 
-	fireOutput(activator: MapEntity, caller: MapEntity) {
+	fireOutput(activator: MapEntity, caller: MapEntity): void {
 		caller.fireOutput(this.outputName);
 	}
 }

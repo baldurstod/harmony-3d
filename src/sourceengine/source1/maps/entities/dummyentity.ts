@@ -8,7 +8,7 @@ import { MapEntity, ParseVector } from '../mapentity';
  */
 export class DummyEntity extends MapEntity {
 
-	setKeyValues(kvElement: KvElement) {
+	override setKeyValues(kvElement: KvElement): void {
 		super.setKeyValues(kvElement);
 		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
 

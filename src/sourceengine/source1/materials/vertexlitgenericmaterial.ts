@@ -29,7 +29,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
 		if (btbba == 1) {
-			this.alphaTest = false;
+			this.setAlphaTest(false);
 			this.variables.set('$alphatest', 0);
 			if (this.variables.get('$selfillum') != 1) {
 				this.removeDefine('USE_SELF_ILLUM');
@@ -61,7 +61,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams: DynamicParams) {
+	override afterProcessProxies(proxyParams: DynamicParams): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 
@@ -100,7 +100,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 		this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.#diffuseModulation));
 	}
 
-	clone() {
+	override clone(): VertexLitGenericMaterial {
 		return new VertexLitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

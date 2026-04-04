@@ -1,4 +1,3 @@
-import { DynamicParams } from '../../../../entities/entity';
 import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
@@ -9,20 +8,20 @@ export class SelectFirstIfNonZero extends Proxy {
 	#srcVar1 = '';
 	#srcVar2 = '';
 
-	init() {
-		this.#srcVar1 = (this.datas['srcvar1'] ?? '').toLowerCase();
-		this.#srcVar2 = (this.datas['srcvar2'] ?? '').toLowerCase();
+	override init(): void {
+		this.#srcVar1 = (this.datas['srcvar1'] as string ?? '').toLowerCase();
+		this.#srcVar2 = (this.datas['srcvar2'] as string ?? '').toLowerCase();
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
-		super.setResult(variables, this.isNonZero(variables.get(this.#srcVar1)) ? variables.get(this.#srcVar1) : variables.get(this.#srcVar2));
+	override execute(variables: Map<string, Source1MaterialVariables>/*, proxyParams: DynamicParams, time: number*/): void {
+		super.setResult(variables, this.#isNonZero(variables.get(this.#srcVar1)) ? variables.get(this.#srcVar1) : variables.get(this.#srcVar2));
 	}
 
-	isNonZero(value: any/*TODO: improve type*/) {
+	#isNonZero(value: any/*TODO: improve type*/): boolean {
 		if (!value) return false;
 		if (value instanceof Array || value instanceof Float32Array) {
-			for (let i = 0; i < value.length; ++i) {
-				if (value[i]) {
+			for (const v of value) {
+				if (v) {
 					return true;
 				}
 			}

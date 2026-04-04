@@ -81,7 +81,7 @@ class Source1TextureManagerClass {
 			this.getVtf(repository, pathWithMaterials).then(
 				(vtf: Source1Vtf | null) => {
 					if (vtf) {
-						vtfToTexture(vtf as Source1Vtf, animatedTexture, srgb);
+						vtfToTexture(vtf, animatedTexture, srgb);
 					} else {
 						const texture = this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
 						if (texture) {
@@ -119,14 +119,14 @@ class Source1TextureManagerClass {
 		return (this.#texturesList.get(repository, path) as AnimatedTexture)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
 	}
 
-	async getInternalTexture(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true): Promise<Texture | null> {
+	getInternalTexture(repository: string, path: string, frame: number/*, needCubeMap: boolean, defaultTexture?: Texture*//*, srgb = true TODO: use srgb param*/): Texture | null {
 		frame = Math.floor(frame);
 		path = cleanupPath(path);
 
 		return this.#texturesList.get(repository, path)?.getFrame(frame) ?? null;
 	}
 
-	#getInternalTextureName() {
+	#getInternalTextureName(): string {
 		return 'source1texturemanager_' + (++internalTextureId);
 	}
 
@@ -139,12 +139,12 @@ class Source1TextureManagerClass {
 		return { name: textureName, texture: texture };
 	}
 
-	setTexture(repository: string, path: string, texture: AnimatedTexture) {
+	setTexture(repository: string, path: string, texture: AnimatedTexture): void {
 		texture.addUser(this);
 		this.#texturesList.set(repository, path, texture);
 	}
 
-	removeTexture(repository: string, path: string) {
+	removeTexture(repository: string, path: string): void {
 		const texture = this.#texturesList.get(repository, path);
 		if (texture) {
 			texture.removeUser(this);
@@ -152,7 +152,7 @@ class Source1TextureManagerClass {
 		}
 	}
 
-	#cleanup() {
+	#cleanup(): void {
 		for (const [repo, path, texture] of this.#texturesList) {
 			if (texture.hasOnlyUser(this)) {
 				texture.removeUser(this);

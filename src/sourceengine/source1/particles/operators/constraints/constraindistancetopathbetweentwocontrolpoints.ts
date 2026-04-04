@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { MaskedAssign } from '../../../../common/math/sse';
 import { CDmxAttributeValue } from '../../../export';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -6,10 +7,9 @@ import { PathParameters } from '../../path';
 import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
-import { MaskedAssign } from '../../../../common/math/sse';
 
-const a = vec3.create();
-const b = vec3.create();
+//const a = vec3.create();
+//const b = vec3.create();
 
 const startPnt = vec3.create();
 const endPnt = vec3.create();
@@ -58,7 +58,7 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1Parti
 		*/
 	}
 
-	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
+	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void {
 		switch (name) {
 			case 'minimum distance':
 				this.#minDistance = value as number;
@@ -93,7 +93,7 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1Parti
 		}
 	}
 
-	applyConstraint(particle: Source1Particle) {
+	override applyConstraint(particle: Source1Particle): boolean {
 		this.particleSystem.calculatePathValues(this.#pathParameters, this.particleSystem.currentTime, startPnt, midP, endPnt);
 
 		const CurTime = this.particleSystem.currentTime;
@@ -173,7 +173,7 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1Parti
 			}
 
 			// change squared distance into approximate rsqr root
-			let guess = Math.sqrt(dist_squared);
+			const guess = Math.sqrt(dist_squared);
 			// newton iteration for 1/sqrt(x) : y(n+1)=1/2 (y(n)*(3-x*y(n)^2));
 			//guess = MulSIMD(guess, SubSIMD(Four_Threes, MulSIMD(dist_squared, MulSIMD(guess, guess))));
 			//guess = MulSIMD(Four_PointFives, guess);

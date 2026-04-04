@@ -100,14 +100,14 @@ export class Source1SoundManager {
 		kv.readText(manifestTxt);
 		const list = kv.rootElements as Record<string, KvElement>;
 		const keyArray = Object.keys(list);
-		for (let i = 0; i < keyArray.length; ++i) {
-			const soundKey = keyArray[i]!;
+		for (const soundKey of keyArray) {
+			//const soundKey = keyArray[i]!;
 			const sound = list[soundKey] as any/*TODO: improve type*/;
-			let wave;
+			let wave: any[] | string;
 			if (sound.rndwave) {
 				wave = [];
 				Object.keys(sound.rndwave).forEach(function (element) {
-					wave.push(sound.rndwave[element]);
+					(wave as any[]).push(sound.rndwave[element]);
 				});
 			} else {
 				wave = sound.wave as string;

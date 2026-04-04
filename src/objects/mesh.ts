@@ -206,7 +206,7 @@ export class Mesh extends Entity {
 		return ret as ObjDatas;
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		this.#material?.removeUser(this);
 		this.#geometry?.removeUser(this);
@@ -255,7 +255,7 @@ export class Mesh extends Entity {
 		}
 	}
 
-	buildContextMenu(): HarmonyMenuItemsDict {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		const contextMenu = super.buildContextMenu();
 
 		const materialSubmenu = contextMenu.material!.submenu as HarmonyMenuItemsDict;
@@ -264,8 +264,9 @@ export class Mesh extends Entity {
 
 		materialSubmenu.setMaterial = {
 			i18n: '#set_material', f: async () => {
-				const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
-					const material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
+				const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
+				if (materialName) {
+					MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 				}
 			}
 		};

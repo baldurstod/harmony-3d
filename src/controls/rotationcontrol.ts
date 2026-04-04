@@ -1,4 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity, EntityParameters } from '../entities/entity';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
@@ -83,7 +84,7 @@ export class RotationControl extends Entity {
 		quat.mul(quaternion, quaternion, tempQuat);
 	}
 
-	reset():void {
+	reset(): void {
 		const parent = this._parent;
 		if (!parent) {
 			return;
@@ -92,7 +93,7 @@ export class RotationControl extends Entity {
 		quat.identity(parent._quaternion);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			RotationControl_1: null,
 			rotation_axis: { i18n: '#rotation_axis', f: () => { const v = prompt('Rotation axis', this.axis.join(' ')); if (v !== null) { this.axis = stringToVec3(v); } } },

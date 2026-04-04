@@ -20,7 +20,7 @@ export class WaterMaterial extends Source1Material {
 		this.setDefine('IS_TRANSLUCENT');
 	}
 
-	clone() {
+	override clone(): WaterMaterial {
 		return new WaterMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

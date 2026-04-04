@@ -719,7 +719,8 @@ export const IMAGE_FORMAT_UVLX8888 = 26;
 export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | ImageFormatBptc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray<ArrayBuffer>> {
 	const uncompressedData = new Uint8ClampedArray(width * height * 4);
 
-	await (Detex as any).decode(format, width, height, datas, uncompressedData);
+	// TODO: handle the Float32Array case
+	await Detex.decode(format, width, height, datas as Uint8Array, uncompressedData as unknown as Uint8Array);
 
 	return uncompressedData;
 }
@@ -742,7 +743,7 @@ function fillTextureDxt(glContext: WebGLAnyRenderingContext, texture: WebGLTextu
 	} else {
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
-		(async () => {
+		(async (): Promise<void> => {
 			const uncompressedData = await decompressDxt(dxtLevel, width, height, datas);//new Uint8Array(width * height * 4);
 			glContext.bindTexture(GL_TEXTURE_2D, texture);
 			glContext.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params

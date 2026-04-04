@@ -18,7 +18,7 @@ export class AlphaFadeInRandom extends Source1ParticleOperator {
 		this.addParam('proportional 0/1', PARAM_TYPE_BOOL, 1);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const proportional = this.getParameter('proportional 0/1');
 
 		const fadeInTimeMin = this.getParameter('fade in time min') as number;
@@ -36,7 +36,7 @@ export class AlphaFadeInRandom extends Source1ParticleOperator {
 			lifeTime = particle.currentTime;
 		}
 
-		let d, d2
+		//let d, d2
 		if (lifeTime < fadeInTime) {
 			particle.alpha = SimpleSplineRemapValWithDeltasClamped(
 				lifeTime, 0,

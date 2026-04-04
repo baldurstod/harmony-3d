@@ -13,7 +13,7 @@ export class SequenceRandom extends Source1ParticleOperator {
 		this.addParam('sequence_max', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const sequence_min = this.getParameter('sequence_min');
 		const sequence_max = this.getParameter('sequence_max');
 

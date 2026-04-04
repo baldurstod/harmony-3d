@@ -5,7 +5,7 @@ export class Source1ParticleOperators {
 	static #functions: Record<string, typeof Source1ParticleOperator> = {};//TODO: create Map
 	static #functionsType: Record<string, string[]> = {};//TODO: create Map
 
-	static getOperator(system: Source1ParticleSystem, name: string) {
+	static getOperator(system: Source1ParticleSystem, name: string): Source1ParticleOperator | null {
 		const n = name.replace(/\_/g, ' ').toLowerCase();
 		if (!this.#functions[n]) {
 			console.error('Missing operator:', name);
@@ -14,18 +14,18 @@ export class Source1ParticleOperators {
 		return new this.#functions[n](system);
 	}
 
-	static #register(type: string, name: string, className: typeof Source1ParticleOperator) {
+	static #register(type: string, name: string, className: typeof Source1ParticleOperator): void {
 		this.#functions[name.replace(/\_/g, ' ').toLowerCase()] = className;
 
 		this.#functionsType[type] = this.#functionsType[type] ?? [];
 		this.#functionsType[type].push(name);
 	}
 
-	static getOperators(type: string) {
+	static getOperators(type: string): string[] {
 		return this.#functionsType[type] ?? [];
 	}
 
-	static registerOperator(name: string | typeof Source1ParticleOperator, operator?: typeof Source1ParticleOperator) {
+	static registerOperator(name: string | typeof Source1ParticleOperator, operator?: typeof Source1ParticleOperator): void {
 
 		if (operator) {
 			this.#register('Operators', name as string, operator);

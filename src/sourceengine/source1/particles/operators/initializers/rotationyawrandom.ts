@@ -14,8 +14,9 @@ export class RotationYawRandom extends Source1ParticleOperator {
 		this.addParam('yaw_offset_max', PARAM_TYPE_FLOAT, 360);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
-		const percent = this.getParameter('Percentage') ?? 0.5;//TODO
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
+		//TODO: use param Percentage
+		//const percent = this.getParameter('Percentage') ?? 0.5;//TODO
 		const yaw_offset_min = this.getParameter('yaw_offset_min') ?? 0;
 		const yaw_offset_max = this.getParameter('yaw_offset_max') ?? 360;
 		const yaw_initial = this.getParameter('yaw_initial') ?? 0;

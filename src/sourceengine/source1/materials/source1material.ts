@@ -21,7 +21,7 @@ import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetrans
 
 const IDENTITY_MAT4 = mat4.create();
 
-function GetTextureTransform(str: string, mat = mat4.create()) {
+function getTextureTransform(str: string, mat = mat4.create()): mat4 {
 	const center = vec2.fromValues(0.5, 0.5);
 	//const mat = mat4.create();
 	const temp = mat4.create();
@@ -97,7 +97,7 @@ const VMT_PARAMETERS: VmtParameters = {//TODO: tunr into map
 	$no_draw: [SHADER_PARAM_TYPE_BOOL, false],
 }
 
-function initDefaultParameters(defaultParameters: VmtParameters, parameters: VmtParameters, variables: Map<string, Source1MaterialVariables>) {
+function initDefaultParameters(defaultParameters: VmtParameters, parameters: VmtParameters, variables: Map<string, Source1MaterialVariables>): void {
 	if (defaultParameters) {
 		for (const parameterName in defaultParameters) {
 			if (parameters[parameterName] === undefined) {
@@ -137,7 +137,8 @@ export function getDefaultTexture(): Texture {
 
 export enum TextureRole {
 	Color = 0,
-	Color2 = 0,
+	// eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
+	Color2 = 0,// TODO: fix color2 value
 	Normal,
 	LightWarp,
 	PhongExponent,
@@ -226,7 +227,7 @@ export class Source1Material extends Material {
 		initDefaultParameters(VMT_PARAMETERS, this.vmt, variables);
 		initDefaultParameters(this.getDefaultParameters(), this.vmt, variables);
 
-		const readParameters = (parameters: Source1MaterialVmt) => {
+		const readParameters = (parameters: Source1MaterialVmt): void => {
 			for (const parameterName in parameters) {
 				const value = parameters[parameterName]!;
 
@@ -309,8 +310,8 @@ export class Source1Material extends Material {
 			this.setDefine('IS_ADDITIVE');
 		}
 		if (vmt['$alphatest'] == 1) {
-			this.alphaTest = true;
-			this.alphaTestReference = Number.parseFloat(vmt['$alphatestreference'] ?? 0.5);
+			this.setAlphaTest(true);
+			this.setAlphaTestReference(Number.parseFloat(vmt['$alphatestreference'] ?? 0.5));
 		}
 		if (vmt['$vertexalpha'] == 1) {
 			this.setDefine('VERTEX_ALPHA');
@@ -336,7 +337,7 @@ export class Source1Material extends Material {
 
 		this.setUniformValue('uTextureTransform', IDENTITY_MAT4);
 		if (vmt['$basetexturetransform']) {
-			const textureTransform = GetTextureTransform(vmt['$basetexturetransform']);
+			const textureTransform = getTextureTransform(vmt['$basetexturetransform']);
 			if (textureTransform) {
 				this.variables.set('$basetexturetransform', textureTransform);
 				this.setUniformValue('uTextureTransform', textureTransform);
@@ -465,7 +466,7 @@ export class Source1Material extends Material {
 		return animated?.getFrame(frame) ?? null;
 	}
 
-	#initUniforms() {
+	#initUniforms(): void {
 		this.setUniformValue('uDetailTextureTransform', this.#detailTextureTransform);
 	}
 
@@ -493,7 +494,7 @@ export class Source1Material extends Material {
 
 					let flAge = flCurTime - flCreationTime;
 					flAge *= flAgeScale;
-					let nFrame = Math.abs(Math.round(flAge));
+					const nFrame = Math.abs(Math.round(flAge));
 					return group.getFrame((nFrame * group.frames.length / 1024) << 0);
 				}
 				/*
@@ -524,10 +525,10 @@ export class Source1Material extends Material {
 		return null;
 	}
 
-	getFrameSpan(sequence: number) {
+	getFrameSpan(sequence: number): number | null {
 		const texture = this.getUniformValue('colorMap') as Texture;
 		if (!texture) {
-			return;
+			return null;
 		}
 
 		const vtf = texture.properties.get('vtf');
@@ -553,7 +554,7 @@ export class Source1Material extends Material {
 	 * Init proxies
 	 * @param proxies {Array} List of proxies
 	 */
-	#initProxies(proxies: Source1MaterialVmt) {
+	#initProxies(proxies: Source1MaterialVmt): void {
 		if (!proxies) { return; }
 
 		for (const proxyIndex in proxies) {
@@ -572,7 +573,7 @@ export class Source1Material extends Material {
 		}
 	}
 
-	updateMaterial(time: number, mesh: Mesh) {
+	updateMaterial(time: number, mesh: Mesh): void {
 		this.#processProxies(time, mesh.materialsParams);
 	}
 
@@ -580,7 +581,7 @@ export class Source1Material extends Material {
 	 * Process proxies
 	 * @param proxyParams {Object} Param passed to proxies
 	 */
-	#processProxies(time: number, proxyParams: DynamicParams = {}) {
+	#processProxies(time: number, proxyParams: DynamicParams = {}): void {
 		if (false && DEBUG) {
 			this.proxyParams.ItemTintColor = vec3.fromValues(Math.cos(time * 2) * 0.5 + 0.5, Math.cos(time * 3) * 0.5 + 0.5, Math.cos(time * 5) * 0.5 + 0.5);
 		}
@@ -588,11 +589,11 @@ export class Source1Material extends Material {
 		for (const proxy of this.proxies) {
 			proxy.execute(this.variables, proxyParams, time);
 		}
-		this._afterProcessProxies(proxyParams);
+		this._afterProcessProxies(/*proxyParams*/);
 		this.afterProcessProxies(proxyParams);
 	}
 
-	_afterProcessProxies(proxyParams = {}/*TODO: improve type*/) {
+	_afterProcessProxies(/*proxyParams = {}*//*TODO: improve type*/): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 
@@ -653,7 +654,7 @@ export class Source1Material extends Material {
 
 			const detailTextureTransform = variables.get('$detailtexturetransform');
 			if (detailTextureTransform) {
-				const textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
+				const textureTransform = getTextureTransform(detailTextureTransform, this.#detailTextureTransform);
 				if (textureTransform) {
 					this.variables.set('$detailtexturetransform', textureTransform);
 				}
@@ -680,15 +681,17 @@ export class Source1Material extends Material {
 
 	}
 
-	afterProcessProxies(proxyParams = {}/*TODO: improve type*/) {
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
+	afterProcessProxies(proxyParams = {}/*TODO: improve type*/): void { }
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
 
-	}
-
-	getAlpha() {
+	getAlpha(): number {
 		return clamp(this.variables.get('$alpha'), 0.0, 1.0);
 	}
 
-	computeModulationColor(out: vec4) {
+	computeModulationColor(out: vec4): vec4 {
 		const color = this.variables.get('$color');//TODOv3: check variable type
 		const color2 = this.variables.get('$color2');//TODOv3: check variable type
 		if (color2) {
@@ -709,7 +712,7 @@ export class Source1Material extends Material {
 		return {};
 	}
 
-	sanitizeValue(parameterName: string, value: any/*TODO: create type */) {
+	sanitizeValue(parameterName: string, value: any/*TODO: create type */): any {
 		const param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
 		if (param) {
 			switch (param[0]) {
@@ -744,7 +747,7 @@ export class Source1Material extends Material {
 		return null;
 	}
 
-	setKeyValue(key: string, value: any/*TODO: create type*/) {
+	setKeyValue(key: string, value: any/*TODO: create type*/): void {
 		const sanitized = this.sanitizeValue(key, value);
 		if (sanitized) {
 			this.variables.set(key, sanitized);
@@ -776,10 +779,10 @@ export class Source1Material extends Material {
 		return new Source1Material(this.repository, this.path, this.vmt, this.parameters);
 	}
 
-	dispose() {
+	override dispose(): void {
 		super.dispose();
 		if (this.hasNoUser()) {
-			for (const [_, texture] of this.#textures) {
+			for (const [, texture] of this.#textures) {
 				texture.removeUser(this);
 			}
 		}
@@ -787,7 +790,7 @@ export class Source1Material extends Material {
 }
 
 //TODO: store regexes
-export function readColor(value: string, color?: vec3) {
+export function readColor(value: string, color?: vec3): vec3 | null {
 	color = color || vec3.create();
 	// With { } : color values in 0-255 range
 	value = value.trim();
@@ -826,7 +829,7 @@ export function readColor(value: string, color?: vec3) {
 	return null;
 }
 
-export function readVec2(value: string, vec?: vec2) {
+export function readVec2(value: string, vec?: vec2): vec2 | null {
 	vec = vec || vec2.create();
 	const regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
 
@@ -837,7 +840,7 @@ export function readVec2(value: string, vec?: vec2) {
 
 	const f = Number.parseFloat(value);
 	if (Number.isNaN(f)) {
-		return;
+		return null;
 	}
 
 	return vec2.set(vec, f, f);

@@ -3,7 +3,7 @@ import { ImageFormat } from './enums';
 
 export function getWebGPUData(imageFormat: ImageFormat, data: Uint8Array | Float32Array): Uint8Array | Float32Array {
 	let rIndex: 0 | 1 | 2 = 0;
-	let gIndex: 0 | 1 | 2 = 1;
+	const gIndex: 0 | 1 | 2 = 1;
 	let bIndex: 0 | 1 | 2 = 2;
 	switch (imageFormat) {
 		case ImageFormat.RGB888:
@@ -11,7 +11,6 @@ export function getWebGPUData(imageFormat: ImageFormat, data: Uint8Array | Float
 			break;
 		case ImageFormat.BGR888:
 		case ImageFormat.BGR888_BLUESCREEN:
-			break;
 			rIndex = 2;
 			bIndex = 0;
 			break;

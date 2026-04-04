@@ -78,7 +78,7 @@ export class Wireframe extends Entity {
 		this.#meshes.clear();
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		this.#material.removeUser(this);
 		this.#disposeMeshes();

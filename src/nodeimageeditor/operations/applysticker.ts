@@ -168,7 +168,7 @@ export class ApplySticker extends Node {
 		return ret.join('\n');
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

@@ -1,8 +1,8 @@
 import { mat4, vec2, vec3 } from 'gl-matrix';
 
 // TODO: deprecate ?
-export function getTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
-	function Vector2DRotate(vIn: vec2, angle: number, vOut: vec2) {
+export function getTexCoordTransform(scale: vec2, translation: vec2, rotation: number): mat4 {
+	function Vector2DRotate(vIn: vec2, angle: number, vOut: vec2): void {
 		const c = Math.cos(angle);
 		const s = Math.sin(angle);
 

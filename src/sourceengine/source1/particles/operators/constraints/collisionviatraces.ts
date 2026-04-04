@@ -10,10 +10,10 @@ import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
 
-const COLLISION_MODE_PER_PARTICLE_TRACE = 0;
-const COLLISION_MODE_PER_FRAME_PLANESET = 1;
-const COLLISION_MODE_INITIAL_TRACE_DOWN = 2;
-const COLLISION_MODE_USE_NEAREST_TRACE = 3;
+//const COLLISION_MODE_PER_PARTICLE_TRACE = 0;
+//const COLLISION_MODE_PER_FRAME_PLANESET = 1;
+//const COLLISION_MODE_INITIAL_TRACE_DOWN = 2;
+//const COLLISION_MODE_USE_NEAREST_TRACE = 3;
 
 const tempVec3_1 = vec3.create();
 const tempVec3_2 = vec3.create();
@@ -22,7 +22,7 @@ export class CollisionViaTraces extends Source1ParticleOperator {
 	static functionName = 'Collision via traces';
 	#raycaster = new Raycaster();
 	#world?: World;
-	#collisionMode: number = -1;/*TODO: create enum*/;
+	#collisionMode = -1;/*TODO: create enum*/;
 
 	constructor(system: Source1ParticleSystem) {
 		super(system);
@@ -49,7 +49,7 @@ export class CollisionViaTraces extends Source1ParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD( "trace accuracy tolerance", "24", float, m_flTraceTolerance )
 	}
 
-	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
+	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void {
 		switch (name) {
 			case 'collision mode':
 				this.#collisionMode = value as number;
@@ -58,7 +58,7 @@ export class CollisionViaTraces extends Source1ParticleOperator {
 		}
 	}
 
-	applyConstraint(particle: Source1Particle) {
+	override applyConstraint(particle: Source1Particle): void {
 		const world = TESTING && (this.#world ?? this.#getWorld());
 		if (world) {
 			this.#worldCollision(particle, world);
@@ -70,12 +70,12 @@ export class CollisionViaTraces extends Source1ParticleOperator {
 		//TODO: do a proper collision
 	}
 
-	#worldCollision(particle: Source1Particle, world: World) {
+	#worldCollision(particle: Source1Particle, world: World): void {
 		//const cp = this.particleSystem.getControlPoint(0);
 		//particle.prevPosition[2] = 50;
 
 		const rayDirection = vec3.sub(tempVec3_1, particle.position, particle.prevPosition);
-		const distance = vec3.len(rayDirection);
+		//const distance = vec3.len(rayDirection);
 		vec3.normalize(rayDirection, rayDirection);
 
 		// We probably already are on the surface, move back the ray origin to prevent falling thru
@@ -98,7 +98,7 @@ export class CollisionViaTraces extends Source1ParticleOperator {
 		}
 	}
 
-	#getWorld() {
+	#getWorld(): World | undefined {
 		const iterator = this.particleSystem.getParentIterator();
 
 		for (const e of iterator) {

@@ -12,7 +12,7 @@ export class LifetimeFromSequence extends Source1ParticleOperator {
 		this.addParam('Frames Per Second', PARAM_TYPE_FLOAT, 30);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const paramFramesPerSecond = this.getParameter('Frames Per Second');
 
 		if (this.particleSystem.material) {
@@ -25,7 +25,7 @@ export class LifetimeFromSequence extends Source1ParticleOperator {
 		}
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

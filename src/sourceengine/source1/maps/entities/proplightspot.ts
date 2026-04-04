@@ -3,9 +3,9 @@ import { Camera } from '../../../../cameras/camera';
 import { SpotLight } from '../../../../lights/spotlight';
 import { DEG_TO_RAD } from '../../../../math/constants';
 import { Scene } from '../../../../scenes/scene';
+import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
 import { AngleQuaternion, MapEntity, MapEntityParameters, MapEntityValue, ParseAngles2, parseLightColorIntensity } from '../mapentity';
-import { KvElement } from '../../loaders/kvreader';
 
 const tempQuaternion = quat.create();
 const tempVec3 = vec3.create();
@@ -19,14 +19,14 @@ export class PropLightSpot extends MapEntity {
 
 	constructor(params: MapEntityParameters) {
 		super(params);
-		this.quaternion = SPOTLIGHT_DEFAULT_QUATERNION;
+		this.setOrientation(SPOTLIGHT_DEFAULT_QUATERNION);
 	}
 
-	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
+	override setKeyValues(kvElement: KvElement): void {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.map.addChild(this.spotLight);
-		this.spotLight.position = this._position;
-		this.spotLight.quaternion = this._quaternion;
+		this.spotLight.setPosition(this._position);
+		this.spotLight.setOrientation(this._quaternion);
 	}
 
 	setKeyValue(key: string, value: MapEntityValue): void {
@@ -73,13 +73,14 @@ export class PropLightSpot extends MapEntity {
 		}
 	}
 
-	setAngles() {
+	setAngles(): void {
 		AngleQuaternion(this._angles, tempQuaternion);
 		quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion);
 	}
 
-	setInput(input: string, parameters: any/*TODO: improve type*/): void {
-		throw 'code me';
+	setInput(/*input: string, parameters: any/*TODO: improve type*/): void {
+		throw new Error('code me');
+
 		/*
 		switch (inputName.toLowerCase()) {
 			case 'skin':
@@ -88,10 +89,10 @@ export class PropLightSpot extends MapEntity {
 		}*/
 	}
 
-	update(scene: Scene, camera: Camera, delta: number): void {
+	override update(scene: Scene, camera: Camera, delta: number): void {
 		super.update(scene, camera, delta);
 		this.spotLight.setPosition(this._position);
-		this.spotLight.quaternion = this._quaternion;
+		this.spotLight.setOrientation(this._quaternion);
 	}
 }
 MapEntities.registerEntity('light_spot', PropLightSpot);

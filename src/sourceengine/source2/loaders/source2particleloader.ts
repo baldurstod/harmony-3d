@@ -154,17 +154,19 @@ async function initChildren(repository: string, systemArray: Source2ParticleSyst
 				const m_ChildRef = property.getValueAsResource('m_ChildRef');
 				const m_flDelay = property.getValueAsNumber('m_flDelay') ?? 0;
 				if (m_ChildRef) {
-					const p = new Promise<boolean>(async resolve => {
-						const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
-						if (system) {
-							system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
-							system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
-							system.startAfterDelay = m_flDelay;
-							systemArray[childIndex] = system;
-							resolve(true);
-						} else {
-							resolve(false);
-						}
+					const p = new Promise<boolean>(resolve => {
+						(async (): Promise<void> => {
+							const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
+							if (system) {
+								system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
+								system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
+								system.startAfterDelay = m_flDelay;
+								systemArray[childIndex] = system;
+								resolve(true);
+							} else {
+								resolve(false);
+							}
+						})()
 					});
 					promises.push(p);
 				}

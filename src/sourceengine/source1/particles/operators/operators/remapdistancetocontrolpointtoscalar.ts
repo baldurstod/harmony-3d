@@ -27,7 +27,7 @@ export class RemapDistanceToControlPointToScalar extends Source1ParticleOperator
 		this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const cpNumber = this.getParameter('control point');
 		const dMin = this.getParameter('distance minimum');
 		const dMax = this.getParameter('distance maximum');

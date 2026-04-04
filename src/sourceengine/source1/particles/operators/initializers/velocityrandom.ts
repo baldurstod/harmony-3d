@@ -58,7 +58,7 @@ export class VelocityRandom extends Source1ParticleOperator {
 		vec3.add(particle.prevPosition, particle.prevPosition, randomVector);
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

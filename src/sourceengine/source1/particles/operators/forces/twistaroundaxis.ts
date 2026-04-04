@@ -1,4 +1,4 @@
-import { quat, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { ControlPoint } from '../../../../export';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
 import { Source1Particle } from '../../particle';
@@ -8,8 +8,8 @@ import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
-const tempAxis = vec3.create();
-const tempQuat = quat.create();
+//const tempAxis = vec3.create();
+//const tempQuat = quat.create();
 
 export class TwistAroundAxis extends Source1ParticleOperator {
 	static functionName = 'twist around axis';
@@ -21,10 +21,11 @@ export class TwistAroundAxis extends Source1ParticleOperator {
 		this.addParam('object local space axis 0/1', PARAM_TYPE_BOOL, 0);
 	}
 
-	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1): void {
 		const axis = this.getParameter('twist axis');//TODO: set in world space
 		const amountOfForce = this.getParameter('amount of force');
-		const localSpace = this.getParameter('object local space axis 0/1');
+		//TODO use param localSpace
+		//const localSpace = this.getParameter('object local space axis 0/1');
 
 		const cp: ControlPoint = particle.system.getControlPoint(0)!;
 		const offsetToAxis = vec3.sub(tempVec3, particle.position, cp.getWorldPosition(tempVec3));

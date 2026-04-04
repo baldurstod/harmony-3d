@@ -1,11 +1,12 @@
 import { vec3 } from 'gl-matrix';
 
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
-import { JSONObject } from 'harmony-types';
+import { vec3ToJSON } from '../utils/json';
 import { stringToVec3 } from '../utils/utils';
 import { LightShadow } from './lightshadow';
-import { vec3ToJSON } from '../utils/json';
 
 const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
 let defaultTextureSize = 1024;
@@ -69,7 +70,7 @@ export class Light extends Entity {
 		return this.#shadowTextureSize;
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Light_1: null,
 			color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) { this.color = stringToVec3(color); } } },

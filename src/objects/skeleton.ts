@@ -209,7 +209,7 @@ export class Skeleton extends Entity {
 		return entity;
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		this.#texture.dispose();
 	}

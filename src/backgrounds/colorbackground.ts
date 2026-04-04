@@ -37,7 +37,7 @@ export class ColorBackground extends BackGround {
 		vec4.copy(out, this.#color);
 	}
 
-	dispose() {
+	override dispose() {
 	}
 
 	is(s: string): boolean {

@@ -2,6 +2,7 @@ import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../../../graphi
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
+import { Source1PcfLoader } from '../export';
 import { SourcePCF } from '../loaders/sourcepcf';
 import { Source1ParticleSystem } from './source1particlesystem';
 
@@ -21,14 +22,14 @@ export class Source1ParticleControler {
 		});
 	}
 
-	static setParticleConstructor(ps: typeof Source1ParticleSystem) {
+	static setParticleConstructor(ps: typeof Source1ParticleSystem): void {
 		this.#sourceEngineParticleSystem = ps;
 	}
 
 	/**
 	 * Reset all active systems
 	 */
-	static resetAll() {
+	static resetAll(): void {
 		for (const system of this.#activeSystemList.values()) {
 			system.reset();
 		}
@@ -37,7 +38,7 @@ export class Source1ParticleControler {
 	 * Step systems
 	 * @param {Number} elapsedTime Step time
 	 */
-	static stepSystems(elapsedTime: number) {
+	static stepSystems(elapsedTime: number): void {
 		if (elapsedTime) {
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
@@ -53,15 +54,14 @@ export class Source1ParticleControler {
 	 * Add system TODO
 	 * @param {Number} elapsedTime Step time
 	 */
-	static addSystem2(system: Source1ParticleSystem) {
+	static addSystem2(system: Source1ParticleSystem): void {
 		this.#systemList[system.id] = system;
 	}
 
 	/**
 	 * Create system
-	 * @param {Number} elapsedTime Step time
 	 */
-	static async createSystem(repository: string, systemName: string) {//TODOv2
+	static async createSystem(repository: string, systemName: string): Promise<Source1ParticleSystem> {
 		if (!repository) {
 			//try to get repository from filename
 			for (const repo in this.#systemNameToPcf) {
@@ -88,7 +88,7 @@ export class Source1ParticleControler {
 	 * Create system
 	 * @param {Number} elapsedTime Step time
 	 */
-	static async #createSystem(repositoryName: string, system: Source1ParticleSystem) {
+	static async #createSystem(repositoryName: string, system: Source1ParticleSystem): Promise<void> {
 		const pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
 		if (pcfName) {
 			const pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
@@ -98,7 +98,7 @@ export class Source1ParticleControler {
 		}
 	}
 
-	static async #getPcfBySystemName(repository: string, systemName: string) {
+	static async #getPcfBySystemName(repository: string, systemName: string): Promise<string | null | undefined> {
 		await this.#loadManifest(repository);
 		const systemNameToPcfRepo = this.#systemNameToPcf[repository];
 
@@ -108,7 +108,7 @@ export class Source1ParticleControler {
 		return null;
 	}
 
-	static async loadManifest(repository: string) {
+	static loadManifest(repository: string): void {
 		if (this.#systemNameToPcf[repository] === undefined) {
 			this.#systemNameToPcf[repository] = null;
 		}
@@ -117,30 +117,32 @@ export class Source1ParticleControler {
 	/**
 	 * TODO
 	 */
-	static async #loadManifest(repositoryName: string) {
-		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve) => {
-			const systemNameToPcfRepo: Record<string, string> = {};
-			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
+	static async #loadManifest(repositoryName: string): Promise<boolean> {
+		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise((resolve) => {
+			(async (): Promise<void> => {
+				const systemNameToPcfRepo: Record<string, string> = {};
+				this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
 
-			const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
-			if (response.error) {
-				resolve(false);
-			}
-
-			const json: any/*TODO: change type*/ = response.json;
-
-			if (json && json.files) {
-				for (const file of json.files) {
-					const pcfName = file.name;
-					for (const definition of file.particlesystemdefinitions) {
-						systemNameToPcfRepo[definition] = pcfName;
-					}
+				const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
+				if (response.error) {
+					resolve(false);
 				}
-				resolve(true);
-			} else {
-				resolve(false);
-			}
+
+				const json: any/*TODO: change type*/ = response.json;
+
+				if (json && json.files) {
+					for (const file of json.files) {
+						const pcfName = file.name;
+						for (const definition of file.particlesystemdefinitions) {
+							systemNameToPcfRepo[definition] = pcfName;
+						}
+					}
+					resolve(true);
+				} else {
+					resolve(false);
+				}
+			})();
 		});
 		return this.#loadManifestPromises[repositoryName];
 	}
@@ -148,7 +150,7 @@ export class Source1ParticleControler {
 	/**
 	 * Start all systems
 	 */
-	static startAll() {
+	static startAll(): void {
 		for (const system of this.#activeSystemList.values()) {
 			system.start();
 		}
@@ -157,7 +159,7 @@ export class Source1ParticleControler {
 	/**
 	 * Stop all systems
 	 */
-	static stopAll() {
+	static stopAll(): void {
 		for (const system of this.#activeSystemList.values()) {
 			system.stop();
 		}
@@ -166,7 +168,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system active
 	 */
-	static setActive(system: Source1ParticleSystem) {
+	static setActive(system: Source1ParticleSystem): void {
 		if (!system) {
 			return;
 		}
@@ -176,7 +178,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system inactive
 	 */
-	static setInactive(system: Source1ParticleSystem) {
+	static setInactive(system: Source1ParticleSystem): void {
 		if (!system) {
 			return;
 		}
@@ -192,7 +194,7 @@ export class Source1ParticleControler {
 		const promise = new Promise<SourcePCF>(resolve => {
 			const pcf = this.#pcfList[pcfName];
 			if (!pcf) {
-				const callback1 = (pcf: SourcePCF) => {
+				const callback1 = (pcf: SourcePCF): void => {
 					if (pcf) {
 						this.#pcfList[pcfName] = pcf;
 						pcf.repository = repository;
@@ -215,15 +217,15 @@ export class Source1ParticleControler {
 	static async #loadPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
 		//TODO: return an empty system if not found?
 		const promise = new Promise<SourcePCF>(resolve => {
-			const pcfLoader = getLoader('Source1PcfLoader');
+			const pcfLoader = getLoader('Source1PcfLoader') as typeof Source1PcfLoader;
 			new pcfLoader().load(repositoryName, pcfName).then(
-				(pcf: SourcePCF) => resolve(pcf)
+				pcf => resolve(pcf as SourcePCF)
 			);
 		});
 		return promise;
 	}
 
-	static setSpeed(s: number) {
+	static setSpeed(s: number): void {
 		this.speed = s;
 	}
 

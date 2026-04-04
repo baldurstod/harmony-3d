@@ -20,7 +20,7 @@ export class AlphaFadeOutRandom extends Source1ParticleOperator {
 		this.addParam('fade bias', PARAM_TYPE_FLOAT, 0.5); //Neutral bias
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const proportional = this.getParameter('proportional 0/1');
 
 		const fadeOutTimeMin = this.getParameter('fade out time min');

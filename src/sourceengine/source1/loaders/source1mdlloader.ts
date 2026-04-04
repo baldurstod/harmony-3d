@@ -1,6 +1,6 @@
-import { mat3, mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { float32, int16, int32, uint8 } from 'harmony-types';
+import { float32, int16, uint8 } from 'harmony-types';
 import { DEBUG, LOG, TESTING } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
@@ -21,10 +21,10 @@ const MESH_STRUCT_SIZE = 80 + MESH_VERTEX_DATA_STRUCT_SIZE;
 const EYEBALL_STRUCT_SIZE = 172;// Size in bytes of mstudioeyeball_t
 
 const STUDIO_VERT_ANIM_NORMAL = 0;
-const STUDIO_VERT_ANIM_WRINKLE = 1;
+//const STUDIO_VERT_ANIM_WRINKLE = 1;
 
 const STUDIO_VERT_ANIM_NORMAL_STRUCT_SIZE = 16;// Size in bytes of mstudiovertanim_t
-const STUDIO_VERT_ANIM_WRINKLE_STRUCT_SIZE = STUDIO_VERT_ANIM_NORMAL_STRUCT_SIZE + 2;// Size in bytes of mstudiovertanim_wrinkle_t
+//const STUDIO_VERT_ANIM_WRINKLE_STRUCT_SIZE = STUDIO_VERT_ANIM_NORMAL_STRUCT_SIZE + 2;// Size in bytes of mstudiovertanim_wrinkle_t
 
 const TEXTURE_STRUCT_SIZE = 64;
 
@@ -205,7 +205,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return super.load(repository, path) as Promise<SourceMdl | null>;
 	}
 
-	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer) {
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl {
 		const mdl = new SourceMdl(repository);
 		const reader = new BinaryReader(arrayBuffer);
 		mdl.reader = reader;//TODOv3//removeme
@@ -227,7 +227,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return mdl;
 	}
 
-	#parseHeader(reader: BinaryReader, mdl: SourceMdl) {
+	#parseHeader(reader: BinaryReader, mdl: SourceMdl): void {
 		mdl.header = {} as SourceMdlHeader;
 		const header = mdl.header;
 		reader.seek(0);
@@ -364,7 +364,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseBodyParts(reader: BinaryReader, mdl: SourceMdl) {
+	#parseBodyParts(reader: BinaryReader, mdl: SourceMdl): void {
 		const bodyParts = mdl.bodyParts;
 
 		for (let i = 0; i < mdl.bodyPartCount; ++i) {
@@ -494,7 +494,9 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 				flex.vertAnims.push(vertAnim);
 			}
 		} else {
-			if (DEBUG) { console.error('Flex type STUDIO_VERT_ANIM_WRINKLE' + flex); }
+			if (DEBUG) {
+				console.error('Flex type STUDIO_VERT_ANIM_WRINKLE' + JSON.stringify(flex));
+			}
 		}
 		return flex;
 	}
@@ -567,7 +569,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		//mdl.skinReferences = skinReferences;
 	}
 
-	#parseTextures(reader: BinaryReader, mdl: SourceMdl) {
+	#parseTextures(reader: BinaryReader, mdl: SourceMdl): void {
 		const textures = mdl.textures;
 
 		for (let i = 0; i < mdl.textureCount; ++i) {
@@ -577,17 +579,17 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseTexture(reader: BinaryReader, mdl: SourceMdl, startOffset: number) {
+	#parseTexture(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlTexture {
 		reader.seek(startOffset);
 		const nameOffset = reader.getInt32() + startOffset;
 
 		// Ensure we have enough data for the name
 		const texture = new MdlTexture();
-		const flags = reader.getInt32();
-		const used = reader.getInt32();
-		const unused = reader.getInt32();
-		const material = reader.getInt32();
-		const client_material = reader.getInt32();
+		/*const flags = */reader.getInt32();// TODO; use flags
+		/*const used = */reader.getInt32();// TODO; use used
+		/*const unused = */reader.getInt32();// TODO; use unused
+		/*const material = */reader.getInt32();// TODO; use material
+		/*const client_material = */reader.getInt32();// TODO: use client_material
 
 		texture.name = reader.getNullString(nameOffset);
 		texture.originalName = texture.name;
@@ -604,7 +606,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return texture;
 	}
 
-	#parseTextureDirs(reader: BinaryReader, mdl: SourceMdl) {
+	#parseTextureDirs(reader: BinaryReader, mdl: SourceMdl): void {
 
 		for (let i = 0; i < mdl.textureDirCount; ++i) {
 			const nameOffset = reader.getInt32(mdl.textureDirOffset + i * 4);
@@ -616,13 +618,13 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseModelGroups(reader: BinaryReader, mdl: SourceMdl) {
+	#parseModelGroups(reader: BinaryReader, mdl: SourceMdl): void {
 		for (let i = 0; i < mdl.includeModelCount; ++i) {
 			mdl.modelGroups.push(this.#parseModelGroup(reader, mdl, mdl.includeModelOffset + i * STUDIO_MODEL_GROUP_STRUCT_SIZE));
 		}
 	}
 
-	#parseModelGroup(reader: BinaryReader, mdl: SourceMdl, startOffset: number) {
+	#parseModelGroup(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlStudioModelGroup {
 		reader.seek(startOffset);
 		const labelOffset = reader.getInt32() + startOffset;
 		const nameOffset = reader.getInt32() + startOffset;
@@ -635,7 +637,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return modelgroup;
 	}
 
-	#parseAnimDescriptions(reader: BinaryReader, mdl: SourceMdl) {
+	#parseAnimDescriptions(reader: BinaryReader, mdl: SourceMdl): void {
 		const animDescriptions = mdl.animDesc;
 
 		for (let i = 0; i < mdl.localAnimCount; ++i) {
@@ -644,7 +646,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseAnimDescription(reader: BinaryReader, mdl: SourceMdl, startOffset: number) {
+	#parseAnimDescription(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlStudioAnimDesc {
 		reader.seek(startOffset + 4);//skip 4 first bytes
 		const nameOffset = reader.getInt32() + startOffset;
 
@@ -655,7 +657,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		animDesc.flags = reader.getInt32();
 		animDesc.numframes = reader.getInt32();
 		animDesc.nummovements = reader.getInt32();
-		const movementOffset = reader.getInt32();
+		/*const movementOffset = */reader.getInt32();// TODO: use movementOffset
 
 		reader.skip(24);
 
@@ -663,11 +665,11 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		animDesc.animIndex = reader.getInt32();
 
 		animDesc.numikrules = reader.getInt32();
-		const ikruleOffset = reader.getInt32();
-		const animblockikruleOffset = reader.getInt32();
+		/*const ikruleOffset = */reader.getInt32();// TODO: use ikruleOffset
+		/*const animblockikruleOffset = */reader.getInt32();//TODO: use animblockikruleOffset
 
-		const numLocalHierarchy = reader.getInt32();
-		const localHierarchyOffset = reader.getInt32() + startOffset;
+		/*const numLocalHierarchy = */reader.getInt32();// TODO: use numLocalHierarchy
+		/*const localHierarchyOffset = */reader.getInt32() /*+ startOffset;*/// TODO: use localHierarchyOffset
 
 		animDesc.sectionOffset = reader.getInt32();
 		animDesc.sectionframes = reader.getInt32();
@@ -677,9 +679,10 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		//console.log(animDesc.zeroframecount);
 		animDesc.zeroframeOffset = reader.getInt32();
 
-		const spanStallTime = reader.getFloat32();
+		/*const spanStallTime = */reader.getFloat32();//TODO; use spanStallTime
 
 		//TODO
+		/*
 		let numSection;
 		if (animDesc.sectionframes != 0) {
 			numSection = Math.ceil(animDesc.numframes / animDesc.sectionframes) + 1;
@@ -687,6 +690,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 			numSection = 1;
 		}
 		numSection = 0;
+		*/
 		/*
 		for (let i = 0; i < numSection; i++) {
 			const section = this._parseAnimSection(reader, animDesc, i);//TODOv3
@@ -731,7 +735,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return hierarchy;
 	}
 
-	#parseSequences(reader: BinaryReader, mdl: SourceMdl) {
+	#parseSequences(reader: BinaryReader, mdl: SourceMdl): void {
 		for (let i = 0; i < mdl.localSeqCount; ++i) {
 			const sequence = this.#parseSequence(reader, mdl, mdl.localSeqOffset + i * STUDIO_SEQUENCE_DESC_STRUCT_SIZE);
 			sequence.id = i;
@@ -739,7 +743,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseSequence(reader: BinaryReader, mdl: SourceMdl, startOffset: number) {
+	#parseSequence(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlStudioSeqDesc {
 		reader.seek(startOffset + 4);//skip 4 first bytes
 
 		const nameOffset = reader.getInt32() + startOffset;
@@ -870,7 +874,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return sequence;
 	}
 
-	#parseStudioEvent(reader: BinaryReader, mdl: SourceMdl, startOffset: number) { // mstudioevent_t
+	#parseStudioEvent(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlStudioEvent { // mstudioevent_t
 		reader.seek(startOffset);
 
 		const studioEvent = new MdlStudioEvent();
@@ -963,7 +967,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 			const block = reader.getInt32();//block;//TODOv2
 			const sectionOffset = reader.getInt32();
 			if (TESTING && block == -1) {
-				throw 'error';
+				throw new Error('error');
 			}
 
 			if (block == 0) {
@@ -1045,7 +1049,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		return anim;
 	}
 
-	#parseAttachments(reader: BinaryReader, mdl: SourceMdl) {
+	#parseAttachments(reader: BinaryReader, mdl: SourceMdl): void {
 		const attachments = mdl.attachments;
 		const attachmentNames = mdl.attachmentNames;
 		if (mdl.attachmentCount && mdl.attachmentOffset) {
@@ -1149,7 +1153,7 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 registerLoader('Source1MdlLoader', Source1MdlLoader);
 
 
-function readMatrix3x4(reader: BinaryReader) {
+function readMatrix3x4(reader: BinaryReader): mat4 {
 	const matrix = mat4.create();
 	matrix[0] = reader.getFloat32();
 	matrix[4] = reader.getFloat32();
@@ -1197,7 +1201,7 @@ function parseHitboxSet(reader: BinaryReader, mdl: SourceMdl, startOffset: numbe
 	return hitboxSet;
 }
 
-function parseHitbox(reader: BinaryReader, startOffset: number) {
+function parseHitbox(reader: BinaryReader, startOffset: number): MdlStudioHitbox {
 	reader.seek(startOffset);
 	const hitbox = new MdlStudioHitbox();
 
@@ -1246,7 +1250,7 @@ function parseCompressedIkError(reader: BinaryReader, offset: number): StudioCom
 	reader.seek(offset);
 	const scale: [float32, float32, float32, float32, float32, float32,] = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(),];
 	const offsets: [int16, int16, int16, int16, int16, int16,] = [reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(),];
-	const localAnimIndex: int32 = reader.getInt32();
+	/*const localAnimIndex: int32 = */reader.getInt32();// TODO: use localAnimIndex
 	const values: [StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null, StudioAnimValue | null,] = [null, null, null, null, null, null,];
 
 	for (let i = 0; i < 6; ++i) {

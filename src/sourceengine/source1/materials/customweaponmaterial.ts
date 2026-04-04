@@ -40,7 +40,7 @@ export class CustomWeaponMaterial extends Source1Material {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams: DynamicParams) {
+	override afterProcessProxies(proxyParams: DynamicParams): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 
@@ -175,7 +175,7 @@ export class CustomWeaponMaterial extends Source1Material {
 		this.setDefine('PAINT_STYLE', style);
 	}
 
-	setColorUniform(uniformName: string, value: string) {
+	setColorUniform(uniformName: string, value: string): void {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
@@ -220,7 +220,7 @@ export class CustomWeaponMaterial extends Source1Material {
 		}
 	*/
 
-	setPatternScale(scale: number) {
+	setPatternScale(scale: number): void {
 		const v = this.getUniformValue('g_PreviewPhongBoosts');
 		(v as vec4)[2] = scale;
 		this.setUniformValue('g_PreviewPhongBoosts', v);
@@ -251,7 +251,7 @@ export class CustomWeaponMaterial extends Source1Material {
 		"phongalbedoboost": "80"
 		*/
 
-	clone() {
+	override clone(): CustomWeaponMaterial {
 		return new CustomWeaponMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

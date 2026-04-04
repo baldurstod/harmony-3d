@@ -21,7 +21,7 @@ export class RemapScalar extends Source1ParticleOperator {
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');

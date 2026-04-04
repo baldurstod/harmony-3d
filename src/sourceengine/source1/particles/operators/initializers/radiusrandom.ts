@@ -13,7 +13,7 @@ export class RadiusRandom extends Source1ParticleOperator {
 		this.addParam('radius_max', PARAM_TYPE_FLOAT, 1);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const radius_min = this.getParameter('radius_min') ?? 1;
 		const radius_max = this.getParameter('radius_max') ?? 1;
 		const radius = (radius_max - radius_min) * Math.random() + radius_min;

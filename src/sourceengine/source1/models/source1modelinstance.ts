@@ -1,6 +1,7 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { Dmx, DmxElement } from 'harmony-dmx';
 import { int32, JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Animation } from '../../../animations/animation';
 import { AnimationBone } from '../../../animations/animationbone';
 import { AnimationDescription } from '../../../animations/animationdescription';
@@ -33,7 +34,6 @@ import { MdlStudioFlex, MeshTest } from '../loaders/source1mdlloader';
 import { SourceAnimation } from '../loaders/sourceanimation';
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { SourceModel } from '../loaders/sourcemodel';
-import { Source1Material } from '../materials/source1material';
 import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { Source1ParticleSystem } from '../particles/source1particlesystem';
@@ -53,7 +53,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	#attachments: Record<string, Bone> = {};
 	#materialsUsed = new Set<Material>();
 	animable = true;
-	hasAnimations: true = true;
+	hasAnimations = true as const;
 	sourceModel: SourceModel;
 	bodyParts: Record<string, Entity> = {};//TODO: create map
 	sequences: Source1ModelSequences = {};
@@ -92,7 +92,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#updateMaterials();
 	}
 
-	get skeleton() {
+	get skeleton(): Skeleton | null {
 		return this.#skeleton;
 	}
 
@@ -100,34 +100,34 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#skeleton = skeleton;
 	}
 
-	#createSkeleton() {
+	#createSkeleton(): Skeleton {
 		this.#skeleton = new Skeleton({ name: `Skeleton ${this.name}` });
-		return super.addChild(this.#skeleton);
+		return super.addChild(this.#skeleton) as Skeleton;
 	}
 
-	addChild(child?: Entity | null) {
+	addChild(child?: Entity | null): Entity | null {
 		if (!child) {
 			return null;
 		}
 		const ret = super.addChild(child);
-		(child as unknown as HasSkeleton).skeleton?.setParentSkeleton(this.#skeleton ?? null);
+		void (child as unknown as HasSkeleton).skeleton?.setParentSkeleton(this.#skeleton ?? null);
 		return ret;
 	}
 
-	removeChild(child: Entity) {
+	removeChild(child: Entity): void {
 		super.removeChild(child);
-		(child as unknown as HasSkeleton).skeleton?.setParentSkeleton(null);
+		void (child as unknown as HasSkeleton).skeleton?.setParentSkeleton(null);
 	}
 
 	set skin(skin: string) {// TODO: deprecate
 		this.setSkin(skin);
 	}
 
-	get skin() {
+	get skin(): string {
 		return String(this.#skin);
 	}
 
-	async setSkin(skin: string) {
+	async setSkin(skin: string): Promise<void> {
 		this.#skin = Number(skin);
 		await this.#updateMaterials();
 	}
@@ -202,7 +202,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	setTint(tint: vec4 | null): void {
-		this.#tint = tint ? vec4.clone(tint as vec4) : null;
+		this.#tint = tint ? vec4.clone(tint) : null;
 		this.materialsParams['ItemTintColor'] = tint;
 	}
 
@@ -214,15 +214,15 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return null;
 	}
 
-	setPoseParameter(paramName: string, paramValue: number) {
+	setPoseParameter(paramName: string, paramValue: number): void {
 		this.#poseParameters.set(paramName, paramValue);
 	}
 
-	playAnimation(name: string) {
+	playAnimation(name: string): void {
 		this.playSequence(name);
 	}
 
-	async setAnimation(id: number, name: string, weight: number) {
+	async setAnimation(id: number, name: string, weight: number): Promise<void> {
 		//TODO: merge with addAnimation
 		this.#animationList[id] = { name: name, weight: weight };
 
@@ -235,7 +235,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	playSequence(sequenceName: string) { //TODO
+	playSequence(sequenceName: string): void { //TODO
 		sequenceName = sequenceName.toLowerCase();
 		const existingSequence = this.sequences[sequenceName];
 		this.sequences = Object.create(null);//TODOv2
@@ -247,7 +247,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.frame = 0;
 	}
 
-	async addAnimation(id: number, animationName: string, weight = 1) {
+	async addAnimation(id: number, animationName: string, weight = 1): Promise<void> {
 		//TODO: merge with setAnimation
 		animationName = animationName.toLowerCase();
 		if (!this.#animations.setWeight(id, weight)) {
@@ -257,7 +257,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	update(scene: Scene, camera: Camera, delta: number) {
+	update(scene: Scene, camera: Camera, delta: number): void {
 		if (this.#skeleton && this.isPlaying()) {
 			this.#playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
@@ -307,11 +307,13 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 						seqContext.s = sequence;
 						seqContext.startTime = now;
 						if (sequence.autolayer) {
-							const autoLayerList = sequence.autolayer;
+							//const autoLayerList = sequence.autolayer;
 
+							/*
 							for (let autoLayerIndex = 0; autoLayerIndex < autoLayerList.length; ++autoLayerIndex) {
 								const autoLayer = autoLayerList[autoLayerIndex];
 							}
+							*/
 						}
 					}
 
@@ -348,10 +350,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 				sequence.play(this);//TODOv2: play autolayer ?
 			}
 		}
-		this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences);
+		this.anim.animate2(this, this.#poseParameters, this.getPosition(/*TODO: optimize*/), this.getOrientation(/*TODO: optimize*/), this.sequences);
 	}
 
-	#animate() {
+	#animate(): void {
 		const skeleton = this.#skeleton;
 		if (!skeleton) {
 			return;
@@ -362,10 +364,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			quat.identity(bone.tempQuaternion);
 		}
 
-		const position = vec3.create();//TODO:optimize
-		const quaternion = quat.create();
+		//const position = vec3.create();//TODO:optimize
+		//const quaternion = quat.create();
 
-		for (const [_, animationDescription] of this.#animations) {
+		for (const [, animationDescription] of this.#animations) {
 			if (!animationDescription) {
 				continue;
 			}
@@ -459,25 +461,23 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 		for (const bone of skeleton._bones) {
 			if (!bone.lockPosition) {
-				bone.position = bone.tempPosition;
+				bone.setPosition(bone.tempPosition);
 			}
 			if (!bone.lockRotation) {
-				bone.quaternion = bone.tempQuaternion;
+				bone.setOrientation(bone.tempQuaternion);
 			}
 		}
 	}
 
-	async setMaterialOverride(materialOverride: Material | null) {
+	async setMaterialOverride(materialOverride: Material | null): Promise<void> {
 		this.#materialOverride = materialOverride;
 		await this.#updateMaterials();
 	}
 
-	async #updateMaterials() {
+	async #updateMaterials(): Promise<void> {
 		for (const mesh of this.#meshes) {
-			let material: Material | null;
-			let materialName;
-			materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
-			material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+			const materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
+			let material: Material | null = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
 			if (this.#materialOverride) {
 				material = this.#materialOverride;
 			}
@@ -494,24 +494,22 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	async getSkins(): Promise<Set<string>> {
+	getSkins(): Promise<Set<string>> {
 		const skinReferences = this.sourceModel.mdl.skinReferences;
 		const skins = new Set<string>();
 		for (const skin of skinReferences.keys()) {
 			skins.add(String(skin));
 		}
-		return skins;
+		return Promise.resolve(skins);
 	}
 
 	async getMaterialsName(skin: string): Promise<[string, Set<string>]> {
-		const skinReferences = this.sourceModel.mdl.skinReferences;
+		//const skinReferences = this.sourceModel.mdl.skinReferences;
 		const materials = new Set<string>();
 
 		for (const mesh of this.#meshes) {
-			let material: Source1Material | null;
-			let materialName: string;
-			materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
-			material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+			const materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
+			const material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
 			if (material) {
 				materials.add(material.path);
 			}
@@ -520,7 +518,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return [this.sourceModel.repository, materials];
 	}
 
-	#init() {
+	#init(): void {
 		const sourceModel = this.sourceModel;
 		for (const [bodyPartName, bodyPart] of sourceModel.bodyParts) {
 			//let newBodyPart = [];
@@ -570,7 +568,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#initSkeleton() {
+	#initSkeleton(): void {
 		const bones = this.sourceModel.getBones();
 		if (bones) {
 			for (const bone of bones) {
@@ -595,7 +593,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#initAttachments() {
+	#initAttachments(): void {
 		const attachments = this.sourceModel.getAttachments();
 		const localMat3 = mat3.create();//todo: optimize
 		if (attachments) {
@@ -643,7 +641,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 	*/
 
-	renderBodyParts(render: boolean) {
+	renderBodyParts(render: boolean): void {
 		for (const bodyPartName in this.bodyParts) {
 			this.renderBodyPart(bodyPartName, render);
 			/*let bodyPart = this.bodyParts[bodyPartName];
@@ -657,7 +655,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	renderBodyPart(bodyPartName: string, render: boolean) {
+	renderBodyPart(bodyPartName: string, render: boolean): void {
 		const bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
 			bodyPart.setVisible(render ? undefined : false);
@@ -669,20 +667,20 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	resetBodyPartModels() {
+	resetBodyPartModels(): void {
 		for (const bodyPartName in this.bodyParts) {
 			this.setBodyPartModel(bodyPartName, 0);
 		}
 	}
 
-	setBodyPartIdModel(bodyPartId: number, modelId: number) {
+	setBodyPartIdModel(bodyPartId: number, modelId: number): void {
 		const bodypart = this.sourceModel.getBodyPart(bodyPartId);
 		if (bodypart) {
 			this.setBodyPartModel(bodypart.name, modelId);
 		}
 	}
 
-	setBodyPartModel(bodyPartName: string, modelId: number) {
+	setBodyPartModel(bodyPartName: string, modelId: number): void {
 		const bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
 			//let id = 0;
@@ -698,15 +696,15 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#bodyGroups.set(bodyPartName, Number(modelId));
 	}
 
-	getBodyGroups() {
+	getBodyGroups(): Map<string, number> {
 		return new Map(this.#bodyGroups);
 	}
 
-	toString() {
+	toString(): string {
 		return 'Source1ModelInstance ' + super.toString();
 	}
 
-	attachSystem(system: Source1ParticleSystem, attachmentName = '', cpIndex = 0, offset?: vec3) {
+	attachSystem(system: Source1ParticleSystem, attachmentName = '', cpIndex = 0, offset?: vec3): void {
 		this.addChild(system);
 
 		const attachment = this.getAttachment(attachmentName);
@@ -749,11 +747,11 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	getAttachment(attachmentName: string) {
+	getAttachment(attachmentName: string): Bone | undefined {
 		return this.#attachments[attachmentName.toLowerCase()];
 	}
 
-	getBoneByName(boneName: string) {
+	getBoneByName(boneName: string): Bone | undefined {
 		if (!this.#skeleton) {
 			return;
 		}
@@ -776,21 +774,21 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		//console.error();
 		const skins = this.sourceModel.mdl.getSkinList();
 		const skinMenu = [];
 		for (const skin of skins) {
 			const item = Object.create(null);
 			item.name = skin;
-			item.f = () => this.skin = String(skin);
+			item.f = (): void => { this.skin = String(skin) };
 			skinMenu.push(item);
 		}
 
 		return Object.assign(super.buildContextMenu(), {
 			Source1ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
-			tint: { i18n: '#tint', f: async (entity: Source1ModelInstance) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
+			tint: { i18n: '#tint', f: (entity: Source1ModelInstance) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
 			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance) => entity.setTint(null), disabled: this.#tint === undefined },
 			animation: { i18n: '#animation', f: async (entity: Source1ModelInstance) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
 			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity: Source1ModelInstance) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]!; } } },
@@ -814,7 +812,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		directionBias: vec3,
 		boundingBoxScale: number,
 		bones: [Bone, number][],
-		hitBoxRelativeCoordOut: vec3 | undefined,
+		//hitBoxRelativeCoordOut: vec3 | undefined,
 	): int32 {
 		const hitboxes = this.getHitboxes();
 		const hitBoxId = getRandomInt/*TODO: use random int of the particle collection*/(hitboxes.length);
@@ -834,7 +832,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return hitBoxId;
 	}
 
-	setPosition(position: vec3) {
+	setPosition(position: vec3): void {
 		super.setPosition(position);
 		if (this.#skeleton) {
 			this.#skeleton.dirty();
@@ -842,13 +840,13 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	set quaternion(quaternion) {
-		super.quaternion = quaternion;
+		super.setOrientation(quaternion);
 		if (this.#skeleton) {
 			this.#skeleton.dirty();
 		}
 	}
 
-	get quaternion() {
+	get quaternion(): quat {
 		return quat.clone(this._quaternion);
 	}
 
@@ -856,7 +854,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#animSpeed = speed;
 	}
 
-	setFlexes(flexes: Map<string, number>) {
+	setFlexes(flexes: Map<string, number>): void {
 		this.#flexParameters.clear();
 		for (const [name, value] of flexes) {
 			this.#flexParameters.set(name, value);
@@ -864,26 +862,27 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		this.#refreshFlexes();
 	}
 
-	resetFlexParameters() {
+	resetFlexParameters(): void {
 		this.#flexParameters.clear();
 		this.#refreshFlexes();
 	}
 
-	#refreshFlexes() {
+	#refreshFlexes(): void {
 		this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
 
 		for (const mesh of this.#meshes) {
-			if (mesh && mesh.geometry) {
-				const attribute = mesh.geometry.getAttribute('aVertexPosition')!;
+			const meshGeometry = mesh.getGeometry();
+			if (meshGeometry) {
+				const attribute = meshGeometry.getAttribute('aVertexPosition')!;
 				const newAttribute = attribute.clone();
-				mesh.geometry.setAttribute('aVertexPosition', newAttribute);
+				meshGeometry.setAttribute('aVertexPosition', newAttribute);
 				const sourceModelMesh = mesh.properties.getObject('sourceModelMesh') as MeshTest;
 				this.#updateArray(newAttribute._array as Float32Array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
 			}
 		}
 	}
 
-	#updateArray(vertexPositionArray: Float32Array, flexes: MdlStudioFlex[], vertexoffset: number) {
+	#updateArray(vertexPositionArray: Float32Array, flexes: MdlStudioFlex[], vertexoffset: number): void {
 		const flexesWeight = this.#flexesWeight;
 		if (flexes && flexes.length) {
 			for (const flex of flexes) {
@@ -906,7 +905,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 						const w = w1 * (1.0 - b) + b * w3;
 
 						const flDelta = vertAnim.flDelta;
-						const flNDelta = vertAnim.flNDelta;
+						//const flNDelta = vertAnim.flNDelta;
 						//const vertexIndex = vertAnim.index * 3;
 						//const vertexIndexArray = this.verticesPositionToto[vertAnim.index];
 
@@ -941,7 +940,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	async playDefaultAnim() {
+	async playDefaultAnim(): Promise<void> {
 		const animList = await this.sourceModel.mdl.getAnimList();
 		if (animList && animList.size > 0) {
 			this.playSequence(animList.keys().next().value!);
@@ -965,19 +964,19 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return hitboxes;
 	}
 
-	replaceMaterial(material: Material, recursive = true) {
+	replaceMaterial(material: Material, recursive = true): void {
 		super.replaceMaterial(material, recursive);
 		for (const mesh of this.#meshes) {
-			mesh.material = material;
+			mesh.setMaterial(material);
 		}
 	}
 
-	resetMaterial(recursive = true) {
+	resetMaterial(recursive = true): void {
 		super.resetMaterial(recursive);
 		this.#updateMaterials();
 	}
 
-	getAnimations() {
+	getAnimations(): Promise<Set<string>> {
 		return this.sourceModel.mdl.getAnimList();
 	}
 
@@ -1090,7 +1089,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 
-				const time = Math.round(frame * 10000 / frameRate);
+				//const time = Math.round(frame * 10000 / frameRate);
 
 				const bonePositions: vec3[] = new Array(bones.length);
 				const boneOrientations: quat[] = new Array(bones.length);
@@ -1150,7 +1149,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.skin = this.skin;
 		json.repository = this.sourceModel.repository;
@@ -1188,13 +1187,13 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return entity;
 	}
 
-	fromJSON(json: JSONObject) {
+	override fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.skin = (json.skin as (string | undefined)) ?? '0';
 		//TODO
 	}
 
-	dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#skeleton?.dispose();
 		for (const material of this.#materialsUsed) {
@@ -1205,11 +1204,11 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	static getEntityName() {
+	static getEntityName(): string {
 		return 'Source1Model';
 	}
 
-	is(s: string) {
+	is(s: string): boolean {
 		if (s == 'Source1ModelInstance') {
 			return true;
 		} else {

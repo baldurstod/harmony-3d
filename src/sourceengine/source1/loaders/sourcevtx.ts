@@ -76,7 +76,7 @@ export class SourceVtx {
 	numBodyParts = 0;
 	bodyPartOffset = 0;
 
-	getBodyparts() {//removeme//TODOv3
+	getBodyparts(): VTXBodyPart[] {//removeme//TODOv3
 		return this.bodyparts;
 	}
 }

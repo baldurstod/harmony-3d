@@ -22,7 +22,7 @@ export class PositionWithinBoxRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const min = this.getParameter('min');
 		const max = this.getParameter('max');
 		const controlPointNumber = this.getParameter('control point number');

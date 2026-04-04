@@ -1,9 +1,10 @@
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
-import { JSONObject } from 'harmony-types';
 import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
 
 export type PlaneParameters = MeshParameters & {
@@ -56,7 +57,7 @@ export class Plane extends Mesh {
 		(this.geometry as PlaneBufferGeometry).updateGeometry(this.#width, this.#height, this.#widthSegments, this.#heightSegments);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Plane_1: null,
 			width: { i18n: '#width', f: () => { const width = prompt(); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },

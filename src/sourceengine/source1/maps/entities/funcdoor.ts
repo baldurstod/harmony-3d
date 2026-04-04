@@ -19,7 +19,7 @@ export class FuncDoor extends MapEntity {
 	pos2 = vec3.create();
 	finalDest = vec3.create();
 
-	setKeyValues(kvElement: KvElement): void {
+	override setKeyValues(kvElement: KvElement): void {
 		super.setKeyValues(kvElement);
 
 		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
@@ -30,7 +30,7 @@ export class FuncDoor extends MapEntity {
 			//}
 		}
 
-		const movedistance = (kvElement as any/*TODO: fix that*/).movedistance;
+		//const movedistance = (kvElement as any/*TODO: fix that*/).movedistance;
 		this.speed = (kvElement as any/*TODO: fix that*/).speed;
 		vec3.zero(this.moveDir);
 		const moveDir = ParseAngles(vec3.create() /*TODO: optimize*/, (kvElement as any/*TODO: fix that*/).movedir);
@@ -71,7 +71,7 @@ export class FuncDoor extends MapEntity {
 		}
 	}
 
-	update(scene: Scene, camera: Camera, delta: number) {
+	override update(scene: Scene, camera: Camera, delta: number): void {
 		super.update(scene, camera, delta);
 		if (this.model && this.model.origin) {
 			if ((this._position[0] != this.model.origin[0]) || (this._position[1] != this.model.origin[1]) || (this._position[2] != this.model.origin[2])) {
@@ -84,7 +84,7 @@ export class FuncDoor extends MapEntity {
 		if (this.m_flMoveDoneTime <= this.m_flLocalTime && this.m_flMoveDoneTime > 0) {
 			this.setMoveDoneTime(-1);
 			//vec3.copy(this.origin, this.finalDest);
-			this.position = this.finalDest;
+			this.setPosition(this.finalDest);
 			vec3.set(this.m_vecVelocity, 0, 0, 0);
 			this.moveDone();
 		}

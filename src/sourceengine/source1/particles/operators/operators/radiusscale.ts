@@ -25,7 +25,7 @@ export class RadiusScale extends Source1ParticleOperator {
 		DMXELEMENT_UNPACK_FIELD('scale_bias', '0.5', float, m_flBias)*/
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const radius_start_scale = this.getParameter('radius_start_scale');
 		const radius_end_scale = this.getParameter('radius_end_scale');
 		const start_time = this.getParameter('start_time');

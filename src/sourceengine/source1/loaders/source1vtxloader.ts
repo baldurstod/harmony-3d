@@ -147,12 +147,12 @@ export class Source1VtxLoader extends SourceBinaryLoader {
 
 		for (let i = 0; i < stripGroup.numStrips; ++i) {
 			reader.seek(baseOffset + stripOffset + i * STRIP_HEADER_SIZE);
-			stripGroup.strips.push(this.#parseStripHeader(reader, vtx));
+			stripGroup.strips.push(this.#parseStripHeader(reader/*, vtx*/));
 		}
 		return stripGroup;
 	}
 
-	#parseStripHeader(reader: BinaryReader, vtx: SourceVtx): MdlStripHeader {
+	#parseStripHeader(reader: BinaryReader/*, vtx: SourceVtx*/): MdlStripHeader {
 		const stripHeader = new MdlStripHeader();
 
 		//const baseOffset = reader.tell();removeme

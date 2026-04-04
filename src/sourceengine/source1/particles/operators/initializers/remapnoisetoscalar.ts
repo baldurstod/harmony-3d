@@ -18,7 +18,7 @@ export class RemapNoiseToScalar extends Source1ParticleOperator {
 		this.addParam('output maximum', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const field = this.getParameter('output field') || 1;
 		const minimum = this.getParameter('output minimum') || 0.0;
 		const maximum = this.getParameter('output maximum') || 1.0;

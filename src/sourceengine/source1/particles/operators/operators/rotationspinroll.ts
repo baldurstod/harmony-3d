@@ -21,7 +21,7 @@ export class RotationSpinRoll extends Source1ParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD('spin_rate_min', '0', int, m_nSpinRateMinDegrees)
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const m_nSpinRateDegrees = this.getParameter('spin_rate_degrees');
 		const m_fSpinRateStopTime = this.getParameter('spin_stop_time');
 		const m_nSpinRateMinDegrees = this.getParameter('spin_rate_min');

@@ -3,10 +3,10 @@ import { Material } from '../../../../materials/material';
 import { generateRandomUUID } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
+import { CDmxAttributeValue } from '../../export';
 import { PARAM_TYPE_ID, PARAM_TYPE_STRING } from '../constants';
 import { Source1Particle } from '../particle';
 import { ParamType, Source1ParticleSystem } from '../source1particlesystem';
-import { CDmxAttributeValue } from '../../export';
 
 export class Source1ParticleOperator {
 	#parameters: Record<string, any> = {};
@@ -16,32 +16,29 @@ export class Source1ParticleOperator {
 	paramList: ParamType[] = [];
 	#endCapState = -1;
 	mesh?: Mesh;//for renderers// TODO: put  in a subclas ?
+	static readonly functionName: string = 'Operator';
 
 	constructor(system: Source1ParticleSystem) {
 		this.setNameId(this.functionName);
 		this.particleSystem = system;
 	}
 
-	get functionName() {
+	get functionName(): string {
 		return (this.constructor as typeof Source1ParticleOperator).getFunctionName();
 	}
 
-	static get functionName() {
-		return 'Operator';
-	}
-
-	static getFunctionName() {
+	static getFunctionName(): string {
 		return this.functionName;
 	}
 
-	initializeParticle(particle: Source1Particle, elapsedTime: number) {
+	initializeParticle(particle: Source1Particle, elapsedTime: number): void {
 		if (!particle) {
 			return;
 		}
 		this.doInit(particle, elapsedTime);
 	}
 
-	operateParticle(particle: Source1Particle, elapsedTime: number) {
+	operateParticle(particle: Source1Particle, elapsedTime: number): void {
 		const strength = this.getOperatorStrength();
 		if (strength > 0 && this.#endCapState != 1) {
 			// TODO: pass strength to doOperate
@@ -49,37 +46,38 @@ export class Source1ParticleOperator {
 		}
 	}
 
-	forceParticle(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3) {
+	forceParticle(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3): void {
 		if (!particle) {
 			return;
 		}
 		this.doForce(particle, elapsedTime, accumulatedForces);
 	}
 
-	constraintParticle(particle: Source1Particle) {
+	constraintParticle(particle: Source1Particle): void {
 		if (!particle) {
 			return;
 		}
 		this.applyConstraint(particle);
 	}
 
-	doEmit(elapsedTime: number) { }
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/no-empty-function */
+	doEmit(elapsedTime: number): void { }
+	doInit(particle: Source1Particle, elapsedTime: number): void { }
+	doOperate(particle: Source1Particle, elapsedTime: number): void { }
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3, strength?: number): void { }
+	applyConstraint(particle: Source1Particle): void { }
+	doRender(particle: Source1Particle[], elapsedTime: number, material: Material): void { }
+	initRenderer(/*particleSystem: Source1ParticleSystem*/): void { }
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void { }
+	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void {
+		// Override this function is you need a notification when a parm is modified
+	}
 
-	doInit(particle: Source1Particle, elapsedTime: number) { }
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/no-empty-function */
 
-	doOperate(particle: Source1Particle, elapsedTime: number) { }
-
-	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3, strength?: number) { }
-
-	applyConstraint(particle: Source1Particle) { }
-
-	doRender(particle: Source1Particle[], elapsedTime: number, material: Material) { }
-
-	initRenderer(/*particleSystem: Source1ParticleSystem*/) { }
-
-	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) { }
-
-	emitParticle(creationTime: number, elapsedTime: number) {
+	emitParticle(creationTime: number, elapsedTime: number): Source1Particle | null {
 		return this.particleSystem.createParticle(creationTime, elapsedTime);
 	}
 
@@ -92,17 +90,13 @@ export class Source1ParticleOperator {
 	}
 	*/
 
-	setMaterial(material: Material) {
+	setMaterial(material: Material): void {
 		this.material = material;
 	}
 
-	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
-		// Override this function is you need a notification when a parm is modified
-	}
-
-	setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
-		if (parameter == '' || parameter == undefined) {
-			return this;
+	setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void {
+		if (parameter == '') {
+			return;
 		}
 		if (parameter == 'operator end cap state') {
 			this.#endCapState = value as number;
@@ -114,10 +108,9 @@ export class Source1ParticleOperator {
 		this.#parameters[parameter].value = value;
 		//this.propertyChanged(parameter);
 		this.paramChanged(parameter, value);
-		return this;
 	}
 
-	getParameter(parameter: string) {
+	getParameter(parameter: string): any {
 		const p = this.#parameters[parameter];
 		if (p == undefined) {
 			return null;
@@ -126,7 +119,7 @@ export class Source1ParticleOperator {
 		return p.value;
 	}
 
-	getParameters() {
+	getParameters(): Record<string, any> {
 		return this.#parameters;
 	}
 
@@ -140,24 +133,21 @@ export class Source1ParticleOperator {
 	}
 	*/
 
-	setNameId(name: string) {
+	setNameId(name: string): void {
 		//this.functionName = name;
 		this.addParam('id', PARAM_TYPE_ID, generateRandomUUID());//TODO
 		this.addParam('name', PARAM_TYPE_STRING, name);
 		this.addParam('functionName', PARAM_TYPE_STRING, name);
 	}
 
-	doNothing() {
-	}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	reset(): void { }
 
-	reset() {
-	}
-
-	getOperatorFade() {
+	getOperatorFade(): number {
 		return this.getOperatorStrength();
 	}
 
-	getOperatorStrength() {
+	getOperatorStrength(): number {
 		if (!this.particleSystem) {
 			return 0;
 		}
@@ -254,11 +244,11 @@ export class Source1ParticleOperator {
 		*/
 	}
 
-	getParamList() {
+	getParamList(): ParamType[] {
 		return this.paramList;
 	}
 
-	addParam(param: string, type: string, value: CDmxAttributeValue) {
+	addParam(param: string, type: string, value: CDmxAttributeValue): void {
 		this.paramList.push(new ParamType(param, type));
 
 		this.setParameter(param, type, value);
@@ -285,7 +275,7 @@ export class Source1ParticleOperator {
 		}
 	*/
 
-	getInputValue(inputField: number/*TODO: create enum*/, particle: Source1Particle) {
+	getInputValue(inputField: number/*TODO: create enum*/, particle: Source1Particle): void {
 		let input: any = 0;
 		switch (inputField) {
 			case 0: //creation time
@@ -298,8 +288,8 @@ export class Source1ParticleOperator {
 		return input;
 	}
 
-	getInputValueAsVector(inputField: number, particle: Source1Particle, v: vec3) {
-		let input;
+	getInputValueAsVector(inputField: number, particle: Source1Particle, v: vec3): void {
+		//let input;
 		switch (inputField) {
 			case 0: //creation time
 				vec3.copy(v, particle.position);
@@ -317,19 +307,19 @@ export class Source1ParticleOperator {
 		}
 	}
 
-	setOutputValue(outputField: number, value: any/*TODO: imrpove type*/, particle: Source1Particle) {
+	setOutputValue(outputField: number, value: any/*TODO: imrpove type*/, particle: Source1Particle): void {
 		particle.setInitialField(outputField, value, false /*TODO*/);
 	}
 
-	initMultipleOverride() {
+	initMultipleOverride(): boolean {
 		return false;
 	}
 
-	finished() {
+	finished(): boolean {
 		return false;
 	}
 
-	setOrientationType(orientationType: number/*TODO: use source2 enum*/) {
+	setOrientationType(orientationType: number/*TODO: use source2 enum*/): void {
 		switch (orientationType) {
 			case 0:
 				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
@@ -349,6 +339,6 @@ export class Source1ParticleOperator {
 		}
 	}
 
-	dispose() {
-	}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	dispose(): void { }
 }

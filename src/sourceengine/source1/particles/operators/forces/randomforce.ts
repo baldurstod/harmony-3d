@@ -16,7 +16,7 @@ export class RandomForce extends Source1ParticleOperator {
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3/*, strength = 1*/): void {
 		const minForce = this.getParameter('min force') || vec3.create();
 		const maxForce = this.getParameter('max force') || vec3.create();
 

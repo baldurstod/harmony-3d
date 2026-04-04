@@ -18,7 +18,7 @@ export class AlphaRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('alpha_random_exponent', '1', float, m_flAlphaRandExponent)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const alpha_min = this.getParameter('alpha_min') / 255.0;
 		const alpha_max = this.getParameter('alpha_max') / 255.0;
 		const alpha_random_exponent = this.getParameter('alpha_random_exponent');

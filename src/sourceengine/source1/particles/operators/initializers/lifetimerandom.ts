@@ -15,7 +15,7 @@ export class LifetimeRandom extends Source1ParticleOperator {
 		this.addParam('lifetime_random_exponent', PARAM_TYPE_FLOAT, 1);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const lifetime_min = this.getParameter('lifetime_min');
 		const lifetime_max = this.getParameter('lifetime_max');
 		const lifetime_random_exponent = this.getParameter('lifetime_random_exponent');

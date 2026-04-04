@@ -10,11 +10,11 @@ import { ProxyManager } from './proxymanager';
 export class BurnLevel extends Proxy {
 	#r = '';
 
-	init() {
+	override init(): void {
 		this.#r = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		variables.set(this.#r, proxyParams.burnlevel ?? 0);
 	}
 }

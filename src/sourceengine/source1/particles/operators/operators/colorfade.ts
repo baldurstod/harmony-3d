@@ -21,7 +21,7 @@ export class ColorFade extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('ease_in_and_out', '1', bool, m_bEaseInOut)
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const color_fade = this.getParameter('color_fade');
 
 		const fade_start_time = this.getParameter('fade_start_time');
@@ -34,7 +34,8 @@ export class ColorFade extends Source1ParticleOperator {
 
 		const ooInRange = 1 / (fade_end_time - fade_start_time);
 
-		const color = new ParticleColor().setColor(particle.initialColor);
+		const color = new ParticleColor();
+		color.setColor(particle.initialColor);
 
 		const flLifeTime = particle.currentTime / particle.timeToLive;
 		//if (proportionOfLife>1)proportionOfLife=1;

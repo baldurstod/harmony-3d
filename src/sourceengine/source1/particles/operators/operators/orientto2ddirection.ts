@@ -17,7 +17,7 @@ export class OrientTo2dDirection extends Source1ParticleOperator {
 	#rotationOffset = DEFAULT_ORIENTATION_OFFSET;
 	#spinStrength = SPIN_STRENGTH;
 
-	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
+	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void {
 		switch (name) {
 			case 'Rotation Offset':
 				this.#rotationOffset = (param as number) * DEG_TO_RAD + Math.PI/*Add PI right away*/;//TODO: convert to number
@@ -31,8 +31,8 @@ export class OrientTo2dDirection extends Source1ParticleOperator {
 		}
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
-		const pos = particle.position;
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
+		//const pos = particle.position;
 		vec2.sub(orientTo2dDirectionTempVelocity, particle.position as vec2, particle.prevPosition as vec2);
 		vec2.normalize(orientTo2dDirectionTempVelocity, orientTo2dDirectionTempVelocity);
 

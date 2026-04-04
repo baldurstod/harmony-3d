@@ -69,7 +69,7 @@ export class SetControlPointsToModelParticles extends Operator {
 							const attachment = (model as Source2ModelInstance).getAttachment?.(this.#attachmentName);
 							if (attachment) {
 								//childCp.quaternion = attachment.getWorldQuaternion();
-								childCp.setQuaternion(particle.quaternion);
+								childCp.setOrientation(particle.quaternion);
 							}
 						}
 					}

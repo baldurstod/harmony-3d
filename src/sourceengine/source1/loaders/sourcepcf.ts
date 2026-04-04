@@ -13,7 +13,7 @@ export class SourcePCF {
 	elementsDict: CDmxElement[] = [];
 	systems: Record<string, CDmxElement> = {};//TODO: turn into map
 	systems2: Record<string, CDmxElement> = {};//TODO: turn into map
-	binaryVersion: number = 0;
+	binaryVersion = 0;
 
 	constructor(repository: string, path: string) {
 		this.repository = repository;
@@ -84,9 +84,9 @@ export class SourcePCF {
 		return system;
 	}
 
-	addOperators(system: Source1ParticleSystem, list: CDmxAttributeValue[], listType: string) {
-		for (let i = 0; i < list.length; ++i) {
-			const ope = list[i] as CDmxElement/*TODO: check actual value*/;
+	addOperators(system: Source1ParticleSystem, list: CDmxAttributeValue[], listType: string): void {
+		for (const ope of list as CDmxElement[]) {
+			//const ope = list[i] as CDmxElement/*TODO: check actual value*/;
 			if (ope.type == 'DmeParticleOperator') {
 				const operator = Source1ParticleOperators.getOperator(system, ope.name);
 				if (operator) {
@@ -112,7 +112,7 @@ export class SourcePCF {
 		}
 	}
 
-	addAttributes(operator: Source1ParticleOperator, list: CDmxAttribute[]) {
+	addAttributes(operator: Source1ParticleOperator, list: CDmxAttribute[]): void {
 		for (const attrib of list) {
 			operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type]!, attrib.value);
 		}

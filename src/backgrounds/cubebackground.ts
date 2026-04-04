@@ -52,7 +52,7 @@ export class CubeBackground extends BackGround {
 		}
 	}
 
-	dispose() {
+	override dispose() {
 		this.#box.dispose();
 	}
 

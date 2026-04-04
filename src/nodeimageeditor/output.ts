@@ -72,6 +72,6 @@ export class Output extends InputOutput {
 		return await this.node.toString(tabs);
 	}
 
-	dispose() {
+	dispose(): void {
 	}
 }

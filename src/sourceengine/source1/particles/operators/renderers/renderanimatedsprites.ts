@@ -47,7 +47,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		}
 	}
 		*/
-	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {//TODOv3
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]/*, elapsedTime: number*/): void {//TODOv3
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
@@ -70,8 +70,8 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 
 		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 		let index = 0;
-		for (let i = 0; i < particleList.length; i++) {
-			const particle: Source1Particle = particleList[i]!;
+		for (const particle of particleList) {
+			//const particle: Source1Particle = particleList[i]!;
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {
@@ -87,7 +87,8 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 					}
 				}
 			}
-			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
+
+			const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
 			if (coords && uvs) {
 				//coords = coords.m_TextureCoordData[0];
 				uvs[index++] = coords.uMin;
@@ -112,7 +113,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		this.#initBuffers();
 	}
 
-	#initBuffers() {
+	#initBuffers(): void {
 		const geometry = this.geometry;
 		if (!geometry || !this.mesh) {
 			return;
@@ -176,12 +177,12 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 				}*/
 	}
 
-	#createParticlesArray() {
+	#createParticlesArray(): void {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 		this.mesh!.setStorage('particles', this.#imgData);
 	}
 
-	#createParticlesTexture() {
+	#createParticlesTexture(): void {
 		this.#texture = TextureManager.createTexture({// TODO: allocate dynamically after changing max particles
 			webgpuDescriptor: {
 				size: {
@@ -201,7 +202,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		this.mesh!.setUniform('uParticles', this.#texture);
 	}
 
-	#updateParticlesTexture() {
+	#updateParticlesTexture(): void {
 		const gl = Graphics.glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
@@ -213,7 +214,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: Source1Particle[]) {
+	#setupParticlesTexture(particleList: Source1Particle[]): void {
 		const a = this.#imgData!;
 
 		let index = 0;
@@ -257,7 +258,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		this.mesh?.dispose();
 		this.#texture?.removeUser(this);
 	}

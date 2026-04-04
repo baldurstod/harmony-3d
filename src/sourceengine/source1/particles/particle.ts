@@ -29,9 +29,9 @@ export class Source1Particle {
 	vMax = 1;
 	system: Source1ParticleSystem;
 	cTime = 0;
-	timeToLive: number = 0;
-	initialTimeToLive: number = 0;
-	proportionOfLife: number = 0;
+	timeToLive = 0;
+	initialTimeToLive = 0;
+	proportionOfLife = 0;
 	u = 0;
 	v = 0;
 	radius = 1;

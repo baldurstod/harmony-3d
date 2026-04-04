@@ -126,7 +126,7 @@ export class CombineAdd extends Node {
 		return 'combine add';
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

@@ -584,7 +584,7 @@ export class Source2ParticleSystem extends Entity {
 
 	}
 
-	buildContextMenu(): HarmonyMenuItemsDict {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		const startStop = this.isRunning ? { i18n: '#stop', f: (): void => this.stop() } : { i18n: '#start', f: (): void => this.start() };
 		return Object.assign(super.buildContextMenu(), {
 			Source2ParticleSystem_1: null,

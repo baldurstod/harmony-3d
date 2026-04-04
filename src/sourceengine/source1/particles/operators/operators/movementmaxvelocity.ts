@@ -15,7 +15,7 @@ export class MovementMaxVelocity extends Source1ParticleOperator {
 		this.addParam('Maximum Velocity', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const maxVelocity = this.getParameter('Maximum Velocity');
 
 		const velocity = vec3.sub(tempVec3, particle.position, particle.prevPosition);

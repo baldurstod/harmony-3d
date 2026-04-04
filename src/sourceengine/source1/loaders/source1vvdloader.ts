@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4 } from 'gl-matrix';
+import { vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { MAX_NUM_LODS } from './constants';

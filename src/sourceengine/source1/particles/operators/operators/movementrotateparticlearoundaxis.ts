@@ -25,7 +25,7 @@ export class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
 		DMXELEMENT_UNPACK_FIELD( "Use Local Space", "0", bool, m_bLocalSpace )*/
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const axis = this.getParameter('Rotation Axis');
 		const rate = this.getParameter('Rotation Rate');
 		const useLocalSpace = this.getParameter('Use Local Space');

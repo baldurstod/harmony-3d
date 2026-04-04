@@ -40,7 +40,7 @@ export class OscillateScalar extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('oscillation start phase', '.5', float, m_flOscAdd)
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const m_bProportional = this.getParameter('proportional 0/1');
 		const m_bProportionalOp = this.getParameter('start/end proportional');
 		const oscillationField = this.getParameter('oscillation field');
@@ -51,7 +51,8 @@ export class OscillateScalar extends Source1ParticleOperator {
 		const m_FrequencyMin = this.getParameter('oscillation frequency min');
 		const m_FrequencyMax = this.getParameter('oscillation frequency max');
 
-		const multiplier = this.getParameter('oscillation multiplier');
+		// TODO: use param oscillation multiplier
+		//const multiplier = this.getParameter('oscillation multiplier');
 
 		const m_flStartTime_min = this.getParameter('start time min');
 		const m_flStartTime_max = this.getParameter('start time max');

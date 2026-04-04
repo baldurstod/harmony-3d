@@ -25,7 +25,7 @@ export class PositionModifyOffsetRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('offset proportional to radius 0/1', '0', bool, m_bProportional)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const localSpace = this.getParameter('offset in local space 0/1');
 		const offsetMin = this.getParameter('offset min');
 		const offsetMax = this.getParameter('offset max');
@@ -64,7 +64,7 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 		vec3.add(particle.prevPosition, particle.prevPosition, offset);
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

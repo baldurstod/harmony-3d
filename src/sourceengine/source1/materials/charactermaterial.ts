@@ -59,7 +59,7 @@ export class CharacterMaterial extends Source1Material {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams: DynamicParams = {}) {
+	override afterProcessProxies(proxyParams: DynamicParams = {}): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 
@@ -112,7 +112,7 @@ export class CharacterMaterial extends Source1Material {
 		this.setUniformValue('g_DiffuseModulation', this.computeModulationColor(this.#diffuseModulation));
 	}
 
-	clone() {
+	override clone(): CharacterMaterial {
 		return new CharacterMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

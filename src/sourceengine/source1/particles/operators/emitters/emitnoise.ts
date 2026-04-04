@@ -22,7 +22,7 @@ export class EmitNoise extends Source1ParticleOperator {
 
 	}
 
-	doEmit(elapsedTime: number) {
+	doEmit(elapsedTime: number): void {
 		const emission_start_time = this.getParameter('emission_start_time');
 		const emissionMinimum = this.getParameter('emission minimum');
 		const emissionMaximum = this.getParameter('emission maximum');

@@ -9,12 +9,12 @@ import { MapEntity } from '../mapentity';
 export class PropDynamic extends MapEntity {
 	#model: Source1ModelInstance | null = null;
 
-	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
+	override setKeyValues(kvElement: KvElement): void {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.setupModel(kvElement);
 	}
 
-	async setupModel(kvElement: KvElement) {
+	async setupModel(kvElement: KvElement): Promise<void> {
 		const entity = kvElement;
 		if (entity && (kvElement as any/*TODO: fix that*/).model) {
 			const model = await this.setModel((kvElement as any/*TODO: fix that*/).model);
@@ -23,8 +23,8 @@ export class PropDynamic extends MapEntity {
 				model.skin = skin;
 
 				if (model) {
-					model.position = this._position;
-					model.quaternion = this._quaternion;
+					model.setPosition(this._position);
+					model.setOrientation(this._quaternion);
 				}
 
 				if ((kvElement as any/*TODO: fix that*/).defaultanim) {
@@ -62,7 +62,7 @@ export class PropDynamic extends MapEntity {
 			}
 		}*/
 
-	async setModel(modelName: string) {
+	async setModel(modelName: string): Promise<Source1ModelInstance | null> {
 		modelName = modelName.replace(/\.mdl$/g, '');
 
 		const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
@@ -83,20 +83,20 @@ export class PropDynamic extends MapEntity {
 		return model;
 	}
 
-	setInput(inputName: string, parameters: any/*TODO: improve type*/) {
+	setInput(inputName: string, parameters: any/*TODO: improve type*/): void {
 		switch (inputName.toLowerCase()) {
 			case 'skin':
-				this.#model?.setSkin(parameters);
+				void this.#model?.setSkin(parameters);
 				break;
 		}
 	}
 
-	update(scene: Scene, camera: Camera, delta: number): void {
+	override update(scene: Scene, camera: Camera, delta: number): void {
 		super.update(scene, camera, delta);
 		const model = this.#model;//fixme this
 		if (model) {
-			model.position = this._position;
-			model.quaternion = this._quaternion;
+			model.setPosition(this._position);
+			model.setOrientation(this._quaternion);
 		}
 	}
 }

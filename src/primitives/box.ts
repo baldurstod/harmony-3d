@@ -1,12 +1,13 @@
 import { vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
-import { JSONObject } from 'harmony-types';
-import { Entity } from '../entities/entity';
 
 export type BoxParameters = MeshParameters & {
 	size?: number,
@@ -43,7 +44,7 @@ export class Box extends Mesh {
 		(this.geometry as BoxBufferGeometry).updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Box_1: null,
 			width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#size[0])); if (width) { this.#size[0] = Number(width); this.#updateGeometry(); } } },

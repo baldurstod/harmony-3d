@@ -1,3 +1,5 @@
+import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { ExtrudeGeometry } from '../geometry/extrudegeometry';
@@ -5,7 +7,6 @@ import { FontManager } from '../managers/fontmanager';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { DEG_TO_RAD } from '../math/constants';
-import { JSONObject } from 'harmony-types';
 import { Interaction } from '../utils/interaction';
 import { Mesh, MeshParameters } from './mesh';
 
@@ -100,7 +101,7 @@ export class Text3D extends Mesh {
 		this.#style = json.style as string ?? Text3D.defaultStyle;
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Text3D_1: null,
 			text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text ?? ''; } },

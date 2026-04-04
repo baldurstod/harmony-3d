@@ -10,13 +10,13 @@ const loBeat = 1.0 * scale;
 const hiBeat = 0.8 * scale;
 
 export class HeartbeatScale extends Proxy {
-	#sineperiod: number = 1;
+	#sineperiod = 1;
 	#resultVar = '';
 	#delta = 0;
 	#mid = 0;
 	#p = 0;
 
-	init() {
+	override init(): void {
 		this.#sineperiod = 1;
 		this.#resultVar = this.datas['resultvar'];
 		this.#delta = 0.2;
@@ -24,7 +24,7 @@ export class HeartbeatScale extends Proxy {
 		this.#p = 2 * Math.PI / this.#sineperiod;
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
 		let s1 = Math.sin(time * TWO_PI);
 		s1 = clamp(s1, 0.0, 1.0);
 		s1 *= s1;

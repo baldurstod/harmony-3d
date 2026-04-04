@@ -1,6 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
-import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
@@ -35,7 +34,7 @@ export class SetControlPointPositions extends Source1ParticleOperator {
 		this.addParam('Fourth Control Point Parent', PARAM_TYPE_INT, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(/*particle: Source1Particle/*, elapsedTime: number*/): void {
 		const list = ['First', 'Second', 'Third', 'Fourth'];
 
 		const useWorldLocation = this.getParameter('Set positions in world space');
@@ -49,7 +48,8 @@ export class SetControlPointPositions extends Source1ParticleOperator {
 			if (cpNumber == headLocation) {
 				continue;
 			}
-			const cpParent = this.getParameter(name + ' Control Point Parent');
+			// TODO: use param Control Point Parent
+			//const cpParent = this.getParameter(name + ' Control Point Parent');
 			const cpLocation = this.getParameter(name + ' Control Point Location');
 			if (!useWorldLocation) {
 				const a = vec3.add(tempVec3, cpLocation, vecControlPoint);

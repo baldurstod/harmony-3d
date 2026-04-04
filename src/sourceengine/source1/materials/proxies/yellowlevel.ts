@@ -15,11 +15,11 @@ const URINE_BLU = vec3.fromValues(7, 5, 1);
 export class YellowLevel extends Proxy {
 	#resultVar = '';
 
-	init() {
+	override init(): void {
 		this.#resultVar = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		if (!proxyParams.jarate) {
 			variables.set(this.#resultVar, vec3.fromValues(1, 1, 1));
 		} else {

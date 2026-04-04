@@ -12,7 +12,7 @@ export class RotationSpinYaw extends Source1ParticleOperator {
 		this.addParam('yaw_rate_degrees', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number): void {
 		const yaw_rate_degrees = this.getParameter('yaw_rate_degrees');
 		particle.rotationYaw += yaw_rate_degrees * elapsedTime;//TODO
 	}

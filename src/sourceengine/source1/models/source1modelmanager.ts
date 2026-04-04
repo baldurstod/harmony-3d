@@ -20,7 +20,7 @@ export class Source1ModelManager {
 		this.#modelsPerRepository.set(repositoryName, fileName, promise);
 
 		const modelLoader = getLoader('ModelLoader') as typeof ModelLoader;
-		let model = await new modelLoader().load(repositoryName, fileName);
+		const model = await new modelLoader().load(repositoryName, fileName);
 		loadedResolve!/*assigned during promise creation*/(model);
 
 		return model;

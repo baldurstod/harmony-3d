@@ -107,7 +107,7 @@ export class CombineLerp extends Node {
 		return 'combine lerp';
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

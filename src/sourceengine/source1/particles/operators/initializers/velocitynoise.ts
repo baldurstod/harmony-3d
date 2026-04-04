@@ -37,12 +37,13 @@ export class VelocityNoise extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('Apply Velocity in Local Space (0/1)','0', bool, m_bLocalSpace)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number) {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const m_nControlPointNumber = this.getParameter('Control Point Number');
 		const m_flNoiseScale = this.getParameter('Time Noise Coordinate Scale');
 		const m_flNoiseScaleLoc = this.getParameter('Spatial Noise Coordinate Scale');
 		const m_flOffset = this.getParameter('Time Coordinate Offset');
-		const m_vecOffsetLoc = this.getParameter('Spatial Coordinate Offset');
+		//TODO: use param Spatial Coordinate Offset
+		//const m_vecOffsetLoc = this.getParameter('Spatial Coordinate Offset');
 		const m_vecAbsVal = this.getParameter('Absolute Value');
 		const m_vecAbsValInv = this.getParameter('Invert Abs Value');
 		const m_vecOutputMin = this.getParameter('output minimum');
@@ -59,10 +60,10 @@ export class VelocityNoise extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('output maximum','1 1 1', Vector, m_vecOutputMax)
 		//	DMXELEMENT_UNPACK_FIELD('Apply Velocity in Local Space (0/1)','0', bool, m_bLocalSpace)
 		let flAbsScaleX, flAbsScaleY, flAbsScaleZ;
-		let fl4AbsValX, fl4AbsValY, fl4AbsValZ;
-		fl4AbsValX = 0xffffffff;
-		fl4AbsValY = 0xffffffff;
-		fl4AbsValZ = 0xffffffff;
+		//let fl4AbsValX, fl4AbsValY, fl4AbsValZ;
+		//fl4AbsValX = 0xffffffff;
+		//fl4AbsValY = 0xffffffff;
+		//fl4AbsValZ = 0xffffffff;
 		flAbsScaleX = 0.5;
 		flAbsScaleY = 0.5;
 		flAbsScaleZ = 0.5;
@@ -71,15 +72,15 @@ export class VelocityNoise extends Source1ParticleOperator {
 		const m_bNoiseAbs = (m_vecAbsValInv[0] != 0.0) || (m_vecAbsValInv[1] != 0.0) || (m_vecAbsValInv[2] != 0.0);
 		// Set up values for more optimal absolute value calculations inside the loop
 		if (m_vecAbsVal[0] != 0.0) {
-			fl4AbsValX = g_SIMD_clear_signmask;
+			//fl4AbsValX = g_SIMD_clear_signmask;
 			flAbsScaleX = 1.0;
 		}
 		if (m_vecAbsVal[1] != 0.0) {
-			fl4AbsValY = g_SIMD_clear_signmask;
+			//fl4AbsValY = g_SIMD_clear_signmask;
 			flAbsScaleY = 1.0;
 		}
 		if (m_vecAbsVal[2] != 0.0) {
-			fl4AbsValZ = g_SIMD_clear_signmask;
+			//fl4AbsValZ = g_SIMD_clear_signmask;
 			flAbsScaleZ = 1.0;
 		}
 
@@ -117,7 +118,7 @@ export class VelocityNoise extends Source1ParticleOperator {
 
 		// setup
 		/*fltx4 fl4Offset = ReplicateX4(m_flOffset);*/
-		const fvOffsetLoc = vec3.clone(m_vecOffsetLoc);//TODO use it ?
+		//const fvOffsetLoc = vec3.clone(m_vecOffsetLoc);//TODO use it ?
 		/*CParticleSIMDTransformation CPTransform;
 		float flCreationTime = SubFloat(*pCreationTime, 0);
 		pParticles->GetControlPointTransformAtTime(m_nControlPointNumber, flCreationTime, &CPTransform);*/
@@ -203,7 +204,7 @@ export class VelocityNoise extends Source1ParticleOperator {
 		}
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }
@@ -236,6 +237,6 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 }*/
 
 //TODO: place somewhere else
-const g_SIMD_clear_signmask = 0x7fffffff;
-const g_SIMD_signmask = 0x80000000;
-const g_SIMD_lsbmask = 0xfffffffe;
+//const g_SIMD_clear_signmask = 0x7fffffff;
+//const g_SIMD_signmask = 0x80000000;
+//const g_SIMD_lsbmask = 0xfffffffe;

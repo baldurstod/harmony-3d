@@ -1,5 +1,6 @@
 import { mat4, quat, ReadonlyQuat, ReadonlyVec3, vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
@@ -115,7 +116,7 @@ export class Bone extends Entity implements Lockable {
 	 * @deprecated Please use `setOrientation` instead.
 	 */
 	setQuaternion(quaternion: ReadonlyQuat): void {
-		super.setQuaternion(quaternion);
+		super.setOrientation(quaternion);
 		this.dirty = true;
 	}
 
@@ -337,7 +338,7 @@ export class Bone extends Entity implements Lockable {
 		quat.identity(this._quaternion);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), this.isAnyLocked() ? {
 			Bone_1: null,
 			unlock: { i18n: '#unlock', f: (entity: Bone) => entity.lockAll(false) },

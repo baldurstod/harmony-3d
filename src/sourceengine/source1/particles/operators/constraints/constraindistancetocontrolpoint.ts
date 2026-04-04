@@ -26,10 +26,11 @@ export class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('global center point', '0', bool, m_bGlobalCenter)
 	}
 
-	applyConstraint(particle: Source1Particle) {
+	override applyConstraint(particle: Source1Particle): void {
 		const minDistance = this.getParameter('minimum distance');
 		const maxDistance = this.getParameter('maximum distance');
-		const offsetOfCenter = this.getParameter('offset of center');
+		//TODO: use param offset of center
+		//const offsetOfCenter = this.getParameter('offset of center');
 		const cpNumber = this.getParameter('control point number');
 
 		const cp = this.particleSystem.getControlPoint(cpNumber);

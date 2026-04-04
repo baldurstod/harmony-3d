@@ -26,7 +26,7 @@ export class PositionOnModelRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD( 'direction bias', '0 0 0', Vector, m_vecDirectionBias )
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number) {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const forceInModel = this.getParameter('force to be inside model');
 		const directionBias = this.getParameter('direction bias');

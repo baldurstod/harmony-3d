@@ -1,7 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { SourceBSP } from './sourcebsp';
 import { KvReader } from './kvreader';
+import { SourceBSP } from './sourcebsp';
 
 export type LumpPakFile = {
 	cs: number;
@@ -24,8 +24,8 @@ export type LumpData = vec3[] | number[] | string[] |
 export class SEBaseBspLump {
 	map: SourceBSP;
 	initialized = false;
-	readonly mapOffset?: number;
-	readonly mapLength?: number;
+	readonly mapOffset: number;
+	readonly mapLength: number;
 	lumpOffset;
 	lumpLen: number;
 	lumpDataPromise = null;
@@ -34,7 +34,7 @@ export class SEBaseBspLump {
 	//mapLen;
 	lumpVersion = 0;
 	lumpData: LumpData | null = null;
-	lumpType: number = 0;
+	lumpType = 0;
 
 	constructor(map: SourceBSP, reader: BinaryReader, offset: number, length: number) {//struct lump_t
 		this.map = map;
@@ -45,8 +45,9 @@ export class SEBaseBspLump {
 		this.lumpLen = length;
 	}
 
-	init() {
-		throw 'remove me';
+	init(): void {
+		throw new Error('remove me');
+
 		/*
 		if (this.reader.getString(4, this.lumpOffset) == 'LZMA') {
 			const uncompressedSize = this.reader.getUint32();
@@ -77,11 +78,11 @@ export class SEBaseBspLump {
 	 * Get lump offset
 	 * @return {Number} The lump offset
 	 */
-	getLumpOffset() {
+	getLumpOffset(): number {
 		return this.lumpOffset;
 	}
 
-	getMapOffset() {
+	getMapOffset(): number {
 		return this.mapOffset;
 	}
 
@@ -98,7 +99,7 @@ export class SEBaseBspLump {
 	 * @return {Number} The lump len
 	 */
 
-	getLumpLen() {
+	getLumpLen(): number {
 		return this.lumpLen;
 	}
 	/*
@@ -111,7 +112,7 @@ export class SEBaseBspLump {
 	 * Set lump Version
 	 * @param {Number} newLumpVersion The lump Version
 	 */
-	setLumpVersion(newLumpVersion: number) {
+	setLumpVersion(newLumpVersion: number): void {
 		this.lumpVersion = newLumpVersion;
 	}
 
@@ -119,7 +120,7 @@ export class SEBaseBspLump {
 	 * Get lump Version
 	 * @return {Number} The lump Version
 	 */
-	getLumpVersion() {
+	getLumpVersion(): number {
 		return this.lumpVersion;
 	}
 
@@ -127,7 +128,7 @@ export class SEBaseBspLump {
 	 * Set lump Data
 	 * @param {Object} newLumpData The lump data
 	 */
-	setLumpData(newLumpData: LumpData) {
+	setLumpData(newLumpData: LumpData): void {
 		this.lumpData = newLumpData;
 	}
 
@@ -158,8 +159,8 @@ export class SEBaseBspLump {
 	}
 	*/
 
-	initDatas() {
-	}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	initDatas(): void { }
 }
 
 /**
@@ -358,11 +359,13 @@ export class SourceBSPLumpPropStaticDirectory {
 	readonly props: SourceBSPLumpPropStatic[] = [];
 }
 
+/*
 class SourceBSPLumpPropDetailDirectory {
 	name = [];
 	leaf = [];
 	props = [];
 }
+*/
 
 export class SourceBSPLumpPropStatic {
 	readonly position = vec3.create();
@@ -567,7 +570,7 @@ export class SourceBSPLumpLeaf {
 	numleafbrushes = 0;
 	leafWaterDataID = 0;
 
-	contains(position: vec3) {
+	contains(position: vec3): boolean {
 		const mins = this.mins;
 		const maxs = this.maxs;
 		if (
@@ -612,7 +615,7 @@ export class SourceBSPLumpNode {
 	numfaces = -1;
 	area = 0;
 
-	contains(position: vec3) {
+	contains(position: vec3): boolean {
 		const mins = this.mins;
 		const maxs = this.maxs;
 		if (
@@ -653,8 +656,9 @@ export class SourceBSPLumpEntity {
 
 
 //TODO: put somewhere else
-function parseVector(str: string) {
-	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
+/*
+export function parseVector(str: string): vec3 | null {
+	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) * /i;
 
 	const result = regex.exec(str);
 	if (result) {
@@ -662,8 +666,10 @@ function parseVector(str: string) {
 	}
 	return null;
 }
+*/
 
 //TODO: put somewhere else
+/*
 function parseAngles(str: string) {
 	const angles = parseVector(str)
 	if (angles) {
@@ -671,8 +677,10 @@ function parseAngles(str: string) {
 	}
 	return null;
 }
+*/
 
 //angles[PITCH, YAW, ROLL]
+/*
 function AngleVectors(angles: vec3, forward: vec3) {
 	const sy = Math.sin(angles[1]);
 	const cy = Math.cos(angles[1]);
@@ -683,3 +691,4 @@ function AngleVectors(angles: vec3, forward: vec3) {
 	forward[1] = cp * sy;
 	forward[2] = -sp;
 }
+*/

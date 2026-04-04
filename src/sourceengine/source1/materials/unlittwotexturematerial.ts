@@ -39,7 +39,7 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 
 	}
 
-	clone() {
+	override clone(): UnlitTwoTextureMaterial {
 		return new UnlitTwoTextureMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
@@ -47,7 +47,7 @@ export class UnlitTwoTextureMaterial extends Source1Material {
 		return 'source1_unlittwotexture';
 	}
 
-	afterProcessProxies() {
+	override afterProcessProxies(): void {
 		const variables = this.variables;
 		const parameters = this.vmt;
 		const texture2Transform = variables.get('$texture2transform');

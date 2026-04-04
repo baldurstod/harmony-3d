@@ -1,6 +1,5 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
-import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
 import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
@@ -17,7 +16,7 @@ export class SetControlPointToParticlesCenter extends Source1ParticleOperator {
 		this.addParam('Center Offset', PARAM_TYPE_VECTOR3, vec3.fromValues(0, 0, 0));
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(/*particle: Source1Particle/*, elapsedTime: number*/): void {
 		const cpNumber = this.getParameter('Control Point Number to Set');
 		const centerOffset = this.getParameter('Center Offset');
 

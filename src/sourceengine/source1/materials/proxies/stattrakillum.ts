@@ -7,16 +7,16 @@ import { ProxyManager } from './proxymanager';
 
 export class StatTrakIllum extends Proxy {
 	#resultVar = '';
-	#minVal: number = 0;
-	#maxVal: number = 0;
+	#minVal = 0;
+	#maxVal = 0;
 
-	init() {
+	override init(): void {
 		this.#resultVar = this.datas['resultvar'];
 		this.#minVal = Number(this.datas['minval'] ?? 0);
 		this.#maxVal = Number(this.datas['maxval'] ?? 1);
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		const glowMultiplier = proxyParams.GlowMultiplier ?? 0.5;
 		const value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
 		variables.set(this.#resultVar, vec3.fromValues(value, value, value));

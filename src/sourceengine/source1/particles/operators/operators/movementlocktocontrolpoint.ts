@@ -29,7 +29,7 @@ export class MovementLocktoControlPoint extends Source1ParticleOperator {
 		'end_fadeout_max' 'float' '0.400000006'*/
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		if (!MovementLocktoControlPoint.once) {
 			if (ERROR) { console.error('Fix me'); }
 			MovementLocktoControlPoint.once = true;
@@ -39,13 +39,16 @@ export class MovementLocktoControlPoint extends Source1ParticleOperator {
 			return;
 		}
 
-		const start_fadeout_min = this.getParameter('start_fadeout_min');
-		const start_fadeout_max = this.getParameter('start_fadeout_max');
+		//TODO: use param start_fadeout_min
+		//const start_fadeout_min = this.getParameter('start_fadeout_min');
+		//TODO: use param start_fadeout_max
+		//const start_fadeout_max = this.getParameter('start_fadeout_max');
 		const end_fadeout_min = this.getParameter('end_fadeout_min');
 		const end_fadeout_max = this.getParameter('end_fadeout_max');
 		const lockRotation = this.getParameter('lock rotation');
 
-		const start_fadeout = (start_fadeout_max - start_fadeout_min) * Math.random() + start_fadeout_min;
+		//TODO: use start_fadeout
+		//const start_fadeout = (start_fadeout_max - start_fadeout_min) * Math.random() + start_fadeout_min;
 		const end_fadeout = (end_fadeout_max - end_fadeout_min) * Math.random() + end_fadeout_min;
 
 
@@ -93,7 +96,7 @@ export class MovementLocktoControlPoint extends Source1ParticleOperator {
 				particle.posLockedToCP = -1;
 			}
 
-			const oldPosition = vec3.clone(particle.position);
+			//const oldPosition = vec3.clone(particle.position);
 			const delta2 = vec3.sub(vec3.create(), particle.position, particle.cpPosition);
 			const delta3 = vec3.sub(vec3.create(), particle.prevPosition, particle.cpPosition);
 			vec3.transformQuat(delta2, delta2, deltaQuaternion);

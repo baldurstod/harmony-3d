@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity } from '../entities/entity';
 
 export class Metaball extends Entity {
@@ -15,7 +16,7 @@ export class Metaball extends Entity {
 		this.radius2 = radius * radius;
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Metaball_1: null,
 			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) { this.setRadius(Number(radius)); } } }

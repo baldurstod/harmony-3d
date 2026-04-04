@@ -14,7 +14,7 @@ export class ColorRandom extends Source1ParticleOperator {
 		this.addParam('color2', PARAM_TYPE_COLOR, WHITE);
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		particle.color.randomize(this.getParameter('color1'), this.getParameter('color2'));
 		particle.initialColor.setColor(particle.color);
 	}

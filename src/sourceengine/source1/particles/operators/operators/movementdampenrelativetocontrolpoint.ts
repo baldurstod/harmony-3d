@@ -21,7 +21,7 @@ export class Source1DampenToCP extends Source1ParticleOperator {
 		this.addParam('dampen scale', PARAM_TYPE_FLOAT, 1);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number): void {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const range = this.getParameter('falloff range');
 		const scale = this.getParameter('dampen scale');
@@ -39,7 +39,7 @@ export class Source1DampenToCP extends Source1ParticleOperator {
 		const offset = vec3.sub(ofs, particle.position, vecControlPoint);
 
 		let flDampenAmount;
-		let distance = vec3.len(offset);
+		const distance = vec3.len(offset);
 		if (distance > range) {
 			return;
 		} else {

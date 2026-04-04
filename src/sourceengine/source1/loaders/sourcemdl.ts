@@ -16,23 +16,23 @@ import { MdlSrcBoneTransform, MdlStudioFlexController, MdlStudioHitboxSet, Model
 //TODOv3 remove parse* function
 const STUDIO_FLEX_OP_CONST = 1;
 const STUDIO_FLEX_OP_FETCH1 = 2;
-const STUDIO_FLEX_OP_FETCH2 = 3;
+//const STUDIO_FLEX_OP_FETCH2 = 3;
 const STUDIO_FLEX_OP_ADD = 4;
 const STUDIO_FLEX_OP_SUB = 5;
 const STUDIO_FLEX_OP_MUL = 6;
 const STUDIO_FLEX_OP_DIV = 7;
 const STUDIO_FLEX_OP_NEG = 8;
-const STUDIO_FLEX_OP_EXP = 9;
-const STUDIO_FLEX_OP_OPEN = 10;
-const STUDIO_FLEX_OP_CLOSE = 11;
-const STUDIO_FLEX_OP_COMMA = 12;
+//const STUDIO_FLEX_OP_EXP = 9;
+//const STUDIO_FLEX_OP_OPEN = 10;
+//const STUDIO_FLEX_OP_CLOSE = 11;
+//const STUDIO_FLEX_OP_COMMA = 12;
 const STUDIO_FLEX_OP_MAX = 13;
 const STUDIO_FLEX_OP_MIN = 14;
-const STUDIO_FLEX_OP_2WAY_0 = 15;
-const STUDIO_FLEX_OP_2WAY_1 = 16;
-const STUDIO_FLEX_OP_NWAY = 17;
-const STUDIO_FLEX_OP_COMBO = 18;
-const STUDIO_FLEX_OP_DOMINATE = 19;
+//const STUDIO_FLEX_OP_2WAY_0 = 15;
+//const STUDIO_FLEX_OP_2WAY_1 = 16;
+//const STUDIO_FLEX_OP_NWAY = 17;
+//const STUDIO_FLEX_OP_COMBO = 18;
+//const STUDIO_FLEX_OP_DOMINATE = 19;
 const STUDIO_FLEX_OP_DME_LOWER_EYELID = 20;
 const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
 
@@ -161,7 +161,7 @@ export class SourceMdl {
 	readonly texturesDir: string[] = [];
 	readonly flexRules: MdlStudioFlexRule[] = [];
 	readonly flexControllers: MdlStudioFlexController[] = [];
-	boneCount: number = 0;
+	boneCount = 0;
 	readonly bones: MdlBone[] = [];
 	readonly boneNames = new Map<string, number>();
 	numflexdesc = 0;
@@ -315,17 +315,19 @@ export class SourceMdl {
 
 		const modelGroup = this.modelGroups[externalId];
 		if (modelGroup) {
-			const p = new Promise<SourceMdl | null>(async resolve => {
-				const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
-				const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
-				if (mdl) {
-					//this.externalMdlsV2[externalId] = mdl;
-					resolve(mdl);
-				} else {
-					resolve(null);
-				}
+			const p = new Promise<SourceMdl | null>(resolve => {
+				(async (): Promise<void> => {
 
 
+					const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
+					const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
+					if (mdl) {
+						//this.externalMdlsV2[externalId] = mdl;
+						resolve(mdl);
+					} else {
+						resolve(null);
+					}
+				})();
 			});
 			this.externalMdlsV2[externalId] = p;
 			return p;
@@ -423,7 +425,7 @@ export class SourceMdl {
 
 					let pCloseLidV;
 					let flCloseLidV;
-					let pCloseLid;
+					let pCloseLid: MdlStudioFlexController | undefined;
 					let flCloseLid;
 					let nEyeUpDownIndex: number;
 					let flEyeUpDown;
@@ -433,7 +435,7 @@ export class SourceMdl {
 						case STUDIO_FLEX_OP_MUL: stack[k - 2] = stack[k - 2]! * stack[k - 1]!; k--; break;
 						case STUDIO_FLEX_OP_DIV:
 							if (stack[k - 1]! > 0.0001) {
-								stack[k - 2]! = stack[k - 2]! / stack[k - 1]!;
+								stack[k - 2] = stack[k - 2]! / stack[k - 1]!;
 							} else {
 								stack[k - 2] = 0;
 							}
@@ -450,7 +452,11 @@ export class SourceMdl {
 							break;
 						case STUDIO_FLEX_OP_DME_LOWER_EYELID:
 							pCloseLidV = this.flexControllers[op.index];
-							flCloseLidV = RemapValClamped(src[pCloseLidV!.localToGlobal]!, pCloseLidV!.min, pCloseLidV!.max, 0.0, 1.0);
+							if (pCloseLidV) {
+								flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal]!, pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+							} else {
+								flCloseLidV = 0;
+							}
 
 							pCloseLid = this.flexControllers[stack[k - 1]!];
 							flCloseLid = RemapValClamped(src[pCloseLid!.localToGlobal]!, pCloseLid!.min, pCloseLid!.max, 0.0, 1.0);
@@ -472,7 +478,11 @@ export class SourceMdl {
 							break;
 						case STUDIO_FLEX_OP_DME_UPPER_EYELID:
 							pCloseLidV = this.flexControllers[op.index];
-							flCloseLidV = RemapValClamped(src[pCloseLidV!.localToGlobal]!, pCloseLidV!.min, pCloseLidV!.max, 0.0, 1.0);
+							if (pCloseLidV) {
+								flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal]!, pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+							} else {
+								flCloseLidV = 0;
+							}
 
 							pCloseLid = this.flexControllers[stack[k - 1]!];
 							flCloseLid = RemapValClamped(src[pCloseLid!.localToGlobal]!, pCloseLid!.min, pCloseLid!.max, 0.0, 1.0);
@@ -692,10 +702,6 @@ export class SourceMdl {
 		return this.attachments;
 	}
 
-	getAttachmentsNames(out?: string[]): MdlAttachment[] {
-		return Array.from(this.getAttachments());
-	}
-
 	getAttachmentById(attachmentId: number): MdlAttachment | undefined {
 		const list = this.getAttachments();
 		if (list) {
@@ -766,7 +772,7 @@ export class SourceMdl {
 		return this.animDesc[animIndex ?? -1] ?? null;
 	}
 
-	getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: MdlStudioAnimDesc, frameIndex: number) {
+	getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: MdlStudioAnimDesc, frameIndex: number): { bones: Record<string, any> }/*TODO: improve type*/ | null {
 		//console.info(frameIndex);
 		//const animDesc = this.getAnimDescription(animIndex);
 		if (animDesc && this.getBones()) {
@@ -949,7 +955,7 @@ export class StudioCompressedIkError {// mstudiocompressedikerror_t
 		reader.seek(this.#offset + this.#offsets[index]);
 		let valid = 0;
 		let total = 0;
-		let value;
+		//let value;
 		let k = frame;
 		let count = 0;
 		const scale = this.#scale[index];
@@ -984,7 +990,7 @@ export class StudioCompressedIkError {// mstudiocompressedikerror_t
 		reader.seek(this.#offset)
 		let valid = 0;
 		let total = 0;
-		let value;
+		//let value;
 		let k = frame;
 		let count = 0;
 		const scale = this.#scale[index];

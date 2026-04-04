@@ -18,7 +18,7 @@ export class AlphaFadeAndDecay extends Source1ParticleOperator {
 		this.addParam('end_fade_out_time', PARAM_TYPE_FLOAT, 1.0);
 	}
 
-	doOperate(particle: Source1Particle, elapsedTime: number) {
+	doOperate(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const start_alpha = this.getParameter('start_alpha');
 		const end_alpha = this.getParameter('end_alpha');
 
@@ -27,8 +27,7 @@ export class AlphaFadeAndDecay extends Source1ParticleOperator {
 		const m_flStartFadeOutTime = this.getParameter('start_fade_out_time');
 		const m_flEndFadeOutTime = this.getParameter('end_fade_out_time');
 
-		const alpha = 1.0;// = particle.startAlpha;
-
+		//const alpha = 1.0;// = particle.startAlpha;
 
 		const proportionOfLife = particle.currentTime / particle.timeToLive;
 		const fl4FadeInDuration = m_flEndFadeInTime - m_flStartFadeInTime;

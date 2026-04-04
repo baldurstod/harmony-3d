@@ -11,7 +11,7 @@ const tempVec3_3 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempVec3_5 = vec3.create();
 
-const a = vec3.create();
+//const a = vec3.create();
 
 export class RemapControlPointToVector extends Source1ParticleOperator {
 	static functionName = 'remap control point to vector';
@@ -38,7 +38,7 @@ export class RemapControlPointToVector extends Source1ParticleOperator {
 		'output maximum' 'vector3' '1 1 1'*/
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');
@@ -61,7 +61,7 @@ export class RemapControlPointToVector extends Source1ParticleOperator {
 		}
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

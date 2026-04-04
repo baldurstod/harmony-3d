@@ -1,3 +1,4 @@
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { GridMaterial } from '../../materials/gridmaterial';
 import { Mesh, MeshParameters } from '../../objects/mesh';
 import { PlaneBufferGeometry } from '../../primitives/geometries/planebuffergeometry';
@@ -29,7 +30,7 @@ export class Grid extends Mesh {
 		(this.geometry as PlaneBufferGeometry).updateGeometry(this.#size, this.#size, 1, 1);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Grid_1: null,
 			size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) { this.#size = Number(size); this.#updateGeometry(); } } },

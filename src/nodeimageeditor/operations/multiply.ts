@@ -134,7 +134,7 @@ export class Multiply extends Node {
 		return 'multiply';
 	}
 
-	dispose() {
+	override dispose() {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

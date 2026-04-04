@@ -1,8 +1,7 @@
 /**
  * Light Map
  */
-export const SELightMap = function (height: number, width: number) {//TODOv3
-}
+//export const SELightMap = function (height: number, width: number) { }
 
 let lightMapNodeId = 0;
 
@@ -27,19 +26,21 @@ export class SELightMapNode {
 		this.width = width;
 	}
 
+	/*
 	setContent(content: never) {
 		if (this.sub1) {
 			return false;
 		}
 		this.content = content;
 	}
+	*/
 
-	split(x: number, y: number) {
-		if (this.content) return false;
-		if (this.filled) return false;
-		if (y >= this.height) return false;
-		if (x >= this.width) return false;
-		if (y != 0 && x != 0) return false;
+	#split(x: number, y: number): void {
+		if (this.content) return;
+		if (this.filled) return;
+		if (y >= this.height) return;
+		if (x >= this.width) return;
+		if (y != 0 && x != 0) return;
 
 		if (y == 0) { /* splitting vertically */
 			this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
@@ -81,9 +82,9 @@ export class SELightMapNode {
 		}
 
 		if ((height / this.height) > (width / this.width)) {
-			this.split(width, 0);
+			this.#split(width, 0);
 		} else {
-			this.split(0, height);
+			this.#split(0, height);
 		}
 
 		if (this.sub1) {
@@ -106,17 +107,17 @@ export class SELightMapNode {
 		return null;
 	}
 
-	toString() {
-		return this.id;
+	toString(): string {
+		return String(this.id);
 	}
 
-	checkFull() {
+	checkFull(): void {
 		if (this.sub1?.filled && this.sub2?.filled) {
 			this.filled = true;
 		}
 	}
 
-	getAllocatedSize() {
+	getAllocatedSize(): number {
 		let total = 0;
 		if (this.sub1) {
 			total += this.sub1?.getAllocatedSize() ?? 0;

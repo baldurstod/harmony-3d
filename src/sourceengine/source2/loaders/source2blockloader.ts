@@ -112,7 +112,7 @@ function loadNtro(reader: BinaryReader, block: Source2NtroBlock): void {
 	const _NTRO_FIELD_LENGTH_ = 24;
 	reader.seek(block.offset);
 	// NTRO header
-	const ntroVersion = reader.getInt32();//TODO: check version
+	/*const ntroVersion = */reader.getInt32();//TODO: check version
 	const ntroOffset = reader.getInt32();
 	const structCount = reader.getInt32();
 	block.structs = {};
@@ -164,7 +164,7 @@ function loadNtro(reader: BinaryReader, block: Source2NtroBlock): void {
 			reader.seek(strStart + strOffset);
 			field.name = reader.getNullString();
 
-			ntroStruct.fields.push(field);
+			(ntroStruct.fields as any[]).push(field);
 
 			if (field.indirectionOffset) {
 				field.indirectionByte = reader.getInt8(indStart + field.indirectionOffset);
@@ -255,7 +255,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 			header.type = reader.getUint32();
 			header.offset = reader.getUint32();
 
-			s1.headers.push(header);
+			(s1.headers as any[]).push(header);
 		}
 
 		s1.vertices = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_POSITION);

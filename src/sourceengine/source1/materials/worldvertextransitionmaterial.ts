@@ -1,4 +1,3 @@
-import { DynamicParams } from '../../../entities/entity';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { Source1Material, TextureRole } from './source1material';
 
@@ -13,9 +12,9 @@ export class WorldVertexTransitionMaterial extends Source1Material {
 		super.init();
 	}
 
-	afterProcessProxies(proxyParams: DynamicParams) {
-		const variables = this.variables;
-		const parameters = this.vmt;
+	override afterProcessProxies(/*proxyParams: DynamicParams*/): void {
+		//const variables = this.variables;
+		//const parameters = this.vmt;
 
 		const baseTexture2 = this.variables.get('$basetexture2');
 		this.setColor2Map(baseTexture2 ? this.getTexture(TextureRole.Color2, this.repository, baseTexture2, 0, true) : null);
@@ -26,7 +25,7 @@ export class WorldVertexTransitionMaterial extends Source1Material {
 		}
 	}
 
-	clone() {
+	clone(): WorldVertexTransitionMaterial {
 		return new WorldVertexTransitionMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

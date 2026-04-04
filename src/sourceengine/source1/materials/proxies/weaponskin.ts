@@ -6,7 +6,7 @@ import { ProxyManager } from './proxymanager';
 export class WeaponSkin extends Proxy {
 	#defaultTexture: string | null = null;
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		if (!this.#defaultTexture) {
 			this.#defaultTexture = variables.get('$basetexture');
 		}

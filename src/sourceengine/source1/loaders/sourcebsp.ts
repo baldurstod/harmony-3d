@@ -2,13 +2,12 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { ERROR, LOG } from '../../../buildoptions';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
-import { Vec3Middle } from '../../../math/functions';
 import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
 import { World } from '../../../objects/world';
 import { Source1ModelInstance } from '../export';
 import { MapEntities } from '../maps/mapentities';
-import { AngleQuaternion, MapEntity, MapEntityConnection } from '../maps/mapentity';
+import { AngleQuaternion, MapEntity, MapEntityConnection, ParseVector } from '../maps/mapentity';
 import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { KvReader } from './kvreader';
@@ -16,7 +15,7 @@ import { Source1BspTree } from './source1bsptree';
 import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES, LumpData, SourceBSPLump, SourceBSPLumpDispInfo, SourceBSPLumpDispVertex, SourceBSPLumpEdge, SourceBSPLumpEntity, SourceBSPLumpFace, SourceBSPLumpGameLump, SourceBSPLumpLeaf, SourceBSPLumpModel, SourceBSPLumpPropStaticDirectory, SourceBSPLumpTexData, SourceBSPLumpTexInfo } from './sourcebsplump';
 import { SELightMapNode } from './sourcelightmap';
 
-const DISPLACEMENT_DELTA = 1.0; // max distance from start position
+//const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 
 const LIGTH_MAP_TEXTURE_SIZE = 1024;
 
@@ -91,13 +90,13 @@ export class SourceBSP extends World {
 		this.addChild(this.#mapFaces);
 	}
 
-	initMap() {
+	initMap(): void {
 		this.#initGeometry();
 		this.#createEntities();
 		this.#createStaticProps();
 	}
 
-	#createEntities() {
+	#createEntities(): void {
 		const lumpEntities = this.getLumpData(LUMP_ENTITIES) as SourceBSPLumpEntity;
 		if (lumpEntities) {
 			this.#createDynamicEntities(lumpEntities.kv);
@@ -109,7 +108,7 @@ export class SourceBSP extends World {
 		}
 	}
 
-	#createStaticProps() {
+	#createStaticProps(): void {
 		const gameLump = this.getLumpData(LUMP_GAME_LUMP) as (Map<string, SourceBSPLumpGameLump> | null);
 		const staticLump = gameLump?.get('prps');
 		const propsStatic = staticLump?.getLumpData() as (SourceBSPLumpPropStaticDirectory | null);
@@ -129,8 +128,8 @@ export class SourceBSP extends World {
 					(model) => {
 						if (model) {
 							this.#staticProps.addChild(model);
-							model.position = prop.position;
-							model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
+							model.setPosition(prop.position);
+							model.setOrientation(AngleQuaternion(prop.angles, tempQuaternion));
 							model.skin = String(prop.skin);
 						}
 					}
@@ -139,7 +138,7 @@ export class SourceBSP extends World {
 		}
 	}
 
-	#createDynamicEntities(kv: KvReader) {
+	#createDynamicEntities(kv: KvReader): void {
 		const list = Object.keys(kv.rootElements);
 
 		for (const name of list) {
@@ -165,14 +164,18 @@ export class SourceBSP extends World {
 				}
 				if (entity.classname == 'info_player_teamspawn') {
 					if (!this.#characterSpawn) {
-						this.#characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
+						const v = ParseVector(vec3.create(), entity.origin);
+						if (v) {
+							this.#characterSpawn = v;
+
+						}
 					}
 				}
 			}
 		}
 	}
 
-	addLump(lump: SourceBSPLump) {
+	addLump(lump: SourceBSPLump): void {
 		this.lumps.push(lump)
 	}
 
@@ -189,7 +192,7 @@ export class SourceBSP extends World {
 			return;
 		}
 		face.initialized = true;
-		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		//const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
 		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO) as (SourceBSPLumpTexInfo[] | null);
 		const lumpTexData = this.getLumpData(LUMP_TEXDATA) as (SourceBSPLumpTexData[] | null);
 		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA) as (string[] | null);
@@ -295,7 +298,7 @@ export class SourceBSP extends World {
 		}
 		face.initialized = true;
 
-		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		//const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
 		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO) as (SourceBSPLumpTexInfo[] | null);
 		const lumpTexData = this.getLumpData(LUMP_TEXDATA) as (SourceBSPLumpTexData[] | null);
 		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA) as (string[] | null);
@@ -351,12 +354,12 @@ export class SourceBSP extends World {
 				continue;
 			}
 
-			let vertice1, vertice2;
+			let vertice1/*, vertice2*/;
 			if (surfedge <= 0) {
 				vertice1 = lumpVertices[edge.f];
-				vertice2 = lumpVertices[edge.s];
+				//vertice2 = lumpVertices[edge.s];
 			} else {
-				vertice2 = lumpVertices[edge.f];
+				//vertice2 = lumpVertices[edge.f];
 				vertice1 = lumpVertices[edge.s];
 			}
 			if (vertice1) {
@@ -368,14 +371,15 @@ export class SourceBSP extends World {
 			}
 		}
 
-		const origVertices2 = [[origVertices[0], origVertices[1]], [origVertices[2], origVertices[3]]];//TODOv3removeme
-		let foundRemoveme = false;
+		//const origVertices2 = [[origVertices[0], origVertices[1]], [origVertices[2], origVertices[3]]];//TODOv3removeme
+		//let foundRemoveme = false;
 		for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
 			const vvremoveme = origVertices[0];
 			if (!vvremoveme) {
 				continue;
 			}
 
+			/*
 			if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
 				&& Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
 				&& Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA
@@ -383,6 +387,7 @@ export class SourceBSP extends World {
 				foundRemoveme = true;
 				break;
 			}
+			*/
 			origVertices.push(origVertices.shift());
 		}
 
@@ -421,15 +426,18 @@ export class SourceBSP extends World {
 					const v3 = tesselateVertices[iMin]![jMax];
 					const v4 = tesselateVertices[iMax]![jMax];
 
-					const iMid = iMin + subdiv2;
-					const jMid = jMin + subdiv2;
+					//const iMid = iMin + subdiv2;
+					//const jMid = jMin + subdiv2;
 
 					if (v1 && v2 && v3 && v4) {
+						/*
+						TODO: tesselate
 						const s1 = Vec3Middle((tesselateVertices[iMid]![jMin] as vec3), v1 as vec3, v2 as vec3);
 						const s2 = Vec3Middle((tesselateVertices[iMid]![jMax] as vec3), v3 as vec3, v4 as vec3);
 						const s3 = Vec3Middle((tesselateVertices[iMin]![jMid] as vec3), v1 as vec3, v3 as vec3);
 						const s4 = Vec3Middle((tesselateVertices[iMax]![jMid] as vec3), v2 as vec3, v4 as vec3);
 						const s5 = Vec3Middle((tesselateVertices[iMid]![jMid] as vec3), s3, s4);
+						*/
 					} else {
 						if (LOG) { console.log(v1, v2, v3, v4); }
 					}
@@ -454,7 +462,7 @@ export class SourceBSP extends World {
 			}
 		}
 
-		const verticesCount = 0;
+		//const verticesCount = 0;
 		subdiv = Math.pow(2, dispInfo.power);
 		for (let i = 0; i < subdiv; ++i) {
 			for (let j = 0; j < subdiv; ++j) {
@@ -506,7 +514,7 @@ export class SourceBSP extends World {
 		}
 	}
 
-	#initGeometry() {
+	#initGeometry(): void {
 		this.#geometries = {};
 		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
 		const lumpLeafs = this.getLumpData(LUMP_LEAFS) as (SourceBSPLumpLeaf[] | null);
@@ -623,13 +631,13 @@ export class SourceBSP extends World {
 		}
 	}
 
-	#addEntity(entity: MapEntity) {
+	#addEntity(entity: MapEntity): void {
 		if (entity) {
 			this.entities.push(entity);
 		}
 	}
 
-	addConnection(connection: MapEntityConnection) {
+	addConnection(connection: MapEntityConnection): void {
 		if (connection) {
 			this.#connections.push(connection);
 		}
@@ -653,7 +661,7 @@ export class SourceBSP extends World {
 		if (model.numfaces == 0) {
 			return vec3.create();
 		}
-		function compare(v: vec3) {
+		function compare(v: vec3): void {
 			for (let i = 0; i < 3; i++) {
 				if (v[i]! < min[i]!) {
 					min[i] = v[i]!;
@@ -705,7 +713,7 @@ export class SourceBSP extends World {
 		this.#dynamicProps.addChild(prop);
 	}
 
-	static getEntityName() {
+	static getEntityName(): string {
 		return 'BSP Map';
 	}
 }

@@ -21,13 +21,13 @@ export class AttractToControlPoint extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3/*, strength = 1*/): void {
 		//console.log(particle.position);
 		const m_fForceAmount = this.getParameter('amount of force');
 		const cpNumber = this.getParameter('control point number');
 		const m_fFalloffPower = this.getParameter('falloff power');
 
-		const power_frac = Math.round(-4.0 * m_fFalloffPower);					// convert to what pow_fixedpoint_exponent_simd wants
+		//const power_frac = Math.round(-4.0 * m_fFalloffPower);					// convert to what pow_fixedpoint_exponent_simd wants
 		const fForceScale = -m_fForceAmount * 1.0/*flStrength*/;
 
 		const cp = this.particleSystem.getControlPoint(cpNumber);

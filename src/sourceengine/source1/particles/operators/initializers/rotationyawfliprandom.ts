@@ -13,12 +13,12 @@ export class RotationYawFlipRandom extends Source1ParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD('Flip Percentage', '.5', float, m_flPercent)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const flip_percent = this.getParameter('Flip Percentage') || 0.5;
 		particle.rotationYaw += (Math.random() < flip_percent) ? 180 : 0;
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

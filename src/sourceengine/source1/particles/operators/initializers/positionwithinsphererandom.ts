@@ -82,7 +82,7 @@ export class PositionWithinSphereRandom extends Source1ParticleOperator {
 			vec3.mul(randpos, randpos, m_vecDistanceBias);//randpos *= m_vecDistanceBias;
 			vec3.normalize(randpos, randpos);//randpos.NormalizeInPlace();
 
-			const randDir = vec3.clone(randpos);
+			//const randDir = vec3.clone(randpos);
 			vec3.scale(randpos, randpos, lerp(m_fRadiusMin, m_fRadiusMax, flLength));//randpos *= Lerp(flLength, m_fRadiusMin, m_fRadiusMax);
 
 			if (!m_bDistanceBias || !m_bLocalCoords) {

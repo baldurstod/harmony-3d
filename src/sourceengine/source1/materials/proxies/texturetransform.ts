@@ -1,5 +1,4 @@
 import { mat4, vec2 } from 'gl-matrix';
-import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
 import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
@@ -12,7 +11,7 @@ export class TextureTransform extends Proxy {
 	scaleVar = '';
 	resultVar = '';
 
-	init(variables: Map<string, Source1MaterialVariables>) {
+	override init(variables: Map<string, Source1MaterialVariables>): void {
 		this.centerVar = this.getData('centervar');
 		this.translateVar = this.getData('translatevar');
 		this.rotateVar = this.getData('rotatevar');
@@ -21,7 +20,7 @@ export class TextureTransform extends Proxy {
 		variables.set(this.resultVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>/*, proxyParams: DynamicParams, time: number*/): void {
 		let center = vec2.fromValues(0.5, 0.5);
 
 		const mat = mat4.create();//TODOv3 optimize
@@ -74,14 +73,14 @@ export class TextureTransform extends Proxy {
 }
 ProxyManager.registerProxy('TextureTransform', TextureTransform);
 
-export function MatrixBuildTranslation(dst: mat4, x: number, y: number, z: number) {
+export function MatrixBuildTranslation(dst: mat4, x: number, y: number, z: number): void {
 	mat4.identity(dst);
 	dst[12] = x;
 	dst[13] = y;
 	dst[14] = z;
 }
 // Builds a scale matrix
-export function MatrixBuildScale(dst: mat4, x: number, y: number, z: number) {
+export function MatrixBuildScale(dst: mat4, x: number, y: number, z: number): void {
 	dst[0] = x;
 	dst[1] = 0;
 	dst[2] = 0;

@@ -8,10 +8,10 @@ import { MapEntity, MapEntityValue, parseLightColorIntensity } from '../mapentit
 export class MapEntityAmbientLight extends MapEntity {
 	#ambientLight = new AmbientLight();
 
-	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
+	override setKeyValues(kvElement: KvElement): void {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.map.addChild(this.#ambientLight);
-		this.#ambientLight.position = this._position;
+		this.#ambientLight.setPosition(this._position);
 	}
 
 	setKeyValue(key: string, value: MapEntityValue): void {
@@ -27,7 +27,7 @@ export class MapEntityAmbientLight extends MapEntity {
 		}
 	}
 
-	update(scene: Scene, camera: Camera, delta: number): void {
+	override update(scene: Scene, camera: Camera, delta: number): void {
 		super.update(scene, camera, delta);
 		this.#ambientLight.setPosition(this._position);
 	}

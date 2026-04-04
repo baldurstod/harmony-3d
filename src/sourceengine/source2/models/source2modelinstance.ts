@@ -207,8 +207,9 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#animName = name;
 	}
 
-	setAnimation(id: number, name: string/*, weight: number*/): void {
+	setAnimation(id: number, name: string/*, weight: number*/): Promise<void> {
 		this.#animName = name;
+		return Promise.resolve();
 	}
 
 	setActivityModifiers(activityModifiers: string[] = []): void {
@@ -255,7 +256,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 						propBone.setPosition(pos.Position || identityVec3);
 					}
 					if (!propBone.lockRotation) {
-						propBone.setQuaternion(pos.Angle || identityQuat);
+						propBone.setOrientation(pos.Angle || identityQuat);
 					}
 				}
 			}
@@ -265,7 +266,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 					bone.setPosition(bone.refPosition);
 				}
 				if (!bone.lockRotation) {
-					bone.setQuaternion(bone.refQuaternion);
+					bone.setOrientation(bone.refQuaternion);
 				}
 			}
 		}
@@ -395,7 +396,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 				for (const [modelBoneIndex, boneName] of bonesName.entries()) {
 					const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
 					//bone.name = boneName;
-					bone.setQuaternion(boneRotParent[modelBoneIndex] as quat);
+					bone.setOrientation(boneRotParent[modelBoneIndex] as quat);
 					bone.setPosition(bonePosParent[modelBoneIndex] as vec3);
 					bone.refQuaternion = boneRotParent[modelBoneIndex] as quat;
 					bone.refPosition = bonePosParent[modelBoneIndex] as vec3;
@@ -444,7 +445,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		return Promise.resolve(this.sourceModel.getAnimations());
 	}
 
-	buildContextMenu(): HarmonyMenuItemsDict {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		const skins = this.sourceModel.getSkinList();
 		const skinMenu = [];
 		for (const [skinId, skin] of skins.entries()) {

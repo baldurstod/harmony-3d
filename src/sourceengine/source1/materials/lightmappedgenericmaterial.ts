@@ -6,7 +6,7 @@ import { Source1Material } from './source1material';
 
 export class LightMappedGenericMaterial extends Source1Material {//TODOv3 removeme
 
-	clone() {
+	override clone(): LightMappedGenericMaterial {
 		return new LightMappedGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

@@ -19,7 +19,7 @@ export class RotationRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('rotation_random_exponent', '1', float, m_flRotationRandExponent)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const rotation_initial = this.getParameter('rotation_initial');
 		const rotation_offset_min = this.getParameter('rotation_offset_min');
 		const rotation_offset_max = this.getParameter('rotation_offset_max');
@@ -29,7 +29,7 @@ export class RotationRandom extends Source1ParticleOperator {
 		particle.setInitialRoll(rotation);
 	}
 
-	initMultipleOverride() {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

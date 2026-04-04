@@ -13,7 +13,7 @@ import { MdlAttachment, MdlBodyPart, SourceMdl } from './sourcemdl';
 import { SourceVtx } from './sourcevtx';
 import { SourceVvd } from './sourcevvd';
 
-const _SOURCE_MODEL_DEBUG_ = false; // removeme
+//const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
 export class SourceModel {
 	readonly repository: string;
@@ -155,13 +155,14 @@ export class SourceModel {
 			const boneFlags: number[] = [];
 			//const poseParameters = {};
 
+			/*
 			for (const [boneId, bone] of animation.bones.entries()) {
 				//posRemoveMeTemp.push(vec3.clone(bone.refPosition));
 				//quatRemoveMeTemp.push(quat.clone(bone.refQuaternion));
 				//posRemoveMeTemp.push(vec3.create());
 				//quatRemoveMeTemp.push(quat.create());
-
 			}
+			*/
 
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);

@@ -10,11 +10,11 @@ import { ProxyManager } from './proxymanager';
 export class ModelGlowColor extends Proxy {
 	#resultVar = '';
 
-	init() {
+	override init(): void {
 		this.#resultVar = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		variables.set(this.#resultVar, proxyParams.ModelGlowColor ?? [1, 1, 1]);
 	}
 }

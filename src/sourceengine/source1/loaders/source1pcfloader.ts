@@ -4,9 +4,8 @@ import { registerLoader } from '../../../loaders/loaderfactory';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { ParticleColor } from '../particles/color';
 import { DmeParticleSystemDefinition, SourcePCF } from './sourcepcf';
-import { saveFile } from 'harmony-browser-utils';
 
-const _PCF_LOADER_DEBUG_ = false;//TODOv3 remove
+//const _PCF_LOADER_DEBUG_ = false;//TODOv3 remove
 
 
 const data_size = [
@@ -86,9 +85,9 @@ export class Source1PcfLoader extends SourceBinaryLoader {
 		element.guid2 = guidToString(element.guid);
 
 		if (element.type == DmeParticleSystemDefinition) {
-			pcf.addSystem(element as CDmxElement);
+			pcf.addSystem(element);
 		}
-		return element as CDmxElement;
+		return element;
 	}
 
 	#parseAttributes(reader: BinaryReader, pcf: SourcePCF): CDmxAttribute[] {
@@ -113,7 +112,7 @@ export class Source1PcfLoader extends SourceBinaryLoader {
 
 		attribute.type = reader.getUint8()
 
-		if (attribute.type > 14) {
+		if (attribute.type >= CDmxAttributeType.ElementArray) {
 			attribute.value = this.#parseArray(reader, pcf, attribute.type);
 		} else {
 			attribute.value = this.#parseValue(reader, pcf, attribute.type);
@@ -179,7 +178,7 @@ export class Source1PcfLoader extends SourceBinaryLoader {
 				break;
 			default:
 				console.error('unknown type', type, 'in #parseValue', pcf);
-				throw 'fix me';
+				throw new Error('fix me');
 				break;
 		}
 
@@ -328,7 +327,7 @@ export function pcfToSTring(pcf: SourcePCF): { text: string, elementsLine: Map<s
 }
 
 function cDmxElementsToSTring(elements: CDmxElement[], context: DmxElementsToSTringContext): string {
-	let lines: string[] = [];
+	const lines: string[] = [];
 	for (const element of elements) {
 		if (context.inlineSubElements.get(element)) {
 			lines.push(cDmxElementToSTring(element, context) + ',');
@@ -355,7 +354,7 @@ function guidToString(bytes: Uint8Array): string {
 }
 
 function cDmxElementToSTring(element: CDmxElement | null, context: DmxElementsToSTringContext): string {
-	let lines: string[] = [];
+	const lines: string[] = [];
 
 	if (element) {
 		context.elementsLine.set(element.guid2, context.line);
@@ -402,16 +401,16 @@ function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToS
 			line += ` "element" "${(attribute.value as (CDmxElement | null))?.guid2 ?? 'null'}"`;
 			break;
 		case CDmxAttributeType.Integer:
-			line += ` "int" ${attribute.value}`;
+			line += ` "int" ${attribute.value as number}`;
 			break;
 		case CDmxAttributeType.Float:
-			line += ` "float" ${attribute.value}`;
+			line += ` "float" ${attribute.value as number}`;
 			break;
 		case CDmxAttributeType.Bool:
 			line += ` "bool" ${attribute.value ? '1' : '0'}`;
 			break;
 		case CDmxAttributeType.String:
-			line += ` "string" "${attribute.value}"`;
+			line += ` "string" "${attribute.value as string}"`;
 			break;
 		case CDmxAttributeType.Color:
 			line += ` "color" "${(attribute.value as ParticleColor).r * 255} ${(attribute.value as ParticleColor).g * 255} ${(attribute.value as ParticleColor).b * 255} ${(attribute.value as ParticleColor).a * 255}"`;

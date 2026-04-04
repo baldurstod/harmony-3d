@@ -47,7 +47,7 @@ export class SpriteMaterial extends Source1Material {
 			}
 		}
 
-		switch (Number(vmt['$spriterendermode'])) {
+		switch (Number(vmt['$spriterendermode']) as RenderMode) {
 			//TODO: add other modes
 			case RenderMode.TransAdd:
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
@@ -84,7 +84,7 @@ export class SpriteMaterial extends Source1Material {
 
 	}
 
-	clone() {
+	override clone(): SpriteMaterial {
 		return new SpriteMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 

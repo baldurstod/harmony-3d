@@ -248,7 +248,7 @@ export class SkeletonHelper extends Entity {
 		this.#highlitLine = line;
 	}
 
-	dispose() {
+	override dispose() {
 		this.#clearSkeleton();
 		this.#lineMaterial.removeUser(this);
 		this.#highlitLineMaterial.removeUser(this);

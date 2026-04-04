@@ -1,4 +1,4 @@
-import { Material } from '../materials/material';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { MetaballsBufferGeometry } from './geometries/metaballsbuffergeometry';
@@ -37,7 +37,7 @@ export class Metaballs extends Mesh {
 		(this.geometry as MetaballsBufferGeometry).updateGeometry(this.#balls, this.cubeWidth);
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Metaballs_1: null,
 			add_ball: { i18n: '#add_ball', f: () => { this.addBall(); } },

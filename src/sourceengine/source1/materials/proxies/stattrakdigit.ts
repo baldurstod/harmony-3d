@@ -9,15 +9,15 @@ import { ProxyManager } from './proxymanager';
 export class StatTrakDigit extends Proxy {
 	#displayDigit = 0;
 	#resultVar = '';
-	#trimZeros: boolean = false;
+	#trimZeros = false;
 
-	init() {
+	override init(): void {
 		this.#trimZeros = this.datas['trimzeros'];
 		this.#resultVar = this.datas['resultvar'];
 		this.#displayDigit = this.datas['displaydigit'] ?? 0;
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams/*, time: number*/): void {
 		const number = proxyParams.StatTrakNumber || 0;
 		const numberasstring = String(number);
 		let digit = Math.floor(number / (Math.pow(10, this.#displayDigit)) % 10);

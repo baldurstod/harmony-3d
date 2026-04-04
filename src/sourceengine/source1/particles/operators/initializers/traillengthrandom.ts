@@ -18,7 +18,7 @@ export class TrailLengthRandom extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('length_random_exponent', '1', float, m_flLengthRandExponent)
 	}
 
-	doInit(particle: Source1Particle, elapsedTime: number): void {
+	doInit(particle: Source1Particle/*, elapsedTime: number*/): void {
 		const length_min = this.getParameter('length_min');
 		const length_max = this.getParameter('length_max');
 		const length_random_exponent = this.getParameter('length_random_exponent');

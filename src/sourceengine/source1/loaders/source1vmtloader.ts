@@ -49,7 +49,7 @@ class Source1VmtLoaderClass {// TODO: improve singleton
 			if (material) {
 				for (const insertIndex in insert) {
 					material.variables.set(insertIndex, insert[insertIndex]);
-					throw 'material.parameters[insertIndex] = insert[insertIndex];'
+					throw new Error('material.parameters[insertIndex] = insert[insertIndex];');
 				}
 			}
 			//materialList[fileNameRemoveMe] = material;removeme
@@ -67,11 +67,11 @@ class Source1VmtLoaderClass {// TODO: improve singleton
 		return material;
 	}
 
-	setMaterial(/*TODO: add repository param*/fileName: string, fileContent: string) {
+	setMaterial(/*TODO: add repository param*/fileName: string, fileContent: string): void {
 		this.#extraMaterials.set(fileName, fileContent);
 	}
 
-	registerMaterial(materialName: string, materialClass: typeof Source1Material) {
+	registerMaterial(materialName: string, materialClass: typeof Source1Material): void {
 		this.#materials.set(materialName.toLowerCase(), materialClass);
 	}
 }

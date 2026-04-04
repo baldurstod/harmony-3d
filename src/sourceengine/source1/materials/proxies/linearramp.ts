@@ -6,11 +6,11 @@ import { ProxyManager } from './proxymanager';
 export class LinearRamp extends Proxy {
 	#rate = 1;
 
-	init() {
+	override init(): void {
 		this.#rate = Number(this.datas['rate'] ?? 1);
 	}
 
-	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
+	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
 		const initialValue = Number(this.getVariable(variables, 'initialvalue') ?? 0);
 
 		super.setResult(variables, initialValue + time * this.#rate);

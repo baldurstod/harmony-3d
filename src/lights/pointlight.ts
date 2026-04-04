@@ -1,5 +1,6 @@
-import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
+import { HarmonyMenuItemsDict } from 'harmony-ui';
+import { registerEntity } from '../entities/entities';
 import { Light, LightParameters } from './light';
 import { PointLightShadow } from './pointlightshadow';
 
@@ -44,7 +45,7 @@ export class PointLight extends Light {
 		this.range = json.range as number ?? this.range;
 	}
 
-	buildContextMenu() {
+	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) { this.range = Number(range); } } },
 		});

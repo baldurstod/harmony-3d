@@ -31,14 +31,14 @@ export class Source1BspTree {
 	}
 	*/
 
-	getLeafId(pos: vec3) {
+	getLeafId(pos: vec3): number | undefined {
 		//TODO: optimize
 		const map = this.#map;
 
 		const lumpModels = map.getLumpData(LUMP_MODELS) as (SourceBSPLumpModel[] | null);
 		const lumpPlanes = map.getLumpData(LUMP_PLANES) as SourceBSPLumpPlane[];
 		const lumpNodes = map.getLumpData(LUMP_NODES) as SourceBSPLumpNode[];
-		const lumpLeafs = map.getLumpData(LUMP_LEAFS)  as (SourceBSPLumpLeaf[] | null);
+		const lumpLeafs = map.getLumpData(LUMP_LEAFS) as (SourceBSPLumpLeaf[] | null);
 		const lumpLeafFaces = map.getLumpData(LUMP_LEAFFACES) as (number[] | null);
 		const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
 
@@ -47,7 +47,7 @@ export class Source1BspTree {
 			let index = model.headnode;
 			let node = null;
 			let plane = null;
-			const normal = vec3.create();
+			//const normal = vec3.create();
 			let dist = 0;
 
 			while (index >= 0) {
@@ -99,7 +99,7 @@ export class Source1BspTree {
 		return false;
 	}
 
-	isVisLeaf(leafId: number) {
+	isVisLeaf(leafId: number): boolean {
 		const lumpLeafs = this.#map.getLumpData(LUMP_LEAFS) as (SourceBSPLumpLeaf[] | null);
 		if (lumpLeafs) {
 			const lumpLeaf = lumpLeafs[leafId];
@@ -110,7 +110,7 @@ export class Source1BspTree {
 		return true;
 	}
 
-	addPropToLeaf(leafId: number, propId: number) {
+	addPropToLeaf(leafId: number, propId: number): void {
 		const leaf = this.#leavesRemoveme[leafId] || [];
 		this.#leavesRemoveme[leafId] = leaf;
 		leaf.push(propId);

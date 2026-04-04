@@ -5,7 +5,7 @@ import { customFetch } from '../../../utils/customfetch';
 import { Source1VmtLoader } from '../export';
 import { Source1Material } from './source1material';
 
-function cleanSource1MaterialName(name: string) {
+function cleanSource1MaterialName(name: string): string {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '').replace(/^materials\//g, '');
 
 	name = name + '.vmt';
@@ -126,23 +126,28 @@ export class Source1MaterialManager {
 	}
 	*/
 
-	static addRepository(repository: string) {
+	static addRepository(repository: string): void {
 		this.#fileListPerRepository.set(repository, null);
 	}
 
-	static async getMaterialList() {
+	static async getMaterialList(): Promise<any/* TODO: improve type*/> {
 		const repoList = [];
+
+		// eslint-disable-next-line prefer-const
 		for (let [repositoryName, repository] of this.#fileListPerRepository) {
-			console.error(repositoryName, repository);
-			if (repository == null) {
-				repository = new Promise<JSONObject>(async resolve => {
-					try {
-						const manifestUrl = repositoryName + 'materials_manifest.json';//todo variable
-						const response = await customFetch(manifestUrl);
-						resolve(await response.json());
-					} catch (e) {
-						resolve({ files: [] });
-					}
+			//console.error(repositoryName, repository);
+			if (repository === null) {
+				repository = new Promise<JSONObject>(resolve => {
+					(async (): Promise<void> => {
+						try {
+							const manifestUrl = repositoryName + 'materials_manifest.json';//todo variable
+							const response = await customFetch(manifestUrl);
+							resolve(await response.json());
+							// eslint-disable-next-line @typescript-eslint/no-unused-vars
+						} catch (e) {
+							resolve({ files: [] });
+						}
+					})();
 				});
 				this.#fileListPerRepository.set(repositoryName, repository);
 			}
