@@ -68,6 +68,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	readonly editor: NodeImageEditor;
 	readonly inputs = new Map<string, Input>();
 	readonly outputs = new Map<string, Output>();
+	readonly #initialValues = new Map<string, NodeParamValue>();
 	readonly params = new Map<string, NodeParam>();
 	readonly previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	previewSize: number = PREVIEW_PICTURE_SIZE;
@@ -143,6 +144,11 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
+	setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void {
+		this.#initialValues.set(paramName, newValue);
+		this.setParam(origin, paramName, newValue, paramIndex);
+	}
+
 	setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number) {
 		const p = this.params.get(paramName);
 		if (p) {
@@ -163,6 +169,19 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 				newValue,
 				paramIndex,
 			} as NodeParamChangedEvent);
+		}
+	}
+
+	resetValue(origin: NodeParamOrigin, paramName: string, paramIndex?: number): void {
+		const value = this.#initialValues.get(paramName);
+		if (value !== undefined) {
+			this.setParam(origin, paramName, value, paramIndex);
+		}
+	}
+
+	resetAllValues(origin: NodeParamOrigin): void {
+		for (const [name, initialValue] of this.#initialValues) {
+			this.setParam(origin, name, initialValue);
 		}
 	}
 

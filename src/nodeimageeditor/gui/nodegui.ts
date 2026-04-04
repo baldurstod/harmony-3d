@@ -1,5 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
-import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
+import { contentCopySVG, dragPanSVG, panZoomSVG, resetWrenchSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
 import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
 import { fileToImage, setTimeoutPromise } from 'harmony-utils';
 import { Graphics } from '../../graphics/graphics2';
@@ -348,7 +348,27 @@ export class NodeGui {
 
 	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
 		const paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-		const nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
+		createElement('div', {
+			parent: paramHtml,
+			childs: [
+				createElement('span', {
+					class: 'reset-button',
+					parent: paramHtml,
+					innerHTML: resetWrenchSVG,
+					$click: async () => {
+						if (param.type === NodeParamType.StickerAdjust) {
+							this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
+							this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
+							this.#node.resetValue(NodeParamOrigin.Gui, 'top right');
+						} else {
+							this.#node.resetValue(NodeParamOrigin.Gui, param.name);
+						}
+						this.#node.revalidate({ updatePreview: true });
+					},
+				}),
+				createElement('span', { parent: paramHtml, class: 'name', innerText: param.name, }),
+			]
+		});
 		let valueHtml: HTMLInputElement;
 
 
@@ -370,10 +390,19 @@ export class NodeGui {
 					valueHtml.classList.remove('flash');
 				},
 			});
+			/*
+			createElement('span', {
+				class: 'reset-button',
+				parent: paramHtml,
+				innerHTML: resetWrenchSVG,
+				$click: async () => {
+					this.#node.resetValue(NodeParamOrigin.Gui, param.name);
+					this.#node.revalidate({ updatePreview: true });
+				},
+			});
+			*/
 			this.#htmlParamsValue.set(paramHtml, valueHtml);
 		}
-
-		nameHtml.innerText = param.name;
 
 		if (param.type == NodeParamType.StickerAdjust) {
 			defineHarmony2dManipulator();
@@ -412,6 +441,19 @@ export class NodeGui {
 									}),
 								]
 							}),
+							/*
+							createElement('span', {
+								class: 'reset-button',
+								parent: paramHtml,
+								innerHTML: resetWrenchSVG,
+								$click: async () => {
+									this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
+									this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
+									this.#node.resetValue(NodeParamOrigin.Gui, 'top right');
+									this.#node.revalidate({ updatePreview: true });
+								},
+							}),
+							*/
 						],
 					}),
 					createElement('div', {

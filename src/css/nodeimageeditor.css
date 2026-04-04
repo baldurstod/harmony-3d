@@ -175,7 +175,7 @@
 	height: 100%;
 }
 
-.copy-button {
+.copy-button, .reset-button {
 	width: 2rem;
 	height: 2rem;
 	display: inline-block;
