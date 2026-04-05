@@ -59,6 +59,11 @@ export class WebGPURenderer implements Renderer {
 	//readonly #pointerPosition = vec2.create();
 	#pickedPrimitive?: GPUBuffer;
 	readonly #identityVec2 = vec2.create();
+	readonly #fullScreenQuad: FullScreenQuad;
+
+	constructor() {
+		this.#fullScreenQuad = new FullScreenQuad();
+	}
 
 	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = this.#renderList;
@@ -161,12 +166,11 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		if (clearValue && context.viewport) {
-			const fullScreenQuad = new FullScreenQuad();
-			const material = fullScreenQuad.getMaterial();
+			const material = this.#fullScreenQuad.getMaterial();
 			material.setDefine('ALWAYS_BEHIND');
 			material.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
 			material.setColorMode(MaterialColorMode.PerMesh);
-			renderList.addObject(fullScreenQuad);
+			renderList.addObject(this.#fullScreenQuad);
 		}
 
 		renderList.finish();
