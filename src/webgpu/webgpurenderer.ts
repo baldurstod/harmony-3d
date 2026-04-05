@@ -31,6 +31,8 @@ import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray, StorageValueStruct } from './storage';
+import { Binding, WgslModule } from './types';
+import { getViewDimension } from './viewdimension';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -39,29 +41,6 @@ const clearError = once(() => console.error('TODO clear'));
 const tempViewProjectionMatrix = mat4.create();
 
 const pickBufferSize = 8;
-
-type WgslModule = {
-	module: GPUShaderModule;
-	reflection?: WgslReflect;
-	attributes: Map<string, number>;
-	source: string;
-}
-
-type Binding = {
-	buffer?: GPUBuffer,
-	bufferType?: GPUBufferBindingType,
-	texture?: Texture,
-	textureCube?: Texture,
-	textureArray?: (Texture | undefined)[],
-	sampler?: GPUSampler,
-	storageTexture?: Texture,
-	storageTextureArray?: (Texture | undefined)[],
-	access?: GPUStorageTextureAccess,
-	visibility?: GPUShaderStageFlags,
-	// for Textures
-	viewDimension?: GPUTextureViewDimension,
-	format?: GPUTextureFormat,
-};
 
 //const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
@@ -1644,27 +1623,4 @@ function writeArray(queue: GPUQueue, buffer: GPUBuffer, type: ArrayInfo, value: 
 	} else {
 		throw new Error('code me');
 	}
-}
-
-const VIEW_DIMENSIONS: Record<string, GPUTextureViewDimension> = {
-	texture_1d: '1d',
-	texture_2d: '2d',
-	texture_2d_array: '2d-array',
-	texture_cube: 'cube',
-	texture_cube_array: 'cube-array',
-	texture_3d: '3d',
-
-	texture_storage_1d: '1d',
-	texture_storage_2d: '2d',
-	texture_storage_2d_array: '2d-array',
-	texture_storage_3d: '3d',
-};
-
-function getViewDimension(info: VariableInfo): GPUTextureViewDimension {
-	const dim = VIEW_DIMENSIONS[info.type.name];
-	if (!dim) {
-		throw new Error(`unknwon texture type ${info.type.name}`);
-	}
-	return dim;
-
 }
