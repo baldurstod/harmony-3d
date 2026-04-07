@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
+import { errorOnce } from 'harmony-utils';
 import { RandomPointOnModel } from '../../../../../interfaces/randompointonmodel';
-import { errorOnce } from '../../../../../utils/console';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';

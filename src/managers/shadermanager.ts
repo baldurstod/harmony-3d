@@ -1,7 +1,7 @@
 import { FinalLine, WgslPreprocessor } from 'amandine';
+import { errorOnce } from 'harmony-utils';
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 import { Shaders } from '../shaders/shaders';
-import { errorOnce } from '../utils/console';
 import { Annotation, WebGLShaderSource } from '../webgl/shadersource';
 import { ShaderType } from '../webgl/types';
 

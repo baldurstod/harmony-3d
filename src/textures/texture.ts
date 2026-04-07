@@ -1,9 +1,9 @@
+import { errorOnce } from 'harmony-utils';
 import { TESTING } from '../buildoptions';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { HasUsers, ObjectUser } from '../interfaces/hasusers';
 import { WebGLAnyRenderingContext } from '../types';
-import { errorOnce } from '../utils/console';
 import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
 import { getTextureData } from './texturedata';

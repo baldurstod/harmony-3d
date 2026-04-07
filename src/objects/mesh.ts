@@ -1,7 +1,7 @@
 import { mat3, mat4, vec2, vec3 } from 'gl-matrix';
 import { TypedArray } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
-import { Map2 } from 'harmony-utils';
+import { errorOnce, Map2 } from 'harmony-utils';
 import { ArrayInfo, MemberInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo } from 'wgsl_reflect';
 import { Camera } from '../cameras/camera';
 import { Entity, EntityParameters } from '../entities/entity';
@@ -18,7 +18,6 @@ import { Intersection } from '../raycasting/intersection';
 import { Ray } from '../raycasting/ray';
 import { Raycaster } from '../raycasting/raycaster';
 import { Texture } from '../textures/texture';
-import { errorOnce } from '../utils/console';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
 import { UniformBuffer, UniformValue } from '../webgl/uniform';

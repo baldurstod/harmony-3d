@@ -1,4 +1,5 @@
 import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
+import { errorOnce } from 'harmony-utils';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
 import { Camera, CameraProjection } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
@@ -16,7 +17,6 @@ import { Source1ParticleSystem } from '../sourceengine/export';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { WebGLAnyRenderingContext } from '../types';
-import { errorOnce } from '../utils/console';
 import { getDefines, getIncludeCode } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_ELEMENT_ARRAY_BUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_LINES, GL_SCISSOR_TEST, GL_UNSIGNED_INT } from '../webgl/constants';

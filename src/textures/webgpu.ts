@@ -1,4 +1,4 @@
-import { errorOnce } from '../utils/console';
+import { errorOnce } from 'harmony-utils';
 import { ImageFormat } from './enums';
 
 export function getWebGPUData(imageFormat: ImageFormat, data: Uint8Array | Float32Array): Uint8Array | Float32Array {

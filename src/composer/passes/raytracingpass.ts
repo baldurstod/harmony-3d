@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { errorOnce } from 'harmony-utils';
 import { Camera } from '../../cameras/camera';
 import { Graphics } from '../../graphics/graphics2';
 import { WebGPUInternal } from '../../graphics/webgpuinternal';
@@ -7,7 +8,6 @@ import { ShaderMaterial } from '../../materials/shadermaterial';
 import { Scene } from '../../scenes/scene';
 import { RenderTarget } from '../../textures/rendertarget';
 import { getCurrentTexture } from '../../textures/texture';
-import { errorOnce } from '../../utils/console';
 import { Pass } from '../pass';
 
 const WIDTH = 400;

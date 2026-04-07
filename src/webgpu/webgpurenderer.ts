@@ -1,6 +1,6 @@
 import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { TypedArray } from 'harmony-types';
-import { Map2, once } from 'harmony-utils';
+import { errorOnce, Map2, once } from 'harmony-utils';
 import { ArrayInfo, MemberInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
@@ -25,7 +25,6 @@ import { Source1ParticleSystem } from '../sourceengine/export';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
 import { Texture } from '../textures/texture';
-import { errorOnce } from '../utils/console';
 import { getDefines } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
