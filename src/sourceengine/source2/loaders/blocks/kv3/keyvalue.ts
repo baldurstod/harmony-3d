@@ -1,4 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { infoSet } from 'harmony-utils';
 import { Source2File } from '../../source2file';
 import { Source2DataBlock } from '../../source2fileblock';
 import { loadDataKv3 } from './kv3';
@@ -26,7 +27,7 @@ export async function loadKeyValue(reader: BinaryReader, file: Source2File, bloc
 			await loadDataKv3(reader, block, 5);
 			return true;
 		default:
-			console.info('Unknown block data type:', bytes, block, file);
+			infoSet('Unknown block data type', { bytes, block, file });
 	}
 	return false
 }

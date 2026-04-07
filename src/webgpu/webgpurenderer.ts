@@ -1,6 +1,6 @@
 import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { TypedArray } from 'harmony-types';
-import { errorOnce, Map2, once } from 'harmony-utils';
+import { errorMap, errorOnce, Map2, once } from 'harmony-utils';
 import { ArrayInfo, MemberInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
@@ -1052,7 +1052,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = subUniform as BufferSource;
 							}
 						} else {
-							errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+							errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
 						}
 
 						if (bufferSource) {
@@ -1123,7 +1123,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = object?.getUniformValue(member.name) as Float32Array<ArrayBuffer> ?? new Float32Array(16);//TODO don't create a Float32Array each time
 								break;
 							default:
-								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+								errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
 						}
 
 						if (bufferSource) {
@@ -1248,7 +1248,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = camera?.getPosition() as BufferSource;
 								break;
 							default:
-								errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
+								errorMap('unknwon wgsl uniform', uniform.name, { group: uniform.group, binding: uniform.binding, shader: material.getShaderSource() + '.wgsl' });
 								const format = (uniform.type as unknown as VariableInfo)?.format as TypeInfo;
 								if (format) {
 									let buffer: BufferSource;

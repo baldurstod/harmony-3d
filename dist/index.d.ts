@@ -9,6 +9,7 @@ import { int16 } from 'harmony-types';
 import { int32 } from 'harmony-types';
 import { int8 } from 'harmony-types';
 import { JSONObject } from 'harmony-types';
+import { Map2 } from 'harmony-utils';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
@@ -28,6 +29,7 @@ import { uint } from 'harmony-types';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import { vec4 } from 'gl-matrix';
+import { WgslReflect } from 'wgsl_reflect';
 
 declare class Actor {
     #private;
@@ -50,7 +52,7 @@ declare class Actor {
  * @comment ouput variable name: resultVar
  */
 export declare class Add extends Proxy_2 {
-    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>): void;
 }
 
 export declare interface AddCanvasOptions {
@@ -98,25 +100,25 @@ export declare class AgeNoise extends Operator {
 export declare class AlphaFadeAndDecay extends Source1ParticleOperator {
     static functionName: string;
     constructor(system: Source1ParticleSystem);
-    doOperate(particle: Source1Particle, elapsedTime: number): void;
+    doOperate(particle: Source1Particle): void;
 }
 
 export declare class AlphaFadeInRandom extends Source1ParticleOperator {
     static functionName: string;
     constructor(system: Source1ParticleSystem);
-    doOperate(particle: Source1Particle, elapsedTime: number): void;
+    doOperate(particle: Source1Particle): void;
 }
 
 export declare class AlphaFadeOutRandom extends Source1ParticleOperator {
     static functionName: string;
     constructor(system: Source1ParticleSystem);
-    doOperate(particle: Source1Particle, elapsedTime: number): void;
+    doOperate(particle: Source1Particle): void;
 }
 
 export declare class AlphaRandom extends Source1ParticleOperator {
     static functionName: string;
     constructor(system: Source1ParticleSystem);
-    doInit(particle: Source1Particle, elapsedTime: number): void;
+    doInit(particle: Source1Particle): void;
 }
 
 export declare class AmbientLight extends Light {
@@ -134,7 +136,7 @@ export declare interface Animated {
     getAnimations: () => Promise<Set<string>>;
     playSequence: (name: string) => void;
     playAnimation: (name: string) => void;
-    setAnimation: (id: number, name: string, weight: number) => void;
+    setAnimation: (id: number, name: string, weight: number) => Promise<void>;
 }
 
 export declare class AnimatedTexture extends Texture {
@@ -303,10 +305,25 @@ export declare class BeamSegment {
 export declare class BenefactorLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>): void;
 }
 
 export declare function Bias(value: number, bias: number): number;
+
+declare type Binding = {
+    buffer?: GPUBuffer;
+    bufferType?: GPUBufferBindingType;
+    texture?: Texture;
+    textureCube?: Texture;
+    textureArray?: (Texture | undefined)[];
+    sampler?: GPUSampler;
+    storageTexture?: Texture;
+    storageTextureArray?: (Texture | undefined)[];
+    access?: GPUStorageTextureAccess;
+    visibility?: GPUShaderStageFlags;
+    viewDimension?: GPUTextureViewDimension;
+    format?: GPUTextureFormat;
+};
 
 export declare enum BlendingEquation {
     Add = 32774,
@@ -412,13 +429,7 @@ export declare class Bone extends Entity implements Lockable {
     lockAll(locked: boolean): void;
     isAnyLocked(): boolean;
     reset(): void;
-    buildContextMenu(): HarmonyMenuItemsDict & {
-        Bone_1: null;
-        unlock: {
-            i18n: string;
-            f: (entity: Bone) => void;
-        };
-    };
+    buildContextMenu(): HarmonyMenuItemsDict;
     toJSON(): JSONObject;
     static constructFromJSON(json: JSONObject): Promise<Bone>;
     fromJSON(json: any): void;
@@ -456,25 +467,7 @@ export declare class BoundingBoxHelper extends Box {
 export declare class Box extends Mesh {
     #private;
     constructor(params?: BoxParameters);
-    buildContextMenu(): HarmonyMenuItemsDict & {
-        Box_1: null;
-        width: {
-            i18n: string;
-            f: () => void;
-        };
-        height: {
-            i18n: string;
-            f: () => void;
-        };
-        depth: {
-            i18n: string;
-            f: () => void;
-        };
-        cube: {
-            i18n: string;
-            f: () => void;
-        };
-    };
+    buildContextMenu(): HarmonyMenuItemsDict;
     toJSON(): JSONObject;
     static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Box | null>;
     static getEntityName(): string;
@@ -568,7 +561,7 @@ export declare class BuildingInvis extends Proxy_2 {
 export declare class BuildingRescueLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>): void;
 }
 
 declare enum BulgeControl {
@@ -584,7 +577,7 @@ declare enum BulgeControl {
 export declare class BurnLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
 }
 
 export declare class Camera extends Entity {
@@ -641,39 +634,7 @@ export declare class Camera extends Entity {
     get quaternion(): quat;
     toString(): string;
     setActiveCamera(): void;
-    buildContextMenu(): HarmonyMenuItemsDict & {
-        camera1: null;
-        cameraPerspective: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        cameraOrthographic: {
-            i18n: string;
-            selected: boolean;
-            f: () => void;
-        };
-        cameraNearPlane: {
-            i18n: string;
-            f: () => void;
-        };
-        cameraFarPlane: {
-            i18n: string;
-            f: () => void;
-        };
-        cameraOrthoZoom: {
-            i18n: string;
-            f: () => void;
-        };
-        cameraFov: {
-            i18n: string;
-            f: () => void;
-        };
-        cameraSetActiveCamera: {
-            i18n: string;
-            f: () => void;
-        };
-    };
+    buildContextMenu(): HarmonyMenuItemsDict;
     invertProjection(v3: vec3): void;
     getViewDirection(v?: vec3): vec3;
     copy(source: Camera): void;
@@ -1092,7 +1053,7 @@ declare class Channel {
              export declare class Clamp extends Proxy_2 {
                  #private;
                  init(): void;
-                 execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                 execute(variables: Map<string, Source1MaterialVariables>): void;
              }
 
              export declare function clamp(val: number, min: number, max: number): number;
@@ -1150,7 +1111,7 @@ declare class Channel {
              export declare class ColorFade extends Source1ParticleOperator {
                  static functionName: string;
                  constructor(system: Source1ParticleSystem);
-                 doOperate(particle: Source1Particle, elapsedTime: number): void;
+                 doOperate(particle: Source1Particle): void;
              }
 
              export declare class ColorInterpolate extends Operator {
@@ -1163,7 +1124,7 @@ declare class Channel {
              export declare class ColorRandom extends Source1ParticleOperator {
                  static functionName: string;
                  constructor(system: Source1ParticleSystem);
-                 doInit(particle: Source1Particle, elapsedTime: number): void;
+                 doInit(particle: Source1Particle): void;
              }
 
              export declare enum ColorSpace {
@@ -1205,17 +1166,7 @@ declare class Channel {
              export declare class Cone extends Mesh {
                  #private;
                  constructor(params?: ConeParameters);
-                 buildContextMenu(): HarmonyMenuItemsDict & {
-                     Cone_1: null;
-                     radius: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                     height: {
-                         i18n: string;
-                         f: () => void;
-                     };
-                 };
+                 buildContextMenu(): HarmonyMenuItemsDict;
                  static getEntityName(): string;
              }
 
@@ -1496,7 +1447,7 @@ declare class Channel {
                    */
                   export declare class CustomSteamImageOnModel extends Proxy_2 {
                       #private;
-                      execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                      execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                   }
 
                   export declare class CustomWeaponMaterial extends Source1Material {
@@ -1517,25 +1468,7 @@ declare class Channel {
                   export declare class Cylinder extends Mesh {
                       #private;
                       constructor(params?: CylinderParameters);
-                      buildContextMenu(): HarmonyMenuItemsDict & {
-                          Cylinder_1: null;
-                          radius: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          height: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          segments: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          hasCap: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                      };
+                      buildContextMenu(): HarmonyMenuItemsDict;
                       toJSON(): JSONObject;
                       static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null>;
                       static getEntityName(): string;
@@ -1564,17 +1497,7 @@ declare class Channel {
                       setSize(size: vec3): void;
                       get size(): vec3;
                       refreshGeometry(): void;
-                      buildContextMenu(): HarmonyMenuItemsDict & {
-                          StaticDecal_1: null;
-                          size: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                          refresh: {
-                              i18n: string;
-                              f: () => void;
-                          };
-                      };
+                      buildContextMenu(): HarmonyMenuItemsDict;
                       static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null>;
                       static getEntityName(): string;
                   }
@@ -1626,7 +1549,7 @@ declare class Channel {
                    * @comment ouput variable name: resultVar
                    */
                   export declare class Divide extends Proxy_2 {
-                      execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                      execute(variables: Map<string, Source1MaterialVariables>): void;
                   }
 
                   export declare const DmeElement = "DmeElement";
@@ -1977,7 +1900,7 @@ declare class Channel {
                        * @comment ouput variable name: resultVar
                        */
                       export declare class Equals extends Proxy_2 {
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
@@ -2985,17 +2908,7 @@ declare class Channel {
                       export declare class Grid extends Mesh {
                           #private;
                           constructor(params?: GridParameters);
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Grid_1: null;
-                              size: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              spacing: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                       }
 
                       export declare class GRIDCELL {
@@ -3244,8 +3157,7 @@ declare class Channel {
                       }
 
                       export declare class IntProxy extends Proxy_2 {
-                          init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       /**
@@ -3263,7 +3175,7 @@ declare class Channel {
                       export declare class ItemTintColor extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class JSONLoader {
@@ -3467,25 +3379,25 @@ declare class Channel {
                       }
 
                       export declare class LessOrEqualProxy extends Proxy_2 {
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       export declare class LifespanDecay extends Source1ParticleOperator {
                           static functionName: string;
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class LifetimeFromSequence extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
                       export declare class LifetimeRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class Light extends Entity {
@@ -3501,22 +3413,7 @@ declare class Channel {
                           get range(): number;
                           set shadowTextureSize(shadowTextureSize: number);
                           get shadowTextureSize(): number;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Light_1: null;
-                              color: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              intensity: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          } & {
-                              texture_size: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<Light>;
                           fromJSON(json: JSONObject): void;
@@ -3616,7 +3513,7 @@ declare class Channel {
                       export declare class LockToBone extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare interface Loopable {
@@ -3804,6 +3701,7 @@ declare class Channel {
                           colorMap: Texture | null;
                           properties: Map<string, any>;
                           static materialList: Record<string, typeof Material>;
+                          updateVersion: number;
                           /** Workgroup size for WebGPU compute shaders. All components default to 1 */
                           workgroupSize?: vec3;
                           constructor(params?: MaterialParams);
@@ -3876,6 +3774,7 @@ declare class Channel {
                           getShaderSource(): string;
                           getWebGPUShader(): string;
                           getUniforms(): Map<string, UniformBuffer>;
+                          getUniform(name: string): UniformBuffer | undefined;
                           getUniformValue(name: string): UniformValue | Record<string, UniformValue>;
                           setUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
                           setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
@@ -4324,12 +4223,11 @@ declare class Channel {
                           #private;
                           renderMode: number;
                           isRenderable: boolean;
-                          readonly uniforms: Record<string, any>;
                           readonly storage: Record<string, StorageBuffer>;
                           defines: any;
                           isMesh: boolean;
                           topology: GPUPrimitiveTopology;
-                          commandBuffer?: GPUCommandBuffer;
+                          dirty: boolean;
                           constructor(params: MeshParameters);
                           /**
                            * @deprecated Please use `setMaterial` instead.
@@ -4347,8 +4245,12 @@ declare class Channel {
                           getGeometry(): BufferGeometry;
                           setMaterial(material: Material): void;
                           getMaterial(): Material;
-                          getUniform(name: string): any;
-                          setUniform(name: string, uniform: UniformValue): void;
+                          getUniforms(): Map<string, UniformBuffer>;
+                          getUniform(name: string): UniformBuffer | undefined;
+                          getUniformValue(name: string): UniformValue | Record<string, UniformValue>;
+                          setUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
+                          updateUniformValue(name: string): void;
+                          setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
                           deleteUniform(name: string): void;
                           getStorage(name: string): StorageBuffer | undefined;
                           setStorage(name: string, value: StorageValue): void;
@@ -4365,6 +4267,7 @@ declare class Channel {
                           toString(): string;
                           getBoundsModelSpace(min?: vec3, max?: vec3): void;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
+                          getPipelineLayout(shaderModule: WgslModule, /*groups: Map2<number, number, Binding>, */ camera: Camera, uniforms: Map<string, BufferSource>, context: InternalRenderContext): [GPUPipelineLayout, Map2<number, number, Binding>];
                           buildContextMenu(): HarmonyMenuItemsDict;
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                           static getEntityName(): string;
@@ -4472,13 +4375,7 @@ declare class Channel {
                           radius2: number;
                           constructor(radius?: number);
                           setRadius(radius: number): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Metaball_1: null;
-                              radius: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                       }
 
                       export declare class Metaballs extends Mesh {
@@ -4488,17 +4385,7 @@ declare class Channel {
                           addBall(ball?: Metaball): Metaball;
                           setBalls(balls: Metaball[]): void;
                           updateGeometry(): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Metaballs_1: null;
-                              add_ball: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              cube_width: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                       }
 
                       declare type MetaballsParameters = MeshParameters & {
@@ -4512,7 +4399,7 @@ declare class Channel {
                       export declare class ModelGlowColor extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class ModelLoader {
@@ -4557,7 +4444,7 @@ declare class Channel {
                           static functionName: string;
                           static once: boolean;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class MovementMaxVelocity extends Source1ParticleOperator {
@@ -4929,7 +4816,7 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare let ortho: (out: mat4, left: number, right: number, bottom: number, top: number, near: number, far: number) => mat4;
@@ -5025,10 +4912,10 @@ declare class Channel {
                           a: number;
                           constructor(r?: number, g?: number, b?: number, a?: number);
                           randomize(color1: ParticleColor, color2: ParticleColor): void;
-                          setColor(color: ParticleColor): this;
-                          setColorAlpha(color: ParticleColor): this;
-                          fromVec3(v: vec3): this;
-                          fromVec4(v: vec4): this;
+                          setColor(color: ParticleColor): void;
+                          setColorAlpha(color: ParticleColor): void;
+                          fromVec3(v: vec3): void;
+                          fromVec4(v: vec4): void;
                           getRed(): number;
                           getGreen(): number;
                           getBlue(): number;
@@ -5132,21 +5019,7 @@ declare class Channel {
                           setWidth(width: number): void;
                           setHeight(height: number): void;
                           setSize(width: number, height?: number): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Plane_1: null;
-                              width: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              height: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              square: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Plane>;
                           static getEntityName(): string;
@@ -5180,27 +5053,7 @@ declare class Channel {
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<PointLight>;
                           fromJSON(json: JSONObject): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Light_1: null;
-                              color: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              intensity: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          } & {
-                              texture_size: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          } & {
-                              range: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
                           is(s: string): boolean;
                       }
@@ -5220,7 +5073,7 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           reset(): void;
                       }
 
@@ -5228,7 +5081,7 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           reset(): void;
                       }
 
@@ -5236,7 +5089,7 @@ declare class Channel {
                           #private;
                           static functionName: string;
                           paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class PositionLock extends Operator {
@@ -5249,7 +5102,7 @@ declare class Channel {
                       export declare class PositionModifyOffsetRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -5263,7 +5116,7 @@ declare class Channel {
                       export declare class PositionOnModelRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class PositionWarp extends Operator {
@@ -5275,7 +5128,7 @@ declare class Channel {
                       export declare class PositionWithinBoxRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class PositionWithinSphereRandom extends Source1ParticleOperator {
@@ -5341,7 +5194,7 @@ declare class Channel {
                        * Source engine material interface
                        */
                       declare class Proxy_2 {
-                          protected datas: any;
+                          protected datas: Source1MaterialVmt;
                           /**
                            * TODO
                            */
@@ -5350,13 +5203,7 @@ declare class Channel {
                            * TODO
                            */
                           getData(name: string): any;
-                          /**
-                           * Dummy function
-                           */
                           init(variables: Map<string, Source1MaterialVariables>): void;
-                          /**
-                           * Dummy function
-                           */
                           execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
                           setResult(variables: Map<string, Source1MaterialVariables>, value: any): void;
                           getVariable(variables: Map<string, Source1MaterialVariables>, name: string): any;
@@ -5367,14 +5214,14 @@ declare class Channel {
                        */
                       export declare class ProxyManager {
                           #private;
-                          static getProxy(proxyName: string): Proxy_2 | null | undefined;
+                          static getProxy(proxyName: string): Proxy_2 | null;
                           static registerProxy(proxyName: string, proxyClass: typeof Proxy_2): void;
                       }
 
                       export declare class PullTowardsControlPoint extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+                          doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3): void;
                       }
 
                       export declare class QuadraticBezierCurve extends Curve {
@@ -5403,13 +5250,13 @@ declare class Channel {
                       export declare class RadiusRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class RadiusScale extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare function radToDeg(rad: number): number;
@@ -5445,7 +5292,7 @@ declare class Channel {
                       export declare class RandomForce extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+                          doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3): void;
                       }
 
                       export declare interface RandomPointOnModel {
@@ -5558,14 +5405,14 @@ declare class Channel {
                       export declare class RemapControlPointToScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
                       export declare class RemapControlPointToVector extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -5578,7 +5425,7 @@ declare class Channel {
                       export declare class RemapCPSpeedToCP extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class RemapCPtoScalar extends Operator {
@@ -5596,26 +5443,26 @@ declare class Channel {
                       export declare class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class RemapInitialScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
                       export declare class RemapNoiseToScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class RemapParticleCountToScalar extends Operator {
@@ -5628,13 +5475,13 @@ declare class Channel {
                       export declare class RemapScalar extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class RemapScalarToVector extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
@@ -5693,7 +5540,7 @@ declare class Channel {
                           static functionName: string;
                           geometry?: BufferGeometry;
                           constructor(system: Source1ParticleSystem);
-                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
+                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]): void;
                           set maxParticles(maxParticles: number);
                           initRenderer(): void;
                           dispose(): void;
@@ -5850,7 +5697,7 @@ declare class Channel {
                           static functionName: string;
                           geometry?: BeamBufferGeometry;
                           constructor(system: Source1ParticleSystem);
-                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
+                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]): void;
                           set maxParticles(maxParticles: number);
                           initRenderer(): void;
                           dispose(): void;
@@ -5872,7 +5719,7 @@ declare class Channel {
                           static functionName: string;
                           isScreenVelocityRotate: boolean;
                           constructor(system: Source1ParticleSystem);
-                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
+                          updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]): void;
                           initRenderer(): void;
                       }
 
@@ -6101,17 +5948,7 @@ declare class Channel {
                            */
                           get axis(): vec3;
                           reset(): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              RotationControl_1: null;
-                              rotation_axis: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rotation_speed: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                       }
 
                       declare type RotationControlParameters = EntityParameters & {
@@ -6122,14 +5959,14 @@ declare class Channel {
                       export declare class RotationRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
                       export declare class RotationSpeedRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       /**
@@ -6150,14 +5987,14 @@ declare class Channel {
                       export declare class RotationYawFlipRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
                       }
 
                       export declare class RotationYawRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       declare enum RtMaterial {
@@ -6246,8 +6083,8 @@ declare class Channel {
                           #private;
                           map: SourceBSP;
                           initialized: boolean;
-                          readonly mapOffset?: number;
-                          readonly mapLength?: number;
+                          readonly mapOffset: number;
+                          readonly mapLength: number;
                           lumpOffset: number;
                           lumpLen: number;
                           lumpDataPromise: null;
@@ -6265,7 +6102,7 @@ declare class Channel {
                            * @return {Number} The lump offset
                            */
                           getLumpOffset(): number;
-                          getMapOffset(): number | undefined;
+                          getMapOffset(): number;
                           /**
                            * Set lump len
                            * @param {Number} newLumpLen The lump len
@@ -6313,14 +6150,17 @@ declare class Channel {
                       export declare class SelectFirstIfNonZero extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
-                          isNonZero(value: any): boolean;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
+                      /**
+                       * Light Map
+                       */
                       /**
                        * TODO
                        */
                       declare class SELightMapNode {
+                          #private;
                           x: number;
                           y: number;
                           width: number;
@@ -6331,10 +6171,8 @@ declare class Channel {
                           sub1?: SELightMapNode;
                           sub2?: SELightMapNode;
                           constructor(x: number, y: number, width: number, height: number);
-                          setContent(content: never): false | undefined;
-                          split(x: number, y: number): false | undefined;
                           allocate(width: number, height: number): SELightMapNode | null;
-                          toString(): number;
+                          toString(): string;
                           checkFull(): void;
                           getAllocatedSize(): number;
                       }
@@ -6346,7 +6184,7 @@ declare class Channel {
                       export declare class SequenceRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator {
@@ -6354,7 +6192,7 @@ declare class Channel {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
                           paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare function setClipSpaceWebGPU(): void;
@@ -6376,7 +6214,7 @@ declare class Channel {
                       export declare class SetControlPointPositions extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class SetControlPointsToModelParticles extends Operator {
@@ -6396,7 +6234,7 @@ declare class Channel {
                       export declare class SetControlPointToParticlesCenter extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(): void;
                       }
 
                       export declare class SetControlPointToPlayer extends Source1ParticleOperator {
@@ -6720,7 +6558,7 @@ declare class Channel {
                       export declare class Source1DampenToCP extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doOperate(particle: Source1Particle, elapsedTime: number): void;
+                          doOperate(particle: Source1Particle): void;
                       }
 
                       export declare class Source1Material extends Material {
@@ -6736,9 +6574,9 @@ declare class Channel {
                           init(): void;
                           getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
                           getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): SpriteSheetCoord | null;
-                          getFrameSpan(sequence: number): any;
+                          getFrameSpan(sequence: number): number | null;
                           updateMaterial(time: number, mesh: Mesh): void;
-                          _afterProcessProxies(proxyParams?: {}): void;
+                          _afterProcessProxies(): void;
                           afterProcessProxies(proxyParams?: {}): void;
                           getAlpha(): number;
                           computeModulationColor(out: vec4): vec4;
@@ -6755,12 +6593,7 @@ declare class Channel {
                           static fallbackRepository: string;
                           static getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<Source1Material | null>;
                           static addRepository(repository: string): void;
-                          static getMaterialList(): Promise<{
-                              files: {
-                                  name: string;
-                                  files: JSONObject[];
-                              }[];
-                          }>;
+                          static getMaterialList(): Promise<any>;
                       }
 
                       declare type Source1MaterialParams = MaterialParams & {};
@@ -6833,50 +6666,12 @@ declare class Channel {
                           getAttachment(attachmentName: string): Bone | undefined;
                           getBoneByName(boneName: string): Bone | undefined;
                           set material(material: Material);
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Source1ModelInstance_1: null;
-                              skin: {
-                                  i18n: string;
-                                  submenu: any[];
-                              };
-                              tint: {
-                                  i18n: string;
-                                  f: (entity: Source1ModelInstance) => Promise<void>;
-                              };
-                              reset_tint: {
-                                  i18n: string;
-                                  f: (entity: Source1ModelInstance) => void;
-                                  disabled: boolean;
-                              };
-                              animation: {
-                                  i18n: string;
-                                  f: (entity: Source1ModelInstance) => Promise<void>;
-                              };
-                              overrideallmaterials: {
-                                  i18n: string;
-                                  f: (entity: Source1ModelInstance) => Promise<void>;
-                              };
-                              Source1ModelInstance_2: null;
-                              animate: {
-                                  i18n: string;
-                                  selected: boolean;
-                                  f: () => 0 | 1;
-                              };
-                              frame: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              Source1ModelInstance_3: null;
-                              copy_filename: {
-                                  i18n: string;
-                                  f: () => Promise<void>;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           getParentModel(): Source1ModelInstance;
-                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][]): int32;
                           setPosition(position: vec3): void;
-                          set quaternion(quaternion: vec4);
-                          get quaternion(): vec4;
+                          set quaternion(quaternion: quat);
+                          get quaternion(): quat;
                           static set animSpeed(speed: number);
                           setFlexes(flexes: Map<string, number>): void;
                           resetFlexParameters(): void;
@@ -6914,8 +6709,7 @@ declare class Channel {
                        * @comment ouput variable name: resultVar
                        */
                       export declare class Source1Multiply extends Proxy_2 {
-                          init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       /**
@@ -7038,10 +6832,9 @@ declare class Channel {
                           static addSystem2(system: Source1ParticleSystem): void;
                           /**
                            * Create system
-                           * @param {Number} elapsedTime Step time
                            */
                           static createSystem(repository: string, systemName: string): Promise<Source1ParticleSystem>;
-                          static loadManifest(repository: string): Promise<void>;
+                          static loadManifest(repository: string): void;
                           /**
                            * Start all systems
                            */
@@ -7069,9 +6862,9 @@ declare class Channel {
                           materialLoaded: boolean;
                           paramList: ParamType[];
                           mesh?: Mesh;
+                          static readonly functionName: string;
                           constructor(system: Source1ParticleSystem);
                           get functionName(): string;
-                          static get functionName(): string;
                           static getFunctionName(): string;
                           initializeParticle(particle: Source1Particle, elapsedTime: number): void;
                           operateParticle(particle: Source1Particle, elapsedTime: number): void;
@@ -7085,20 +6878,19 @@ declare class Channel {
                           doRender(particle: Source1Particle[], elapsedTime: number, material: Material): void;
                           initRenderer(): void;
                           updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
+                          paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
                           emitParticle(creationTime: number, elapsedTime: number): Source1Particle | null;
                           setMaterial(material: Material): void;
-                          paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
-                          setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): this;
+                          setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
                           getParameter(parameter: string): any;
                           getParameters(): Record<string, any>;
                           setNameId(name: string): void;
-                          doNothing(): void;
                           reset(): void;
                           getOperatorFade(): number;
                           getOperatorStrength(): number;
                           getParamList(): ParamType[];
                           addParam(param: string, type: string, value: CDmxAttributeValue): void;
-                          getInputValue(inputField: number, particle: Source1Particle): any;
+                          getInputValue(inputField: number, particle: Source1Particle): void;
                           getInputValueAsVector(inputField: number, particle: Source1Particle, v: vec3): void;
                           setOutputValue(outputField: number, value: any, particle: Source1Particle): void;
                           initMultipleOverride(): boolean;
@@ -7258,7 +7050,7 @@ declare class Channel {
                           getTexture(repository: string, path: string, needCubeMap?: boolean, srgb?: boolean): AnimatedTexture | null;
                           getVtf(repository: string, path: string): Promise<Source1Vtf | null>;
                           getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
-                          getInternalTexture(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
+                          getInternalTexture(repository: string, path: string, frame: number): Texture | null;
                           addInternalTexture(repository: string, path?: string, texture?: AnimatedTexture): {
                               name: string;
                               texture: AnimatedTexture;
@@ -7750,7 +7542,7 @@ declare class Channel {
                           setPoseParameter(paramName: string, paramValue: number): void;
                           playSequence(activity: string, activityModifiers?: string[]): void;
                           playAnimation(name: string): void;
-                          setAnimation(id: number, name: string): void;
+                          setAnimation(id: number, name: string): Promise<void>;
                           setActivityModifiers(activityModifiers?: string[]): void;
                           update(scene: Scene, camera: Camera, delta: number): void;
                           getSkins(): Promise<Set<string>>;
@@ -8549,7 +8341,6 @@ declare class Channel {
                           getBoneByName(boneName: string): MdlBone | undefined;
                           getBoneId(boneName: string): number;
                           getAttachments(): MdlAttachment[];
-                          getAttachmentsNames(out?: string[]): MdlAttachment[];
                           getAttachmentById(attachmentId: number): MdlAttachment | undefined;
                           getAttachment(attachmentName: string): MdlAttachment | undefined;
                           getSequenceById(sequenceId: number): MdlStudioSeqDesc | undefined;
@@ -8712,21 +8503,7 @@ declare class Channel {
                           constructor(params?: SphereParameters);
                           setRadius(radius: number): void;
                           updateGeometry(): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Sphere_1: null;
-                              radius: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              segments: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              rings: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Sphere>;
@@ -8767,35 +8544,7 @@ declare class Channel {
                           set innerAngle(innerAngle: number);
                           get innerAngle(): number;
                           getDirection(out?: vec3): vec3;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Light_1: null;
-                              color: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              intensity: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          } & {
-                              texture_size: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          } & {
-                              angle: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              inner_angle: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              range: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
                       }
 
@@ -8862,19 +8611,19 @@ declare class Channel {
                       export declare class StatTrakDigit extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class StatTrakIllum extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class StickybombGlowColor extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       export declare type StorageBuffer = {
@@ -8965,25 +8714,7 @@ declare class Channel {
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null>;
                           fromJSON(json: JSONObject): void;
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              Text3D_1: null;
-                              text: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              font: {
-                                  i18n: string;
-                                  f: () => Promise<void>;
-                              };
-                              font_size: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              font_depth: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
                       }
 
@@ -9209,7 +8940,7 @@ declare class Channel {
 
                       declare enum TextureRole {
                           Color = 0,
-                          Color2 = 0,
+                          Color2 = 0,// TODO: fix color2 value
                           Normal = 1,
                           LightWarp = 2,
                           PhongExponent = 3,
@@ -9258,7 +8989,7 @@ declare class Channel {
                           scaleVar: string;
                           resultVar: string;
                           init(variables: Map<string, Source1MaterialVariables>): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       export declare enum TextureType {
@@ -9364,27 +9095,13 @@ declare class Channel {
                       export declare class TrailLengthRandom extends Source1ParticleOperator {
                           static functionName: string;
                           constructor(system: Source1ParticleSystem);
-                          doInit(particle: Source1Particle, elapsedTime: number): void;
+                          doInit(particle: Source1Particle): void;
                       }
 
                       export declare class TranslationControl extends Entity {
                           #private;
                           constructor(params?: any);
-                          buildContextMenu(): HarmonyMenuItemsDict & {
-                              TranslationControl_1: null;
-                              speed: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              start_position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                              end_position: {
-                                  i18n: string;
-                                  f: () => void;
-                              };
-                          };
+                          buildContextMenu(): HarmonyMenuItemsDict;
                       }
 
                       export declare class TRIANGLE {
@@ -9447,7 +9164,7 @@ declare class Channel {
                       };
 
                       export declare class UniformNoiseProxy extends Proxy_2 {
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       declare type UniformSetter = ((glContext: WebGLAnyRenderingContext, value: UniformValue) => void);
@@ -9672,12 +9389,12 @@ declare class Channel {
                       export declare class WeaponLabelText extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class WeaponSkin extends Proxy_2 {
                           #private;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       declare type WebGLAnyRenderingContext = WebGLRenderingContext | WebGL2RenderingContext;
@@ -9786,6 +9503,13 @@ declare class Channel {
                           getFileList(): Promise<RepositoryFileListResponse>;
                       }
 
+                      declare type WgslModule = {
+                          module: GPUShaderModule;
+                          reflection?: WgslReflect;
+                          attributes: Map<string, number>;
+                          source: string;
+                      };
+
                       export declare class Wireframe extends Entity {
                           #private;
                           enumerable: boolean;
@@ -9806,7 +9530,7 @@ declare class Channel {
                       export declare class WorldVertexTransitionMaterial extends Source1Material {
                           #private;
                           init(): void;
-                          afterProcessProxies(proxyParams: DynamicParams): void;
+                          afterProcessProxies(): void;
                           clone(): WorldVertexTransitionMaterial;
                           getShaderSource(): string;
                       }
@@ -9814,7 +9538,7 @@ declare class Channel {
                       export declare class YellowLevel extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
                       }
 
                       export declare class ZipRepository implements Repository {

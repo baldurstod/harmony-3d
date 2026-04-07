@@ -1,6 +1,6 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
-import { Map2, MyEventTarget, StaticEventTarget, once as once$1, setTimeoutPromise, fileToImage, joinPath, Queue } from 'harmony-utils';
+import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$1, setTimeoutPromise, fileToImage, joinPath, Queue, infoSet, errorSet } from 'harmony-utils';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
@@ -503,8 +503,7 @@ class BackGround {
     render(renderer, camera, context) {
         return { clearColor: false };
     }
-    dispose() {
-    }
+    dispose() { }
     is(s) {
         return s == 'BackGround';
     }
@@ -564,18 +563,6 @@ var BlendingMode;
 const ShaderEventTarget = new EventTarget();
 
 const Shaders = {};
-
-const messages = new Map2();
-function errorOnce(message, max = 1) {
-    if (!messages.has('error', message)) {
-        messages.set('error', message, 0);
-    }
-    const newCount = messages.get('error', message) + 1;
-    messages.set('error', message, newCount);
-    if (newCount <= max) {
-        console.error(message);
-    }
-}
 
 var ShaderType;
 (function (ShaderType) {
@@ -1649,6 +1636,8 @@ class Material {
     colorMap = null;
     properties = new Map();
     static materialList = {};
+    #dirtyBuffers = false;
+    updateVersion = 0;
     /** Workgroup size for WebGPU compute shaders. All components default to 1 */
     workgroupSize;
     constructor(params = {}) {
@@ -2073,6 +2062,9 @@ class Material {
     getUniforms() {
         return this.#uniforms;
     }
+    getUniform(name) {
+        return this.#uniforms.get(name);
+    }
     getUniformValue(name) {
         return this.#uniforms.get(name)?.value;
     }
@@ -2084,7 +2076,9 @@ class Material {
                 existingValue.buffer.destroy();
             }
         }
-        this.#uniforms.set(name, { value, dirty: true });
+        this.#uniforms.set(name, { value, dirty: true, });
+        this.#dirtyBuffers = true;
+        ++this.updateVersion;
     }
     setSubUniformValue(name, value) {
         const path = name.split('.');
@@ -2105,6 +2099,9 @@ class Material {
         }
         subValue[path[len]] = value;
         existingValue.dirty = true;
+        //existingValue.updateVersion = this.updateVersion;
+        this.#dirtyBuffers = true;
+        ++this.updateVersion;
     }
     deleteUniform(name) {
         // TODO: do some cleanup ?
@@ -4152,6 +4149,20 @@ class BufferGeometry {
     }
 }
 
+let Graphics$1;
+function setGraphics(graphics) {
+    Graphics$1 = graphics;
+}
+
+class WebGPUInternal {
+    static gpuContext;
+    static config;
+    static adapter;
+    static device;
+    static format;
+    static depthTexture;
+}
+
 class MaterialManager {
     static #materials = new Map();
     static registerMaterial(materialName, materialClass, manager /*TODO: better type*/) {
@@ -5101,7 +5112,28 @@ class Interaction {
     }
 }
 
+const VIEW_DIMENSIONS = {
+    texture_1d: '1d',
+    texture_2d: '2d',
+    texture_2d_array: '2d-array',
+    texture_cube: 'cube',
+    texture_cube_array: 'cube-array',
+    texture_3d: '3d',
+    texture_storage_1d: '1d',
+    texture_storage_2d: '2d',
+    texture_storage_2d_array: '2d-array',
+    texture_storage_3d: '3d',
+};
+function getViewDimension(info) {
+    const dim = VIEW_DIMENSIONS[info.type.name];
+    if (!dim) {
+        throw new Error(`unknwon texture type ${info.type.name}`);
+    }
+    return dim;
+}
+
 const tempVec3$v = vec3.create();
+const identityVec2 = vec2.create();
 const v1$2 = vec3.create();
 const v2$1 = vec3.create();
 const v3$1 = vec3.create();
@@ -5123,13 +5155,19 @@ class Mesh extends Entity {
     #dirtyProgram = true; //TODOv3 use another method
     renderMode = GL_TRIANGLES;
     isRenderable = true;
-    uniforms = {};
+    #uniforms = new Map();
     storage = {};
     defines = Object.create(null);
     isMesh = true;
     topology;
     // Internal use
-    commandBuffer;
+    #pipelineLayout;
+    #materialUpdateVersion = -1;
+    #materialDefinesVersion = -1;
+    #webGpuGroups = new Map2();
+    #webGpuShaderSource;
+    dirty = false;
+    #dirtyBuffers = false;
     constructor(params) {
         super(params);
         this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
@@ -5175,19 +5213,63 @@ class Mesh extends Entity {
             }
             material.addUser(this);
             this.#material = material;
+            this.#materialUpdateVersion = -1;
         }
     }
     getMaterial() {
         return this.#material;
     }
-    getUniform(name) {
-        return this.uniforms[name];
+    getUniforms() {
+        return this.#uniforms;
     }
-    setUniform(name, uniform) {
-        this.uniforms[name] = uniform;
+    getUniform(name) {
+        return this.#uniforms.get(name);
+    }
+    getUniformValue(name) {
+        return this.#uniforms.get(name)?.value;
+    }
+    setUniformValue(name, value) {
+        const existingValue = this.#uniforms.get(name);
+        if (existingValue) {
+            if (existingValue.buffer) {
+                // TODO: only destroy is size is different
+                existingValue.buffer.destroy();
+            }
+        }
+        this.#uniforms.set(name, { value, dirty: true, });
+        this.#dirtyBuffers = true;
+    }
+    updateUniformValue(name) {
+        const existingValue = this.#uniforms.get(name);
+        if (existingValue) {
+            existingValue.dirty = true;
+            this.dirty = true;
+        }
+    }
+    setSubUniformValue(name, value) {
+        const path = name.split('.');
+        let len = path.length;
+        if (len === 1) {
+            return this.setUniformValue(name, value);
+        }
+        const existingValue = this.#uniforms.get(name);
+        if (!existingValue) {
+            return;
+        }
+        let subValue = existingValue.value;
+        for (let i = 1; i < len - 1; i++) {
+            if (Object.prototype.toString.call(subValue) !== '[object Object]') {
+                return;
+            }
+            subValue = subValue[path[i]];
+        }
+        subValue[path[len]] = value;
+        existingValue.dirty = true;
+        this.#dirtyBuffers = true;
     }
     deleteUniform(name) {
-        delete this.uniforms[name];
+        // TODO: do some cleanup ?
+        this.#uniforms.delete(name);
     }
     getStorage(name) {
         return this.storage[name];
@@ -5295,6 +5377,27 @@ class Mesh extends Entity {
             this.removeDefine('DESATURATE');
         }
     }
+    getPipelineLayout(shaderModule, /*groups: Map2<number, number, Binding>, */ camera, uniforms, context) {
+        const material = this.#material;
+        if (this.#webGpuShaderSource?.deref() !== shaderModule) {
+            // Recreate the pipeline layout if the shader module has changed
+            this.#pipelineLayout = undefined;
+            // TODO: delete buffers inside
+            this.#webGpuGroups.clear();
+            this.#webGpuShaderSource = new WeakRef(shaderModule);
+        }
+        if (this.#pipelineLayout) {
+            if (!this.dirty && (this.#materialUpdateVersion === this.#material.updateVersion)) {
+                return [this.#pipelineLayout, this.#webGpuGroups];
+            }
+        }
+        populateBindGroups(shaderModule, this.#webGpuGroups, material, this, camera, uniforms, context, false);
+        this.#pipelineLayout = WebGPUInternal.device.createPipelineLayout({
+            label: material.getShaderSource(),
+            bindGroupLayouts: getBindGroupLayouts(this.#webGpuGroups, false),
+        });
+        return [this.#pipelineLayout, this.#webGpuGroups];
+    }
     buildContextMenu() {
         const contextMenu = super.buildContextMenu();
         const materialSubmenu = contextMenu.material.submenu;
@@ -5303,7 +5406,7 @@ class Mesh extends Entity {
             i18n: '#set_material', f: async () => {
                 const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
                 if (materialName) {
-                    await MaterialManager.getMaterial(materialName, (material) => { if (material) {
+                    MaterialManager.getMaterial(materialName, (material) => { if (material) {
                         this.setMaterial(material);
                     } });
                 }
@@ -5405,6 +5508,614 @@ class Mesh extends Entity {
         else {
             return super.is(s);
         }
+    }
+}
+function getBindGroupLayouts(groups, compute) {
+    const device = WebGPUInternal.device;
+    const bindGroupLayouts = [];
+    for (const [groupId, group] of groups.getMap()) {
+        const entries = [];
+        for (const [bindingId, binding] of group) {
+            const entry = {
+                binding: bindingId, // corresponds to @binding
+                visibility: binding.visibility ?? (compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT), // TODO: set appropriate visibility
+                //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
+            };
+            if (binding.buffer) {
+                entry.buffer = {
+                    type: binding.bufferType ?? 'uniform',
+                    // TODO: add minBindingSize ?
+                };
+            }
+            if (binding.texture) {
+                entry.texture = {
+                    viewDimension: binding.viewDimension,
+                };
+            }
+            if (binding.textureArray) {
+                entry.texture = {
+                    viewDimension: binding.viewDimension,
+                };
+            }
+            if (binding.sampler) {
+                entry.sampler = {};
+            }
+            if (binding.storageTexture) {
+                entry.storageTexture = {
+                    viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
+                    format: binding.storageTexture.gpuFormat,
+                    access: binding.access,
+                };
+            }
+            if (binding.storageTextureArray) {
+                entry.storageTexture = {
+                    viewDimension: binding.viewDimension,
+                    format: binding.format,
+                    access: binding.access,
+                };
+            }
+            entries.push(entry);
+        }
+        bindGroupLayouts.push(device.createBindGroupLayout({
+            label: `group ${groupId}`,
+            entries: entries,
+        }));
+    }
+    return bindGroupLayouts;
+}
+const tempViewProjectionMatrix$2 = mat4.create();
+let pickedPrimitive;
+function populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, isCompute) {
+    if (!shaderModule.reflection) {
+        return;
+    }
+    const cameraMatrix = camera?.cameraMatrix;
+    const projectionMatrix = camera?.projectionMatrix;
+    const device = WebGPUInternal.device;
+    for (const uniform of shaderModule.reflection.uniforms) {
+        const materialUniform = material.getUniform(uniform.name) ?? object.getUniform(uniform.name);
+        if (materialUniform && !materialUniform.dirty && groups.has(uniform.group, uniform.binding)) {
+            continue;
+        }
+        if (materialUniform) {
+            materialUniform.dirty = false;
+        }
+        /*
+        let additionalUsage: GPUFlagsConstant = 0;
+        if (uniform.name == 'commonUniforms') {// TODO: improve that
+            additionalUsage = GPUBufferUsage.STORAGE;
+        }
+        */
+        const uniformBuffer = device.createBuffer({
+            label: uniform.name,
+            size: uniform.size,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST /* | additionalUsage*/,
+        });
+        groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
+        const members = uniform.members;
+        if (members) {
+            const materialUniform = material.getUniformValue(uniform.name) ?? object.getUniformValue(uniform.name);
+            if (materialUniform) {
+                for (const member of members) {
+                    let bufferSource = null;
+                    uniformBuffer.label = uniform.name + '.' + member.name;
+                    const subUniform = materialUniform[member.name];
+                    if (subUniform !== undefined) {
+                        if (typeof subUniform === 'number') {
+                            switch (member.type.name) {
+                                case 'u32':
+                                    bufferSource = new Uint32Array([subUniform]);
+                                    break;
+                                case 'f32':
+                                    bufferSource = new Float32Array([subUniform]);
+                                    break;
+                                default:
+                                    errorOnce(`unknwon type: ${member.type.name} for member: ${member.name} for uniform ${uniform.name}in ${material.getShaderSource() + '.wgsl'}`);
+                                    break;
+                            }
+                        }
+                        else {
+                            bufferSource = subUniform;
+                        }
+                    }
+                    else {
+                        errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
+                    }
+                    if (bufferSource) {
+                        device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                    }
+                }
+            }
+            else {
+                for (const member of members) {
+                    let bufferSource = null;
+                    uniformBuffer.label = uniform.name + '.' + member.name;
+                    switch (member.name) {
+                        case 'modelMatrix':
+                            bufferSource = object?.worldMatrix;
+                            break;
+                        case 'viewMatrix':
+                            bufferSource = cameraMatrix;
+                            break;
+                        case 'modelViewMatrix':
+                            bufferSource = object?._mvMatrix;
+                            break;
+                        case 'projectionMatrix':
+                            bufferSource = projectionMatrix;
+                            break;
+                        case 'viewProjectionMatrix':
+                            bufferSource = tempViewProjectionMatrix$2;
+                            break;
+                        case 'normalMatrix':
+                            // In WGSL, mat3x3 actually are mat4x3
+                            // TODO: improve this
+                            if (object && cameraMatrix) {
+                                mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
+                                const m = new Float32Array(12);
+                                m[0] = object._normalMatrix[0];
+                                m[1] = object._normalMatrix[1];
+                                m[2] = object._normalMatrix[2];
+                                m[4] = object._normalMatrix[3];
+                                m[5] = object._normalMatrix[4];
+                                m[6] = object._normalMatrix[5];
+                                m[8] = object._normalMatrix[6];
+                                m[9] = object._normalMatrix[7];
+                                m[10] = object._normalMatrix[8];
+                                bufferSource = m;
+                            }
+                            break;
+                        case 'cameraPosition':
+                            bufferSource = camera?.getPosition();
+                            break;
+                        case 'resolution':
+                            bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
+                            break;
+                        case 'time':
+                            bufferSource = new Float32Array([Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]); // TODO: create float32 once and update it once evry frame
+                            break;
+                        /*
+                        case 'pickingColor':
+                            bufferSource = new Float32Array(object?.pickingColor ?? this.#defaultPickingColor) as BufferSource;// TODO: create float32 once and update it once evry frame
+                            break;
+                        */
+                        case 'pointerCoord':
+                            bufferSource = (context?.renderContext.pick?.position ?? identityVec2);
+                            break;
+                        case 'boneMatrix':
+                            bufferSource = object.getUniformValue(member.name) ?? new Float32Array(16); //TODO don't create a Float32Array each time
+                            break;
+                        default:
+                            errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
+                    }
+                    if (bufferSource) {
+                        device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
+                    }
+                }
+            }
+        }
+        else if (uniform.isArray) {
+            const members = uniform.format.members;
+            if (members) {
+                const structSize = uniform.format.size;
+                for (const member of members) {
+                    for (let i = 0; i < uniform.count; i++) {
+                        const bufferSource = uniforms?.get(`${uniform.name}[${i}].${member.name}`);
+                        if (!bufferSource) {
+                            continue;
+                        }
+                        device.queue.writeBuffer(uniformBuffer, member.offset + structSize * i, bufferSource);
+                    }
+                }
+            }
+            else {
+                const arrayUniform = material.getUniformValue(uniform.name) ?? object.getUniformValue(uniform.name);
+                if (arrayUniform !== undefined) {
+                    device.queue.writeBuffer(uniformBuffer, 0, arrayUniform /*TODO: actually check the value type*/);
+                }
+                else {
+                    errorOnce('unknwon array uniform ' + uniform.name);
+                }
+            }
+        }
+        else { // uniform is neither a struct nor an array
+            const bufferSource = uniforms?.get(uniform.name);
+            if (bufferSource) {
+                device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+            }
+            else {
+                const materialUniform = material.getUniformValue(uniform.name) ?? object.getUniformValue(uniform.name);
+                if (materialUniform !== undefined) {
+                    switch (uniform.type.name) {
+                        case 'f32':
+                            device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
+                            break;
+                        case 'u32':
+                            device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([materialUniform]));
+                            break;
+                        case 'mat3x3f':
+                            // In WGSL, mat3x3 actually are mat4x3
+                            const m = new Float32Array([
+                                materialUniform, materialUniform, materialUniform, 0,
+                                materialUniform, materialUniform, materialUniform, 0,
+                                materialUniform, materialUniform, materialUniform, 0,
+                            ]);
+                            device.queue.writeBuffer(uniformBuffer, 0, m);
+                            break;
+                        case 'mat4x4f':
+                        case 'vec2f':
+                        case 'vec3f':
+                        case 'vec4f':
+                            device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
+                            break;
+                        case 'vec2u':
+                            const vec2uArray = new Uint32Array([materialUniform, materialUniform]);
+                            device.queue.writeBuffer(uniformBuffer, 0, vec2uArray);
+                            break;
+                        case 'vec4':
+                            switch (uniform.type.format?.name) {
+                                case 'u32':
+                                    const m = new Uint32Array(uniform.type.format.size);
+                                    for (let i = 0; i < materialUniform.length; i++) {
+                                        m[i] = materialUniform[i];
+                                    }
+                                    device.queue.writeBuffer(uniformBuffer, 0, m);
+                                    break;
+                            }
+                            break;
+                        default:
+                            errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                            break;
+                    }
+                }
+                else {
+                    let bufferSource = null;
+                    switch (uniform.name) {
+                        case 'cameraPosition':
+                            bufferSource = camera?.getPosition();
+                            break;
+                        default:
+                            errorMap('unknwon wgsl uniform', uniform.name, { group: uniform.group, binding: uniform.binding, shader: material.getShaderSource() + '.wgsl' });
+                            const format = uniform.type?.format;
+                            if (format) {
+                                let buffer;
+                                switch (format.name) {
+                                    case 'f32':
+                                        buffer = new Float32Array(format.size);
+                                        break;
+                                    case 'u32':
+                                        buffer = new Uint32Array(format.size);
+                                        break;
+                                    default:
+                                        errorOnce(`unknwon uniform type: ${format.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                                        break;
+                                }
+                                if (buffer) {
+                                    device.queue.writeBuffer(uniformBuffer, 0, buffer);
+                                }
+                            }
+                    }
+                    if (bufferSource) {
+                        device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
+                    }
+                }
+            }
+        }
+    }
+    for (const shaderTexture of shaderModule.reflection.textures) {
+        switch (shaderTexture.name) {
+            case 'colorTexture':
+                const texture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
+                if (texture) {
+                    groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
+                }
+                break;
+            case 'color2Texture':
+                {
+                    const texture = material.getUniformValue('color2Map'); //?.texture as GPUTexture | undefined;
+                    if (texture) {
+                        groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
+                    }
+                }
+                break;
+            default:
+                {
+                    const texture = material.getUniformValue(shaderTexture.name); //?.texture as GPUTexture | undefined;
+                    if (texture) {
+                        groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: getViewDimension(shaderTexture) });
+                    }
+                    else {
+                        errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
+                    }
+                }
+                break;
+        }
+    }
+    // TODO: set samplers and texture in a single pass ?
+    for (const shaderSampler of shaderModule.reflection.samplers) {
+        switch (shaderSampler.name) {
+            case 'colorSampler':
+                const sampler = material.getUniformValue('colorMap')?.sampler;
+                if (sampler) {
+                    groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+                }
+                break;
+            case 'color2Sampler':
+                {
+                    const sampler = material.getUniformValue('color2Map')?.sampler;
+                    if (sampler) {
+                        groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+                    }
+                }
+                break;
+            default:
+                {
+                    const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
+                    const sampler = material.getUniformValue(name)?.sampler;
+                    if (sampler) {
+                        groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
+                    }
+                    else {
+                        errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
+                    }
+                }
+                break;
+        }
+    }
+    for (const storage of shaderModule.reflection.storage) {
+        let access = 'read-only';
+        let bufferType = 'storage';
+        let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;
+        switch (storage.type.access ?? storage.access) {
+            case 'read':
+                bufferType = 'read-only-storage';
+                // TODO: only set vertex if the storage is actually used in a vertex buffer
+                if (!isCompute) {
+                    visibility |= GPUShaderStage.VERTEX;
+                }
+                break;
+            case 'write':
+                access = 'write-only';
+                break;
+            case 'read_write':
+                access = 'read-write';
+                break;
+            default:
+                errorOnce(`Unknown storage access type ${storage.type.access}`);
+                break;
+        }
+        switch (storage.name) {
+            case 'colorTexture':
+                const storageTexture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
+                if (storageTexture) {
+                    groups.set(storage.group, storage.binding, { storageTexture, access, viewDimension: '2d', });
+                }
+                break;
+            case 'pickedPrimitive':
+                const buffer = pickedPrimitive ?? device.createBuffer({
+                    label: storage.name,
+                    size: storage.size,
+                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+                });
+                if (!pickedPrimitive) {
+                    pickedPrimitive = buffer;
+                }
+                groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
+                break;
+            default:
+                {
+                    const storageTexture = material.getUniformValue(storage.name); //?.texture as GPUTexture | undefined;
+                    if (storageTexture) {
+                        if (storage.isArray) {
+                            console.error("check this branch");
+                            let isCube = false;
+                            let visibility = undefined;
+                            let format = 'rgba8unorm';
+                            for (const texture of storageTexture) {
+                                // TODO: find a better way to do this
+                                if (texture) {
+                                    isCube = texture.isCube;
+                                    format = texture.gpuFormat;
+                                    visibility = texture.gpuVisibility;
+                                    break;
+                                }
+                            }
+                            groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture, access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
+                        }
+                        else if (storage.isStruct) {
+                            throw new Error('this should be a storage ' + storage.name);
+                        }
+                        else {
+                            groups.set(storage.group, storage.binding, { storageTexture: storageTexture, access, visibility: storageTexture.gpuVisibility, viewDimension: getViewDimension(storage) });
+                        }
+                    }
+                    else {
+                        const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
+                        if (storageBuffer) {
+                            const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
+                            if (storageBuffer.raw) {
+                                if (!storageBuffer.buffer) {
+                                    storageBuffer.buffer = device.createBuffer({
+                                        label: storage.name,
+                                        size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
+                                        usage,
+                                    });
+                                }
+                                if (storageBuffer.value !== null) {
+                                    device.queue.writeBuffer(storageBuffer.buffer, storageBuffer.rawOffset ?? 0, storageBuffer.value, 0 /*TODO: use data offset ?*/, storageBuffer.rawSize ?? storageBuffer.buffer.size);
+                                }
+                            }
+                            else if (storage.isStruct) {
+                                // TODO: handle nested structs
+                                // TODO: Do this every time there is a struct
+                                // Compute the size of the struct if the last member is a dynamically sized array
+                                let size = storage.size;
+                                const members = storage.type.members;
+                                const lastMember = members[members.length - 1];
+                                if (lastMember.isArray && lastMember.size === 0) {
+                                    const value = storageBuffer.value?.[lastMember.name];
+                                    if (Array.isArray(value) || ArrayBuffer.isView(value)) {
+                                        size += value.length * lastMember.type.stride;
+                                    }
+                                }
+                                if (!storageBuffer.buffer) {
+                                    storageBuffer.buffer = device.createBuffer({
+                                        label: storage.name,
+                                        size,
+                                        usage,
+                                    });
+                                }
+                                for (const member of storage.type.members) {
+                                    const source = storageBuffer.value[member.name];
+                                    if (source) {
+                                        device.queue.writeBuffer(storageBuffer.buffer, member.offset, source);
+                                    }
+                                }
+                            }
+                            else if (storage.isArray) {
+                                if (storage.format.isArray) {
+                                    // Array of array
+                                    if (!storageBuffer.buffer) {
+                                        storageBuffer.buffer = device.createBuffer({
+                                            label: storage.name,
+                                            size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
+                                            usage,
+                                        });
+                                    }
+                                    if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
+                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                    }
+                                }
+                                else if (storage.format.isStruct) {
+                                    if (!storageBuffer.buffer) {
+                                        storageBuffer.buffer = device.createBuffer({
+                                            label: storage.name,
+                                            size: storage.size || storageBuffer.value.length * storage.format.size,
+                                            usage,
+                                        });
+                                    }
+                                    let baseOffset = 0;
+                                    for (const s of storageBuffer.value) {
+                                        if (s) {
+                                            writeStruct$1(device.queue, storageBuffer.buffer, storage.format.members, s, baseOffset);
+                                        }
+                                        baseOffset += storage.type.stride;
+                                        /*
+                                        for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
+                                            const source = s[member.name];
+                                            if (source !== undefined) {
+                                                if (typeof source === 'number') {
+                                                    writeNumber(device.queue, storageBuffer.buffer, member, source);
+                                                } else {
+                                                    device.queue.writeBuffer(
+                                                        storageBuffer.buffer,
+                                                        member.offset,
+                                                        source as BufferSource,
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        */
+                                    }
+                                }
+                                else if (storage.format.isPointer) {
+                                    throw new Error('code me: storage is a pointer array');
+                                }
+                                else if (storage.format.isTemplate) {
+                                    throw new Error('code me: storage is a template array');
+                                }
+                                else {
+                                    // Array of primitives
+                                    if (!storageBuffer.buffer) {
+                                        storageBuffer.buffer = device.createBuffer({
+                                            label: storage.name,
+                                            size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
+                                            usage,
+                                        });
+                                    }
+                                    if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
+                                        device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
+                                    }
+                                }
+                            }
+                            else {
+                                throw new Error('code me: storage is neither a struct nor an array');
+                            }
+                            groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
+                        }
+                        else {
+                            errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
+                        }
+                    }
+                }
+                break;
+        }
+    }
+}
+function writePrimitive$1(queue, buffer, member, value, baseOffset) {
+    switch (member.type.name) {
+        case 'u32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Uint32Array([value]));
+            break;
+        case 'i32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Int32Array([value]));
+            break;
+        case 'f32':
+            queue.writeBuffer(buffer, baseOffset + member.offset, new Float32Array([value]));
+            break;
+        case 'vec3f':
+            queue.writeBuffer(buffer, baseOffset + member.offset, value);
+            break;
+        default:
+            errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
+            break;
+    }
+}
+function writeStruct$1(queue, buffer, members, struct, baseOffset) {
+    for (const member of members) {
+        const structValue = struct[member.name];
+        if (member.isTemplate) {
+            writeTemplate$1(queue, buffer, member.type, structValue, baseOffset + member.offset);
+        }
+        else if (member.isStruct) {
+            // nested struct
+            if (structValue) {
+                writeStruct$1(queue, buffer, member.type.members, structValue, baseOffset + member.offset);
+            }
+        }
+        else if (member.isArray) {
+            writeArray$1(queue, buffer, member.type, structValue, baseOffset + member.offset);
+        }
+        else {
+            // primitive
+            if (structValue !== undefined && structValue !== null) {
+                writePrimitive$1(queue, buffer, member, structValue, baseOffset);
+            }
+            else {
+                errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
+            }
+        }
+    }
+}
+function writeTemplate$1(queue, buffer, type, value, offset) {
+    switch (type.name) {
+        case 'vec4':
+            queue.writeBuffer(buffer, offset, value);
+            break;
+        default:
+            throw new Error(`code this type ${type.name}`);
+    }
+}
+function writeArray$1(queue, buffer, type, value, baseOffset) {
+    if (type.format.isStruct) {
+        for (let i = 0; i < type.count; ++i) {
+            writeStruct$1(queue, buffer, type.format.members, value[i], baseOffset + i * type.stride);
+        }
+    }
+    else if (type.format.isArray) {
+        throw new Error('code me');
+    }
+    else {
+        throw new Error('code me');
     }
 }
 
@@ -5813,6 +6524,12 @@ function generateCubeUVSize(height) {
     return { texelWidth, texelHeight, maxMip };
 }
 
+// Default ortho function correspond to WebGL clip space
+let ortho = mat4.orthoNO;
+function setClipSpaceWebGPU() {
+    ortho = mat4.orthoZO;
+}
+
 function vec3ToJSON(vec) {
     return [...vec];
 }
@@ -5821,12 +6538,6 @@ function quatToJSON(q) {
 }
 function mat4ToJSON(mat) {
     return [...mat];
-}
-
-// Default ortho function correspond to WebGL clip space
-let ortho = mat4.orthoNO;
-function setClipSpaceWebGPU() {
-    ortho = mat4.orthoZO;
 }
 
 var CameraProjection;
@@ -6251,11 +6962,6 @@ class Camera extends Entity {
 }
 registerEntity(Camera);
 
-let Graphics$1;
-function setGraphics(graphics) {
-    Graphics$1 = graphics;
-}
-
 class Pass {
     camera;
     quad;
@@ -6348,15 +7054,6 @@ class CopyPass extends Pass {
         Graphics$1.render(this.scene, this.camera, 0, context);
         Graphics$1.popRenderTarget();
     }
-}
-
-class WebGPUInternal {
-    static gpuContext;
-    static config;
-    static adapter;
-    static device;
-    static format;
-    static depthTexture;
 }
 
 const COMPUTE_WORKGROUP_SIZE_X$1 = 16;
@@ -12331,8 +13028,8 @@ class ForwardRenderer {
         WebGLRenderingState.disableUnusedAttributes();
     }
     #setupVertexUniforms(program, mesh) {
-        for (const uniform in mesh.uniforms) {
-            program.setUniformValue(uniform, mesh.uniforms[uniform]);
+        for (const [name, uniform] of mesh.getUniforms()) {
+            program.setUniformValue(name, uniform.value);
         }
     }
     setToneMapping(toneMapping) {
@@ -12401,6 +13098,10 @@ class WebGPURenderer {
     //readonly #pointerPosition = vec2.create();
     #pickedPrimitive;
     #identityVec2 = vec2.create();
+    #fullScreenQuad;
+    constructor() {
+        this.#fullScreenQuad = new FullScreenQuad();
+    }
     render(scene, camera, delta, context) {
         const renderList = this.#renderList;
         renderList.reset();
@@ -12482,12 +13183,11 @@ class WebGPURenderer {
             currentObject = objectStack.shift();
         }
         if (clearValue && context.viewport) {
-            const fullScreenQuad = new FullScreenQuad();
-            const material = fullScreenQuad.getMaterial();
+            const material = this.#fullScreenQuad.getMaterial();
             material.setDefine('ALWAYS_BEHIND');
             material.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
             material.setColorMode(MaterialColorMode.PerMesh);
-            renderList.addObject(fullScreenQuad);
+            renderList.addObject(this.#fullScreenQuad);
         }
         renderList.finish();
     }
@@ -12594,7 +13294,7 @@ class WebGPURenderer {
         const projectionMatrix = camera.projectionMatrix;
         mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
         mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix); //TODO: compute this in camera
-        const groups = new Map2();
+        //const groups = new Map2<number, number, Binding>();
         if (renderLights) {
             material.beforeRender(camera);
         }
@@ -12603,11 +13303,15 @@ class WebGPURenderer {
         if (renderLights) {
             this.#setupLights(renderList, camera, cameraMatrix, uniforms);
         }
+        /*
         this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, false);
+
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
         });
+        */
+        const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule /*, groups*/, camera, uniforms, context);
         const commandEncoder = device.createCommandEncoder();
         if (pick && this.#pickedPrimitive) {
             commandEncoder.clearBuffer(this.#pickedPrimitive);
@@ -13126,7 +13830,7 @@ class WebGPURenderer {
                 const uniformTexture = uniformBuffer.texture ?? uniformBuffer.storageTexture;
                 if (uniformTexture) {
                     if (!uniformBuffer.viewDimension) {
-                        throw new Error(`missing viewDimension for texture ${uniformBuffer}`);
+                        throw new Error(`missing viewDimension for texture ${JSON.stringify(uniformBuffer)}`);
                     }
                     if (uniformTexture.isCube) {
                         entries.push({
@@ -13177,6 +13881,13 @@ class WebGPURenderer {
         const projectionMatrix = camera?.projectionMatrix;
         const device = WebGPUInternal.device;
         for (const uniform of shaderModule.reflection.uniforms) {
+            const materialUniform = material.getUniform(uniform.name) ?? object?.getUniform(uniform.name);
+            if (materialUniform && !materialUniform.dirty && groups.has(uniform.group, uniform.binding)) {
+                continue;
+            }
+            if (materialUniform) {
+                materialUniform.dirty = false;
+            }
             /*
             let additionalUsage: GPUFlagsConstant = 0;
             if (uniform.name == 'commonUniforms') {// TODO: improve that
@@ -13191,7 +13902,7 @@ class WebGPURenderer {
             groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
             const members = uniform.members;
             if (members) {
-                const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+                const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
                 if (materialUniform) {
                     for (const member of members) {
                         let bufferSource = null;
@@ -13216,7 +13927,7 @@ class WebGPURenderer {
                             }
                         }
                         else {
-                            errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                            errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
                         }
                         if (bufferSource) {
                             device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
@@ -13279,10 +13990,10 @@ class WebGPURenderer {
                                 bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2);
                                 break;
                             case 'boneMatrix':
-                                bufferSource = object?.uniforms[member.name];
+                                bufferSource = object?.getUniformValue(member.name) ?? new Float32Array(16); //TODO don't create a Float32Array each time
                                 break;
                             default:
-                                errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
+                                errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
                         }
                         if (bufferSource) {
                             device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
@@ -13305,9 +14016,9 @@ class WebGPURenderer {
                     }
                 }
                 else {
-                    const arrayUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+                    const arrayUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
                     if (arrayUniform !== undefined) {
-                        device.queue.writeBuffer(uniformBuffer, 0, arrayUniform);
+                        device.queue.writeBuffer(uniformBuffer, 0, arrayUniform /*TODO: actually check the value type*/);
                     }
                     else {
                         errorOnce('unknwon array uniform ' + uniform.name);
@@ -13320,7 +14031,7 @@ class WebGPURenderer {
                     device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
                 }
                 else {
-                    const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+                    const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
                     if (materialUniform !== undefined) {
                         switch (uniform.type.name) {
                             case 'f32':
@@ -13332,9 +14043,9 @@ class WebGPURenderer {
                             case 'mat3x3f':
                                 // In WGSL, mat3x3 actually are mat4x3
                                 const m = new Float32Array([
-                                    materialUniform[0], materialUniform[1], materialUniform[2], 0,
-                                    materialUniform[3], materialUniform[4], materialUniform[5], 0,
-                                    materialUniform[6], materialUniform[7], materialUniform[8], 0,
+                                    materialUniform, materialUniform, materialUniform, 0,
+                                    materialUniform, materialUniform, materialUniform, 0,
+                                    materialUniform, materialUniform, materialUniform, 0,
                                 ]);
                                 device.queue.writeBuffer(uniformBuffer, 0, m);
                                 break;
@@ -13345,7 +14056,7 @@ class WebGPURenderer {
                                 device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
                                 break;
                             case 'vec2u':
-                                const vec2uArray = new Uint32Array([materialUniform[0], materialUniform[1]]);
+                                const vec2uArray = new Uint32Array([materialUniform, materialUniform]);
                                 device.queue.writeBuffer(uniformBuffer, 0, vec2uArray);
                                 break;
                             case 'vec4':
@@ -13371,7 +14082,7 @@ class WebGPURenderer {
                                 bufferSource = camera?.getPosition();
                                 break;
                             default:
-                                errorOnce(`unknwon uniform: ${uniform.name}, setting a default value. Group: ${uniform.group}, binding: ${uniform.binding} in ${material.getShaderSource() + '.wgsl'}`);
+                                errorMap('unknwon wgsl uniform', uniform.name, { group: uniform.group, binding: uniform.binding, shader: material.getShaderSource() + '.wgsl' });
                                 const format = uniform.type?.format;
                                 if (format) {
                                     let buffer;
@@ -13715,25 +14426,6 @@ function writeArray(queue, buffer, type, value, baseOffset) {
     else {
         throw new Error('code me');
     }
-}
-const VIEW_DIMENSIONS = {
-    texture_1d: '1d',
-    texture_2d: '2d',
-    texture_2d_array: '2d-array',
-    texture_cube: 'cube',
-    texture_cube_array: 'cube-array',
-    texture_3d: '3d',
-    texture_storage_1d: '1d',
-    texture_storage_2d: '2d',
-    texture_storage_2d_array: '2d-array',
-    texture_storage_3d: '3d',
-};
-function getViewDimension(info) {
-    const dim = VIEW_DIMENSIONS[info.type.name];
-    if (!dim) {
-        throw new Error(`unknwon texture type ${info.type.name}`);
-    }
-    return dim;
 }
 
 /**
@@ -17391,6 +18083,7 @@ class VTFFile {
     get flags() {
         return this.#flags;
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get frames() {
         return 1; //TODO
     }
@@ -17400,18 +18093,22 @@ class VTFFile {
     get highResImageFormat() {
         return this.#highResImageFormat;
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get mipmapCount() {
         return 1; //TODO
     }
     get lowResImageFormat() {
         return -1; //TODO
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get lowResImageWidth() {
         return 0; //TODO
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get lowResImageHeight() {
         return 0; //TODO
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get depth() {
         return 1; //TODO
     }
@@ -17433,6 +18130,8 @@ class VTFFile {
     }
 }
 class VTFWriter {
+    static majorVersion = 7;
+    static minorVersion = 5;
     static writeAndSave(vtffile, filename) {
         const arrayBuffer = this.write(vtffile);
         const dataView = new DataView(arrayBuffer);
@@ -17521,12 +18220,6 @@ class VTFWriter {
         if (b) {
             writer.setBytes(b);
         }
-    }
-    static get majorVersion() {
-        return 7;
-    }
-    static get minorVersion() {
-        return 5;
     }
 }
 
@@ -20839,7 +21532,7 @@ class Bone extends Entity {
      * @deprecated Please use `setOrientation` instead.
      */
     setQuaternion(quaternion) {
-        super.setQuaternion(quaternion);
+        super.setOrientation(quaternion);
         this.dirty = true;
     }
     setOrientation(quaternion) {
@@ -21322,8 +22015,8 @@ class SkeletalMesh extends Mesh {
     constructor(params) {
         super(params);
         this.skeleton = params.skeleton;
-        this.setUniform('uBoneMatrix', this.skeleton.getTexture());
-        this.setUniform('boneMatrix', this.skeleton.imgData);
+        this.setUniformValue('uBoneMatrix', this.skeleton.getTexture());
+        this.setUniformValue('boneMatrix', this.skeleton.imgData);
         this.setDefine('HARDWARE_SKINNING'); //TODOv3 proper defines
         this.setDefine('SKELETAL_MESH');
         this.setDefine('MAX_HARDWARE_BONES', MAX_HARDWARE_BONES);
@@ -22680,7 +23373,7 @@ class Metaball extends Entity {
     }
 }
 
-var _a$5;
+var _a$6;
 const a$5 = vec3.create();
 const b$2 = vec3.create();
 const THRESHOLD = 0.99;
@@ -22745,7 +23438,7 @@ class MetaballsBufferGeometry extends BufferGeometry {
         return value;
     }
     #testMarchingCubes(balls, cubeWidth) {
-        const [min, max] = _a$5.getBoundingBox(balls);
+        const [min, max] = _a$6.getBoundingBox(balls);
         for (const ball of balls) {
             ball.getWorldPosition(ball.currentWorldPosition);
         }
@@ -22763,35 +23456,35 @@ class MetaballsBufferGeometry extends BufferGeometry {
                     grid.p[0][0] = i;
                     grid.p[0][1] = j;
                     grid.p[0][2] = k;
-                    grid.val[0] = _a$5.#computeValue(balls, grid.p[0]); //1 / vec3.squaredDistance(center, grid.p[0]) + 1 / vec3.squaredDistance(center2, grid.p[0]) * doSphere2;
+                    grid.val[0] = _a$6.#computeValue(balls, grid.p[0]); //1 / vec3.squaredDistance(center, grid.p[0]) + 1 / vec3.squaredDistance(center2, grid.p[0]) * doSphere2;
                     grid.p[1][0] = i + cubeWidth;
                     grid.p[1][1] = j;
                     grid.p[1][2] = k;
-                    grid.val[1] = _a$5.#computeValue(balls, grid.p[1]); //1 / vec3.squaredDistance(center, grid.p[1]) + 1 / vec3.squaredDistance(center2, grid.p[1]) * doSphere2;
+                    grid.val[1] = _a$6.#computeValue(balls, grid.p[1]); //1 / vec3.squaredDistance(center, grid.p[1]) + 1 / vec3.squaredDistance(center2, grid.p[1]) * doSphere2;
                     grid.p[2][0] = i + cubeWidth;
                     grid.p[2][1] = j + cubeWidth;
                     grid.p[2][2] = k;
-                    grid.val[2] = _a$5.#computeValue(balls, grid.p[2]); //1 / vec3.squaredDistance(center, grid.p[2]) + 1 / vec3.squaredDistance(center2, grid.p[2]) * doSphere2;
+                    grid.val[2] = _a$6.#computeValue(balls, grid.p[2]); //1 / vec3.squaredDistance(center, grid.p[2]) + 1 / vec3.squaredDistance(center2, grid.p[2]) * doSphere2;
                     grid.p[3][0] = i;
                     grid.p[3][1] = j + cubeWidth;
                     grid.p[3][2] = k;
-                    grid.val[3] = _a$5.#computeValue(balls, grid.p[3]); //1 / vec3.squaredDistance(center, grid.p[3]) + 1 / vec3.squaredDistance(center2, grid.p[3]) * doSphere2;
+                    grid.val[3] = _a$6.#computeValue(balls, grid.p[3]); //1 / vec3.squaredDistance(center, grid.p[3]) + 1 / vec3.squaredDistance(center2, grid.p[3]) * doSphere2;
                     grid.p[4][0] = i;
                     grid.p[4][1] = j;
                     grid.p[4][2] = k + cubeWidth;
-                    grid.val[4] = _a$5.#computeValue(balls, grid.p[4]); //1 / vec3.squaredDistance(center, grid.p[4]) + 1 / vec3.squaredDistance(center2, grid.p[4]) * doSphere2;
+                    grid.val[4] = _a$6.#computeValue(balls, grid.p[4]); //1 / vec3.squaredDistance(center, grid.p[4]) + 1 / vec3.squaredDistance(center2, grid.p[4]) * doSphere2;
                     grid.p[5][0] = i + cubeWidth;
                     grid.p[5][1] = j;
                     grid.p[5][2] = k + cubeWidth;
-                    grid.val[5] = _a$5.#computeValue(balls, grid.p[5]); //1 / vec3.squaredDistance(center, grid.p[5]) + 1 / vec3.squaredDistance(center2, grid.p[5]) * doSphere2;
+                    grid.val[5] = _a$6.#computeValue(balls, grid.p[5]); //1 / vec3.squaredDistance(center, grid.p[5]) + 1 / vec3.squaredDistance(center2, grid.p[5]) * doSphere2;
                     grid.p[6][0] = i + cubeWidth;
                     grid.p[6][1] = j + cubeWidth;
                     grid.p[6][2] = k + cubeWidth;
-                    grid.val[6] = _a$5.#computeValue(balls, grid.p[6]); //1 / vec3.squaredDistance(center, grid.p[6]) + 1 / vec3.squaredDistance(center2, grid.p[6]) * doSphere2;
+                    grid.val[6] = _a$6.#computeValue(balls, grid.p[6]); //1 / vec3.squaredDistance(center, grid.p[6]) + 1 / vec3.squaredDistance(center2, grid.p[6]) * doSphere2;
                     grid.p[7][0] = i;
                     grid.p[7][1] = j + cubeWidth;
                     grid.p[7][2] = k + cubeWidth;
-                    grid.val[7] = _a$5.#computeValue(balls, grid.p[7]); //1 / vec3.squaredDistance(center, grid.p[7]) + 1 / vec3.squaredDistance(center2, grid.p[7]) * doSphere2;
+                    grid.val[7] = _a$6.#computeValue(balls, grid.p[7]); //1 / vec3.squaredDistance(center, grid.p[7]) + 1 / vec3.squaredDistance(center2, grid.p[7]) * doSphere2;
                     polygonise(grid, isolevel, tris);
                     triangles.push(...tris);
                 }
@@ -22813,7 +23506,7 @@ class MetaballsBufferGeometry extends BufferGeometry {
         return tris;
     }
 }
-_a$5 = MetaballsBufferGeometry;
+_a$6 = MetaballsBufferGeometry;
 
 class Metaballs extends Mesh {
     cubeWidth;
@@ -23980,7 +24673,7 @@ class MemoryRepository {
     }
 }
 
-var _a$4;
+var _a$5;
 class RepositoryEntry {
     #repository;
     #name;
@@ -24012,7 +24705,7 @@ class RepositoryEntry {
         this.#childs.delete(name);
     }
     #addFile(name, isDirectory, depth) {
-        const e = new _a$4(this.#repository, name, isDirectory, depth);
+        const e = new _a$5(this.#repository, name, isDirectory, depth);
         e.#parent = this;
         this.#childs.set(name, e);
         return e;
@@ -24161,7 +24854,7 @@ class RepositoryEntry {
         }
     }
 }
-_a$4 = RepositoryEntry;
+_a$5 = RepositoryEntry;
 function splitFilename(filename) {
     const pos = filename.lastIndexOf('.');
     if (pos < 1) {
@@ -24967,7 +25660,7 @@ class Source1ModelManager {
         promise = new Promise(resolve => loadedResolve = resolve);
         this.#modelsPerRepository.set(repositoryName, fileName, promise);
         const modelLoader = getLoader('ModelLoader');
-        let model = await new modelLoader().load(repositoryName, fileName);
+        const model = await new modelLoader().load(repositoryName, fileName);
         loadedResolve /*assigned during promise creation*/(model);
         return model;
     }
@@ -25061,7 +25754,6 @@ class Source1ParticleControler {
     }
     /**
      * Create system
-     * @param {Number} elapsedTime Step time
      */
     static async createSystem(repository, systemName) {
         if (!repository) {
@@ -25104,7 +25796,7 @@ class Source1ParticleControler {
         }
         return null;
     }
-    static async loadManifest(repository) {
+    static loadManifest(repository) {
         if (this.#systemNameToPcf[repository] === undefined) {
             this.#systemNameToPcf[repository] = null;
         }
@@ -25113,26 +25805,28 @@ class Source1ParticleControler {
      * TODO
      */
     static async #loadManifest(repositoryName) {
-        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve) => {
-            const systemNameToPcfRepo = {};
-            this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
-            const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
-            if (response.error) {
-                resolve(false);
-            }
-            const json /*TODO: change type*/ = response.json;
-            if (json && json.files) {
-                for (const file of json.files) {
-                    const pcfName = file.name;
-                    for (const definition of file.particlesystemdefinitions) {
-                        systemNameToPcfRepo[definition] = pcfName;
-                    }
+        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise((resolve) => {
+            (async () => {
+                const systemNameToPcfRepo = {};
+                this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
+                const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
+                if (response.error) {
+                    resolve(false);
                 }
-                resolve(true);
-            }
-            else {
-                resolve(false);
-            }
+                const json /*TODO: change type*/ = response.json;
+                if (json && json.files) {
+                    for (const file of json.files) {
+                        const pcfName = file.name;
+                        for (const definition of file.particlesystemdefinitions) {
+                            systemNameToPcfRepo[definition] = pcfName;
+                        }
+                    }
+                    resolve(true);
+                }
+                else {
+                    resolve(false);
+                }
+            })();
         });
         return this.#loadManifestPromises[repositoryName];
     }
@@ -25203,7 +25897,7 @@ class Source1ParticleControler {
         //TODO: return an empty system if not found?
         const promise = new Promise(resolve => {
             const pcfLoader = getLoader('Source1PcfLoader');
-            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf));
+            new pcfLoader().load(repositoryName, pcfName).then(pcf => resolve(pcf));
         });
         return promise;
     }
@@ -25487,7 +26181,7 @@ class Detex {
 
 function getWebGPUData(imageFormat, data) {
     let rIndex = 0;
-    let gIndex = 1;
+    const gIndex = 1;
     let bIndex = 2;
     switch (imageFormat) {
         case ImageFormat.RGB888:
@@ -25495,6 +26189,8 @@ function getWebGPUData(imageFormat, data) {
             break;
         case ImageFormat.BGR888:
         case ImageFormat.BGR888_BLUESCREEN:
+            rIndex = 2;
+            bIndex = 0;
             break;
         case ImageFormat.RGB565:
             // TODO: handle this case. No test data yet
@@ -26200,6 +26896,7 @@ const IMAGE_FORMAT_UVLX8888 = 26;
 // TODO: move this function elsewhere
 async function decompressDxt(format, width, height, datas) {
     const uncompressedData = new Uint8ClampedArray(width * height * 4);
+    // TODO: handle the Float32Array case
     await Detex.decode(format, width, height, datas, uncompressedData);
     return uncompressedData;
 }
@@ -27836,156 +28533,153 @@ class Zstd {
     }
 }
 
-const BinaryKv3Loader = new (function () {
-    class BinaryKv3Loader {
-        getBinaryVkv3(binaryString) {
-            const reader = new BinaryReader(binaryString);
-            const binaryKv3 = new Kv3File();
-            const stringDictionary = [];
-            readStringDictionary(reader, stringDictionary);
-            const element = readElement(reader, stringDictionary);
-            if (element instanceof Kv3Element) {
-                binaryKv3.setRoot(element);
-            }
-            return binaryKv3;
+class BinaryKv3Loader {
+    static getBinaryVkv3(binaryString) {
+        const reader = new BinaryReader(binaryString);
+        const binaryKv3 = new Kv3File();
+        const stringDictionary = [];
+        readStringDictionary(reader, stringDictionary);
+        const element = readElement(reader, stringDictionary);
+        if (element instanceof Kv3Element) {
+            binaryKv3.setRoot(element);
         }
-        getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId, stringDictionary, objectCount, arrayCount /*TODO: use it*/, buffer0) {
-            const reader = new BinaryReader(binaryString);
-            if (!stringDictionary) {
-                stringDictionary = [];
+        return binaryKv3;
+    }
+    static getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId, stringDictionary, objectCount, arrayCount /*TODO: use it*/, buffer0) {
+        const reader = new BinaryReader(binaryString);
+        if (!stringDictionary) {
+            stringDictionary = [];
+        }
+        //let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
+        let offset;
+        let byteCursor = 0;
+        if (version >= 5 && bufferId == 1) {
+            byteCursor = objectCount * 4;
+        }
+        const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2; //Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
+        const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4; //Math.ceil(singleByteCount / 4) * 4;
+        let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
+        if (version >= 5 && eightByteCount[bufferId] == 0) {
+            // In this case, don't align cursor
+            eightCursor = quadCursor + quadByteCount[bufferId] * 4;
+        }
+        //console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
+        let dictionaryOffset = eightCursor + eightByteCount[bufferId] * 8;
+        if (version >= 5 && bufferId == 0) {
+            dictionaryOffset = 0;
+        }
+        let uncompressedBlobSizeReader, compressedBlobSizeReader;
+        const blobOffset = dictionaryOffset + dictionaryTypeLength;
+        if (version >= 2 && blobCount != 0) {
+            if (compressedBlobReader) {
+                const uncompressedLength = blobCount * 4;
+                uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
+                compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
             }
-            //let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
-            let offset;
-            let byteCursor = 0;
-            if (version >= 5 && bufferId == 1) {
-                byteCursor = objectCount * 4;
+            else {
+                if (uncompressedBlobReader) {
+                    uncompressedBlobSizeReader = new BinaryReader(reader, reader.byteLength - blobCount * 4 - 4, blobCount * 4);
+                }
             }
-            const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2; //Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
-            const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4; //Math.ceil(singleByteCount / 4) * 4;
-            let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
-            if (version >= 5 && eightByteCount[bufferId] == 0) {
-                // In this case, don't align cursor
-                eightCursor = quadCursor + quadByteCount[bufferId] * 4;
-            }
-            //console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
-            let dictionaryOffset = eightCursor + eightByteCount[bufferId] * 8;
-            if (version >= 5 && bufferId == 0) {
-                dictionaryOffset = 0;
-            }
-            let uncompressedBlobSizeReader, compressedBlobSizeReader;
-            const blobOffset = dictionaryOffset + dictionaryTypeLength;
-            if (version >= 2 && blobCount != 0) {
-                if (compressedBlobReader) {
-                    const uncompressedLength = blobCount * 4;
-                    uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
-                    compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
+        }
+        if (version == 1) { //v1
+            offset = reader.byteLength - 4;
+        }
+        else if (version < 5) { //v2-v4
+            offset = blobOffset;
+        }
+        else {
+            offset = 0 /*TODO: check*/;
+        }
+        const typeArray = [];
+        const valueArray = [];
+        if (version < 5) {
+            do {
+                --offset;
+                const type = reader.getUint8(offset);
+                //typeArray.unshift(type);
+                if (type) {
+                    typeArray.unshift(type);
                 }
                 else {
-                    if (uncompressedBlobReader) {
-                        uncompressedBlobSizeReader = new BinaryReader(reader, reader.byteLength - blobCount * 4 - 4, blobCount * 4);
-                    }
+                    break;
                 }
-            }
-            if (version == 1) { //v1
-                offset = reader.byteLength - 4;
-            }
-            else if (version < 5) { //v2-v4
-                offset = blobOffset;
-            }
-            else {
-                offset = 0 /*TODO: check*/;
-            }
-            const typeArray = [];
-            const valueArray = [];
-            if (version < 5) {
-                do {
-                    --offset;
-                    const type = reader.getUint8(offset);
-                    //typeArray.unshift(type);
-                    if (type) {
-                        typeArray.unshift(type);
-                    }
-                    else {
-                        break;
-                    }
-                } while (offset >= 0);
-            }
-            else {
-                if (bufferId == 1) {
-                    reader.seek(dictionaryOffset);
-                    for (let i = 0; i < dictionaryTypeLength; i++) {
-                        const type = reader.getUint8();
-                        if (type) {
-                            typeArray.push(type);
-                        }
-                    }
-                }
-            }
-            const byteReader = new BinaryReader(reader);
-            const doubleReader = new BinaryReader(reader);
-            const quadReader = new BinaryReader(reader);
-            const eightReader = new BinaryReader(reader);
-            let byteReaderBuf0;
-            let doubleReaderBuf0;
-            let quadReaderBuf0;
-            let eightReaderBuf0;
-            byteReader.seek(byteCursor);
-            doubleReader.seek(doubleCursor);
-            quadReader.seek(quadCursor);
-            eightReader.seek(eightCursor);
-            reader.seek(); // skip blob data
-            const readers = {};
-            let objectsSizeReader = quadReader;
-            if (bufferId == 0) {
-                // In v5, strings are in buffer 0
-                const stringCount = quadReader.getUint32();
-                reader.seek(dictionaryOffset);
-                readStringDictionary(reader, stringDictionary, stringCount);
-                if (version >= 5) {
-                    return stringDictionary;
-                }
-            }
-            else {
-                objectsSizeReader = new BinaryReader(reader);
-                const reader0 = new BinaryReader(buffer0);
-                const byteCursorBuf0 = 0;
-                const doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
-                const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
-                const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
-                //console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
-                byteReaderBuf0 = new BinaryReader(reader0);
-                doubleReaderBuf0 = new BinaryReader(reader0);
-                quadReaderBuf0 = new BinaryReader(reader0);
-                eightReaderBuf0 = new BinaryReader(reader0);
-                byteReaderBuf0.seek(byteCursorBuf0);
-                doubleReaderBuf0.seek(doubleCursorBuf0);
-                quadReaderBuf0.seek(quadCursorBuf0 + 4); // Eat a quad (string dictionnary length)
-                eightReaderBuf0.seek(eightCursorBuf0);
-                readers.reader1 = byteReaderBuf0;
-                readers.reader2 = doubleReaderBuf0;
-                readers.reader4 = quadReaderBuf0;
-                readers.reader8 = eightReaderBuf0;
-            }
-            let decompressBlobBuffer;
-            let decompressBlobArray;
-            if (compressedBlobReader) { //if a compressed reader is provided, we have to uncompress the blobs
-                decompressBlobBuffer = new ArrayBuffer(totalUncompressedBlobSize);
-                decompressBlobArray =
-                    { array: new Uint8Array(decompressBlobBuffer), offset: 0 };
-                //decompressBlobArray.decompressOffset = 0;
-            }
-            const rootValue = readBinaryKv3Element({ dictionary: stringDictionary }, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
-            // return it in a suitable format
-            const binaryKv3 = new Kv3File();
-            if (rootValue?.getType() == Kv3Type.Element) {
-                //binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
-                binaryKv3.setRoot(rootValue.getValue());
-            }
-            return binaryKv3;
+            } while (offset >= 0);
         }
+        else {
+            if (bufferId == 1) {
+                reader.seek(dictionaryOffset);
+                for (let i = 0; i < dictionaryTypeLength; i++) {
+                    const type = reader.getUint8();
+                    if (type) {
+                        typeArray.push(type);
+                    }
+                }
+            }
+        }
+        const byteReader = new BinaryReader(reader);
+        const doubleReader = new BinaryReader(reader);
+        const quadReader = new BinaryReader(reader);
+        const eightReader = new BinaryReader(reader);
+        let byteReaderBuf0;
+        let doubleReaderBuf0;
+        let quadReaderBuf0;
+        let eightReaderBuf0;
+        byteReader.seek(byteCursor);
+        doubleReader.seek(doubleCursor);
+        quadReader.seek(quadCursor);
+        eightReader.seek(eightCursor);
+        reader.seek(); // skip blob data
+        const readers = {};
+        let objectsSizeReader = quadReader;
+        if (bufferId == 0) {
+            // In v5, strings are in buffer 0
+            const stringCount = quadReader.getUint32();
+            reader.seek(dictionaryOffset);
+            readStringDictionary(reader, stringDictionary, stringCount);
+            if (version >= 5) {
+                return stringDictionary;
+            }
+        }
+        else {
+            objectsSizeReader = new BinaryReader(reader);
+            const reader0 = new BinaryReader(buffer0);
+            const byteCursorBuf0 = 0;
+            const doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
+            const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
+            const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
+            //console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
+            byteReaderBuf0 = new BinaryReader(reader0);
+            doubleReaderBuf0 = new BinaryReader(reader0);
+            quadReaderBuf0 = new BinaryReader(reader0);
+            eightReaderBuf0 = new BinaryReader(reader0);
+            byteReaderBuf0.seek(byteCursorBuf0);
+            doubleReaderBuf0.seek(doubleCursorBuf0);
+            quadReaderBuf0.seek(quadCursorBuf0 + 4); // Eat a quad (string dictionnary length)
+            eightReaderBuf0.seek(eightCursorBuf0);
+            readers.reader1 = byteReaderBuf0;
+            readers.reader2 = doubleReaderBuf0;
+            readers.reader4 = quadReaderBuf0;
+            readers.reader8 = eightReaderBuf0;
+        }
+        let decompressBlobBuffer;
+        let decompressBlobArray;
+        if (compressedBlobReader) { //if a compressed reader is provided, we have to uncompress the blobs
+            decompressBlobBuffer = new ArrayBuffer(totalUncompressedBlobSize);
+            decompressBlobArray =
+                { array: new Uint8Array(decompressBlobBuffer), offset: 0 };
+            //decompressBlobArray.decompressOffset = 0;
+        }
+        const rootValue = readBinaryKv3Element({ dictionary: stringDictionary }, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
+        // return it in a suitable format
+        const binaryKv3 = new Kv3File();
+        if (rootValue?.getType() == Kv3Type.Element) {
+            //binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
+            binaryKv3.setRoot(rootValue.getValue());
+        }
+        return binaryKv3;
     }
-    return BinaryKv3Loader;
-}());
+}
 function readStringDictionary(reader, stringDictionary, stringCount) {
     stringCount = stringCount ?? reader.getUint32();
     for (let i = 0; i < stringCount; i++) {
@@ -28807,7 +29501,7 @@ async function loadKeyValue(reader, file, block) {
             await loadDataKv3(reader, block, 5);
             return true;
         default:
-            console.info('Unknown block data type:', bytes, block, file);
+            infoSet('Unknown block data type', { bytes, block, file });
     }
     return false;
 }
@@ -29479,64 +30173,61 @@ function sNormUint16(uint16) {
     //https://www.khronos.org/opengl/wiki/Normalized_Integer
     return Math.max(uint16 / 0x7FFF, -1.0);
 }
-const Source2BlockLoader = new (function () {
-    class Source2BlockLoader {
-        async parseBlock(reader, file, block, parseVtex, context) {
-            const introspection = file.blocks['NTRO'];
-            const reference = file.blocks['RERL'];
-            switch (block.type) {
-                case 'RERL':
-                    loadRerl(reader, block);
-                    break;
-                case 'NTRO':
-                    loadNtro(reader, block);
-                    break;
-                //case 'DATA':
-                case 'ANIM':
-                case 'CTRL':
-                case 'MRPH':
-                case 'MDAT':
-                case 'ASEQ':
-                case 'AGRP':
-                case 'PHYS':
-                case 'LaCo':
-                    await loadData(reader, file, reference, block, introspection, false);
-                    break;
-                case 'DATA':
-                    await loadData(reader, file, reference, block, introspection, parseVtex);
-                    break;
-                case 'REDI':
-                case 'RED2':
-                    await loadRedi(reader, file, block);
-                    break;
-                case 'VBIB':
-                case 'MBUF':
-                    loadVbib(reader, block, context.meshIndex++);
-                    break;
-                case 'SNAP':
-                    let sa;
-                    const decodeLength = reader.getUint32(block.offset);
-                    if ((decodeLength >>> 24) == 0x80) {
-                        //no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
-                        sa = reader.getBytes(decodeLength & 0xFFFFFF);
-                    }
-                    else {
-                        sa = new Uint8Array(new ArrayBuffer(decodeLength));
-                        decodeBlockCompressed(reader, sa, decodeLength);
-                    }
-                    block.datas = sa;
-                    break;
-                case 'MVTX':
-                case 'MIDX':
-                    // Loaded along CTRL block
-                    break;
-                default:
-                    console.info('Unknown block type ' + block.type, block.offset, block.length, block);
-            }
+class Source2BlockLoader {
+    static async parseBlock(reader, file, block, parseVtex, context) {
+        const introspection = file.blocks['NTRO'];
+        const reference = file.blocks['RERL'];
+        switch (block.type) {
+            case 'RERL':
+                loadRerl(reader, block);
+                break;
+            case 'NTRO':
+                loadNtro(reader, block);
+                break;
+            //case 'DATA':
+            case 'ANIM':
+            case 'CTRL':
+            case 'MRPH':
+            case 'MDAT':
+            case 'ASEQ':
+            case 'AGRP':
+            case 'PHYS':
+            case 'LaCo':
+                await loadData(reader, file, reference, block, introspection, false);
+                break;
+            case 'DATA':
+                await loadData(reader, file, reference, block, introspection, parseVtex);
+                break;
+            case 'REDI':
+            case 'RED2':
+                await loadRedi(reader, file, block);
+                break;
+            case 'VBIB':
+            case 'MBUF':
+                loadVbib(reader, block, context.meshIndex++);
+                break;
+            case 'SNAP':
+                let sa;
+                const decodeLength = reader.getUint32(block.offset);
+                if ((decodeLength >>> 24) == 0x80) {
+                    //no compression see particles/models/heroes/antimage/antimage_weapon_primary.vsnap_c
+                    sa = reader.getBytes(decodeLength & 0xFFFFFF);
+                }
+                else {
+                    sa = new Uint8Array(new ArrayBuffer(decodeLength));
+                    decodeBlockCompressed(reader, sa, decodeLength);
+                }
+                block.datas = sa;
+                break;
+            case 'MVTX':
+            case 'MIDX':
+                // Loaded along CTRL block
+                break;
+            default:
+                infoSet('Unknown block type', { type: block.type, offset: block.offset, length: block.length, block });
         }
     }
-    return Source2BlockLoader;
-}());
+}
 function loadRerl(reader, block) {
     reader.seek(block.offset);
     const resOffset = reader.getInt32(); // Seems to be always 0x00000008
@@ -29559,7 +30250,7 @@ function loadNtro(reader, block) {
     const _NTRO_FIELD_LENGTH_ = 24;
     reader.seek(block.offset);
     // NTRO header
-    reader.getInt32(); //TODO: check version
+    /*const ntroVersion = */ reader.getInt32(); //TODO: check version
     const ntroOffset = reader.getInt32();
     const structCount = reader.getInt32();
     block.structs = {};
@@ -31548,6 +32239,7 @@ class Source2ModelInstance extends Entity {
     }
     setAnimation(id, name /*, weight: number*/) {
         this.#animName = name;
+        return Promise.resolve();
     }
     setActivityModifiers(activityModifiers = []) {
         this.activityModifiers.clear();
@@ -31588,7 +32280,7 @@ class Source2ModelInstance extends Entity {
                         propBone.setPosition(pos.Position || identityVec3$1);
                     }
                     if (!propBone.lockRotation) {
-                        propBone.setQuaternion(pos.Angle || identityQuat);
+                        propBone.setOrientation(pos.Angle || identityQuat);
                     }
                 }
             }
@@ -31599,7 +32291,7 @@ class Source2ModelInstance extends Entity {
                     bone.setPosition(bone.refPosition);
                 }
                 if (!bone.lockRotation) {
-                    bone.setQuaternion(bone.refQuaternion);
+                    bone.setOrientation(bone.refQuaternion);
                 }
             }
         }
@@ -31721,7 +32413,7 @@ class Source2ModelInstance extends Entity {
                 for (const [modelBoneIndex, boneName] of bonesName.entries()) {
                     const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
                     //bone.name = boneName;
-                    bone.setQuaternion(boneRotParent[modelBoneIndex]);
+                    bone.setOrientation(boneRotParent[modelBoneIndex]);
                     bone.setPosition(bonePosParent[modelBoneIndex]);
                     bone.refQuaternion = boneRotParent[modelBoneIndex];
                     bone.refPosition = bonePosParent[modelBoneIndex];
@@ -32155,14 +32847,14 @@ class Source2Model {
     }
 }
 
-var _a$3;
+var _a$4;
 class Source2ModelLoader {
     static #loadPromisesPerRepo = new Map2;
     static defaultMaterial = new MeshBasicMaterial({ user: this });
     load(repository, path) {
         // Cleanup filename
         path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
-        let promise = _a$3.#loadPromisesPerRepo.get(repository, path);
+        let promise = _a$4.#loadPromisesPerRepo.get(repository, path);
         if (promise) {
             return promise;
         }
@@ -32181,7 +32873,7 @@ class Source2ModelLoader {
             });
             return;
         });
-        _a$3.#loadPromisesPerRepo.set(repository, path, promise);
+        _a$4.#loadPromisesPerRepo.set(repository, path, promise);
         return promise;
     }
     async testProcess2 /*TODO: rename*/(vmdl, model, repository) {
@@ -32561,9 +33253,9 @@ class Source2ModelLoader {
                     geometry.properties.set('bones', new Property(PropertyType.Array, bones));
                 }
                 else {
-                    console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
+                    errorSet('unable to find m_skeleton.m_bones in DATA block', dataBlock);
                 }
-                const material = _a$3.defaultMaterial;
+                const material = _a$4.defaultMaterial;
                 const staticMesh = new Mesh({ geometry: geometry, material: material });
                 group.addChild(staticMesh);
                 const materialPath = drawCall.getValueAsResource('m_material');
@@ -32624,14 +33316,14 @@ class Source2ModelLoader {
     async #loadIncludeModels(model) {
         const includeModels = model.getIncludeModels();
         for (const includeModel of includeModels) {
-            const refModel = await new _a$3().load(model.repository, includeModel);
+            const refModel = await new _a$4().load(model.repository, includeModel);
             if (refModel) {
                 model.addIncludeModel(refModel);
             }
         }
     }
 }
-_a$3 = Source2ModelLoader;
+_a$4 = Source2ModelLoader;
 
 class Source2ModelManager {
     static #modelListPerRepository = {}; //TODO: use a map
@@ -32798,7 +33490,7 @@ class Source2ParticleManagerClass {
 }
 const Source2ParticleManager = new Source2ParticleManagerClass();
 
-var _a$2;
+var _a$3;
 const MAX_ANIMATIONS = 3;
 let dataListId = 0;
 function getDataListId() {
@@ -32824,10 +33516,10 @@ class SceneExplorerEntity extends HTMLElement {
     static #explorer;
     static #draggedEntity = null;
     static {
-        EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => _a$2.#handlePropertyChanged(event.detail));
-        EntityObserver.addEventListener(EntityObserverEventType.EntityDeleted, (event) => _a$2.#handleEntityDeleted(event.detail));
+        EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event) => _a$3.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event) => _a$3.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => _a$3.#handlePropertyChanged(event.detail));
+        EntityObserver.addEventListener(EntityObserverEventType.EntityDeleted, (event) => _a$3.#handleEntityDeleted(event.detail));
     }
     constructor() {
         super();
@@ -32947,7 +33639,7 @@ class SceneExplorerEntity extends HTMLElement {
                 if (event.dataTransfer) {
                     event.dataTransfer.effectAllowed = 'link';
                 }
-                _a$2.#draggedEntity = this.#entity;
+                _a$3.#draggedEntity = this.#entity;
                 event.stopPropagation();
             });
             this.addEventListener('dragenter', event => {
@@ -32961,7 +33653,7 @@ class SceneExplorerEntity extends HTMLElement {
                 event.stopPropagation();
             });
             this.addEventListener('drop', event => {
-                const draggedEntity = _a$2.#draggedEntity;
+                const draggedEntity = _a$3.#draggedEntity;
                 if (draggedEntity) {
                     this.classList.remove('dragged-over');
                     this.#entity?.addChild(draggedEntity);
@@ -32969,7 +33661,7 @@ class SceneExplorerEntity extends HTMLElement {
                 }
             });
             this.addEventListener('dragend', () => {
-                _a$2.#draggedEntity = null;
+                _a$3.#draggedEntity = null;
             });
         }
     }
@@ -32993,7 +33685,7 @@ class SceneExplorerEntity extends HTMLElement {
         display(this.#htmlLockedButton, entity?.isLockable);
     }
     static setExplorer(explorer) {
-        _a$2.#explorer = explorer;
+        _a$3.#explorer = explorer;
     }
     /*
     static get selectedEntity() {
@@ -33002,11 +33694,11 @@ class SceneExplorerEntity extends HTMLElement {
     */
     select() {
         this.classList.add('selected');
-        const selectedEntity = _a$2.#selectedEntity;
+        const selectedEntity = _a$3.#selectedEntity;
         if (selectedEntity != this) {
             selectedEntity?.unselect();
         }
-        _a$2.#selectedEntity = this;
+        _a$3.#selectedEntity = this;
     }
     display() {
         this.#display();
@@ -33015,7 +33707,7 @@ class SceneExplorerEntity extends HTMLElement {
     #display() {
         const parentEntity = this.#entity?.parent;
         if (parentEntity) {
-            const htmlParent = _a$2.getEntityElement(parentEntity);
+            const htmlParent = _a$3.getEntityElement(parentEntity);
             if (htmlParent) {
                 htmlParent.#display();
                 htmlParent.expand();
@@ -33029,17 +33721,17 @@ class SceneExplorerEntity extends HTMLElement {
         if (entity.hideInExplorer) {
             return null;
         }
-        let entityElement = _a$2.#entitiesHTML.get(entity);
+        let entityElement = _a$3.#entitiesHTML.get(entity);
         if (!entityElement) {
             entityElement = createElement('scene-explorer-entity');
             entityElement.setEntity(entity);
-            _a$2.#entitiesHTML.set(entity, entityElement);
+            _a$3.#entitiesHTML.set(entity, entityElement);
         }
         return entityElement;
     }
     static #handlePropertyChanged(detail) {
         const entity = detail.entity;
-        _a$2.#updateEntity(entity);
+        _a$3.#updateEntity(entity);
         switch (detail.propertyName) {
             case 'visible':
                 this.#updateEntityVisibility(entity);
@@ -33053,17 +33745,17 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     static #handleEntityDeleted(detail) {
-        _a$2.#entitiesHTML.delete(detail.entity);
+        _a$3.#entitiesHTML.delete(detail.entity);
         //console.log('deleted entity', detail.entity);
     }
     static #updateEntity(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
+        const entityElement = _a$3.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#update();
         }
     }
     static #expandEntityChilds(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
+        const entityElement = _a$3.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#expandChilds();
         }
@@ -33076,7 +33768,7 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     static #updateEntityVisibility(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
+        const entityElement = _a$3.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#updateVisibility();
         }
@@ -33090,7 +33782,7 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     static #updateEntityPlaying(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
+        const entityElement = _a$3.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#updatePlaying();
         }
@@ -33115,25 +33807,25 @@ class SceneExplorerEntity extends HTMLElement {
             return;
         }
         for (const child of entity.children) {
-            const childHtml = _a$2.getEntityElement(child);
+            const childHtml = _a$3.getEntityElement(child);
             if (childHtml) {
                 this.#htmlChilds.append(childHtml);
             }
         }
     }
     #titleClick() {
-        if (this == _a$2.#selectedEntity) {
+        if (this == _a$3.#selectedEntity) {
             toggle(this.#htmlChilds);
         }
         else {
             show(this.#htmlChilds);
         }
         this.#expandChilds();
-        _a$2.#explorer?.selectEntity(this.#entity);
+        _a$3.#explorer?.selectEntity(this.#entity);
     }
     #contextMenuHandler(event) {
         if (!event.shiftKey && this.#entity) {
-            _a$2.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+            _a$3.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
             event.preventDefault();
             event.stopPropagation();
         }
@@ -33198,7 +33890,7 @@ class SceneExplorerEntity extends HTMLElement {
         this.#entity.setAnimation(id, name, 1); //TODO: weight
     }
 }
-_a$2 = SceneExplorerEntity;
+_a$3 = SceneExplorerEntity;
 if (window.customElements) {
     customElements.define('scene-explorer-entity', SceneExplorerEntity);
 }
@@ -38029,7 +38721,7 @@ class Decoder {
         }
     }
     decodeHeader(inStream) {
-        let properties, lc, lp, pb, uncompressedSize, dictionarySize;
+        let properties, uncompressedSize, dictionarySize;
         if (inStream.size < 13) {
             return false;
         }
@@ -38037,10 +38729,10 @@ class Decoder {
         // | Properties |	Dictionary Size	|	 Uncompressed Size	 |
         // +------------+----+----+----+----+--+--+--+--+--+--+--+--+
         properties = inStream.readByte();
-        lc = properties % 9;
+        const lc = properties % 9;
         properties = ~~(properties / 9);
-        lp = properties % 5;
-        pb = ~~(properties / 5);
+        const lp = properties % 5;
+        const pb = ~~(properties / 5);
         dictionarySize = inStream.readByte();
         dictionarySize |= inStream.readByte() << 8;
         dictionarySize |= inStream.readByte() << 16;
@@ -38056,13 +38748,13 @@ class Decoder {
         return {
             // The number of high bits of the previous
             // byte to use as a context for literal encoding.
-            lc: lc,
+            lc,
             // The number of low bits of the dictionary
             // position to include in literal_pos_state.
-            lp: lp,
+            lp,
             // The number of low bits of the dictionary
             // position to include in pos_state.
-            pb: pb,
+            pb,
             // Dictionary Size is stored as an unsigned 32-bit
             // little endian integer. Any 32-bit value is possible,
             // but for maximum portability, only sizes of 2^n and
@@ -38094,14 +38786,17 @@ class Decoder {
         this.#rangeDecoder.init();
     }
     decodeBody(inStream, outStream, maxSize) {
-        let state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0, posState, decoder2, len, distance, posSlot, numDirectBits;
+        let state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0, posState, len, distance, posSlot, numDirectBits;
         this.#rangeDecoder.setStream(inStream);
         this.#outWindow.setStream(outStream);
         this.init();
         while (maxSize < 0 || nowPos64 < maxSize) {
             posState = nowPos64 & this.#posStateMask;
             if (this.#rangeDecoder.decodeBit(this.#isMatchDecoders, (state << 4) + posState) === 0) {
-                decoder2 = this.#literalDecoder.getDecoder(nowPos64++, prevByte);
+                const decoder2 = this.#literalDecoder.getDecoder(nowPos64++, prevByte);
+                if (!decoder2) {
+                    return false;
+                }
                 if (state >= 7) {
                     prevByte = decoder2.decodeWithMatchByte(this.#rangeDecoder, this.#outWindow.getByte(rep0));
                 }
@@ -38184,15 +38879,15 @@ class Decoder {
         return true;
     }
     setDecoderProperties(properties) {
-        let value, lc, lp, pb, dictionarySize;
+        let value, dictionarySize;
         if (properties.size < 5) {
             return false;
         }
         value = properties.readByte();
-        lc = value % 9;
+        const lc = value % 9;
         value = ~~(value / 9);
-        lp = value % 5;
-        pb = ~~(value / 5);
+        const lp = value % 5;
+        const pb = ~~(value / 5);
         if (!this.setLcLpPb(lc, lp, pb)) {
             return false;
         }
@@ -39115,8 +39810,8 @@ class Source1SoundManager {
         kv.readText(manifestTxt);
         const list = kv.rootElements;
         const keyArray = Object.keys(list);
-        for (let i = 0; i < keyArray.length; ++i) {
-            const soundKey = keyArray[i];
+        for (const soundKey of keyArray) {
+            //const soundKey = keyArray[i]!;
             const sound = list[soundKey] /*TODO: improve type*/;
             let wave;
             if (sound.rndwave) {
@@ -40479,11 +41174,11 @@ class Source1VtxLoader extends SourceBinaryLoader {
         }
         for (let i = 0; i < stripGroup.numStrips; ++i) {
             reader.seek(baseOffset + stripOffset + i * STRIP_HEADER_SIZE);
-            stripGroup.strips.push(this.#parseStripHeader(reader, vtx));
+            stripGroup.strips.push(this.#parseStripHeader(reader /*, vtx*/));
         }
         return stripGroup;
     }
-    #parseStripHeader(reader, vtx) {
+    #parseStripHeader(reader /*, vtx: SourceVtx*/) {
         const stripHeader = new MdlStripHeader();
         //const baseOffset = reader.tell();removeme
         stripHeader.numIndices = reader.getInt32();
@@ -41490,8 +42185,11 @@ class MapEntity extends Entity {
         output.fromString(outputValue);
         //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
     }
-    setInput(input, parameters /*TODO: improve type*/) {
-    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
+    setInput(input, parameters /*TODO: improve type*/) { }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/no-empty-function */
     getFlag(position) {
         return (this.f >> position) & 1;
     }
@@ -41528,7 +42226,7 @@ class MapEntity extends Entity {
     update(scene, camera, delta) {
         this.m_flLocalTime += delta;
         if (this.parentName) {
-            throw 'uncomment next line';
+            throw new Error('uncomment next line');
             /*const parent = this.map.getEntityByTargetName(this.parentName);
             if (parent) {
                 this.setParent(parent);
@@ -41536,7 +42234,7 @@ class MapEntity extends Entity {
             }
             */
         }
-        this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
+        this.setPosition(vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta)); //TODO removeme : optimize
     }
     setParent(parent) {
         //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
@@ -41640,10 +42338,11 @@ class MapEntityConnection {
             return parameters[4];
         }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     fire(map) {
         const parameters = this.parameters;
         if (parameters) {
-            throw 'uncomment next line';
+            throw new Error('uncomment next line');
             //map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
         }
     }
@@ -44435,7 +45134,7 @@ class SourceAnimation {
         if (!modelBones) {
             return;
         }
-        dynamicProp.parent;
+        //const parentModel = dynamicProp.parent;
         const posRemoveMeTemp = [];
         const quatRemoveMeTemp = [];
         const seqlist = Object.keys(sequences);
@@ -44525,8 +45224,8 @@ class SourceAnimation {
             const quatRemoveMeMe = quatRemoveMe[bone.boneId];
             //bone.boneQuat = this.boneQuat;
             //bone.position = this.position;
-            bone.parent;
-            bone.lowcasename;
+            //const parent = bone.parent;
+            //const boneNameLowerCase = bone.lowcasename;
             //const parentMergedBone = bone.parentMergedBone;
             const dynamicPropBones = dynamicProp.skeleton?._bones; //dynamicProp.bones;
             if (!dynamicPropBones) {
@@ -44549,17 +45248,17 @@ class SourceAnimation {
                 }
             }
             */
-            let b = dynamicPropBones[boneIndex];
+            const b = dynamicPropBones[boneIndex];
             if (b) {
                 if (!b.lockPosition) {
-                    b.position = posRemoveMeMe ?? b._initialPosition;
+                    b.setPosition(posRemoveMeMe ?? b._initialPosition);
                 }
                 if (!b.lockRotation) {
-                    b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
+                    b.setOrientation(quatRemoveMeMe ?? b._initialQuaternion);
                 }
             }
             else {
-                throw 'fix me';
+                throw new Error('fix me');
                 /*
                 b = new Bone(dynamicProp.skeleton);
                 dynamicProp.skeleton._bones[boneIndex] = b;
@@ -44638,13 +45337,23 @@ class FlexController {
 //TODOv3 remove parse* function
 const STUDIO_FLEX_OP_CONST = 1;
 const STUDIO_FLEX_OP_FETCH1 = 2;
+//const STUDIO_FLEX_OP_FETCH2 = 3;
 const STUDIO_FLEX_OP_ADD = 4;
 const STUDIO_FLEX_OP_SUB = 5;
 const STUDIO_FLEX_OP_MUL = 6;
 const STUDIO_FLEX_OP_DIV = 7;
 const STUDIO_FLEX_OP_NEG = 8;
+//const STUDIO_FLEX_OP_EXP = 9;
+//const STUDIO_FLEX_OP_OPEN = 10;
+//const STUDIO_FLEX_OP_CLOSE = 11;
+//const STUDIO_FLEX_OP_COMMA = 12;
 const STUDIO_FLEX_OP_MAX = 13;
 const STUDIO_FLEX_OP_MIN = 14;
+//const STUDIO_FLEX_OP_2WAY_0 = 15;
+//const STUDIO_FLEX_OP_2WAY_1 = 16;
+//const STUDIO_FLEX_OP_NWAY = 17;
+//const STUDIO_FLEX_OP_COMBO = 18;
+//const STUDIO_FLEX_OP_DOMINATE = 19;
 const STUDIO_FLEX_OP_DME_LOWER_EYELID = 20;
 const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
 const MAX_STUDIO_FLEX_DESC = 1024;
@@ -44865,16 +45574,18 @@ class SourceMdl {
         }
         const modelGroup = this.modelGroups[externalId];
         if (modelGroup) {
-            const p = new Promise(async (resolve) => {
-                const mdlLoader = getLoader('Source1MdlLoader');
-                const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
-                if (mdl) {
-                    //this.externalMdlsV2[externalId] = mdl;
-                    resolve(mdl);
-                }
-                else {
-                    resolve(null);
-                }
+            const p = new Promise(resolve => {
+                (async () => {
+                    const mdlLoader = getLoader('Source1MdlLoader');
+                    const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
+                    if (mdl) {
+                        //this.externalMdlsV2[externalId] = mdl;
+                        resolve(mdl);
+                    }
+                    else {
+                        resolve(null);
+                    }
+                })();
             });
             this.externalMdlsV2[externalId] = p;
             return p;
@@ -45005,7 +45716,12 @@ class SourceMdl {
                             break;
                         case STUDIO_FLEX_OP_DME_LOWER_EYELID:
                             pCloseLidV = this.flexControllers[op.index];
-                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            if (pCloseLidV) {
+                                flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            }
+                            else {
+                                flCloseLidV = 0;
+                            }
                             pCloseLid = this.flexControllers[stack[k - 1]];
                             flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
                             nEyeUpDownIndex = stack[k - 3];
@@ -45025,7 +45741,12 @@ class SourceMdl {
                             break;
                         case STUDIO_FLEX_OP_DME_UPPER_EYELID:
                             pCloseLidV = this.flexControllers[op.index];
-                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            if (pCloseLidV) {
+                                flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            }
+                            else {
+                                flCloseLidV = 0;
+                            }
                             pCloseLid = this.flexControllers[stack[k - 1]];
                             flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
                             nEyeUpDownIndex = stack[k - 3];
@@ -45084,9 +45805,6 @@ class SourceMdl {
     }
     getAttachments() {
         return this.attachments;
-    }
-    getAttachmentsNames(out) {
-        return Array.from(this.getAttachments());
     }
     getAttachmentById(attachmentId) {
         const list = this.getAttachments();
@@ -45274,6 +45992,7 @@ class StudioCompressedIkError {
         reader.seek(this.#offset + this.#offsets[index]);
         let valid = 0;
         let total = 0;
+        //let value;
         let k = frame;
         let count = 0;
         const scale = this.#scale[index];
@@ -45302,6 +46021,7 @@ class StudioCompressedIkError {
         reader.seek(this.#offset);
         let valid = 0;
         let total = 0;
+        //let value;
         let k = frame;
         let count = 0;
         const scale = this.#scale[index];
@@ -45441,18 +46161,22 @@ class Source1MaterialManager {
     }
     static async getMaterialList() {
         const repoList = [];
+        // eslint-disable-next-line prefer-const
         for (let [repositoryName, repository] of this.#fileListPerRepository) {
-            console.error(repositoryName, repository);
-            if (repository == null) {
-                repository = new Promise(async (resolve) => {
-                    try {
-                        const manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
-                        const response = await customFetch(manifestUrl);
-                        resolve(await response.json());
-                    }
-                    catch (e) {
-                        resolve({ files: [] });
-                    }
+            //console.error(repositoryName, repository);
+            if (repository === null) {
+                repository = new Promise(resolve => {
+                    (async () => {
+                        try {
+                            const manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
+                            const response = await customFetch(manifestUrl);
+                            resolve(await response.json());
+                            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                        }
+                        catch (e) {
+                            resolve({ files: [] });
+                        }
+                    })();
                 });
                 this.#fileListPerRepository.set(repositoryName, repository);
             }
@@ -45462,7 +46186,7 @@ class Source1MaterialManager {
     }
 }
 
-var _a$1;
+var _a$2;
 class Source1ModelInstance extends Entity {
     isSource1ModelInstance = true;
     #poseParameters = new Map();
@@ -45526,12 +46250,12 @@ class Source1ModelInstance extends Entity {
             return null;
         }
         const ret = super.addChild(child);
-        child.skeleton?.setParentSkeleton(this.#skeleton ?? null);
+        void child.skeleton?.setParentSkeleton(this.#skeleton ?? null);
         return ret;
     }
     removeChild(child) {
         super.removeChild(child);
-        child.skeleton?.setParentSkeleton(null);
+        void child.skeleton?.setParentSkeleton(null);
     }
     set skin(skin) {
         this.setSkin(skin);
@@ -45648,28 +46372,32 @@ class Source1ModelInstance extends Entity {
     }
     update(scene, camera, delta) {
         if (this.#skeleton && this.isPlaying()) {
-            this.#playSequences(delta * _a$1.#animSpeed * this.animationSpeed);
+            this.#playSequences(delta * _a$2.#animSpeed * this.animationSpeed);
             this.#skeleton.setBonesMatrix();
         }
         for (const mesh of this.#meshes) {
             if (mesh.skeleton) {
                 mesh.skeleton.setBonesMatrix();
+                mesh.updateUniformValue('uBoneMatrix');
+                mesh.updateUniformValue('boneMatrix');
             }
         }
     }
     async updateAsync(scene, camera, delta) {
         if (this.#skeleton && this.isPlaying()) {
-            await this.#playSequences(delta * _a$1.#animSpeed * this.animationSpeed);
+            await this.#playSequences(delta * _a$2.#animSpeed * this.animationSpeed);
             this.#skeleton.setBonesMatrix();
         }
         for (const mesh of this.#meshes) {
             if (mesh.skeleton) {
                 mesh.skeleton.setBonesMatrix();
+                mesh.updateUniformValue('uBoneMatrix');
+                mesh.updateUniformValue('boneMatrix');
             }
         }
     }
     async #playSequences(delta) {
-        if (_a$1.useNewAnimSystem || this.useNewAnimSystem) {
+        if (_a$2.useNewAnimSystem || this.useNewAnimSystem) {
             this.frame += delta;
             this.#animate();
             return;
@@ -45690,12 +46418,7 @@ class Source1ModelInstance extends Entity {
                     if (sequence) {
                         seqContext.s = sequence;
                         seqContext.startTime = now;
-                        if (sequence.autolayer) {
-                            const autoLayerList = sequence.autolayer;
-                            for (let autoLayerIndex = 0; autoLayerIndex < autoLayerList.length; ++autoLayerIndex) {
-                                autoLayerList[autoLayerIndex];
-                            }
-                        }
+                        if (sequence.autolayer) ;
                     }
                     /*
                     this.sourceModel.mdl.getSequence(sequenceName).then((sequence) => {
@@ -45730,7 +46453,7 @@ class Source1ModelInstance extends Entity {
                 sequence.play(this); //TODOv2: play autolayer ?
             }
         }
-        this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences);
+        this.anim.animate2(this, this.#poseParameters, this.getPosition( /*TODO: optimize*/), this.getOrientation( /*TODO: optimize*/), this.sequences);
     }
     #animate() {
         const skeleton = this.#skeleton;
@@ -45741,9 +46464,9 @@ class Source1ModelInstance extends Entity {
             vec3.zero(bone.tempPosition);
             quat.identity(bone.tempQuaternion);
         }
-        vec3.create(); //TODO:optimize
-        quat.create();
-        for (const [_, animationDescription] of this.#animations) {
+        //const position = vec3.create();//TODO:optimize
+        //const quaternion = quat.create();
+        for (const [, animationDescription] of this.#animations) {
             if (!animationDescription) {
                 continue;
             }
@@ -45830,10 +46553,10 @@ class Source1ModelInstance extends Entity {
         }
         for (const bone of skeleton._bones) {
             if (!bone.lockPosition) {
-                bone.position = bone.tempPosition;
+                bone.setPosition(bone.tempPosition);
             }
             if (!bone.lockRotation) {
-                bone.quaternion = bone.tempQuaternion;
+                bone.setOrientation(bone.tempQuaternion);
             }
         }
     }
@@ -45843,10 +46566,8 @@ class Source1ModelInstance extends Entity {
     }
     async #updateMaterials() {
         for (const mesh of this.#meshes) {
-            let material;
-            let materialName;
-            materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
-            material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+            const materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
+            let material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
             if (this.#materialOverride) {
                 material = this.#materialOverride;
             }
@@ -45862,22 +46583,20 @@ class Source1ModelInstance extends Entity {
             }
         }
     }
-    async getSkins() {
+    getSkins() {
         const skinReferences = this.sourceModel.mdl.skinReferences;
         const skins = new Set();
         for (const skin of skinReferences.keys()) {
             skins.add(String(skin));
         }
-        return skins;
+        return Promise.resolve(skins);
     }
     async getMaterialsName(skin) {
-        this.sourceModel.mdl.skinReferences;
+        //const skinReferences = this.sourceModel.mdl.skinReferences;
         const materials = new Set();
         for (const mesh of this.#meshes) {
-            let material;
-            let materialName;
-            materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
-            material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+            const materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
+            const material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
             if (material) {
                 materials.add(material.path);
             }
@@ -45906,10 +46625,10 @@ class Source1ModelInstance extends Entity {
                         const geometry = modelMesh.geometry;
                         let mesh;
                         if (this.#skeleton) {
-                            mesh = new SkeletalMesh({ geometry: geometry.clone(), material: _a$1.defaultMaterial, skeleton: this.#skeleton });
+                            mesh = new SkeletalMesh({ geometry: geometry.clone(), material: _a$2.defaultMaterial, skeleton: this.#skeleton });
                         }
                         else {
-                            mesh = new Mesh({ geometry: geometry, material: _a$1.defaultMaterial });
+                            mesh = new Mesh({ geometry: geometry, material: _a$2.defaultMaterial });
                         }
                         mesh.name = geometry.properties.getString('name') ?? '';
                         mesh.properties.setObject('sourceModelMesh', modelMesh.mesh);
@@ -46122,13 +46841,13 @@ class Source1ModelInstance extends Entity {
         for (const skin of skins) {
             const item = Object.create(null);
             item.name = skin;
-            item.f = () => this.skin = String(skin);
+            item.f = () => { this.skin = String(skin); };
             skinMenu.push(item);
         }
         return Object.assign(super.buildContextMenu(), {
             Source1ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
+            tint: { i18n: '#tint', f: (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
             reset_tint: { i18n: '#reset_tint', f: (entity) => entity.setTint(null), disabled: this.#tint === undefined },
             animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
@@ -46149,7 +46868,7 @@ class Source1ModelInstance extends Entity {
     getParentModel() {
         return this;
     }
-    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones) {
         const hitboxes = this.getHitboxes();
         const hitBoxId = getRandomInt /*TODO: use random int of the particle collection*/(hitboxes.length);
         const hitbox = hitboxes[hitBoxId];
@@ -46173,7 +46892,7 @@ class Source1ModelInstance extends Entity {
         }
     }
     set quaternion(quaternion) {
-        super.quaternion = quaternion;
+        super.setOrientation(quaternion);
         if (this.#skeleton) {
             this.#skeleton.dirty();
         }
@@ -46198,10 +46917,11 @@ class Source1ModelInstance extends Entity {
     #refreshFlexes() {
         this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
         for (const mesh of this.#meshes) {
-            if (mesh && mesh.geometry) {
-                const attribute = mesh.geometry.getAttribute('aVertexPosition');
+            const meshGeometry = mesh.getGeometry();
+            if (meshGeometry) {
+                const attribute = meshGeometry.getAttribute('aVertexPosition');
                 const newAttribute = attribute.clone();
-                mesh.geometry.setAttribute('aVertexPosition', newAttribute);
+                meshGeometry.setAttribute('aVertexPosition', newAttribute);
                 const sourceModelMesh = mesh.properties.getObject('sourceModelMesh');
                 this.#updateArray(newAttribute._array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
             }
@@ -46226,7 +46946,7 @@ class Source1ModelInstance extends Entity {
                         //console.error(b);
                         const w = w1 * (1.0 - b) + b * w3;
                         const flDelta = vertAnim.flDelta;
-                        vertAnim.flNDelta;
+                        //const flNDelta = vertAnim.flNDelta;
                         //const vertexIndex = vertAnim.index * 3;
                         //const vertexIndexArray = this.verticesPositionToto[vertAnim.index];
                         const vertexIndex = (vertexoffset + vertAnim.index) * 3;
@@ -46282,7 +47002,7 @@ class Source1ModelInstance extends Entity {
     replaceMaterial(material, recursive = true) {
         super.replaceMaterial(material, recursive);
         for (const mesh of this.#meshes) {
-            mesh.material = material;
+            mesh.setMaterial(material);
         }
     }
     resetMaterial(recursive = true) {
@@ -46374,6 +47094,7 @@ class Source1ModelInstance extends Entity {
             const preTransformRoot = quat.fromEuler(quat.create(), 90, 0, 90);
             for (let frame = 0; frame < frameCount; frame++) {
                 const animationFrame = new AnimationFrame(frame);
+                //const time = Math.round(frame * 10000 / frameRate);
                 const bonePositions = new Array(bones.length);
                 const boneOrientations = new Array(bones.length);
                 const boneFlags = new Array(bones.length);
@@ -46474,9 +47195,10 @@ class Source1ModelInstance extends Entity {
         }
     }
 }
-_a$1 = Source1ModelInstance;
+_a$2 = Source1ModelInstance;
 registerEntity(Source1ModelInstance);
 
+//const _SOURCE_MODEL_DEBUG_ = false; // removeme
 class SourceModel {
     repository;
     fileName;
@@ -46596,12 +47318,14 @@ class SourceModel {
             const quatRemoveMeTemp = [];
             const boneFlags = [];
             //const poseParameters = {};
+            /*
             for (const [boneId, bone] of animation.bones.entries()) {
                 //posRemoveMeTemp.push(vec3.clone(bone.refPosition));
                 //quatRemoveMeTemp.push(quat.clone(bone.refQuaternion));
                 //posRemoveMeTemp.push(vec3.create());
                 //quatRemoveMeTemp.push(quat.create());
             }
+            */
             for (let frame = 0; frame < frameCount; frame++) {
                 const animationFrame = new AnimationFrame(frame);
                 const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
@@ -46800,7 +47524,7 @@ class Source1VmtLoaderClass {
             if (material) {
                 for (const insertIndex in insert) {
                     material.variables.set(insertIndex, insert[insertIndex]);
-                    throw 'material.parameters[insertIndex] = insert[insertIndex];';
+                    throw new Error('material.parameters[insertIndex] = insert[insertIndex];');
                 }
             }
             //materialList[fileNameRemoveMe] = material;removeme
@@ -46873,7 +47597,7 @@ class SEBaseBspLump {
         this.lumpLen = length;
     }
     init() {
-        throw 'remove me';
+        throw new Error('remove me');
         /*
         if (this.reader.getString(4, this.lumpOffset) == 'LZMA') {
             const uncompressedSize = this.reader.getUint32();
@@ -46973,8 +47697,8 @@ class SEBaseBspLump {
         }
     }
     */
-    initDatas() {
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    initDatas() { }
 }
 /**
  * BSP lump
@@ -47108,11 +47832,13 @@ class SourceBSPLumpPropStaticDirectory {
     leaf = [];
     props = [];
 }
+/*
 class SourceBSPLumpPropDetailDirectory {
     name = [];
     leaf = [];
     props = [];
 }
+*/
 class SourceBSPLumpPropStatic {
     position = vec3.create();
     angles = vec3.create();
@@ -47312,6 +48038,41 @@ class SourceBSPLumpEntity {
     str = '';
     kv;
 }
+//TODO: put somewhere else
+/*
+export function parseVector(str: string): vec3 | null {
+    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) * /i;
+
+    const result = regex.exec(str);
+    if (result) {
+        return vec3.fromValues(Number(result[1]), Number(result[3]), Number(result[5]));
+    }
+    return null;
+}
+*/
+//TODO: put somewhere else
+/*
+function parseAngles(str: string) {
+    const angles = parseVector(str)
+    if (angles) {
+        return vec3.scale(angles, angles, Math.PI / 180);
+    }
+    return null;
+}
+*/
+//angles[PITCH, YAW, ROLL]
+/*
+function AngleVectors(angles: vec3, forward: vec3) {
+    const sy = Math.sin(angles[1]);
+    const cy = Math.cos(angles[1]);
+    const sp = Math.sin(angles[0]);
+    const cp = Math.cos(angles[0]);
+
+    forward[0] = cp * cy;
+    forward[1] = cp * sy;
+    forward[2] = -sp;
+}
+*/
 
 /**
  * BSP Tree
@@ -47353,7 +48114,7 @@ class Source1BspTree {
             let index = model.headnode;
             let node = null;
             let plane = null;
-            vec3.create();
+            //const normal = vec3.create();
             let dist = 0;
             while (index >= 0) {
                 node = lumpNodes[index];
@@ -47418,6 +48179,8 @@ class Source1BspTree {
 /**
  * Light Map
  */
+//export const SELightMap = function (height: number, width: number) { }
+var _a$1;
 let lightMapNodeId = 0;
 /**
  * TODO
@@ -47438,30 +48201,32 @@ class SELightMapNode {
         this.height = height;
         this.width = width;
     }
-    setContent(content) {
+    /*
+    setContent(content: never) {
         if (this.sub1) {
             return false;
         }
         this.content = content;
     }
-    split(x, y) {
+    */
+    #split(x, y) {
         if (this.content)
-            return false;
+            return;
         if (this.filled)
-            return false;
+            return;
         if (y >= this.height)
-            return false;
+            return;
         if (x >= this.width)
-            return false;
+            return;
         if (y != 0 && x != 0)
-            return false;
+            return;
         if (y == 0) { /* splitting vertically */
-            this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
-            this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
+            this.sub1 = new _a$1(this.x, this.y, x, this.height);
+            this.sub2 = new _a$1(this.x + x, this.y, this.width - x, this.height);
         }
         else { /* splitting horizontally */
-            this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
-            this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
+            this.sub1 = new _a$1(this.x, this.y, this.width, y);
+            this.sub2 = new _a$1(this.x, this.y + y, this.width, this.height - y);
         }
     }
     allocate(width, height) {
@@ -47497,10 +48262,10 @@ class SELightMapNode {
             return this;
         }
         if ((height / this.height) > (width / this.width)) {
-            this.split(width, 0);
+            this.#split(width, 0);
         }
         else {
-            this.split(0, height);
+            this.#split(0, height);
         }
         if (this.sub1) {
             node = this.sub1.allocate(width, height);
@@ -47520,7 +48285,7 @@ class SELightMapNode {
         return null;
     }
     toString() {
-        return this.id;
+        return String(this.id);
     }
     checkFull() {
         if (this.sub1?.filled && this.sub2?.filled) {
@@ -47540,8 +48305,9 @@ class SELightMapNode {
         return 0;
     }
 }
+_a$1 = SELightMapNode;
 
-const DISPLACEMENT_DELTA = 1.0; // max distance from start position
+//const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 const LIGTH_MAP_TEXTURE_SIZE = 1024;
 class SourceBSP extends World {
     repository;
@@ -47618,8 +48384,8 @@ class SourceBSP extends World {
                 Source1ModelManager.createInstance(this.repository, propName, true).then((model) => {
                     if (model) {
                         this.#staticProps.addChild(model);
-                        model.position = prop.position;
-                        model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
+                        model.setPosition(prop.position);
+                        model.setOrientation(AngleQuaternion(prop.angles, tempQuaternion));
                         model.skin = String(prop.skin);
                     }
                 });
@@ -47649,7 +48415,10 @@ class SourceBSP extends World {
                 }
                 if (entity.classname == 'info_player_teamspawn') {
                     if (!this.#characterSpawn) {
-                        this.#characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
+                        const v = ParseVector(vec3.create(), entity.origin);
+                        if (v) {
+                            this.#characterSpawn = v;
+                        }
                     }
                 }
             }
@@ -47670,7 +48439,7 @@ class SourceBSP extends World {
             return;
         }
         face.initialized = true;
-        this.getLumpData(LUMP_FACES);
+        //const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
         const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
         const lumpTexData = this.getLumpData(LUMP_TEXDATA);
         const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
@@ -47761,7 +48530,7 @@ class SourceBSP extends World {
             return;
         }
         face.initialized = true;
-        this.getLumpData(LUMP_FACES);
+        //const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
         const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
         const lumpTexData = this.getLumpData(LUMP_TEXDATA);
         const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
@@ -47809,29 +48578,35 @@ class SourceBSP extends World {
             if (edge === undefined) {
                 continue;
             }
-            let vertice1;
+            let vertice1 /*, vertice2*/;
             if (surfedge <= 0) {
                 vertice1 = lumpVertices[edge.f];
-                lumpVertices[edge.s];
+                //vertice2 = lumpVertices[edge.s];
             }
             else {
-                lumpVertices[edge.f];
+                //vertice2 = lumpVertices[edge.f];
                 vertice1 = lumpVertices[edge.s];
             }
             if (vertice1) {
                 origVertices.push(vertice1);
             }
         }
+        //const origVertices2 = [[origVertices[0], origVertices[1]], [origVertices[2], origVertices[3]]];//TODOv3removeme
+        //let foundRemoveme = false;
         for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
             const vvremoveme = origVertices[0];
             if (!vvremoveme) {
                 continue;
             }
+            /*
             if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
                 && Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
-                && Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA) {
+                && Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA
+            ) {
+                foundRemoveme = true;
                 break;
             }
+            */
             origVertices.push(origVertices.shift());
         }
         if (origVertices.length < 4) {
@@ -47862,19 +48637,10 @@ class SourceBSP extends World {
                     const iMax = iMin + subdiv;
                     const jMin = subdiv * j;
                     const jMax = jMin + subdiv;
-                    const v1 = tesselateVertices[iMin][jMin];
-                    const v2 = tesselateVertices[iMax][jMin];
-                    const v3 = tesselateVertices[iMin][jMax];
-                    const v4 = tesselateVertices[iMax][jMax];
-                    const iMid = iMin + subdiv2;
-                    const jMid = jMin + subdiv2;
-                    if (v1 && v2 && v3 && v4) {
-                        Vec3Middle(tesselateVertices[iMid][jMin], v1, v2);
-                        Vec3Middle(tesselateVertices[iMid][jMax], v3, v4);
-                        const s3 = Vec3Middle(tesselateVertices[iMin][jMid], v1, v3);
-                        const s4 = Vec3Middle(tesselateVertices[iMax][jMid], v2, v4);
-                        Vec3Middle(tesselateVertices[iMid][jMid], s3, s4);
-                    }
+                    tesselateVertices[iMin][jMin];
+                    tesselateVertices[iMax][jMin];
+                    tesselateVertices[iMin][jMax];
+                    tesselateVertices[iMax][jMax];
                 }
             }
             subdiv = subdiv2;
@@ -47894,6 +48660,7 @@ class SourceBSP extends World {
                 ++vertexIndex;
             }
         }
+        //const verticesCount = 0;
         subdiv = Math.pow(2, dispInfo.power);
         for (let i = 0; i < subdiv; ++i) {
             for (let j = 0; j < subdiv; ++j) {
@@ -48807,7 +49574,9 @@ const MESH_VERTEX_DATA_STRUCT_SIZE = 4 + 4 * MAX_NUM_LODS; // Size in bytes of m
 const MESH_STRUCT_SIZE = 80 + MESH_VERTEX_DATA_STRUCT_SIZE;
 const EYEBALL_STRUCT_SIZE = 172; // Size in bytes of mstudioeyeball_t
 const STUDIO_VERT_ANIM_NORMAL = 0;
+//const STUDIO_VERT_ANIM_WRINKLE = 1;
 const STUDIO_VERT_ANIM_NORMAL_STRUCT_SIZE = 16; // Size in bytes of mstudiovertanim_t
+//const STUDIO_VERT_ANIM_WRINKLE_STRUCT_SIZE = STUDIO_VERT_ANIM_NORMAL_STRUCT_SIZE + 2;// Size in bytes of mstudiovertanim_wrinkle_t
 const TEXTURE_STRUCT_SIZE = 64;
 const STUDIO_MODEL_GROUP_STRUCT_SIZE = 8;
 const STUDIO_ANIM_DESC_STRUCT_SIZE = 25 * 4; // Size in bytes of mstudioanimdesc_t
@@ -49233,11 +50002,11 @@ class Source1MdlLoader extends SourceBinaryLoader {
         const nameOffset = reader.getInt32() + startOffset;
         // Ensure we have enough data for the name
         const texture = new MdlTexture();
-        reader.getInt32();
-        reader.getInt32();
-        reader.getInt32();
-        reader.getInt32();
-        reader.getInt32();
+        /*const flags = */ reader.getInt32(); // TODO; use flags
+        /*const used = */ reader.getInt32(); // TODO; use used
+        /*const unused = */ reader.getInt32(); // TODO; use unused
+        /*const material = */ reader.getInt32(); // TODO; use material
+        /*const client_material = */ reader.getInt32(); // TODO: use client_material
         texture.name = reader.getNullString(nameOffset);
         texture.originalName = texture.name;
         /*
@@ -49291,25 +50060,32 @@ class Source1MdlLoader extends SourceBinaryLoader {
         animDesc.flags = reader.getInt32();
         animDesc.numframes = reader.getInt32();
         animDesc.nummovements = reader.getInt32();
-        reader.getInt32();
+        /*const movementOffset = */ reader.getInt32(); // TODO: use movementOffset
         reader.skip(24);
         animDesc.animblock = reader.getInt32();
         animDesc.animIndex = reader.getInt32();
         animDesc.numikrules = reader.getInt32();
-        reader.getInt32();
-        reader.getInt32();
-        reader.getInt32();
-        reader.getInt32() + startOffset;
+        /*const ikruleOffset = */ reader.getInt32(); // TODO: use ikruleOffset
+        /*const animblockikruleOffset = */ reader.getInt32(); //TODO: use animblockikruleOffset
+        /*const numLocalHierarchy = */ reader.getInt32(); // TODO: use numLocalHierarchy
+        /*const localHierarchyOffset = */ reader.getInt32(); /*+ startOffset;*/ // TODO: use localHierarchyOffset
         animDesc.sectionOffset = reader.getInt32();
         animDesc.sectionframes = reader.getInt32();
         animDesc.zeroframespan = reader.getInt16();
         animDesc.zeroframecount = reader.getInt16();
         //console.log(animDesc.zeroframecount);
         animDesc.zeroframeOffset = reader.getInt32();
-        reader.getFloat32();
+        /*const spanStallTime = */ reader.getFloat32(); //TODO; use spanStallTime
+        //TODO
+        /*
+        let numSection;
         if (animDesc.sectionframes != 0) {
-            Math.ceil(animDesc.numframes / animDesc.sectionframes) + 1;
+            numSection = Math.ceil(animDesc.numframes / animDesc.sectionframes) + 1;
+        } else {
+            numSection = 1;
         }
+        numSection = 0;
+        */
         /*
         for (let i = 0; i < numSection; i++) {
             const section = this._parseAnimSection(reader, animDesc, i);//TODOv3
@@ -49735,7 +50511,7 @@ function parseCompressedIkError(reader, offset) {
     reader.seek(offset);
     const scale = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32(),];
     const offsets = [reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(), reader.getInt16(),];
-    reader.getInt32();
+    /*const localAnimIndex: int32 = */ reader.getInt32(); // TODO: use localAnimIndex
     const values = [null, null, null, null, null, null,];
     for (let i = 0; i < 6; ++i) {
         if (offsets[i] != 0) {
@@ -49790,27 +50566,23 @@ class ParticleColor {
         this.r = color.r;
         this.g = color.g;
         this.b = color.b;
-        return this;
     }
     setColorAlpha(color) {
         this.r = color.r;
         this.g = color.g;
         this.b = color.b;
         this.a = color.a;
-        return this;
     }
     fromVec3(v) {
         this.r = v[0];
         this.g = v[1];
         this.b = v[2];
-        return this;
     }
     fromVec4(v) {
         this.r = v[0];
         this.g = v[1];
         this.b = v[2];
         this.a = v[3];
-        return this;
     }
     getRed() {
         return Math.round(this.r * 255.0);
@@ -50853,6 +51625,8 @@ const RANDOM_FLOAT_MASK = MAX_RANDOM_FLOATS - 1;
 
 var _a;
 const MAX_PARTICLE_CONTROL_POINTS = 64;
+//const RESET_DELAY = 0;
+//let systemNumber = 0;
 class ParamType {
     param;
     type;
@@ -51528,7 +52302,7 @@ class Source1ParticleSystem extends Entity {
             for (let cpId = first; cpId <= last; ++cpId) {
                 const cp = child.getOwnControlPoint(cpId);
                 if (cp) {
-                    cp.setQuaternion(orientation);
+                    cp.setOrientation(orientation);
                     //The control point is now world positioned
                     //Therefore we remove it from the hierarchy
                     //cp.remove();
@@ -51797,8 +52571,8 @@ class SourcePCF {
         return system;
     }
     addOperators(system, list, listType) {
-        for (let i = 0; i < list.length; ++i) {
-            const ope = list[i] /*TODO: check actual value*/;
+        for (const ope of list) {
+            //const ope = list[i] as CDmxElement/*TODO: check actual value*/;
             if (ope.type == 'DmeParticleOperator') {
                 const operator = Source1ParticleOperators.getOperator(system, ope.name);
                 if (operator) {
@@ -51827,6 +52601,7 @@ class SourcePCF {
 const DmeElement = 'DmeElement';
 const DmeParticleSystemDefinition = 'DmeParticleSystemDefinition';
 
+//const _PCF_LOADER_DEBUG_ = false;//TODOv3 remove
 const data_size = [
     0, 4, 4, 4, 1, 0, 0, 4, 4, 8, 12, 16, 12, 16, 64,
     4, 4, 4, 1, 0, 0, 4, 4, 8, 12, 16, 12, 16, 64,
@@ -51912,7 +52687,7 @@ class Source1PcfLoader extends SourceBinaryLoader {
             attribute.typeName = this.getString(pcf, reader.getUint32());
         }
         attribute.type = reader.getUint8();
-        if (attribute.type > 14) {
+        if (attribute.type >= CDmxAttributeType.ElementArray) {
             attribute.value = this.#parseArray(reader, pcf, attribute.type);
         }
         else {
@@ -51975,7 +52750,7 @@ class Source1PcfLoader extends SourceBinaryLoader {
                 break;
             default:
                 console.error('unknown type', type, 'in #parseValue', pcf);
-                throw 'fix me';
+                throw new Error('fix me');
         }
         return value;
     }
@@ -52100,7 +52875,7 @@ function pcfToSTring(pcf) {
     return { text: lines.join('\n'), elementsLine: context.elementsLine };
 }
 function cDmxElementsToSTring(elements, context) {
-    let lines = [];
+    const lines = [];
     for (const element of elements) {
         if (context.inlineSubElements.get(element)) {
             lines.push(cDmxElementToSTring(element, context) + ',');
@@ -52125,7 +52900,7 @@ function guidToString(bytes) {
         .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
 }
 function cDmxElementToSTring(element, context) {
-    let lines = [];
+    const lines = [];
     if (element) {
         context.elementsLine.set(element.guid2, context.line);
     }
@@ -52349,7 +53124,7 @@ class FuncDoor extends MapEntity {
             this.map.funcBrushesRemoveMe.push(this.model);
             //}
         }
-        kvElement /*TODO: fix that*/.movedistance;
+        //const movedistance = (kvElement as any/*TODO: fix that*/).movedistance;
         this.speed = kvElement /*TODO: fix that*/.speed;
         vec3.zero(this.moveDir);
         const moveDir = ParseAngles(vec3.create() /*TODO: optimize*/, kvElement /*TODO: fix that*/.movedir);
@@ -52397,7 +53172,7 @@ class FuncDoor extends MapEntity {
         if (this.m_flMoveDoneTime <= this.m_flLocalTime && this.m_flMoveDoneTime > 0) {
             this.setMoveDoneTime(-1);
             //vec3.copy(this.origin, this.finalDest);
-            this.position = this.finalDest;
+            this.setPosition(this.finalDest);
             vec3.set(this.m_vecVelocity, 0, 0, 0);
             this.moveDone();
         }
@@ -52448,7 +53223,7 @@ class MapEntityAmbientLight extends MapEntity {
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         this.map.addChild(this.#ambientLight);
-        this.#ambientLight.position = this._position;
+        this.#ambientLight.setPosition(this._position);
     }
     setKeyValue(key, value) {
         const ambientLight = this.#ambientLight;
@@ -52491,7 +53266,7 @@ class MapEntityLight extends MapEntity {
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         this.map.addChild(this.pointLight);
-        this.pointLight.position = this._position;
+        this.pointLight.setPosition(this._position);
     }
     setKeyValue(key, value) {
         const pointLight = this.pointLight;
@@ -52529,8 +53304,8 @@ class PropDynamic extends MapEntity {
             if (model) {
                 model.skin = skin;
                 if (model) {
-                    model.position = this._position;
-                    model.quaternion = this._quaternion;
+                    model.setPosition(this._position);
+                    model.setOrientation(this._quaternion);
                 }
                 if (kvElement /*TODO: fix that*/.defaultanim) {
                     model.playSequence(kvElement /*TODO: fix that*/.defaultanim);
@@ -52588,7 +53363,7 @@ class PropDynamic extends MapEntity {
     setInput(inputName, parameters /*TODO: improve type*/) {
         switch (inputName.toLowerCase()) {
             case 'skin':
-                this.#model?.setSkin(parameters);
+                void this.#model?.setSkin(parameters);
                 break;
         }
     }
@@ -52596,8 +53371,8 @@ class PropDynamic extends MapEntity {
         super.update(scene, camera, delta);
         const model = this.#model; //fixme this
         if (model) {
-            model.position = this._position;
-            model.quaternion = this._quaternion;
+            model.setPosition(this._position);
+            model.setOrientation(this._quaternion);
         }
     }
 }
@@ -52616,13 +53391,13 @@ class PropLightSpot extends MapEntity {
     _angles = vec3.fromValues(-90, 0, 0);
     constructor(params) {
         super(params);
-        this.quaternion = SPOTLIGHT_DEFAULT_QUATERNION;
+        this.setOrientation(SPOTLIGHT_DEFAULT_QUATERNION);
     }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         this.map.addChild(this.spotLight);
-        this.spotLight.position = this._position;
-        this.spotLight.quaternion = this._quaternion;
+        this.spotLight.setPosition(this._position);
+        this.spotLight.setOrientation(this._quaternion);
     }
     setKeyValue(key, value) {
         const spotLight = this.spotLight;
@@ -52671,8 +53446,8 @@ class PropLightSpot extends MapEntity {
         AngleQuaternion(this._angles, tempQuaternion$1);
         quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion$1);
     }
-    setInput(input, parameters /*TODO: improve type*/) {
-        throw 'code me';
+    setInput( /*input: string, parameters: any/*TODO: improve type*/) {
+        throw new Error('code me');
         /*
         switch (inputName.toLowerCase()) {
             case 'skin':
@@ -52683,7 +53458,7 @@ class PropLightSpot extends MapEntity {
     update(scene, camera, delta) {
         super.update(scene, camera, delta);
         this.spotLight.setPosition(this._position);
-        this.spotLight.quaternion = this._quaternion;
+        this.spotLight.setOrientation(this._quaternion);
     }
 }
 MapEntities.registerEntity('light_spot', PropLightSpot);
@@ -52695,7 +53470,7 @@ class SkyCamera extends MapEntity {
         super.setKeyValues(kvElement);
         const scale = kvElement /*TODO: fix that*/.scale;
         this.camera.scale = vec3.fromValues(scale, scale, scale);
-        this.camera.position = this._position;
+        this.camera.setPosition(this._position);
     }
 }
 MapEntities.registerEntity('sky_camera', SkyCamera);
@@ -52825,9 +53600,9 @@ class Source1VtfLoader extends SourceBinaryLoader {
         }
     }
     #parseResEntries(reader, vtf) {
-        reader.tell();
-        for (let resIndex = 0; resIndex < vtf.resEntries.length; ++resIndex) {
-            this.#parseResEntry(reader, vtf, vtf.resEntries[resIndex]);
+        //const startOffset = reader.tell();
+        for (const resEntry of vtf.resEntries) {
+            this.#parseResEntry(reader, vtf, resEntry);
         }
     }
     #parseResEntry(reader, vtf, entry) {
@@ -52864,10 +53639,12 @@ class Source1VtfLoader extends SourceBinaryLoader {
         reader.seek(entry.resData);
         const sheet = new SpriteSheet();
         vtf.sheet = sheet;
-        reader.getUint32(); // TODO: use length ?
+        /*const length = */ reader.getUint32(); // TODO: use length ?
         const nVersion = reader.getUint32();
         const nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
         let nNumSequences = reader.getUint32();
+        //sheet.sequences = [];
+        //let valuesCount = 16;
         /*
         if (sheet.format == 0) {//TODOv3 : where comes sheet.format ?
             valuesCount = 4;
@@ -52880,9 +53657,11 @@ class Source1VtfLoader extends SourceBinaryLoader {
             //group.m_pSamples = [];
             //group.m_pSamples2 = [];
             //sheet.sequences.push(group);
-            reader.getUint32();
+            /*const nSequenceNumber = */ reader.getUint32(); //TODO: use nSequenceNumber
             group.clamp = reader.getUint32() != 0;
             const frameCount = reader.getUint32();
+            //const bSingleFrameSequence = (frameCount == 1);
+            //const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
             //let m_pSample = [];
             //sheet.m_pSamples[nSequenceNumber] = m_pSample;
             /*
@@ -52958,32 +53737,32 @@ class Source1VtfLoader extends SourceBinaryLoader {
                     SEQUENCE_SAMPLE_COUNT,
                     nIdx,
                     /*TODO* /false/*!group.clamp*/ /*,
-                    &flIdxA, &flIdxB, &flInterp * /);
+&flIdxA, &flIdxB, &flInterp * /);
 const sA = samples[result.pValueA];
 const sB = samples[result.pValueB];
 const oseq = group.frames[nIdx];
 if (!sA || !sB) {
-    continue;
+continue;
 }
 
 //oseq.m_fBlendFactor = result.pInterpolationValue;
 /*
 for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-    const src0 = sA.m_TextureCoordData[nImage];
-    const src1 = sB.m_TextureCoordData[nImage];
-    if (!src0 || !src1) {
-        continue;
-    }
+const src0 = sA.m_TextureCoordData[nImage];
+const src1 = sB.m_TextureCoordData[nImage];
+if (!src0 || !src1) {
+continue;
+}
 
-    const o = oseq.m_TextureCoordData[nImage];
-    o.m_fLeft_U0 = src0.m_fLeft_U0;
-    o.m_fTop_V0 = src0.m_fTop_V0;
-    o.m_fRight_U0 = src0.m_fRight_U0;
-    o.m_fBottom_V0 = src0.m_fBottom_V0;
-    o.m_fLeft_U1 = src1.m_fLeft_U0;
-    o.m_fTop_V1 = src1.m_fTop_V0;
-    o.m_fRight_U1 = src1.m_fRight_U0;
-    o.m_fBottom_V1 = src1.m_fBottom_V0;
+const o = oseq.m_TextureCoordData[nImage];
+o.m_fLeft_U0 = src0.m_fLeft_U0;
+o.m_fTop_V0 = src0.m_fTop_V0;
+o.m_fRight_U0 = src0.m_fRight_U0;
+o.m_fBottom_V0 = src0.m_fBottom_V0;
+o.m_fLeft_U1 = src1.m_fLeft_U0;
+o.m_fTop_V1 = src1.m_fTop_V0;
+o.m_fRight_U1 = src1.m_fRight_U0;
+o.m_fBottom_V1 = src1.m_fBottom_V0;
 }
 * /
 }
@@ -53128,6 +53907,20 @@ function str2abBGRA(str) {
     return bufView;
 }
 /*
+function str2abARGB(str: string) {
+    // assume str.length is divisible by 4
+    const buf = new ArrayBuffer(str.length);
+    const bufView = new Uint8Array(buf);
+    for (let i = 0, strLen = str.length; i < strLen; i += 4) {
+        bufView[i] = str.charCodeAt(i + 1);
+        bufView[i + 1] = str.charCodeAt(i + 2);
+        bufView[i + 2] = str.charCodeAt(i + 3);
+        bufView[i + 3] = str.charCodeAt(i);
+    }
+    return bufView;
+}
+*/
+/*
 function str2abABGR(reader, start, length) {
 // assume str.length is divisible by 4
     const buf = new ArrayBuffer(str.length);
@@ -53241,7 +54034,7 @@ class Source1TextureManagerClass {
         }
         return this.#texturesList.get(repository, path)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture); //TODOv3
     }
-    async getInternalTexture(repository, path, frame, needCubeMap, defaultTexture, srgb = true) {
+    getInternalTexture(repository, path, frame /*, needCubeMap: boolean, defaultTexture?: Texture*/ /*, srgb = true TODO: use srgb param*/) {
         frame = Math.floor(frame);
         path = cleanupPath(path);
         return this.#texturesList.get(repository, path)?.getFrame(frame) ?? null;
@@ -53323,7 +54116,7 @@ class ProxyManager {
     static #proxyList = {}; //TODO: turn into map
     static getProxy(proxyName) {
         if (!proxyName) {
-            return;
+            return null;
         }
         proxyName = proxyName.toLowerCase();
         const proxy = this.#proxyList[proxyName];
@@ -53363,7 +54156,7 @@ class ProxyManager {
  * Source engine material interface
  */
 class Proxy {
-    datas = null;
+    datas = {};
     /**
      * TODO
      */
@@ -53381,16 +54174,12 @@ class Proxy {
         }
         return result;
     }
-    /**
-     * Dummy function
-     */
-    init(variables) {
-    }
-    /**
-     * Dummy function
-     */
-    execute(variables, proxyParams, time) {
-    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
+    init(variables) { }
+    execute(variables, proxyParams, time) { }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/no-empty-function */
     setResult(variables, value /*TODO: improve type*/) {
         let resultVarName = this.getData('resultvar');
         if (resultVarName) {
@@ -53455,7 +54244,7 @@ class TextureTransform extends Proxy {
         this.resultVar = this.getData('resultvar');
         variables.set(this.resultVar, mat4.create()); //TODO: fixme
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         let center = vec2.fromValues(0.5, 0.5);
         const mat = mat4.create(); //TODOv3 optimize
         const temp = mat4.create(); //TODOv3 optimize
@@ -53547,7 +54336,7 @@ resultVar
 */
 
 const IDENTITY_MAT4$3 = mat4.create();
-function GetTextureTransform(str, mat = mat4.create()) {
+function getTextureTransform(str, mat = mat4.create()) {
     const center = vec2.fromValues(0.5, 0.5);
     //const mat = mat4.create();
     const temp = mat4.create();
@@ -53638,6 +54427,7 @@ function getDefaultTexture() {
 var TextureRole;
 (function (TextureRole) {
     TextureRole[TextureRole["Color"] = 0] = "Color";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     TextureRole[TextureRole["Color2"] = 0] = "Color2";
     TextureRole[TextureRole["Normal"] = 1] = "Normal";
     TextureRole[TextureRole["LightWarp"] = 2] = "LightWarp";
@@ -53789,8 +54579,8 @@ class Source1Material extends Material {
             this.setDefine('IS_ADDITIVE');
         }
         if (vmt['$alphatest'] == 1) {
-            this.alphaTest = true;
-            this.alphaTestReference = Number.parseFloat(vmt['$alphatestreference'] ?? 0.5);
+            this.setAlphaTest(true);
+            this.setAlphaTestReference(Number.parseFloat(vmt['$alphatestreference'] ?? 0.5));
         }
         if (vmt['$vertexalpha'] == 1) {
             this.setDefine('VERTEX_ALPHA');
@@ -53813,7 +54603,7 @@ class Source1Material extends Material {
         }
         this.setUniformValue('uTextureTransform', IDENTITY_MAT4$3);
         if (vmt['$basetexturetransform']) {
-            const textureTransform = GetTextureTransform(vmt['$basetexturetransform']);
+            const textureTransform = getTextureTransform(vmt['$basetexturetransform']);
             if (textureTransform) {
                 this.variables.set('$basetexturetransform', textureTransform);
                 this.setUniformValue('uTextureTransform', textureTransform);
@@ -53940,7 +54730,7 @@ class Source1Material extends Material {
                     }
                     let flAge = flCurTime - flCreationTime;
                     flAge *= flAgeScale;
-                    let nFrame = Math.abs(Math.round(flAge));
+                    const nFrame = Math.abs(Math.round(flAge));
                     return group.getFrame((nFrame * group.frames.length / 1024) << 0);
                 }
                 /*
@@ -53973,7 +54763,7 @@ class Source1Material extends Material {
     getFrameSpan(sequence) {
         const texture = this.getUniformValue('colorMap');
         if (!texture) {
-            return;
+            return null;
         }
         const vtf = texture.properties.get('vtf');
         const sheet = vtf?.sheet;
@@ -54021,10 +54811,10 @@ class Source1Material extends Material {
         for (const proxy of this.proxies) {
             proxy.execute(this.variables, proxyParams, time);
         }
-        this._afterProcessProxies(proxyParams);
+        this._afterProcessProxies( /*proxyParams*/);
         this.afterProcessProxies(proxyParams);
     }
-    _afterProcessProxies(proxyParams = {} /*TODO: improve type*/) {
+    _afterProcessProxies( /*proxyParams = {}*/ /*TODO: improve type*/) {
         const variables = this.variables;
         const parameters = this.vmt;
         const baseTexture = variables.get('$basetexture');
@@ -54075,7 +54865,7 @@ class Source1Material extends Material {
             this.setDetailMap(this.getTexture(TextureRole.Detail, this.repository, detailTexture, variables.get('$detailframe') ?? 0));
             const detailTextureTransform = variables.get('$detailtexturetransform');
             if (detailTextureTransform) {
-                const textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
+                const textureTransform = getTextureTransform(detailTextureTransform, this.#detailTextureTransform);
                 if (textureTransform) {
                     this.variables.set('$detailtexturetransform', textureTransform);
                 }
@@ -54099,8 +54889,11 @@ class Source1Material extends Material {
             this.setUniformValue('uDetailBlendFactor', variables.get('$detailblendfactor') ?? 0);
         }
     }
-    afterProcessProxies(proxyParams = {} /*TODO: improve type*/) {
-    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
+    afterProcessProxies(proxyParams = {} /*TODO: improve type*/) { }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/no-empty-function */
     getAlpha() {
         return clamp$1(this.variables.get('$alpha'), 0.0, 1.0);
     }
@@ -54181,7 +54974,7 @@ class Source1Material extends Material {
     dispose() {
         super.dispose();
         if (this.hasNoUser()) {
-            for (const [_, texture] of this.#textures) {
+            for (const [, texture] of this.#textures) {
                 texture.removeUser(this);
             }
         }
@@ -54229,7 +55022,7 @@ function readVec2(value, vec) {
     }
     const f = Number.parseFloat(value);
     if (Number.isNaN(f)) {
-        return;
+        return null;
     }
     return vec2.set(vec, f, f);
 }
@@ -54637,7 +55430,7 @@ class CustomWeaponMaterial extends Source1Material {
 }
 Source1VmtLoader.registerMaterial('customweapon', CustomWeaponMaterial);
 
-vec3.create();
+//const tempVec3 = vec3.create();
 class EyeRefractMaterial extends Source1Material {
     #initialized = false;
     #eyeOrigin = vec3.create();
@@ -54669,7 +55462,7 @@ class EyeRefractMaterial extends Source1Material {
         }
     }
     afterProcessProxies() {
-        this.variables;
+        //const variables = this.variables;
         const parameters = this.vmt;
         if (parameters['$iris']) {
             this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
@@ -54702,7 +55495,7 @@ class EyeRefractMaterial extends Source1Material {
                 if (bone) {
                     bone.getWorldPosOffset(eyeBall.org, this.#eyeOrigin);
                     vec3.transformQuat(this.#eyeUp, eyeBall.up, bone.worldQuat);
-                    vec3.sub(this.#eyeForward, camera.position, this.#eyeOrigin);
+                    vec3.sub(this.#eyeForward, camera.getPosition(), this.#eyeOrigin);
                     vec3.cross(this.#eyeRight, this.#eyeForward, this.#eyeUp);
                     vec3.normalize(this.#eyeRight, this.#eyeRight);
                     vec3.scaleAndAdd(this.#eyeForward, this.#eyeForward, this.#eyeRight, eyeBall.zoffset);
@@ -54763,7 +55556,7 @@ Source1VmtLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMateri
  * @comment ouput variable name: resultVar
  */
 class Add extends Proxy {
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -54873,7 +55666,7 @@ class BenefactorLevel extends Proxy {
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         const value = 1.0;
         variables.set(this.#resultVar, minValue + (maxValue - minValue) * value);
     }
@@ -54890,7 +55683,7 @@ class BuildingRescueLevel extends Proxy {
     init() {
         this.#r = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         const v = variables.get(this.#r);
         if (v) {
             const iAmmo = 200;
@@ -54922,7 +55715,7 @@ class BurnLevel extends Proxy {
     init() {
         this.#r = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         variables.set(this.#r, proxyParams.burnlevel ?? 0);
     }
 }
@@ -54940,7 +55733,7 @@ class Clamp extends Proxy {
         this.#minVal = this.datas['min'] ?? 0;
         this.#maxVal = this.datas['max'] ?? 1;
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         const v1 = variables.get(this.getData('srcvar1'));
         if ((v1 === null) || (v1 === undefined)) {
             variables.set(this.#resultvar, null);
@@ -54977,7 +55770,7 @@ ProxyManager.registerProxy('communityweapon', CommunityWeapon);
  */
 class CustomSteamImageOnModel extends Proxy {
     #defaultTexture = '';
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         if (!this.#defaultTexture) {
             this.#defaultTexture = variables.get('$basetexture');
         }
@@ -54998,7 +55791,7 @@ ProxyManager.registerProxy('customsteamimageonmodel', CustomSteamImageOnModel);
  * @comment ouput variable name: resultVar
  */
 class Divide extends Proxy {
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -55036,7 +55829,7 @@ ProxyManager.registerProxy('Divide', Divide);
  * @comment ouput variable name: resultVar
  */
 class Equals extends Proxy {
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
     }
 }
@@ -55081,9 +55874,7 @@ class HeartbeatScale extends Proxy {
 ProxyManager.registerProxy('HeartbeatScale', HeartbeatScale);
 
 class IntProxy extends Proxy {
-    init() {
-    }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         //const v2 = variables.get(this.getData('srcvar2'));
@@ -55117,14 +55908,14 @@ class ItemTintColor extends Proxy {
     init() {
         this.#resultvar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         variables.set(this.#resultvar, proxyParams.ItemTintColor);
     }
 }
 ProxyManager.registerProxy('ItemTintColor', ItemTintColor);
 
 class LessOrEqualProxy extends Proxy {
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const srcVar1 = variables.get(this.getData('srcvar1'));
         const srcVar2 = variables.get(this.getData('srcvar2'));
@@ -55174,7 +55965,7 @@ class ModelGlowColor extends Proxy {
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         variables.set(this.#resultVar, proxyParams.ModelGlowColor ?? [1, 1, 1]);
     }
 }
@@ -55187,9 +55978,7 @@ ProxyManager.registerProxy('ModelGlowColor', ModelGlowColor);
  * @comment ouput variable name: resultVar
  */
 class Multiply extends Proxy {
-    init() {
-    }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -55227,15 +56016,15 @@ class SelectFirstIfNonZero extends Proxy {
         this.#srcVar1 = (this.datas['srcvar1'] ?? '').toLowerCase();
         this.#srcVar2 = (this.datas['srcvar2'] ?? '').toLowerCase();
     }
-    execute(variables, proxyParams, time) {
-        super.setResult(variables, this.isNonZero(variables.get(this.#srcVar1)) ? variables.get(this.#srcVar1) : variables.get(this.#srcVar2));
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
+        super.setResult(variables, this.#isNonZero(variables.get(this.#srcVar1)) ? variables.get(this.#srcVar1) : variables.get(this.#srcVar2));
     }
-    isNonZero(value /*TODO: improve type*/) {
+    #isNonZero(value /*TODO: improve type*/) {
         if (!value)
             return false;
         if (value instanceof Array || value instanceof Float32Array) {
-            for (let i = 0; i < value.length; ++i) {
-                if (value[i]) {
+            for (const v of value) {
+                if (v) {
                     return true;
                 }
             }
@@ -55308,7 +56097,7 @@ class StatTrakDigit extends Proxy {
         this.#resultVar = this.datas['resultvar'];
         this.#displayDigit = this.datas['displaydigit'] ?? 0;
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         const number = proxyParams.StatTrakNumber || 0;
         const numberasstring = String(number);
         let digit = Math.floor(number / (Math.pow(10, this.#displayDigit)) % 10);
@@ -55330,7 +56119,7 @@ class StatTrakIllum extends Proxy {
         this.#minVal = Number(this.datas['minval'] ?? 0);
         this.#maxVal = Number(this.datas['maxval'] ?? 1);
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         const glowMultiplier = proxyParams.GlowMultiplier ?? 0.5;
         const value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
         variables.set(this.#resultVar, vec3.fromValues(value, value, value));
@@ -55343,7 +56132,7 @@ class StickybombGlowColor extends Proxy {
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         variables.set(this.#resultVar, [1, 1, 1]);
     }
 }
@@ -55437,7 +56226,7 @@ Angle of rotation to move along. (90 = up, 180 = left, etc)
 */
 
 class UniformNoiseProxy extends Proxy {
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const minVal = (this.getData('minval') ?? 0) * 1;
         const maxVal = (this.getData('maxval') ?? 1) * 1;
@@ -55469,8 +56258,8 @@ class WeaponLabelText extends Proxy {
     init() {
         this.#displayDigit = this.datas['displaydigit'] ?? 0;
     }
-    execute(variables, proxyParams, time) {
-        const text = proxyParams.WeaponLabelText || '';
+    execute(variables, proxyParams /*, time: number*/) {
+        const text = proxyParams.WeaponLabelText ?? '';
         const car = text.charCodeAt(this.#displayDigit);
         const mat = mat4.create(); //TODOv3 optimize
         // 96 ASCII characters starting from 0x20 (space)
@@ -55504,7 +56293,7 @@ ProxyManager.registerProxy('WeaponLabelTextPreview', WeaponLabelText);
 
 class WeaponSkin extends Proxy {
     #defaultTexture = null;
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         if (!this.#defaultTexture) {
             this.#defaultTexture = variables.get('$basetexture');
         }
@@ -55529,7 +56318,7 @@ class YellowLevel extends Proxy {
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams, time) {
+    execute(variables, proxyParams /*, time: number*/) {
         if (!proxyParams.jarate) {
             variables.set(this.#resultVar, vec3.fromValues(1, 1, 1));
         }
@@ -55792,7 +56581,7 @@ class VertexLitGenericMaterial extends Source1Material {
         this.setUniformValue('g_DiffuseModulation', this.#diffuseModulation);
         const btbba = this.variables.get('$blendtintbybasealpha');
         if (btbba == 1) {
-            this.alphaTest = false;
+            this.setAlphaTest(false);
             this.variables.set('$alphatest', 0);
             if (this.variables.get('$selfillum') != 1) {
                 this.removeDefine('USE_SELF_ILLUM');
@@ -55899,6 +56688,11 @@ class WaterMaterial extends Source1Material {
 }
 Source1VmtLoader.registerMaterial('water', WaterMaterial);
 
+//const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
+//const DEFAULT_BASE_TEXTURE = 'models/weapons/customization/stickers/default/sticker_default';
+//const DEFAULT_AO_TEXTURE = 'models/weapons/customization/stickers/default/ao_default';
+//const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_paper';
+//const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
 //TODO: deprecate
 class WeaponDecalMaterial extends Source1Material {
     #initialized = false;
@@ -56025,7 +56819,8 @@ class WeaponDecalMaterial extends Source1Material {
         this.setUniformValue('uPhongParams', vec4.fromValues(4.0, 1.0, 1.0, 2.0)); //TODO: set actual values
         this.setUniformValue('uPhongFresnel', vec4.fromValues(1.0, 1.0, 1.0, 0.0)); //TODO: set actual values
         const wearProgress = proxyParams['WearProgress'] ?? 0.0; //TODO
-        variables.get('$wearremapmid');
+        // TODO: use param wearRemapMid
+        //const wearRemapMid = variables.get('$wearremapmid');
         const flX = wearProgress;
         const flP = variables.get('$wearremapmid');
         let flRemappedWear = 2.0 * (1.0 - flX) * flX * flP + (flX * flX);
@@ -56133,9 +56928,9 @@ class WorldVertexTransitionMaterial extends Source1Material {
         this.#initialized = true;
         super.init();
     }
-    afterProcessProxies(proxyParams) {
-        this.variables;
-        this.vmt;
+    afterProcessProxies( /*proxyParams: DynamicParams*/) {
+        //const variables = this.variables;
+        //const parameters = this.vmt;
         const baseTexture2 = this.variables.get('$basetexture2');
         this.setColor2Map(baseTexture2 ? this.getTexture(TextureRole.Color2, this.repository, baseTexture2, 0, true) : null);
         const blendModulateTexture = this.variables.get('$blendmodulatetexture');
@@ -56160,15 +56955,13 @@ class Source1ParticleOperator {
     paramList = [];
     #endCapState = -1;
     mesh; //for renderers// TODO: put  in a subclas ?
+    static functionName = 'Operator';
     constructor(system) {
         this.setNameId(this.functionName);
         this.particleSystem = system;
     }
     get functionName() {
         return this.constructor.getFunctionName();
-    }
-    static get functionName() {
-        return 'Operator';
     }
     static getFunctionName() {
         return this.functionName;
@@ -56198,6 +56991,8 @@ class Source1ParticleOperator {
         }
         this.applyConstraint(particle);
     }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/no-empty-function */
     doEmit(elapsedTime) { }
     doInit(particle, elapsedTime) { }
     doOperate(particle, elapsedTime) { }
@@ -56206,6 +57001,11 @@ class Source1ParticleOperator {
     doRender(particle, elapsedTime, material) { }
     initRenderer( /*particleSystem: Source1ParticleSystem*/) { }
     updateParticles(particleSystem, particleList, elapsedTime) { }
+    paramChanged(name, value) {
+        // Override this function is you need a notification when a parm is modified
+    }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/no-empty-function */
     emitParticle(creationTime, elapsedTime) {
         return this.particleSystem.createParticle(creationTime, elapsedTime);
     }
@@ -56220,12 +57020,9 @@ class Source1ParticleOperator {
     setMaterial(material) {
         this.material = material;
     }
-    paramChanged(name, value) {
-        // Override this function is you need a notification when a parm is modified
-    }
     setParameter(parameter, type, value) {
-        if (parameter == '' || parameter == undefined) {
-            return this;
+        if (parameter == '') {
+            return;
         }
         if (parameter == 'operator end cap state') {
             this.#endCapState = value;
@@ -56237,7 +57034,6 @@ class Source1ParticleOperator {
         this.#parameters[parameter].value = value;
         //this.propertyChanged(parameter);
         this.paramChanged(parameter, value);
-        return this;
     }
     getParameter(parameter) {
         const p = this.#parameters[parameter];
@@ -56264,10 +57060,8 @@ class Source1ParticleOperator {
         this.addParam('name', PARAM_TYPE_STRING, name);
         this.addParam('functionName', PARAM_TYPE_STRING, name);
     }
-    doNothing() {
-    }
-    reset() {
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    reset() { }
     getOperatorFade() {
         return this.getOperatorStrength();
     }
@@ -56369,6 +57163,7 @@ class Source1ParticleOperator {
         return input;
     }
     getInputValueAsVector(inputField, particle, v) {
+        //let input;
         switch (inputField) {
             case 0: //creation time
                 vec3.copy(v, particle.position);
@@ -56413,10 +57208,14 @@ class Source1ParticleOperator {
                 console.error('Unknown orientationType ', orientationType);
         }
     }
-    dispose() {
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    dispose() { }
 }
 
+//const COLLISION_MODE_PER_PARTICLE_TRACE = 0;
+//const COLLISION_MODE_PER_FRAME_PLANESET = 1;
+//const COLLISION_MODE_INITIAL_TRACE_DOWN = 2;
+//const COLLISION_MODE_USE_NEAREST_TRACE = 3;
 const tempVec3_1$2 = vec3.create();
 const tempVec3_2$8 = vec3.create();
 class CollisionViaTraces extends Source1ParticleOperator {
@@ -56468,7 +57267,7 @@ class CollisionViaTraces extends Source1ParticleOperator {
         //const cp = this.particleSystem.getControlPoint(0);
         //particle.prevPosition[2] = 50;
         const rayDirection = vec3.sub(tempVec3_1$2, particle.position, particle.prevPosition);
-        vec3.len(rayDirection);
+        //const distance = vec3.len(rayDirection);
         vec3.normalize(rayDirection, rayDirection);
         // We probably already are on the surface, move back the ray origin to prevent falling thru
         const rayPosition = vec3.scaleAndAdd(tempVec3_2$8, particle.prevPosition, rayDirection, -0.001);
@@ -56521,7 +57320,8 @@ class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
     applyConstraint(particle) {
         const minDistance = this.getParameter('minimum distance');
         const maxDistance = this.getParameter('maximum distance');
-        this.getParameter('offset of center');
+        //TODO: use param offset of center
+        //const offsetOfCenter = this.getParameter('offset of center');
         const cpNumber = this.getParameter('control point number');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         const v = vec3.copy(tempVec3_2$7, particle.position);
@@ -56610,8 +57410,8 @@ function SimpleSplineRemapValWithDeltasClamped(val, A, BMinusA, OneOverBMinusA, 
     return C + DMinusC * SimpleSpline(cVal); //AddSIMD(C, MulSIMD(DMinusC, SimpleSpline(cVal)));
 }
 
-vec3.create();
-vec3.create();
+//const a = vec3.create();
+//const b = vec3.create();
 const startPnt = vec3.create();
 const endPnt = vec3.create();
 const midP = vec3.create();
@@ -56744,7 +57544,7 @@ class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOper
         const NeedAdjust = (TooFarMask || TooCloseMask);
         if ((NeedAdjust)) { // any out of bounds?
             // change squared distance into approximate rsqr root
-            let guess = Math.sqrt(dist_squared);
+            const guess = Math.sqrt(dist_squared);
             // newton iteration for 1/sqrt(x) : y(n+1)=1/2 (y(n)*(3-x*y(n)^2));
             //guess = MulSIMD(guess, SubSIMD(Four_Threes, MulSIMD(dist_squared, MulSIMD(guess, guess))));
             //guess = MulSIMD(Four_PointFives, guess);
@@ -56919,11 +57719,12 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends Source1Particl
         //	DMXELEMENT_UNPACK_FIELD('falloff power', '2', float, m_fFalloffPower)
         //	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
+    doForce(particle, elapsedTime, accumulatedForces /*, strength = 1*/) {
         //console.log(particle.position);
         const m_fForceAmount = this.getParameter('amount of force');
         const cpNumber = this.getParameter('control point number');
         const m_fFalloffPower = this.getParameter('falloff power');
+        //const power_frac = Math.round(-4.0 * m_fFalloffPower);					// convert to what pow_fixedpoint_exponent_simd wants
         const fForceScale = -m_fForceAmount * 1.0 /*flStrength*/;
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (!cp) {
@@ -56952,7 +57753,7 @@ let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
         this.addParam('max force', PARAM_TYPE_VECTOR, vec3.create());
         this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
+    doForce(particle, elapsedTime, accumulatedForces /*, strength = 1*/) {
         const minForce = this.getParameter('min force') || vec3.create();
         const maxForce = this.getParameter('max force') || vec3.create();
         const f = vec3RandomBox(vec3.create(), minForce, maxForce);
@@ -56966,8 +57767,8 @@ Source1ParticleOperators.registerOperator(RandomForce$1);
 
 const tempVec3$g = vec3.create();
 const tempVec3_2$6 = vec3.create();
-vec3.create();
-quat.create();
+//const tempAxis = vec3.create();
+//const tempQuat = quat.create();
 let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
     static functionName = 'twist around axis';
     constructor(system) {
@@ -56979,7 +57780,8 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
     doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
         const axis = this.getParameter('twist axis'); //TODO: set in world space
         const amountOfForce = this.getParameter('amount of force');
-        this.getParameter('object local space axis 0/1');
+        //TODO use param localSpace
+        //const localSpace = this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
         const offsetToAxis = vec3.sub(tempVec3$g, particle.position, cp.getWorldPosition(tempVec3$g));
         /*
@@ -57010,7 +57812,7 @@ class AlphaRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('alpha_max', '255', int, m_nAlphaMax)
         //	DMXELEMENT_UNPACK_FIELD('alpha_random_exponent', '1', float, m_flAlphaRandExponent)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const alpha_min = this.getParameter('alpha_min') / 255.0;
         const alpha_max = this.getParameter('alpha_max') / 255.0;
         const alpha_random_exponent = this.getParameter('alpha_random_exponent');
@@ -57028,7 +57830,7 @@ class ColorRandom extends Source1ParticleOperator {
         this.addParam('color1', PARAM_TYPE_COLOR, BLACK);
         this.addParam('color2', PARAM_TYPE_COLOR, WHITE);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         particle.color.randomize(this.getParameter('color1'), this.getParameter('color2'));
         particle.initialColor.setColor(particle.color);
     }
@@ -57041,7 +57843,7 @@ class LifetimeFromSequence extends Source1ParticleOperator {
         super(system);
         this.addParam('Frames Per Second', PARAM_TYPE_FLOAT, 30);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const paramFramesPerSecond = this.getParameter('Frames Per Second');
         if (this.particleSystem.material) {
             const frameSpan = this.particleSystem.material.getFrameSpan(particle.sequence);
@@ -57066,7 +57868,7 @@ class LifetimeRandom extends Source1ParticleOperator {
         this.addParam('lifetime_max', PARAM_TYPE_FLOAT, 0);
         this.addParam('lifetime_random_exponent', PARAM_TYPE_FLOAT, 1);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const lifetime_min = this.getParameter('lifetime_min');
         const lifetime_max = this.getParameter('lifetime_max');
         const lifetime_random_exponent = this.getParameter('lifetime_random_exponent');
@@ -57091,7 +57893,7 @@ class PositionAlongPathRandom extends Source1ParticleOperator {
         this.addParam('bulge', PARAM_TYPE_FLOAT, 0);
         this.addParam('maximum distance', PARAM_TYPE_FLOAT, 0);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const startNumber = this.getParameter('start control point number') ?? 1;
         const endNumber = this.getParameter('end control point number') ?? 2;
         const startCP = this.particleSystem.getControlPoint(startNumber);
@@ -57101,7 +57903,7 @@ class PositionAlongPathRandom extends Source1ParticleOperator {
         }
         const nbPart = this.getParameter('particles to map from start to end') || 2;
         const delta = startCP.deltaPosFrom(endCP);
-        this.#sequence / nbPart;
+        //const s = this.#sequence / nbPart;
         vec3.scale(delta, delta, Math.random());
         vec3.add(particle.position, startCP.getWorldPosition(a$3), delta);
         vec3.copy(particle.prevPosition, particle.position);
@@ -57132,7 +57934,7 @@ class PositionAlongPathSequential extends Source1ParticleOperator {
         this.addParam('particles to map from start to end', PARAM_TYPE_FLOAT, 100);
         this.addParam('restart behavior (0 = bounce, 1 = loop )', PARAM_TYPE_BOOL, 1);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const startControlPointNumber = this.getParameter('start control point number');
         const endControlPointNumber = this.getParameter('end control point number');
         const startCP = this.particleSystem.getControlPoint(startControlPointNumber);
@@ -57163,8 +57965,8 @@ class PositionAlongPathSequential extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionAlongPathSequential);
 
-vec3.create();
-vec3.create();
+//const positionFromParentParticlesTempVec3_0 = vec3.create();
+//const positionFromParentParticlesTempVec3_1 = vec3.create();
 const DEFAULT_VELOCITY_SCALE$1 = 0; /* TODO: check default value*/
 let PositionFromParentParticles$1 = class PositionFromParentParticles extends Source1ParticleOperator {
     static functionName = 'Position From Parent Particles';
@@ -57183,7 +57985,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
                 break;
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const parent = this.particleSystem.parentSystem;
         if (!parent) {
             vec3.zero(particle.position);
@@ -57230,7 +58032,7 @@ class PositionModifyOffsetRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('offset in local space 0/1', '0', bool, m_bLocalCoords)
         //	DMXELEMENT_UNPACK_FIELD('offset proportional to radius 0/1', '0', bool, m_bProportional)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const localSpace = this.getParameter('offset in local space 0/1');
         const offsetMin = this.getParameter('offset min');
         const offsetMax = this.getParameter('offset max');
@@ -57283,7 +58085,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD( 'hitbox scale', '1.0', int, m_flHitBoxScale )
         //	DMXELEMENT_UNPACK_FIELD( 'direction bias', '0 0 0', Vector, m_vecDirectionBias )
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const controlPointNumber = this.getParameter('control_point_number');
         const forceInModel = this.getParameter('force to be inside model');
         const directionBias = this.getParameter('direction bias');
@@ -57333,7 +58135,7 @@ class PositionWithinBoxRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('max', '0 0 0', Vector, m_vecMax)
         //	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const min = this.getParameter('min');
         const max = this.getParameter('max');
         const controlPointNumber = this.getParameter('control point number');
@@ -57414,7 +58216,7 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
             }
             vec3.mul(randpos, randpos, m_vecDistanceBias); //randpos *= m_vecDistanceBias;
             vec3.normalize(randpos, randpos); //randpos.NormalizeInPlace();
-            vec3.clone(randpos);
+            //const randDir = vec3.clone(randpos);
             vec3.scale(randpos, randpos, lerp(m_fRadiusMin, m_fRadiusMax, flLength)); //randpos *= Lerp(flLength, m_fRadiusMin, m_fRadiusMax);
             if (!m_bDistanceBias || !m_bLocalCoords) {
                 /*Vector vecControlPoint;
@@ -57485,7 +58287,7 @@ class RadiusRandom extends Source1ParticleOperator {
         this.addParam('radius_min', PARAM_TYPE_FLOAT, 1);
         this.addParam('radius_max', PARAM_TYPE_FLOAT, 1);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const radius_min = this.getParameter('radius_min') ?? 1;
         const radius_max = this.getParameter('radius_max') ?? 1;
         const radius = (radius_max - radius_min) * Math.random() + radius_min;
@@ -57494,7 +58296,7 @@ class RadiusRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RadiusRandom);
 
-vec3.create();
+//const a = vec3.create();
 class RemapControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'remap control point to scalar';
     constructor(system) {
@@ -57526,7 +58328,7 @@ class RemapControlPointToScalar extends Source1ParticleOperator {
                     'output is scalar of initial random range' 'bool' '0'
                     */
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         /*if (!this.firstTime) {
             console.error('I don\'t know what i\'m supposed to do ' + this.functionName);
             console.log(this.parameters);
@@ -57560,7 +58362,7 @@ const tempVec3_2$4 = vec3.create();
 const tempVec3_3$1 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempVec3_5 = vec3.create();
-vec3.create();
+//const a = vec3.create();
 class RemapControlPointToVector extends Source1ParticleOperator {
     static functionName = 'remap control point to vector';
     constructor(system) {
@@ -57579,7 +58381,7 @@ class RemapControlPointToVector extends Source1ParticleOperator {
         'output field' 'int' '6'
         'output maximum' 'vector3' '1 1 1'*/
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const inputMinimum = this.getParameter('input minimum');
         const inputMaximum = this.getParameter('input maximum');
         const outputMinimum = this.getParameter('output minimum');
@@ -57618,7 +58420,7 @@ class RemapInitialScalar extends Source1ParticleOperator {
         this.addParam('emitter lifetime end time (seconds)', PARAM_TYPE_FLOAT, -1);
         this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const emitterStartTime = this.getParameter('emitter lifetime start time (seconds)');
         const emitterEndTime = this.getParameter('emitter lifetime end time (seconds)');
         const currentTime = this.particleSystem.currentTime;
@@ -57655,7 +58457,7 @@ class RemapNoiseToScalar extends Source1ParticleOperator {
         this.addParam('output minimum', PARAM_TYPE_FLOAT, 0);
         this.addParam('output maximum', PARAM_TYPE_FLOAT, 0);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const field = this.getParameter('output field') || 1;
         const minimum = this.getParameter('output minimum') || 0.0;
         const maximum = this.getParameter('output maximum') || 1.0;
@@ -57706,7 +58508,7 @@ class RemapScalarToVector extends Source1ParticleOperator {
         this.addParam('use local system', PARAM_TYPE_BOOL, 1);
         this.addParam('control_point_number', PARAM_TYPE_INT, 0);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const m_flStartTime = this.getParameter('emitter lifetime start time (seconds)');
         const m_flEndTime = this.getParameter('emitter lifetime end time (seconds)');
         const m_nControlPointNumber = this.getParameter('control_point_number');
@@ -57773,7 +58575,7 @@ class RotationRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('rotation_offset_max', '360', float, m_flDegreesMax)
         //	DMXELEMENT_UNPACK_FIELD('rotation_random_exponent', '1', float, m_flRotationRandExponent)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const rotation_initial = this.getParameter('rotation_initial');
         const rotation_offset_min = this.getParameter('rotation_offset_min');
         const rotation_offset_max = this.getParameter('rotation_offset_max');
@@ -57802,7 +58604,7 @@ class RotationSpeedRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_exponent', '1', float, m_flRotationRandExponent)
         //	DMXELEMENT_UNPACK_FIELD('randomly_flip_direction', '1', bool, m_bRandomlyFlipDirection)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const m_flDegrees = this.getParameter('rotation_speed_constant');
         const m_flDegreesMin = this.getParameter('rotation_speed_random_min');
         const m_flDegreesMax = this.getParameter('rotation_speed_random_max');
@@ -57827,7 +58629,7 @@ class RotationYawFlipRandom extends Source1ParticleOperator {
         this.addParam('Flip Percentage', PARAM_TYPE_FLOAT, 0.5);
         //DMXELEMENT_UNPACK_FIELD('Flip Percentage', '.5', float, m_flPercent)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const flip_percent = this.getParameter('Flip Percentage') || 0.5;
         particle.rotationYaw += (Math.random() < flip_percent) ? 180 : 0;
     }
@@ -57845,8 +58647,9 @@ class RotationYawRandom extends Source1ParticleOperator {
         this.addParam('yaw_offset_min', PARAM_TYPE_FLOAT, 0);
         this.addParam('yaw_offset_max', PARAM_TYPE_FLOAT, 360);
     }
-    doInit(particle, elapsedTime) {
-        this.getParameter('Percentage') ?? 0.5; //TODO
+    doInit(particle /*, elapsedTime: number*/) {
+        //TODO: use param Percentage
+        //const percent = this.getParameter('Percentage') ?? 0.5;//TODO
         const yaw_offset_min = this.getParameter('yaw_offset_min') ?? 0;
         const yaw_offset_max = this.getParameter('yaw_offset_max') ?? 360;
         const yaw_initial = this.getParameter('yaw_initial') ?? 0;
@@ -57862,7 +58665,7 @@ class SequenceRandom extends Source1ParticleOperator {
         this.addParam('sequence_min', PARAM_TYPE_FLOAT, 0);
         this.addParam('sequence_max', PARAM_TYPE_FLOAT, 0);
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const sequence_min = this.getParameter('sequence_min');
         const sequence_max = this.getParameter('sequence_max');
         const sequence = Math.round((sequence_max - sequence_min) * Math.random()) + sequence_min;
@@ -57882,7 +58685,7 @@ class TrailLengthRandom extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('length_max', '0.1', float, m_flMaxLength)
         //	DMXELEMENT_UNPACK_FIELD('length_random_exponent', '1', float, m_flLengthRandExponent)
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle /*, elapsedTime: number*/) {
         const length_min = this.getParameter('length_min');
         const length_max = this.getParameter('length_max');
         const length_random_exponent = this.getParameter('length_random_exponent');
@@ -58116,7 +58919,8 @@ class VelocityNoise extends Source1ParticleOperator {
         const m_flNoiseScale = this.getParameter('Time Noise Coordinate Scale');
         const m_flNoiseScaleLoc = this.getParameter('Spatial Noise Coordinate Scale');
         const m_flOffset = this.getParameter('Time Coordinate Offset');
-        const m_vecOffsetLoc = this.getParameter('Spatial Coordinate Offset');
+        //TODO: use param Spatial Coordinate Offset
+        //const m_vecOffsetLoc = this.getParameter('Spatial Coordinate Offset');
         const m_vecAbsVal = this.getParameter('Absolute Value');
         const m_vecAbsValInv = this.getParameter('Invert Abs Value');
         const m_vecOutputMin = this.getParameter('output minimum');
@@ -58133,6 +58937,10 @@ class VelocityNoise extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('output maximum','1 1 1', Vector, m_vecOutputMax)
         //	DMXELEMENT_UNPACK_FIELD('Apply Velocity in Local Space (0/1)','0', bool, m_bLocalSpace)
         let flAbsScaleX, flAbsScaleY, flAbsScaleZ;
+        //let fl4AbsValX, fl4AbsValY, fl4AbsValZ;
+        //fl4AbsValX = 0xffffffff;
+        //fl4AbsValY = 0xffffffff;
+        //fl4AbsValZ = 0xffffffff;
         flAbsScaleX = 0.5;
         flAbsScaleY = 0.5;
         flAbsScaleZ = 0.5;
@@ -58140,15 +58948,15 @@ class VelocityNoise extends Source1ParticleOperator {
         const m_bNoiseAbs = (m_vecAbsValInv[0] != 0.0) || (m_vecAbsValInv[1] != 0.0) || (m_vecAbsValInv[2] != 0.0);
         // Set up values for more optimal absolute value calculations inside the loop
         if (m_vecAbsVal[0] != 0.0) {
-            g_SIMD_clear_signmask;
+            //fl4AbsValX = g_SIMD_clear_signmask;
             flAbsScaleX = 1.0;
         }
         if (m_vecAbsVal[1] != 0.0) {
-            g_SIMD_clear_signmask;
+            //fl4AbsValY = g_SIMD_clear_signmask;
             flAbsScaleY = 1.0;
         }
         if (m_vecAbsVal[2] != 0.0) {
-            g_SIMD_clear_signmask;
+            //fl4AbsValZ = g_SIMD_clear_signmask;
             flAbsScaleZ = 1.0;
         }
         const ValueScaleX = (flAbsScaleX * (m_vecOutputMax[0] - m_vecOutputMin[0]));
@@ -58177,7 +58985,7 @@ class VelocityNoise extends Source1ParticleOperator {
         pCreationTime += attr_stride * start_block;*/
         // setup
         /*fltx4 fl4Offset = ReplicateX4(m_flOffset);*/
-        vec3.clone(m_vecOffsetLoc); //TODO use it ?
+        //const fvOffsetLoc = vec3.clone(m_vecOffsetLoc);//TODO use it ?
         /*CParticleSIMDTransformation CPTransform;
         float flCreationTime = SubFloat(*pCreationTime, 0);
         pParticles->GetControlPointTransformAtTime(m_nControlPointNumber, flCreationTime, &CPTransform);*/
@@ -58277,7 +59085,9 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
     }
 }*/
 //TODO: place somewhere else
-const g_SIMD_clear_signmask = 0x7fffffff;
+//const g_SIMD_clear_signmask = 0x7fffffff;
+//const g_SIMD_signmask = 0x80000000;
+//const g_SIMD_lsbmask = 0xfffffffe;
 
 const identityVec3 = vec3.create();
 const tempVec3$b = vec3.create();
@@ -58341,13 +59151,14 @@ class AlphaFadeAndDecay extends Source1ParticleOperator {
         this.addParam('start_fade_out_time', PARAM_TYPE_FLOAT, 0.5);
         this.addParam('end_fade_out_time', PARAM_TYPE_FLOAT, 1.0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const start_alpha = this.getParameter('start_alpha');
         const end_alpha = this.getParameter('end_alpha');
         const m_flStartFadeInTime = this.getParameter('start_fade_in_time');
         const m_flEndFadeInTime = this.getParameter('end_fade_in_time');
         const m_flStartFadeOutTime = this.getParameter('start_fade_out_time');
         const m_flEndFadeOutTime = this.getParameter('end_fade_out_time');
+        //const alpha = 1.0;// = particle.startAlpha;
         const proportionOfLife = particle.currentTime / particle.timeToLive;
         const fl4FadeInDuration = m_flEndFadeInTime - m_flStartFadeInTime;
         const fl4OOFadeInDuration = 1.0 / fl4FadeInDuration;
@@ -58389,7 +59200,7 @@ class AlphaFadeInRandom extends Source1ParticleOperator {
         this.addParam('fade in time exponent', PARAM_TYPE_FLOAT, 1);
         this.addParam('proportional 0/1', PARAM_TYPE_BOOL, 1);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const proportional = this.getParameter('proportional 0/1');
         const fadeInTimeMin = this.getParameter('fade in time min');
         const fadeInTimeMax = this.getParameter('fade in time max');
@@ -58404,6 +59215,7 @@ class AlphaFadeInRandom extends Source1ParticleOperator {
         else {
             lifeTime = particle.currentTime;
         }
+        //let d, d2
         if (lifeTime < fadeInTime) {
             particle.alpha = SimpleSplineRemapValWithDeltasClamped(lifeTime, 0, fadeInTime, 1 / fadeInTime, 0, particle.startAlpha);
         }
@@ -58422,7 +59234,7 @@ class AlphaFadeOutRandom extends Source1ParticleOperator {
         this.addParam('ease in and out', PARAM_TYPE_BOOL, 1);
         this.addParam('fade bias', PARAM_TYPE_FLOAT, 0.5); //Neutral bias
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const proportional = this.getParameter('proportional 0/1');
         const fadeOutTimeMin = this.getParameter('fade out time min');
         const fadeOutTimeMax = this.getParameter('fade out time max');
@@ -58470,7 +59282,7 @@ class ColorFade extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('fade_end_time', '1', float, m_flFadeEndTime)
         //	DMXELEMENT_UNPACK_FIELD('ease_in_and_out', '1', bool, m_bEaseInOut)
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const color_fade = this.getParameter('color_fade');
         const fade_start_time = this.getParameter('fade_start_time');
         const fade_end_time = this.getParameter('fade_end_time');
@@ -58479,7 +59291,8 @@ class ColorFade extends Source1ParticleOperator {
             return;
         }
         const ooInRange = 1 / (fade_end_time - fade_start_time);
-        const color = new ParticleColor().setColor(particle.initialColor);
+        const color = new ParticleColor();
+        color.setColor(particle.initialColor);
         const flLifeTime = particle.currentTime / particle.timeToLive;
         //if (proportionOfLife>1)proportionOfLife=1;
         /*
@@ -58510,7 +59323,7 @@ Source1ParticleOperators.registerOperator(ColorFade);
 
 let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
     static functionName = 'Lifespan Decay';
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         if (particle.timeToLive < particle.currentTime) {
             particle.die();
         }
@@ -58527,7 +59340,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
         super(system);
         this.addParam('control_point_number', PARAM_TYPE_INT, 0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
         if (controlPoint) {
             // TODO : Actually we should get the model parenting the control point
@@ -58585,6 +59398,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(LockToBone$1);
 
+//const gravity_const = 0.5;
 const tempVec3$9 = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
@@ -58599,7 +59413,8 @@ class MovementBasic extends Source1ParticleOperator {
     doOperate(particle, elapsedTime) {
         const drag = this.getParameter('drag');
         const gravity = this.getParameter('gravity');
-        this.getParameter('max constraint passes'); //TODO
+        //TODO: use param max constraint passes
+        //const maxConstraintPasses = this.getParameter('max constraint passes');//TODO
         //ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
         //fltx4 adj_dt = ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
         const adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
@@ -58642,7 +59457,7 @@ class Source1DampenToCP extends Source1ParticleOperator {
         this.addParam('falloff range', PARAM_TYPE_FLOAT, 100);
         this.addParam('dampen scale', PARAM_TYPE_FLOAT, 1);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const controlPointNumber = this.getParameter('control_point_number');
         const range = this.getParameter('falloff range');
         const scale = this.getParameter('dampen scale');
@@ -58656,7 +59471,7 @@ class Source1DampenToCP extends Source1ParticleOperator {
         controlPoint.getWorldPosition(vecControlPoint);
         const offset = vec3.sub(ofs, particle.position, vecControlPoint);
         let flDampenAmount;
-        let distance = vec3.len(offset);
+        const distance = vec3.len(offset);
         if (distance > range) {
             return;
         }
@@ -58692,7 +59507,7 @@ class MovementLocktoControlPoint extends Source1ParticleOperator {
         'end_fadeout_min' 'float' '0.3000000119'
         'end_fadeout_max' 'float' '0.400000006'*/
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         if (!MovementLocktoControlPoint.once) {
             MovementLocktoControlPoint.once = true;
         }
@@ -58700,11 +59515,15 @@ class MovementLocktoControlPoint extends Source1ParticleOperator {
         if (particle.posLockedToCP == -1) {
             return;
         }
-        this.getParameter('start_fadeout_min');
-        this.getParameter('start_fadeout_max');
+        //TODO: use param start_fadeout_min
+        //const start_fadeout_min = this.getParameter('start_fadeout_min');
+        //TODO: use param start_fadeout_max
+        //const start_fadeout_max = this.getParameter('start_fadeout_max');
         const end_fadeout_min = this.getParameter('end_fadeout_min');
         const end_fadeout_max = this.getParameter('end_fadeout_max');
         const lockRotation = this.getParameter('lock rotation');
+        //TODO: use start_fadeout
+        //const start_fadeout = (start_fadeout_max - start_fadeout_min) * Math.random() + start_fadeout_min;
         const end_fadeout = (end_fadeout_max - end_fadeout_min) * Math.random() + end_fadeout_min;
         switch (true) {
             case end_fadeout == 1:
@@ -58742,7 +59561,7 @@ class MovementLocktoControlPoint extends Source1ParticleOperator {
             if (distanceFadeRange != 0 && particle.deltaL > distanceFadeRange) {
                 particle.posLockedToCP = -1;
             }
-            vec3.clone(particle.position);
+            //const oldPosition = vec3.clone(particle.position);
             const delta2 = vec3.sub(vec3.create(), particle.position, particle.cpPosition);
             const delta3 = vec3.sub(vec3.create(), particle.prevPosition, particle.cpPosition);
             vec3.transformQuat(delta2, delta2, deltaQuaternion);
@@ -58881,8 +59700,8 @@ class OrientTo2dDirection extends Source1ParticleOperator {
                 break;
         }
     }
-    doOperate(particle, elapsedTime) {
-        particle.position;
+    doOperate(particle /*, elapsedTime: number*/) {
+        //const pos = particle.position;
         vec2.sub(orientTo2dDirectionTempVelocity, particle.position, particle.prevPosition);
         vec2.normalize(orientTo2dDirectionTempVelocity, orientTo2dDirectionTempVelocity);
         const currentRotation = particle.rotationRoll;
@@ -58932,7 +59751,8 @@ let OscillateScalar$1 = class OscillateScalar extends Source1ParticleOperator {
         const m_RateMax = this.getParameter('oscillation rate max');
         const m_FrequencyMin = this.getParameter('oscillation frequency min');
         const m_FrequencyMax = this.getParameter('oscillation frequency max');
-        this.getParameter('oscillation multiplier');
+        // TODO: use param oscillation multiplier
+        //const multiplier = this.getParameter('oscillation multiplier');
         const m_flStartTime_min = this.getParameter('start time min');
         const m_flStartTime_max = this.getParameter('start time max');
         const m_flEndTime_min = this.getParameter('end time min');
@@ -59022,7 +59842,7 @@ let OscillateVector$1 = class OscillateVector extends Source1ParticleOperator {
         const m_bProportionalOp = this.getParameter('start/end proportional');
         const m_flOscMult = this.getParameter('oscillation multiplier');
         const m_flOscAdd = this.getParameter('oscillation start phase');
-        particle.cTime; //CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
+        //const pCreationTime = particle.cTime;//CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
         const pLifeDuration = particle.timeToLive; //CM128AttributeIterator pLifeDuration(PARTICLE_ATTRIBUTE_LIFE_DURATION, pParticles);
         //C4IAttributeIterator pParticleId (PARTICLE_ATTRIBUTE_PARTICLE_ID, pParticles);
         //C4VAttributeWriteIterator pOscField (m_nField, pParticles) ;
@@ -59138,7 +59958,7 @@ class RadiusScale extends Source1ParticleOperator {
         DMXELEMENT_UNPACK_FIELD('ease_in_and_out', '0', bool, m_bEaseInAndOut)
         DMXELEMENT_UNPACK_FIELD('scale_bias', '0.5', float, m_flBias)*/
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const radius_start_scale = this.getParameter('radius_start_scale');
         const radius_end_scale = this.getParameter('radius_end_scale');
         const start_time = this.getParameter('start_time');
@@ -59190,7 +60010,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
         this.addParam('Output field 0-2 X/Y/Z', PARAM_TYPE_INT, 0); // X/Y/Z
         this.addParam('output control point', PARAM_TYPE_INT, 1);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate( /*particle: Source1Particle, elapsedTime: number*/) {
         const inputMinimum = this.getParameter('input minimum');
         const inputMaximum = this.getParameter('input maximum');
         const outputMinimum = this.getParameter('output minimum');
@@ -59201,10 +60021,10 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
         const incp = this.particleSystem.getControlPoint(inCPNumber);
         const outcp = this.particleSystem.getControlPoint(outCPNumber);
         if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
-            vec3.length(incp.getWorldPosition(a$1));
-            const position = outcp.position; //TODO optimize
+            //const v = vec3.length(incp.getWorldPosition(a));
+            const position = outcp.getPosition(a$1); //TODO optimize
             position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
-            outcp.position = position;
+            outcp.setPosition(position);
         }
     }
 }
@@ -59225,7 +60045,7 @@ class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
         this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
         this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const cpNumber = this.getParameter('control point');
         const dMin = this.getParameter('distance minimum');
         const dMax = this.getParameter('distance maximum');
@@ -59292,7 +60112,7 @@ class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
         //this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
         this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const cpNumber = this.getParameter('control point');
         const distanceMin = this.getParameter('distance minimum');
         const distanceMax = this.getParameter('distance maximum');
@@ -59351,7 +60171,7 @@ class RemapScalar extends Source1ParticleOperator {
         this.addParam('output field', PARAM_TYPE_INT, 0);
         this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const inputMinimum = this.getParameter('input minimum');
         const inputMaximum = this.getParameter('input maximum');
         const outputMinimum = this.getParameter('output minimum');
@@ -59494,7 +60314,7 @@ class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator
             */
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle /*, elapsedTime: number*/) {
         const number = this.getParameter('# of control points to set');
         const first = this.getParameter('First control point to set');
         //const v = vec3.clone(particle.position);
@@ -59537,7 +60357,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
         this.addParam('Fourth Control Point Number', PARAM_TYPE_INT, 4);
         this.addParam('Fourth Control Point Parent', PARAM_TYPE_INT, 0);
     }
-    doOperate(particle, elapsedTime) {
+    doOperate( /*particle: Source1Particle/*, elapsedTime: number*/) {
         const list = ['First', 'Second', 'Third', 'Fourth'];
         const useWorldLocation = this.getParameter('Set positions in world space');
         const headLocation = this.getParameter('Control Point to offset positions from');
@@ -59548,7 +60368,8 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             if (cpNumber == headLocation) {
                 continue;
             }
-            this.getParameter(name + ' Control Point Parent');
+            // TODO: use param Control Point Parent
+            //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
                 const a = vec3.add(tempVec3$4, cpLocation, vecControlPoint);
@@ -59576,7 +60397,7 @@ class SetControlPointToParticlesCenter extends Source1ParticleOperator {
         this.addParam('Control Point Number to Set', PARAM_TYPE_INT, 1);
         this.addParam('Center Offset', PARAM_TYPE_VECTOR3, vec3.fromValues(0, 0, 0));
     }
-    doOperate(particle, elapsedTime) {
+    doOperate( /*particle: Source1Particle/*, elapsedTime: number*/) {
         const cpNumber = this.getParameter('Control Point Number to Set');
         const centerOffset = this.getParameter('Center Offset');
         //const v = vec3.add(tempVec3, particle.position, particle.cpPosition);
@@ -59588,7 +60409,7 @@ class SetControlPointToParticlesCenter extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(SetControlPointToParticlesCenter);
 
-vec3.create();
+//const tempVec3 = vec3.create();
 class SetControlPointToPlayer extends Source1ParticleOperator {
     static functionName = 'Set Control Point To Player';
     constructor(system) {
@@ -59598,7 +60419,8 @@ class SetControlPointToPlayer extends Source1ParticleOperator {
     }
     doOperate( /*particle: Source1Particle, elapsedTime: number*/) {
         const controlPointNumber = this.getParameter('Control Point Number');
-        this.getParameter('Control Point Offset');
+        //TODO: use param Control Point Offset
+        //const controlPointOffset = this.getParameter('Control Point Offset') as vec3;
         // TODO: set it to the camera position
         this.particleSystem.setControlPointPosition(controlPointNumber, vec3.fromValues(1000, 0, 0));
     }
@@ -59633,7 +60455,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         }
     }
         */
-    updateParticles(particleSystem, particleList, elapsedTime) {
+    updateParticles(particleSystem, particleList /*, elapsedTime: number*/) {
         if (!this.geometry || !this.mesh || !this.particleSystem.material) {
             return;
         }
@@ -59643,20 +60465,20 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
         this.#setupParticlesTexture(particleList);
-        this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
-        this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias')); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias')); //TODOv3:optimize
         const orientationControlPointNumber = this.getParameter('orientation control point');
         const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
         if (orientationControlPoint) {
-            this.mesh.setUniform('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat$3));
+            this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat$3));
         }
         else {
-            this.mesh.setUniform('uOrientationControlPoint', IDENTITY_QUAT);
+            this.mesh.setUniformValue('uOrientationControlPoint', IDENTITY_QUAT);
         }
         const uvs = this.geometry.attributes.get('aTextureCoord')._array;
         let index = 0;
-        for (let i = 0; i < particleList.length; i++) {
-            const particle = particleList[i];
+        for (const particle of particleList) {
+            //const particle: Source1Particle = particleList[i]!;
             const sequence = particle.sequence;
             let flAgeScale;
             if (m_bFitCycleToLifetime) {
@@ -59673,7 +60495,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
                     }
                 }
             }
-            let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
+            const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
             if (coords && uvs) {
                 //coords = coords.m_TextureCoordData[0];
                 uvs[index++] = coords.uMin;
@@ -59723,7 +60545,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
         geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
         geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-        this.mesh.setUniform('uMaxParticles', this.#maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', this.#maxParticles); //TODOv3:optimize
     }
     initRenderer() {
         this.geometry = new BufferGeometry();
@@ -59778,7 +60600,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
-        this.mesh.setUniform('uParticles', this.#texture);
+        this.mesh.setUniformValue('uParticles', this.#texture);
     }
     #updateParticlesTexture() {
         const gl = Graphics$1.glContext;
@@ -59858,17 +60680,22 @@ class RenderRope extends Source1ParticleOperator {
         }
     }
         */
-    updateParticles(particleSystem, particleList, elapsedTime) {
+    updateParticles(particleSystem, particleList /*, elapsedTime: number*/) {
         if (!this.geometry || !this.mesh || !this.particleSystem.material) {
             return;
         }
-        this.getParameter('subdivision_count');
+        // TODO: use param subdivision_count
+        //const subdivCount = this.getParameter('subdivision_count');
         const m_flTexelSizeInUnits = this.getParameter('texel_size');
         const m_flTextureScrollRate = this.getParameter('texture_scroll_rate');
         const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2$1)[1] * m_flTexelSizeInUnits);
         const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
         const geometry = this.geometry;
+        //const vertices = [];
+        //const indices = [];
+        //const id = [];
         const segments = [];
+        //let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
         for (let i = 0, l = particleList.length; i < l; i++) {
@@ -59899,7 +60726,7 @@ class RenderRope extends Source1ParticleOperator {
         if (Graphics$1.isWebGLAny) {
             this.#createParticlesTexture();
         }
-        this.mesh.setUniform('uParticles', this.#texture);
+        this.mesh.setUniformValue('uParticles', this.#texture);
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
         this.setOrientationType(this.getParameter('orientation_type') ?? 0); //TODO: remove orientation_type : only for RenderAnimatedSprites
@@ -59944,47 +60771,6 @@ class RenderRope extends Source1ParticleOperator {
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    #updateParticlesTexture() {
-        const gl = Graphics$1.glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
-        }
-        else {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
-        }
-        gl.bindTexture(GL_TEXTURE_2D, null);
-    }
-    #setupParticlesTexture(particleList) {
-        const a = this.#imgData;
-        let index = 0;
-        for (const particle of particleList) { //TODOv3
-            /*let pose = bone.boneMat;
-            for (let k = 0; k < 16; ++k) {
-                a[index++] = pose[k];
-            }*/
-            a[index++] = particle.position[0];
-            a[index++] = particle.position[1];
-            a[index++] = particle.position[2];
-            index++;
-            a[index++] = particle.color.r;
-            a[index++] = particle.color.g;
-            a[index++] = particle.color.b;
-            a[index++] = particle.alpha;
-            a[index++] = particle.radius;
-            index++;
-            a[index++] = particle.rotationRoll;
-            a[index++] = particle.rotationYaw * DEG_TO_RAD;
-            index++;
-            index++;
-            index++;
-            index++;
-            index += 16;
-        }
-        if (Graphics$1.isWebGLAny) {
-            this.#updateParticlesTexture();
-        }
-    }
     dispose() {
         this.mesh?.dispose();
         this.#texture?.removeUser(this);
@@ -60008,11 +60794,11 @@ class RenderScreenVelocityRotate extends Source1ParticleOperator {
             }
         }
     */
-    updateParticles(particleSystem, particleList, elapsedTime) {
+    updateParticles(particleSystem, particleList /*, elapsedTime: number*/) {
         const m_flRotateRate = this.getParameter('rotate_rate(dps)') * DEG_TO_RAD;
         const m_flForward = this.getParameter('forward_angle') * DEG_TO_RAD;
-        for (let i = 0; i < particleList.length; i++) {
-            const particle = particleList[i];
+        for (const particle of particleList) {
+            //const particle: Source1Particle = particleList[i]!;
             particle.renderScreenVelocityRotate = true;
             particle.m_flRotateRate = m_flRotateRate;
             particle.m_flForward = m_flForward;
@@ -60054,10 +60840,10 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.geometry.count = particleList.length * 6;
         const maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
-        this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         let index = 0;
         for (const particle of particleList) {
-            let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
+            const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
             const uvs = this.geometry.attributes.get('aTextureCoord')._array;
             if (coords && uvs) {
                 //coords = coords.m_TextureCoordData[0];
@@ -60112,8 +60898,8 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.mesh.setUniform('uParticles', this.#texture);
-        this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uParticles', this.#texture);
+        this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         this.particleSystem.addChild(this.mesh);
         this.geometry = geometry;
         this.particleSystem.material.setDefine('RENDER_SPRITE_TRAIL');
@@ -60157,8 +60943,9 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         const m_flMaxLength = this.getParameter('max length');
         const m_flMinLength = this.getParameter('min length');
         const m_flLengthFadeInTime = this.getParameter('length fade in time');
-        this.getParameter('animation rate') ?? 30;
-        this.getParameter('animation_fit_lifetime') ?? 0;
+        // TODO: use rate and fit parameters
+        //const rate = this.getParameter('animation rate') ?? 30;
+        //const fit = this.getParameter('animation_fit_lifetime') ?? 0;
         /*
                 if (fit) {
                     rate = material.sequenceLength / particle.timeToLive;
@@ -60167,6 +60954,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         //const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
         const a = this.#imgData;
         let index = 0;
+        //const len = 0;
         for (const particle of particleList) {
             const flAge = particle.currentTime;
             const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
@@ -64539,10 +65327,6 @@ class Operator {
             this.setParameter(pair[0], pair[1], pair[2]);
         }
     }
-    /*
-    doNothing() {
-    }
-    */
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     reset() {
     }
@@ -65898,18 +66682,20 @@ async function initChildren(repository, systemArray, kv3Array, snapshotModifiers
                 const m_ChildRef = property.getValueAsResource('m_ChildRef');
                 const m_flDelay = property.getValueAsNumber('m_flDelay') ?? 0;
                 if (m_ChildRef) {
-                    const p = new Promise(async (resolve) => {
-                        const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
-                        if (system) {
-                            system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
-                            system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
-                            system.startAfterDelay = m_flDelay;
-                            systemArray[childIndex] = system;
-                            resolve(true);
-                        }
-                        else {
-                            resolve(false);
-                        }
+                    const p = new Promise(resolve => {
+                        (async () => {
+                            const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
+                            if (system) {
+                                system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
+                                system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
+                                system.startAfterDelay = m_flDelay;
+                                systemArray[childIndex] = system;
+                                resolve(true);
+                            }
+                            else {
+                                resolve(false);
+                            }
+                        })();
                     });
                     promises.push(p);
                 }
@@ -73571,7 +74357,7 @@ class SetControlPointsToModelParticles extends Operator {
                             const attachment = model.getAttachment?.(this.#attachmentName);
                             if (attachment) {
                                 //childCp.quaternion = attachment.getWorldQuaternion();
-                                childCp.setQuaternion(particle.quaternion);
+                                childCp.setOrientation(particle.quaternion);
                             }
                         }
                     }
@@ -73669,7 +74455,7 @@ class SetCPOrientationToGroundNormal extends Operator {
         const outputCP = this.system.getControlPoint(this.#outputCP);
         if (outputCP) {
             quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
-            outputCP.setQuaternion(q);
+            outputCP.setOrientation(q);
         }
     }
 }
@@ -74303,7 +75089,7 @@ class RenderBase extends Operator {
             colorScale[0] = Number(param[0]) * COLOR_SCALE;
             colorScale[1] = Number(param[1]) * COLOR_SCALE;
             colorScale[2] = Number(param[2]) * COLOR_SCALE;
-            this.material?.setUniform('uColorScale', colorScale);
+            this.material?.setUniformValue('uColorScale', colorScale);
             break;
             */
             // Renderer parameters
@@ -74394,7 +75180,7 @@ class RenderBlobs extends RenderBase {
         this.mesh = new StaticMesh(this.geometry, this.material);
         this.mesh.setDefine('HARDWARE_PARTICLES');
         this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
+        this.mesh.setUniformValue('uParticles', this.texture);
 
         this.maxParticles = particleSystem.maxParticles;*/
         //this.metaballs = new Metaballs();
@@ -74731,7 +75517,7 @@ class RenderRopes extends RenderBase {
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
         // TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
-        this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+        this.mesh.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
         //const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
         //const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
         this.#textureScroll += elapsedTime * this.#textureVScrollRate;
@@ -74771,7 +75557,7 @@ class RenderRopes extends RenderBase {
             this.mesh.setDefine('IS_ROPE');
             this.mesh.setDefine('USE_VERTEX_COLOR');
             this.#createParticlesTexture();
-            this.mesh.setUniform('uParticles', this.#texture);
+            this.mesh.setUniformValue('uParticles', this.#texture);
         }
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
@@ -74993,9 +75779,9 @@ class RenderSprites extends RenderBase {
         this.geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
         this.#setupParticlesTexture(particleList);
-        this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
-        this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+        this.mesh.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
         const uvs = this.geometry.attributes.get('aTextureCoord')._array;
         const uvs2 = this.geometry.attributes.get('aTextureCoord2')._array;
         let index = 0;
@@ -75079,14 +75865,14 @@ class RenderSprites extends RenderBase {
         geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
         geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
         geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-        this.mesh.setUniform('uMaxParticles', this.#maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', this.#maxParticles); //TODOv3:optimize
     }
     initRenderer(particleSystem) {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
         this.#initParticlesTexture();
-        this.mesh.setUniform('uParticles', this.#texture);
+        this.mesh.setUniformValue('uParticles', this.#texture);
         this.setMaxParticles(particleSystem.maxParticles);
         particleSystem.addChild(this.mesh);
     }
@@ -75255,7 +76041,7 @@ class RenderTrails extends RenderBase {
     updateParticles(particleSystem, particleList, elapsedTime) {
         // TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
         //const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
-        this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+        this.mesh.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
         const rate = this.#animationRate; //this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -75263,7 +76049,7 @@ class RenderTrails extends RenderBase {
         geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
-        this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
         vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
         this.material.setUniformValue('uFinalTextureScale', tempVec2);
@@ -75314,14 +76100,14 @@ class RenderTrails extends RenderBase {
         geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
         geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
         geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-        this.mesh.setUniform('uMaxParticles', this.#maxParticles); //TODOv3:optimize
+        this.mesh.setUniformValue('uMaxParticles', this.#maxParticles); //TODOv3:optimize
     }
     initRenderer(particleSystem) {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
         this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.#texture);
+        this.mesh.setUniformValue('uParticles', this.#texture);
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
     }

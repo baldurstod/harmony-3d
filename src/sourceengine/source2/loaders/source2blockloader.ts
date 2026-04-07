@@ -1,5 +1,6 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
+import { infoSet } from 'harmony-utils';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { VERBOSE } from '../../../buildoptions';
 import { loadData } from './blocks/data';
@@ -81,7 +82,7 @@ export class Source2BlockLoader {
 				// Loaded along CTRL block
 				break;
 			default:
-				console.info('Unknown block type ' + block.type, block.offset, block.length, block);
+				infoSet('Unknown block type', { type: block.type, offset: block.offset, length: block.length, block });
 		}
 	}
 }

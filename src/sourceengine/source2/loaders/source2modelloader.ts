@@ -1,6 +1,6 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { Map2 } from 'harmony-utils';
+import { errorSet, Map2 } from 'harmony-utils';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { VERBOSE } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
@@ -469,7 +469,7 @@ export class Source2ModelLoader {
 				if (bones) {
 					geometry.properties.set('bones', new Property(PropertyType.Array, bones));
 				} else {
-					console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
+					errorSet('unable to find m_skeleton.m_bones in DATA block', dataBlock);
 				}
 
 				const material = Source2ModelLoader.defaultMaterial;
