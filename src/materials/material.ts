@@ -92,6 +92,8 @@ export class Material implements HasUsers {
 	colorMap: Texture | null = null;
 	properties = new Map<string, any>();
 	static materialList: Record<string, typeof Material> = {};
+	#dirtyBuffers = false;
+	updateVersion = 0;
 	/** Workgroup size for WebGPU compute shaders. All components default to 1 */
 	workgroupSize?: vec3;
 
@@ -594,6 +596,10 @@ export class Material implements HasUsers {
 		return this.#uniforms;
 	}
 
+	getUniform(name: string): UniformBuffer | undefined {
+		return this.#uniforms.get(name);
+	}
+
 	getUniformValue(name: string): UniformValue | Record<string, UniformValue> {
 		return this.#uniforms.get(name)?.value;
 	}
@@ -607,7 +613,9 @@ export class Material implements HasUsers {
 			}
 		}
 
-		this.#uniforms.set(name, { value, dirty: true });
+		this.#uniforms.set(name, { value, dirty: true, });
+		this.#dirtyBuffers = true;
+		++this.updateVersion;
 	}
 
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
@@ -634,6 +642,9 @@ export class Material implements HasUsers {
 
 		(subValue as Record<string, UniformValue | Record<string, UniformValue>>)[path[len]!] = value;
 		existingValue.dirty = true;
+		//existingValue.updateVersion = this.updateVersion;
+		this.#dirtyBuffers = true;
+		++this.updateVersion;
 	}
 
 	deleteUniform(name: string): void {

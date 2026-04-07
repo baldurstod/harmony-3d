@@ -265,6 +265,8 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		for (const mesh of this.#meshes) {
 			if ((mesh as SkeletalMesh).skeleton) {
 				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
+				mesh.updateUniformValue('uBoneMatrix');
+				mesh.updateUniformValue('boneMatrix');
 			}
 		}
 	}
@@ -277,6 +279,8 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		for (const mesh of this.#meshes) {
 			if ((mesh as SkeletalMesh).skeleton) {
 				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
+				mesh.updateUniformValue('uBoneMatrix');
+				mesh.updateUniformValue('boneMatrix');
 			}
 		}
 	}

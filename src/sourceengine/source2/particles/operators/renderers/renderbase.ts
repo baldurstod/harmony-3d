@@ -45,7 +45,7 @@ export class RenderBase extends Operator {
 			colorScale[0] = Number(param[0]) * COLOR_SCALE;
 			colorScale[1] = Number(param[1]) * COLOR_SCALE;
 			colorScale[2] = Number(param[2]) * COLOR_SCALE;
-			this.material?.setUniform('uColorScale', colorScale);
+			this.material?.setUniformValue('uColorScale', colorScale);
 			break;
 			*/
 			// Renderer parameters

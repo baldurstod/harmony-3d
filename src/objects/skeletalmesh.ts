@@ -42,8 +42,8 @@ export class SkeletalMesh extends Mesh {
 		super(params);
 		this.skeleton = params.skeleton;
 
-		this.setUniform('uBoneMatrix', this.skeleton.getTexture());
-		this.setUniform('boneMatrix', this.skeleton.imgData);
+		this.setUniformValue('uBoneMatrix', this.skeleton.getTexture());
+		this.setUniformValue('boneMatrix', this.skeleton.imgData);
 		this.setDefine('HARDWARE_SKINNING');//TODOv3 proper defines
 		this.setDefine('SKELETAL_MESH');
 		this.setDefine('MAX_HARDWARE_BONES', MAX_HARDWARE_BONES);

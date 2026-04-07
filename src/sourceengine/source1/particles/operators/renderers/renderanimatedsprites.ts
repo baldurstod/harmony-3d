@@ -57,15 +57,15 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
 		this.#setupParticlesTexture(particleList);
-		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias'));//TODOv3:optimize
+		this.mesh.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh.setUniformValue('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias'));//TODOv3:optimize
 
 		const orientationControlPointNumber = this.getParameter('orientation control point');
 		const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
 		if (orientationControlPoint) {
-			this.mesh.setUniform('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat));
+			this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat));
 		} else {
-			this.mesh.setUniform('uOrientationControlPoint', IDENTITY_QUAT);
+			this.mesh.setUniformValue('uOrientationControlPoint', IDENTITY_QUAT);
 		}
 
 		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
@@ -139,7 +139,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-		this.mesh.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
+		this.mesh.setUniformValue('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
 	initRenderer(): void {
@@ -199,7 +199,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
-		this.mesh!.setUniform('uParticles', this.#texture);
+		this.mesh!.setUniformValue('uParticles', this.#texture);
 	}
 
 	#updateParticlesTexture(): void {

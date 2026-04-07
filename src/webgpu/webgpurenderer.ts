@@ -301,7 +301,7 @@ export class WebGPURenderer implements Renderer {
 		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
 		mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix);//TODO: compute this in camera
 
-		const groups = new Map2<number, number, Binding>();
+		//const groups = new Map2<number, number, Binding>();
 
 		if (renderLights) {
 			material.beforeRender(camera);
@@ -315,12 +315,15 @@ export class WebGPURenderer implements Renderer {
 			this.#setupLights(renderList, camera, cameraMatrix, uniforms);
 		}
 
+		/*
 		this.#populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, false);
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
 			bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
 		});
+		*/
+		const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule/*, groups*/, camera, uniforms, context);
 
 		const commandEncoder = device.createCommandEncoder();
 
@@ -1000,6 +1003,16 @@ export class WebGPURenderer implements Renderer {
 		const device = WebGPUInternal.device;
 
 		for (const uniform of shaderModule.reflection.uniforms) {
+			const materialUniform = material.getUniform(uniform.name) ?? object?.getUniform(uniform.name);
+
+
+			if (materialUniform && !materialUniform.dirty && groups.has(uniform.group, uniform.binding)) {
+				continue;
+			}
+
+			if (materialUniform) {
+				materialUniform.dirty = false;
+			}
 			/*
 			let additionalUsage: GPUFlagsConstant = 0;
 			if (uniform.name == 'commonUniforms') {// TODO: improve that
@@ -1017,7 +1030,7 @@ export class WebGPURenderer implements Renderer {
 			const members = uniform.members;
 			if (members) {
 
-				const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+				const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
 				if (materialUniform) {
 					for (const member of members) {
 						let bufferSource: BufferSource | null = null;
@@ -1108,7 +1121,7 @@ export class WebGPURenderer implements Renderer {
 								bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2) as BufferSource;
 								break;
 							case 'boneMatrix':
-								bufferSource = object?.uniforms[member.name];
+								bufferSource = object?.getUniformValue(member.name) as Float32Array<ArrayBuffer> ?? new Float32Array(16);//TODO don't create a Float32Array each time
 								break;
 							default:
 								errorOnce(`unknwon member: ${member.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
@@ -1142,12 +1155,12 @@ export class WebGPURenderer implements Renderer {
 						}
 					}
 				} else {
-					const arrayUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+					const arrayUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
 					if (arrayUniform !== undefined) {
 						device.queue.writeBuffer(
 							uniformBuffer,
 							0,
-							arrayUniform,
+							arrayUniform as BufferSource/*TODO: actually check the value type*/,
 						);
 					} else {
 						errorOnce('unknwon array uniform ' + uniform.name);
@@ -1162,7 +1175,7 @@ export class WebGPURenderer implements Renderer {
 						bufferSource,
 					);
 				} else {
-					const materialUniform = material.getUniformValue(uniform.name) ?? object?.uniforms[uniform.name];
+					const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
 					if (materialUniform !== undefined) {
 						switch (uniform.type.name) {
 							case 'f32':
@@ -1182,9 +1195,9 @@ export class WebGPURenderer implements Renderer {
 							case 'mat3x3f':
 								// In WGSL, mat3x3 actually are mat4x3
 								const m = new Float32Array([
-									materialUniform[0], materialUniform[1], materialUniform[2], 0,
-									materialUniform[3], materialUniform[4], materialUniform[5], 0,
-									materialUniform[6], materialUniform[7], materialUniform[8], 0,
+									materialUniform as Float32Array[0], materialUniform as Float32Array[1], materialUniform as Float32Array[2], 0,
+									materialUniform as Float32Array[3], materialUniform as Float32Array[4], materialUniform as Float32Array[5], 0,
+									materialUniform as Float32Array[6], materialUniform as Float32Array[7], materialUniform as Float32Array[8], 0,
 								]);
 								device.queue.writeBuffer(
 									uniformBuffer,
@@ -1203,7 +1216,7 @@ export class WebGPURenderer implements Renderer {
 								);
 								break;
 							case 'vec2u':
-								const vec2uArray = new Uint32Array([materialUniform[0], materialUniform[1]]);
+								const vec2uArray = new Uint32Array([materialUniform as Uint32Array[0], materialUniform as Uint32Array[1]]);
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
@@ -1214,8 +1227,8 @@ export class WebGPURenderer implements Renderer {
 								switch ((uniform.type as TemplateInfo).format?.name) {
 									case 'u32':
 										const m = new Uint32Array((uniform.type as TemplateInfo).format!.size);
-										for (let i = 0; i < materialUniform.length; i++) {
-											m[i] = materialUniform[i];
+										for (let i = 0; i < (materialUniform as Uint32Array).length; i++) {
+											m[i] = (materialUniform as Uint32Array)[i]!;
 										}
 										device.queue.writeBuffer(
 											uniformBuffer,

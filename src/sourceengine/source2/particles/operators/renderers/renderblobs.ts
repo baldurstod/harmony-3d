@@ -43,7 +43,7 @@ export class RenderBlobs extends RenderBase {
 		this.mesh = new StaticMesh(this.geometry, this.material);
 		this.mesh.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture);
+		this.mesh.setUniformValue('uParticles', this.texture);
 
 		this.maxParticles = particleSystem.maxParticles;*/
 		//this.metaballs = new Metaballs();

@@ -465,8 +465,8 @@ export class ForwardRenderer implements Renderer {
 	}
 
 	#setupVertexUniforms(program: Program, mesh: Mesh) {
-		for (const uniform in mesh.uniforms) {
-			program.setUniformValue(uniform, mesh.uniforms[uniform]);
+		for (const [name, uniform] of mesh.getUniforms()) {
+			program.setUniformValue(name, uniform.value as any);
 		}
 	}
 

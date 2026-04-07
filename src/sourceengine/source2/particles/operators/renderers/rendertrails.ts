@@ -132,7 +132,7 @@ export class RenderTrails extends RenderBase {
 	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
 		// TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
 		//const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
-		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+		this.mesh!.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.#animationRate;//this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -140,7 +140,7 @@ export class RenderTrails extends RenderBase {
 		geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
-		this.mesh!.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh!.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh!.setVisible(Source2ParticleManager.visible);
 
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
@@ -243,7 +243,7 @@ export class RenderTrails extends RenderBase {
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
 		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
+		this.mesh!.setUniformValue('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
 	override initRenderer(particleSystem: Source2ParticleSystem): void {
@@ -251,7 +251,7 @@ export class RenderTrails extends RenderBase {
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
-		this.mesh!.setUniform('uParticles', this.#texture);
+		this.mesh!.setUniformValue('uParticles', this.#texture);
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);

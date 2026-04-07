@@ -171,9 +171,9 @@ export class RenderSprites extends RenderBase {
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
 		this.#setupParticlesTexture(particleList);
-		this.mesh!.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh!.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh!.setVisible(Source2ParticleManager.visible);
-		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+		this.mesh!.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 
 		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 		const uvs2 = this.geometry.attributes.get('aTextureCoord2')!._array;
@@ -269,7 +269,7 @@ export class RenderSprites extends RenderBase {
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
 		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2, 'texCoord2'));
 		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1, 'particleId'));
-		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
+		this.mesh!.setUniformValue('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
 	override initRenderer(particleSystem: Source2ParticleSystem): void {
@@ -277,7 +277,7 @@ export class RenderSprites extends RenderBase {
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.#initParticlesTexture();
-		this.mesh!.setUniform('uParticles', this.#texture);
+		this.mesh!.setUniformValue('uParticles', this.#texture);
 
 		this.setMaxParticles(particleSystem.maxParticles);
 		particleSystem.addChild(this.mesh);

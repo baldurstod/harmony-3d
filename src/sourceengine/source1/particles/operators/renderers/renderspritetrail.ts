@@ -49,7 +49,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
-		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 
 		let index = 0;
 		for (const particle of particleList) {
@@ -117,8 +117,8 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.mesh.setUniform('uParticles', this.#texture);
-		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh.setUniformValue('uParticles', this.#texture);
+		this.mesh.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
 		this.particleSystem.material!.setDefine('RENDER_SPRITE_TRAIL');

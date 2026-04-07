@@ -124,7 +124,7 @@ export class RenderRopes extends RenderBase {
 
 	override updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
-		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+		this.mesh!.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		//const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 		//const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		this.#textureScroll += elapsedTime * this.#textureVScrollRate;
@@ -169,7 +169,7 @@ export class RenderRopes extends RenderBase {
 			this.mesh.setDefine('IS_ROPE');
 			this.mesh.setDefine('USE_VERTEX_COLOR');
 			this.#createParticlesTexture();
-			this.mesh.setUniform('uParticles', this.#texture);
+			this.mesh.setUniformValue('uParticles', this.#texture);
 		}
 
 		this.maxParticles = particleSystem.maxParticles;
