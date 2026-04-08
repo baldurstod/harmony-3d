@@ -2,6 +2,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { ShaderMaterial } from '../materials/shadermaterial';
+import { Mesh } from '../objects/mesh';
 import { Texture } from './texture';
 
 const COMPUTE_WORKGROUP_SIZE_X = 16;
@@ -45,12 +46,14 @@ async function getTexture2dData(texture: Texture): Promise<Float32Array> {// TOD
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});
 
+	const mesh = new Mesh({ material });
+
 	const stagingBuffer = WebGPUInternal.device.createBuffer({
 		size: bufferSize,
 		usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 	});
 
-	Graphics.compute(material,
+	Graphics.compute(mesh,
 		{
 			workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
 			workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
@@ -110,6 +113,8 @@ async function getTextureCubeData(texture: Texture): Promise<Float32Array> {// T
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});
 
+	const mesh = new Mesh({ material });
+
 	const destinationBuffer = WebGPUInternal.device.createBuffer({
 		size: destBufferSize,
 		usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
@@ -117,7 +122,7 @@ async function getTextureCubeData(texture: Texture): Promise<Float32Array> {// T
 
 	for (let i = 0; i < 6; ++i) {
 		material.gpuConstants!.layer = i;
-		Graphics.compute(material,
+		Graphics.compute(mesh,
 			{
 				workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
 				workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),

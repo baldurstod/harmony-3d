@@ -12,17 +12,14 @@ import { Pass } from '../pass';
 
 export class GrainPass extends Pass {
 	#intensity!: number;
-	#material: ShaderMaterial;
+	#material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'grain', user: this, depthTest: false });
 	//#density;
 	//#size;
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'grain', user: this });
-		material.setUniformValue('uGrainParams', vec4.create());
-		material.depthTest = false;
-		this.#material = material;
+		this.#material.setUniformValue('uGrainParams', vec4.create());
 		this.scene = new Scene();
-		this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
 		this.camera = camera;
 		this.setIntensity(0.2);
 		//this.density = 0.2;
@@ -50,7 +47,7 @@ export class GrainPass extends Pass {
 		} else {
 			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-			Graphics.compute(this.#material, {
+			Graphics.compute(this.quad!, {
 				...context,
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,

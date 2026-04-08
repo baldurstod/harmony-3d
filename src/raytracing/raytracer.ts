@@ -10,7 +10,6 @@ import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
-import { UniformValue } from '../webgl/uniform';
 import { StorageValueArray } from '../webgpu/storage';
 import { sceneToRtScene } from './raytracingscene';
 
@@ -62,12 +61,14 @@ export class Raytracer {
 		},
 		workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
 	});
+	#mesh = new Mesh({ material: this.#material });
 	#prepassMaterial = new ShaderMaterial({
 		shaderSource: 'bitangent_prepass',
 		gpuConstants: {
 			WORKGROUP_SIZE_X: 256,
 		},
 	});
+	#prepassMesh = new Mesh({ material: this.#prepassMaterial });
 	#debugBvhMaterial = new ShaderMaterial({
 		shaderSource: 'debug_bvh',
 		blendingMode: BlendingMode.Normal,
@@ -230,7 +231,7 @@ export class Raytracer {
 		this.#material.setSubUniformValue('commonUniforms.frameCounter', this.#frameId++);
 
 		if (!this.#prepassDone) {
-			Graphics.compute(this.#prepassMaterial,
+			Graphics.compute(this.#prepassMesh,
 				{
 					width: this.#facesCount,
 					height: 1,
@@ -244,7 +245,7 @@ export class Raytracer {
 			this.#material.getStorage('faces')!.buffer = this.#prepassMaterial.getStorage('faces')!.buffer;
 		}
 
-		Graphics.compute(this.#material,
+		Graphics.compute(this.#mesh,
 			{
 				width: this.#width,
 				height: this.#height,

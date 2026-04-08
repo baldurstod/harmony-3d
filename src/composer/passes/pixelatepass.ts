@@ -12,16 +12,15 @@ import { Pass } from '../pass';
 export class PixelatePass extends Pass {
 	#horizontalTiles = 0;
 	#pixelStyle = 0;
-	#material: ShaderMaterial;
+	#material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'pixelate', user: this, depthTest: false });
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		this.#material = new ShaderMaterial({ shaderSource: 'pixelate', user: this });
 		this.#material.depthTest = false;
 		this.scene = new Scene();
 		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
 		this.camera = camera;
-		this.horizontalTiles = 10;
+		this.setHorizontalTiles(10);
 	}
 
 	/**
@@ -56,7 +55,7 @@ export class PixelatePass extends Pass {
 		} else {
 			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-			Graphics.compute(this.#material, {
+			Graphics.compute(this.quad!, {
 				...context,
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,

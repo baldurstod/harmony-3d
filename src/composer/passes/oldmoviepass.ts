@@ -10,15 +10,12 @@ import { getCurrentTexture } from '../../textures/texture';
 import { Pass } from '../pass';
 
 export class OldMoviePass extends Pass {
-	#material: ShaderMaterial;
+	#material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'oldmovie', user: this, depthTest: false });
 
 	constructor(camera: Camera) {
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'oldmovie', user: this });
-		material.depthTest = false;
-		this.#material = material;
 		this.scene = new Scene();
-		this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
 		this.camera = camera;
 	}
 
@@ -32,7 +29,7 @@ export class OldMoviePass extends Pass {
 		} else {
 			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-			Graphics.compute(this.#material, {
+			Graphics.compute(this.quad!, {
 				...context,
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,

@@ -108,7 +108,7 @@ export class RayTracingPass extends Pass {
 			if (this.material) {
 				this.material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 				this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-				Graphics.compute(this.material, {
+				Graphics.compute(this.quad!, {
 					...context,
 					workgroupCountX: Math.ceil(context.width! / (this.material.workgroupSize?.[0] ?? 1)),
 					workgroupCountY: Math.ceil(context.height! / (this.material.workgroupSize?.[1] ?? 1)),

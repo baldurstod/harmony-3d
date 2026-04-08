@@ -11,17 +11,14 @@ import { Pass } from '../pass';
 
 export class SaturatePass extends Pass {
 	#saturation = 0;
-	#material: ShaderMaterial;
+	#material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'saturate', user: this, depthTest: false });
 
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		const material = new ShaderMaterial({ shaderSource: 'saturate', user: this });
-		this.#material = material;
-		material.depthTest = false;
 		this.scene = new Scene();
-		this.quad = new FullScreenQuad({ material, parent: this.scene });
+		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
 		this.camera = camera;
-		this.saturation = 1.0;
+		this.setSaturation(1.0);
 	}
 
 	/**
@@ -46,7 +43,7 @@ export class SaturatePass extends Pass {
 		} else {
 			this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
 			this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-			Graphics.compute(this.#material, {
+			Graphics.compute(this.quad!, {
 				...context,
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,
