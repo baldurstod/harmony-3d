@@ -322,7 +322,7 @@ export class WebGPURenderer implements Renderer {
 			bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
 		});
 		*/
-		const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule/*, groups*/, camera, uniforms, context);
+		const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule/*, groups*/, camera, uniforms, context, false);
 
 		const commandEncoder = device.createCommandEncoder();
 
@@ -810,8 +810,9 @@ export class WebGPURenderer implements Renderer {
 		this.#defines.delete(define);
 	}
 
-	compute(material: Material, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
+	compute(mesh: Mesh, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
+		const material = mesh.getMaterial();
 		getDefines(material, defines);
 
 		const shaderModule = this.#getShaderModule(material, defines);
@@ -820,14 +821,17 @@ export class WebGPURenderer implements Renderer {
 		}
 		const device = WebGPUInternal.device;
 
-		const groups = new Map2<number, number, Binding>();
+		//const groups = new Map2<number, number, Binding>();
 
+		/*
 		this.#populateBindGroups(shaderModule, groups, material, null, null, null, context, true);
 
 		const pipelineLayout = device.createPipelineLayout({
 			label: material.getShaderSource(),
 			bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
 		});
+		*/
+		const [pipelineLayout, groups] = mesh.getPipelineLayout(shaderModule/*, groups*/, null, null, context, true);
 
 		const pipelineDescriptor: GPUComputePipelineDescriptor = {
 			compute: {

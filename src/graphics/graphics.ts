@@ -11,6 +11,7 @@ import { InternalRenderContext, RenderContext } from '../interfaces/rendercontex
 import { Material } from '../materials/material';
 import { isNumeric } from '../math/functions';
 import { setClipSpaceWebGPU } from '../math/ortho';
+import { Mesh } from '../objects/mesh';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
 import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
@@ -640,8 +641,8 @@ class Graphics {
 		}
 	}
 
-	static compute(material: Material, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
-		this.#forwardRenderer!.compute(material,
+	static compute(mesh: Mesh, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
+		this.#forwardRenderer!.compute(mesh,
 			{
 				renderContext: context,
 				width: context.width!,

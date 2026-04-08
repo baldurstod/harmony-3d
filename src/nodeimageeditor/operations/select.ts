@@ -1,5 +1,6 @@
 import { DEBUG } from '../../buildoptions';
 import { Graphics } from '../../graphics/graphics2';
+import { Mesh } from '../../objects/mesh';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
 import { TextureManager } from '../../textures/texturemanager';
@@ -16,6 +17,7 @@ export class Select extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
 	#outputTexture?: Texture;
+	#mesh = new Mesh();
 
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
@@ -25,6 +27,7 @@ export class Select extends Node {
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
 		this.material = new NodeImageEditorMaterial({ shaderName: 'select', user: this });
 		this.material.setDefine('MAX_SELECTORS', String(MAX_SELECTORS));
+		this.#mesh.setMaterial(this.material);
 		this.#textureSize = params.textureSize ?? this.editor.textureSize;
 	}
 
@@ -90,7 +93,7 @@ export class Select extends Node {
 		this.material.setUniformValue('outTexture', this.#outputTexture);
 
 		//this.editor.render(this.material, this.#textureSize, this.#textureSize);
-		Graphics.compute(this.material, {
+		Graphics.compute(this.#mesh, {
 			workgroupCountX: this.#textureSize,
 			workgroupCountY: this.#textureSize,
 		});

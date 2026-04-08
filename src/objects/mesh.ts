@@ -81,7 +81,7 @@ export class Mesh extends Entity {
 	dirty = false;
 	#dirtyBuffers = false;
 
-	constructor(params: MeshParameters) {
+	constructor(params: MeshParameters = {}) {
 		super(params);
 		this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
 		this.setMaterial(params.material ?? meshDefaultMaterial);
@@ -329,7 +329,7 @@ export class Mesh extends Entity {
 		}
 	}
 
-	getPipelineLayout(shaderModule: WgslModule, /*groups: Map2<number, number, Binding>, */camera: Camera, uniforms: Map<string, BufferSource>, context: InternalRenderContext): [GPUPipelineLayout, Map2<number, number, Binding>] {
+	getPipelineLayout(shaderModule: WgslModule, /*groups: Map2<number, number, Binding>, */camera: Camera | null, uniforms: Map<string, BufferSource> | null, context: InternalRenderContext, isCompute: boolean): [GPUPipelineLayout, Map2<number, number, Binding>] {
 		const material = this.#material;
 
 		if (this.#webGpuShaderSource?.deref() !== shaderModule) {
@@ -347,11 +347,11 @@ export class Mesh extends Entity {
 			}
 		}
 
-		populateBindGroups(shaderModule, this.#webGpuGroups, material, this, camera, uniforms, context, false);
+		populateBindGroups(shaderModule, this.#webGpuGroups, material, this, camera, uniforms, context, isCompute);
 
 		this.#pipelineLayout = WebGPUInternal.device.createPipelineLayout({
 			label: material.getShaderSource(),
-			bindGroupLayouts: getBindGroupLayouts(this.#webGpuGroups, false),
+			bindGroupLayouts: getBindGroupLayouts(this.#webGpuGroups, isCompute),
 		});
 
 		return [this.#pipelineLayout, this.#webGpuGroups];

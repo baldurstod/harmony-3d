@@ -1,7 +1,7 @@
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { InternalRenderContext } from '../interfaces/rendercontext';
-import { Material } from '../materials/material';
+import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { RenderList } from './renderlist';
@@ -28,7 +28,7 @@ export interface Renderer {
 	setDefine: (define: string, value?: string) => void;
 	removeDefine: (define: string) => void;
 
-	compute: (material: Material, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void) => void;
+	compute: (mesh: Mesh, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void) => void;
 	/*
 
 		clearColor(clearColor: vec4) {
