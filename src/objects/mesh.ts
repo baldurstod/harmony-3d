@@ -215,7 +215,7 @@ export class Mesh extends Entity {
 
 	setStorage(name: string, value: StorageValue): void {
 		// TODO: copy the behavior of material setStorage
-		this.storage[name] = { value };
+		this.storage[name] = { value, dirty: true, };
 	}
 
 	deleteStorage(name: string): void {
@@ -577,7 +577,6 @@ function populateBindGroups(
 	for (const uniform of shaderModule.reflection.uniforms) {
 		const materialUniform = material.getUniform(uniform.name) ?? object.getUniform(uniform.name);
 
-
 		if (materialUniform && !materialUniform.dirty && groups.has(uniform.group, uniform.binding)) {
 			continue;
 		}
@@ -921,6 +920,15 @@ function populateBindGroups(
 	}
 
 	for (const storage of shaderModule.reflection.storage) {
+		const materialUniform = material.getStorage(storage.name) ?? object.getStorage(storage.name);
+		if (materialUniform && !materialUniform.dirty && groups.has(storage.group, storage.binding)) {
+			continue;
+		}
+
+		if (materialUniform) {
+			materialUniform.dirty = false;
+		}
+
 		let access: GPUStorageTextureAccess = 'read-only';
 		let bufferType: GPUBufferBindingType = 'storage';
 		let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;

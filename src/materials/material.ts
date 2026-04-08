@@ -10,7 +10,7 @@ import { RaytracingMaterial } from '../raytracing/material';
 import { Texture } from '../textures/texture';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { MaterialUniform, UniformBuffer, UniformValue } from '../webgl/uniform';
-import { StorageBuffer, StorageValueArray } from '../webgpu/storage';
+import { StorageBuffer, StorageBufferParam, StorageValueArray } from '../webgpu/storage';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 
@@ -47,7 +47,7 @@ export type MaterialParams = {
 	polygonOffsetUnits?: number;
 
 	uniforms?: MaterialUniform;
-	storages?: Record<string, StorageValueArray | number | StorageBuffer>;
+	storages?: Record<string, StorageValueArray | number | StorageBufferParam>;
 	gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines?: Record<string, string>;
 	workgroupSize?: vec3;
@@ -69,7 +69,7 @@ export class Material implements HasUsers {
 	#parameters = new Map<string, MateriaParameter>();
 	readonly #uniforms = new Map<string, UniformBuffer>();
 	// Storage bindings. Only for WebGPU.
-	readonly storage = new Map<string, StorageBuffer>();
+	readonly #storage = new Map<string, StorageBuffer>();
 	readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
@@ -653,11 +653,11 @@ export class Material implements HasUsers {
 	}
 
 	getStorage(name: string): StorageBuffer | undefined {
-		return this.storage.get(name);
+		return this.#storage.get(name);
 	}
 
-	setStorage(name: string, value: StorageValueArray | number | StorageBuffer): void {
-		const existingValue = this.storage.get(name);
+	setStorage(name: string, value: StorageValueArray | number | StorageBufferParam): void {
+		const existingValue = this.#storage.get(name);
 		if (existingValue) {
 			if (existingValue.buffer) {
 				existingValue.buffer.destroy();
@@ -665,18 +665,18 @@ export class Material implements HasUsers {
 		}
 
 		if (typeof value === 'number') {
-			this.storage.set(name, { value: null, size: value });
+			this.#storage.set(name, { value: null, size: value, dirty: true, });
 		} else {
 			if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
-				this.storage.set(name, { value: value as StorageValueArray });
+				this.#storage.set(name, { value: value as StorageValueArray, dirty: true, });
 			} else {
-				this.storage.set(name, value as StorageBuffer);
+				this.#storage.set(name, value as StorageBuffer);
 			}
 		}
 	}
 
 	deleteStorage(name: string): void {
-		const sto = this.storage.get(name);
+		const sto = this.#storage.get(name);
 		if (sto) {
 			sto.buffer?.destroy();
 			sto.buffer = null;

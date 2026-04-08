@@ -29,4 +29,9 @@ export type StorageBuffer = {
 	/** If raw is true, Size of content to write from `value` to `buffer`.
 	 * Given in elements if `value` is a `TypedArray` and bytes otherwise. Default to `value` size. */
 	rawSize?: number;
+
+	// Internal use
+	dirty: boolean;
 };
+
+export type StorageBufferParam = Omit<StorageBuffer, 'dirty'>;;
