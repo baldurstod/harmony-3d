@@ -180,12 +180,12 @@ export class Mesh extends Entity {
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
 		const path = name.split('.');
 
-		let len = path.length;
-		if (len === 1) {
+		let len = path.length - 1;
+		if (len === 0) {
 			return this.setUniformValue(name, value);
 		}
 
-		const existingValue = this.#uniforms.get(name);
+		const existingValue = this.#uniforms.get(path[0]!);
 		if (!existingValue) {
 			return;
 		}

@@ -621,12 +621,12 @@ export class Material implements HasUsers {
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
 		const path = name.split('.');
 
-		let len = path.length;
-		if (len === 1) {
+		let len = path.length - 1;
+		if (len === 0) {
 			return this.setUniformValue(name, value);
 		}
 
-		const existingValue = this.#uniforms.get(name);
+		const existingValue = this.#uniforms.get(path[0]!);
 		if (!existingValue) {
 			return;
 		}
@@ -642,7 +642,6 @@ export class Material implements HasUsers {
 
 		(subValue as Record<string, UniformValue | Record<string, UniformValue>>)[path[len]!] = value;
 		existingValue.dirty = true;
-		//existingValue.updateVersion = this.updateVersion;
 		this.#dirtyBuffers = true;
 		++this.updateVersion;
 	}
