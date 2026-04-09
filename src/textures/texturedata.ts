@@ -80,8 +80,7 @@ async function getTexture2dData(texture: Texture): Promise<Float32Array> {// TOD
 	const copyArrayBuffer = stagingBuffer.getMappedRange(0, bufferSize);
 	const data = new Float32Array(copyArrayBuffer.slice());
 
-	material.dispose();
-
+	mesh.dispose();
 
 	return data;
 }

@@ -1219,7 +1219,7 @@ export class WebGPURenderer implements Renderer {
 								);
 								break;
 							case 'vec2u':
-								const vec2uArray = new Uint32Array([materialUniform as Uint32Array[0], materialUniform as Uint32Array[1]]);
+								const vec2uArray = new Uint32Array([(materialUniform as Uint32Array)[0]!, (materialUniform as Uint32Array)[1]!]);
 								device.queue.writeBuffer(
 									uniformBuffer,
 									0,
