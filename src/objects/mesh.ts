@@ -216,6 +216,7 @@ export class Mesh extends Entity {
 	setStorage(name: string, value: StorageValue): void {
 		// TODO: copy the behavior of material setStorage
 		this.storage[name] = { value, dirty: true, };
+		this.dirty = false;
 	}
 
 	deleteStorage(name: string): void {
@@ -223,6 +224,8 @@ export class Mesh extends Entity {
 		if (sto) {
 			sto.buffer?.destroy();
 			sto.buffer = null;
+			sto.dirty = true;
+			this.dirty = true;
 		}
 	}
 

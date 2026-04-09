@@ -661,6 +661,8 @@ export class Material implements HasUsers {
 		if (existingValue) {
 			if (existingValue.buffer) {
 				existingValue.buffer.destroy();
+				existingValue.buffer = null;
+				existingValue.dirty = true;
 			}
 		}
 
@@ -670,9 +672,11 @@ export class Material implements HasUsers {
 			if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
 				this.#storage.set(name, { value: value as StorageValueArray, dirty: true, });
 			} else {
+				(value as StorageBuffer).dirty = true;
 				this.#storage.set(name, value as StorageBuffer);
 			}
 		}
+		++this.updateVersion;
 	}
 
 	deleteStorage(name: string): void {
@@ -680,6 +684,8 @@ export class Material implements HasUsers {
 		if (sto) {
 			sto.buffer?.destroy();
 			sto.buffer = null;
+			sto.dirty = true;
+			++this.updateVersion;
 		}
 	}
 
