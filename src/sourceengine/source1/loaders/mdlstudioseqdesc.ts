@@ -22,8 +22,8 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	weightlist: number[] = [];
 	groupsize: [number, number] = [0, 0];
 	mdl!: SourceMdl;
-	previousTime: number = -1;
-	currentTime: number = -1;
+	previousTime = -1;
+	currentTime = -1;
 	posekeyindex!: number;
 	autolayer: MdlStudioAutoLayer[] = [];
 	events: MdlStudioEvent[] = [];
@@ -63,7 +63,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	activityName!: string;
 	keyvalueText!: string;
 
-	pBoneweight(boneIndex: number) {
+	pBoneweight(boneIndex: number): number | undefined {
 		return this.weightlist[boneIndex];
 	}
 	//MdlStudioSeqDesc.prototype.weight = MdlStudioSeqDesc.prototype.pBoneweight;//TODOV2
@@ -74,7 +74,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 		return this.blend[y]?.[x] ?? null;
 	}
 
-	poseKey(iParam: number, iAnim: number) {
+	poseKey(iParam: number, iAnim: number): number {
 		if (this.mdl && this.posekeyindex) {
 			const mdl = this.mdl;
 			const offset = this.posekeyindex + (iParam * this.groupsize[0] + iAnim) * 4;
@@ -89,7 +89,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 		return this.autolayer[autoLayerIndex] ?? null;
 	}
 
-	get length() {
+	get length(): number {
 		const anim = this.mdl.getAnimDescription(this.blend[0]?.[0]);
 		if (!anim) {
 			return 0;
@@ -116,8 +116,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 		const currentTime = this.currentTime;
 
 		const seqEvents = this.events;
-		for (let eventIndex = 0; eventIndex < seqEvents.length; ++eventIndex) {
-			const event = seqEvents[eventIndex]!;
+		for (const event of seqEvents) {
 			if (event.cycle > previousTime && event.cycle <= currentTime) {
 				this.processEvent(event, dynamicProp);//TODOv3
 			}
@@ -151,7 +150,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 			case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
 				options = event.options.split(' ');
 				//TODOV2
-				const f = async () => {
+				const f = async (): Promise<void> => {
 					const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]!);
 					sys.autoKill = true;
 					sys.start();

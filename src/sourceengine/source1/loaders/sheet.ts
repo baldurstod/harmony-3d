@@ -76,7 +76,7 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 		flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1]!;
 	}
 
-	function FLerp(f1: number, f2: number, i1: number, i2: number, x: number) {
+	function FLerp(f1: number, f2: number, i1: number, i2: number, x: number): number {
 		// TODO: use a common function
 		return f1 + (f2 - f1) * (x - i1) / (i2 - i1);
 	}

@@ -13,26 +13,27 @@ import { SourceVvd } from './sourcevvd';
 
 export class ModelLoader {
 	load(repositoryName: string, fileName: string): Promise<SourceModel | null> {
-		const promise = new Promise<SourceModel | null>(async (resolve) => {
-			fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
+		const promise = new Promise<SourceModel | null>((resolve) => {
+			(async (): Promise<void> => {
+				fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
 
-			// First load mdl. We need the mdl version to load the vtx
-			const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
-			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
-			if (!mdl) {
-				resolve(null);
-				return;
-			}
-
-			const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
-			const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
-
-			Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
-				if (vvd && vtx) {
-					this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
+				// First load mdl. We need the mdl version to load the vtx
+				const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
+				const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
+				if (!mdl) {
+					resolve(null);
+					return;
 				}
-			});
 
+				const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
+				const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+
+				Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
+					if (vvd && vtx) {
+						this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
+					}
+				});
+			})();
 		});
 		return promise;
 	}
@@ -102,7 +103,7 @@ export class ModelLoader {
 
 					modelsname += modelTest.name + ', ';//TODOV2
 					if (VERBOSE) {
-						console.info('	Model : ' + modelIndex);
+						console.info('	Model : ' + modelIndex, modelsname);
 					}
 					const lod = model.lods[requiredLod];
 					if (!lod) {

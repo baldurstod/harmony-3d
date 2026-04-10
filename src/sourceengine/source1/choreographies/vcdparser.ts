@@ -60,7 +60,7 @@ function parseVdf(context: VcdParserContext): boolean {
 }
 
 function parseEvent(context: VcdParserContext): ChoreographyEvent | null {
-	let eventType: EventType | undefined = ChoreographyEventName.get(getNextToken(context)!);
+	const eventType: EventType | undefined = ChoreographyEventName.get(getNextToken(context)!);
 	if (!eventType) {
 		return null;
 	}
@@ -230,7 +230,7 @@ function parseRamp(context: VcdParserContext): CurveData | null {
 	return ramp;
 }
 
-function getNextToken(context: VcdParserContext, lineEnd: boolean = true): string | null {
+function getNextToken(context: VcdParserContext, lineEnd = true): string | null {
 	if (lineEnd) {
 		return getNextTokenInternal(context);
 	} else {
@@ -300,7 +300,7 @@ function getNextTokenInternal(context: VcdParserContext): string | null {
 					switch (c) {
 						case '"':
 						case '\'':
-							throw "Quote in an unquoted string";
+							throw new Error('Quote in an unquoted string');
 						case '{':
 						case '}':
 							// Get back one character

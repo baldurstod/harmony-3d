@@ -5,14 +5,14 @@ export class ExpressionSample {
 	c = 0;
 	selected = false;
 
-	setCurveType(curveType: number) {
+	setCurveType(curveType: number): void {
 		this.c = curveType;
 	}
 
 	/**
 	 * toString
 	 */
-	toString(indent = '') {
+	toString(indent = ''): string {
 		return indent + this.t + ' ' + this.v;
 	}
 }

@@ -48,8 +48,8 @@ export const BONE_HAS_SAVEFRAME_POS = 0x00200000;// Vector48
 export const BONE_HAS_SAVEFRAME_ROT = 0x00400000;// Quaternion64
 
 const tempMat4 = mat4.create();
-const tempVec3 = vec3.create();
-const tempQuat = quat.create();
+//const tempVec3 = vec3.create();
+//const tempQuat = quat.create();
 //TODOV4: cleanup unused code
 export class MdlBone {
 	_poseToBone = mat4.create();
@@ -85,7 +85,7 @@ export class MdlBone {
 		this.#skeleton = skeleton;/*TODO:remove*/
 	}
 
-	get skeleton() {/*TODO:remove*/
+	get skeleton(): Skeleton | undefined {/*TODO:remove*/
 		return this.#skeleton;
 	}
 
@@ -94,7 +94,7 @@ export class MdlBone {
 		this.dirty = true;
 	}
 
-	get quaternion() {
+	get quaternion(): quat {
 		return this._quaternion;
 	}
 
@@ -103,7 +103,7 @@ export class MdlBone {
 		this.dirty = true;
 	}
 
-	get position() {
+	get position(): vec3 {
 		return this._position;
 	}
 
@@ -112,7 +112,7 @@ export class MdlBone {
 		this.dirty = true;
 	}
 
-	get parent() {/*TODO:remove ?*/
+	get parent(): MdlBone | null {/*TODO:remove ?*/
 		return this._parent;
 	}
 
@@ -130,16 +130,17 @@ export class MdlBone {
 		mat4.multiply(this._boneMat, tempMat4, this._poseToBone);
 	}
 
-	getWorldPos(offset: vec3, out = vec3.create()) {
+	getWorldPos(offset: vec3, out = vec3.create()): vec3 {
 		if (DEBUG && offset == undefined) {
-			throw 'This function must be called with an offset use .worldPos instead';
+			throw new Error('This function must be called with an offset use .worldPos instead');
+
 		}
 		vec3.transformQuat(out, offset, this.worldQuat);
 		vec3.add(out, this.worldPos, out);
 		return out;
 	}
 
-	getRelativePos() {
+	getRelativePos(): vec3 {
 		return vec3.clone(this.position);
 	}
 
@@ -149,7 +150,7 @@ export class MdlBone {
 		this.dirty = true;
 	}
 
-	get poseToBone() {
+	get poseToBone(): mat4 {
 		return this._poseToBone;
 	}
 
@@ -158,11 +159,11 @@ export class MdlBone {
 		this.dirty = true;
 	}
 
-	get initPoseToBone() {
+	get initPoseToBone(): mat4 {
 		return this._initPoseToBone;
 	}
 
-	getWorldQuat() {
+	getWorldQuat(): quat {
 		return this.worldQuat;
 	}
 
@@ -170,7 +171,7 @@ export class MdlBone {
 	 * Is a procedural bone ?
 	 * @returns {bool} yes is procedural bone
 	 */
-	isProcedural() {
+	isProcedural(): boolean {
 		return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
 	}
 
@@ -178,7 +179,7 @@ export class MdlBone {
 	 * Use bone merge
 	 * @returns {bool} yes bone is available for bone merge to occur against it
 	 */
-	useBoneMerge() {
+	useBoneMerge(): boolean {
 		return (this.flags & BONE_USED_BY_BONE_MERGE) == BONE_USED_BY_BONE_MERGE; //TODO: test engine verion; TF2 seems not use this flag
 	}
 }

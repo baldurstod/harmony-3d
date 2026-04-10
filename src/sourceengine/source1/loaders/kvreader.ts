@@ -15,7 +15,7 @@ class KvAttribute {
 export class KvElement {
 	// TODO: create map to store values
 
-	addElement(name: string, value: KvAttributeValue) {
+	addElement(name: string, value: KvAttributeValue): void {
 		name = name.toLowerCase();
 		let newName = name;
 		let count = 1;
@@ -25,13 +25,13 @@ export class KvElement {
 		(this as any/*TODO: fix this*/)[newName] = value;
 	}
 
-	toString(linePrefix?: string) {
+	toString(linePrefix?: string): string {
 		linePrefix = linePrefix ?? '';
 		const s = [linePrefix, '"'/*, this.type, '"\n'*/, linePrefix, '{\n'];
 
-		for (const i in this) {
-			s.push(this.toString(linePrefix + '\t'));
-		}
+		//for (const i in this) {
+		s.push(this.toString(linePrefix + '\t'));
+		//}
 		s.push(linePrefix);
 		s.push('}\n');
 		return s.join('');
@@ -65,7 +65,7 @@ export class KvReader {
 		this.carSize = carSize;
 	}
 
-	readText(src: string) {
+	readText(src: string): void {
 		if (!src) {
 			return;
 		}
@@ -100,15 +100,15 @@ export class KvReader {
 		this.endElement();
 	}
 
-	getRootElement() {
+	getRootElement(): KvElement | undefined {
 		return this.rootElement;
 	}
 
-	getRootName() {
+	getRootName(): string {
 		return this.rootName;
 	}
 
-	readChar() {
+	readChar(): string | number {
 		if (this.offset > this.src.length) {
 			return -1;
 		}
@@ -117,14 +117,14 @@ export class KvReader {
 		return this.src.charAt(offset);
 	}
 
-	pickChar() {
+	pickChar(): string | number {
 		if (this.offset > this.src.length) {
 			return -1;
 		}
 		return this.src.charAt(this.offset);
 	}
 
-	pushElement() {
+	pushElement(): void {
 		if (this.currentElement) {
 			this.elementStack.push(this.currentElement);
 		}
@@ -136,7 +136,7 @@ export class KvReader {
 		this.pushKey();
 	}
 
-	popElement() {
+	popElement(): void {
 		const a = this.currentElement;
 		this.currentElement = this.elementStack.pop();
 		if (!this.currentElement) {
@@ -153,23 +153,23 @@ export class KvReader {
 		}
 	}
 
-	pushAttribute() {
+	pushAttribute(): void {
 		if (this.currentAttribute) {
 			this.attributeStack.push(this.currentAttribute);
 		}
 		//this.currentAttribute = new KvElement();
 	}
 
-	popAttribute() {
+	popAttribute(): void {
 		this.currentAttribute = this.attributeStack.pop();
 	}
 
-	pushValue() {
+	pushValue(): void {
 		this.valuesStack.push(this.currentValue);
 		this.currentValue = '';
 	}
 
-	popValue() {
+	popValue(): any {
 		if (this.valuesStack.length == 0) {
 			if (ERROR) {
 				console.error('valuesStack == 0');
@@ -178,12 +178,12 @@ export class KvReader {
 		return this.valuesStack.pop();
 	}
 
-	pushKey() {
+	pushKey(): void {
 		this.keyStack.push(this.currentKey);
 		this.currentKey = '';
 	}
 
-	popKey() {
+	popKey(): string | undefined {
 		if (this.keyStack.length == 0) {
 			if (ERROR) {
 				console.error('keyStack == 0');
@@ -192,18 +192,18 @@ export class KvReader {
 		return this.keyStack.pop();
 	}
 
-	pushArray() {
+	pushArray(): void {
 		if (this.currentArray) {
 			this.arrayStack.push(this.currentArray);
 		}
 		this.currentArray = undefined;
 	}
 
-	popArray() {
+	popArray(): void {
 		this.currentArray = this.arrayStack.pop();
 	}
 
-	parse() {
+	parse(): boolean {
 		const car = this.readChar();
 		if (car == -1) return true;
 
@@ -285,14 +285,14 @@ export class KvReader {
 		return false;
 	}
 
-	startElement() {
+	startElement(): void {
 		this.pushElement();
 
 		this.newLine();
 		this.pushAttribute();
 	}
 
-	endElement() {
+	endElement(): void {
 		if (this.currentElement) {
 			const e = this.currentElement;
 			this.popElement();
@@ -305,7 +305,7 @@ export class KvReader {
 		}
 	}
 
-	startArray() {
+	startArray(): void {
 		this.pushArray();
 		this.currentValue = [];
 		this.currentArray = this.currentValue;
@@ -314,22 +314,22 @@ export class KvReader {
 		this.pushAttribute();
 	}
 
-	endArray() {
+	endArray(): void {
 		this.popAttribute();
 		//this.currentAttribute.value.push(this.currentElement);
 		this.popArray();
 
 	}
 
-	nextArrayValue() {
+	nextArrayValue(): void {
 		//TODO
 	}
 
-	setValue() {
+	setValue(): void {
 		this.pushValue();
 	}
 
-	newLine() {
+	newLine(): void {
 		if (this.valuesStack.length >= 2) {
 			// order matters
 			const value = this.popValue();
@@ -347,7 +347,7 @@ export class KvReader {
 		}
 	}
 
-	comma() {
+	comma(): void {
 		if (this.valuesStack.length >= 1) {
 			// order matters
 			const value = this.popValue();

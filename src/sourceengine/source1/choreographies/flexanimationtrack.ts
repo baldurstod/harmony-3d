@@ -5,7 +5,7 @@ export class FlexAnimationTrack {
 	event: ChoreographyEvent;
 	flags = 0;
 	samples: [ExpressionSample[], ExpressionSample[]] = [[], []];
-	controllerName: string = '';
+	controllerName = '';
 	min = 0;
 	max = 0;
 
@@ -13,31 +13,31 @@ export class FlexAnimationTrack {
 		this.event = event;
 	}
 
-	setFlexControllerName(controllerName: string) {
+	setFlexControllerName(controllerName: string): void {
 		this.controllerName = controllerName;
 	}
 
-	setFlags(flags: number) {
+	setFlags(flags: number): void {
 		this.flags = flags;
 	}
 
-	setMin(min: number) {
+	setMin(min: number): void {
 		this.min = min;
 	}
 
-	setMax(max: number) {
+	setMax(max: number): void {
 		this.max = max;
 	}
 
-	isTrackActive() {
+	isTrackActive(): boolean {
 		return (this.flags & (1 << 0)) ? true : false
 	}
 
-	isComboType() {
+	isComboType(): boolean {
 		return (this.flags & (1 << 1)) ? true : false
 	}
 
-	addSample(time: number, value: number, type: number) {
+	addSample(time: number, value: number, type: number): ExpressionSample {
 		const sample = new ExpressionSample();
 		sample.t = time;
 		sample.v = value;
@@ -48,7 +48,7 @@ export class FlexAnimationTrack {
 		return sample;
 	}
 
-	toString(indent?: string) {
+	toString(indent?: string): string {
 		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [indent + this.controllerName];

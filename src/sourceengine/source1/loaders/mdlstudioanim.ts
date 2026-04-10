@@ -11,7 +11,7 @@ export const STUDIO_ANIM_DELTA = 0x10
 export const STUDIO_ANIM_RAWROT2 = 0x20 // Quaternion64
 
 const tempMat4 = mat4.create();
-const tempQuat = quat.create();
+//const tempQuat = quat.create();
 const tempvec3 = vec3.create();
 
 /**
@@ -21,7 +21,7 @@ export class MdlStudioAnimValuePtr { // mstudioanim_valueptr_t
 	offset: number[] = [];
 	base = 0;
 
-	getAnimValue2(i: number) {
+	getAnimValue2(i: number): number {
 		return this.base + this.offset[i]!;
 	}
 }
@@ -56,42 +56,29 @@ export class MdlStudioAnim {//mstudioanim_t
 	 * TODO
 	 */
 	getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3 {
-		const fromEuler5 = function (out: vec3, q: quat, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
+		const fromEuler5 = function (out: vec3, q: quat, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string): vec3 {
 			const M = tempMat4;//Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-			let Nq;
 			let s;
-			let xs;
-			let ys;
-			let zs;
-			let wx;
-			let wy;
-			let wz;
-			let xx;
-			let xy;
-			let xz;
-			let yy;
-			let yz;
-			let zz;
 
-			Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
+			const Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
 			if (Nq > 0) {
 				s = 2.0 / Nq
 			} else {
 				s = 0
 			}
-			xs = q[0] * s
-			ys = q[1] * s
-			zs = q[2] * s
+			const xs = q[0] * s
+			const ys = q[1] * s
+			const zs = q[2] * s
 
-			wx = q[3] * xs
-			wy = q[3] * ys
-			wz = q[3] * zs
-			xx = q[0] * xs
-			xy = q[0] * ys
-			xz = q[0] * zs
-			yy = q[1] * ys
-			yz = q[1] * zs
-			zz = q[2] * zs
+			const wx = q[3] * xs
+			const wy = q[3] * ys
+			const wz = q[3] * zs
+			const xx = q[0] * xs
+			const xy = q[0] * ys
+			const xz = q[0] * zs
+			const yy = q[1] * ys
+			const yz = q[1] * zs
+			const zz = q[2] * zs
 
 			M[0] = 1.0 - (yy + zz)
 			M[1] = xy - wz
@@ -106,7 +93,7 @@ export class MdlStudioAnim {//mstudioanim_t
 
 			return Eul_FromHMatrix(out, M, i, j, k, h, parity, repeat, frame)
 		}
-		const fromEuler4 = function (out: vec3, q: quat) {
+		const fromEuler4 = function (out: vec3, q: quat): vec3 {
 			fromEuler5(out, q, 0, 1, 2, 0, 'even', 'no', 'S')
 			const temp = out[0];
 			out[0] = out[2];
@@ -115,7 +102,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			return out;
 		}
 
-		var Eul_FromHMatrix = function (out: vec3, M: mat4, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
+		const Eul_FromHMatrix = function (out: vec3, M: mat4, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string): vec3 {
 			const ea = tempvec3;
 
 			if (repeat == 'yes') {
@@ -223,12 +210,12 @@ export class MdlStudioAnim {//mstudioanim_t
 		return pos;
 	}
 
-	readValue(mdl: SourceMdl, frame: number, offset: number/*, boneid, memberid*/) {
+	readValue(mdl: SourceMdl, frame: number, offset: number/*, boneid, memberid*/): number {
 		const reader = mdl.reader;
 		reader.seek(offset)
 		let valid = 0;
 		let total = 0;
-		let value;
+		//let value;
 		let k = frame;
 		let count = 0;
 
