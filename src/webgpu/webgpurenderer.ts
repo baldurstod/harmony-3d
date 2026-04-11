@@ -549,9 +549,9 @@ export class WebGPURenderer implements Renderer {
 
 	#setupLights(renderList: RenderList, camera: Camera, viewMatrix: mat4, uniforms: Map<string, BufferSource>): void {
 		//const uniforms = new Map<string, any>();
-		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
-		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
-		const colorIntensity = vec3.create();//TODO: do not create a vec3
+		//const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
+		//const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
+		//const colorIntensity = vec3.create();//TODO: do not create a vec3
 		const pointLights = renderList.pointLights;//scene.getChildList(PointLight);
 		const spotLights = renderList.spotLights;
 
@@ -562,22 +562,19 @@ export class WebGPURenderer implements Renderer {
 
 		for (const pointLight of pointLights) {
 			if (pointLight.isVisible()) {
-				pointLight.getWorldPosition(lightPositionWorldSpace);;
+				const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
+				const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
+				pointLight.getWorldPosition(lightPositionWorldSpace);
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
 
+				const colorIntensity = vec3.scale(vec3.create(), pointLight.color, pointLight.intensity);
+
 				uniforms.set('pointLights[' + pointLightId + '].position', lightPositionCameraSpace as BufferSource);
-				uniforms.set('pointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity) as BufferSource);
+				uniforms.set('pointLights[' + pointLightId + '].color', colorIntensity as BufferSource);
 				uniforms.set('pointLights[' + pointLightId + '].range', new Float32Array([pointLight.range]) as BufferSource);
 
 				uniforms.set('pbrLights[' + pointLightId + '].position', lightPositionWorldSpace as BufferSource);
-				uniforms.set('pbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity) as BufferSource);
-				//program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
-				//program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-				//program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
-				//program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
-				//program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
-				//program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
-				//program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+				uniforms.set('pbrLights[' + pointLightId + '].radiance', colorIntensity as BufferSource);
 
 				shadow = pointLight.shadow;
 				if (shadow && pointLight.castShadow) {
@@ -605,10 +602,11 @@ export class WebGPURenderer implements Renderer {
 
 		for (const spotLight of spotLights) {
 			if (spotLight.isVisible()) {
+				const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
 				spotLight.getWorldPosition(lightPositionCameraSpace);
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
 				uniforms.set('spotLights[' + spotLightId + '].position', lightPositionCameraSpace as BufferSource);
-				uniforms.set('spotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity) as BufferSource);
+				uniforms.set('spotLights[' + spotLightId + '].color', vec3.scale(vec3.create(), spotLight.color, spotLight.intensity) as BufferSource);
 				uniforms.set('spotLights[' + spotLightId + '].range', new Float32Array([spotLight.range]) as BufferSource);
 				uniforms.set('spotLights[' + spotLightId + '].innerAngleCos', new Float32Array([spotLight.innerAngleCos]) as BufferSource);
 				uniforms.set('spotLights[' + spotLightId + '].outerAngleCos', new Float32Array([spotLight.outerAngleCos]) as BufferSource);
