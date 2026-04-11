@@ -41,7 +41,7 @@ const tempViewProjectionMatrix = mat4.create();
 
 const pickBufferSize = 8;
 
-//const lightDirection = vec3.create();
+const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
 const computeEntryPoint = 'compute_main';
@@ -553,7 +553,7 @@ export class WebGPURenderer implements Renderer {
 		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		const colorIntensity = vec3.create();//TODO: do not create a vec3
 		const pointLights = renderList.pointLights;//scene.getChildList(PointLight);
-		//const spotLights = renderList.spotLights;
+		const spotLights = renderList.spotLights;
 
 		let shadow;
 		let pointLightId = 0;
@@ -599,21 +599,21 @@ export class WebGPURenderer implements Renderer {
 		//program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
 
 
-		//let spotLightId = 0;
-		//const spotShadowMap = [];
-		//const spotShadowMatrix = [];
-		/*
+		let spotLightId = 0;
+		const spotShadowMap = [];
+		const spotShadowMatrix = [];
+
 		for (const spotLight of spotLights) {
 			if (spotLight.isVisible()) {
 				spotLight.getWorldPosition(lightPositionCameraSpace);
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
-				program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
-				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
-				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
+				uniforms.set('spotLights[' + spotLightId + '].position', lightPositionCameraSpace as BufferSource);
+				uniforms.set('spotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity) as BufferSource);
+				uniforms.set('spotLights[' + spotLightId + '].range', new Float32Array([spotLight.range]) as BufferSource);
+				uniforms.set('spotLights[' + spotLightId + '].innerAngleCos', new Float32Array([spotLight.innerAngleCos]) as BufferSource);
+				uniforms.set('spotLights[' + spotLightId + '].outerAngleCos', new Float32Array([spotLight.outerAngleCos]) as BufferSource);
+				//program.setUniformValue('spotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
+				//program.setUniformValue('spotLights[' + spotLightId + '].direction', [0, 0, -1]);
 
 				spotLight.getDirection(lightDirection);
 				const m = viewMatrix;
@@ -623,19 +623,21 @@ export class WebGPURenderer implements Renderer {
 				lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
 				lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
 				lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
-				program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
+				uniforms.set('spotLights[' + spotLightId + '].direction', lightDirection as BufferSource);
 
 				shadow = spotLight.shadow;
 				if (shadow && spotLight.castShadow) {
+					/*
+					TODO
 					spotShadowMap.push(shadow.renderTarget.getTexture());
 					spotShadowMatrix.push(shadow.shadowMatrix);
-					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
-					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
+					uniforms.set('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
+					uniforms.set('uSpotLightShadows[' + spotLightId + '].enabled', true);
+					*/
 				}
 				++spotLightId;
 			}
 		}
-		*/
 		//program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
 		//program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
 
