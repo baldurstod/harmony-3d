@@ -1,3 +1,5 @@
+#define FLAT_SHADING
+
 #include matrix_uniforms
 #include declare_texture_transform
 //#include declare_shadow_mapping
