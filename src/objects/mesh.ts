@@ -556,7 +556,7 @@ function getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boo
 }
 
 const tempViewProjectionMatrix = mat4.create();
-let pickedPrimitive: GPUBuffer;
+export let pickedPrimitive: GPUBuffer;
 
 function populateBindGroups(
 	shaderModule: WgslModule,

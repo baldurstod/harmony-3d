@@ -654,8 +654,8 @@ class Graphics {
 
 	static renderMultiCanvas(delta: number, context: RenderContext = {}) {
 		// TODO: mutualize with the method render()
-		for (const [_, canvas] of this.#canvases) {
-			if (canvas.enabled) {
+		for (const [, canvas] of this.#canvases) {
+			if (canvas.enabled && (!context.pick || context.pick?.canvas === canvas.canvas)) {
 				this.#renderMultiCanvas(canvas, delta, context);
 			}
 		}

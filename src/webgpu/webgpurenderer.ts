@@ -15,7 +15,7 @@ import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material, MaterialColorMode } from '../materials/material';
-import { Mesh } from '../objects/mesh';
+import { Mesh, pickedPrimitive } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';
@@ -56,7 +56,7 @@ export class WebGPURenderer implements Renderer {
 	#defines = new Map<string, string>();
 	readonly #defaultPickingColor = vec3.create();
 	//readonly #pointerPosition = vec2.create();
-	#pickedPrimitive?: GPUBuffer;
+	//#pickedPrimitive?: GPUBuffer;
 	readonly #identityVec2 = vec2.create();
 	readonly #fullScreenQuad: FullScreenQuad;
 
@@ -326,8 +326,8 @@ export class WebGPURenderer implements Renderer {
 
 		const commandEncoder = device.createCommandEncoder();
 
-		if (pick && this.#pickedPrimitive) {
-			commandEncoder.clearBuffer(this.#pickedPrimitive);
+		if (pick && pickedPrimitive) {
+			commandEncoder.clearBuffer(pickedPrimitive);
 		}
 
 		let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
@@ -506,13 +506,13 @@ export class WebGPURenderer implements Renderer {
 
 
 		let stagingBuffer: GPUBuffer;
-		if (pick && this.#pickedPrimitive) {
+		if (pick && pickedPrimitive) {
 			stagingBuffer = device.createBuffer({// TODO: destroy buffer
 				size: pickBufferSize,
 				usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 			});
 			commandEncoder.copyBufferToBuffer(
-				this.#pickedPrimitive,
+				pickedPrimitive,
 				stagingBuffer,
 			);
 		}
@@ -1382,14 +1382,14 @@ export class WebGPURenderer implements Renderer {
 					}
 					break;
 				case 'pickedPrimitive':
-					const buffer = this.#pickedPrimitive ?? device.createBuffer({// TODO: don't recreate buffers each time
+					const buffer = pickedPrimitive ?? device.createBuffer({// TODO: don't recreate buffers each time
 						label: storage.name,
 						size: storage.size,
 						usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 					});
 
-					if (!this.#pickedPrimitive) {
-						this.#pickedPrimitive = buffer;
+					if (!pickedPrimitive) {
+						//pickedPrimitive = buffer;
 					}
 
 					groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
