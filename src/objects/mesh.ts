@@ -1124,7 +1124,18 @@ function populateBindGroups(
 								}
 
 							} else {
-								throw new Error('code me: storage is neither a struct nor an array');
+								if (!storageBuffer.buffer) {
+									storageBuffer.buffer = device.createBuffer({
+										label: storage.name,
+										size: storage.type.size,
+										usage,
+									});
+								}
+								//throw new Error('code me: storage is neither a struct nor an array');*
+								const s = storageBuffer.value;
+								if (s !== undefined && s !== null) {
+									writePrimitive(device.queue, storageBuffer.buffer, storage.type.name, s as number | vec3, 0);
+								}
 							}
 							groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
 						} else {
@@ -1137,38 +1148,38 @@ function populateBindGroups(
 	}
 }
 
-function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number | vec3, baseOffset: number): void {
-	switch (member.type.name) {
+function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, type: string, /*member: MemberInfo, */value: number | vec3, baseOffset: number): void {
+	switch (type) {
 		case 'u32':
 			queue.writeBuffer(
 				buffer,
-				baseOffset + member.offset,
+				baseOffset,
 				new Uint32Array([value as number]),
 			);
 			break;
 		case 'i32':
 			queue.writeBuffer(
 				buffer,
-				baseOffset + member.offset,
+				baseOffset,
 				new Int32Array([value as number]),
 			);
 			break;
 		case 'f32':
 			queue.writeBuffer(
 				buffer,
-				baseOffset + member.offset,
+				baseOffset,
 				new Float32Array([value as number]),
 			);
 			break;
 		case 'vec3f':
 			queue.writeBuffer(
 				buffer,
-				baseOffset + member.offset,
+				baseOffset,
 				value as vec3 as BufferSource,
 			);
 			break;
 		default:
-			errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
+			errorOnce(`unknwon type ${type} in writePrimitive`);
 			break;
 	}
 }
@@ -1189,7 +1200,7 @@ function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], 
 		} else {
 			// primitive
 			if (structValue !== undefined && structValue !== null) {
-				writePrimitive(queue, buffer, member, structValue as number, baseOffset);
+				writePrimitive(queue, buffer, member.type.name, structValue as number, baseOffset + member.offset);
 			} else {
 				errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
 			}
