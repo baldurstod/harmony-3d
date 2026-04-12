@@ -1,8 +1,10 @@
 import { vec3 } from 'gl-matrix';
+import { FpsCounter } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
+import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { BlendingMode } from '../materials/constants';
 import { ShaderMaterial } from '../materials/shadermaterial';
 import { Mesh } from '../objects/mesh';
@@ -84,6 +86,8 @@ export class Raytracer {
 	#outputTexture: Texture | null = null;
 	#prepassDone = false;
 	#facesCount = 0;
+	#zeroUint32 = new Uint32Array([0]);
+	#rpsCounter = new FpsCounter();
 
 	constructor() {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
@@ -220,6 +224,9 @@ export class Raytracer {
 
 		this.#material.setStorage('raytraceImageBuffer', this.#width * this.#height * 4 * 4);
 		this.#material.setStorage('rngStateBuffer', this.#width * this.#height * 4);
+		this.#material.setStorage('rayCount', {
+			usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+		});
 	}
 
 	#raytrace(event: CustomEvent<GraphicTickEvent>): void {
@@ -245,14 +252,56 @@ export class Raytracer {
 			this.#material.getStorage('faces')!.buffer = this.#prepassMaterial.getStorage('faces')!.buffer;
 		}
 
+		const rayCountCopyBuffer = WebGPUInternal.device.createBuffer({
+			size: 4,
+			usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+		});
+
+		const rayCountBuffer = this.#material.getStorage('rayCount')?.buffer;
+		if (rayCountBuffer) {
+			WebGPUInternal.device.queue.writeBuffer(
+				rayCountBuffer,
+				0,
+				this.#zeroUint32,
+			);
+		}
+
 		Graphics.compute(this.#mesh,
 			{
 				width: this.#width,
 				height: this.#height,
 				workgroupCountX: Math.ceil(this.#width! / COMPUTE_WORKGROUP_SIZE_X),
 				workgroupCountY: Math.ceil(this.#height! / COMPUTE_WORKGROUP_SIZE_Y),
-			}
+			},
+			(commandEncoder: GPUCommandEncoder) => {
+				const outputBuffer = this.#material.getStorage('rayCount')!.buffer!;
+
+				commandEncoder.copyBufferToBuffer(
+					outputBuffer,
+					0, // Source offset
+					rayCountCopyBuffer,
+					0, // Destination offset
+					4
+				);
+			},
 		);
+
+		(async (): Promise<void> => {
+			await rayCountCopyBuffer.mapAsync(
+				GPUMapMode.READ,
+				0, // Offset
+				4 // Length
+			);
+
+			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, 4);
+			const rays = new Uint32Array(copyArrayBuffer.slice())[0]!;
+
+			this.#rpsCounter.addQuantity(rays);
+		})();
+	}
+
+	getRps(): number {
+		return this.#rpsCounter.getSpeed();
 	}
 
 	getOutputTexture(): Texture | null {
