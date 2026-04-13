@@ -546,10 +546,10 @@ function getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boo
 			entries.push(entry);
 		}
 
-		bindGroupLayouts.push(device.createBindGroupLayout({
+		bindGroupLayouts[groupId] = device.createBindGroupLayout({
 			label: `group ${groupId}`,
 			entries: entries,
-		}));
+		});
 	}
 
 	return bindGroupLayouts;
