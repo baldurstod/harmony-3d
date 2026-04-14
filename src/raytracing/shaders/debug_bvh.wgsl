@@ -1,19 +1,37 @@
 #include matrix_uniforms
 #include raytracer::common
 
+struct AABB2 {
+  min: vec3f,
+  max: vec3f,
+}
+
 @group(0) @binding(x) var<storage, read> AABBs: array<AABB>;
+@group(0) @binding(x) var<storage, read> bvhNodes: array<AABB2>;
 @group(0) @binding(x) var<uniform> viewProjectionMatrix: mat4x4f;
 
+override highlight: bool = false;
+override highlightIndex: u32 = 0;
+
 const EDGES_PER_CUBE = 12u;
+
+struct VertexOut {
+	@builtin(position) position : vec4f,
+	@interpolate(flat) @location(0) aabbInstanceIdx: u32,
+}
 
 @vertex
 fn vertex_main(
   @builtin(instance_index) instanceIndex: u32,
   @builtin(vertex_index) vertexIndex: u32
-) -> @builtin(position) vec4f {
+) -> VertexOut {
   let lineInstanceIdx = instanceIndex % EDGES_PER_CUBE;
   let aabbInstanceIdx = instanceIndex / EDGES_PER_CUBE;
+#ifdef NEW_METHOD
+  let a = bvhNodes[aabbInstanceIdx];
+#else
   let a = AABBs[aabbInstanceIdx];
+#endif
   var pos: vec3f;
   let fVertexIndex = f32(vertexIndex);
 
@@ -67,10 +85,20 @@ fn vertex_main(
   } else if (lineInstanceIdx == 11) {
     pos = mix(a7, a4, fVertexIndex);
   }
-  return matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1);
+  return VertexOut(
+    matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1),
+    aabbInstanceIdx
+  );
 }
 
 @fragment
-fn fragment_main() -> @location(0) vec4f {
-  return vec4f(1, 1, 1, 0.1);
+fn fragment_main(fragInput: VertexOut) -> @location(0) vec4f {
+  if (highlight) {
+    if (fragInput.aabbInstanceIdx != highlightIndex) {
+      discard;
+    }
+    return vec4f(1, 1, 1, 1);
+  } else {
+    return vec4f(1, 1, 1, 0.1);
+  }
 }
