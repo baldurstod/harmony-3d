@@ -47,6 +47,10 @@ type RayTracingScene = {
 	MODELS_COUNT: number,
 	MAX_NUM_BVs_PER_MESH: number,
 	MAX_NUM_FACES_PER_MESH: number,
+	v2_indices: Uint8ClampedArray,
+	v2_tris: Uint8ClampedArray,
+	v2_nodes: Uint8ClampedArray,
+	nodesUsed: number,
 }
 
 type RayTracingContext = {
@@ -280,6 +284,52 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 			}
 		}
 	}
+
+	const start = performance.now();
+	const context_v2 = buildBVH_v2(meshes, sceneMaterials);
+	//console.info(context_v2.bvhNodes);
+	const end = performance.now();
+	console.info(`Building bvh took ${end - start} ms`);
+
+	const TRI_SIZE = 20;// 3 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
+
+	//const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
+	const v2_trisBuffer = new ArrayBuffer(context_v2.triIdx.length * TRI_SIZE * Float32Array.BYTES_PER_ELEMENT);
+	const v2_nodesBuffer = new ArrayBuffer(context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT);// 2 * vec4 per node
+
+	const v2_indices = new Uint8ClampedArray(context_v2.triIdx.buffer);//context_v2.triIdx);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
+	const v2_tris = new Uint8ClampedArray(v2_trisBuffer);//context_v2.triIdx.length * 12 * Float32Array.BYTES_PER_ELEMENT);// 3 * vec4 per tri
+	const v2_nodes = new Uint8ClampedArray(v2_nodesBuffer);//context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT);// 2 * vec4 per node
+
+	const trisFloat = new Float32Array(v2_trisBuffer);
+	const trisUint32 = new Uint32Array(v2_trisBuffer);
+	const nodesFloat = new Float32Array(v2_nodesBuffer);
+	const nodesUint32 = new Uint32Array(v2_nodesBuffer);
+
+	const tris = context_v2.tris;
+	for (let i = 0; i < tris.length; i++) {
+		const tri = tris[i]!;
+		const j = i * TRI_SIZE;
+		trisFloat.set(tri.vertex0, j + 0);
+		trisFloat.set(tri.vertex1, j + 4);
+		trisFloat.set(tri.vertex2, j + 8);
+		trisUint32[j + 11] = tri.materialIdx;
+		trisFloat.set(tri.uv0, j + 12);
+		trisFloat.set(tri.uv1, j + 14);
+		trisFloat.set(tri.uv2, j + 16);
+	}
+
+	const bvhNodes = context_v2.bvhNodes;
+	for (let i = 0; i < context_v2.nodesUsed; i++) {
+		const bvhNode = bvhNodes[i]!;
+		const j = i * 8;
+		nodesFloat.set(bvhNode.aabbMin, j + 0);
+		nodesFloat.set(bvhNode.aabbMax, j + 4);
+
+		nodesUint32[j + 3] = bvhNode.leftFirst;
+		nodesUint32[j + 7] = bvhNode.triCount;
+	}
+
 	return {
 		materials,
 		faces,
@@ -290,6 +340,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		MODELS_COUNT: context.MODELS_COUNT,
 		MAX_NUM_BVs_PER_MESH: context.MAX_NUM_BVs_PER_MESH,
 		MAX_NUM_FACES_PER_MESH: context.MAX_NUM_FACES_PER_MESH,
+		v2_indices,
+		v2_tris,
+		v2_nodes,
+		nodesUsed: context_v2.nodesUsed,
 	}
 }
 
@@ -464,4 +518,430 @@ async function addToGlobalTextureData(context: RayTracingContext, texture: Textu
 		repeat,
 		layers: texture.isCube ? 6 : 1,
 	}
+}
+
+type Tri = {
+	vertex0: vec3, vertex1: vec3, vertex2: vec3,
+	uv0: vec3, uv1: vec3, uv2: vec3,
+	centroid: vec3;
+	materialIdx: number;
+};
+
+class BVHNode {
+	readonly aabbMin: vec3 = vec3.create();
+	readonly aabbMax: vec3 = vec3.create();
+	leftFirst!: number;
+	triCount!: number;
+	static readonly #tmp = vec3.create();
+
+	//union { struct { float3 aabbMin; uint leftFirst; }; __m128 aabbMin4; };
+	//union { struct { float3 aabbMax; uint triCount; }; __m128 aabbMax4; };
+	isLeaf(): boolean { return this.triCount > 0; }
+	grow(p: vec3): void {
+		vec3.min(this.aabbMin, this.aabbMin, p);
+		vec3.max(this.aabbMax, this.aabbMax, p);
+	}
+
+	area(): number {
+		const tmp = BVHNode.#tmp;
+		vec3.sub(tmp, this.aabbMax, this.aabbMin)
+		return tmp[0] * tmp[1] + tmp[1] * tmp[2] + tmp[2] * tmp[0];
+	}
+};
+
+class Aabb {
+	readonly bmin = vec3.fromValues(Infinity, Infinity, Infinity);
+	readonly bmax = vec3.fromValues(-Infinity, -Infinity, - Infinity);
+	static readonly #tmp = vec3.create();
+
+	grow(p: vec3): void {
+		vec3.min(this.bmin, this.bmin, p);
+		vec3.max(this.bmax, this.bmax, p);
+	}
+
+	growAabb(b: Aabb): void {
+		if (b.bmin[0] != Infinity) {
+			this.grow(b.bmin);
+			this.grow(b.bmax);
+		}
+	}
+
+	area(): number {
+		const tmp = Aabb.#tmp;
+		vec3.sub(tmp, this.bmax, this.bmin)
+		return tmp[0] * tmp[1] + tmp[1] * tmp[2] + tmp[2] * tmp[0];
+	}
+
+	reset() {
+		vec3.set(this.bmin, Infinity, Infinity, Infinity);
+		vec3.set(this.bmax, -Infinity, -Infinity, - Infinity);
+	}
+};
+
+type Context_V2 = {
+	triIdx: Uint32Array;
+	tris: Tri[];
+	bvhNodes: BVHNode[];
+	nodesUsed: number;
+
+	bin: Bin[];
+	leftArea: number[];
+	rightArea: number[];
+	leftCount: number[];
+	rightCount: number[];
+}
+
+const rootNodeIdx = 0;
+function buildBVH_v2(meshes: Mesh[], materials: Map<Material, RaytracingMaterial | null>): Context_V2 {
+	const tris = createTris(meshes, materials);
+
+	// create the BVH node pool
+	const triCount = tris.length;
+	const bvhNodes: BVHNode[] = new Array(triCount * 2);
+	const triIdx = new Uint32Array(triCount);
+
+	// populate triangle index array
+	for (let i = 0; i < triCount; i++) {
+		triIdx[i] = i;
+		// calculate triangle centroids for partitioning
+		const tri = tris[i]!;
+		tri.centroid[0] = (tri.vertex0[0] + tri.vertex1[0] + tri.vertex2[0]) * 0.3333;
+		tri.centroid[1] = (tri.vertex0[1] + tri.vertex1[1] + tri.vertex2[1]) * 0.3333;
+		tri.centroid[2] = (tri.vertex0[2] + tri.vertex1[2] + tri.vertex2[2]) * 0.3333;
+	}
+
+	// assign all triangles to root node
+	const rootNode = new BVHNode();
+	bvhNodes[rootNodeIdx] = rootNode;
+	bvhNodes[rootNodeIdx + 1] = new BVHNode();
+	rootNode.leftFirst = 0, rootNode.triCount = triCount;
+
+	// Prepare arrays for findBestSplitPlane
+	const bin: Bin[] = new Array(BINS);
+	for (let i = 0; i < BINS; i++) {
+		bin[i] = new Bin();//{ bounds: new Aabb(), triCount: 0 };
+	}
+
+	const leftArea: number[] = new Array(BINS - 1);
+	const rightArea: number[] = new Array(BINS - 1);
+	const leftCount: number[] = new Array(BINS - 1);
+	const rightCount: number[] = new Array(BINS - 1);
+
+	for (let i = 0; i < BINS - 1; i++) {
+		leftArea[i] = 0;//new Bin();//{ bounds: new Aabb(), triCount: 0 };
+		rightArea[i] = 0;//new Bin();//{ bounds: new Aabb(), triCount: 0 };
+		leftCount[i] = 0;//new Bin();//{ bounds: new Aabb(), triCount: 0 };
+		rightCount[i] = 0;//new Bin();//{ bounds: new Aabb(), triCount: 0 };
+	}
+
+	const context: Context_V2 = {
+		bvhNodes,
+		triIdx,
+		tris,
+		nodesUsed: 2,
+		bin,
+		leftArea,
+		rightArea,
+		leftCount,
+		rightCount,
+	};
+
+	updateNodeBounds(rootNodeIdx, context);
+	// subdivide recursively
+	subdivide(rootNodeIdx, context);
+	return context;
+}
+
+function updateNodeBounds(nodeIdx: number, context: Context_V2): void {
+	const node = context.bvhNodes[nodeIdx]!;
+	const triIdx = context.triIdx;
+	const tris = context.tris;
+	vec3.set(node.aabbMin, Infinity, Infinity, Infinity);
+	vec3.set(node.aabbMax, -Infinity, -Infinity, - Infinity);
+
+	for (let first = node.leftFirst, i = 0; i < node.triCount; i++) {
+		const leafTriIdx = triIdx[first + i]!;
+		const leafTri = tris[leafTriIdx]!;
+
+		node.grow(leafTri.vertex0);
+		node.grow(leafTri.vertex1);
+		node.grow(leafTri.vertex2);
+	}
+}
+
+function subdivide(nodeIdx: number, context: Context_V2): void {
+	// terminate recursion
+	const bvhNodes = context.bvhNodes;
+	const node = bvhNodes[nodeIdx]!;
+	const triIdx = context.triIdx;
+	const tris = context.tris;
+	// determine split axis using SAH
+	const [splitCost, axis, splitPos] = findBestSplitPlane(node, context);
+	const nosplitCost = calculateNodeCost(node);
+	if (splitCost >= nosplitCost) {
+		return;
+	}
+
+	// in-place partition
+	let i = node.leftFirst;
+	let j = i + node.triCount - 1;
+	while (i <= j) {
+		if (tris[triIdx[i]!]!.centroid[axis]! < splitPos) {
+			i++;
+		} else {
+			const t = triIdx[i]!;
+			triIdx[i] = triIdx[j]!;
+			triIdx[j] = t;
+			--j;
+		}
+	}
+	// abort split if one of the sides is empty
+	const leftCount = i - node.leftFirst;
+	if (leftCount == 0 || leftCount == node.triCount) {
+		return;
+	}
+	// create child nodes
+	const leftChildIdx = context.nodesUsed++;
+	const rightChildIdx = context.nodesUsed++;
+
+
+	const leftNode = new BVHNode();
+	const rightNode = new BVHNode();
+	bvhNodes[leftChildIdx] = leftNode;
+	bvhNodes[rightChildIdx] = rightNode;
+
+
+	leftNode.leftFirst = node.leftFirst;
+	leftNode.triCount = leftCount;
+	rightNode.leftFirst = i;
+	rightNode.triCount = node.triCount - leftCount;
+	node.leftFirst = leftChildIdx;
+	node.triCount = 0;
+	updateNodeBounds(leftChildIdx, context);
+	updateNodeBounds(rightChildIdx, context);
+	// recurse
+	subdivide(leftChildIdx, context);
+	subdivide(rightChildIdx, context);
+}
+
+function subdivide_removeme(nodeIdx: number, context: Context_V2): void {
+	// terminate recursion
+	const bvhNodes = context.bvhNodes;
+	const node = bvhNodes[nodeIdx]!;
+	const triIdx = context.triIdx;
+	const tris = context.tris;
+	// determine split axis using SAH
+	let bestAxis = -1;
+	let bestPos = 0, bestCost = Infinity;
+	for (let axis = 0; axis < 3; axis++) {
+		for (let i = 0; i < node.triCount; i++) {
+			const triangle = tris[triIdx[node.leftFirst + i]!]!;
+			const candidatePos = triangle.centroid[axis]!;
+			const cost = evaluateSAH(node, axis as 0 | 1 | 2, candidatePos, context);
+			if (cost < bestCost) {
+				bestPos = candidatePos, bestAxis = axis, bestCost = cost;
+			}
+		}
+	}
+	const axis = bestAxis;
+	const splitPos = bestPos;
+	//float3 e = node.aabbMax - node.aabbMin; // extent of parent
+	const parentArea = node.area();//e.x * e.y + e.y * e.z + e.z * e.x;
+	const parentCost = node.triCount * parentArea;
+	if (bestCost >= parentCost) return;
+	// in-place partition
+	let i = node.leftFirst;
+	let j = i + node.triCount - 1;
+	while (i <= j) {
+		if (tris[triIdx[i]!]!.centroid[axis]! < splitPos) {
+			i++;
+		} else {
+			const t = triIdx[i]!;
+			triIdx[i] = triIdx[j]!;
+			triIdx[j] = t;
+			--j;
+		}
+	}
+	// abort split if one of the sides is empty
+	const leftCount = i - node.leftFirst;
+	if (leftCount == 0 || leftCount == node.triCount) {
+		return;
+	}
+	// create child nodes
+	const leftChildIdx = context.nodesUsed++;
+	const rightChildIdx = context.nodesUsed++;
+
+
+	const leftNode = new BVHNode();
+	const rightNode = new BVHNode();
+	bvhNodes[leftChildIdx] = leftNode;
+	bvhNodes[rightChildIdx] = rightNode;
+
+
+	leftNode.leftFirst = node.leftFirst;
+	leftNode.triCount = leftCount;
+	rightNode.leftFirst = i;
+	rightNode.triCount = node.triCount - leftCount;
+	node.leftFirst = leftChildIdx;
+	node.triCount = 0;
+	updateNodeBounds(leftChildIdx, context);
+	updateNodeBounds(rightChildIdx, context);
+	// recurse
+	subdivide(leftChildIdx, context);
+	subdivide(rightChildIdx, context);
+}
+
+class Bin {
+	readonly bounds: Aabb = new Aabb();
+	triCount: number = 0;
+
+	reset(): void {
+		this.bounds.reset();
+		this.triCount = 0;
+	}
+};
+
+const BINS = 8;
+
+function findBestSplitPlane(node: BVHNode, context: Context_V2): [number, number, number] {
+	const triIdx = context.triIdx;
+	const tris = context.tris;
+
+	let axis: 0 | 1 | 2 = 0, splitPos: number = 0;
+
+	let bestCost = Infinity;
+	for (let a = 0; a < 3; a++) {
+		let boundsMin = Infinity, boundsMax = -Infinity;
+		for (let i = 0; i < node.triCount; i++) {
+			const triangle: Tri = tris[triIdx[node.leftFirst + i]!]!;
+			boundsMin = Math.min(boundsMin, triangle.centroid[a]!);
+			boundsMax = Math.max(boundsMax, triangle.centroid[a]!);
+		}
+		if (boundsMin === boundsMax) {
+			continue;
+		}
+		// populate the bins
+		const bin: Bin[] = context.bin;
+		for (let i = 0; i < BINS; i++) {
+			bin[i]!.reset();// = { bounds: new Aabb(), triCount: 0 };
+		}
+		let scale = BINS / (boundsMax - boundsMin);
+		for (let i = 0; i < node.triCount; i++) {
+			const triangle: Tri = tris[triIdx[node.leftFirst + i]!]!;
+			const binIdx = Math.min(BINS - 1, Math.floor((triangle.centroid[a]! - boundsMin) * scale));
+			bin[binIdx]!.triCount++;
+			bin[binIdx]!.bounds.grow(triangle.vertex0);
+			bin[binIdx]!.bounds.grow(triangle.vertex1);
+			bin[binIdx]!.bounds.grow(triangle.vertex2);
+		}
+
+		// gather data for the 7 planes between the 8 bins
+		const leftArea = context.leftArea;//new Array(BINS - 1);
+		const rightArea = context.rightArea;//new Array(BINS - 1);
+		const leftCount = context.leftCount;//new Array(BINS - 1);
+		const rightCount = context.rightCount;//new Array(BINS - 1);
+
+		for (let i = 0; i < BINS - 1; i++) {
+			leftArea[i]! = 0;//.reset();// = { bounds: new Aabb(), triCount: 0 };
+			rightArea[i]! = 0;//.reset();// = { bounds: new Aabb(), triCount: 0 };
+			leftCount[i]! = 0;//.reset();// = { bounds: new Aabb(), triCount: 0 };
+			rightCount[i]! = 0;//.reset();// = { bounds: new Aabb(), triCount: 0 };
+		}
+
+		const leftBox = new Aabb(), rightBox = new Aabb();
+		let leftSum = 0, rightSum = 0;
+		for (let i = 0; i < BINS - 1; i++) {
+			leftSum += bin[i]!.triCount;
+			leftCount[i] = leftSum;
+			leftBox.growAabb(bin[i]!.bounds);
+			leftArea[i] = leftBox.area();
+			rightSum += bin[BINS - 1 - i]!.triCount;
+			rightCount[BINS - 2 - i] = rightSum;
+			rightBox.growAabb(bin[BINS - 1 - i]!.bounds);
+			rightArea[BINS - 2 - i] = rightBox.area();
+		}
+
+		// calculate SAH cost for the 7 planes
+		scale = (boundsMax - boundsMin) / BINS;
+		for (let i = 0; i < BINS - 1; i++) {
+			const planeCost = leftCount[i]! * leftArea[i]! + rightCount[i]! * rightArea[i]!;
+			if (planeCost < bestCost) {
+				axis = a as 0 | 1 | 2, splitPos = boundsMin + scale * (i + 1), bestCost = planeCost;
+			}
+		}
+	}
+	return [bestCost, axis, splitPos];
+}
+
+function calculateNodeCost(node: BVHNode): number {
+	return node.triCount * node.area();
+}
+
+function evaluateSAH(node: BVHNode, axis: 0 | 1 | 2, pos: number, context: Context_V2): number {
+	const triIdx = context.triIdx;
+	const tris = context.tris;
+	// determine triangle counts and bounds for this split candidate
+	const leftBox = new Aabb, rightBox = new Aabb;
+	let leftCount = 0, rightCount = 0;
+	for (let i = 0; i < node.triCount; i++) {
+		const triangle = tris[triIdx[node.leftFirst + i]!]!;
+		if (triangle.centroid[axis] < pos) {
+			leftCount++;
+			leftBox.grow(triangle.vertex0);
+			leftBox.grow(triangle.vertex1);
+			leftBox.grow(triangle.vertex2);
+		}
+		else {
+			rightCount++;
+			rightBox.grow(triangle.vertex0);
+			rightBox.grow(triangle.vertex1);
+			rightBox.grow(triangle.vertex2);
+		}
+	}
+	const cost = leftCount * leftBox.area() + rightCount * rightBox.area();
+	return cost > 0 ? cost : Infinity;
+}
+
+function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial | null>): Tri[] {
+	const tris: Tri[] = [];
+	for (const mesh of meshes) {
+		const rtMaterial = materials.get(mesh.getMaterial());
+		if (!rtMaterial) {
+			continue;
+		}
+		const obj = mesh.exportObj(true);
+
+		const faces = obj.f;
+		const vertexPos = obj.v!;
+		const vertexCoord = obj.vt!;
+
+		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
+			const i0 = faces[vertexIndex + 0]!;
+			const i1 = faces[vertexIndex + 1]!;
+			const i2 = faces[vertexIndex + 2]!;
+
+			const vertex0 = new Float32Array(vertexPos.buffer, i0 * 4 * 3, 3);
+			const vertex1 = new Float32Array(vertexPos.buffer, i1 * 4 * 3, 3);
+			const vertex2 = new Float32Array(vertexPos.buffer, i2 * 4 * 3, 3);
+
+
+
+			const uv0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
+			const uv1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
+			const uv2 = new Float32Array(vertexCoord.buffer, i2 * 4 * 2, 2);
+
+			tris.push({
+				vertex0,
+				vertex1,
+				vertex2,
+				uv0,
+				uv1,
+				uv2,
+				centroid: vec3.create(),
+				materialIdx: rtMaterial.index,
+			});
+		}
+	}
+
+	return tris;
 }

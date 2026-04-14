@@ -1047,7 +1047,7 @@ function populateBindGroups(
 								}
 
 								for (const member of (storage.type as StructInfo).members) {
-									const source = (storageBuffer.value as StorageValueStruct)[member.name];
+									const source = (storageBuffer.value as StorageValueStruct | undefined)?.[member.name];
 									if (source) {
 										device.queue.writeBuffer(
 											storageBuffer.buffer,

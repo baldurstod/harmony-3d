@@ -28,6 +28,10 @@ type RtCamera = {
 const COMPUTE_WORKGROUP_SIZE_X = 16;
 const COMPUTE_WORKGROUP_SIZE_Y = 16;
 
+const COUNTERS = 10;
+const UINT_COUNTERS = 6;
+const COUNTERS_SIZE = COUNTERS * 4;
+
 export class Raytracer {
 	#frameId = 0;
 	#running = false;
@@ -35,7 +39,7 @@ export class Raytracer {
 	#width = 0;
 	#height = 0;
 	#material = new ShaderMaterial({
-		shaderSource: 'raytracer',
+		shaderSource: 'raytracer_v2',
 		uniforms: {
 			commonUniforms: {
 				frameCounter: 0,
@@ -74,6 +78,10 @@ export class Raytracer {
 	#debugBvhMaterial = new ShaderMaterial({
 		shaderSource: 'debug_bvh',
 		blendingMode: BlendingMode.Normal,
+		gpuConstants: {
+			highlight: 0,
+			highlightIndex: 0,
+		},
 	});
 	#debugBvhGeometry = new InstancedBufferGeometry({ count: 2, user: this });
 	#debugBvhMesh = new Mesh({
@@ -86,8 +94,14 @@ export class Raytracer {
 	#outputTexture: Texture | null = null;
 	#prepassDone = false;
 	#facesCount = 0;
-	#zeroUint32 = new Uint32Array([0]);
+	#zeroUint32 = new Uint32Array(COUNTERS);
 	#rpsCounter = new FpsCounter();
+	//#counters: number[] = new Array(COUNTERS);
+	#countersUint32?: Uint32Array;
+	#countersFloat32?: Float32Array;
+	#oldInstanceCount = 0;
+	#newInstanceCount = 0;
+	#newMethod = true;
 
 	constructor() {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
@@ -107,11 +121,13 @@ export class Raytracer {
 		this.#height = height;
 		this.#prepassDone = false;
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount } = await sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, nodesUsed } = await sceneToRtScene(scene);
 		this.#facesCount = facesCount;
 		this.#reset();
 
-		this.#debugBvhGeometry.instanceCount = aabbsCount * 12;
+		this.#oldInstanceCount = aabbsCount * 12;
+		this.#newInstanceCount = nodesUsed * 12;
+		this.#setInstanceCount();
 
 		const lookFrom = activeCamera.getWorldPosition();
 
@@ -164,6 +180,9 @@ export class Raytracer {
 			value: aabbs,
 			raw: true,
 		});
+		this.#material.setStorage('indices', { value: v2_indices, raw: true, });
+		this.#material.setStorage('tris', { value: v2_tris, raw: true, });
+		this.#material.setStorage('bvhNodes', { value: v2_nodes, raw: true, });
 
 
 		this.#material.setStorage('materials', materials as StorageValueArray);
@@ -176,6 +195,10 @@ export class Raytracer {
 
 		this.#debugBvhMaterial.setStorage('AABBs', {
 			value: aabbs,
+			raw: true,
+		});
+		this.#debugBvhMaterial.setStorage('bvhNodes', {
+			value: v2_nodes,
 			raw: true,
 		});
 
@@ -224,7 +247,7 @@ export class Raytracer {
 
 		this.#material.setStorage('raytraceImageBuffer', this.#width * this.#height * 4 * 4);
 		this.#material.setStorage('rngStateBuffer', this.#width * this.#height * 4);
-		this.#material.setStorage('rayCount', {
+		this.#material.setStorage('counters', {
 			usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 		});
 	}
@@ -253,11 +276,11 @@ export class Raytracer {
 		}
 
 		const rayCountCopyBuffer = WebGPUInternal.device.createBuffer({
-			size: 4,
+			size: COUNTERS_SIZE,
 			usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
 		});
 
-		const rayCountBuffer = this.#material.getStorage('rayCount')?.buffer;
+		const rayCountBuffer = this.#material.getStorage('counters')?.buffer;
 		if (rayCountBuffer) {
 			WebGPUInternal.device.queue.writeBuffer(
 				rayCountBuffer,
@@ -274,15 +297,14 @@ export class Raytracer {
 				workgroupCountY: Math.ceil(this.#height! / COMPUTE_WORKGROUP_SIZE_Y),
 			},
 			(commandEncoder: GPUCommandEncoder) => {
-				const outputBuffer = this.#material.getStorage('rayCount')!.buffer!;
+				const outputBuffer = this.#material.getStorage('counters')?.buffer;
 
-				commandEncoder.copyBufferToBuffer(
-					outputBuffer,
-					0, // Source offset
-					rayCountCopyBuffer,
-					0, // Destination offset
-					4
-				);
+				if (outputBuffer) {
+					commandEncoder.copyBufferToBuffer(
+						outputBuffer,
+						rayCountCopyBuffer,
+					);
+				}
 			},
 		);
 
@@ -290,11 +312,22 @@ export class Raytracer {
 			await rayCountCopyBuffer.mapAsync(
 				GPUMapMode.READ,
 				0, // Offset
-				4 // Length
+				COUNTERS_SIZE // Length
 			);
 
-			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, 4);
-			const rays = new Uint32Array(copyArrayBuffer.slice())[0]!;
+			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, COUNTERS_SIZE);
+			this.#countersUint32 = new Uint32Array(copyArrayBuffer.slice());
+			this.#countersFloat32 = new Float32Array(copyArrayBuffer.slice());
+			const rays = this.#countersUint32[1]!;
+			const high = this.#countersUint32[9]!;
+
+			if (high != 0) {
+				this.#debugBvhMaterial.gpuConstants!.highlight = 1;
+				this.#debugBvhMaterial.gpuConstants!.highlightIndex = high;
+			} else {
+				this.#debugBvhMaterial.gpuConstants!.highlight = 0;
+
+			}
 
 			this.#rpsCounter.addQuantity(rays);
 		})();
@@ -302,6 +335,18 @@ export class Raytracer {
 
 	getRps(): number {
 		return this.#rpsCounter.getSpeed();
+	}
+
+	getInvocations(): number {
+		return this.#countersUint32?.[0] ?? 0;
+	}
+
+	getUint32Counter(index: number): number | undefined {
+		return this.#countersUint32?.[index + 2];
+	}
+
+	getFloat32Counter(index: number): number | undefined {
+		return this.#countersFloat32?.[index + 2];
 	}
 
 	getOutputTexture(): Texture | null {
@@ -314,6 +359,22 @@ export class Raytracer {
 
 	debugBvh(debug: boolean): void {
 		this.#debugBvhMesh.setVisible(debug);
+	}
+
+	#setInstanceCount(): void {
+		if (this.#newMethod) {
+			this.#debugBvhGeometry.instanceCount = this.#newInstanceCount;
+			this.#debugBvhMesh.setDefine('NEW_METHOD');
+		} else {
+			this.#debugBvhGeometry.instanceCount = this.#oldInstanceCount;
+			this.#debugBvhMesh.removeDefine('NEW_METHOD');
+		}
+
+	}
+
+	useNewBvh(newBvh: boolean): void {
+		this.#newMethod = newBvh;
+		this.#setInstanceCount();
 	}
 
 	dispose(): void {
