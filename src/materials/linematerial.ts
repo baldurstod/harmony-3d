@@ -37,6 +37,10 @@ export class LineMaterial extends Material {
 	static getEntityName(): string {
 		return 'LineMaterial';
 	}
+
+	override getRaytracingMaterial(index: number): null {
+		return null;
+	}
 }
 Material.materialList['Line'] = LineMaterial;
 registerEntity(LineMaterial);
