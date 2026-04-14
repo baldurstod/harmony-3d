@@ -421,15 +421,17 @@ export class WebGPURenderer implements Renderer {
 			vertex: {
 				module: shaderModule.module,
 				entryPoint: vertexEntryPoint,
-				buffers: vertexBuffers
+				buffers: vertexBuffers,
+				constants: material.gpuConstants,
 			},
 			fragment: {
 				module: shaderModule.module,
 				entryPoint: fragmentEntryPoint,
+				constants: material.gpuConstants,
 				targets: [{
 					format: pipelineColorFormat,
 					blend: material.getWebGPUBlending(),
-				}]
+				}],
 			},
 			primitive: {
 				topology: object.topology,
@@ -915,10 +917,10 @@ export class WebGPURenderer implements Renderer {
 				entries.push(entry);
 			}
 
-			bindGroupLayouts.push(device.createBindGroupLayout({
+			bindGroupLayouts[groupId] = device.createBindGroupLayout({
 				label: `group ${groupId}`,
 				entries: entries,
-			}));
+			});
 		}
 
 		return bindGroupLayouts;
