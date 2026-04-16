@@ -63,10 +63,7 @@ async function getTexture2dData(texture: Texture): Promise<Float32Array> {// TOD
 
 			commandEncoder.copyBufferToBuffer(
 				outputBuffer,
-				0, // Source offset
 				stagingBuffer,
-				0, // Destination offset
-				bufferSize
 			);
 		}
 	);

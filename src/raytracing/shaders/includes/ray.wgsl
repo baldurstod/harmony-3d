@@ -1,4 +1,3 @@
-  @group(1) @binding(5) var<storage, read_write> rayCount: atomic<u32>;
 
   struct Ray {
     origin: vec3f,
@@ -111,7 +110,6 @@
     interval: Interval
   ) -> bool {
 
-    atomicAdd(&rayCount, 1);
     var current: HitRecord;
     var didIntersect = false;
     var stack: array<i32, BV_MAX_STACK_DEPTH>;
