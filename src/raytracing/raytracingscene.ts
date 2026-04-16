@@ -291,7 +291,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	const end = performance.now();
 	console.info(`Building bvh took ${end - start} ms`);
 
-	const TRI_SIZE = 20;// 3 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
+	const TRI_SIZE = 36;// 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
 
 	//const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
 	const v2_trisBuffer = new ArrayBuffer(context_v2.triIdx.length * TRI_SIZE * Float32Array.BYTES_PER_ELEMENT);
@@ -311,12 +311,20 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		const tri = tris[i]!;
 		const j = i * TRI_SIZE;
 		trisFloat.set(tri.vertex0, j + 0);
+		trisUint32[j + 3] = tri.materialIdx;
 		trisFloat.set(tri.vertex1, j + 4);
+		trisUint32[j + 7] = tri.flatShading ? 1 : 0;
 		trisFloat.set(tri.vertex2, j + 8);
-		trisUint32[j + 11] = tri.materialIdx;
-		trisFloat.set(tri.uv0, j + 12);
-		trisFloat.set(tri.uv1, j + 14);
-		trisFloat.set(tri.uv2, j + 16);
+
+		trisFloat.set(tri.normal0, j + 12);
+		trisFloat.set(tri.normal1, j + 16);
+		trisFloat.set(tri.normal2, j + 20);
+
+		trisFloat.set(tri.uv0, j + 24);
+		trisFloat.set(tri.uv1, j + 26);
+		trisFloat.set(tri.uv2, j + 28);
+
+		trisFloat.set(tri.faceNormal, j + 32);
 	}
 
 	const bvhNodes = context_v2.bvhNodes;
@@ -522,9 +530,12 @@ async function addToGlobalTextureData(context: RayTracingContext, texture: Textu
 
 type Tri = {
 	vertex0: vec3, vertex1: vec3, vertex2: vec3,
+	normal0: vec3, normal1: vec3, normal2: vec3,
 	uv0: vec3, uv1: vec3, uv2: vec3,
 	centroid: vec3;
 	materialIdx: number;
+	flatShading: boolean;
+	faceNormal: vec3;
 };
 
 class BVHNode {
@@ -903,6 +914,9 @@ function evaluateSAH(node: BVHNode, axis: 0 | 1 | 2, pos: number, context: Conte
 }
 
 function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial | null>): Tri[] {
+	const p1p0Diff = vec3.create();
+	const p2p0Diff = vec3.create();
+
 	const tris: Tri[] = [];
 	for (const mesh of meshes) {
 		const rtMaterial = materials.get(mesh.getMaterial());
@@ -913,6 +927,7 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 
 		const faces = obj.f;
 		const vertexPos = obj.v!;
+		const vertexNormal = obj.vn!;
 		const vertexCoord = obj.vt!;
 
 		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
@@ -924,21 +939,33 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 			const vertex1 = new Float32Array(vertexPos.buffer, i1 * 4 * 3, 3);
 			const vertex2 = new Float32Array(vertexPos.buffer, i2 * 4 * 3, 3);
 
-
+			const normal0 = new Float32Array(vertexNormal.buffer, i0 * 4 * 3, 3);
+			const normal1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
+			const normal2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
 
 			const uv0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
 			const uv1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
 			const uv2 = new Float32Array(vertexCoord.buffer, i2 * 4 * 2, 2);
 
+			vec3.sub(p1p0Diff, vertex1, vertex0);
+			vec3.sub(p2p0Diff, vertex2, vertex0);
+			const faceNormal = vec3.cross(vec3.create(), p1p0Diff, p2p0Diff);
+			vec3.normalize(faceNormal, faceNormal);
+
 			tris.push({
 				vertex0,
 				vertex1,
 				vertex2,
+				normal0,
+				normal1,
+				normal2,
 				uv0,
 				uv1,
 				uv2,
 				centroid: vec3.create(),
 				materialIdx: rtMaterial.index,
+				faceNormal,
+				flatShading: rtMaterial.flatShading,
 			});
 		}
 	}

@@ -1,3 +1,9 @@
+requires unrestricted_pointer_parameters;
+
+#ifndef MAX_BOUNCES
+	#define MAX_BOUNCES 10
+#endif
+
 const BV_MAX_STACK_DEPTH = 16;
 const EPSILON = 0.001;
 
@@ -11,18 +17,30 @@ struct Ray {
 	direction: vec3f,
 	rD: vec3f,
 	t: f32,// TODO: pack ?
-	triIndex: u32,// TODO: pack ?
+	//triIndex: u32,// TODO: pack ?
+	materialIdx: u32,
+	hitPos: vec3f,
+	hitNormal: vec3f,
 	coord: vec2f,
+	hitColor: vec4f,
 };
 
 struct Tri {
 	vertex0: vec3f,
-	vertex1: vec3f,
-	vertex2: vec3f,
 	materialIdx: u32,
+	vertex1: vec3f,
+	flatShading: u32,
+	vertex2: vec3f,
+
+	normal0: vec3f,
+	normal1: vec3f,
+	normal2: vec3f,
+
 	uv0: vec2f,
 	uv1: vec2f,
 	uv2: vec2f,
+
+	faceNormal: vec3f,
 };
 
 struct TextureDescriptor {
@@ -74,6 +92,16 @@ struct Counters {
 	counter7: atomic<u32>,
 }
 
+struct Context {
+	rayStackPtr: u32,
+	rayStack: array<Ray, MAX_BOUNCES + 1>,
+	//currentRay: Ray,
+	rngState: u32,
+	globalInvocationId: vec3<u32>,
+	bounces: u32,
+	done: bool,
+}
+
 @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;
 @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;
 @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;
@@ -96,11 +124,18 @@ override OBJECTS_COUNT_IN_SCENE: u32;
 override MAX_BVs_COUNT_PER_MESH: u32;
 override MAX_FACES_COUNT_PER_MESH: u32;
 
+override maxBounces: u32 = 10;
+
+//const rayStack = array<Ray, MAX_BOUNCES>();
+
+
 @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
 fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {
 	if (any(globalInvocationId.xy >= cameraUniforms.viewportSize)) {
 		return;
 	}
+
+	let rayStackPtr: u32 = 0;
 
 	atomicAdd(&counters.invocations, 1);
 
@@ -111,10 +146,18 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 
 	var rngState = rngStateBuffer[idx];
 
+	if (commonUniforms.frameCounter == 0) {
+		rngState = idx;
+	}
+
 	var camera = cameraUniforms;
 	initCamera(&camera);
 	var ray = getCameraRay(&camera, x, y, &rngState);
-	var p: f32 = intersectBvh(&ray/* , globalInvocationId*/);
+
+	var rays = array<Ray, MAX_BOUNCES + 1>();
+	rays[0] = ray;
+	var context: Context = Context(0, rays, rngState, globalInvocationId, 0, false);
+	var color: vec4f = castRayLoop(&context);
 
 	/*
 	if (r.t < 1e30f) {
@@ -123,6 +166,7 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	*/
 
 
+	/*
 	var color: vec4f;
 	if (ray.t != 1.e30) {
 		let tri = &tris[ray.triIndex];
@@ -139,9 +183,154 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	} else {
 		color = vec4f(1.0, 0.0, 0.0, 1.0);
 	}
+	*/
 
-	raytraceImageBuffer[idx] = vec3f(p);
-	textureStore(outTexture, globalInvocationId.xy, color);
+	var pixel = raytraceImageBuffer[idx];
+
+	if (commonUniforms.frameCounter == 0) {
+		pixel = vec3f(0);
+	}
+
+	pixel += color.rgb;
+	raytraceImageBuffer[idx] = pixel;
+
+
+
+
+	raytraceImageBuffer[idx] = pixel;
+	textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));
+	//textureStore(outTexture, globalInvocationId.xy, vec4f(color.rgb, 1.0));
+
+	rngStateBuffer[idx] = rngState;
+}
+
+@must_use
+fn castRayLoop(context: ptr<function, Context>) -> vec4f {
+	var color: vec4f = vec4f(1.0);
+	loop {
+		castRay(context);
+
+		if ((*context).done) {
+			break;
+		}
+	}
+
+	if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+		atomicStore(&counters.counter6, bitcast<u32>((*context).rayStackPtr));
+	}
+
+	for(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {
+		let ray: Ray = (*context).rayStack[i];
+		let material = &materials[ray.materialIdx];
+
+		if ((*material).materialType == 1) {
+			// Emissive
+
+			if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+				atomicStore(&counters.counter0, (*context).rayStackPtr);
+				//atomicStore(&counters.counter1, bitcast<u32>((ray).hitNormal.y));
+				//atomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));
+			}
+
+
+			//color = vec4f(f32(i / 10), 0.0, 0.0, 1.0);
+
+			color = ray.hitColor;
+			//color = vec4f(1, 0.0, 0.0, 1.0);
+		} else {
+			color *= ray.hitColor;
+		}
+
+		//color = vec4f( f32((*context).rayStackPtr) / 3.);
+		//color = vec4f(abs(ray.hitNormal), 1.0);
+	}
+
+	let ray: Ray = (*context).rayStack[0];
+	//color = vec4f(normalize(abs(ray.direction)), 1.0);
+	//color = vec4f(abs(ray.hitNormal), 0.0);
+	//color = ray.hitColor;
+	//color = vec4f( f32((*context).rayStackPtr) / 3.);
+
+	let material = &materials[ray.materialIdx];
+	if ((*material).materialType == 1) {
+		//color = vec4f(1.0) ;
+	} else {
+		//color = vec4f(.0) ;
+	}
+
+	return color;
+}
+
+fn castRay(context: ptr<function, Context>) {
+	/*
+	if ((*context).rayStackPtr == MAX_BOUNCES) {
+		return vec4f(0);
+	}
+	*/
+	(*context).done = true;
+
+
+	var color: vec4f;
+
+	let currentRay = (*context).rayStackPtr;
+	let ray = &(*context).rayStack[currentRay];
+	//(*context).rayStackPtr--;
+
+	let p = intersectBvh(ray);
+
+	if (false && all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+		atomicStore(&counters.counter0, bitcast<u32>((ray).hitNormal.x));
+		atomicStore(&counters.counter1, bitcast<u32>((ray).hitNormal.y));
+		atomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));
+	}
+
+	if (ray.t != 1.e30) {
+		(*context).rayStack[currentRay].t = ray.t;
+		//let tri = &tris[ray.triIndex];
+		let material = &materials[ray.materialIdx];
+
+
+		switch ((*material).materialType) {
+			case 1: {
+				//ray.hitColor = vec4f(1.0);
+				ray.hitColor = vec4f((*material).albedo, 1.0);
+			}
+			case 7777: {
+				(*context).rayStack[currentRay].hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
+			}
+			case 6,7, 8: {
+
+				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+				if (nearZero(scatterDirection)) {
+					scatterDirection = ray.hitNormal;
+				}
+
+				let rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+				var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xffffff, vec3f(0), vec3f(0), vec2f(0), vec4f(0));
+
+
+				pushRay(&newRay, context);
+
+				(*context).rayStack[currentRay].hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
+			}
+			default: {
+				// ...
+			}
+		}
+	}
+}
+
+fn pushRay(ray: ptr<function, Ray>, context: ptr<function, Context>) {
+	if ((*context).bounces >= MAX_BOUNCES) {
+		return;
+	}
+
+	(*context).bounces++;
+
+	(*context).rayStackPtr++;
+	(*context).rayStack[(*context).rayStackPtr] = *ray;
+	(*context).done = false;
+
 }
 
 @must_use
@@ -156,9 +345,9 @@ fn intersectBvh(ray: ptr<function, Ray>, /*globalInvocationId : vec3<u32> TODO: 
 	var r: f32 = 0;
 	var currentNode: u32 = 0;
 
-	atomicAdd(&counters.counter0, bitcast<u32>(node.aabbMaxTriCount.a));
+	//atomicAdd(&counters.counter0, bitcast<u32>(node.aabbMaxTriCount.a));
 
-	while (true) {
+	loop {
 		//atomicAdd(&counters.counter1, 1);
 		//r = abs(ray.direction[0] * ray.direction[2]);
 		let nodeTriCount: u32 = bitcast<u32>(node.aabbMaxTriCount.a);
@@ -166,7 +355,8 @@ fn intersectBvh(ray: ptr<function, Ray>, /*globalInvocationId : vec3<u32> TODO: 
 			// Node is a leaf
 			let nodeLeftFirst: u32 = bitcast<u32>(node.aabbMinLeftFirst.a);
 			for(var i: u32 = 0; i <= nodeTriCount; i++) {
-				intersectTri( ray, indices[nodeLeftFirst + i] );
+				let tri = &tris[indices[nodeLeftFirst + i]];
+				intersectTri( ray, tri );
 
 				/*
 				if (all(globalInvocationId.xy == vec2u(100, 75))) {
@@ -251,11 +441,14 @@ fn intersectBvh(ray: ptr<function, Ray>, /*globalInvocationId : vec3<u32> TODO: 
 	return r;
 }
 
-fn intersectTri(ray: ptr<function, Ray>, triIndex: u32) {
-	let tri = &tris[triIndex];
+fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
+	//let tri = &tris[triIndex];
 
 	let edge1: vec3f = (*tri).vertex1 - (*tri).vertex0;
 	let edge2: vec3f = (*tri).vertex2 - (*tri).vertex0;
+
+	let normal1 = (*tri).normal1 - (*tri).normal0;
+	let normal2 = (*tri).normal2 - (*tri).normal0;
 
 	let uv1 = (*tri).uv1 - (*tri).uv0;
 	let uv2 = (*tri).uv2 - (*tri).uv0;
@@ -279,7 +472,14 @@ fn intersectTri(ray: ptr<function, Ray>, triIndex: u32) {
 	let t: f32 = f * dot( edge2, q );
 	if (t > 0.0001f) {
 		if (t < (*ray).t) {
-			(*ray).triIndex = triIndex;
+			(*ray).materialIdx = (*tri).materialIdx;
+
+			(*ray).hitPos = (*tri).vertex0 + u * edge1 + v * edge2;
+			if ((*tri).flatShading == 0) {
+				(*ray).hitNormal = (*tri).normal0 + u * normal1 + v * normal2;
+			} else {
+				(*ray).hitNormal = (*tri).faceNormal;
+			}
 			(*ray).coord = (*tri).uv0 + u * uv1 + v * uv2;
 		}
 		(*ray).t = min( (*ray).t, t );
@@ -293,7 +493,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0, vec2f(0));
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xffffff, vec3f(0), vec3f(0), vec2f(0), vec4f(0));
 }
 
 @must_use
