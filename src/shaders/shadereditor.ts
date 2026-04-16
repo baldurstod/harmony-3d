@@ -248,7 +248,11 @@ export class ShaderEditor extends HTMLElement {
 			}
 
 			this.#shaderEditor.setSession(editSession);
-			const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
+			let type = ShaderType.Vertex;
+			if (Graphics.isWebGPU) {
+				type = ShaderType.Wgsl;
+			}
+			const source = ShaderManager.getShaderSource(type, this.#editorShaderName, true);
 			if (source) {
 				this.#shaderType = source.getType();
 				this.#editMode = EDIT_MODE_SHADER;
