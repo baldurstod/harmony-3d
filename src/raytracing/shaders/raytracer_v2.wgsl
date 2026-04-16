@@ -126,9 +126,6 @@ override MAX_FACES_COUNT_PER_MESH: u32;
 
 override maxBounces: u32 = 10;
 
-//const rayStack = array<Ray, MAX_BOUNCES>();
-
-
 @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)
 fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {
 	if (any(globalInvocationId.xy >= cameraUniforms.viewportSize)) {
@@ -159,32 +156,6 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	var context: Context = Context(0, rays, rngState, globalInvocationId, 0, false);
 	var color: vec4f = castRayLoop(&context);
 
-	/*
-	if (r.t < 1e30f) {
-		p = r.t / 1000.;
-	}
-	*/
-
-
-	/*
-	var color: vec4f;
-	if (ray.t != 1.e30) {
-		let tri = &tris[ray.triIndex];
-		p = f32(ray.triIndex) / f32(arrayLength(&indices));
-		p = f32(tri.materialIdx) / 10;
-		color = vec4f(p);
-
-		let material = &materials[(*tri).materialIdx];
-		if ((*material).materialType == 7) {
-			color = vec4f(1, 0, 0, 1);
-			//color = vec4f(textureLookup((*material).textures[0], 0.5, 0.5/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
-			color = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
-		}
-	} else {
-		color = vec4f(1.0, 0.0, 0.0, 1.0);
-	}
-	*/
-
 	var pixel = raytraceImageBuffer[idx];
 
 	if (commonUniforms.frameCounter == 0) {
@@ -192,14 +163,9 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	}
 
 	pixel += color.rgb;
-	raytraceImageBuffer[idx] = pixel;
-
-
-
 
 	raytraceImageBuffer[idx] = pixel;
 	textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));
-	//textureStore(outTexture, globalInvocationId.xy, vec4f(color.rgb, 1.0));
 
 	rngStateBuffer[idx] = rngState;
 }
@@ -215,9 +181,11 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 		}
 	}
 
+	/*
 	if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
 		atomicStore(&counters.counter6, bitcast<u32>((*context).rayStackPtr));
 	}
+	*/
 
 	for(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {
 		let ray: Ray = (*context).rayStack[i];
@@ -225,48 +193,16 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 
 		if ((*material).materialType == 1) {
 			// Emissive
-
-			if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
-				atomicStore(&counters.counter0, (*context).rayStackPtr);
-				//atomicStore(&counters.counter1, bitcast<u32>((ray).hitNormal.y));
-				//atomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));
-			}
-
-
-			//color = vec4f(f32(i / 10), 0.0, 0.0, 1.0);
-
 			color = ray.hitColor;
-			//color = vec4f(1, 0.0, 0.0, 1.0);
 		} else {
 			color *= ray.hitColor;
 		}
-
-		//color = vec4f( f32((*context).rayStackPtr) / 3.);
-		//color = vec4f(abs(ray.hitNormal), 1.0);
-	}
-
-	let ray: Ray = (*context).rayStack[0];
-	//color = vec4f(normalize(abs(ray.direction)), 1.0);
-	//color = vec4f(abs(ray.hitNormal), 0.0);
-	//color = ray.hitColor;
-	//color = vec4f( f32((*context).rayStackPtr) / 3.);
-
-	let material = &materials[ray.materialIdx];
-	if ((*material).materialType == 1) {
-		//color = vec4f(1.0) ;
-	} else {
-		//color = vec4f(.0) ;
 	}
 
 	return color;
 }
 
 fn castRay(context: ptr<function, Context>) {
-	/*
-	if ((*context).rayStackPtr == MAX_BOUNCES) {
-		return vec4f(0);
-	}
-	*/
 	(*context).done = true;
 
 
@@ -274,15 +210,16 @@ fn castRay(context: ptr<function, Context>) {
 
 	let currentRay = (*context).rayStackPtr;
 	let ray = &(*context).rayStack[currentRay];
-	//(*context).rayStackPtr--;
 
 	let p = intersectBvh(ray);
 
+	/*
 	if (false && all((*context).globalInvocationId.xy == vec2u(200, 150))) {
 		atomicStore(&counters.counter0, bitcast<u32>((ray).hitNormal.x));
 		atomicStore(&counters.counter1, bitcast<u32>((ray).hitNormal.y));
 		atomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));
 	}
+	*/
 
 	if (ray.t != 1.e30) {
 		(*context).rayStack[currentRay].t = ray.t;
@@ -295,10 +232,7 @@ fn castRay(context: ptr<function, Context>) {
 				//ray.hitColor = vec4f(1.0);
 				ray.hitColor = vec4f((*material).albedo, 1.0);
 			}
-			case 7777: {
-				(*context).rayStack[currentRay].hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
-			}
-			case 6,7, 8: {
+			case 6, 7, 8: {
 
 				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
 				if (nearZero(scatterDirection)) {
@@ -345,11 +279,7 @@ fn intersectBvh(ray: ptr<function, Ray>, /*globalInvocationId : vec3<u32> TODO: 
 	var r: f32 = 0;
 	var currentNode: u32 = 0;
 
-	//atomicAdd(&counters.counter0, bitcast<u32>(node.aabbMaxTriCount.a));
-
 	loop {
-		//atomicAdd(&counters.counter1, 1);
-		//r = abs(ray.direction[0] * ray.direction[2]);
 		let nodeTriCount: u32 = bitcast<u32>(node.aabbMaxTriCount.a);
 		if (nodeTriCount > 0) {
 			// Node is a leaf
