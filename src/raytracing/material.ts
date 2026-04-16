@@ -3,7 +3,8 @@ import { float32 } from 'harmony-types';
 import { Texture } from '../textures/texture';
 
 export enum RtMaterial {
-	Emissive = 0,
+	Unknown = 0,
+	Emissive,
 	Reflective,
 	Dielectric,
 	Lambertian,

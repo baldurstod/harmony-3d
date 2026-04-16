@@ -73,12 +73,12 @@
       var i2 = i;
 
       switch material.materialType {
-        case 0: {
+        case 1: {
           color = material.albedo;
           bLoop = false;
           break;
         }
-        case 1: {
+        case 2: {
           if (i < commonUniforms.maxBounces) {
             var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);
             if (scatters) {
@@ -95,7 +95,7 @@
           }
           break;
         }
-        case 2: {
+        case 3: {
           if (i < commonUniforms.maxBounces) {
             var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);
             r = scattered;
@@ -106,7 +106,7 @@
           }
           break;
         }
-        case 3: {
+        case 4: {
           var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -116,7 +116,7 @@
           }
           break;
         }
-        case 4: {// Source1Material
+        case 5: {// Source1Material
           var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -126,7 +126,7 @@
           }
           break;
         }
-        case 5: {// Source1VertexLitGeneric
+        case 6: {// Source1VertexLitGeneric
           var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -136,7 +136,7 @@
           }
           break;
         }
-        case 6: {// LightMappedGeneric
+        case 7: {// LightMappedGeneric
           var scatters = scatterSource1LightMappedGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
@@ -146,7 +146,7 @@
           }
           break;
         }
-        case 7: {// Source2Material
+        case 8: {// Source2Material
           var scatters = scatterSource2Material(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);
           if (i < commonUniforms.maxBounces) {
             i++;
