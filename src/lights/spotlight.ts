@@ -1,7 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
-import { Light } from './light';
+import { Light, LightType } from './light';
 import { SpotLightShadow } from './spotlightshadow';
 
 const DEFAULT_ANGLE = Math.PI / 4.0;
@@ -72,6 +72,10 @@ export class SpotLight extends Light {
 
 	static getEntityName() {
 		return 'SpotLight';
+	}
+
+	override getRaytracingLight(): LightType {
+		return LightType.Spot;
 	}
 }
 registerEntity(SpotLight);

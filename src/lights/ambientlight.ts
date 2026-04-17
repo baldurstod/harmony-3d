@@ -1,10 +1,10 @@
 import { registerEntity } from '../entities/entities';
-import { Light, LightParameters } from './light';
+import { Light, LightParameters, LightType } from './light';
 
 export type AmbientLightParameters = LightParameters;
 
 export class AmbientLight extends Light {
-	isAmbientLight = true;
+	readonly isAmbientLight = true;
 
 	constructor(params: AmbientLightParameters = {}) {
 		super(params);
@@ -24,6 +24,10 @@ export class AmbientLight extends Light {
 		} else {
 			return super.is(s);
 		}
+	}
+
+	override getRaytracingLight(): LightType {
+		return LightType.Point;
 	}
 }
 registerEntity(AmbientLight);

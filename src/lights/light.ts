@@ -16,13 +16,21 @@ export type LightParameters = EntityParameters & {
 	intensity?: number,
 };
 
+export enum LightType {
+	// The value should be consistent with the values in the raytracing shader
+	Ambient = 1,
+	Point = 2,
+	Spot = 3,
+	Directional = 4,
+}
+
 export class Light extends Entity {
 	#intensity: number;
 	#color: vec3;// TODO: use Color instead
 	#range: number = 1000;
 	shadow?: LightShadow;
 	#shadowTextureSize: number = defaultTextureSize;
-	isLight = true;
+	readonly isLight = true;
 
 	constructor(parameters: LightParameters = {}) {
 		super(parameters);
@@ -109,6 +117,10 @@ export class Light extends Entity {
 
 	is(s: string): boolean {
 		return s == 'Light';
+	}
+
+	getRaytracingLight(): LightType {
+		throw new Error('Override this function');
 	}
 }
 registerEntity(Light);

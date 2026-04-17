@@ -1,7 +1,7 @@
 import { JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
-import { Light, LightParameters } from './light';
+import { Light, LightParameters, LightType } from './light';
 import { PointLightShadow } from './pointlightshadow';
 
 export type PointLightParameters = LightParameters & {
@@ -9,7 +9,7 @@ export type PointLightParameters = LightParameters & {
 };
 
 export class PointLight extends Light {
-	isPointLight = true;
+	readonly isPointLight = true;
 
 	constructor(params: PointLightParameters = {}) {
 		super(params);
@@ -61,6 +61,10 @@ export class PointLight extends Light {
 		} else {
 			return super.is(s);
 		}
+	}
+
+	override getRaytracingLight(): LightType {
+		return LightType.Point;
 	}
 }
 registerEntity(PointLight);
