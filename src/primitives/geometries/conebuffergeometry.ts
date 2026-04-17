@@ -67,7 +67,6 @@ export class ConeBufferGeometry extends BufferGeometry {
 
 			const indexStart = segmentId * 2;
 			this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
-			this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
 		}
 	}
 
