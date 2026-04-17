@@ -221,7 +221,14 @@ export class Entity {
 		}
 	}
 
+	/**
+	 * @deprecated Use getWorldOrientation instead.
+	 */
 	getWorldQuaternion(q = quat.create()): quat {
+		return this.getWorldOrientation(q);
+	}
+
+	getWorldOrientation(q = quat.create()): quat {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(q);
 			quat.mul(q, q, this._quaternion);
@@ -231,7 +238,14 @@ export class Entity {
 		return q;
 	}
 
+	/**
+	 * @deprecated Use setWorldOrientation instead.
+	 */
 	setWorldQuaternion(quaternion: ReadonlyQuat): void {
+		this.setWorldOrientation(quaternion);
+	}
+
+	setWorldOrientation(quaternion: ReadonlyQuat): void {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(tempQuat);
 			quat.invert(tempQuat, tempQuat);
