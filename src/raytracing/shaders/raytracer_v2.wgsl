@@ -1,8 +1,9 @@
-requires unrestricted_pointer_parameters;
+requires unrestricted_pointer_parameters, pointer_composite_access;
 
 #ifndef MAX_BOUNCES
 	#define MAX_BOUNCES 10
 #endif
+#define MAX_SUB_RAYS 5
 
 const BV_MAX_STACK_DEPTH = 16;
 const EPSILON = 0.001;
@@ -23,6 +24,13 @@ struct Ray {
 	hitNormal: vec3f,
 	coord: vec2f,
 	hitColor: vec4f,
+	totalColor: vec4f,
+
+	lightIndex: u32,
+	lightDistance: f32,
+
+	chilRays: array<u32, MAX_SUB_RAYS>,
+	chilId: u32,
 };
 
 struct Tri {
@@ -61,6 +69,22 @@ struct Material {
 	textures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures
 };
 
+const AmbientLight = 1;
+const PointLight = 2;
+const SpotLight = 3;
+const DirectionalLight = 4;
+
+struct Light {
+	position: vec3f,
+	lightType: u32,
+	orientation: vec4f,
+	color: vec3f,
+	intensity: f32,
+	innerAngle: f32,
+	outerAngle: f32,
+	range: f32,
+};
+
 const rootNodeIdx = 0;
 
 #include math::modulo
@@ -94,7 +118,8 @@ struct Counters {
 
 struct Context {
 	rayStackPtr: u32,
-	rayStack: array<Ray, MAX_BOUNCES + 1>,
+	rayStackPtr2: u32,
+	rayStack: array<Ray, (MAX_BOUNCES + 1) * MAX_SUB_RAYS>,
 	//currentRay: Ray,
 	rngState: u32,
 	globalInvocationId: vec3<u32>,
@@ -112,6 +137,7 @@ struct Context {
 //@group(1) @binding(1) var<storage, read> AABBs: array<AABB>;
 @group(1) @binding(2) var<storage, read> materials: array<Material>;
 @group(1) @binding(3) var<storage, read> textures: array<f32>;
+@group(1) @binding(4) var<storage, read> lights: array<Light>;
 
 @group(2) @binding(x) var<storage, read> indices: array<u32>;
 @group(2) @binding(x) var<storage, read> tris: array<Tri>;
@@ -151,9 +177,9 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	initCamera(&camera);
 	var ray = getCameraRay(&camera, x, y, &rngState);
 
-	var rays = array<Ray, MAX_BOUNCES + 1>();
+	var rays = array<Ray, (MAX_BOUNCES + 1) * MAX_SUB_RAYS>();
 	rays[0] = ray;
-	var context: Context = Context(0, rays, rngState, globalInvocationId, 0, false);
+	var context: Context = Context(0, 0, rays, rngState, globalInvocationId, 0, false);
 	var color: vec4f = castRayLoop(&context);
 
 	var pixel = raytraceImageBuffer[idx];
@@ -187,17 +213,77 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 	}
 	*/
 
+	let ray: ptr<function, Ray> = &(*context).rayStack[0];
+
+	if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+		atomicStore(&counters.counter6, bitcast<u32>((*context).rayStackPtr));
+	}
+
 	for(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {
-		let ray: Ray = (*context).rayStack[i];
+		let ray: ptr<function, Ray> = &(*context).rayStack[i];
+		let material = &materials[ray.materialIdx];
+
+		var childsColor = vec4f(0.);
+
+		if (i == 0) {
+			if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+				atomicStore(&counters.counter6, bitcast<u32>(ray.chilId));
+			}
+		}
+
+		if (ray.chilId > 0) {
+			var found: bool = false;
+			for(var i: u32 = 0; i < MAX_SUB_RAYS; i++) {
+				let child: u32 = ray.chilRays[i];
+				if (child == 0) {
+					break;
+				}
+
+				let childRay = (*context).rayStack[child];
+
+				if (childRay.t != 1.e30) {
+					childsColor += childRay.totalColor;
+					found = true;
+				}
+			}
+			if (found) {
+				ray.totalColor = ray.hitColor * childsColor;
+			} else {
+				ray.totalColor = ray.hitColor;
+			}
+		} else {
+			ray.totalColor = ray.hitColor;
+		}
+	}
+
+	if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+		let id: u32 = 1;
+		atomicStore(&counters.counter0, bitcast<u32>((*context).rayStack[id].hitColor.x));
+		atomicStore(&counters.counter1, bitcast<u32>((*context).rayStack[id].hitColor.y));
+		atomicStore(&counters.counter2, bitcast<u32>((*context).rayStack[id].hitColor.z));
+		atomicStore(&counters.counter3, bitcast<u32>((*context).rayStack[id].totalColor.x));
+		atomicStore(&counters.counter4, bitcast<u32>((*context).rayStack[id].totalColor.y));
+		atomicStore(&counters.counter5, bitcast<u32>((*context).rayStack[id].totalColor.z));
+
+		atomicStore(&counters.counter6, bitcast<u32>((*context).rayStack[0].chilId));
+		atomicStore(&counters.counter6, bitcast<u32>((*context).rayStack[0].chilRays[0]));
+		atomicStore(&counters.counter7, bitcast<u32>((*context).rayStack[0].chilRays[1]));
+	}
+
+	/*
+	for(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {
+		let ray: ptr<function, Ray> = &(*context).rayStack[i];
 		let material = &materials[ray.materialIdx];
 
 		if ((*material).materialType == 1) {
 			// Emissive
-			color = ray.hitColor;
+			color = ray.totalColor;
 		} else {
 			color *= ray.hitColor;
 		}
 	}
+	*/
+	color = ray.totalColor;
 
 	return color;
 }
@@ -208,8 +294,9 @@ fn castRay(context: ptr<function, Context>) {
 
 	var color: vec4f;
 
-	let currentRay = (*context).rayStackPtr;
-	let ray = &(*context).rayStack[currentRay];
+	let currentRay = (*context).rayStackPtr2;
+	(*context).rayStackPtr2++;
+	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
 
 	let p = intersectBvh(ray);
 
@@ -220,6 +307,23 @@ fn castRay(context: ptr<function, Context>) {
 		atomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));
 	}
 	*/
+
+	if (ray.lightIndex != 0xFFFFFFFF) {
+
+		/*
+		if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
+			atomicStore(&counters.counter0, bitcast<u32>(ray.lightDistance));
+		}
+		*/
+
+		if (ray.t < ray.lightDistance) {
+			ray.hitColor = vec4f(0.0);
+			return;
+		} else {
+			ray.t = ray.lightDistance;
+			ray.materialIdx = 1;// light material
+		}
+	}
 
 	if (ray.t != 1.e30) {
 		(*context).rayStack[currentRay].t = ray.t;
@@ -239,13 +343,27 @@ fn castRay(context: ptr<function, Context>) {
 					scatterDirection = ray.hitNormal;
 				}
 
-				let rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
-				var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xffffff, vec3f(0), vec3f(0), vec2f(0), vec4f(0));
+				var rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+				var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+				pushRay(&newRay, currentRay, context);
 
+				let light = &lights[0];
+				let lightDir = light.position + randomUnitVec3(&(*context).rngState) - ray.hitPos;
+				scatterDirection = normalize(lightDir);
+				let dist = length(lightDir);
 
-				pushRay(&newRay, context);
+				rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+				newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+				pushRay(&newRay, currentRay, context);
 
-				(*context).rayStack[currentRay].hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
+				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
+
+				(*context).bounces++;
+			}
+			case 0xFFFFFFFF: {
+				let light = &lights[ray.lightIndex];
+				//ray.hitColor = vec4f(ray.t / light.range);
+				ray.hitColor = vec4f(light.intensity * light.range / (ray.lightDistance));
 			}
 			default: {
 				// ...
@@ -254,14 +372,18 @@ fn castRay(context: ptr<function, Context>) {
 	}
 }
 
-fn pushRay(ray: ptr<function, Ray>, context: ptr<function, Context>) {
+fn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {
 	if ((*context).bounces >= MAX_BOUNCES) {
 		return;
 	}
 
-	(*context).bounces++;
+	let parent: ptr<function, Ray> = &(*context).rayStack[parentId];
 
 	(*context).rayStackPtr++;
+	parent.chilRays[parent.chilId] = (*context).rayStackPtr;
+	parent.chilId++;
+
+
 	(*context).rayStack[(*context).rayStackPtr] = *ray;
 	(*context).done = false;
 
@@ -423,7 +545,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xffffff, vec3f(0), vec3f(0), vec2f(0), vec4f(0));
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 }
 
 @must_use

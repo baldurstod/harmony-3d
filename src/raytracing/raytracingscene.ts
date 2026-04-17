@@ -1,5 +1,7 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { quat, vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
+import { AmbientLight } from '../lights/ambientlight';
+import { Light } from '../lights/light';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
@@ -50,6 +52,7 @@ type RayTracingScene = {
 	v2_indices: Uint8ClampedArray,
 	v2_tris: Uint8ClampedArray,
 	v2_nodes: Uint8ClampedArray,
+	v2_lights: Uint8ClampedArray,
 	nodesUsed: number,
 }
 
@@ -86,8 +89,9 @@ interface ParsedModel {
 export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	const entitites = scene.getRenderableList();
 	const meshes: Mesh[] = [];
+	const lights: Light[] = [];
 	const materials = new Map<Material, RaytracingMaterial | null>();
-	let materialIndex = 0;
+	let materialIndex = 2;
 
 	for (const entity of entitites) {
 		if ((entity as Mesh).isMesh) {
@@ -98,6 +102,8 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 				let rtMaterials = material.getRaytracingMaterial(materialIndex++);
 				materials.set(material, rtMaterials);
 			}
+		} else if ((entity as Light).isLight && !(entity as AmbientLight).isAmbientLight) {
+			lights.push(entity as Light);
 		}
 	}
 
@@ -114,10 +120,11 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 		},
 		meshes,
 		materials,
+		lights,
 	);
 }
 
-async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial | null>): Promise<RayTracingScene> {
+async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMaterials: Map<Material, RaytracingMaterial | null>, lights: Light[]): Promise<RayTracingScene> {
 	const sceneModels = parseModel(meshes, sceneMaterials);
 
 	context.MODELS_COUNT = sceneModels.length;
@@ -256,8 +263,28 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 
 		// Prepare materials buffer
 		{
-			context.MATERIALS_COUNT = sceneMaterials.size;
+			context.MATERIALS_COUNT = sceneMaterials.size + 2;
 			const numFloatsPerMaterial = 8;
+
+			// Add a material for lights
+			const textures: RtTextureDescriptors = [emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture];
+			materials.push({
+				materialType: 0,
+				reflectionRatio: 0,
+				reflectionGloss: 0,
+				refractionIndex: 0,
+				albedo: vec3.create(),
+				textures,
+			});
+
+			materials.push({
+				materialType: 0xFFFFFFFF,
+				reflectionRatio: 0,
+				reflectionGloss: 0,
+				refractionIndex: 0,
+				albedo: vec3.create(),
+				textures,
+			});
 
 			for (const [, mtl] of sceneMaterials) {
 				if (!mtl) {
@@ -300,6 +327,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	const v2_indices = new Uint8ClampedArray(context_v2.triIdx.buffer);//context_v2.triIdx);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
 	const v2_tris = new Uint8ClampedArray(v2_trisBuffer);//context_v2.triIdx.length * 12 * Float32Array.BYTES_PER_ELEMENT);// 3 * vec4 per tri
 	const v2_nodes = new Uint8ClampedArray(v2_nodesBuffer);//context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT);// 2 * vec4 per node
+	const v2_lights = new Uint8ClampedArray(lights.length * 16 * Float32Array.BYTES_PER_ELEMENT);
 
 	const trisFloat = new Float32Array(v2_trisBuffer);
 	const trisUint32 = new Uint32Array(v2_trisBuffer);
@@ -338,6 +366,26 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		nodesUint32[j + 7] = bvhNode.triCount;
 	}
 
+	const lightsFloat = new Float32Array(v2_lights.buffer);
+	const lightsUint32 = new Uint32Array(v2_lights.buffer);
+
+	const tmpV = vec3.create();
+	const tmpQ = quat.create();
+	for (let i = 0; i < lights.length; i++) {
+		const light = lights[i]!;
+
+		const j = i * 16;
+
+		lightsFloat.set(light.getWorldPosition(tmpV), j + 0);		// position
+		lightsUint32[j + 3] = light.getRaytracingLight();			// type
+		lightsFloat.set(light.getWorldOrientation(tmpQ), j + 4);	// orientation
+		lightsFloat.set(light.color, j + 8);						// color
+		lightsFloat[j + 11] = light.intensity;						// intensity
+		lightsFloat[j + 12] = 1;									// inner angle
+		lightsFloat[j + 13] = 1;									// outer angle
+		lightsFloat[j + 14] = 100;									// range
+	}
+
 	return {
 		materials,
 		faces,
@@ -351,6 +399,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		v2_indices,
 		v2_tris,
 		v2_nodes,
+		v2_lights,
 		nodesUsed: context_v2.nodesUsed,
 	}
 }

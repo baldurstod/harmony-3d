@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { FpsCounter } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
@@ -121,7 +121,7 @@ export class Raytracer {
 		this.#height = height;
 		this.#prepassDone = false;
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, nodesUsed } = await sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);
 		this.#facesCount = facesCount;
 		this.#reset();
 
@@ -201,6 +201,7 @@ export class Raytracer {
 			value: v2_nodes,
 			raw: true,
 		});
+		this.#material.setStorage('lights', { value: v2_lights, raw: true, });
 
 		if (this.#outputTexture) {
 			if (this.#outputTexture.width !== width ||
