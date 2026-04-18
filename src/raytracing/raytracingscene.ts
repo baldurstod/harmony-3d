@@ -318,7 +318,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 					reflectionRatio: mtl.reflectionRatio,
 					reflectionGloss: mtl.reflectionGloss,
 					refractionIndex: mtl.refractionIndex,
-					albedo: mtl.albedo,
+					albedo: mtl.albedo ?? vec3.create(),
 					textures,
 					v0: mtl.v0 ?? vec4.create(),
 					v1: mtl.v1 ?? vec4.create(),
@@ -335,7 +335,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	const end = performance.now();
 	console.info(`Building bvh took ${end - start} ms`);
 
-	const TRI_SIZE = 36;// 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
+	const TRI_SIZE = 60;// 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
 	const LIGHT_SIZE = 17;
 
 	//const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
@@ -366,11 +366,15 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		trisFloat.set(tri.normal1, j + 16);
 		trisFloat.set(tri.normal2, j + 20);
 
-		trisFloat.set(tri.uv0, j + 24);
-		trisFloat.set(tri.uv1, j + 26);
-		trisFloat.set(tri.uv2, j + 28);
+		trisFloat.set(tri.tangent0, j + 24);
+		trisFloat.set(tri.tangent1, j + 28);
+		trisFloat.set(tri.tangent2, j + 32);
 
-		trisFloat.set(tri.faceNormal, j + 32);
+		trisFloat.set(tri.uv0, j + 48);
+		trisFloat.set(tri.uv1, j + 50);
+		trisFloat.set(tri.uv2, j + 52);
+
+		trisFloat.set(tri.faceNormal, j + 56);
 	}
 
 	const bvhNodes = context_v2.bvhNodes;
@@ -599,6 +603,7 @@ async function addToGlobalTextureData(context: RayTracingContext, texture: Textu
 type Tri = {
 	vertex0: vec3, vertex1: vec3, vertex2: vec3,
 	normal0: vec3, normal1: vec3, normal2: vec3,
+	tangent0: vec3, tangent1: vec3, tangent2: vec3,
 	uv0: vec3, uv1: vec3, uv2: vec3,
 	centroid: vec3;
 	materialIdx: number;
@@ -996,7 +1001,12 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 		const faces = obj.f;
 		const vertexPos = obj.v!;
 		const vertexNormal = obj.vn!;
+		const vertexTangent = obj.tangent;
 		const vertexCoord = obj.vt!;
+
+		let tangent0: vec3;
+		let tangent1: vec3;
+		let tangent2: vec3;
 
 		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
 			const i0 = faces[vertexIndex + 0]!;
@@ -1010,6 +1020,16 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 			const normal0 = new Float32Array(vertexNormal.buffer, i0 * 4 * 3, 3);
 			const normal1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
 			const normal2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
+
+			if (vertexTangent) {
+				tangent0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 3, 3);
+				tangent1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 3, 3);
+				tangent2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 3, 3);
+			} else {
+				tangent0 = vec3.create();
+				tangent1 = vec3.create();
+				tangent2 = vec3.create();
+			}
 
 			const uv0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
 			const uv1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
@@ -1027,6 +1047,9 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 				normal0,
 				normal1,
 				normal2,
+				tangent0,
+				tangent1,
+				tangent2,
 				uv0,
 				uv1,
 				uv2,

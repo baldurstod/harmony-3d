@@ -23,6 +23,7 @@ struct Ray {
 	hitPos: vec3f,
 	hitNormal: vec3f,
 	startNormal: vec3f,
+	tbn: mat3x3f,
 	coord: vec2f,
 	hitColor: vec4f,
 	totalColor: vec4f,
@@ -44,6 +45,14 @@ struct Tri {
 	normal0: vec3f,
 	normal1: vec3f,
 	normal2: vec3f,
+
+	tangent0: vec4f,
+	tangent1: vec4f,
+	tangent2: vec4f,
+
+	bitangent0: vec3f,
+	bitangent1: vec3f,
+	bitangent2: vec3f,
 
 	uv0: vec2f,
 	uv1: vec2f,
@@ -390,7 +399,7 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, C
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -402,7 +411,7 @@ fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	lightDir = normalize(lightDir);
 
 	var rD: vec3f = 1 / lightDir;
-	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -536,6 +545,12 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 	let normal1 = (*tri).normal1 - (*tri).normal0;
 	let normal2 = (*tri).normal2 - (*tri).normal0;
 
+	let tangent1 = (*tri).tangent1.xyz - (*tri).tangent0.xyz;
+	let tangent2 = (*tri).tangent2.xyz - (*tri).tangent0.xyz;
+
+	let bitangent1 = (*tri).bitangent1 - (*tri).bitangent0;
+	let bitangent2 = (*tri).bitangent2 - (*tri).bitangent0;
+
 	let uv1 = (*tri).uv1 - (*tri).uv0;
 	let uv2 = (*tri).uv2 - (*tri).uv0;
 
@@ -558,15 +573,23 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 	let t: f32 = f * dot( edge2, q );
 	if (t > 0.0001f) {
 		if (t < (*ray).t) {
+			var tangent: vec3f;
+			var bitangent: vec3f;
+
 			(*ray).materialIdx = (*tri).materialIdx;
 
 			(*ray).hitPos = (*tri).vertex0 + u * edge1 + v * edge2;
 			if ((*tri).flatShading == 0) {
 				(*ray).hitNormal = (*tri).normal0 + u * normal1 + v * normal2;
+				tangent = (*tri).tangent0.xyz + u * tangent1 + v * tangent2;
+				bitangent = (*tri).bitangent0 + u * bitangent1 + v * bitangent2;
 			} else {
 				(*ray).hitNormal = (*tri).faceNormal;
+				tangent = vec3f(1, 0, 0);// TODO: compute actual tangent
+				bitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent
 			}
 			(*ray).coord = (*tri).uv0 + u * uv1 + v * uv2;
+			(*ray).tbn = mat3x3f(tangent, bitangent, (*ray).hitNormal);
 		}
 		(*ray).t = min( (*ray).t, t );
 	}
@@ -579,7 +602,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 }
 
 @must_use
