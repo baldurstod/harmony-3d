@@ -558,6 +558,8 @@ function getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boo
 const tempViewProjectionMatrix = mat4.create();
 export let pickedPrimitive: GPUBuffer;
 
+const uniformBuffers = new Map2<Mesh, string, GPUBuffer>();
+
 function populateBindGroups(
 	shaderModule: WgslModule,
 	groups: Map2<number, number, Binding>,
@@ -593,11 +595,24 @@ function populateBindGroups(
 			additionalUsage = GPUBufferUsage.STORAGE;
 		}
 		*/
+		/*
 		const uniformBuffer = device.createBuffer({// TODO: don't recreate buffers each time
 			label: uniform.name,
 			size: uniform.size,
-			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST/* | additionalUsage*/,
+			usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,// | additionalUsage
 		});
+		*/
+
+		let uniformBuffer = uniformBuffers.get(object, uniform.name);
+		if (!uniformBuffer) {
+			uniformBuffer = device.createBuffer({
+				label: uniform.name,
+				size: uniform.size,
+				usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,// | additionalUsage
+			});
+			uniformBuffers.set(object, uniform.name, uniformBuffer);
+		}
+
 
 		groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
 
