@@ -953,6 +953,11 @@ class Graphics {
 
 		if (!configuration.device) {
 			const requiredFeatures: GPUFeatureName[] = ['texture-compression-bc'];
+			let requiredLimits: Record<string, GPUSize64 | undefined> = {};
+
+			if (attributes?.requiredLimits) {
+				requiredLimits = { ...requiredLimits, ...attributes?.requiredLimits };
+			}
 
 			if (attributes?.requiredFeatures) {
 				requiredFeatures.push(...attributes?.requiredFeatures);
@@ -965,7 +970,7 @@ class Graphics {
 
 			configuration.device = await adapter.requestDevice({
 				requiredFeatures,
-				requiredLimits: attributes?.requiredLimits,
+				requiredLimits,
 			});
 		}
 
