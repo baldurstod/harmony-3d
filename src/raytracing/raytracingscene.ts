@@ -9,6 +9,7 @@ import { Texture } from '../textures/texture';
 import { GL_REPEAT } from '../webgl/constants';
 import { BV, Face } from './bv';
 import { RaytracingMaterial } from './material';
+import { SpotLight } from '../lights/spotlight';
 
 export type RtTextureDescriptor = {
 	width: uint32,
@@ -319,6 +320,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	console.info(`Building bvh took ${end - start} ms`);
 
 	const TRI_SIZE = 36;// 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
+	const LIGHT_SIZE = 17;
 
 	//const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
 	const v2_trisBuffer = new ArrayBuffer(context_v2.triIdx.length * TRI_SIZE * Float32Array.BYTES_PER_ELEMENT);
@@ -327,7 +329,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	const v2_indices = new Uint8ClampedArray(context_v2.triIdx.buffer);//context_v2.triIdx);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
 	const v2_tris = new Uint8ClampedArray(v2_trisBuffer);//context_v2.triIdx.length * 12 * Float32Array.BYTES_PER_ELEMENT);// 3 * vec4 per tri
 	const v2_nodes = new Uint8ClampedArray(v2_nodesBuffer);//context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT);// 2 * vec4 per node
-	const v2_lights = new Uint8ClampedArray(lights.length * 16 * Float32Array.BYTES_PER_ELEMENT);
+	const v2_lights = new Uint8ClampedArray(lights.length * LIGHT_SIZE * Float32Array.BYTES_PER_ELEMENT);
 
 	const trisFloat = new Float32Array(v2_trisBuffer);
 	const trisUint32 = new Uint32Array(v2_trisBuffer);
@@ -374,16 +376,17 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	for (let i = 0; i < lights.length; i++) {
 		const light = lights[i]!;
 
-		const j = i * 16;
+		const j = i * LIGHT_SIZE;
 
 		lightsFloat.set(light.getWorldPosition(tmpV), j + 0);		// position
 		lightsUint32[j + 3] = light.getRaytracingLight();			// type
 		lightsFloat.set(light.getWorldOrientation(tmpQ), j + 4);	// orientation
 		lightsFloat.set(light.color, j + 8);						// color
 		lightsFloat[j + 11] = light.intensity;						// intensity
-		lightsFloat[j + 12] = 1;									// inner angle
-		lightsFloat[j + 13] = 1;									// outer angle
-		lightsFloat[j + 14] = 100;									// range
+		lightsFloat[j + 12] = (light as SpotLight).innerAngle;		// inner angle
+		lightsFloat[j + 13] = (light as SpotLight).angle;			// outer angle
+		lightsFloat[j + 14] = light.range;							// range
+		lightsFloat[j + 15] = light.radius;							// radius
 	}
 
 	return {

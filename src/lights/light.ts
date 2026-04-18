@@ -14,6 +14,7 @@ let defaultTextureSize = 1024;
 export type LightParameters = EntityParameters & {
 	color?: vec3,
 	intensity?: number,
+	radius?: number,
 };
 
 export enum LightType {
@@ -31,11 +32,13 @@ export class Light extends Entity {
 	shadow?: LightShadow;
 	#shadowTextureSize: number = defaultTextureSize;
 	readonly isLight = true;
+	radius: number;// Radius for ray tracing
 
 	constructor(parameters: LightParameters = {}) {
 		super(parameters);
 		this.#color = vec3.clone(parameters.color ?? DEFAULT_LIGHT_COLOR);
 		this.#intensity = parameters.intensity ?? 1.0;
+		this.radius = parameters.radius ?? 1.0;
 		this.castShadow = false;
 		this.isRenderable = true;
 	}
