@@ -357,12 +357,16 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f((*material).albedo, 1.0);
 			}
 			case Source1Material, Source1VertexLitGenericMaterial, Source1LightMappedGenericMaterial, Source2Material: {
-				scatterRay(currentRay, context);
+				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+				scatterRay(scatterDirection, currentRay, context);
+				shadowRay(currentRay, context);
 				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
 				(*context).bounces++;
 			}
 			case Source1EyeRefractMaterial: {
-				scatterRay(currentRay, context);
+				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+				scatterRay(scatterDirection, currentRay, context);
+				shadowRay(currentRay, context);
 				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
 				(*context).bounces++;
 			}
@@ -378,24 +382,27 @@ fn castRay(context: ptr<function, Context>) {
 	}
 }
 
-fn scatterRay(currentRay: u32, context: ptr<function, Context>) {
+fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, Context>) {
 	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
-	var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+	//var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
 	if (nearZero(scatterDirection)) {
-		scatterDirection = ray.hitNormal;
+		return;
 	}
 
-	var rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+	var rD: vec3f = 1 / scatterDirection;
 	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
+}
 
+fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
+	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
 	let light = &lights[0];
-	let lightDir = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;
-	scatterDirection = normalize(lightDir);
+	var lightDir: vec3f = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;
 	let dist = length(lightDir);
+	lightDir = normalize(lightDir);
 
-	rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
-	newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+	var rD: vec3f = 1 / lightDir;
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
