@@ -1,3 +1,5 @@
+#include math::modulo
+
 #include matrix_uniforms
 #include declare_texture_transform
 #include declare_vertex_skinning
@@ -196,7 +198,7 @@ fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 
 #ifdef SKIP_PROJECTION
 #ifdef USE_COLOR_MAP
-	fragColor = texture2D(colorTexture, mod(vTextureCoord.xy, 1.0));
+	fragColor = textureSample(colorTexture, colorSampler, modulo_vec2f(fragInput.vTextureCoord.xy));
 #else
 	vec4 fragColor = vec4(1.0);
 #endif

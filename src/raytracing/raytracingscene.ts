@@ -2,6 +2,7 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
 import { AmbientLight } from '../lights/ambientlight';
 import { Light } from '../lights/light';
+import { SpotLight } from '../lights/spotlight';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
@@ -9,7 +10,6 @@ import { Texture } from '../textures/texture';
 import { GL_REPEAT } from '../webgl/constants';
 import { BV, Face } from './bv';
 import { RaytracingMaterial } from './material';
-import { SpotLight } from '../lights/spotlight';
 
 export type RtTextureDescriptor = {
 	width: uint32,
@@ -38,6 +38,10 @@ type RtMaterial = {
 	refractionIndex: float32,
 	albedo: vec3,
 	textures: RtTextureDescriptors,
+	v0: vec4,
+	v1: vec4,
+	v2: vec4,
+	v3: vec4,
 };
 
 type RayTracingScene = {
@@ -276,6 +280,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				refractionIndex: 0,
 				albedo: vec3.create(),
 				textures,
+				v0: vec4.create(),
+				v1: vec4.create(),
+				v2: vec4.create(),
+				v3: vec4.create(),
 			});
 
 			materials.push({
@@ -285,6 +293,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				refractionIndex: 0,
 				albedo: vec3.create(),
 				textures,
+				v0: vec4.create(),
+				v1: vec4.create(),
+				v2: vec4.create(),
+				v3: vec4.create(),
 			});
 
 			for (const [, mtl] of sceneMaterials) {
@@ -308,6 +320,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 					refractionIndex: mtl.refractionIndex,
 					albedo: mtl.albedo,
 					textures,
+					v0: mtl.v0 ?? vec4.create(),
+					v1: mtl.v1 ?? vec4.create(),
+					v2: mtl.v2 ?? vec4.create(),
+					v3: mtl.v3 ?? vec4.create(),
 				});
 			}
 		}

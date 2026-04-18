@@ -4,6 +4,8 @@ import { Skeleton } from '../../../objects/skeleton';
 import { TextureManager } from '../../../textures/texturemanager';
 import { Source1VmtLoader } from '../loaders/source1vmtloader';
 import { getDefaultTexture, Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
+import { RaytracingMaterial, RtMaterial } from '../../../raytracing/material';
+import { Texture } from '../../../textures/texture';
 
 //const tempVec3 = vec3.create();
 
@@ -112,6 +114,25 @@ export class EyeRefractMaterial extends Source1Material {
 
 	override getShaderSource(): string {
 		return 'source1_eyerefract';
+	}
+
+	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		return {
+			index,
+			materialType: RtMaterial.Source1EyeRefract,
+			reflectionRatio: 0.1,
+			reflectionGloss: 1,
+			refractionIndex: 0.1,
+			albedo: vec3.fromValues(
+				0.901960015296936,
+				0.49411699175834656,
+				0.1333329975605011,
+			),// TODO: set actual value
+			textures: new Map([
+				[0, this.getUniformValue('colorMap') as Texture],
+			]),
+			flatShading: true,
+		}
 	}
 }
 Source1VmtLoader.registerMaterial('eyerefract', EyeRefractMaterial);

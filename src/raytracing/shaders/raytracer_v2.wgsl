@@ -61,6 +61,19 @@ struct TextureDescriptor {
 	layers: u32,
 }
 
+// The values should be consistent with enum RtMaterial
+const EmissiveMaterial = 1;
+const ReflectiveMaterial = 2;
+const DielectricMaterial = 3;
+const LambertianMaterial = 4;
+const Source1Material = 1000;
+
+const Source1VertexLitGenericMaterial = 1001;
+const Source1LightMappedGenericMaterial = 1002;
+const Source1EyeRefractMaterial = 1003;
+
+const Source2Material = 2000;
+
 struct Material {
 	materialType: u32,
 	reflectionRatio: f32,
@@ -68,8 +81,13 @@ struct Material {
 	refractionIndex: f32,
 	albedo: vec3f,
 	textures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures
+	v0: vec4f,
+	v1: vec4f,
+	v2: vec4f,
+	v3: vec4f,
 };
 
+// The values should be consistent with enum LightType
 const AmbientLight = 1;
 const PointLight = 2;
 const SpotLight = 3;
@@ -334,34 +352,18 @@ fn castRay(context: ptr<function, Context>) {
 
 
 		switch ((*material).materialType) {
-			case 1: {
+			case EmissiveMaterial: {
 				//ray.hitColor = vec4f(1.0);
 				ray.hitColor = vec4f((*material).albedo, 1.0);
 			}
-			case 6, 7, 8: {
-
-				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
-				if (nearZero(scatterDirection)) {
-					scatterDirection = ray.hitNormal;
-				}
-
-				var rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
-				var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
-				pushRay(&newRay, currentRay, context);
-
-				let light = &lights[0];
-				let lightDir = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;
-				scatterDirection = normalize(lightDir);
-				let dist = length(lightDir);
-
-				rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
-				newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
-				pushRay(&newRay, currentRay, context);
-
-				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord.x, ray.coord.y/*hitRec.coord.x, hitRec.coord.y*/).rgb, 1.0);
-				//ray.hitColor = vec4f(normalize(abs(ray.hitNormal)), 1.0);
-				//ray.hitColor = vec4f(normalize(abs(lightDir)), 1.0);
-
+			case Source1Material, Source1VertexLitGenericMaterial, Source1LightMappedGenericMaterial, Source2Material: {
+				scatterRay(currentRay, context);
+				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
+				(*context).bounces++;
+			}
+			case Source1EyeRefractMaterial: {
+				scatterRay(currentRay, context);
+				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
 				(*context).bounces++;
 			}
 			case 0xFFFFFFFF: {
@@ -374,6 +376,27 @@ fn castRay(context: ptr<function, Context>) {
 			}
 		}
 	}
+}
+
+fn scatterRay(currentRay: u32, context: ptr<function, Context>) {
+	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
+	var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+	if (nearZero(scatterDirection)) {
+		scatterDirection = ray.hitNormal;
+	}
+
+	var rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	pushRay(&newRay, currentRay, context);
+
+	let light = &lights[0];
+	let lightDir = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;
+	scatterDirection = normalize(lightDir);
+	let dist = length(lightDir);
+
+	rD = vec3f( 1 / scatterDirection.x, 1 / scatterDirection.y, 1 / scatterDirection.z );
+	newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+	pushRay(&newRay, currentRay, context);
 }
 
 fn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {
@@ -587,15 +610,15 @@ fn intersectAABB(ray: ptr<function, Ray>, bmin: vec3f, bmax: vec3f ) -> f32 {
 }
 
 @must_use
-fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec4<f32> {
+fn textureLookup(desc: TextureDescriptor, uv: vec2f) -> vec4<f32> {
 	if (desc.offset == 0xffffffff) {
 		return vec4f(0.0);
 	}
-	let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);
-	let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);
 
-	let j = u32(u2 * f32(desc.width - 1));
-	let i = u32(v2 * f32(desc.height - 1));
+	let uv2 : vec2f = select(clamp(uv, vec2f(0), vec2f(1)), modulo_vec2f(uv, vec2f(1)), vec2<bool>((desc.repeat & 1) == 1, (desc.repeat & 2) == 2));
+
+	let j = u32(uv2.x * f32(desc.width - 1));
+	let i = u32(uv2.y * f32(desc.height - 1));
 	let idx = (i * desc.width + j) * desc.elements;
 
 	let elem = textures[desc.offset + idx];
