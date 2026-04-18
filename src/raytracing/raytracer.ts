@@ -1,4 +1,4 @@
-import { quat, vec3 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { FpsCounter } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
@@ -102,10 +102,22 @@ export class Raytracer {
 	#oldInstanceCount = 0;
 	#newInstanceCount = 0;
 	#newMethod = true;
+	#scene?:Scene;
 
 	constructor() {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
 		this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm'/*WebGPUInternal.format*/);
+	}
+
+	async reset(): Promise<void> {
+		this.#reset();
+
+		const activeCamera = this.#scene?.activeCamera;
+		if (!activeCamera) {
+			return;
+		}
+
+		this.#configureCamera(activeCamera, this.#width, this.#height);
 	}
 
 	async configure(scene: Scene, width: number, height: number,
@@ -116,6 +128,7 @@ export class Raytracer {
 		if (!activeCamera) {
 			return false;
 		}
+		this.#scene = scene;
 
 		this.#width = width;
 		this.#height = height;
@@ -129,44 +142,7 @@ export class Raytracer {
 		this.#newInstanceCount = nodesUsed * 12;
 		this.#setInstanceCount();
 
-		const lookFrom = activeCamera.getWorldPosition();
-
-		const cameraQuat = activeCamera.getWorldQuaternion();
-
-		const lookAt = vec3.fromValues(0, 0, -1);
-		vec3.transformQuat(lookAt, lookAt, cameraQuat);
-		vec3.add(lookAt, lookFrom, lookAt);
-
-		const vup = vec3.fromValues(0, 1, 0);
-		vec3.transformQuat(vup, vup, cameraQuat);
-		vec3.add(vup, vup, vup);
-
-		this.#material.setUniformValue('camera', computeCamera(activeCamera, width, height));
-		/*
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
-		(this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
-		*/
-		this.#material.setUniformValue('cameraUniforms', {
-			viewportSize: new Uint32Array([width, height]),
-			imageWidth: width,
-			imageHeight: height,
-			aspectRatio: width / height,
-			vfov: activeCamera.getVerticalFov(),
-			lookFrom: lookFrom,
-			lookAt: lookAt,
-			vup: vup,
-			defocusAngle: 0,// TODO: set an actual value
-			focusDist: 3.4,//activeCamera.focus;
-		});
-
+		this.#configureCamera(activeCamera, width, height);
 
 		this.#material.setStorage('faces', {
 			value: faces,
@@ -233,6 +209,35 @@ export class Raytracer {
 		rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
 
 		return true;
+	}
+
+	async #configureCamera(camera: Camera, width: number, height: number): Promise<void> {
+		const lookFrom = camera.getWorldPosition();
+		const cameraQuat = camera.getWorldOrientation();
+
+		const lookAt = vec3.fromValues(0, 0, -1);
+		vec3.transformQuat(lookAt, lookAt, cameraQuat);
+		vec3.add(lookAt, lookFrom, lookAt);
+
+		const vup = vec3.fromValues(0, 1, 0);
+		vec3.transformQuat(vup, vup, cameraQuat);
+		vec3.add(vup, vup, vup);
+
+		this.#material.setUniformValue('camera', computeCamera(camera, width, height));
+
+		this.#material.setUniformValue('cameraUniforms', {
+			viewportSize: new Uint32Array([width, height]),
+			imageWidth: width,
+			imageHeight: height,
+			aspectRatio: width / height,
+			vfov: camera.getVerticalFov(),
+			lookFrom: lookFrom,
+			lookAt: lookAt,
+			vup: vup,
+			defocusAngle: 0,// TODO: set an actual value
+			focusDist: 3.4,//activeCamera.focus;
+		});
+
 	}
 
 	play(): void {
