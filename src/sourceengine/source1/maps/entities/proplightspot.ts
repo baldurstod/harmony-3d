@@ -13,7 +13,7 @@ const tempVec3 = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 
 export class PropLightSpot extends MapEntity {
-	spotLight = new SpotLight();
+	spotLight = new SpotLight({ radius: 20 });
 	//this.spotLight.visible = false;
 	_angles = vec3.fromValues(-90, 0, 0);
 

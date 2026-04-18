@@ -1,12 +1,17 @@
 import { quat, vec3 } from 'gl-matrix';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
-import { Light, LightType } from './light';
+import { Light, LightParameters, LightType } from './light';
 import { SpotLightShadow } from './spotlightshadow';
 
 const DEFAULT_ANGLE = Math.PI / 4.0;
 const Z_VECTOR = vec3.fromValues(0, 0, 1);
 const tempQuat = quat.create();
+
+export type SpotLightParameters = LightParameters & {
+	innerAngle?: number,
+	outerAngle?: number,
+};
 
 export class SpotLight extends Light {
 	isSpotLight = true;
@@ -15,10 +20,10 @@ export class SpotLight extends Light {
 	#outerAngle!: number;
 	outerAngleCos!: number;
 
-	constructor(parameters = {}) {
+	constructor(parameters: SpotLightParameters = {}) {
 		super(parameters);
-		this.angle = DEFAULT_ANGLE;
-		this.innerAngle = DEFAULT_ANGLE;
+		this.angle = parameters.outerAngle ?? DEFAULT_ANGLE;
+		this.innerAngle = parameters.innerAngle ?? DEFAULT_ANGLE;
 		this.range = 0;
 	}
 
