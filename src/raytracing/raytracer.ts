@@ -317,10 +317,12 @@ export class Raytracer {
 			);
 
 			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, COUNTERS_SIZE);
-			this.#countersUint32 = new Uint32Array(copyArrayBuffer.slice());
-			this.#countersFloat32 = new Float32Array(copyArrayBuffer.slice());
+			this.#countersUint32 = new Uint32Array(copyArrayBuffer);
+			this.#countersFloat32 = new Float32Array(copyArrayBuffer);
 			const rays = this.#countersUint32[1]!;
 			const high = this.#countersUint32[9]!;
+
+			rayCountCopyBuffer.destroy();
 
 			if (high != 0) {
 				this.#debugBvhMaterial.gpuConstants!.highlight = 1;
