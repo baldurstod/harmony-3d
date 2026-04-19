@@ -1020,7 +1020,9 @@ function populateBindGroups(
 						const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
 						if (storageBuffer) {
 							const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
-							if (storageBuffer.raw) {
+							if (storageBuffer.shared) {
+								// Do nothing
+							} else if (storageBuffer.raw) {
 								if (!storageBuffer.buffer) {
 									storageBuffer.buffer = device.createBuffer({
 										label: storage.name,
@@ -1028,7 +1030,7 @@ function populateBindGroups(
 										usage,
 									});
 								}
-								if (storageBuffer.value !== null) {
+								if (storageBuffer.value) {
 									device.queue.writeBuffer(
 										storageBuffer.buffer,
 										storageBuffer.rawOffset ?? 0,
@@ -1152,7 +1154,7 @@ function populateBindGroups(
 									writePrimitive(device.queue, storageBuffer.buffer, storage.type.name, s as number | vec3, 0);
 								}
 							}
-							groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
+							groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer!, bufferType, access, visibility });
 						} else {
 							errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
 						}

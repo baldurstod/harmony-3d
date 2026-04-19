@@ -12,7 +12,7 @@ import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
-import { StorageValueArray } from '../webgpu/storage';
+import { StorageBufferParam, StorageValueArray } from '../webgpu/storage';
 import { sceneToRtScene } from './raytracingscene';
 
 type RtCamera = {
@@ -102,7 +102,7 @@ export class Raytracer {
 	#oldInstanceCount = 0;
 	#newInstanceCount = 0;
 	#newMethod = true;
-	#scene?:Scene;
+	#scene?: Scene;
 
 	constructor() {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
@@ -132,7 +132,6 @@ export class Raytracer {
 
 		this.#width = width;
 		this.#height = height;
-		this.#prepassDone = false;
 
 		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);
 		this.#facesCount = facesCount;
@@ -143,21 +142,32 @@ export class Raytracer {
 		this.#setInstanceCount();
 
 		this.#configureCamera(activeCamera, width, height);
+		this.#prepassDone = false;
 
 		this.#material.setStorage('faces', {
 			value: faces,
 			raw: true,
 		});
-		this.#prepassMaterial.setStorage('faces', {
-			value: faces,
+
+		/*
+		const triBuffer: StorageBufferParam = {
+			value: v2_tris,
 			raw: true,
+			usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+		};
+		*/
+
+		this.#prepassMaterial.setStorage('tris', {
+			value: v2_tris,
+			raw: true,
+			usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
 		});
 		this.#material.setStorage('AABBs', {
 			value: aabbs,
 			raw: true,
 		});
 		this.#material.setStorage('indices', { value: v2_indices, raw: true, });
-		this.#material.setStorage('tris', { value: v2_tris, raw: true, });
+		this.#material.setStorage('tris', { value: v2_tris, shared: true, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE, });
 		this.#material.setStorage('bvhNodes', { value: v2_nodes, raw: true, });
 
 
@@ -274,11 +284,11 @@ export class Raytracer {
 					// TODO: fix that: we can hit the limit of 65536 workgroup * 256 workgroup size
 					// if we have more than 16M triangles
 					workgroupCountX: Math.ceil(this.#facesCount! / 256),
-				}
+				},
 			);
 			this.#prepassDone = true;
 
-			this.#material.getStorage('faces')!.buffer = this.#prepassMaterial.getStorage('faces')!.buffer;
+			this.#material.getStorage('tris')!.buffer = this.#prepassMaterial.getStorage('tris')!.buffer;
 		}
 
 		const rayCountCopyBuffer = WebGPUInternal.device.createBuffer({
@@ -321,7 +331,7 @@ export class Raytracer {
 				COUNTERS_SIZE // Length
 			);
 
-			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, COUNTERS_SIZE);
+			const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, COUNTERS_SIZE).slice();
 			this.#countersUint32 = new Uint32Array(copyArrayBuffer);
 			this.#countersFloat32 = new Float32Array(copyArrayBuffer);
 			const rays = this.#countersUint32[1]!;

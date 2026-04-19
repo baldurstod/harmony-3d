@@ -603,7 +603,7 @@ async function addToGlobalTextureData(context: RayTracingContext, texture: Textu
 type Tri = {
 	vertex0: vec3, vertex1: vec3, vertex2: vec3,
 	normal0: vec3, normal1: vec3, normal2: vec3,
-	tangent0: vec3, tangent1: vec3, tangent2: vec3,
+	tangent0: vec4, tangent1: vec4, tangent2: vec4,
 	uv0: vec3, uv1: vec3, uv2: vec3,
 	centroid: vec3;
 	materialIdx: number;
@@ -1004,9 +1004,9 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 		const vertexTangent = obj.tangent;
 		const vertexCoord = obj.vt!;
 
-		let tangent0: vec3;
-		let tangent1: vec3;
-		let tangent2: vec3;
+		let tangent0: vec4;
+		let tangent1: vec4;
+		let tangent2: vec4;
 
 		for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
 			const i0 = faces[vertexIndex + 0]!;
@@ -1022,13 +1022,13 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 			const normal2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
 
 			if (vertexTangent) {
-				tangent0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 3, 3);
-				tangent1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 3, 3);
-				tangent2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 3, 3);
+				tangent0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 4, 4);
+				tangent1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 4, 4);
+				tangent2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 4, 4);
 			} else {
-				tangent0 = vec3.create();
-				tangent1 = vec3.create();
-				tangent2 = vec3.create();
+				tangent0 = vec4.create();
+				tangent1 = vec4.create();
+				tangent2 = vec4.create();
 			}
 
 			const uv0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);

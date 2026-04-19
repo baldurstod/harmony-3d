@@ -13,6 +13,7 @@ export enum RtMaterial {
 	Source1VertexLitGeneric,
 	Source1LightMappedGeneric,
 	Source1EyeRefract,
+	Source1Refract,
 
 	Source2Material = 2000,// fallback for all source 2 materials
 }
@@ -24,7 +25,7 @@ export type RaytracingMaterial = {
 	reflectionRatio: float32,
 	reflectionGloss: float32,
 	refractionIndex: float32,
-	albedo: vec3,
+	albedo?: vec3,
 	flatShading: boolean,
 	v0?: vec4,
 	v1?: vec4,

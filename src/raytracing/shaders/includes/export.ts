@@ -18,6 +18,9 @@ addWgslInclude('raytracer::material', material);
 import ray from './ray.wgsl';
 addWgslInclude('raytracer::ray', ray);
 
+import tri from './tri.wgsl';
+addWgslInclude('raytracer::tri', tri);
+
 import utils from './utils.wgsl';
 addWgslInclude('raytracer::utils', utils);
 

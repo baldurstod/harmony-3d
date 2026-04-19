@@ -35,32 +35,6 @@ struct Ray {
 	chilId: u32,
 };
 
-struct Tri {
-	vertex0: vec3f,
-	materialIdx: u32,
-	vertex1: vec3f,
-	flatShading: u32,
-	vertex2: vec3f,
-
-	normal0: vec3f,
-	normal1: vec3f,
-	normal2: vec3f,
-
-	tangent0: vec4f,
-	tangent1: vec4f,
-	tangent2: vec4f,
-
-	bitangent0: vec3f,
-	bitangent1: vec3f,
-	bitangent2: vec3f,
-
-	uv0: vec2f,
-	uv1: vec2f,
-	uv2: vec2f,
-
-	faceNormal: vec3f,
-};
-
 struct TextureDescriptor {
 	width: u32,
 	height: u32,
@@ -80,6 +54,7 @@ const Source1Material = 1000;
 const Source1VertexLitGenericMaterial = 1001;
 const Source1LightMappedGenericMaterial = 1002;
 const Source1EyeRefractMaterial = 1003;
+const Source1RefractMaterial = 1004;
 
 const Source2Material = 2000;
 
@@ -119,6 +94,7 @@ const rootNodeIdx = 0;
 #include math::modulo
 #include raytracer::utils
 #include raytracer::common
+#include raytracer::tri
 /*
 #include raytracer::ray
 */
@@ -379,6 +355,43 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
 				(*context).bounces++;
 			}
+			case Source1RefractMaterial: {
+				let refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, /*(*hitRec).frontFace*/ false);
+				let unitDirection = normalize((*ray).direction);
+				let cosTheta = dot(-unitDirection, ray.hitNormal);
+				let sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+				let cannotRefract = refractRatio * sinTheta > 1.0;
+				var direction = select(
+					refract(unitDirection, ray.hitNormal, refractRatio),
+					reflect(unitDirection, ray.hitNormal),
+					false
+				);
+
+
+				var dir = textureLookup((*material).textures[0], ray.coord).rgb;
+
+				direction = normalize((*ray).direction) + dir * 0.15;
+				direction = refract(ray.direction, ray.hitNormal, 0.15);
+
+
+				let surfaceNormal: vec3f = normalize((*ray).tbn * (dir.rgb * 2 - 1));
+
+				//scatterRay(direction, currentRay, context);
+				ray.hitColor = vec4f(ray.coord, 0.0, 1.0);
+				ray.hitColor = vec4f(abs((*ray).tbn[1]), 1.0);
+				ray.hitColor = vec4f(abs(direction), 1.0);
+				let refractedRay = refract(normalize((*ray).direction), surfaceNormal, 0.15);
+				ray.hitColor = vec4f(abs(refractedRay), 1.0);
+
+
+				scatterRay2(ray.hitPos + ray.direction * 10, refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
+				//ray.hitColor = vec4f(abs(surfaceNormal), 1.0);
+				//ray.hitColor = vec4f(dir, 1.0);
+				//ray.hitColor = vec4f(1.0);
+				//ray.hitColor = vec4f(direction - (*ray).direction, 1.0);
+				//ray.hitColor = vec4f(vec3f(sinTheta), 1.0);
+				(*context).bounces++;
+			}
 			case 0xFFFFFFFF: {
 				let light = &lights[ray.lightIndex];
 				//ray.hitColor = vec4f(ray.t / light.range);
@@ -402,6 +415,19 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, C
 	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
+
+fn scatterRay2(origin: vec3f, scatterDirection: vec3f, currentRay: u32, context: ptr<function, Context>) {
+	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
+	//var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+	if (nearZero(scatterDirection)) {
+		return;
+	}
+
+	var rD: vec3f = 1 / scatterDirection;
+	var newRay = Ray(origin, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	pushRay(&newRay, currentRay, context);
+}
+
 
 fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
