@@ -142,10 +142,10 @@ export class SkeletalMesh extends Mesh {
 				skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
 				skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
 
-				skinnedVertexTangent[vertexArrayIndex + 0] = tempVertexTangent[0];
-				skinnedVertexTangent[vertexArrayIndex + 1] = tempVertexTangent[1];
-				skinnedVertexTangent[vertexArrayIndex + 2] = tempVertexTangent[2];
-				skinnedVertexTangent[vertexArrayIndex + 3] = tempVertexTangent[3];
+				skinnedVertexTangent[vertexArrayIndexTangent + 0] = tempVertexTangent[0];
+				skinnedVertexTangent[vertexArrayIndexTangent + 1] = tempVertexTangent[1];
+				skinnedVertexTangent[vertexArrayIndexTangent + 2] = tempVertexTangent[2];
+				skinnedVertexTangent[vertexArrayIndexTangent + 3] = tempVertexTangent[3];
 			}
 		}
 
