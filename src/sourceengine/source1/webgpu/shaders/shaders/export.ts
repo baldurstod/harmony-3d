@@ -6,6 +6,9 @@ Shaders['source1_eyerefract.wgsl'] = source1_eyerefract;
 import source1_lightmappedgeneric from './source1_lightmappedgeneric.wgsl';
 Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
 
+import source1_refract from './source1_refract.wgsl';
+Shaders['source1_refract.wgsl'] = source1_refract;
+
 import source1_sprite from './source1_sprite.wgsl';
 Shaders['source1_sprite.wgsl'] = source1_sprite;
 
