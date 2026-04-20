@@ -26,6 +26,7 @@ struct Ray {
 	tbn: mat3x3f,
 	coord: vec2f,
 	hitColor: vec4f,
+	selfColor: vec4f,
 	totalColor: vec4f,
 
 	lightIndex: u32,
@@ -252,12 +253,12 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 				}
 			}
 			if (found) {
-				ray.totalColor = ray.hitColor * childsColor;
+				ray.totalColor = ray.hitColor * childsColor + ray.selfColor;
 			} else {
-				ray.totalColor = ray.hitColor;
+				ray.totalColor = ray.hitColor + ray.selfColor;
 			}
 		} else {
-			ray.totalColor = ray.hitColor;
+			ray.totalColor = ray.hitColor + ray.selfColor;
 		}
 	}
 
@@ -342,10 +343,26 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f((*material).albedo, 1.0);
 			}
 			case Source1Material, Source1VertexLitGenericMaterial, Source1LightMappedGenericMaterial, Source2Material: {
-				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+				let cubeMap = (*material).textures[3];
+				//let random = select(0., 1., cubeMap.offset == 0xffffffff);
+
+				var scatterDirection: vec3f = normalize(ray.hitNormal * randomUnitVec3(&(*context).rngState));
 				scatterRay(scatterDirection, currentRay, context);
 				shadowRay(currentRay, context);
-				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
+
+				var color: vec3f;
+				let texelColor = textureLookup((*material).textures[0], ray.coord);
+
+				color = texelColor.rgb;
+
+				if (cubeMap.offset != 0xffffffff) {
+					let cubeValue = textureCubeLookup(cubeMap, reflect(ray.direction, ray.hitNormal));
+					//scatterDirection = normalize((*hitRec).tbn * pixelNormal);
+					//color = cubeValue.rgb * texelColor.a * 2 + texelColor.rgb;
+					ray.selfColor = vec4f(cubeValue.rgb * texelColor.a + texelColor.rgb, 1.0);
+				}
+
+				ray.hitColor = vec4f(color, 1.0);
 				(*context).bounces++;
 			}
 			case Source1EyeRefractMaterial: {
@@ -368,6 +385,7 @@ fn castRay(context: ptr<function, Context>) {
 				);
 
 				var dir = textureLookup((*material).textures[0], ray.coord).rgb;
+				dir = vec3f(0.5, 0.5, 1);
 
 				direction = normalize((*ray).direction) + dir * 0.15;
 				direction = refract(ray.direction, ray.hitNormal, 0.15);
@@ -411,7 +429,7 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, C
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -423,7 +441,7 @@ fn scatterRay2(origin: vec3f, scatterDirection: vec3f, currentRay: u32, context:
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(origin, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(origin, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -436,7 +454,7 @@ fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	lightDir = normalize(lightDir);
 
 	var rD: vec3f = 1 / lightDir;
-	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -627,7 +645,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 }
 
 @must_use
@@ -726,4 +744,54 @@ fn textureLookup2(desc: TextureDescriptor, u: u32, v: u32) -> vec4<f32> {
 		textures[desc.offset + idx + 2],
 		select(0., textures[desc.offset + idx + 3], desc.elements >= 4)
 	) / 255.;
+}
+
+@must_use
+fn textureCubeLookup(desc: TextureDescriptor, dir: vec3f) -> vec4<f32> {
+	if (desc.offset == 0xffffffff || desc.layers < 6) {
+	return vec4f(0.0);
+	}
+
+	let coords = sampleCube(dir);
+	let u = coords.x;
+	let v = coords.y;
+	let faceIndex = coords.z;
+
+	let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);
+	let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);
+
+	let j = u32(u2 * f32(desc.width - 1));
+	let i = u32(v2 * f32(desc.height - 1));
+	let idx = (i * desc.width + j) * desc.elements + u32(faceIndex) * desc.height * desc.width * desc.elements;
+
+	let elem = textures[desc.offset + idx];
+	return vec4f(
+	textures[desc.offset + idx + 0],
+	textures[desc.offset + idx + 1],
+	textures[desc.offset + idx + 2],
+	select(0., textures[desc.offset + idx + 3], desc.elements >= 4)
+	) / 255.;
+}
+
+// See https://gamedev.net/forums/topic/687535
+fn sampleCube(v: vec3f) -> vec3f {
+	let vAbs = abs(v);
+	var ma: f32;
+	var faceIndex: f32;
+	var uv: vec2f;
+
+	if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {
+		faceIndex = select(4., 5., v.z < 0.0);
+		ma = 0.5 / vAbs.z;
+		uv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);
+	} else if(vAbs.y >= vAbs.x) {
+		faceIndex = select(2., 3., v.y < 0.0);
+		ma = 0.5 / vAbs.y;
+		uv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));
+	} else {
+		faceIndex = select(0., 1., v.z < 0.0);
+		ma = 0.5 / vAbs.x;
+		uv = vec2f(select(-v.z, v.z, v.x < 0.0), -v.y);
+	}
+	return vec3f(uv * ma + 0.5, faceIndex);
 }

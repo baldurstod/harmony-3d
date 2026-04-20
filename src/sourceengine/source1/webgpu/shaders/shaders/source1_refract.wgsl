@@ -61,7 +61,7 @@ fn vertex_main(
 fn fragment_main(fragInput: VertexOut) -> FragmentOutput
 {
 	#include calculate_fragment_normal_map
-	//var fragColor: vec4f = vec4f(texelNormal.rgb, 1.0);
+	var fragColor: vec4f = vec4f(texelNormal.rgb, 1.0);
 	discard;
 	#include output_fragment
 }
