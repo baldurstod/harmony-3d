@@ -367,7 +367,6 @@ fn castRay(context: ptr<function, Context>) {
 					false
 				);
 
-
 				var dir = textureLookup((*material).textures[0], ray.coord).rgb;
 
 				direction = normalize((*ray).direction) + dir * 0.15;
@@ -673,9 +672,52 @@ fn textureLookup(desc: TextureDescriptor, uv: vec2f) -> vec4<f32> {
 
 	let uv2 : vec2f = select(clamp(uv, vec2f(0), vec2f(1)), modulo_vec2f(uv, vec2f(1)), vec2<bool>((desc.repeat & 1) == 1, (desc.repeat & 2) == 2));
 
-	let j = u32(uv2.x * f32(desc.width - 1));
-	let i = u32(uv2.y * f32(desc.height - 1));
-	let idx = (i * desc.width + j) * desc.elements;
+	return textureLookup2(desc,
+		u32(uv2.x * f32(desc.width - 1)),
+		u32(uv2.y * f32(desc.height - 1)),
+	);
+}
+
+@must_use
+fn textureLookupBilinear(desc: TextureDescriptor, uv: vec2f) -> vec4<f32> {
+	if (desc.offset == 0xffffffff) {
+		return vec4f(0.0);
+	}
+
+	let uv2 : vec2f = select(clamp(uv, vec2f(0), vec2f(1)), modulo_vec2f(uv, vec2f(1)), vec2<bool>((desc.repeat & 1) == 1, (desc.repeat & 2) == 2));
+
+
+	let x = uv2.x * f32(desc.width - 1);
+	let y = uv2.y * f32(desc.height - 1);
+
+	let x1 = floor(x);
+	let x2 = ceil(x);
+	let y1 = floor(y);
+	let y2 = ceil(y);
+
+	let q11 = textureLookup2(desc, u32(x1), u32(y1));
+	let q12 = textureLookup2(desc, u32(x1), u32(y2));
+	let q21 = textureLookup2(desc, u32(x2), u32(y1));
+	let q22 = textureLookup2(desc, u32(x2), u32(y2));
+
+	//return vec4f(f32(x) / 1000, f32(y) / 1000, 0, 1);
+	//return vec4f(vec3f((x2 - x) / (x2 - x1)), 1);
+
+	let f1 = (x2 - x);
+	let f2 = (x - x1);
+
+	let r1 = f1 * q11 + f2 * q21;
+	let r2 = f1 * q12 + f2 * q22;
+
+	//return vec4f(f32(x) / 1000, f32(y) / 1000, 0, 1);
+	//return vec4f(vec3f((x2 - x) / (x2 - x1)  ), 1);
+
+	return f1 * r1 + f2 * r2;
+}
+
+@must_use
+fn textureLookup2(desc: TextureDescriptor, u: u32, v: u32) -> vec4<f32> {
+	let idx = (v * desc.width + u) * desc.elements;
 
 	let elem = textures[desc.offset + idx];
 	return vec4f(
