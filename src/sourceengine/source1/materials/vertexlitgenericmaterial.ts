@@ -109,6 +109,14 @@ export class VertexLitGenericMaterial extends Source1Material {
 	}
 
 	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		const cubeMapTint = vec4.fromValues(1, 1, 1, 1);
+		const uCubeMapTint = this.getUniformValue('uCubeMapTint') as vec3;
+		if (uCubeMapTint) {
+			cubeMapTint[0] = uCubeMapTint[0];
+			cubeMapTint[1] = uCubeMapTint[1];
+			cubeMapTint[2] = uCubeMapTint[2];
+		}
+
 		return {
 			index,
 			materialType: RtMaterial.Source1VertexLitGeneric,
@@ -126,6 +134,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 				[3, this.getUniformValue('cubeTexture') as Texture],
 			]),
 			flatShading: false,
+			v0: cubeMapTint,
 		}
 	}
 }

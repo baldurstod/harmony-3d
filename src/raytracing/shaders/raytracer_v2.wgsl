@@ -357,9 +357,8 @@ fn castRay(context: ptr<function, Context>) {
 
 				if (cubeMap.offset != 0xffffffff) {
 					let cubeValue = textureCubeLookup(cubeMap, reflect(ray.direction, ray.hitNormal));
-					//scatterDirection = normalize((*hitRec).tbn * pixelNormal);
-					//color = cubeValue.rgb * texelColor.a * 2 + texelColor.rgb;
-					ray.selfColor = vec4f(cubeValue.rgb * texelColor.a + texelColor.rgb, 1.0);
+					//ray.selfColor = vec4f(cubeValue.rgb * texelColor.a * (*material).v0.rgb, 1.0);
+					color = color + cubeValue.rgb * texelColor.a * (*material).v0.rgb;
 				}
 
 				ray.hitColor = vec4f(color, 1.0);
