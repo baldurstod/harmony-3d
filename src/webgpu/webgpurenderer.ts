@@ -1,7 +1,6 @@
-import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
-import { TypedArray } from 'harmony-types';
-import { errorMap, errorOnce, Map2, once } from 'harmony-utils';
-import { ArrayInfo, MemberInfo, StructInfo, TemplateInfo, TypeInfo, VariableInfo, WgslReflect } from 'wgsl_reflect';
+import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
+import { errorOnce, Map2, once } from 'harmony-utils';
+import { StructInfo, WgslReflect } from 'wgsl_reflect';
 import { BackGroundResult } from '../backgrounds/background';
 import { USE_STATS } from '../buildoptions';
 import { Camera } from '../cameras/camera';
@@ -24,14 +23,10 @@ import { MAX_PARTICLES_IN_A_SYSTEM } from '../sourceengine/common/particles/cons
 import { Source1ParticleSystem } from '../sourceengine/export';
 import { ToneMapping } from '../textures/constants';
 import { ShadowMap } from '../textures/shadowmap';
-import { Texture } from '../textures/texture';
 import { getDefines } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
-import { UniformValue } from '../webgl/uniform';
-import { StorageValueArray, StorageValueStruct } from './storage';
 import { Binding, WgslModule } from './types';
-import { getViewDimension } from './viewdimension';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -862,70 +857,6 @@ export class WebGPURenderer implements Renderer {
 		device.queue.submit([commandBuffer]);
 	}
 
-	#getBindGroupLayouts(groups: Map2<number, number, Binding>, compute: boolean): GPUBindGroupLayout[] {
-		const device = WebGPUInternal.device;
-
-		const bindGroupLayouts: GPUBindGroupLayout[] = [];
-		for (const [groupId, group] of groups.getMap()) {
-			const entries: GPUBindGroupLayoutEntry[] = [];
-			for (const [bindingId, binding] of group) {
-				const entry: GPUBindGroupLayoutEntry = {
-					binding: bindingId,// corresponds to @binding
-					visibility: binding.visibility ?? (compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT),// TODO: set appropriate visibility
-					//buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
-				}
-
-				if (binding.buffer) {
-					entry.buffer = {
-						type: binding.bufferType ?? 'uniform',
-						// TODO: add minBindingSize ?
-					};
-				}
-
-				if (binding.texture) {
-					entry.texture = {
-						viewDimension: binding.viewDimension,
-					};
-				}
-
-				if (binding.textureArray) {
-					entry.texture = {
-						viewDimension: binding.viewDimension,
-					};
-				}
-
-				if (binding.sampler) {
-					entry.sampler = {};
-				}
-
-				if (binding.storageTexture) {
-					entry.storageTexture = {
-						viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
-						format: binding.storageTexture.gpuFormat,
-						access: binding.access,
-					};
-				}
-
-				if (binding.storageTextureArray) {
-					entry.storageTexture = {
-						viewDimension: binding.viewDimension,
-						format: binding.format!,
-						access: binding.access,
-					};
-				}
-
-				entries.push(entry);
-			}
-
-			bindGroupLayouts[groupId] = device.createBindGroupLayout({
-				label: `group ${groupId}`,
-				entries: entries,
-			});
-		}
-
-		return bindGroupLayouts;
-	}
-
 	#createBindGroups(groups: Map2<number, number, Binding>, pipeline: GPUComputePipeline | GPURenderPipeline, encoder: GPUComputePassEncoder | GPURenderPassEncoder): void {
 		const device = WebGPUInternal.device;
 
@@ -986,92 +917,5 @@ export class WebGPURenderer implements Renderer {
 			});
 			encoder.setBindGroup(groupId, uniformBindGroup);
 		}
-	}
-}
-
-function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, member: MemberInfo, value: number | vec3, baseOffset: number): void {
-	switch (member.type.name) {
-		case 'u32':
-			queue.writeBuffer(
-				buffer,
-				baseOffset + member.offset,
-				new Uint32Array([value as number]),
-			);
-			break;
-		case 'i32':
-			queue.writeBuffer(
-				buffer,
-				baseOffset + member.offset,
-				new Int32Array([value as number]),
-			);
-			break;
-		case 'f32':
-			queue.writeBuffer(
-				buffer,
-				baseOffset + member.offset,
-				new Float32Array([value as number]),
-			);
-			break;
-		case 'vec3f':
-			queue.writeBuffer(
-				buffer,
-				baseOffset + member.offset,
-				value as vec3 as BufferSource,
-			);
-			break;
-		default:
-			errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
-			break;
-	}
-}
-
-function writeStruct(queue: GPUQueue, buffer: GPUBuffer, members: MemberInfo[], struct: StorageValueStruct, baseOffset: number): void {
-	for (const member of members) {
-		const structValue = struct[member.name];
-
-		if (member.isTemplate) {
-			writeTemplate(queue, buffer, member.type, structValue as StorageValueArray, baseOffset + member.offset);
-		} else if (member.isStruct) {
-			// nested struct
-			if (structValue) {
-				writeStruct(queue, buffer, (member.type as StructInfo).members, structValue as StorageValueStruct, baseOffset + member.offset);
-			}
-		} else if (member.isArray) {
-			writeArray(queue, buffer, (member.type as ArrayInfo), structValue as StorageValueArray, baseOffset + member.offset);
-		} else {
-			// primitive
-			if (structValue !== undefined && structValue !== null) {
-				writePrimitive(queue, buffer, member, structValue as number, baseOffset);
-			} else {
-				errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
-			}
-		}
-	}
-}
-
-function writeTemplate(queue: GPUQueue, buffer: GPUBuffer, type: TypeInfo, value: StorageValueArray, offset: number): void {
-	switch (type.name) {
-		case 'vec4':
-			queue.writeBuffer(
-				buffer,
-				offset,
-				value as BufferSource,
-			);
-
-			break;
-		default:
-			throw new Error(`code this type ${type.name}`);
-	}
-}
-
-function writeArray(queue: GPUQueue, buffer: GPUBuffer, type: ArrayInfo, value: StorageValueArray, baseOffset: number): void {
-	if (type.format.isStruct) {
-		for (let i = 0; i < type.count; ++i) {
-			writeStruct(queue, buffer, (type.format as StructInfo).members, value[i] as StorageValueStruct, baseOffset + i * type.stride);
-		}
-	} else if (type.format.isArray) {
-		throw new Error('code me');
-	} else {
-		throw new Error('code me');
 	}
 }
