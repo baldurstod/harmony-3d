@@ -80,12 +80,12 @@ const DirectionalLight = 4;
 
 struct Light {
 	position: vec3f,
-	lightType: u32,
-	orientation: vec4f,
+	lightType: u32, // See above. lightType is packed after position
+	direction: vec3f,
+	intensity: f32, // intensity is packed after direction
 	color: vec3f,
-	intensity: f32,
-	innerAngle: f32,
-	outerAngle: f32,
+	innerAngleCos: f32,
+	outerAngleCos: f32,
 	range: f32,
 	radius: f32,
 };
@@ -346,7 +346,7 @@ fn castRay(context: ptr<function, Context>) {
 				let cubeMap = (*material).textures[3];
 				//let random = select(0., 1., cubeMap.offset == 0xffffffff);
 
-				var scatterDirection: vec3f = normalize(ray.hitNormal * randomUnitVec3(&(*context).rngState));
+				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
 				scatterRay(scatterDirection, currentRay, context);
 				shadowRay(currentRay, context);
 
@@ -408,10 +408,24 @@ fn castRay(context: ptr<function, Context>) {
 				//ray.hitColor = vec4f(vec3f(sinTheta), 1.0);
 				(*context).bounces++;
 			}
-			case 0xFFFFFFFF: {
+			case 0xFFFFFFFF: {// Light
+
 				let light = &lights[ray.lightIndex];
 				//ray.hitColor = vec4f(ray.t / light.range);
-				ray.hitColor = vec4f(light.intensity * light.range * 100 / (ray.lightDistance * ray.lightDistance)) * max(0, dot(ray.direction, ray.startNormal));
+				switch (light.lightType) {
+					case SpotLight: {
+
+						let angleCos: f32 = dot( ray.direction, light.direction );
+
+						if (angleCos > light.outerAngleCos ) {
+							let spotEffect: f32 = smoothstep( light.outerAngleCos, light.innerAngleCos, angleCos );
+							ray.hitColor = vec4f(light.intensity * light.range * 50 /* TODO: fix this const */ / (ray.lightDistance * ray.lightDistance)) * max(0, dot(ray.direction, ray.startNormal)) * spotEffect;
+						}
+					}
+					default: {
+						ray.hitColor = vec4f(light.intensity * light.range * 50 /* TODO: fix this const */ / (ray.lightDistance * ray.lightDistance)) * max(0, dot(ray.direction, ray.startNormal));
+					}
+				}
 			}
 			default: {
 				// ...

@@ -400,13 +400,15 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 
 		lightsFloat.set(light.getWorldPosition(tmpV), j + 0);		// position
 		lightsUint32[j + 3] = light.getRaytracingLight();			// type
-		lightsFloat.set(light.getWorldOrientation(tmpQ), j + 4);	// orientation
+		if ((light as SpotLight).isSpotLight) {
+			lightsFloat.set((light as SpotLight).getDirection(tmpV), j + 4);	// orientation
+		}
+		lightsFloat[j + 7] = light.intensity;						// intensity
 		lightsFloat.set(light.color, j + 8);						// color
-		lightsFloat[j + 11] = light.intensity;						// intensity
-		lightsFloat[j + 12] = (light as SpotLight).innerAngle;		// inner angle
-		lightsFloat[j + 13] = (light as SpotLight).angle;			// outer angle
-		lightsFloat[j + 14] = light.range;							// range
-		lightsFloat[j + 15] = light.radius;							// radius
+		lightsFloat[j + 11] = (light as SpotLight).innerAngleCos;	// inner angle
+		lightsFloat[j + 12] = (light as SpotLight).outerAngleCos;	// outer angle
+		lightsFloat[j + 13] = light.range;							// range
+		lightsFloat[j + 14] = light.radius;							// radius
 	}
 
 	return {
