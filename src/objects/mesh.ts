@@ -1,4 +1,4 @@
-import { mat3, mat4, vec2, vec3 } from 'gl-matrix';
+import { mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { TypedArray } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { errorMap, errorOnce, Map2 } from 'harmony-utils';
@@ -604,6 +604,7 @@ function populateBindGroups(
 		*/
 
 		let uniformBuffer = uniformBuffers.get(object, uniform.name);
+		uniformBuffer = undefined;
 		if (!uniformBuffer) {
 			uniformBuffer = device.createBuffer({
 				label: uniform.name,
@@ -1188,6 +1189,13 @@ function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, type: string, /*memb
 				new Float32Array([value as number]),
 			);
 			break;
+		case 'vec2f':
+			queue.writeBuffer(
+				buffer,
+				baseOffset,
+				value as vec2 as BufferSource,
+			);
+			break;
 		case 'vec3f':
 			queue.writeBuffer(
 				buffer,
@@ -1195,9 +1203,15 @@ function writePrimitive(queue: GPUQueue, buffer: GPUBuffer, type: string, /*memb
 				value as vec3 as BufferSource,
 			);
 			break;
-		default:
-			errorOnce(`unknwon type ${type} in writePrimitive`);
+		case 'vec4f':
+			queue.writeBuffer(
+				buffer,
+				baseOffset,
+				value as vec4 as BufferSource,
+			);
 			break;
+		default:
+			throw new Error(`unknwon type ${type} in writePrimitive`);
 	}
 }
 
