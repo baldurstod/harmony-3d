@@ -117,6 +117,13 @@ export class VertexLitGenericMaterial extends Source1Material {
 			cubeMapTint[2] = uCubeMapTint[2];
 		}
 
+		let cubeMap: Texture | null;
+		if (this.variables.get('$envmap') == 'env_cubemap') {
+			cubeMap = null;
+		} else {
+			cubeMap = this.getUniformValue('cubeTexture') as Texture;
+		}
+
 		return {
 			index,
 			materialType: RtMaterial.Source1VertexLitGeneric,
@@ -131,7 +138,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			textures: new Map([
 				[0, this.getUniformValue('colorMap') as Texture],
 				[1, this.getUniformValue('normalTexture') as Texture],
-				[3, this.getUniformValue('cubeTexture') as Texture],
+				[3, cubeMap],
 			]),
 			flatShading: false,
 			v0: cubeMapTint,
