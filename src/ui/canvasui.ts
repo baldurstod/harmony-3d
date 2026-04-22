@@ -15,6 +15,7 @@ export enum CanvasUiType {
 	Boolean,
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CanvasUiValue { };
 
 export type CanvasUiParam = {

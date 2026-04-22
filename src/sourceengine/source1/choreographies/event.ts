@@ -1,4 +1,5 @@
 import { TimelineClip } from '../../../timeline/clip';
+import { Source1ModelInstance } from '../export';
 import { Source1SoundManager } from '../sounds/soundmanager';
 import { Channel } from './channel';
 import { Choreography } from './choreography';
@@ -9,7 +10,7 @@ export type ChoreographyEventParam = any/*TODO: improve type*/;
 
 export class ChoreographyEvent {
 	#repository: string;
-	type: number;
+	type: EventType;
 	name: string;
 	startTime: number;
 	endTime: number;
@@ -18,15 +19,15 @@ export class ChoreographyEvent {
 	param3: ChoreographyEventParam;
 	flags;
 	distanceToTarget = 0;
-	flexAnimTracks: any = {};
+	flexAnimTracks: Record<string, FlexAnimationTrack> = {};
 	#ramp?: CurveData;
-	#ccType: number = -1;// TODO: create enum
-	#ccToken: string = '';
+	#ccType = -1;// TODO: create enum
+	#ccToken = '';
 	#choreography: Choreography;
 	#channel?: Channel;
 	m_nNumLoops = 0;
 
-	constructor(choreography: Choreography, repository: string, eventType: number, name: string, startTime: number, endTime: number, param1: ChoreographyEventParam, param2: ChoreographyEventParam, param3: ChoreographyEventParam, flags: number, distanceToTarget: number) {
+	constructor(choreography: Choreography, repository: string, eventType: EventType, name: string, startTime: number, endTime: number, param1: ChoreographyEventParam, param2: ChoreographyEventParam, param3: ChoreographyEventParam, flags: number, distanceToTarget: number) {
 		this.#repository = repository;
 		this.#choreography = choreography;
 		this.type = eventType;
@@ -40,7 +41,7 @@ export class ChoreographyEvent {
 		this.distanceToTarget = distanceToTarget;
 	}
 
-	getRepository() {
+	getRepository(): string {
 		return this.#repository;
 	}
 
@@ -48,7 +49,7 @@ export class ChoreographyEvent {
 	 * Get the startTime
 	 * @return {Number} startTime
 	 */
-	getStartTime() {
+	getStartTime(): number {
 		return this.startTime;
 	}
 
@@ -56,7 +57,7 @@ export class ChoreographyEvent {
 	 * Get the endTime
 	 * @return {Number} endTime
 	 */
-	getEndTime() {
+	getEndTime(): number {
 		return this.endTime;
 	}
 
@@ -65,7 +66,7 @@ export class ChoreographyEvent {
 	 * Get the type
 	 * @return {Number} The loaded file
 	 */
-	getType() {
+	getType(): EventType {
 		return this.type;
 	}
 
@@ -73,83 +74,83 @@ export class ChoreographyEvent {
 	 * Set the ramp
 	 * @param {Object CurveData} ramp The ramp to set
 	 */
-	setRamp(ramp: CurveData) {
+	setRamp(ramp: CurveData): void {
 		this.#ramp = ramp;
 	}
 
 	/**
 	 * TODO
 	 */
-	setCloseCaptionType(ccType: number) {
+	setCloseCaptionType(ccType: number): void {
 		this.#ccType = ccType;
 	}
 
 	/**
 	 * TODO
 	 */
-	setCloseCaptionToken(token: string) {
+	setCloseCaptionToken(token: string): void {
 		this.#ccToken = token;
 	}
 
 	/**
 	 * TODO
 	 */
-	setChannel(channel: Channel) {
+	setChannel(channel: Channel): void {
 		this.#channel = channel;
 	}
 
 	//TODO
-	AddRelativeTag() {
+	AddRelativeTag(): void {
 		console.error('TODO');
 	}
 
 	//TODO
-	addRelativeTag() {
+	addRelativeTag(): void {
 		console.error('TODO');
 	}
 	//TODO
-	addTimingTag() {
+	addTimingTag(): void {
 		console.error('TODO');
 	}
 	//TODO
-	addAbsoluteTag() {
+	addAbsoluteTag(): void {
 		console.error('TODO');
 	}
 
 	/**
 	 * TODO
 	 */
-	isResumeCondition() {
+	isResumeCondition(): boolean {
 		return (this.flags & (1 << 0)) ? true : false;
 	}
 	/**
 	 * TODO
 	 */
-	isLockBodyFacing() {
+	isLockBodyFacing(): boolean {
 		return (this.flags & (1 << 1)) ? true : false;
 	}
 	/**
 	 * TODO
 	 */
-	isFixedLength() {
+	isFixedLength(): boolean {
 		return (this.flags & (1 << 2)) ? true : false;
 	}
 	/**
 	 * TODO
 	 */
-	isActive() {
+	isActive(): boolean {
 		return (this.flags & (1 << 3)) ? true : false;
 	}
 	/**
 	 * TODO
 	 */
-	getForceShortMovement() {
+	getForceShortMovement(): boolean {
 		return (this.flags & (1 << 4)) ? true : false;
 	}
 	/**
 	 * TODO
 	 */
-	getPlayOverScript() {
+	getPlayOverScript(): boolean {
 		return (this.flags & (1 << 5)) ? true : false;
 	}
 
@@ -157,7 +158,7 @@ export class ChoreographyEvent {
 	 * TODO
 	 * Add a flex animation track
 	 */
-	addTrack(controllerName: string) {
+	addTrack(controllerName: string): FlexAnimationTrack {
 		const track = new FlexAnimationTrack(this);
 		track.setFlexControllerName(controllerName);
 		this.flexAnimTracks[controllerName] = track;
@@ -167,7 +168,7 @@ export class ChoreographyEvent {
 	/**
 	 * toString
 	 */
-	toString(indent: string) {
+	toString(indent: string): string {
 		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [];
@@ -191,7 +192,7 @@ export class ChoreographyEvent {
 		}
 
 		for (const i in this.flexAnimTracks) {
-			arr.push(this.flexAnimTracks[i].toString(subindent + '\t'));
+			arr.push(this.flexAnimTracks[i]!.toString(subindent + '\t'));
 		}
 
 		if (this.getType() == EventType.Speak) {
@@ -204,7 +205,7 @@ export class ChoreographyEvent {
 	/**
 	 * Step
 	 */
-	step(previousTime: number, currentTime: number) {
+	step(previousTime: number, currentTime: number): void {
 		const actor = this.getActor();
 		if (actor) {
 			actor.frame = currentTime;
@@ -274,7 +275,7 @@ export class ChoreographyEvent {
 	/**
 	 * TODO
 	 */
-	getActor() {
+	getActor(): Source1ModelInstance | undefined {
 		const channel = this.#channel;
 		if (channel) {
 			const actor = channel.getActor();

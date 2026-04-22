@@ -32,7 +32,7 @@ export class SetToCP extends Operator {
 		if (cp) {
 			cp.getWorldPosition(tempVec3_2);
 			if (this.#offsetLocal) {
-				vec3.transformQuat(tempVec3, this.#offset, cp.getWorldQuaternion(tempQuat));
+				vec3.transformQuat(tempVec3, this.#offset, cp.getWorldOrientation(tempQuat));
 				vec3.add(tempVec3, tempVec3, tempVec3_2);
 			} else {
 				vec3.add(tempVec3, this.#offset, tempVec3_2);

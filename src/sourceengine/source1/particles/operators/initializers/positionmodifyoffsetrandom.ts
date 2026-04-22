@@ -38,7 +38,7 @@ export class PositionModifyOffsetRandom extends Source1ParticleOperator {
 
 			const cp = particle.system.getControlPoint(controlPointNumber);
 			if (cp) {
-				vec3.transformQuat(offset, offset, cp.getWorldQuaternion());
+				vec3.transformQuat(offset, offset, cp.getWorldOrientation());
 			}
 			/*const a = offset[1];
 			offset[1] = offset[2];

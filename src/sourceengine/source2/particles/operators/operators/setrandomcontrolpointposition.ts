@@ -66,7 +66,7 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 			cp1.setPosition(v);
 
 			if (this.#orient) {
-				cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
+				cp1.setWorldOrientation(headLocation.currentWorldQuaternion);
 			}
 		}
 	}

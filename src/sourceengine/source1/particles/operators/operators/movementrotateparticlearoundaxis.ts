@@ -39,7 +39,7 @@ export class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
 		const cp = particle.system.getControlPoint(controlPointNumber);
 		if (cp) {
 			if (useLocalSpace == 1) {
-				quat.copy(q, cp.getWorldQuaternion());
+				quat.copy(q, cp.getWorldOrientation());
 			}
 
 			cp.getWorldPosition(tempVec3);

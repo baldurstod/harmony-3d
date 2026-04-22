@@ -73,13 +73,13 @@ export class MovementLocktoControlPoint extends Source1ParticleOperator {
 				particle.initialCPPosition = vec3.clone(particle.cpPosition);
 			}
 			if (!particle.initialCPQuaternion) {
-				particle.initialCPQuaternion = cp.getWorldQuaternion();
+				particle.initialCPQuaternion = cp.getWorldOrientation();
 			} else {
 				particle.initialCPQuaternion = quat.clone(particle.cpOrientation);
 			}
 
 			cp.getWorldPosition(particle.cpPosition);
-			cp.getWorldQuaternion(particle.cpOrientation);
+			cp.getWorldOrientation(particle.cpOrientation);
 
 			const invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion);//TODO: optimize
 
@@ -107,7 +107,7 @@ export class MovementLocktoControlPoint extends Source1ParticleOperator {
 			vec3.add(particle.position, particle.position, delta);
 			vec3.add(particle.prevPosition, particle.prevPosition, delta);
 			if (lockRotation) {
-				cp.getWorldQuaternion(particle.cpOrientation);
+				cp.getWorldOrientation(particle.cpOrientation);
 				//TODO
 			} else {
 				vec4.zero(particle.cpOrientation);

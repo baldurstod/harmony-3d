@@ -37,7 +37,7 @@ export class Source2ModelAttachmentInstance extends Entity {
 		const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
 		if (bone) {
 			bone.getWorldPosition(vec);
-			bone.getWorldQuaternion(tempQuat);
+			bone.getWorldOrientation(tempQuat);
 			const offset0 = this.attachment.influenceOffsets[0];
 			if (offset0) {
 				vec3.transformQuat(tempPos, offset0, tempQuat);
@@ -50,10 +50,10 @@ export class Source2ModelAttachmentInstance extends Entity {
 	}
 
 	//TODO: compute with all bones, not only the first one
-	getWorldQuaternion(q = quat.create()): quat {
+	getWorldOrientation(q = quat.create()): quat {
 		const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
 		if (bone) {
-			bone.getWorldQuaternion(q);
+			bone.getWorldOrientation(q);
 			const quat0 = this.attachment.influenceRotations[0];
 			if (quat0) {
 				quat.mul(q, q, quat0);

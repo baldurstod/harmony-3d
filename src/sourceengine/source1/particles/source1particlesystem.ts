@@ -482,7 +482,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 			}
 		}
 		if (this.parentSystem) {
-			this.setOrientation(this.parentSystem.getWorldQuaternion());
+			this.setOrientation(this.parentSystem.getWorldOrientation());
 
 		}
 	}

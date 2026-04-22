@@ -187,7 +187,7 @@ export class VelocityNoise extends Source1ParticleOperator {
 				//TODO
 				const cp = particle.system.getControlPoint(m_nControlPointNumber);
 				if (cp) {
-					vec3.transformQuat(fvOffset, fvOffset, cp.getWorldQuaternion());
+					vec3.transformQuat(fvOffset, fvOffset, cp.getWorldOrientation());
 					//vec3.add(randpos, randpos, cp.getOrigin());
 				}
 			}

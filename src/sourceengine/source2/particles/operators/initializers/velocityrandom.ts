@@ -55,7 +55,7 @@ export class VelocityRandom extends Operator {
 
 		const cp = particle.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
-			vec3.transformQuat(randomVector, randomVector, cp.getWorldQuaternion());
+			vec3.transformQuat(randomVector, randomVector, cp.getWorldOrientation());
 		}
 		if (!this.#ignoreDT) {
 			vec3.scale(randomVector, randomVector, -elapsedTime);

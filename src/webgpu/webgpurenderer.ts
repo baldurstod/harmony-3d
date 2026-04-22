@@ -594,8 +594,8 @@ export class WebGPURenderer implements Renderer {
 
 
 		let spotLightId = 0;
-		const spotShadowMap = [];
-		const spotShadowMatrix = [];
+		//const spotShadowMap = [];
+		//const spotShadowMatrix = [];
 
 		for (const spotLight of spotLights) {
 			if (spotLight.isVisible()) {

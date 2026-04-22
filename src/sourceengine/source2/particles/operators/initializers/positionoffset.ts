@@ -45,7 +45,7 @@ export class PositionOffset extends Operator {
 
 			const cp = particle.system.getControlPoint(this.controlPointNumber);
 			if (cp) {
-				vec3.transformQuat(offset, offset, cp.getWorldQuaternion());
+				vec3.transformQuat(offset, offset, cp.getWorldOrientation());
 			}
 		}
 		vec3.add(particle.position, particle.position, offset);

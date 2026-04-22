@@ -25,7 +25,7 @@ export class RemapCPOrientationToRotations extends Operator {
 	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.#controlPointNumber);
 		if (cp) {
-			cp.getWorldQuaternion(tempQuat);
+			cp.getWorldOrientation(tempQuat);
 			quat.rotateY(tempQuat, tempQuat, this.#vecRotation[0] * DEG_TO_RAD);
 			quat.rotateZ(tempQuat, tempQuat, this.#vecRotation[1] * DEG_TO_RAD);
 			quat.rotateX(tempQuat, tempQuat, this.#vecRotation[2] * DEG_TO_RAD);

@@ -50,7 +50,7 @@ export class VelocityRandom extends Source1ParticleOperator {
 
 		const cp = particle.system.getControlPoint(m_nControlPointNumber);
 		if (cp) {
-			vec3.transformQuat(randomVector, randomVector, cp.getWorldQuaternion());
+			vec3.transformQuat(randomVector, randomVector, cp.getWorldOrientation());
 		}
 		//vec3.copy(particle.velocity, randomVector);
 		//vec3.add(particle.velocity, particle.velocity, randomVector);

@@ -103,7 +103,7 @@ export class PositionWithinSphereRandom extends Source1ParticleOperator {
 
 				cp = particle.system.getControlPoint(controlPointNumber);
 				if (cp) {
-					vec3.transformQuat(randpos, randpos, cp.getWorldQuaternion());
+					vec3.transformQuat(randpos, randpos, cp.getWorldOrientation());
 					cp.getWorldPosition(tempVec3);
 					vec3.add(randpos, randpos, tempVec3);
 				}
@@ -116,14 +116,14 @@ export class PositionWithinSphereRandom extends Source1ParticleOperator {
 		//vec3.add(particle.position, particle.position, v);
 		//const cp = particle.system.getControlPoint(controlPointNumber);
 		if (cp) {
-			 cp.getWorldQuaternion(particle.cpOrientation);
+			 cp.getWorldOrientation(particle.cpOrientation);
 		}
 		vec3.copy(particle.position, randpos);
 
 		vec3RandomBox(particle.velocity, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);//particle.velocity.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
 		particle.velocity[1] = -particle.velocity[1]; //For some reason y is inversed
 		if (cp) {
-			vec3.transformQuat(particle.velocity, particle.velocity, cp.getWorldQuaternion());
+			vec3.transformQuat(particle.velocity, particle.velocity, cp.getWorldOrientation());
 		}
 		//vec3.transformQuat(particle.velocity, particle.velocity, particle.cpOrientation/*cp.getWorldQuaternion()*/);
 		if (speed) {

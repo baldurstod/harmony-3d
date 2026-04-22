@@ -68,7 +68,7 @@ export class RemapScalarToVector extends Source1ParticleOperator {
 				vec3.add(tempVec3, cp.getWorldPosition(tempVec3_2), tempVec3);
 			} else {
 				if (cp) {
-					cp.getWorldQuaternion(tempQuat);
+					cp.getWorldOrientation(tempQuat);
 					vec3.transformQuat(tempVec3, tempVec3, tempQuat);
 					vec3.add(tempVec3, cp.getWorldPosition(tempVec3_2), tempVec3);
 				}

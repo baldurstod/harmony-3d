@@ -63,7 +63,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		const orientationControlPointNumber = this.getParameter('orientation control point');
 		const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
 		if (orientationControlPoint) {
-			this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat));
+			this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldOrientation(tempQuat));
 		} else {
 			this.mesh.setUniformValue('uOrientationControlPoint', IDENTITY_QUAT);
 		}

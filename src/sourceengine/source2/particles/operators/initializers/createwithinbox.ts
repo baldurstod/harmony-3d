@@ -59,7 +59,7 @@ export class CreateWithinBox extends Operator {
 		if (controlPoint) {
 			controlPoint.getWorldPosition(tempVec3_2);
 			if (this.#localSpace) {
-				vec3.transformQuat(tempVec3, tempVec3, controlPoint.getWorldQuaternion(tempQuat));
+				vec3.transformQuat(tempVec3, tempVec3, controlPoint.getWorldOrientation(tempQuat));
 				vec3.add(tempVec3, tempVec3, tempVec3_2);
 			} else {
 				vec3.add(tempVec3, tempVec3, tempVec3_2);
