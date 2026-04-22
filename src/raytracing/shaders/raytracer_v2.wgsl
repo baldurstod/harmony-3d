@@ -619,15 +619,17 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 	let s: vec3f = (*ray).origin - (*tri).vertex0;
 	let u: f32 = f * dot( s, h );
 	if (u < 0 || u > 1) {
+		// Ray passes outside edge2's bounds
 		return;
 	}
 	let q: vec3f = cross( s, edge1 );
 	let v: f32 = f * dot( (*ray).direction, q );
 	if (v < 0 || u + v > 1) {
+		// Ray passes outside edge1's bounds
 		return;
 	}
 	let t: f32 = f * dot( edge2, q );
-	if (t > 0.0001f) {
+	if (t > 0.0001f && dot( (*ray).direction, q ) > 0 /* TODO: properly reject backfaces */) {
 		if (t < (*ray).t) {
 			var tangent: vec3f;
 			var bitangent: vec3f;
