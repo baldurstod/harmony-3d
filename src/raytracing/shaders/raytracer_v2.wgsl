@@ -400,7 +400,7 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f(abs(refractedRay), 1.0);
 
 
-				scatterRay2(ray.hitPos, refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
+				scatterRay(refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
 				//ray.hitColor = vec4f(abs(surfaceNormal), 1.0);
 				//ray.hitColor = vec4f(dir, 1.0);
 				//ray.hitColor = vec4f(1.0);
@@ -445,19 +445,6 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, C
 	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
-
-fn scatterRay2(origin: vec3f, scatterDirection: vec3f, currentRay: u32, context: ptr<function, Context>) {
-	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
-	//var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
-	if (nearZero(scatterDirection)) {
-		return;
-	}
-
-	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(origin, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
-	pushRay(&newRay, currentRay, context);
-}
-
 
 fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
