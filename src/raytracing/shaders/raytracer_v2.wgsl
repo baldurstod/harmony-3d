@@ -400,7 +400,7 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f(abs(refractedRay), 1.0);
 
 
-				scatterRay2(ray.hitPos + ray.direction * 10, refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
+				scatterRay2(ray.hitPos, refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
 				//ray.hitColor = vec4f(abs(surfaceNormal), 1.0);
 				//ray.hitColor = vec4f(dir, 1.0);
 				//ray.hitColor = vec4f(1.0);
@@ -629,8 +629,8 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 		return;
 	}
 	let t: f32 = f * dot( edge2, q );
-	if (t > 0.0001f && dot( (*ray).direction, q ) > 0 /* TODO: properly reject backfaces */) {
-		if (t < (*ray).t) {
+	if (t > 0.0001f) {
+		if (t < (*ray).t  && dot( (*ray).direction, q ) > 0 /* TODO: properly reject backfaces */) {
 			var tangent: vec3f;
 			var bitangent: vec3f;
 
