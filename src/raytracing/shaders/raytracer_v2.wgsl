@@ -42,6 +42,7 @@ struct Ray {
 	chilRays: array<u32, MAX_SUB_RAYS>,
 	chilId: u32,
 	rayType: u32,
+	ignoreBackFaces: bool,
 };
 
 struct TextureDescriptor {
@@ -356,6 +357,13 @@ fn castRay(context: ptr<function, Context>) {
 				//ray.hitColor = vec4f(1.0);
 				ray.hitColor = vec4f((*material).albedo, 1.0);
 			}
+			case LambertianMaterial: {
+				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
+				scatterRay(scatterDirection, currentRay, 1, RayTypeDiffuse, context);
+				shadowRay(currentRay, 1, context);
+				ray.hitColor = vec4f(1.0);
+				(*context).bounces++;
+			}
 			case Source1Material, Source1VertexLitGenericMaterial, Source1LightMappedGenericMaterial, Source2Material: {
 				let cubeMap = (*material).textures[3];
 				//let random = select(0., 1., cubeMap.offset == 0xffffffff);
@@ -473,11 +481,11 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, strength: f32, rayType: 
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, rayType);
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, rayType, true);
 	pushRay(&newRay, currentRay, context);
 }
 
-fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
+fn shadowRay(currentRay: u32, strength: f32, context: ptr<function, Context>) {
 	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
 	let light = &lights[0];
 	var lightDir: vec3f = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;
@@ -485,7 +493,7 @@ fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	lightDir = normalize(lightDir);
 
 	var rD: vec3f = 1 / lightDir;
-	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0, dist, array<u32, MAX_SUB_RAYS>(), 0, RayTypeShadow);
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0, dist, array<u32, MAX_SUB_RAYS>(), 0, RayTypeShadow, false);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -647,8 +655,8 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 		return;
 	}
 	let t: f32 = f * dot( edge2, q );
-	if (t > 0.0001f && dot( (*ray).direction, q ) > 0) {
-		if (t < (*ray).t  && dot( (*ray).direction, q ) > 0 /* TODO: properly reject backfaces */) {
+	if (t > 0.0001f && !((*ray).ignoreBackFaces && dot( (*ray).direction, q ) < 0)/* TODO: properly reject backfaces */) {
+		if (t < (*ray).t) {
 			var tangent: vec3f;
 			var bitangent: vec3f;
 
@@ -678,7 +686,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, RayTypeCamera);
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, RayTypeCamera, true);
 }
 
 @must_use
