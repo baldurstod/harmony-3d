@@ -28,6 +28,7 @@ struct Ray {
 	hitColor: vec4f,
 	selfColor: vec4f,
 	totalColor: vec4f,
+	strength: f32,
 
 	lightIndex: u32,
 	lightDistance: f32,
@@ -64,6 +65,7 @@ struct Material {
 	reflectionRatio: f32,
 	reflectionGloss: f32,
 	refractionIndex: f32,
+	transparent: f32,
 	albedo: vec3f,
 	textures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures
 	v0: vec4f,
@@ -248,7 +250,7 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 				let childRay = (*context).rayStack[child];
 
 				if (childRay.t != 1.e30) {
-					childsColor += childRay.totalColor;
+					childsColor += childRay.totalColor * childRay.strength;
 					found = true;
 				}
 			}
@@ -347,26 +349,43 @@ fn castRay(context: ptr<function, Context>) {
 				//let random = select(0., 1., cubeMap.offset == 0xffffffff);
 
 				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
-				scatterRay(scatterDirection, currentRay, context);
-				shadowRay(currentRay, context);
+				//scatterRay(scatterDirection, currentRay, 1, context);
+				//shadowRay(currentRay, context);
 
-				var color: vec3f;
+				var color: vec4f;
 				let texelColor = textureLookup((*material).textures[0], ray.coord);
 
-				color = texelColor.rgb;
+				color = texelColor;
 
 				if (cubeMap.offset != 0xffffffff) {
 					let cubeValue = textureCubeLookup(cubeMap, reflect(ray.direction, ray.hitNormal));
 					//ray.selfColor = vec4f(cubeValue.rgb * texelColor.a * (*material).v0.rgb, 1.0);
-					color = color + cubeValue.rgb * texelColor.a * (*material).v0.rgb;
+					//color = color + cubeValue.rgb * texelColor.a * (*material).v0.rgb;
+					color = vec4f(color.rgb + cubeValue.rgb * texelColor.a * (*material).v0.rgb, color.a);
 				}
 
-				ray.hitColor = vec4f(color, 1.0);
+				if ((*material).transparent == 1) {
+					let reflectDirection = reflect(ray.direction, ray.hitNormal);
+					let refractDirection = refract(ray.direction, ray.hitNormal, 0.5);
+					scatterRay(refractDirection + 0. * randomUnitVec3(&(*context).rngState), currentRay, 1, context);
+					scatterRay(reflectDirection, currentRay, 0.1, context);
+					//scatterRay(refractDirection , currentRay, 1, context);
+
+					ray.hitColor = color;
+					ray.hitColor = vec4f(0.9);
+					//ray.hitColor = vec4f(reflectDirection, 1.0);
+					return;
+				} else {
+					scatterRay(scatterDirection, currentRay, 1, context);
+				}
+				shadowRay(currentRay, context);
+
+				ray.hitColor = color;
 				(*context).bounces++;
 			}
 			case Source1EyeRefractMaterial: {
 				var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
-				scatterRay(scatterDirection, currentRay, context);
+				scatterRay(scatterDirection, currentRay, 1, context);
 				shadowRay(currentRay, context);
 				ray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);
 				(*context).bounces++;
@@ -400,7 +419,7 @@ fn castRay(context: ptr<function, Context>) {
 				ray.hitColor = vec4f(abs(refractedRay), 1.0);
 
 
-				scatterRay(refractedRay, currentRay, context);ray.hitColor = vec4f(1.0);
+				scatterRay(refractedRay, currentRay, 1, context);ray.hitColor = vec4f(1.0);
 				//ray.hitColor = vec4f(abs(surfaceNormal), 1.0);
 				//ray.hitColor = vec4f(dir, 1.0);
 				//ray.hitColor = vec4f(1.0);
@@ -434,7 +453,7 @@ fn castRay(context: ptr<function, Context>) {
 	}
 }
 
-fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, Context>) {
+fn scatterRay(scatterDirection: vec3f, currentRay: u32, strength: f32, context: ptr<function, Context>) {
 	let ray: ptr<function, Ray> = &(*context).rayStack[currentRay];
 	//var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));
 	if (nearZero(scatterDirection)) {
@@ -442,7 +461,7 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, context: ptr<function, C
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -454,7 +473,7 @@ fn shadowRay(currentRay: u32, context: ptr<function, Context>) {
 	lightDir = normalize(lightDir);
 
 	var rD: vec3f = 1 / lightDir;
-	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0, dist, array<u32, MAX_SUB_RAYS>(), 0);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -616,7 +635,7 @@ fn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {
 		return;
 	}
 	let t: f32 = f * dot( edge2, q );
-	if (t > 0.0001f) {
+	if (t > 0.0001f && dot( (*ray).direction, q ) > 0) {
 		if (t < (*ray).t  && dot( (*ray).direction, q ) > 0 /* TODO: properly reject backfaces */) {
 			var tangent: vec3f;
 			var bitangent: vec3f;
@@ -647,7 +666,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0);
 }
 
 @must_use
