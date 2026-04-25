@@ -35,12 +35,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('min length', '0', float, m_flMinLength)
 	}
 
-	/*
-	doRender(particleList, elapsedTime, material) {
-		for (let i = 0; i < particleList.length; ++i) {
-			this.renderSpriteTrail(particleList[i], elapsedTime, material);
-		}
-	}*/
 	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void {
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
@@ -56,13 +50,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
 			const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 			if (coords && uvs) {
-				//coords = coords.m_TextureCoordData[0];
-				/*
-				const uMin = coords.m_fLeft_U0;
-				const vMin = coords.m_fTop_V0;
-				const uMax = coords.m_fRight_U0;
-				const vMax = coords.m_fBottom_V0;
-				*/
 				uvs[index++] = coords.uMin;
 				uvs[index++] = coords.vMin;
 				uvs[index++] = coords.uMax;
@@ -76,11 +63,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			}
 		}
 		this.geometry.attributes.get('aTextureCoord')!.dirty = true;
-
-		//this.geometry.attributes.get('aTextureCoord').dirty = true;
-		if (TESTING) {
-			//this.geometry.count = 6;
-		}
 	}
 
 	initRenderer():void {
@@ -122,7 +104,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
 		this.particleSystem.material!.setDefine('RENDER_SPRITE_TRAIL');
-		//particleSystem.material.setDefine('PARTICLE_ORIENTATION_SCREEN_ALIGNED');
 		this.setOrientationType(0);
 	}
 
@@ -175,12 +156,9 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 				}
 					*/
 
-
-		//const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		const a = this.#imgData!;
 		let index = 0;
 
-		//const len = 0;
 		for (const particle of particleList) {
 			const flAge = particle.currentTime;
 			const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
@@ -225,66 +203,6 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 			this.#updateParticlesTexture(maxParticles, a);
 		}
 	}
-
-	/*
-	setupParticlesTexture1(particleList, maxParticles, elapsedTime) {
-		const m_flMaxLength = this.getParameter('max length');
-		const m_flMinLength = this.getParameter('min length');
-		const m_flLengthFadeInTime = this.getParameter('length fade in time');
-		const rate = this.getParameter('animation rate') || 30;
-		const fit = this.getParameter('animation_fit_lifetime') || 0;
-		/*
-				if (fit) {
-					rate = material.sequenceLength / particle.timeToLive;
-				}
-		* /
-
-		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
-		let index = 0;
-
-		for (const particle of particleList) {
-			const flAge = particle.currentTime;
-			const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
-			const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position);//TODOv3: optimize
-			const flMag = vec3.length(vecDelta);
-			vec3.normalize(vecDelta, vecDelta);
-			const flOODt = (elapsedTime != 0.0) ? (1.0 / elapsedTime) : 1.0;
-			let flLength = flLengthScale * flMag * flOODt * particle.trailLength;
-			if (flLength <= 0.0) {
-				return;
-			}
-
-			flLength = clamp(flLength, m_flMinLength, m_flMaxLength);
-			//vec3.scale(vecDelta, vecDelta, flLength * 0.5);TODOv3
-
-			//const vTangentY = vec3.cross(vec3.create(), vDirToBeam, vecDelta);
-			let rad = particle.radius;
-			if (flLength < rad) {
-				rad = flLength;
-			}
-
-			a[index++] = particle.position[0];
-			a[index++] = particle.position[1];
-			a[index++] = particle.position[2];
-			index++;
-			a[index++] = particle.color.r;
-			a[index++] = particle.color.g;
-			a[index++] = particle.color.b;
-			a[index++] = particle.alpha;
-			a[index++] = rad;
-			index++;
-			a[index++] = particle.rotationRoll;
-			a[index++] = particle.rotationYaw * DEG_TO_RAD;
-			a[index++] = vecDelta[0];
-			a[index++] = vecDelta[1];
-			a[index++] = vecDelta[2];
-			a[index++] = flLength;
-			index += 16;
-		}
-
-		this.#updateParticlesTexture(maxParticles, a);
-	}
-	*/
 
 	dispose(): void {
 		this.mesh?.dispose();
