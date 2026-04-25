@@ -1,5 +1,5 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 const DEFAULT_SEGMENT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -41,7 +41,14 @@ export class BeamBufferGeometry extends BufferGeometry {
 	}
 	*/
 
+	/**
+	 * @deprecated use setSegments instead
+	 */
 	set segments(segments: BeamSegment[]) {
+		this.setSegments(segments);
+	}
+
+	setSegments(segments: BeamSegment[]): void {
 		let previousSegment = null;
 
 		let indiceBase = 0;
