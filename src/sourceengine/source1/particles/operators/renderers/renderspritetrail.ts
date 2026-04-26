@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics2';
@@ -46,9 +45,9 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.mesh.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 
 		let index = 0;
+		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 		for (const particle of particleList) {
 			const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
-			const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 			if (coords && uvs) {
 				uvs[index++] = coords.uMin;
 				uvs[index++] = coords.vMin;
@@ -65,7 +64,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		this.geometry.attributes.get('aTextureCoord')!.dirty = true;
 	}
 
-	initRenderer():void {
+	initRenderer(): void {
 		const geometry = new BufferGeometry();
 		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
 		const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
@@ -210,3 +209,4 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 }
 Source1ParticleOperators.registerOperator(RenderSpriteTrail);
+//Source1ParticleOperators.registerOperator('render rope', RenderSpriteTrail);
