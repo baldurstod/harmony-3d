@@ -1,5 +1,4 @@
-import { vec2 } from 'gl-matrix';
-
+import { vec2, vec3 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics2';
 import { RenderFace } from '../../../../../materials/constants';
 import { Mesh } from '../../../../../objects/mesh';
@@ -15,12 +14,14 @@ import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
 
 const tempVec2 = vec2.create();
+const tempVec3 = vec3.create();
 
 export class RenderRope extends Source1ParticleOperator {
 	static functionName = 'render rope';
 	#maxParticles = 0;
 	#texture?: Texture;
-	geometry?: BeamBufferGeometry;
+	#geometry = new BeamBufferGeometry();
+	mesh = new Mesh({ geometry: this.#geometry });
 	#imgData?: Float32Array;
 
 	constructor(system: Source1ParticleSystem) {
@@ -37,17 +38,18 @@ export class RenderRope extends Source1ParticleOperator {
 	}
 		*/
 	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]/*, elapsedTime: number*/): void {
-		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
+		if (!this.particleSystem.material) {
 			return;
 		}
+
 		// TODO: use param subdivision_count
-		//const subdivCount = this.getParameter('subdivision_count');
+		const subdivCount = this.getParameter('subdivision_count');
 		const m_flTexelSizeInUnits = this.getParameter('texel_size');
 		const m_flTextureScrollRate = this.getParameter('texture_scroll_rate');
 		const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2)[1] * m_flTexelSizeInUnits);
 		const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
 
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		//const vertices = [];
 		//const indices = [];
 		//const id = [];
@@ -56,19 +58,40 @@ export class RenderRope extends Source1ParticleOperator {
 
 		//let particle;
 		let ropeLength = 0.0;
-		let previousSegment = null;
-		for (let i = 0, l = particleList.length; i < l; i++) {
+		let previousSegment: BeamSegment | null = null;
+		let previousParticle: Source1Particle | null = null;
+		const deltaPos = vec3.create();
+
+		for (const particle of particleList) {
 			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-			const particle: Source1Particle = particleList[i]!;
-			const segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
-			if (previousSegment) {
-				ropeLength += segment.distanceTo(previousSegment);
+			//const particle: Source1Particle = particleList[i]!;
+			if (previousParticle) {
+
+				vec3.sub(deltaPos, particle.position, previousParticle.position);
+
+				for (let i = 0; i < subdivCount; i++) {
+					const j = i / subdivCount;
+					const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
+					const position = vec3.scaleAndAdd(tempVec3, previousParticle.position, deltaPos, i / 3);
+					const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
+					const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
+					const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
+					const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
+					const segment = new BeamSegment(position, [colorR, colorG, colorB, alpha], 0.0, radius);
+					if (previousSegment) {
+						ropeLength += segment.distanceTo(previousSegment);
+					}
+
+
+					segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
+					segments.push(segment);
+					previousSegment = segment;
+
+				}
 			}
-			segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
-			segments.push(segment);
-			previousSegment = segment;
+			previousParticle = particle;
 		}
-		geometry.segments = segments;
+		geometry.setSegments(segments);
 	}
 
 	set maxParticles(maxParticles: number) {
@@ -78,8 +101,9 @@ export class RenderRope extends Source1ParticleOperator {
 	}
 
 	initRenderer(): void {
-		this.geometry = new BeamBufferGeometry();
-		this.mesh = new Mesh({ geometry: this.geometry, material: this.particleSystem.material });
+		if (this.particleSystem.material) {
+			this.mesh.setMaterial(this.particleSystem.material);
+		}
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('IS_ROPE');
@@ -92,7 +116,6 @@ export class RenderRope extends Source1ParticleOperator {
 		this.maxParticles = this.particleSystem.maxParticles;
 		this.particleSystem.addChild(this.mesh);
 
-		this.setOrientationType(this.getParameter('orientation_type') ?? 0);//TODO: remove orientation_type : only for RenderAnimatedSprites
 		this.particleSystem.material!.renderFace(RenderFace.Both);
 		/*
 				switch (orientation) {
