@@ -3,6 +3,7 @@ import { Graphics } from '../../../../../graphics/graphics2';
 import { RenderFace } from '../../../../../materials/constants';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
+import { Scene } from '../../../../../scenes/scene';
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_NEAREST, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
@@ -91,7 +92,11 @@ export class RenderRope extends Source1ParticleOperator {
 			}
 			previousParticle = particle;
 		}
-		geometry.setSegments(segments);
+
+		const camera = (particleSystem.root as Scene).activeCamera;
+		if (camera) {
+			geometry.setSegments(segments, camera);
+		}
 	}
 
 	set maxParticles(maxParticles: number) {

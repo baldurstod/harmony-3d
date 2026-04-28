@@ -1,13 +1,10 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
+import { Camera } from '../../cameras/camera';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 const DEFAULT_SEGMENT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 
-const tempVec3 = vec3.create();
-const tempQuat = quat.create();
-const tempQuat2 = quat.create();
-const UNIT_VEC3_X = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_MINUS_Y = vec3.fromValues(0, -1, 0);
 
 export class BeamSegment {
@@ -41,59 +38,34 @@ export class BeamBufferGeometry extends BufferGeometry {
 	}
 	*/
 
-	/**
-	 * @deprecated use setSegments instead
-	 */
-	set segments(segments: BeamSegment[]) {
-		this.setSegments(segments);
-	}
-
-	setSegments(segments: BeamSegment[]): void {
+	setSegments(segments: BeamSegment[], camera: Camera): void {
 		let previousSegment = null;
 
 		let indiceBase = 0;
 		const indices = [];
-		const vertices = [];
-		const normals = [];
+		const vertices = []
 		const uvs = [];
 		const colors = [];
-		const widths = [];
+
+		const cameraPos = camera.getWorldPosition();
+		const tangentY = vec3.create();
+		const dirToBeam = vec3.create();
+		const normal = vec3.create();
+		const p = vec3.create();
 
 		for (const segment of segments) {
 			if (previousSegment) {
 				indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
 
-				vec3.sub(tempVec3, segment.pos, previousSegment.pos);
-				vec3.normalize(tempVec3, tempVec3);
-				quat.rotationTo(tempQuat, UNIT_VEC3_X, tempVec3);
-				quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, previousSegment.normal);
+				vec3.sub(tangentY, segment.pos, previousSegment.pos);
+				vec3.sub(dirToBeam, segment.pos, cameraPos);
+				vec3.cross(normal, tangentY, dirToBeam);
+				vec3.normalize(normal, normal);
 
-				vec3.set(tempVec3, 0, 0, -previousSegment.width / 2.0);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat2);
-				vec3.add(tempVec3, tempVec3, previousSegment.pos);
-				vertices.push(...tempVec3);
-
-				vec3.set(tempVec3, 0, 0, previousSegment.width / 2.0);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat2);
-				vec3.add(tempVec3, tempVec3, previousSegment.pos);
-				vertices.push(...tempVec3);
-
-
-				quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, segment.normal);
-
-				vec3.set(tempVec3, 0, 0, -segment.width / 2.0);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat2);
-				vec3.add(tempVec3, tempVec3, segment.pos);
-				vertices.push(...tempVec3);
-
-				vec3.set(tempVec3, 0, 0, segment.width / 2.0);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat);
-				vec3.transformQuat(tempVec3, tempVec3, tempQuat2);
-				vec3.add(tempVec3, tempVec3, segment.pos);
-				vertices.push(...tempVec3);
+				vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, -previousSegment.width / 2.0));
+				vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, previousSegment.width / 2.0));
+				vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
+				vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
 
 				uvs.push(0, previousSegment.texCoordY,
 					1, previousSegment.texCoordY,

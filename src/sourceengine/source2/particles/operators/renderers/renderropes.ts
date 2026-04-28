@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics2';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
+import { Scene } from '../../../../../scenes/scene';
 import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
@@ -154,7 +155,10 @@ export class RenderRopes extends RenderBase {
 			segments.push(segment);
 			previousSegment = segment;
 		}
-		geometry.segments = segments;
+		const camera = (particleSystem.root as Scene).activeCamera;
+		if (camera) {
+			geometry.setSegments(segments, camera);
+		}
 	}
 
 	set maxParticles(maxParticles: number) {
