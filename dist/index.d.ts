@@ -122,11 +122,12 @@ export declare class AlphaRandom extends Source1ParticleOperator {
 }
 
 export declare class AmbientLight extends Light {
-    isAmbientLight: boolean;
+    readonly isAmbientLight = true;
     constructor(params?: AmbientLightParameters);
     static constructFromJSON(json: any): Promise<AmbientLight>;
     static getEntityName(): string;
     is(s: string): boolean;
+    getRaytracingLight(): LightType;
 }
 
 declare type AmbientLightParameters = LightParameters;
@@ -289,7 +290,7 @@ export declare class BasicMovement extends Operator {
 }
 
 export declare class BeamBufferGeometry extends BufferGeometry {
-    set segments(segments: BeamSegment[]);
+    setSegments(segments: BeamSegment[], camera: Camera): void;
 }
 
 export declare class BeamSegment {
@@ -727,6 +728,37 @@ export declare class CanvasLayout {
     removeView(name: string): void;
 }
 
+export declare class CanvasUi {
+    #private;
+    constructor(params?: CanvasUiParams);
+    setCanvas(canvas: CanvasAttributes | string): void;
+    addParameter(param: CanvasUiParam): void;
+    setValue(name: string, value: CanvasUiValue): void;
+}
+
+export declare type CanvasUiParam = {
+    name: string;
+    label: string;
+    type: CanvasUiType;
+    value?: CanvasUiValue;
+    humanReadable?: boolean;
+};
+
+export declare type CanvasUiParams = {
+    canvas?: CanvasAttributes | string;
+    params?: CanvasUiParam[];
+};
+
+export declare enum CanvasUiType {
+    Integer = 0,
+    Float = 1,
+    String = 2,
+    Boolean = 3
+}
+
+export declare interface CanvasUiValue {
+}
+
 /**
  * Definition of a single scene part of a layout.
  * initCanvas must be called with useOffscreenCanvas = true to take effect
@@ -943,7 +975,7 @@ declare class Channel {
 
          declare class ChoreographyEvent {
              #private;
-             type: number;
+             type: EventType;
              name: string;
              startTime: number;
              endTime: number;
@@ -952,9 +984,9 @@ declare class Channel {
              param3: ChoreographyEventParam;
              flags: number;
              distanceToTarget: number;
-             flexAnimTracks: any;
+             flexAnimTracks: Record<string, FlexAnimationTrack>;
              m_nNumLoops: number;
-             constructor(choreography: Choreography, repository: string, eventType: number, name: string, startTime: number, endTime: number, param1: ChoreographyEventParam, param2: ChoreographyEventParam, param3: ChoreographyEventParam, flags: number, distanceToTarget: number);
+             constructor(choreography: Choreography, repository: string, eventType: EventType, name: string, startTime: number, endTime: number, param1: ChoreographyEventParam, param2: ChoreographyEventParam, param3: ChoreographyEventParam, flags: number, distanceToTarget: number);
              getRepository(): string;
              /**
               * Get the startTime
@@ -970,7 +1002,7 @@ declare class Channel {
               * Get the type
               * @return {Number} The loaded file
               */
-             getType(): number;
+             getType(): EventType;
              /**
               * Set the ramp
               * @param {Object CurveData} ramp The ramp to set
@@ -1032,7 +1064,7 @@ declare class Channel {
               /**
                * TODO
                */
-              getActor(): Source1ModelInstance_2 | undefined;
+              getActor(): Source1ModelInstance | undefined;
               toTimelineElement(): TimelineClip;
              }
 
@@ -1245,7 +1277,11 @@ declare class Channel {
                  snapshot?: Source2Snapshot;
                  model?: Source2ModelInstance;
                  getWorldTransformation(mat?: mat4): mat4;
+                 /**
+                  * @deprecated Use getWorldOrientation instead.
+                  */
                  getWorldQuaternion(q?: quat): quat;
+                 getWorldOrientation(q?: quat): quat;
                  parentChanged(): void;
                  set parentControlPoint(parentControlPoint: ControlPoint | null);
                  get parentControlPoint(): ControlPoint | null;
@@ -1679,8 +1715,16 @@ declare class Channel {
                       getWorldPosition(vec?: vec3): vec3;
                       getPositionFrom(other: Entity, vec?: vec3): vec3;
                       setWorldPosition(position: ReadonlyVec3): void;
+                      /**
+                       * @deprecated Use getWorldOrientation instead.
+                       */
                       getWorldQuaternion(q?: quat): quat;
+                      getWorldOrientation(q?: quat): quat;
+                      /**
+                       * @deprecated Use setWorldOrientation instead.
+                       */
                       setWorldQuaternion(quaternion: ReadonlyQuat): void;
+                      setWorldOrientation(quaternion: ReadonlyQuat): void;
                       getWorldScale(vec?: vec3): vec3;
                       get positionAsString(): string;
                       /**
@@ -1903,6 +1947,26 @@ declare class Channel {
                           execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
+                      declare enum EventType {
+                          Unspecified = 0,
+                          Section = 1,
+                          Expression = 2,
+                          LookAt = 3,
+                          MoveTo = 4,
+                          Speak = 5,
+                          Gesture = 6,
+                          Sequence = 7,
+                          Face = 8,
+                          FireTrigger = 9,
+                          Flexanimation = 10,
+                          SubScene = 11,
+                          Loop = 12,
+                          Interrupt = 13,
+                          StopPoint = 14,
+                          PermitResponses = 15,
+                          Generic = 16
+                      }
+
                       export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
                       export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBuffer>;
@@ -1929,6 +1993,7 @@ declare class Channel {
                           beforeRender(camera: Camera): void;
                           clone(): EyeRefractMaterial;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       export declare class FadeAndKill extends Operator {
@@ -2752,7 +2817,7 @@ declare class Channel {
                           static pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null>;
                           static getDefinesAsString(material: Material): string;
                           static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-                          static compute(material: Material, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void;
+                          static compute(mesh: Mesh, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void;
                           static renderMultiCanvas(delta: number, context?: RenderContext): void;
                           /**
                            * Transfers the content of the offscreen canvas to a bitmap an return the newly allocated bitmap.
@@ -3347,8 +3412,8 @@ declare class Channel {
                           readText(src: string): void;
                           getRootElement(): KvElement | undefined;
                           getRootName(): string;
-                          readChar(): string | -1;
-                          pickChar(): string | -1;
+                          readChar(): string | number;
+                          pickChar(): string | number;
                           pushElement(): void;
                           popElement(): void;
                           pushAttribute(): void;
@@ -3403,7 +3468,8 @@ declare class Channel {
                       export declare class Light extends Entity {
                           #private;
                           shadow?: LightShadow;
-                          isLight: boolean;
+                          readonly isLight = true;
+                          radius: number;
                           constructor(parameters?: LightParameters);
                           set color(color: vec3);
                           get color(): vec3;
@@ -3420,6 +3486,7 @@ declare class Channel {
                           static set defaultTextureSize(textureSize: number);
                           static getEntityName(): string;
                           is(s: string): boolean;
+                          getRaytracingLight(): LightType;
                       }
 
                       export declare class LightMappedGenericMaterial extends Source1Material {
@@ -3431,6 +3498,7 @@ declare class Channel {
                       declare type LightParameters = EntityParameters & {
                           color?: vec3;
                           intensity?: number;
+                          radius?: number;
                       };
 
                       export declare class LightShadow {
@@ -3446,6 +3514,13 @@ declare class Channel {
                           set textureSize(textureSize: number);
                           get textureSize(): vec2;
                           computeShadowMatrix(mapIndex: number): void;
+                      }
+
+                      declare enum LightType {
+                          Ambient = 1,
+                          Point = 2,
+                          Spot = 3,
+                          Directional = 4
                       }
 
                       export declare class Line extends Mesh {
@@ -3486,6 +3561,7 @@ declare class Channel {
                           static constructFromJSON(json: JSONObject): Promise<LineMaterial>;
                           fromJSON(json: JSONObject): void;
                           static getEntityName(): string;
+                          getRaytracingMaterial(index: number): null;
                       }
 
                       declare type LineParameters = MeshParameters & {
@@ -3515,6 +3591,8 @@ declare class Channel {
                           constructor(system: Source1ParticleSystem);
                           doOperate(particle: Source1Particle): void;
                       }
+
+                      export declare function logGPUBuffers(delay: Millisecond): ReturnType<typeof setInterval>;
 
                       export declare interface Loopable {
                           isLoopable: true;
@@ -3679,7 +3757,6 @@ declare class Channel {
                           #private;
                           id: string;
                           name: string;
-                          readonly storage: Map<string, StorageBuffer>;
                           readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines: Record<string, any>;
                           parameters: MaterialParams;
@@ -3780,7 +3857,7 @@ declare class Channel {
                           setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void;
                           deleteUniform(name: string): void;
                           getStorage(name: string): StorageBuffer | undefined;
-                          setStorage(name: string, value: StorageValueArray | number | StorageBuffer): void;
+                          setStorage(name: string, value: StorageValueArray | number | StorageBufferParam): void;
                           deleteStorage(name: string): void;
                           getRaytracingMaterial(index: number): RaytracingMaterial | null;
                       }
@@ -3812,7 +3889,7 @@ declare class Channel {
                           polygonOffsetFactor?: number;
                           polygonOffsetUnits?: number;
                           uniforms?: MaterialUniform;
-                          storages?: Record<string, StorageValueArray | number | StorageBuffer>;
+                          storages?: Record<string, StorageValueArray | number | StorageBufferParam>;
                           gpuConstants?: Record<string, GPUPipelineConstantValue>;
                           defines?: Record<string, string>;
                           workgroupSize?: vec3;
@@ -4228,7 +4305,7 @@ declare class Channel {
                           isMesh: boolean;
                           topology: GPUPrimitiveTopology;
                           dirty: boolean;
-                          constructor(params: MeshParameters);
+                          constructor(params?: MeshParameters);
                           /**
                            * @deprecated Please use `setMaterial` instead.
                            */
@@ -4267,7 +4344,7 @@ declare class Channel {
                           toString(): string;
                           getBoundsModelSpace(min?: vec3, max?: vec3): void;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-                          getPipelineLayout(shaderModule: WgslModule, /*groups: Map2<number, number, Binding>, */ camera: Camera, uniforms: Map<string, BufferSource>, context: InternalRenderContext): [GPUPipelineLayout, Map2<number, number, Binding>];
+                          getPipelineLayout(shaderModule: WgslModule, /*groups: Map2<number, number, Binding>, */ camera: Camera | null, uniforms: Map<string, BufferSource> | null, context: InternalRenderContext, isCompute: boolean): [GPUPipelineLayout, Map2<number, number, Binding>];
                           buildContextMenu(): HarmonyMenuItemsDict;
                           raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                           static getEntityName(): string;
@@ -5046,7 +5123,7 @@ declare class Channel {
                       };
 
                       export declare class PointLight extends Light {
-                          isPointLight: boolean;
+                          readonly isPointLight = true;
                           constructor(params?: PointLightParameters);
                           set castShadow(castShadow: boolean | undefined);
                           get castShadow(): boolean | undefined;
@@ -5056,6 +5133,7 @@ declare class Channel {
                           buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
                           is(s: string): boolean;
+                          getRaytracingLight(): LightType;
                       }
 
                       export declare class PointLightHelper extends Mesh {
@@ -5361,12 +5439,18 @@ declare class Channel {
                       export declare class Raytracer {
                           #private;
                           constructor();
+                          reset(): Promise<void>;
                           configure(scene: Scene, width: number, height: number): Promise<boolean>;
                           play(): void;
                           pause(): void;
+                          getRps(): number;
+                          getInvocations(): number;
+                          getUint32Counter(index: number): number | undefined;
+                          getFloat32Counter(index: number): number | undefined;
                           getOutputTexture(): Texture | null;
                           getMaterial(): ShaderMaterial;
                           debugBvh(debug: boolean): void;
+                          useNewBvh(newBvh: boolean): void;
                           dispose(): void;
                       }
 
@@ -5377,8 +5461,13 @@ declare class Channel {
                           reflectionRatio: float32;
                           reflectionGloss: float32;
                           refractionIndex: float32;
-                          albedo: vec3;
+                          transparent?: float32;
+                          albedo?: vec3;
                           flatShading: boolean;
+                          v0?: vec4;
+                          v1?: vec4;
+                          v2?: vec4;
+                          v3?: vec4;
                       };
 
                       export declare class RayTracingPass extends Pass {
@@ -5392,6 +5481,7 @@ declare class Channel {
                       export declare class RefractMaterial extends Source1Material {
                           clone(): RefractMaterial;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       export declare function registerLoader(name: string, loader: any): void;
@@ -5654,7 +5744,7 @@ declare class Channel {
                           clearColor: (clearColor: vec4) => void;
                           setDefine: (define: string, value?: string) => void;
                           removeDefine: (define: string) => void;
-                          compute: (material: Material, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void) => void;
+                          compute: (mesh: Mesh, context: InternalRenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void) => void;
                       }
 
                       export declare enum RenderFace {
@@ -5695,7 +5785,7 @@ declare class Channel {
                       export declare class RenderRope extends Source1ParticleOperator {
                           #private;
                           static functionName: string;
-                          geometry?: BeamBufferGeometry;
+                          mesh: Mesh;
                           constructor(system: Source1ParticleSystem);
                           updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[]): void;
                           set maxParticles(maxParticles: number);
@@ -5998,14 +6088,17 @@ declare class Channel {
                       }
 
                       declare enum RtMaterial {
-                          Emissive = 0,
-                          Reflective = 1,
-                          Dielectric = 2,
-                          Lambertian = 3,
-                          Source1Material = 4,// fallback for all source 1 materials
-                          Source1VertexLitGeneric = 5,
-                          Source1LightMappedGeneric = 6,
-                          Source2Material = 7
+                          Unknown = 0,
+                          Emissive = 1,
+                          Reflective = 2,
+                          Dielectric = 3,
+                          Lambertian = 4,
+                          Source1Material = 1000,// fallback for all source 1 materials
+                          Source1VertexLitGeneric = 1001,
+                          Source1LightMappedGeneric = 1002,
+                          Source1EyeRefract = 1003,
+                          Source1Refract = 1004,
+                          Source2Material = 2000
                       }
 
                       export declare function sanitizeRepositoryName(name: string): string;
@@ -7510,7 +7603,7 @@ declare class Channel {
                           attachment: Source2ModelAttachment;
                           constructor(model: Source2ModelInstance, attachment: Source2ModelAttachment);
                           getWorldPosition(vec?: vec3): vec3;
-                          getWorldQuaternion(q?: quat): quat;
+                          getWorldOrientation(q?: quat): quat;
                       }
 
                       export declare class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
@@ -8536,7 +8629,7 @@ declare class Channel {
                           isSpotLight: boolean;
                           innerAngleCos: number;
                           outerAngleCos: number;
-                          constructor(parameters?: {});
+                          constructor(parameters?: SpotLightParameters);
                           set castShadow(castShadow: boolean | undefined);
                           get castShadow(): boolean | undefined;
                           set angle(angle: number);
@@ -8546,6 +8639,7 @@ declare class Channel {
                           getDirection(out?: vec3): vec3;
                           buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
+                          getRaytracingLight(): LightType;
                       }
 
                       export declare class SpotLightHelper extends Mesh {
@@ -8554,6 +8648,11 @@ declare class Channel {
                           update(): void;
                           parentChanged(parent?: Entity | null): void;
                       }
+
+                      declare type SpotLightParameters = LightParameters & {
+                          innerAngle?: number;
+                          outerAngle?: number;
+                      };
 
                       export declare class SpriteCardMaterial extends Source1Material {
                           #private;
@@ -8634,12 +8733,17 @@ declare class Channel {
                           usage?: number;
                           /** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
                           raw?: boolean;
+                          /** Is this buffer intended to be written raw, instead of structured. Defaults to false. */
+                          shared?: boolean;
                           /** If raw is true, offset in bytes into `buffer` to begin writing at. Defaults to 0. */
                           rawOffset?: number;
                           /** If raw is true, Size of content to write from `value` to `buffer`.
                            * Given in elements if `value` is a `TypedArray` and bytes otherwise. Default to `value` size. */
                           rawSize?: number;
+                          dirty: boolean;
                       };
+
+                      export declare type StorageBufferParam = Omit<StorageBuffer, 'dirty'>;
 
                       /**
                        * Cache the result of the underlying repository in persistent storage
@@ -9091,6 +9195,8 @@ declare class Channel {
                           Reinhard = 2,
                           ReinhardExtended = 3
                       }
+
+                      export declare function trackGPUBuffers(): Set<GPUBuffer>;
 
                       export declare class TrailLengthRandom extends Source1ParticleOperator {
                           static functionName: string;

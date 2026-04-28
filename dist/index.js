@@ -1,6 +1,6 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
-import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$1, setTimeoutPromise, fileToImage, joinPath, Queue, infoSet, errorSet } from 'harmony-utils';
+import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$1, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue, infoSet, errorSet } from 'harmony-utils';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
@@ -1613,7 +1613,7 @@ class Material {
     #parameters = new Map();
     #uniforms = new Map();
     // Storage bindings. Only for WebGPU.
-    storage = new Map();
+    #storage = new Map();
     gpuConstants;
     defines = {}; //TODOv3: put defines in meshes too ? TODO: transform to map ?
     parameters;
@@ -2082,11 +2082,11 @@ class Material {
     }
     setSubUniformValue(name, value) {
         const path = name.split('.');
-        let len = path.length;
-        if (len === 1) {
+        let len = path.length - 1;
+        if (len === 0) {
             return this.setUniformValue(name, value);
         }
-        const existingValue = this.#uniforms.get(name);
+        const existingValue = this.#uniforms.get(path[0]);
         if (!existingValue) {
             return;
         }
@@ -2099,7 +2099,6 @@ class Material {
         }
         subValue[path[len]] = value;
         existingValue.dirty = true;
-        //existingValue.updateVersion = this.updateVersion;
         this.#dirtyBuffers = true;
         ++this.updateVersion;
     }
@@ -2108,32 +2107,38 @@ class Material {
         this.#uniforms.delete(name);
     }
     getStorage(name) {
-        return this.storage.get(name);
+        return this.#storage.get(name);
     }
     setStorage(name, value) {
-        const existingValue = this.storage.get(name);
+        const existingValue = this.#storage.get(name);
         if (existingValue) {
             if (existingValue.buffer) {
                 existingValue.buffer.destroy();
+                existingValue.buffer = null;
+                existingValue.dirty = true;
             }
         }
         if (typeof value === 'number') {
-            this.storage.set(name, { value: null, size: value });
+            this.#storage.set(name, { value: null, size: value, dirty: true, });
         }
         else {
             if (Array.isArray(value) || (ArrayBuffer.isView(value) && !(value instanceof DataView))) {
-                this.storage.set(name, { value: value });
+                this.#storage.set(name, { value: value, dirty: true, });
             }
             else {
-                this.storage.set(name, value);
+                value.dirty = true;
+                this.#storage.set(name, value);
             }
         }
+        ++this.updateVersion;
     }
     deleteStorage(name) {
-        const sto = this.storage.get(name);
+        const sto = this.#storage.get(name);
         if (sto) {
             sto.buffer?.destroy();
             sto.buffer = null;
+            sto.dirty = true;
+            ++this.updateVersion;
         }
     }
     getRaytracingMaterial(index) {
@@ -2213,14 +2218,18 @@ class JSONLoader {
 
 var RtMaterial;
 (function (RtMaterial) {
-    RtMaterial[RtMaterial["Emissive"] = 0] = "Emissive";
-    RtMaterial[RtMaterial["Reflective"] = 1] = "Reflective";
-    RtMaterial[RtMaterial["Dielectric"] = 2] = "Dielectric";
-    RtMaterial[RtMaterial["Lambertian"] = 3] = "Lambertian";
-    RtMaterial[RtMaterial["Source1Material"] = 4] = "Source1Material";
-    RtMaterial[RtMaterial["Source1VertexLitGeneric"] = 5] = "Source1VertexLitGeneric";
-    RtMaterial[RtMaterial["Source1LightMappedGeneric"] = 6] = "Source1LightMappedGeneric";
-    RtMaterial[RtMaterial["Source2Material"] = 7] = "Source2Material";
+    // The values should be consistent with the values in the raytracing shader
+    RtMaterial[RtMaterial["Unknown"] = 0] = "Unknown";
+    RtMaterial[RtMaterial["Emissive"] = 1] = "Emissive";
+    RtMaterial[RtMaterial["Reflective"] = 2] = "Reflective";
+    RtMaterial[RtMaterial["Dielectric"] = 3] = "Dielectric";
+    RtMaterial[RtMaterial["Lambertian"] = 4] = "Lambertian";
+    RtMaterial[RtMaterial["Source1Material"] = 1000] = "Source1Material";
+    RtMaterial[RtMaterial["Source1VertexLitGeneric"] = 1001] = "Source1VertexLitGeneric";
+    RtMaterial[RtMaterial["Source1LightMappedGeneric"] = 1002] = "Source1LightMappedGeneric";
+    RtMaterial[RtMaterial["Source1EyeRefract"] = 1003] = "Source1EyeRefract";
+    RtMaterial[RtMaterial["Source1Refract"] = 1004] = "Source1Refract";
+    RtMaterial[RtMaterial["Source2Material"] = 2000] = "Source2Material";
 })(RtMaterial || (RtMaterial = {}));
 
 class MeshBasicMaterial extends Material {
@@ -2683,8 +2692,8 @@ const tempVec3_1$3 = vec3.create();
 const tempVec3_2$a = vec3.create();
 const tempVec3_3$2 = vec3.create();
 const tempVec3_4$1 = vec3.create();
-const tempQuat$c = quat.create();
-const tempQuat2$1 = quat.create();
+const tempQuat$b = quat.create();
+const tempQuat2 = quat.create();
 const tempQuat3 = quat.create();
 const tempMat4$4 = mat4.create();
 const _upVector = vec3.fromValues(0, 0, 1);
@@ -2819,9 +2828,9 @@ class Entity {
     getWorldPosition(vec = vec3.create()) {
         if (this._parent) {
             this._parent.getWorldPosition(vec);
-            this._parent.getWorldQuaternion(tempQuat$c);
+            this._parent.getWorldQuaternion(tempQuat$b);
             vec3.mul(tempVec3_3$2, this._position, this._parent.getWorldScale(tempVec3_3$2));
-            vec3.transformQuat(tempVec3_3$2, tempVec3_3$2, tempQuat$c);
+            vec3.transformQuat(tempVec3_3$2, tempVec3_3$2, tempQuat$b);
             vec3.add(vec, vec, tempVec3_3$2);
         }
         else {
@@ -2837,17 +2846,23 @@ class Entity {
     setWorldPosition(position) {
         if (this._parent) {
             this._parent.getWorldPosition(tempVec3_1$3);
-            this._parent.getWorldQuaternion(tempQuat$c);
+            this._parent.getWorldQuaternion(tempQuat$b);
             vec3.sub(tempVec3_1$3, position, tempVec3_1$3);
-            quat.invert(tempQuat$c, tempQuat$c);
-            vec3.transformQuat(tempVec3_1$3, tempVec3_1$3, tempQuat$c);
+            quat.invert(tempQuat$b, tempQuat$b);
+            vec3.transformQuat(tempVec3_1$3, tempVec3_1$3, tempQuat$b);
             this.setPosition(tempVec3_1$3);
         }
         else {
             this.setPosition(position);
         }
     }
+    /**
+     * @deprecated Use getWorldOrientation instead.
+     */
     getWorldQuaternion(q = quat.create()) {
+        return this.getWorldOrientation(q);
+    }
+    getWorldOrientation(q = quat.create()) {
         if (this._parent) {
             this._parent.getWorldQuaternion(q);
             quat.mul(q, q, this._quaternion);
@@ -2857,11 +2872,17 @@ class Entity {
         }
         return q;
     }
+    /**
+     * @deprecated Use setWorldOrientation instead.
+     */
     setWorldQuaternion(quaternion) {
+        this.setWorldOrientation(quaternion);
+    }
+    setWorldOrientation(quaternion) {
         if (this._parent) {
-            this._parent.getWorldQuaternion(tempQuat$c);
-            quat.invert(tempQuat$c, tempQuat$c);
-            quat.mul(this._quaternion, tempQuat$c, quaternion);
+            this._parent.getWorldQuaternion(tempQuat$b);
+            quat.invert(tempQuat$b, tempQuat$b);
+            quat.mul(this._quaternion, tempQuat$b, quaternion);
         }
         else {
             quat.copy(this._quaternion, quaternion);
@@ -2932,9 +2953,9 @@ class Entity {
     get worldMatrix() {
         //TODO: optimize
         this.getWorldPosition(tempVec3_1$3);
-        this.getWorldQuaternion(tempQuat$c);
+        this.getWorldQuaternion(tempQuat$b);
         //console.error(...tempVec3_1);
-        mat4.fromRotationTranslationScale(this.#worldMatrix, tempQuat$c, tempVec3_1$3, this.getWorldScale());
+        mat4.fromRotationTranslationScale(this.#worldMatrix, tempQuat$b, tempVec3_1$3, this.getWorldScale());
         return this.#worldMatrix;
     }
     setVisible(visible) {
@@ -3208,18 +3229,18 @@ class Entity {
         this.lockRotation = true;
     }
     rotateGlobalX(rad) {
-        quat.rotateX(tempQuat$c, IDENTITY_QUAT$1, rad);
-        quat.mul(this._quaternion, tempQuat$c, this._quaternion);
+        quat.rotateX(tempQuat$b, IDENTITY_QUAT$1, rad);
+        quat.mul(this._quaternion, tempQuat$b, this._quaternion);
         this.lockRotation = true;
     }
     rotateGlobalY(rad) {
-        quat.rotateY(tempQuat$c, IDENTITY_QUAT$1, rad);
-        quat.mul(this._quaternion, tempQuat$c, this._quaternion);
+        quat.rotateY(tempQuat$b, IDENTITY_QUAT$1, rad);
+        quat.mul(this._quaternion, tempQuat$b, this._quaternion);
         this.lockRotation = true;
     }
     rotateGlobalZ(rad) {
-        quat.rotateZ(tempQuat$c, IDENTITY_QUAT$1, rad);
-        quat.mul(this._quaternion, tempQuat$c, this._quaternion);
+        quat.rotateZ(tempQuat$b, IDENTITY_QUAT$1, rad);
+        quat.mul(this._quaternion, tempQuat$b, this._quaternion);
         this.lockRotation = true;
     }
     /**
@@ -3232,13 +3253,13 @@ class Entity {
     lookAt(target, upVector) {
         const parent = this._parent;
         mat4.lookAt(tempMat4$4, this._position, target, upVector ?? _upVector);
-        mat4.getRotation(tempQuat$c, tempMat4$4);
-        quat.invert(tempQuat$c, tempQuat$c);
+        mat4.getRotation(tempQuat$b, tempMat4$4);
+        quat.invert(tempQuat$b, tempQuat$b);
         if (parent) {
-            quat.conjugate(tempQuat2$1, parent._quaternion);
-            quat.mul(tempQuat$c, tempQuat2$1, tempQuat$c);
+            quat.conjugate(tempQuat2, parent._quaternion);
+            quat.mul(tempQuat$b, tempQuat2, tempQuat$b);
         }
-        this.setQuaternion(tempQuat$c);
+        this.setQuaternion(tempQuat$b);
     }
     getRenderableList() {
         const meshList = new Set();
@@ -4162,6 +4183,56 @@ class WebGPUInternal {
     static format;
     static depthTexture;
 }
+let buffers;
+function trackGPUBuffers() {
+    if (buffers) {
+        return buffers;
+    }
+    buffers = new Set();
+    const gpuDeviceOriginals = {
+        GPUDevice_createBuffer: GPUDevice.prototype.createBuffer,
+        GPUBuffer_destroy: GPUBuffer.prototype.destroy,
+    };
+    GPUDevice.prototype.createBuffer = function (descriptor) {
+        const buffer = gpuDeviceOriginals.GPUDevice_createBuffer.call(this, descriptor);
+        buffers.add(buffer);
+        return buffer;
+    };
+    GPUBuffer.prototype.destroy = function () {
+        buffers.delete(this);
+        gpuDeviceOriginals.GPUBuffer_destroy.call(this);
+    };
+    return buffers;
+}
+function logGPUBuffers(delay) {
+    return setInterval(() => {
+        let totalSize = 0;
+        buffers.forEach((buffer) => totalSize += buffer.size);
+        console.log(`GPU buffers: ${buffers.size}, total size: ${totalSize}`, buffers);
+    }, delay);
+}
+/*
+
+
+const gpuDeviceOriginals = {
+    GPUQueue_writeBuffer: GPUQueue.prototype.writeBuffer,
+};
+
+GPUQueue.prototype.writeBuffer = function (
+
+    buffer: GPUBuffer,
+    bufferOffset: GPUSize64,
+    data: GPUAllowSharedBufferSource,
+    dataOffset?: GPUSize64,
+    size?: GPUSize64
+
+): undefined {
+    if (buffer.size > 50000) {
+        console.info(`writing buffer ${buffer.size}`);
+    }
+    return gpuDeviceOriginals.GPUQueue_writeBuffer.call(this, buffer, bufferOffset, data, dataOffset, size,);
+}
+*/
 
 class MaterialManager {
     static #materials = new Map();
@@ -5168,7 +5239,7 @@ class Mesh extends Entity {
     #webGpuShaderSource;
     dirty = false;
     #dirtyBuffers = false;
-    constructor(params) {
+    constructor(params = {}) {
         super(params);
         this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
         this.setMaterial(params.material ?? meshDefaultMaterial);
@@ -5248,11 +5319,11 @@ class Mesh extends Entity {
     }
     setSubUniformValue(name, value) {
         const path = name.split('.');
-        let len = path.length;
-        if (len === 1) {
+        let len = path.length - 1;
+        if (len === 0) {
             return this.setUniformValue(name, value);
         }
-        const existingValue = this.#uniforms.get(name);
+        const existingValue = this.#uniforms.get(path[0]);
         if (!existingValue) {
             return;
         }
@@ -5276,13 +5347,16 @@ class Mesh extends Entity {
     }
     setStorage(name, value) {
         // TODO: copy the behavior of material setStorage
-        this.storage[name] = { value };
+        this.storage[name] = { value, dirty: true, };
+        this.dirty = false;
     }
     deleteStorage(name) {
         const sto = this.storage[name];
         if (sto) {
             sto.buffer?.destroy();
             sto.buffer = null;
+            sto.dirty = true;
+            this.dirty = true;
         }
     }
     setDefine(define, value = '') {
@@ -5377,7 +5451,7 @@ class Mesh extends Entity {
             this.removeDefine('DESATURATE');
         }
     }
-    getPipelineLayout(shaderModule, /*groups: Map2<number, number, Binding>, */ camera, uniforms, context) {
+    getPipelineLayout(shaderModule, /*groups: Map2<number, number, Binding>, */ camera, uniforms, context, isCompute) {
         const material = this.#material;
         if (this.#webGpuShaderSource?.deref() !== shaderModule) {
             // Recreate the pipeline layout if the shader module has changed
@@ -5391,10 +5465,10 @@ class Mesh extends Entity {
                 return [this.#pipelineLayout, this.#webGpuGroups];
             }
         }
-        populateBindGroups(shaderModule, this.#webGpuGroups, material, this, camera, uniforms, context, false);
+        populateBindGroups(shaderModule, this.#webGpuGroups, material, this, camera, uniforms, context, isCompute);
         this.#pipelineLayout = WebGPUInternal.device.createPipelineLayout({
             label: material.getShaderSource(),
-            bindGroupLayouts: getBindGroupLayouts(this.#webGpuGroups, false),
+            bindGroupLayouts: getBindGroupLayouts(this.#webGpuGroups, isCompute),
         });
         return [this.#pipelineLayout, this.#webGpuGroups];
     }
@@ -5556,15 +5630,16 @@ function getBindGroupLayouts(groups, compute) {
             }
             entries.push(entry);
         }
-        bindGroupLayouts.push(device.createBindGroupLayout({
+        bindGroupLayouts[groupId] = device.createBindGroupLayout({
             label: `group ${groupId}`,
             entries: entries,
-        }));
+        });
     }
     return bindGroupLayouts;
 }
 const tempViewProjectionMatrix$2 = mat4.create();
 let pickedPrimitive;
+const uniformBuffers = new Map2();
 function populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, isCompute) {
     if (!shaderModule.reflection) {
         return;
@@ -5586,11 +5661,23 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
             additionalUsage = GPUBufferUsage.STORAGE;
         }
         */
-        const uniformBuffer = device.createBuffer({
+        /*
+        const uniformBuffer = device.createBuffer({// TODO: don't recreate buffers each time
             label: uniform.name,
             size: uniform.size,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST /* | additionalUsage*/,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,// | additionalUsage
         });
+        */
+        let uniformBuffer = uniformBuffers.get(object, uniform.name);
+        uniformBuffer = undefined;
+        if (!uniformBuffer) {
+            uniformBuffer = device.createBuffer({
+                label: uniform.name,
+                size: uniform.size,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, // | additionalUsage
+            });
+            uniformBuffers.set(object, uniform.name, uniformBuffer);
+        }
         groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
         const members = uniform.members;
         if (members) {
@@ -5748,7 +5835,7 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                             device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
                             break;
                         case 'vec2u':
-                            const vec2uArray = new Uint32Array([materialUniform, materialUniform]);
+                            const vec2uArray = new Uint32Array([materialUniform[0], materialUniform[1]]);
                             device.queue.writeBuffer(uniformBuffer, 0, vec2uArray);
                             break;
                         case 'vec4':
@@ -5862,6 +5949,13 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
         }
     }
     for (const storage of shaderModule.reflection.storage) {
+        const materialUniform = material.getStorage(storage.name) ?? object.getStorage(storage.name);
+        if (materialUniform && !materialUniform.dirty && groups.has(storage.group, storage.binding)) {
+            continue;
+        }
+        if (materialUniform) {
+            materialUniform.dirty = false;
+        }
         let access = 'read-only';
         let bufferType = 'storage';
         let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;
@@ -5932,7 +6026,8 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                         const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
                         if (storageBuffer) {
                             const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
-                            if (storageBuffer.raw) {
+                            if (storageBuffer.shared) ;
+                            else if (storageBuffer.raw) {
                                 if (!storageBuffer.buffer) {
                                     storageBuffer.buffer = device.createBuffer({
                                         label: storage.name,
@@ -5940,7 +6035,7 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                                         usage,
                                     });
                                 }
-                                if (storageBuffer.value !== null) {
+                                if (storageBuffer.value) {
                                     device.queue.writeBuffer(storageBuffer.buffer, storageBuffer.rawOffset ?? 0, storageBuffer.value, 0 /*TODO: use data offset ?*/, storageBuffer.rawSize ?? storageBuffer.buffer.size);
                                 }
                             }
@@ -5965,7 +6060,7 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                                     });
                                 }
                                 for (const member of storage.type.members) {
-                                    const source = storageBuffer.value[member.name];
+                                    const source = storageBuffer.value?.[member.name];
                                     if (source) {
                                         device.queue.writeBuffer(storageBuffer.buffer, member.offset, source);
                                     }
@@ -5996,7 +6091,7 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                                     let baseOffset = 0;
                                     for (const s of storageBuffer.value) {
                                         if (s) {
-                                            writeStruct$1(device.queue, storageBuffer.buffer, storage.format.members, s, baseOffset);
+                                            writeStruct(device.queue, storageBuffer.buffer, storage.format.members, s, baseOffset);
                                         }
                                         baseOffset += storage.type.stride;
                                         /*
@@ -6038,7 +6133,18 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                                 }
                             }
                             else {
-                                throw new Error('code me: storage is neither a struct nor an array');
+                                if (!storageBuffer.buffer) {
+                                    storageBuffer.buffer = device.createBuffer({
+                                        label: storage.name,
+                                        size: storage.type.size,
+                                        usage,
+                                    });
+                                }
+                                //throw new Error('code me: storage is neither a struct nor an array');*
+                                const s = storageBuffer.value;
+                                if (s !== undefined && s !== null) {
+                                    writePrimitive(device.queue, storageBuffer.buffer, storage.type.name, s, 0);
+                                }
                             }
                             groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
                         }
@@ -6051,44 +6157,49 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
         }
     }
 }
-function writePrimitive$1(queue, buffer, member, value, baseOffset) {
-    switch (member.type.name) {
+function writePrimitive(queue, buffer, type, /*member: MemberInfo, */ value, baseOffset) {
+    switch (type) {
         case 'u32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Uint32Array([value]));
+            queue.writeBuffer(buffer, baseOffset, new Uint32Array([value]));
             break;
         case 'i32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Int32Array([value]));
+            queue.writeBuffer(buffer, baseOffset, new Int32Array([value]));
             break;
         case 'f32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Float32Array([value]));
+            queue.writeBuffer(buffer, baseOffset, new Float32Array([value]));
+            break;
+        case 'vec2f':
+            queue.writeBuffer(buffer, baseOffset, value);
             break;
         case 'vec3f':
-            queue.writeBuffer(buffer, baseOffset + member.offset, value);
+            queue.writeBuffer(buffer, baseOffset, value);
+            break;
+        case 'vec4f':
+            queue.writeBuffer(buffer, baseOffset, value);
             break;
         default:
-            errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
-            break;
+            throw new Error(`unknwon type ${type} in writePrimitive`);
     }
 }
-function writeStruct$1(queue, buffer, members, struct, baseOffset) {
+function writeStruct(queue, buffer, members, struct, baseOffset) {
     for (const member of members) {
         const structValue = struct[member.name];
         if (member.isTemplate) {
-            writeTemplate$1(queue, buffer, member.type, structValue, baseOffset + member.offset);
+            writeTemplate(queue, buffer, member.type, structValue, baseOffset + member.offset);
         }
         else if (member.isStruct) {
             // nested struct
             if (structValue) {
-                writeStruct$1(queue, buffer, member.type.members, structValue, baseOffset + member.offset);
+                writeStruct(queue, buffer, member.type.members, structValue, baseOffset + member.offset);
             }
         }
         else if (member.isArray) {
-            writeArray$1(queue, buffer, member.type, structValue, baseOffset + member.offset);
+            writeArray(queue, buffer, member.type, structValue, baseOffset + member.offset);
         }
         else {
             // primitive
             if (structValue !== undefined && structValue !== null) {
-                writePrimitive$1(queue, buffer, member, structValue, baseOffset);
+                writePrimitive(queue, buffer, member.type.name, structValue, baseOffset + member.offset);
             }
             else {
                 errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
@@ -6096,7 +6207,7 @@ function writeStruct$1(queue, buffer, members, struct, baseOffset) {
         }
     }
 }
-function writeTemplate$1(queue, buffer, type, value, offset) {
+function writeTemplate(queue, buffer, type, value, offset) {
     switch (type.name) {
         case 'vec4':
             queue.writeBuffer(buffer, offset, value);
@@ -6105,10 +6216,10 @@ function writeTemplate$1(queue, buffer, type, value, offset) {
             throw new Error(`code this type ${type.name}`);
     }
 }
-function writeArray$1(queue, buffer, type, value, baseOffset) {
+function writeArray(queue, buffer, type, value, baseOffset) {
     if (type.format.isStruct) {
         for (let i = 0; i < type.count; ++i) {
-            writeStruct$1(queue, buffer, type.format.members, value[i], baseOffset + i * type.stride);
+            writeStruct(queue, buffer, type.format.members, value[i], baseOffset + i * type.stride);
         }
     }
     else if (type.format.isArray) {
@@ -6546,7 +6657,7 @@ var CameraProjection;
     CameraProjection[CameraProjection["Orthographic"] = 1] = "Orthographic";
     CameraProjection[CameraProjection["Mixed"] = 2] = "Mixed";
 })(CameraProjection || (CameraProjection = {}));
-const tempQuat$b = quat.create();
+const tempQuat$a = quat.create();
 const tempVec3$t = vec3.create();
 const proj1 = mat4.create();
 const proj2 = mat4.create();
@@ -6613,7 +6724,7 @@ class Camera extends Entity {
         //this._renderMode = 2;
     }
     computeCameraMatrix() {
-        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$b), this.getWorldPosition(tempVec3$t));
+        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$a), this.getWorldPosition(tempVec3$t));
         mat4.invert(this.#cameraMatrix, this.#cameraMatrix);
     }
     #computeProjectionMatrix() {
@@ -6883,7 +6994,7 @@ class Camera extends Entity {
         vec3.transformMat4(v3, v3, this.projectionMatrixInverse);
     }
     getViewDirection(v = vec3.create()) {
-        return vec3.transformQuat(v, FrontVector, this.getWorldQuaternion(tempQuat$b));
+        return vec3.transformQuat(v, FrontVector, this.getWorldQuaternion(tempQuat$a));
     }
     copy(source) {
         super.copy(source);
@@ -7095,25 +7206,25 @@ async function getTexture2dData(texture) {
         },
         workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X$1, COMPUTE_WORKGROUP_SIZE_Y$1, 1),
     });
+    const mesh = new Mesh({ material });
     const stagingBuffer = WebGPUInternal.device.createBuffer({
         size: bufferSize,
         usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
     });
-    Graphics$1.compute(material, {
+    Graphics$1.compute(mesh, {
         workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
         workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
     }, (commandEncoder) => {
         const outputBuffer = material.getStorage('output').buffer;
-        commandEncoder.copyBufferToBuffer(outputBuffer, 0, // Source offset
-        stagingBuffer, 0, // Destination offset
-        bufferSize);
+        commandEncoder.copyBufferToBuffer(outputBuffer, stagingBuffer);
     });
     await stagingBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
     bufferSize // Length
     );
     const copyArrayBuffer = stagingBuffer.getMappedRange(0, bufferSize);
     const data = new Float32Array(copyArrayBuffer.slice());
-    material.dispose();
+    mesh.dispose();
+    stagingBuffer.destroy();
     return data;
 }
 async function getTextureCubeData(texture) {
@@ -7141,13 +7252,14 @@ async function getTextureCubeData(texture) {
         },
         workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X$1, COMPUTE_WORKGROUP_SIZE_Y$1, 1),
     });
+    const mesh = new Mesh({ material });
     const destinationBuffer = WebGPUInternal.device.createBuffer({
         size: destBufferSize,
         usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
     });
     for (let i = 0; i < 6; ++i) {
         material.gpuConstants.layer = i;
-        Graphics$1.compute(material, {
+        Graphics$1.compute(mesh, {
             workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
             workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
         }, (commandEncoder) => {
@@ -7627,14 +7739,11 @@ function getCurrentTexture() {
 }
 
 class CrosshatchPass extends Pass {
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'crosshatch', user: this, depthTest: false });
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'crosshatch', user: this });
-        material.depthTest = false;
-        this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
@@ -7647,7 +7756,7 @@ class CrosshatchPass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -7658,17 +7767,14 @@ class CrosshatchPass extends Pass {
 
 class GrainPass extends Pass {
     #intensity;
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'grain', user: this, depthTest: false });
     //#density;
     //#size;
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'grain', user: this });
-        material.setUniformValue('uGrainParams', vec4.create());
-        material.depthTest = false;
-        this.#material = material;
+        this.#material.setUniformValue('uGrainParams', vec4.create());
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
         this.setIntensity(0.2);
         //this.density = 0.2;
@@ -7694,7 +7800,7 @@ class GrainPass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -7704,14 +7810,11 @@ class GrainPass extends Pass {
 }
 
 class OldMoviePass extends Pass {
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'oldmovie', user: this, depthTest: false });
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'oldmovie', user: this });
-        material.depthTest = false;
-        this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
@@ -7724,7 +7827,7 @@ class OldMoviePass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8206,14 +8309,11 @@ class OutlinePass extends Pass {
 }
 
 class PalettePass extends Pass {
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'palette', user: this, depthTest: false });
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'palette', user: this });
-        material.depthTest = false;
-        this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
@@ -8226,7 +8326,7 @@ class PalettePass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8238,15 +8338,14 @@ class PalettePass extends Pass {
 class PixelatePass extends Pass {
     #horizontalTiles = 0;
     #pixelStyle = 0;
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'pixelate', user: this, depthTest: false });
     constructor(camera) {
         super();
-        this.#material = new ShaderMaterial({ shaderSource: 'pixelate', user: this });
         this.#material.depthTest = false;
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
-        this.horizontalTiles = 10;
+        this.setHorizontalTiles(10);
     }
     /**
      * @deprecated Use setHorizontalTiles instead
@@ -8277,7 +8376,7 @@ class PixelatePass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8378,7 +8477,7 @@ class RayTracingPass extends Pass {
             if (this.material) {
                 this.material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
                 this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-                Graphics$1.compute(this.material, {
+                Graphics$1.compute(this.quad, {
                     ...context,
                     workgroupCountX: Math.ceil(context.width / (this.material.workgroupSize?.[0] ?? 1)),
                     workgroupCountY: Math.ceil(context.height / (this.material.workgroupSize?.[1] ?? 1)),
@@ -8406,16 +8505,13 @@ class RenderPass extends Pass {
 
 class SaturatePass extends Pass {
     #saturation = 0;
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'saturate', user: this, depthTest: false });
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'saturate', user: this });
-        this.#material = material;
-        material.depthTest = false;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
-        this.saturation = 1.0;
+        this.setSaturation(1.0);
     }
     /**
      * @deprecated Use setSaturation instead
@@ -8437,7 +8533,7 @@ class SaturatePass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8447,14 +8543,11 @@ class SaturatePass extends Pass {
 }
 
 class SketchPass extends Pass {
-    #material;
+    #material = new ShaderMaterial({ shaderSource: 'sketch', user: this, depthTest: false });
     constructor(camera) {
         super();
-        const material = new ShaderMaterial({ shaderSource: 'sketch', user: this });
-        material.depthTest = false;
-        this.#material = material;
         this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
@@ -8467,7 +8560,7 @@ class SketchPass extends Pass {
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.#material, {
+            Graphics$1.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -9882,7 +9975,7 @@ MapControls.prototype = Object.create(EventTarget.prototype);
 MapControls.prototype.constructor = MapControls;*/
 
 const Z_VECTOR$1 = vec3.fromValues(0, 0, 1);
-const tempQuat$a = quat.create();
+const tempQuat$9 = quat.create();
 class RotationControl extends Entity {
     #rotationSpeed;
     #axis = vec3.clone(Z_VECTOR$1);
@@ -9936,9 +10029,9 @@ class RotationControl extends Entity {
         if (!parent) {
             return;
         }
-        quat.setAxisAngle(tempQuat$a, this.#axis, this.#rotationSpeed * delta);
+        quat.setAxisAngle(tempQuat$9, this.#axis, this.#rotationSpeed * delta);
         const quaternion = parent._quaternion;
-        quat.mul(quaternion, quaternion, tempQuat$a);
+        quat.mul(quaternion, quaternion, tempQuat$9);
     }
     reset() {
         const parent = this._parent;
@@ -10040,6 +10133,9 @@ class LineMaterial extends Material {
     }
     static getEntityName() {
         return 'LineMaterial';
+    }
+    getRaytracingMaterial(index) {
+        return null;
     }
 }
 Material.materialList['Line'] = LineMaterial;
@@ -10227,7 +10323,6 @@ class ConeBufferGeometry extends BufferGeometry {
             this.#uvs.push(u, 1);
             const indexStart = segmentId * 2;
             this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
-            this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
         }
     }
     #generateCap(radius, z, segments) {
@@ -10720,7 +10815,7 @@ const yzUnitVec3 = vec3.fromValues(0, 1, 1);
 const tempVec3$p = vec3.create();
 const tempVec3_b = vec3.create();
 const translationManipulatorTempQuat = quat.create();
-const tempQuat$9 = quat.create();
+const tempQuat$8 = quat.create();
 const MANIPULATOR_SHORTCUT_INCREASE = 'engine.shortcuts.manipulator.size.increase';
 const MANIPULATOR_SHORTCUT_DECREASE = 'engine.shortcuts.manipulator.size.decrease';
 const MANIPULATOR_SHORTCUT_TRANSLATION = 'engine.shortcuts.manipulator.mode.translation';
@@ -11369,11 +11464,11 @@ class Manipulator extends Entity {
         this.getPositionFrom(camera, tempVec3$p);
         vec3.normalize(tempVec3$p, tempVec3$p);
         vec3.transformQuat(tempVec3$p, tempVec3$p, translationManipulatorTempQuat);
-        this.#circle.quaternion = quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$p);
-        this.#viewCircle.quaternion = tempQuat$9;
-        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$p[1], -tempVec3$p[2]));
-        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$p[0], tempVec3$p[2]));
-        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$p[1], tempVec3$p[0]));
+        this.#circle.quaternion = quat.rotationTo(tempQuat$8, zUnitVec3, tempVec3$p);
+        this.#viewCircle.quaternion = tempQuat$8;
+        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$8, xUnitVec3, Math.atan2(tempVec3$p[1], -tempVec3$p[2]));
+        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$8, yUnitVec3, Math.atan2(tempVec3$p[0], tempVec3$p[2]));
+        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$8, zUnitVec3, Math.atan2(tempVec3$p[1], tempVec3$p[0]));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -12648,7 +12743,7 @@ class RenderList {
 }
 
 const tempViewProjectionMatrix$1 = mat4.create();
-const lightDirection = vec3.create();
+const lightDirection$1 = vec3.create();
 class ForwardRenderer {
     #shadowMap = new ShadowMap();
     #frame = 0;
@@ -12917,15 +13012,15 @@ class ForwardRenderer {
                 program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
                 //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
                 //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
-                spotLight.getDirection(lightDirection);
+                spotLight.getDirection(lightDirection$1);
                 const m = viewMatrix;
-                const x = lightDirection[0];
-                const y = lightDirection[1];
-                const z = lightDirection[2];
-                lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
-                lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
-                lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
-                program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
+                const x = lightDirection$1[0];
+                const y = lightDirection$1[1];
+                const z = lightDirection$1[2];
+                lightDirection$1[0] = m[0] * x + m[4] * y + m[8] * z;
+                lightDirection$1[1] = m[1] * x + m[5] * y + m[9] * z;
+                lightDirection$1[2] = m[2] * x + m[6] * y + m[10] * z;
+                program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection$1);
                 shadow = spotLight.shadow;
                 if (shadow && spotLight.castShadow) {
                     spotShadowMap.push(shadow.renderTarget.getTexture());
@@ -13082,7 +13177,7 @@ const clearColorError = once$1(() => console.error('TODO clearColor'));
 const clearError = once$1(() => console.error('TODO clear'));
 const tempViewProjectionMatrix = mat4.create();
 const pickBufferSize = 8;
-//const lightDirection = vec3.create();
+const lightDirection = vec3.create();
 const vertexEntryPoint = 'vertex_main';
 const fragmentEntryPoint = 'fragment_main';
 const computeEntryPoint = 'compute_main';
@@ -13096,7 +13191,7 @@ class WebGPURenderer {
     #defines = new Map();
     #defaultPickingColor = vec3.create();
     //readonly #pointerPosition = vec2.create();
-    #pickedPrimitive;
+    //#pickedPrimitive?: GPUBuffer;
     #identityVec2 = vec2.create();
     #fullScreenQuad;
     constructor() {
@@ -13311,10 +13406,10 @@ class WebGPURenderer {
             bindGroupLayouts: this.#getBindGroupLayouts(groups, false),
         });
         */
-        const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule /*, groups*/, camera, uniforms, context);
+        const [pipelineLayout, groups] = object.getPipelineLayout(shaderModule /*, groups*/, camera, uniforms, context, false);
         const commandEncoder = device.createCommandEncoder();
-        if (pick && this.#pickedPrimitive) {
-            commandEncoder.clearBuffer(this.#pickedPrimitive);
+        if (pick && pickedPrimitive) {
+            commandEncoder.clearBuffer(pickedPrimitive);
         }
         let view = WebGPUInternal.gpuContext.getCurrentTexture().createView();
         let pipelineColorFormat = WebGPUInternal.format;
@@ -13395,15 +13490,17 @@ class WebGPURenderer {
             vertex: {
                 module: shaderModule.module,
                 entryPoint: vertexEntryPoint,
-                buffers: vertexBuffers
+                buffers: vertexBuffers,
+                constants: material.gpuConstants,
             },
             fragment: {
                 module: shaderModule.module,
                 entryPoint: fragmentEntryPoint,
+                constants: material.gpuConstants,
                 targets: [{
                         format: pipelineColorFormat,
                         blend: material.getWebGPUBlending(),
-                    }]
+                    }],
             },
             primitive: {
                 topology: object.topology,
@@ -13474,12 +13571,12 @@ class WebGPURenderer {
         // End the render pass
         passEncoder.end();
         let stagingBuffer;
-        if (pick && this.#pickedPrimitive) {
+        if (pick && pickedPrimitive) {
             stagingBuffer = device.createBuffer({
                 size: pickBufferSize,
                 usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
             });
-            commandEncoder.copyBufferToBuffer(this.#pickedPrimitive, stagingBuffer);
+            commandEncoder.copyBufferToBuffer(pickedPrimitive, stagingBuffer);
         }
         // 10: End frame by passing array of command buffers to command queue for execution
         device.queue.submit([commandEncoder.finish()]);
@@ -13504,31 +13601,27 @@ class WebGPURenderer {
     }
     #setupLights(renderList, camera, viewMatrix, uniforms) {
         //const uniforms = new Map<string, any>();
-        const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
-        const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
-        const colorIntensity = vec3.create(); //TODO: do not create a vec3
+        //const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
+        //const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
+        //const colorIntensity = vec3.create();//TODO: do not create a vec3
         const pointLights = renderList.pointLights; //scene.getChildList(PointLight);
-        //const spotLights = renderList.spotLights;
+        const spotLights = renderList.spotLights;
         let shadow;
         let pointLightId = 0;
         //const pointShadowMap = [];
         //const pointShadowMatrix = [];
         for (const pointLight of pointLights) {
             if (pointLight.isVisible()) {
+                const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
+                const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
                 pointLight.getWorldPosition(lightPositionWorldSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
+                const colorIntensity = vec3.scale(vec3.create(), pointLight.color, pointLight.intensity);
                 uniforms.set('pointLights[' + pointLightId + '].position', lightPositionCameraSpace);
-                uniforms.set('pointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+                uniforms.set('pointLights[' + pointLightId + '].color', colorIntensity);
                 uniforms.set('pointLights[' + pointLightId + '].range', new Float32Array([pointLight.range]));
                 uniforms.set('pbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
-                uniforms.set('pbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-                //program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
-                //program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-                //program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
-                //program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
-                //program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
-                //program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
-                //program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+                uniforms.set('pbrLights[' + pointLightId + '].radiance', colorIntensity);
                 shadow = pointLight.shadow;
                 if (shadow && pointLight.castShadow) ;
                 ++pointLightId;
@@ -13536,22 +13629,21 @@ class WebGPURenderer {
         }
         //program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
         //program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
-        //let spotLightId = 0;
+        let spotLightId = 0;
         //const spotShadowMap = [];
         //const spotShadowMatrix = [];
-        /*
         for (const spotLight of spotLights) {
             if (spotLight.isVisible()) {
+                const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
                 spotLight.getWorldPosition(lightPositionCameraSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
-                program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
-                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
-                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
-
+                uniforms.set('spotLights[' + spotLightId + '].position', lightPositionCameraSpace);
+                uniforms.set('spotLights[' + spotLightId + '].color', vec3.scale(vec3.create(), spotLight.color, spotLight.intensity));
+                uniforms.set('spotLights[' + spotLightId + '].range', new Float32Array([spotLight.range]));
+                uniforms.set('spotLights[' + spotLightId + '].innerAngleCos', new Float32Array([spotLight.innerAngleCos]));
+                uniforms.set('spotLights[' + spotLightId + '].outerAngleCos', new Float32Array([spotLight.outerAngleCos]));
+                //program.setUniformValue('spotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
+                //program.setUniformValue('spotLights[' + spotLightId + '].direction', [0, 0, -1]);
                 spotLight.getDirection(lightDirection);
                 const m = viewMatrix;
                 const x = lightDirection[0];
@@ -13560,19 +13652,12 @@ class WebGPURenderer {
                 lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
                 lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
                 lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
-                program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
-
+                uniforms.set('spotLights[' + spotLightId + '].direction', lightDirection);
                 shadow = spotLight.shadow;
-                if (shadow && spotLight.castShadow) {
-                    spotShadowMap.push(shadow.renderTarget.getTexture());
-                    spotShadowMatrix.push(shadow.shadowMatrix);
-                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
-                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
-                }
+                if (shadow && spotLight.castShadow) ;
                 ++spotLightId;
             }
         }
-        */
         //program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
         //program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
         const ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
@@ -13727,20 +13812,25 @@ class WebGPURenderer {
     removeDefine(define) {
         this.#defines.delete(define);
     }
-    compute(material, context, postCompute) {
+    compute(mesh, context, postCompute) {
         const defines = new Map(this.#defines); // TODO: don't create one each time
+        const material = mesh.getMaterial();
         getDefines(material, defines);
         const shaderModule = this.#getShaderModule(material, defines);
         if (!shaderModule) {
             return;
         }
         const device = WebGPUInternal.device;
-        const groups = new Map2();
+        //const groups = new Map2<number, number, Binding>();
+        /*
         this.#populateBindGroups(shaderModule, groups, material, null, null, null, context, true);
+
         const pipelineLayout = device.createPipelineLayout({
             label: material.getShaderSource(),
             bindGroupLayouts: this.#getBindGroupLayouts(groups, true),
         });
+        */
+        const [pipelineLayout, groups] = mesh.getPipelineLayout(shaderModule /*, groups*/, null, null, context, true);
         const pipelineDescriptor = {
             compute: {
                 module: shaderModule.module,
@@ -13760,59 +13850,6 @@ class WebGPURenderer {
         postCompute?.(encoder);
         const commandBuffer = encoder.finish();
         device.queue.submit([commandBuffer]);
-    }
-    #getBindGroupLayouts(groups, compute) {
-        const device = WebGPUInternal.device;
-        const bindGroupLayouts = [];
-        for (const [groupId, group] of groups.getMap()) {
-            const entries = [];
-            for (const [bindingId, binding] of group) {
-                const entry = {
-                    binding: bindingId, // corresponds to @binding
-                    visibility: binding.visibility ?? (compute ? GPUShaderStage.COMPUTE : GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT), // TODO: set appropriate visibility
-                    //buffer: {},// TODO: set appropriate buffer, sampler, texture, storageTexture, texelBuffer, or externalTexture
-                };
-                if (binding.buffer) {
-                    entry.buffer = {
-                        type: binding.bufferType ?? 'uniform',
-                        // TODO: add minBindingSize ?
-                    };
-                }
-                if (binding.texture) {
-                    entry.texture = {
-                        viewDimension: binding.viewDimension,
-                    };
-                }
-                if (binding.textureArray) {
-                    entry.texture = {
-                        viewDimension: binding.viewDimension,
-                    };
-                }
-                if (binding.sampler) {
-                    entry.sampler = {};
-                }
-                if (binding.storageTexture) {
-                    entry.storageTexture = {
-                        viewDimension: binding.storageTexture.isCube ? 'cube' : '2d',
-                        format: binding.storageTexture.gpuFormat,
-                        access: binding.access,
-                    };
-                }
-                if (binding.storageTextureArray) {
-                    entry.storageTexture = {
-                        viewDimension: binding.viewDimension,
-                        format: binding.format,
-                        access: binding.access,
-                    };
-                }
-                entries.push(entry);
-            }
-            bindGroupLayouts.push(device.createBindGroupLayout({
-                label: `group ${groupId}`,
-                entries: entries,
-            }));
-        }
-        return bindGroupLayouts;
     }
     #createBindGroups(groups, pipeline, encoder) {
         const device = WebGPUInternal.device;
@@ -13872,559 +13909,6 @@ class WebGPURenderer {
             });
             encoder.setBindGroup(groupId, uniformBindGroup);
         }
-    }
-    #populateBindGroups(shaderModule, groups, material, object, camera, uniforms, context, isCompute) {
-        if (!shaderModule.reflection) {
-            return;
-        }
-        const cameraMatrix = camera?.cameraMatrix;
-        const projectionMatrix = camera?.projectionMatrix;
-        const device = WebGPUInternal.device;
-        for (const uniform of shaderModule.reflection.uniforms) {
-            const materialUniform = material.getUniform(uniform.name) ?? object?.getUniform(uniform.name);
-            if (materialUniform && !materialUniform.dirty && groups.has(uniform.group, uniform.binding)) {
-                continue;
-            }
-            if (materialUniform) {
-                materialUniform.dirty = false;
-            }
-            /*
-            let additionalUsage: GPUFlagsConstant = 0;
-            if (uniform.name == 'commonUniforms') {// TODO: improve that
-                additionalUsage = GPUBufferUsage.STORAGE;
-            }
-            */
-            const uniformBuffer = device.createBuffer({
-                label: uniform.name,
-                size: uniform.size,
-                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST /* | additionalUsage*/,
-            });
-            groups.set(uniform.group, uniform.binding, { buffer: uniformBuffer });
-            const members = uniform.members;
-            if (members) {
-                const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
-                if (materialUniform) {
-                    for (const member of members) {
-                        let bufferSource = null;
-                        uniformBuffer.label = uniform.name + '.' + member.name;
-                        const subUniform = materialUniform[member.name];
-                        if (subUniform !== undefined) {
-                            if (typeof subUniform === 'number') {
-                                switch (member.type.name) {
-                                    case 'u32':
-                                        bufferSource = new Uint32Array([subUniform]);
-                                        break;
-                                    case 'f32':
-                                        bufferSource = new Float32Array([subUniform]);
-                                        break;
-                                    default:
-                                        errorOnce(`unknwon type: ${member.type.name} for member: ${member.name} for uniform ${uniform.name}in ${material.getShaderSource() + '.wgsl'}`);
-                                        break;
-                                }
-                            }
-                            else {
-                                bufferSource = subUniform;
-                            }
-                        }
-                        else {
-                            errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
-                        }
-                        if (bufferSource) {
-                            device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
-                        }
-                    }
-                }
-                else {
-                    for (const member of members) {
-                        let bufferSource = null;
-                        uniformBuffer.label = uniform.name + '.' + member.name;
-                        switch (member.name) {
-                            case 'modelMatrix':
-                                bufferSource = object?.worldMatrix;
-                                break;
-                            case 'viewMatrix':
-                                bufferSource = cameraMatrix;
-                                break;
-                            case 'modelViewMatrix':
-                                bufferSource = object?._mvMatrix;
-                                break;
-                            case 'projectionMatrix':
-                                bufferSource = projectionMatrix;
-                                break;
-                            case 'viewProjectionMatrix':
-                                bufferSource = tempViewProjectionMatrix;
-                                break;
-                            case 'normalMatrix':
-                                // In WGSL, mat3x3 actually are mat4x3
-                                // TODO: improve this
-                                if (object && cameraMatrix) {
-                                    mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
-                                    const m = new Float32Array(12);
-                                    m[0] = object._normalMatrix[0];
-                                    m[1] = object._normalMatrix[1];
-                                    m[2] = object._normalMatrix[2];
-                                    m[4] = object._normalMatrix[3];
-                                    m[5] = object._normalMatrix[4];
-                                    m[6] = object._normalMatrix[5];
-                                    m[8] = object._normalMatrix[6];
-                                    m[9] = object._normalMatrix[7];
-                                    m[10] = object._normalMatrix[8];
-                                    bufferSource = m;
-                                }
-                                break;
-                            case 'cameraPosition':
-                                bufferSource = camera?.getPosition();
-                                break;
-                            case 'resolution':
-                                bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
-                                break;
-                            case 'time':
-                                bufferSource = new Float32Array([Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]); // TODO: create float32 once and update it once evry frame
-                                break;
-                            /*
-                            case 'pickingColor':
-                                bufferSource = new Float32Array(object?.pickingColor ?? this.#defaultPickingColor) as BufferSource;// TODO: create float32 once and update it once evry frame
-                                break;
-                            */
-                            case 'pointerCoord':
-                                bufferSource = (context?.renderContext.pick?.position ?? this.#identityVec2);
-                                break;
-                            case 'boneMatrix':
-                                bufferSource = object?.getUniformValue(member.name) ?? new Float32Array(16); //TODO don't create a Float32Array each time
-                                break;
-                            default:
-                                errorMap('unknwon wgsl uniform member', `${uniform.name}.${member.name}`, { uniform: uniform.name, member: member.name, shader: material.getShaderSource() + '.wgsl' });
-                        }
-                        if (bufferSource) {
-                            device.queue.writeBuffer(uniformBuffer, member.offset, bufferSource);
-                        }
-                    }
-                }
-            }
-            else if (uniform.isArray) {
-                const members = uniform.format.members;
-                if (members) {
-                    const structSize = uniform.format.size;
-                    for (const member of members) {
-                        for (let i = 0; i < uniform.count; i++) {
-                            const bufferSource = uniforms?.get(`${uniform.name}[${i}].${member.name}`);
-                            if (!bufferSource) {
-                                continue;
-                            }
-                            device.queue.writeBuffer(uniformBuffer, member.offset + structSize * i, bufferSource);
-                        }
-                    }
-                }
-                else {
-                    const arrayUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
-                    if (arrayUniform !== undefined) {
-                        device.queue.writeBuffer(uniformBuffer, 0, arrayUniform /*TODO: actually check the value type*/);
-                    }
-                    else {
-                        errorOnce('unknwon array uniform ' + uniform.name);
-                    }
-                }
-            }
-            else { // uniform is neither a struct nor an array
-                const bufferSource = uniforms?.get(uniform.name);
-                if (bufferSource) {
-                    device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
-                }
-                else {
-                    const materialUniform = material.getUniformValue(uniform.name) ?? object?.getUniformValue(uniform.name);
-                    if (materialUniform !== undefined) {
-                        switch (uniform.type.name) {
-                            case 'f32':
-                                device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([materialUniform]));
-                                break;
-                            case 'u32':
-                                device.queue.writeBuffer(uniformBuffer, 0, new Uint32Array([materialUniform]));
-                                break;
-                            case 'mat3x3f':
-                                // In WGSL, mat3x3 actually are mat4x3
-                                const m = new Float32Array([
-                                    materialUniform, materialUniform, materialUniform, 0,
-                                    materialUniform, materialUniform, materialUniform, 0,
-                                    materialUniform, materialUniform, materialUniform, 0,
-                                ]);
-                                device.queue.writeBuffer(uniformBuffer, 0, m);
-                                break;
-                            case 'mat4x4f':
-                            case 'vec2f':
-                            case 'vec3f':
-                            case 'vec4f':
-                                device.queue.writeBuffer(uniformBuffer, 0, materialUniform);
-                                break;
-                            case 'vec2u':
-                                const vec2uArray = new Uint32Array([materialUniform, materialUniform]);
-                                device.queue.writeBuffer(uniformBuffer, 0, vec2uArray);
-                                break;
-                            case 'vec4':
-                                switch (uniform.type.format?.name) {
-                                    case 'u32':
-                                        const m = new Uint32Array(uniform.type.format.size);
-                                        for (let i = 0; i < materialUniform.length; i++) {
-                                            m[i] = materialUniform[i];
-                                        }
-                                        device.queue.writeBuffer(uniformBuffer, 0, m);
-                                        break;
-                                }
-                                break;
-                            default:
-                                errorOnce(`unknwon uniform type: ${uniform.type.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                                break;
-                        }
-                    }
-                    else {
-                        let bufferSource = null;
-                        switch (uniform.name) {
-                            case 'cameraPosition':
-                                bufferSource = camera?.getPosition();
-                                break;
-                            default:
-                                errorMap('unknwon wgsl uniform', uniform.name, { group: uniform.group, binding: uniform.binding, shader: material.getShaderSource() + '.wgsl' });
-                                const format = uniform.type?.format;
-                                if (format) {
-                                    let buffer;
-                                    switch (format.name) {
-                                        case 'f32':
-                                            buffer = new Float32Array(format.size);
-                                            break;
-                                        case 'u32':
-                                            buffer = new Uint32Array(format.size);
-                                            break;
-                                        default:
-                                            errorOnce(`unknwon uniform type: ${format.name} for uniform ${uniform.name} in ${material.getShaderSource() + '.wgsl'}`);
-                                            break;
-                                    }
-                                    if (buffer) {
-                                        device.queue.writeBuffer(uniformBuffer, 0, buffer);
-                                    }
-                                }
-                        }
-                        if (bufferSource) {
-                            device.queue.writeBuffer(uniformBuffer, 0, bufferSource);
-                        }
-                    }
-                }
-            }
-        }
-        for (const shaderTexture of shaderModule.reflection.textures) {
-            switch (shaderTexture.name) {
-                case 'colorTexture':
-                    const texture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
-                    if (texture) {
-                        groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
-                    }
-                    break;
-                case 'color2Texture':
-                    {
-                        const texture = material.getUniformValue('color2Map'); //?.texture as GPUTexture | undefined;
-                        if (texture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: '2d', });
-                        }
-                    }
-                    break;
-                default:
-                    {
-                        const texture = material.getUniformValue(shaderTexture.name); //?.texture as GPUTexture | undefined;
-                        if (texture) {
-                            groups.set(shaderTexture.group, shaderTexture.binding, { texture, viewDimension: getViewDimension(shaderTexture) });
-                        }
-                        else {
-                            errorOnce(`unknwon texture ${shaderTexture.name} in ${material.getShaderSource() + '.wgsl'}`);
-                        }
-                    }
-                    break;
-            }
-        }
-        // TODO: set samplers and texture in a single pass ?
-        for (const shaderSampler of shaderModule.reflection.samplers) {
-            switch (shaderSampler.name) {
-                case 'colorSampler':
-                    const sampler = material.getUniformValue('colorMap')?.sampler;
-                    if (sampler) {
-                        groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                    }
-                    break;
-                case 'color2Sampler':
-                    {
-                        const sampler = material.getUniformValue('color2Map')?.sampler;
-                        if (sampler) {
-                            groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                        }
-                    }
-                    break;
-                default:
-                    {
-                        const name = shaderSampler.name.replace(/Sampler$/, 'Texture');
-                        const sampler = material.getUniformValue(name)?.sampler;
-                        if (sampler) {
-                            groups.set(shaderSampler.group, shaderSampler.binding, { sampler });
-                        }
-                        else {
-                            errorOnce(`unknwon sampler ${shaderSampler.name} in ${material.getShaderSource() + '.wgsl'}`);
-                        }
-                    }
-                    break;
-            }
-        }
-        for (const storage of shaderModule.reflection.storage) {
-            let access = 'read-only';
-            let bufferType = 'storage';
-            let visibility = isCompute ? GPUShaderStage.COMPUTE : GPUShaderStage.FRAGMENT;
-            switch (storage.type.access ?? storage.access) {
-                case 'read':
-                    bufferType = 'read-only-storage';
-                    // TODO: only set vertex if the storage is actually used in a vertex buffer
-                    if (!isCompute) {
-                        visibility |= GPUShaderStage.VERTEX;
-                    }
-                    break;
-                case 'write':
-                    access = 'write-only';
-                    break;
-                case 'read_write':
-                    access = 'read-write';
-                    break;
-                default:
-                    errorOnce(`Unknown storage access type ${storage.type.access}`);
-                    break;
-            }
-            switch (storage.name) {
-                case 'colorTexture':
-                    const storageTexture = material.getUniformValue('colorMap'); //?.texture as GPUTexture | undefined;
-                    if (storageTexture) {
-                        groups.set(storage.group, storage.binding, { storageTexture, access, viewDimension: '2d', });
-                    }
-                    break;
-                case 'pickedPrimitive':
-                    const buffer = this.#pickedPrimitive ?? device.createBuffer({
-                        label: storage.name,
-                        size: storage.size,
-                        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
-                    });
-                    if (!this.#pickedPrimitive) {
-                        this.#pickedPrimitive = buffer;
-                    }
-                    groups.set(storage.group, storage.binding, { buffer, bufferType, access, visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.COMPUTE });
-                    break;
-                default:
-                    {
-                        const storageTexture = material.getUniformValue(storage.name); //?.texture as GPUTexture | undefined;
-                        if (storageTexture) {
-                            if (storage.isArray) {
-                                console.error("check this branch");
-                                let isCube = false;
-                                let visibility = undefined;
-                                let format = 'rgba8unorm';
-                                for (const texture of storageTexture) {
-                                    // TODO: find a better way to do this
-                                    if (texture) {
-                                        isCube = texture.isCube;
-                                        format = texture.gpuFormat;
-                                        visibility = texture.gpuVisibility;
-                                        break;
-                                    }
-                                }
-                                groups.set(storage.group, storage.binding, { storageTextureArray: storageTexture, access, visibility, format, viewDimension: isCube ? 'cube-array' : '2d-array', });
-                            }
-                            else if (storage.isStruct) {
-                                throw new Error('this should be a storage ' + storage.name);
-                            }
-                            else {
-                                groups.set(storage.group, storage.binding, { storageTexture: storageTexture, access, visibility: storageTexture.gpuVisibility, viewDimension: getViewDimension(storage) });
-                            }
-                        }
-                        else {
-                            const storageBuffer = object?.getStorage(storage.name) ?? material?.getStorage(storage.name);
-                            if (storageBuffer) {
-                                const usage = storageBuffer.usage ?? GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
-                                if (storageBuffer.raw) {
-                                    if (!storageBuffer.buffer) {
-                                        storageBuffer.buffer = device.createBuffer({
-                                            label: storage.name,
-                                            size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
-                                            usage,
-                                        });
-                                    }
-                                    if (storageBuffer.value !== null) {
-                                        device.queue.writeBuffer(storageBuffer.buffer, storageBuffer.rawOffset ?? 0, storageBuffer.value, 0 /*TODO: use data offset ?*/, storageBuffer.rawSize ?? storageBuffer.buffer.size);
-                                    }
-                                }
-                                else if (storage.isStruct) {
-                                    // TODO: handle nested structs
-                                    // TODO: Do this every time there is a struct
-                                    // Compute the size of the struct if the last member is a dynamically sized array
-                                    let size = storage.size;
-                                    const members = storage.type.members;
-                                    const lastMember = members[members.length - 1];
-                                    if (lastMember.isArray && lastMember.size === 0) {
-                                        const value = storageBuffer.value?.[lastMember.name];
-                                        if (Array.isArray(value) || ArrayBuffer.isView(value)) {
-                                            size += value.length * lastMember.type.stride;
-                                        }
-                                    }
-                                    if (!storageBuffer.buffer) {
-                                        storageBuffer.buffer = device.createBuffer({
-                                            label: storage.name,
-                                            size,
-                                            usage,
-                                        });
-                                    }
-                                    for (const member of storage.type.members) {
-                                        const source = storageBuffer.value[member.name];
-                                        if (source) {
-                                            device.queue.writeBuffer(storageBuffer.buffer, member.offset, source);
-                                        }
-                                    }
-                                }
-                                else if (storage.isArray) {
-                                    if (storage.format.isArray) {
-                                        // Array of array
-                                        if (!storageBuffer.buffer) {
-                                            storageBuffer.buffer = device.createBuffer({
-                                                label: storage.name,
-                                                size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
-                                                usage,
-                                            });
-                                        }
-                                        if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
-                                            device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
-                                        }
-                                    }
-                                    else if (storage.format.isStruct) {
-                                        if (!storageBuffer.buffer) {
-                                            storageBuffer.buffer = device.createBuffer({
-                                                label: storage.name,
-                                                size: storage.size || storageBuffer.value.length * storage.format.size,
-                                                usage,
-                                            });
-                                        }
-                                        let baseOffset = 0;
-                                        for (const s of storageBuffer.value) {
-                                            if (s) {
-                                                writeStruct(device.queue, storageBuffer.buffer, storage.format.members, s, baseOffset);
-                                            }
-                                            baseOffset += storage.type.stride;
-                                            /*
-                                            for (const member of ((storage.type as ArrayInfo).format as StructInfo).members) {
-                                                const source = s[member.name];
-                                                if (source !== undefined) {
-                                                    if (typeof source === 'number') {
-                                                        writeNumber(device.queue, storageBuffer.buffer, member, source);
-                                                    } else {
-                                                        device.queue.writeBuffer(
-                                                            storageBuffer.buffer,
-                                                            member.offset,
-                                                            source as BufferSource,
-                                                        );
-                                                    }
-                                                }
-                                            }
-                                            */
-                                        }
-                                    }
-                                    else if (storage.format.isPointer) {
-                                        throw new Error('code me: storage is a pointer array');
-                                    }
-                                    else if (storage.format.isTemplate) {
-                                        throw new Error('code me: storage is a template array');
-                                    }
-                                    else {
-                                        // Array of primitives
-                                        if (!storageBuffer.buffer) {
-                                            storageBuffer.buffer = device.createBuffer({
-                                                label: storage.name,
-                                                size: storage.size || storageBuffer.size || storageBuffer.value.byteLength,
-                                                usage,
-                                            });
-                                        }
-                                        if (storageBuffer.value !== null && storageBuffer.value !== undefined) {
-                                            device.queue.writeBuffer(storageBuffer.buffer, 0, storageBuffer.value, 0, storageBuffer.value.length);
-                                        }
-                                    }
-                                }
-                                else {
-                                    throw new Error('code me: storage is neither a struct nor an array');
-                                }
-                                groups.set(storage.group, storage.binding, { buffer: storageBuffer.buffer, bufferType, access, visibility });
-                            }
-                            else {
-                                errorOnce(`unknwon storage ${storage.name} in ${material.getShaderSource() + '.wgsl'}`);
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-    }
-}
-function writePrimitive(queue, buffer, member, value, baseOffset) {
-    switch (member.type.name) {
-        case 'u32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Uint32Array([value]));
-            break;
-        case 'i32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Int32Array([value]));
-            break;
-        case 'f32':
-            queue.writeBuffer(buffer, baseOffset + member.offset, new Float32Array([value]));
-            break;
-        case 'vec3f':
-            queue.writeBuffer(buffer, baseOffset + member.offset, value);
-            break;
-        default:
-            errorOnce(`unknwon type ${member.type.name} in writePrimitive`);
-            break;
-    }
-}
-function writeStruct(queue, buffer, members, struct, baseOffset) {
-    for (const member of members) {
-        const structValue = struct[member.name];
-        if (member.isTemplate) {
-            writeTemplate(queue, buffer, member.type, structValue, baseOffset + member.offset);
-        }
-        else if (member.isStruct) {
-            // nested struct
-            if (structValue) {
-                writeStruct(queue, buffer, member.type.members, structValue, baseOffset + member.offset);
-            }
-        }
-        else if (member.isArray) {
-            writeArray(queue, buffer, member.type, structValue, baseOffset + member.offset);
-        }
-        else {
-            // primitive
-            if (structValue !== undefined && structValue !== null) {
-                writePrimitive(queue, buffer, member, structValue, baseOffset);
-            }
-            else {
-                errorOnce(`Primitive value is ${structValue} in writeStruct for member ${member.name}`);
-            }
-        }
-    }
-}
-function writeTemplate(queue, buffer, type, value, offset) {
-    switch (type.name) {
-        case 'vec4':
-            queue.writeBuffer(buffer, offset, value);
-            break;
-        default:
-            throw new Error(`code this type ${type.name}`);
-    }
-}
-function writeArray(queue, buffer, type, value, baseOffset) {
-    if (type.format.isStruct) {
-        for (let i = 0; i < type.count; ++i) {
-            writeStruct(queue, buffer, type.format.members, value[i], baseOffset + i * type.stride);
-        }
-    }
-    else if (type.format.isArray) {
-        throw new Error('code me');
-    }
-    else {
-        throw new Error('code me');
     }
 }
 
@@ -14905,8 +14389,8 @@ class Graphics {
             this.#bipmapContext.transferFromImageBitmap(bitmap);
         }
     }
-    static compute(material, context, postCompute) {
-        this.#forwardRenderer.compute(material, {
+    static compute(mesh, context, postCompute) {
+        this.#forwardRenderer.compute(mesh, {
             renderContext: context,
             width: context.width,
             height: context.height,
@@ -14914,8 +14398,8 @@ class Graphics {
     }
     static renderMultiCanvas(delta, context = {}) {
         // TODO: mutualize with the method render()
-        for (const [_, canvas] of this.#canvases) {
-            if (canvas.enabled) {
+        for (const [, canvas] of this.#canvases) {
+            if (canvas.enabled && (!context.pick || context.pick?.canvas === canvas.canvas)) {
                 this.#renderMultiCanvas(canvas, delta, context);
             }
         }
@@ -15158,6 +14642,10 @@ class Graphics {
         const configuration = attributes?.configuration ?? {};
         if (!configuration.device) {
             const requiredFeatures = ['texture-compression-bc'];
+            let requiredLimits = {};
+            if (attributes?.requiredLimits) {
+                requiredLimits = { ...requiredLimits, ...attributes?.requiredLimits };
+            }
             if (attributes?.requiredFeatures) {
                 requiredFeatures.push(...attributes?.requiredFeatures);
             }
@@ -15167,7 +14655,7 @@ class Graphics {
             requiredFeatures.push('texture-formats-tier2');
             configuration.device = await adapter.requestDevice({
                 requiredFeatures,
-                requiredLimits: attributes?.requiredLimits,
+                requiredLimits,
             });
         }
         if (!configuration.format) {
@@ -15941,6 +15429,14 @@ class PointLightHelper extends Mesh {
 
 const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
 let defaultTextureSize = 1024;
+var LightType;
+(function (LightType) {
+    // The values should be consistent with the values in the raytracing shader
+    LightType[LightType["Ambient"] = 1] = "Ambient";
+    LightType[LightType["Point"] = 2] = "Point";
+    LightType[LightType["Spot"] = 3] = "Spot";
+    LightType[LightType["Directional"] = 4] = "Directional";
+})(LightType || (LightType = {}));
 class Light extends Entity {
     #intensity;
     #color; // TODO: use Color instead
@@ -15948,10 +15444,12 @@ class Light extends Entity {
     shadow;
     #shadowTextureSize = defaultTextureSize;
     isLight = true;
+    radius; // Radius for ray tracing
     constructor(parameters = {}) {
         super(parameters);
         this.#color = vec3.clone(parameters.color ?? DEFAULT_LIGHT_COLOR);
         this.#intensity = parameters.intensity ?? 1.0;
+        this.radius = parameters.radius ?? 1.0;
         this.castShadow = false;
         this.isRenderable = true;
     }
@@ -16025,6 +15523,9 @@ class Light extends Entity {
     is(s) {
         return s == 'Light';
     }
+    getRaytracingLight() {
+        throw new Error('Override this function');
+    }
 }
 registerEntity(Light);
 
@@ -16090,7 +15591,7 @@ class SpotLightShadow extends LightShadow {
 
 const DEFAULT_ANGLE = Math.PI / 4.0;
 const Z_VECTOR = vec3.fromValues(0, 0, 1);
-const tempQuat$8 = quat.create();
+const tempQuat$7 = quat.create();
 class SpotLight extends Light {
     isSpotLight = true;
     #innerAngle;
@@ -16099,8 +15600,8 @@ class SpotLight extends Light {
     outerAngleCos;
     constructor(parameters = {}) {
         super(parameters);
-        this.angle = DEFAULT_ANGLE;
-        this.innerAngle = DEFAULT_ANGLE;
+        this.angle = parameters.outerAngle ?? DEFAULT_ANGLE;
+        this.innerAngle = parameters.innerAngle ?? DEFAULT_ANGLE;
         this.range = 0;
     }
     set castShadow(castShadow) {
@@ -16132,7 +15633,7 @@ class SpotLight extends Light {
         return this.#innerAngle;
     }
     getDirection(out = vec3.create()) {
-        return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat$8));
+        return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat$7));
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -16149,6 +15650,9 @@ class SpotLight extends Light {
     }
     static getEntityName() {
         return 'SpotLight';
+    }
+    getRaytracingLight() {
+        return LightType.Spot;
     }
 }
 registerEntity(SpotLight);
@@ -16247,6 +15751,9 @@ class AmbientLight extends Light {
         else {
             return super.is(s);
         }
+    }
+    getRaytracingLight() {
+        return LightType.Point;
     }
 }
 registerEntity(AmbientLight);
@@ -16348,6 +15855,9 @@ class PointLight extends Light {
         else {
             return super.is(s);
         }
+    }
+    getRaytracingLight() {
+        return LightType.Point;
     }
 }
 registerEntity(PointLight);
@@ -20186,6 +19696,7 @@ class CombineLerp extends Node {
     #renderTarget;
     #textureSize;
     #outputTexture;
+    #mesh = new Mesh();
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -20195,6 +19706,7 @@ class CombineLerp extends Node {
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
         this.material = new NodeImageEditorMaterial({ shaderName: 'combine_lerp', user: this });
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
+        this.#mesh.setMaterial(this.material);
         this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
@@ -20248,7 +19760,7 @@ class CombineLerp extends Node {
             });
         }
         this.material.setUniformValue('outTexture', this.#outputTexture);
-        Graphics$1.compute(this.material, {
+        Graphics$1.compute(this.#mesh, {
             workgroupCountX: this.#textureSize,
             workgroupCountY: this.#textureSize,
         });
@@ -20387,6 +19899,7 @@ class Select extends Node {
     #renderTarget;
     #textureSize;
     #outputTexture;
+    #mesh = new Mesh();
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -20395,6 +19908,7 @@ class Select extends Node {
         this.addOutput('output', IO_TYPE_TEXTURE_2D);
         this.material = new NodeImageEditorMaterial({ shaderName: 'select', user: this });
         this.material.setDefine('MAX_SELECTORS', String(MAX_SELECTORS));
+        this.#mesh.setMaterial(this.material);
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
@@ -20445,7 +19959,7 @@ class Select extends Node {
         }
         this.material.setUniformValue('outTexture', this.#outputTexture);
         //this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.compute(this.material, {
+        Graphics$1.compute(this.#mesh, {
             workgroupCountX: this.#textureSize,
             workgroupCountY: this.#textureSize,
         });
@@ -22104,10 +21618,10 @@ class SkeletalMesh extends Mesh {
                 skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
                 skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
                 skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
-                skinnedVertexTangent[vertexArrayIndex + 0] = tempVertexTangent[0];
-                skinnedVertexTangent[vertexArrayIndex + 1] = tempVertexTangent[1];
-                skinnedVertexTangent[vertexArrayIndex + 2] = tempVertexTangent[2];
-                skinnedVertexTangent[vertexArrayIndex + 3] = tempVertexTangent[3];
+                skinnedVertexTangent[vertexArrayIndexTangent + 0] = tempVertexTangent[0];
+                skinnedVertexTangent[vertexArrayIndexTangent + 1] = tempVertexTangent[1];
+                skinnedVertexTangent[vertexArrayIndexTangent + 2] = tempVertexTangent[2];
+                skinnedVertexTangent[vertexArrayIndexTangent + 3] = tempVertexTangent[3];
             }
         }
         for (const objAttribute in attributes) {
@@ -23269,10 +22783,6 @@ class World extends Entity {
 registerEntity(World);
 
 const DEFAULT_SEGMENT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-const tempVec3$k = vec3.create();
-const tempQuat$7 = quat.create();
-const tempQuat2 = quat.create();
-const UNIT_VEC3_X$1 = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_MINUS_Y = vec3.fromValues(0, -1, 0);
 class BeamSegment {
     pos = vec3.create();
@@ -23301,41 +22811,29 @@ class BeamBufferGeometry extends BufferGeometry {
         }
     }
     */
-    set segments(segments) {
+    setSegments(segments, camera) {
         let previousSegment = null;
         let indiceBase = 0;
         const indices = [];
         const vertices = [];
         const uvs = [];
         const colors = [];
+        const cameraPos = camera.getWorldPosition();
+        const tangentY = vec3.create();
+        const dirToBeam = vec3.create();
+        const normal = vec3.create();
+        const p = vec3.create();
         for (const segment of segments) {
             if (previousSegment) {
                 indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
-                vec3.sub(tempVec3$k, segment.pos, previousSegment.pos);
-                vec3.normalize(tempVec3$k, tempVec3$k);
-                quat.rotationTo(tempQuat$7, UNIT_VEC3_X$1, tempVec3$k);
-                quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, previousSegment.normal);
-                vec3.set(tempVec3$k, 0, 0, -previousSegment.width / 2.0);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat$7);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat2);
-                vec3.add(tempVec3$k, tempVec3$k, previousSegment.pos);
-                vertices.push(...tempVec3$k);
-                vec3.set(tempVec3$k, 0, 0, previousSegment.width / 2.0);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat$7);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat2);
-                vec3.add(tempVec3$k, tempVec3$k, previousSegment.pos);
-                vertices.push(...tempVec3$k);
-                quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, segment.normal);
-                vec3.set(tempVec3$k, 0, 0, -segment.width / 2.0);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat$7);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat2);
-                vec3.add(tempVec3$k, tempVec3$k, segment.pos);
-                vertices.push(...tempVec3$k);
-                vec3.set(tempVec3$k, 0, 0, segment.width / 2.0);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat$7);
-                vec3.transformQuat(tempVec3$k, tempVec3$k, tempQuat2);
-                vec3.add(tempVec3$k, tempVec3$k, segment.pos);
-                vertices.push(...tempVec3$k);
+                vec3.sub(tangentY, segment.pos, previousSegment.pos);
+                vec3.sub(dirToBeam, segment.pos, cameraPos);
+                vec3.cross(normal, tangentY, dirToBeam);
+                vec3.normalize(normal, normal);
+                vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, -previousSegment.width / 2.0));
+                vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, previousSegment.width / 2.0));
+                vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
+                vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
                 uvs.push(0, previousSegment.texCoordY, 1, previousSegment.texCoordY, 0, segment.texCoordY, 1, segment.texCoordY);
                 colors.push(...previousSegment.color, ...previousSegment.color, ...segment.color, ...segment.color);
                 indiceBase += 4;
@@ -23596,13 +23094,15 @@ var camera$1 = "  struct Camera {\n    viewportSize: vec2u,\n    imageWidth: f32
 
 var color$1 = "  // Narkowicz 2015, \"ACES Filmic Tone Mapping Curve\"\n  @must_use\n  fn aces(x: vec3f) -> vec3f {\n    let a = 2.51;\n    let b = 0.03;\n    let c = 2.43;\n    let d = 0.59;\n    let e = 0.14;\n    return saturate(x * (a * x + b)) / (x * (c * x + d) + e);\n  }\n\n  // Filmic Tonemapping Operators http://filmicworlds.com/blog/filmic-tonemapping-operators/\n  @must_use\n  fn filmic(x: vec3f) -> vec3f {\n    let X = max(vec3f(0.0), x - 0.004);\n    let result = (X * (6.2 * X + 0.5)) / (X * (6.2 * X + 1.7) + 0.06);\n    return pow(result, vec3(2.2));\n  }\n\n  // Lottes 2016, \"Advanced Techniques and Optimization of HDR Color Pipelines\"\n  @must_use\n  fn lottes(x: vec3f) -> vec3f {\n    let a = vec3f(1.6);\n    let d = vec3f(0.977);\n    let hdrMax = vec3f(8.0);\n    let midIn = vec3f(0.18);\n    let midOut = vec3f(0.267);\n\n    let b =\n        (-pow(midIn, a) + pow(hdrMax, a) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n    let c =\n        (pow(hdrMax, a * d) * pow(midIn, a) - pow(hdrMax, a) * pow(midIn, a * d) * midOut) /\n        ((pow(hdrMax, a * d) - pow(midIn, a * d)) * midOut);\n\n    return pow(x, a) / (pow(x, a * d) * b + c);\n  }\n\n  @must_use\n  fn reinhard(x: vec3f) -> vec3f {\n    return x / (1.0 + x);\n  }\n";
 
-var common = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32,\n    debugColor: u32,\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    tbn: mat3x3f,\n    coord: vec2f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    ta0: vec4f,\n    ta1: vec4f,\n    ta2: vec4f,\n\n    bta0: vec3f,\n    bta1: vec3f,\n    bta2: vec3f,\n\n    t0: vec2f,\n    t1: vec2f,\n    t2: vec2f,\n\n    faceNormal: vec3f,\n    materialIdx: u32,\n    flatShading: u32,\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
+var common$1 = "  struct CommonUniforms {\n    // Random seed for the workgroup\n    //seed : vec3u,\n    frameCounter: u32,\n    maxBounces: u32,\n    flatShading: u32,\n    debugNormals: u32,\n    debugColor: u32,\n  }\n\n  struct HitRecord {\n    p: vec3f,\n    normal: vec3f,\n    tbn: mat3x3f,\n    coord: vec2f,\n    t: f32,\n    frontFace: bool,\n    materialIdx: u32,\n    meshIdx: i32\n  };\n\n  struct Face {\n    p0: vec3f,\n    p1: vec3f,\n    p2: vec3f,\n\n    n0: vec3f,\n    n1: vec3f,\n    n2: vec3f,\n\n    ta0: vec4f,\n    ta1: vec4f,\n    ta2: vec4f,\n\n    bta0: vec3f,\n    bta1: vec3f,\n    bta2: vec3f,\n\n    t0: vec2f,\n    t1: vec2f,\n    t2: vec2f,\n\n    faceNormal: vec3f,\n    materialIdx: u32,\n    flatShading: u32,\n  }\n\n  struct AABB {\n    min: vec3f,\n    max: vec3f,\n    leftChildIdx: i32,\n    rightChildIdx: i32,\n    faceIdx0: i32,\n    faceIdx1: i32\n  }\n\n  struct Mesh {\n    aabbOffset: i32,\n    faceOffset: i32\n  }\n";
 
 var interval = "  struct Interval {\n    min: f32,\n    max: f32,\n  };\n\n  @must_use\n  fn intervalContains(interval: Interval, x: f32) -> bool {\n    return interval.min <= x && x <= interval.max;\n  }\n\n  @must_use\n  fn intervalSurrounds(interval: Interval, x: f32) -> bool {\n    return interval.min < x && x < interval.max;\n  }\n\n  @must_use\n  fn intervalClamp(interval: Interval, x: f32) -> f32 {\n    var out = x;\n    if (x < interval.min) {\n      out = interval.min;\n    }\n    if (x > interval.max) {\n      out = interval.max;\n    }\n    return out;\n  }\n\n  const emptyInterval = Interval(f32max, f32min);\n  const universeInterval = Interval(f32min, f32max);\n  const positiveUniverseInterval = Interval(EPSILON, f32max);\n";
 
 var material$1 = "#include math::modulo\n\nstruct TextureDescriptor {\n\twidth: u32,\n\theight: u32,\n\toffset: u32,\n\telements: u32,\n\trepeat: u32,\n\tlayers: u32,\n}\n\nstruct Material {\n    materialType: u32,\n    reflectionRatio: f32,\n    reflectionGloss: f32,\n    refractionIndex: f32,\n    albedo: vec3f,\n    textures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures\n  };\n\n  @must_use\n  fn scatterLambertian(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = (*material).albedo;\n    return true;\n  }\n\n  @must_use\n  fn scatterMetal(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    let reflected = reflect(normalize((*ray).direction), (*hitRec).normal);\n    (*scattered) = Ray((*hitRec).p, reflected + (*material).reflectionGloss * randomUnitVec3(rngState));\n    (*attenuation) = (*material).albedo;\n    return (dot((*scattered).direction, (*hitRec).normal) >= 0);\n  }\n\n  @must_use\n  fn scatterDielectric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    *attenuation = vec3f(1);\n    let refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, (*hitRec).frontFace);\n    let unitDirection = normalize((*ray).direction);\n    let cosTheta = dot(-unitDirection, (*hitRec).normal);\n    let sinTheta = sqrt(1.0 - cosTheta * cosTheta);\n    let cannotRefract = refractRatio * sinTheta > 1.0;\n    let direction = select(\n      refract(unitDirection, (*hitRec).normal, refractRatio),\n      reflect(unitDirection, (*hitRec).normal),\n      cannotRefract || reflectance(cosTheta, refractRatio) > rngNextFloat(rngState)\n    );\n    (*scattered) = Ray((*hitRec).p, direction);\n    return true;\n  }\n\n  @must_use\n  fn reflectance(cosine: f32, refractionIndex: f32) -> f32 {\n    // Use Schlick's approximation for reflectance.\n    var r0 = (1.0 - refractionIndex) / (1.0 + refractionIndex);\n    r0 *= r0;\n    return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);\n  }\n\n  @must_use\n  fn scatterSource1(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  @must_use\n  fn scatterSource1VertexLitGeneric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal;\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    let texelColor = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y);\n    (*attenuation) = texelColor.rgb;\n    let normalTexture = (*material).textures[1];\n    let cubeMap = (*material).textures[3];\n\n    var texelNormal = vec4f(0.5, 0.5, 1.0, 0.0);\n\n    if (normalTexture.offset != 0xffffffff) {\n      texelNormal = textureLookup(normalTexture, hitRec.coord.x, hitRec.coord.y);\n      scatterDirection = normalize((*hitRec).tbn * (texelNormal.rgb * 2 - 1));\n    }\n\n    if (cubeMap.offset != 0xffffffff) {\n      let cubeValue = textureCubeLookup(cubeMap, scatterDirection);\n      //scatterDirection = normalize((*hitRec).tbn * pixelNormal);\n      (*attenuation) = cubeValue * texelColor.a + texelColor.rgb;\n    }\n\n    scatterDirection += randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    return true;\n  }\n\n  @must_use\n  fn scatterSource1LightMappedGeneric(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  @must_use\n  fn scatterSource2Material(\n    material: ptr<function, Material>,\n    ray: ptr<function, Ray>,\n    scattered: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    attenuation: ptr<function, vec3f>,\n    rngState: ptr<function, u32>\n  ) -> bool {\n    var scatterDirection = (*hitRec).normal + randomUnitVec3(rngState);\n    if (nearZero(scatterDirection)) {\n      scatterDirection = (*hitRec).normal;\n    }\n    (*scattered) = Ray((*hitRec).p, scatterDirection);\n    (*attenuation) = textureLookup((*material).textures[0], hitRec.coord.x, hitRec.coord.y).rgb;\n\n    return true;\n  }\n\n  fn textureLookup(desc: TextureDescriptor, u: f32, v: f32) -> vec4<f32> {\n    if (desc.offset == 0xffffffff) {\n      return vec4f(0.0);\n    }\n    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);\n    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);\n\n    let j = u32(u2 * f32(desc.width - 1));\n    let i = u32(v2 * f32(desc.height - 1));\n    let idx = (i * desc.width + j) * desc.elements;\n\n    let elem = textures[desc.offset + idx];\n    return vec4f(\n      textures[desc.offset + idx + 0],\n      textures[desc.offset + idx + 1],\n      textures[desc.offset + idx + 2],\n      select(0., textures[desc.offset + idx + 3], desc.elements >= 4)\n    ) / 255.;\n  }\n\n  fn textureCubeLookup(desc: TextureDescriptor, dir: vec3f) -> vec3<f32> {\n    if (desc.offset == 0xffffffff || desc.layers < 6) {\n      return vec3f(0.0);\n    }\n\n    let coords = sampleCube(dir);\n    let u = coords.x;\n    let v = coords.y;\n    let faceIndex = coords.z;\n\n    let u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);\n    let v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);\n\n    let j = u32(u2 * f32(desc.width - 1));\n    let i = u32(v2 * f32(desc.height - 1));\n    let idx = (i * desc.width + j) * desc.elements + u32(faceIndex) * desc.height * desc.width * desc.elements;\n\n    let elem = textures[desc.offset + idx];\n    return vec3f(\n      textures[desc.offset + idx + 0],\n      textures[desc.offset + idx + 1],\n      textures[desc.offset + idx + 2],\n    ) / 255.;\n  }\n\n  // See https://gamedev.net/forums/topic/687535\n  fn sampleCube(v: vec3f) -> vec3f {\n    let vAbs = abs(v);\n    var ma: f32;\n    var faceIndex: f32;\n    var uv: vec2f;\n\n    if(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {\n      faceIndex = select(4., 5., v.z < 0.0);\n      ma = 0.5 / vAbs.z;\n      uv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);\n    } else if(vAbs.y >= vAbs.x) {\n      faceIndex = select(2., 3., v.y < 0.0);\n      ma = 0.5 / vAbs.y;\n      uv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));\n    } else {\n      faceIndex = select(0., 1., v.z < 0.0);\n      ma = 0.5 / vAbs.x;\n      uv = vec2f(select(-v.z, v.z, v.x < 0.0), -v.y);\n    }\n    return vec3f(uv * ma + 0.5, faceIndex);\n  }\n";
 
-var ray$1 = "  struct Ray {\n    origin: vec3f,\n    direction: vec3f,\n  };\n\n  @must_use\n  fn rayAt(ray: ptr<function, Ray>, t: f32) -> vec3f {\n    return (*ray).origin + (*ray).direction * t;\n  }\n\n  @must_use\n  fn rayIntersectFace(\n    ray: ptr<function, Ray>,\n    face: ptr<function, Face>,\n    rec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n    // Mäller-Trumbore algorithm\n    // https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm\n\n    // let fnDotRayDir = dot((*face).faceNormal, (*ray).direction);\n    // if (abs(fnDotRayDir) < EPSILON) {\n    //   return false; // ray direction almost parallel\n    // }\n\n    let e1 = (*face).p1 - (*face).p0;\n    let e2 = (*face).p2 - (*face).p0;\n\n    let t1 = (*face).t1 - (*face).t0;\n    let t2 = (*face).t2 - (*face).t0;\n\n    let h = cross((*ray).direction, e2);\n    let det = dot(e1, h);\n\n    if det > -0.00001 && det < 0.00001 {\n      return false;\n    }\n\n    let invDet = 1.0f / det;\n    let s = (*ray).origin - (*face).p0;\n    let u = invDet * dot(s, h);\n\n    if u < 0.0f || u > 1.0f {\n      return false;\n    }\n\n    let q = cross(s, e1);\n    let v = invDet * dot((*ray).direction, q);\n\n    if v < 0.0f || u + v > 1.0f {\n      return false;\n    }\n\n    let t = invDet * dot(e2, q);\n\n    if t > interval.min && t < interval.max {\n      // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html\n\n      let p = (*face).p0 + u * e1 + v * e2;\n      let coord = (*face).t0 + u * t1 + v * t2;\n      // *hit = TriangleHit(offsetRay(p, n), b, t);\n      (*rec).t = t;\n      (*rec).p = p;\n      (*rec).coord = coord;\n      (*rec).materialIdx = (*face).materialIdx;\n\n      var tangent: vec3f;\n      var bitangent: vec3f;\n\n      if (commonUniforms.flatShading == 1u) {\n        (*rec).normal = abs((*face).faceNormal);\n      } else {\n        var n: vec3f;\n        if ((*face).flatShading == 0) {\n          let b = vec3f(1f - u - v, u, v);\n          n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;\n          tangent = b[0] * (*face).ta0.xyz + b[1] * (*face).ta1.xyz + b[2] * (*face).ta2.xyz;\n          bitangent = b[0] * (*face).bta0.xyz + b[1] * (*face).bta1.xyz + b[2] * (*face).bta2.xyz;\n        } else {\n          n = ((*face).faceNormal);\n          tangent = vec3f(1, 0, 0);// TODO: compute actual tangent\n          bitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent\n        }\n        (*rec).normal = n;\n        (*rec).tbn = mat3x3f(tangent, bitangent, n);\n      }\n      return true;\n    } else {\n      return false;\n    }\n  }\n\n\n  @must_use\n  fn rayIntersectBV(ray: ptr<function, Ray>, aabb: ptr<function, AABB>) -> bool {\n    let t0 = ((*aabb).min - (*ray).origin) / (*ray).direction;\n    let t1 = ((*aabb).max - (*ray).origin) / (*ray).direction;\n    let tmin = min(t0, t1);\n    let tmax = max(t0, t1);\n    let maxMinT = max(tmin.x, max(tmin.y, tmin.z));\n    let minMaxT = min(tmax.x, min(tmax.y, tmax.z));\n    return maxMinT < minMaxT;\n  }\n\n  @must_use\n  fn rayIntersectBVH(\n    ray: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n\n    var current: HitRecord;\n    var didIntersect = false;\n    var stack: array<i32, BV_MAX_STACK_DEPTH>;\n\n    (*hitRec).t = f32max;\n\n    var top: i32;\n\n    for (var objIdx = 0u; objIdx < OBJECTS_COUNT_IN_SCENE; objIdx++) {\n      top = 0;\n      stack[0] = 0;\n\n      while (top > -1) {\n        var bvIdx = stack[top];\n        top--;\n        var aabb = AABBs[u32(bvIdx) + objIdx * MAX_BVs_COUNT_PER_MESH];\n\n        if (rayIntersectBV(ray, &aabb)) {\n          if (aabb.leftChildIdx != -1) {\n            top++;\n            stack[top] = aabb.leftChildIdx;\n          }\n          if (aabb.rightChildIdx != -1) {\n            top++;\n            stack[top] = aabb.rightChildIdx;\n          }\n\n          if (aabb.faceIdx0 != -1) {\n            var face = faces[u32(aabb.faceIdx0) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n\n          if (aabb.faceIdx1 != -1) {\n            var face = faces[u32(aabb.faceIdx1) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n        }\n      }\n    }\n    return didIntersect;\n  }\n\n  @must_use\n  fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n    let pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n    let pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n    let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n    let rayDirection = pixelSample - rayOrigin;\n    return Ray(rayOrigin, rayDirection);\n  }\n\n  @must_use\n  fn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n    let p = randomVec3InUnitDisc(rngState);\n    return (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n  }\n\n  @must_use\n  fn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n    let px = -0.5 + rngNextFloat(rngState);\n    let py = -0.5 + rngNextFloat(rngState);\n    return (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n  }\n";
+var ray$1 = "\n  struct Ray {\n    origin: vec3f,\n    direction: vec3f,\n  };\n\n  @must_use\n  fn rayAt(ray: ptr<function, Ray>, t: f32) -> vec3f {\n    return (*ray).origin + (*ray).direction * t;\n  }\n\n  @must_use\n  fn rayIntersectFace(\n    ray: ptr<function, Ray>,\n    face: ptr<function, Face>,\n    rec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n    // Mäller-Trumbore algorithm\n    // https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm\n\n    // let fnDotRayDir = dot((*face).faceNormal, (*ray).direction);\n    // if (abs(fnDotRayDir) < EPSILON) {\n    //   return false; // ray direction almost parallel\n    // }\n\n    let e1 = (*face).p1 - (*face).p0;\n    let e2 = (*face).p2 - (*face).p0;\n\n    let t1 = (*face).t1 - (*face).t0;\n    let t2 = (*face).t2 - (*face).t0;\n\n    let h = cross((*ray).direction, e2);\n    let det = dot(e1, h);\n\n    if det > -0.00001 && det < 0.00001 {\n      return false;\n    }\n\n    let invDet = 1.0f / det;\n    let s = (*ray).origin - (*face).p0;\n    let u = invDet * dot(s, h);\n\n    if u < 0.0f || u > 1.0f {\n      return false;\n    }\n\n    let q = cross(s, e1);\n    let v = invDet * dot((*ray).direction, q);\n\n    if v < 0.0f || u + v > 1.0f {\n      return false;\n    }\n\n    let t = invDet * dot(e2, q);\n\n    if t > interval.min && t < interval.max {\n      // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html\n\n      let p = (*face).p0 + u * e1 + v * e2;\n      let coord = (*face).t0 + u * t1 + v * t2;\n      // *hit = TriangleHit(offsetRay(p, n), b, t);\n      (*rec).t = t;\n      (*rec).p = p;\n      (*rec).coord = coord;\n      (*rec).materialIdx = (*face).materialIdx;\n\n      var tangent: vec3f;\n      var bitangent: vec3f;\n\n      if (commonUniforms.flatShading == 1u) {\n        (*rec).normal = abs((*face).faceNormal);\n      } else {\n        var n: vec3f;\n        if ((*face).flatShading == 0) {\n          let b = vec3f(1f - u - v, u, v);\n          n = b[0] * (*face).n0 + b[1] * (*face).n1 + b[2] * (*face).n2;\n          tangent = b[0] * (*face).ta0.xyz + b[1] * (*face).ta1.xyz + b[2] * (*face).ta2.xyz;\n          bitangent = b[0] * (*face).bta0.xyz + b[1] * (*face).bta1.xyz + b[2] * (*face).bta2.xyz;\n        } else {\n          n = ((*face).faceNormal);\n          tangent = vec3f(1, 0, 0);// TODO: compute actual tangent\n          bitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent\n        }\n        (*rec).normal = n;\n        (*rec).tbn = mat3x3f(tangent, bitangent, n);\n      }\n      return true;\n    } else {\n      return false;\n    }\n  }\n\n\n  @must_use\n  fn rayIntersectBV(ray: ptr<function, Ray>, aabb: ptr<function, AABB>) -> bool {\n    let t0 = ((*aabb).min - (*ray).origin) / (*ray).direction;\n    let t1 = ((*aabb).max - (*ray).origin) / (*ray).direction;\n    let tmin = min(t0, t1);\n    let tmax = max(t0, t1);\n    let maxMinT = max(tmin.x, max(tmin.y, tmin.z));\n    let minMaxT = min(tmax.x, min(tmax.y, tmax.z));\n    return maxMinT < minMaxT;\n  }\n\n  @must_use\n  fn rayIntersectBVH(\n    ray: ptr<function, Ray>,\n    hitRec: ptr<function, HitRecord>,\n    interval: Interval\n  ) -> bool {\n\n    var current: HitRecord;\n    var didIntersect = false;\n    var stack: array<i32, BV_MAX_STACK_DEPTH>;\n\n    (*hitRec).t = f32max;\n\n    var top: i32;\n\n    for (var objIdx = 0u; objIdx < OBJECTS_COUNT_IN_SCENE; objIdx++) {\n      top = 0;\n      stack[0] = 0;\n\n      while (top > -1) {\n        var bvIdx = stack[top];\n        top--;\n        var aabb = AABBs[u32(bvIdx) + objIdx * MAX_BVs_COUNT_PER_MESH];\n\n        if (rayIntersectBV(ray, &aabb)) {\n          if (aabb.leftChildIdx != -1) {\n            top++;\n            stack[top] = aabb.leftChildIdx;\n          }\n          if (aabb.rightChildIdx != -1) {\n            top++;\n            stack[top] = aabb.rightChildIdx;\n          }\n\n          if (aabb.faceIdx0 != -1) {\n            var face = faces[u32(aabb.faceIdx0) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n\n          if (aabb.faceIdx1 != -1) {\n            var face = faces[u32(aabb.faceIdx1) + objIdx * MAX_FACES_COUNT_PER_MESH];\n            if (\n              rayIntersectFace(ray, &face, &current, positiveUniverseInterval) &&\n              current.t < (*hitRec).t\n            ) {\n              *hitRec = current;\n              didIntersect = true;\n            }\n          }\n        }\n      }\n    }\n    return didIntersect;\n  }\n\n  @must_use\n  fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n    let pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n    let pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n    let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n    let rayDirection = pixelSample - rayOrigin;\n    return Ray(rayOrigin, rayDirection);\n  }\n\n  @must_use\n  fn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n    let p = randomVec3InUnitDisc(rngState);\n    return (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n  }\n\n  @must_use\n  fn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n    let px = -0.5 + rngNextFloat(rngState);\n    let py = -0.5 + rngNextFloat(rngState);\n    return (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n  }\n";
+
+var tri = "struct Tri {\n\tvertex0: vec3f,\n\tmaterialIdx: u32,\n\tvertex1: vec3f,\n\tflatShading: u32,\n\tvertex2: vec3f,\n\n\tnormal0: vec3f,\n\tnormal1: vec3f,\n\tnormal2: vec3f,\n\n\ttangent0: vec4f,\n\ttangent1: vec4f,\n\ttangent2: vec4f,\n\n\tbitangent0: vec3f,\n\tbitangent1: vec3f,\n\tbitangent2: vec3f,\n\n\tuv0: vec2f,\n\tuv1: vec2f,\n\tuv2: vec2f,\n\n\tfaceNormal: vec3f,\n};\n";
 
 var utils = "  const f32min = 0x1p-126f;\n  const f32max = 0x1.fffffep+127;\n\n  const pi = 3.1415927f;\n\n  @must_use\n  fn rngNextFloat(state: ptr<function, u32>) -> f32 {\n    rngNextInt(state);\n    return f32(*state) / f32(0xffffffffu);\n  }\n\n  fn rngNextInt(state: ptr<function, u32>) {\n    // PCG random number generator\n    // Based on https://www.shadertoy.com/view/XlGcRh\n\n    let oldState = *state + 747796405u + 2891336453u;\n    let word = ((oldState >> ((oldState >> 28u) + 4u)) ^ oldState) * 277803737u;\n    *state = (word >> 22u) ^ word;\n  }\n\n  @must_use\n  fn randInRange(min: f32, max: f32, state: ptr<function, u32>) -> f32 {\n    return min + rngNextFloat(state) * (max - min);\n  }\n";
 
@@ -23612,27 +23112,57 @@ var vertex = "  struct VertexOutput {\n    @builtin(position) Position: vec4f,\n
 
 addWgslInclude('raytracer::camera', camera$1);
 addWgslInclude('raytracer::color', color$1);
-addWgslInclude('raytracer::common', common);
+addWgslInclude('raytracer::common', common$1);
 addWgslInclude('raytracer::interval', interval);
 addWgslInclude('raytracer::material', material$1);
 addWgslInclude('raytracer::ray', ray$1);
+addWgslInclude('raytracer::tri', tri);
 addWgslInclude('raytracer::utils', utils);
 addWgslInclude('raytracer::vec', vec$9);
 addWgslInclude('raytracer::vertex', vertex);
 
-var bitangent_prepass = "  #include raytracer::common\n\n  @group(0) @binding(0) var<storage, read_write> faces: array<Face>;\n\n  override WORKGROUP_SIZE_X: u32;\n  /**\n   * compute the bitangent for each vertex\n   */\n  @compute @workgroup_size(WORKGROUP_SIZE_X, 1)\n  fn compute_main(@builtin(global_invocation_id) id : vec3<u32>,) {\n    if (id.x > arrayLength(&faces)) {\n      return;\n    }\n\n    let face = &faces[id.x];\n\n    face.bta0 = cross(face.n0, face.ta0.xyz) * face.ta0.w;\n    face.bta1 = cross(face.n1, face.ta1.xyz) * face.ta1.w;\n    face.bta2 = cross(face.n2, face.ta2.xyz) * face.ta2.w;\n  }\n";
+var common = "#pragma once\n\n/*\nstruct AABB {\n  min: vec3f,\n  max: vec3f,\n};\n*/\n\n/*\nstruct Ray {\n  origin: vec3f,\n  direction: vec3f,\n  tmin: f32,\n  tmax: f32,\n};\n*/\n\n// #define WEBRTX_SHADER_UNUSED (~0u)\n#define WEBRTX_SHADER_UNUSED (0xffu)\n\nstruct TlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  // for interior node, this is the offset in bvhTree for the second child\n  // for TLAS leaf node, this is the offset for the single BLAS referenced by\n  // current instance\n  //   TODO: can TLAS leaf node contain more than one BLAS when tree height is\n  //   restricted?\n  //   TODO: can TLAS be nested (but should not matter? since TLAS leaf has no\n  //   assumption, just set the offset for next node)\n  //      looks like it can\n  //      https://renderdoc.org/vkspec_chunked/chap37.html#VkAccelerationStructureInstanceKHR\n  // for BLAS leaf node, this is the offset for the primitive (either triangle\n  // or AABB) in global indices/aabbs buffer(s)\n  entry_index: u32,  // _or_primitive_id\n  exit_index: u32,\n  // uint axis;\n\n  // >0: leaf\n  is_leaf: u32,\n\n  // leaf data\n  mask: u32,\n  flags: u32,              // TODO: INSTANCE_FORCE_OPAQUE_BIT_KHR\n  instanceId: u32,         // used for gl_InstanceId\n  sbtInstanceOffset: u32,  // The start hitGroupId for all\n                           // geoms within this instance\n  instanceCustomIndex: i32,\n  transformToWorld: mat4x3f,  // column major\n  transformToObject: mat4x3f,\n  // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n  //transformToWorld: array<f32, 12>,  // column major\n  //transformToObject: array<f32, 12>,\n\n  // For traversal\n  blas_geometry_id_offset: u32,\n};\n\nstruct BlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  entry_index_or_primitive_id: u32,\n  exit_index: u32,\n  // uint axis;\n\n  // geometryId >= 0: BLAS leaf\n  // else: interior\n  geometryId: i32,\n  // TODO: geometry type? flags\n};\n";
 
-var debug_bvh = "#include matrix_uniforms\n#include raytracer::common\n\n@group(0) @binding(x) var<storage, read> AABBs: array<AABB>;\n@group(0) @binding(x) var<uniform> viewProjectionMatrix: mat4x4f;\n\nconst EDGES_PER_CUBE = 12u;\n\n@vertex\nfn vertex_main(\n  @builtin(instance_index) instanceIndex: u32,\n  @builtin(vertex_index) vertexIndex: u32\n) -> @builtin(position) vec4f {\n  let lineInstanceIdx = instanceIndex % EDGES_PER_CUBE;\n  let aabbInstanceIdx = instanceIndex / EDGES_PER_CUBE;\n  let a = AABBs[aabbInstanceIdx];\n  var pos: vec3f;\n  let fVertexIndex = f32(vertexIndex);\n\n  //        a7 _______________ a6\n  //         / |             /|\n  //        /  |            / |\n  //    a4 /   |       a5  /  |\n  //      /____|__________/   |\n  //      |    |__________|___|\n  //      |   / a3        |   / a2\n  //      |  /            |  /\n  //      | /             | /\n  //      |/______________|/\n  //      a0              a1\n\n  let dx = a.max.x - a.min.x;\n  let dy = a.max.y - a.min.y;\n  let dz = a.max.z - a.min.z;\n\n  let a0 = a.min;\n  let a1 = vec3f(a.min.x + dx, a.min.y,      a.min.z     );\n  let a2 = vec3f(a.min.x + dx, a.min.y,      a.min.z + dz);\n  let a3 = vec3f(a.min.x,      a.min.y,      a.min.z + dz);\n  let a4 = vec3f(a.min.x,      a.min.y + dy, a.min.z     );\n  let a5 = vec3f(a.min.x + dx, a.min.y + dy, a.min.z     );\n  let a6 = a.max;\n  let a7 = vec3f(a.min.x,      a.min.y + dy, a.min.z + dz);\n\n  if (lineInstanceIdx == 0) {\n    pos = mix(a0, a1, fVertexIndex);\n  } else if (lineInstanceIdx == 1) {\n    pos = mix(a1, a2, fVertexIndex);\n  } else if (lineInstanceIdx == 2) {\n    pos = mix(a2, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 3) {\n    pos = mix(a0, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 4) {\n    pos = mix(a0, a4, fVertexIndex);\n  } else if (lineInstanceIdx == 5) {\n    pos = mix(a1, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 6) {\n    pos = mix(a2, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 7) {\n    pos = mix(a3, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 8) {\n    pos = mix(a4, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 9) {\n    pos = mix(a5, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 10) {\n    pos = mix(a6, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 11) {\n    pos = mix(a7, a4, fVertexIndex);\n  }\n  return matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1);\n}\n\n@fragment\nfn fragment_main() -> @location(0) vec4f {\n  return vec4f(1, 1, 1, 0.1);\n}\n";
+var geom = "#pragma once\n\n// clang-format off\n//#include \"layout.glsl\"\n#include raytracer::commonv2\n// clang-format on\n\n// TODO: share with bvh builder\nconst GEOM_TYPE_TRIANGLE = 0u;\nconst GEOM_TYPE_AABB = 1u;\n\n// Note: this is included so that user_prelude knows the type\n// one for each geometry\nstruct BvhGeometryDescriptor {\n  // vBuffer stores either vertex positions, or AABBs\n  vBufferIndex: u32,\n  // only for triangles, if indices are used (>=0), first look up this indices\n  // buffer\n  iBufferIndex: i32,\n  vboOffset: u32,\n  vboStride: u32,\n  vioOffset: u32,\n  vioStride: u32,\n  // note that geometry info are duplicated for vbo and vio buffer\n  owningGeometryType_todo_deprecate: u32,\n  owningGeometryFlags: u32,  // Geometry.OPAQUE etc\n};\n\n// this can be a uniform?\n//const bvhReferencedGeomBuffer: array<BvhGeometryDescriptor> = _CRT_USER_BVH_GEOM_BUFFERS_INITIALIZER_LIST;\n\n// each buffer is described by BvhGeometryDescriptor\n\n// from application\n// TODO: looks like array of buffers not supported??\n// layout(set = RT_RESOURCES_BIND_SET,\n//        binding = BP_GEOM_BUFFERS_START) readonly buffer BvhGeomBufferGeneral\n//        {\n//   float fword[];\n// }\n// bvhGeoBuffers[USER_NUM_TOTAL_GEOMETRY_RELATED_BUFFERS];\n// #define GET_VEC3_FROM_BUFFER(bi, wordi)        \\\n//   vec3(bvhGeoBuffers[(bi)].fword[(wordi)],     \\\n//        bvhGeoBuffers[(bi)].fword[(wordi) + 1], \\\n//        bvhGeoBuffers[(bi)].fword[(wordi) + 2])\n\nfn GET_VEC3_FROM_BUFFER(geoBufferIndex: u32, wordIndex: u32) -> vec3<f32> {\n    switch bitcast<i32>(geoBufferIndex) {\n        case 0: {\n            return vec3<f32>(\n              bvhGeoBuffers_0_.fword[wordIndex],\n              bvhGeoBuffers_0_.fword[(wordIndex + 1u)],\n              bvhGeoBuffers_0_.fword[(wordIndex + 2u)],\n            );\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertIndices(iBufferIndex: u32, offset: u32, stride: u32, primitiveId: u32) -> vec3u {\n  let vioWordOffset: u32 =\n      (offset + primitiveId * stride) / 4;  // byte offset => word offset\n  let f3: vec3f = GET_VEC3_FROM_BUFFER(iBufferIndex, vioWordOffset);\n  // return floatBitsToUint(f3);\n  return vec3u(bitcast<u32>(f3.x), bitcast<u32>(f3.y), bitcast<u32>(f3.z));\n}\n\nfn getTriVertPosition(vBufferIndex: u32, offset: u32, stride: u32, vindex: u32) -> vec3f {\n  let vboWordOffset: u32 = (offset + vindex * stride) / 4;  // byte offset => word offset\n  return GET_VEC3_FROM_BUFFER(vBufferIndex, vboWordOffset);\n}\n\nfn getTriangleVertexPositions(g: BvhGeometryDescriptor, primitiveId: u32) -> array<vec3f, 3> {\n  var indices: vec3u;\n  if (g.iBufferIndex >= 0) {\n    indices = getTriVertIndices(u32(g.iBufferIndex), g.vioOffset, g.vioStride, primitiveId);\n  } else {\n    indices = vec3u(primitiveId * 3, primitiveId * 3 + 1, primitiveId * 3 + 2);\n  }\n  return array<vec3f, 3>(\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[0]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[1]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[2]));\n}\n";
+
+var intersect = "#pragma once\n\n// https://tavianator.com/2011/ray_box.html\n// https://medium.com/@bromanz/another-view-on-the-classic-ray-aabb-intersection-algorithm-for-bvh-traversal-41125138b525\nfn intersect_aabb(rayOrigin: vec3f, invRayDir: vec3f,\n                    ray_tmin: f32, ray_tmax: f32,\n                    aabb: AABB) -> bool {\n  let t0: vec3f = (aabb.min - rayOrigin) * invRayDir;\n  let t1: vec3f = (aabb.max - rayOrigin) * invRayDir;\n  let tmin: vec3f = min(t0, t1);\n  let tmax: vec3f = max(t0, t1);\n  return max(ray_tmin, max(max(tmin.x, tmin.y), tmin.z)) <=\n         min(ray_tmax, min(min(tmax.x, tmax.y), tmax.z));\n}\n\nfn intersect_triangle_branchless(ray_origin: vec3f, ray_tmin: f32,\n                                   ray_dir: vec3f, ray_tmax: f32,\n                                   p0: vec3f, p1: vec3f, p2: vec3f,\n                                   n: ptr<function, vec3f>, t: ptr<function, f32>, beta: ptr<function, f32>,\n                                   gamma: ptr<function, f32>) -> bool {\n  let e0: vec3f = p1 - p0;\n  let e1: vec3f = p0 - p2;\n  *n = cross(e1, e0);\n\n  let e2: vec3f = (1.f / dot(*n, ray_dir)) * (p0 - ray_origin);\n  let i: vec3f = cross(ray_dir, e2);\n\n  *beta = dot(i, e1);\n  *gamma = dot(i, e0);\n  *t = dot(*n, e2);\n\n  return (*t < ray_tmax) &&\n    (*t > ray_tmin) &&\n    (*beta >= 0) &&\n    (*gamma >= 0) &&\n    (*beta + *gamma <= 1);\n}\n";
+
+var sbt = "//#pragma once\nstruct RtUniforms {\n  sbtStartRayGen: u32,\n  sbtStartRayMiss: u32,\n  sbtStrideRayMiss: u32,\n  sbtStartHit: u32,\n  sbtStrideHit: u32,\n  sbtStartCallable: u32,\n  sbtStrideCallable: u32,\n  webrtx_NumWorkGroups: vec3u,\n};\n\n\n\n\nfn sbtHitGroupIndex(instanceId: u32, geometryId: u32, num_ray_types: u32,\n                      ray_type: u32) -> u32 {\n  return rtUniformParams.sbtStartHit +\n         rtUniformParams.sbtStrideHit *\n             (instanceId + geometryId * num_ray_types + ray_type);\n}\n\nfn invokeShaderIndirect_closestHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>\n    // TODO: make these global for non-recursive ray tracing?\n    // ,int gl_PrimitiveID, int gl_InstanceID, int gl_InstanceCustomIndexEXT,\n    // int gl_GeometryIndexEXT\n) {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rchit: u32 = RCHit(hitShaderGroupIdentifier);\n  if (rchit == WEBRTX_SHADER_UNUSED) {\n    return;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  float _crt_HitTEXT = _crt_RayTmaxEXT;\n  _CRT_USER_RCHIT_TABLE\n}\n\n// TODO: unify hitgroup shaders: intersect, rchit, rahit\nfn invokeShaderIndirect_anyHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  //  uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> u32 {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rahit: u32 = RAHit(hitShaderGroupIdentifier);\n  if (rahit == WEBRTX_SHADER_UNUSED) {\n    // assume hit confirmed by default\n    return _CRT_HIT_REPORT_CONFIRMED;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  // TODO: alias\n  const _crt_HitTEXT: f32 = _crt_RayTmaxEXT;\n  // assume hit confirmed by default\n  let _CRT_INOUT_PARAM_HIT_REPORT: u32 = _CRT_HIT_REPORT_CONFIRMED;\n  // anyhit shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT`.\n  //_CRT_USER_RAHIT_TABLE\n  return _CRT_INOUT_PARAM_HIT_REPORT;\n}\n\n#define _CRT_SBT_BUFFER_NAME _crt_sbt_buf\n\n// TODO: move APIs to a central place\n// BUG: this is different from vk api, it's only allowed to be called once and\n// does not return a value (it's a statement not expression)\n// https://forums.developer.nvidia.com/t/about-two-functions-rtpotentialintersection-and-rtreportintersection/30607/8\n#define reportIntersectionEXT(hit_t, hit_kind) _CRT_POTENTIAL_HIT_T = (hit_t);\n\nfn invokeShaderIndirect_intersect(\n    sbtByteIndex: u32, crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_ObjectRayOriginEXT: vec3f, _CRT_POTENTIAL_HIT_T: ptr<function, f32>,\n    _crt_ObjectRayDirectionEXT: vec3f, _crt_WorldToObjectEXT: mat4x3f,\n    _crt_ObjectToWorldEXT: mat4x3f, _crt_GeometryIndexEXT: i32,\n    _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> bool {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: f32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rint: u32 = RInt(hitShaderGroupIdentifier);\n  if (rint == WEBRTX_SHADER_UNUSED) {\n    return false;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  _CRT_POTENTIAL_HIT_T = _crt_RayTminEXT - 1.0;\n  // TODO: uint potential_hit_kind;\n  // intersection shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT` and `const\n  // _crt_RayTmaxEXT` and `out hit_attributes` and `out _CRT_POTENTIAL_HIT_T`.\n\n  //_CRT_USER_RINT_TABLE\n\n  return (_CRT_POTENTIAL_HIT_T > _crt_RayTminEXT &&\n          _CRT_POTENTIAL_HIT_T < _crt_RayTmaxEXT);\n}\n";
+
+var traceray = "#pragma once\n#include raytracer::commonv2\n#include raytracer::geom\n\nstruct AABB {\n  min: vec3f,\n  max: vec3f,\n};\n\nstruct Ray {\n  origin: vec3f,\n  direction: vec3f,\n  tmin: f32,\n  tmax: f32,\n};\n\n// #define WEBRTX_SHADER_UNUSED (~0U)\n#define WEBRTX_SHADER_UNUSED (0xffu)\n#define _CRT_HIT_REPORT_IGNORE 1\n\n#define gl_HitKindFrontFacingTriangleEXT (0xFEu)\n#define gl_HitKindBackFacingTriangleEXT (0xFFu)\n\nstruct BvhGeomBuffer_0_ {\n    fword: array<f32>,\n}\n\n/*\nstruct TlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  // for interior node, this is the offset in bvhTree for the second child\n  // for TLAS leaf node, this is the offset for the single BLAS referenced by\n  // current instance\n  //   TODO: can TLAS leaf node contain more than one BLAS when tree height is\n  //   restricted?\n  //   TODO: can TLAS be nested (but should not matter? since TLAS leaf has no\n  //   assumption, just set the offset for next node)\n  //      looks like it can\n  //      https://renderdoc.org/vkspec_chunked/chap37.html#VkAccelerationStructureInstanceKHR\n  // for BLAS leaf node, this is the offset for the primitive (either triangle\n  // or AABB) in global indices/aabbs buffer(s)\n  entry_index: u32,  // _or_primitive_id\n  exit_index: u32,\n  // uint axis;\n\n  // >0: leaf\n  is_leaf: u32,\n\n  // leaf data\n  mask: u32,\n  flags: u32,              // TODO: INSTANCE_FORCE_OPAQUE_BIT_KHR\n  instanceId: u32,         // used for gl_InstanceId\n  sbtInstanceOffset: u32,  // The start hitGroupId for all\n                           // geoms within this instance\n  instanceCustomIndex: i32,\n  transformToWorld: mat4x3f,  // column major\n  transformToObject: mat4x3f,\n  // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n  //transformToWorld: array<f32, 12>,  // column major\n  //transformToObject: array<f32, 12>,\n\n  // For traversal\n  blas_geometry_id_offset: u32,\n};\n*/\n/*\nstruct BlasBvhNode {\n  aabb: AABB,  // 2*3*4\n  entry_index_or_primitive_id: u32,\n  exit_index: u32,\n  // uint axis;\n\n  // geometryId >= 0: BLAS leaf\n  // else: interior\n  geometryId: i32,\n  // TODO: geometry type? flags\n};\n*/\n\n/*\nstruct BvhGeometryDescriptor {\n  // vBuffer stores either vertex positions, or AABBs\n  vBufferIndex: u32,\n  // only for triangles, if indices are used (>=0), first look up this indices\n  // buffer\n  iBufferIndex: i32,\n  vboOffset: u32,\n  vboStride: u32,\n  vioOffset: u32,\n  vioStride: u32,\n  // note that geometry info are duplicated for vbo and vio buffer\n  owningGeometryType_todo_deprecate: u32,\n  owningGeometryFlags: u32,  // Geometry.OPAQUE etc\n};\n*/\n\nstruct RtUniforms {\n  sbtStartRayGen: u32,\n  sbtStartRayMiss: u32,\n  sbtStrideRayMiss: u32,\n  sbtStartHit: u32,\n  sbtStrideHit: u32,\n  sbtStartCallable: u32,\n  sbtStrideCallable: u32,\n  webrtx_NumWorkGroups: vec3u,\n};\n\n\nfn sbtHitGroupIndex(instanceId: u32, geometryId: u32, num_ray_types: u32,\n                      ray_type: u32) -> u32 {\n  return rtUniformParams.sbtStartHit +\n         rtUniformParams.sbtStrideHit *\n             (instanceId + geometryId * num_ray_types + ray_type);\n}\n\n/*\nfn GET_VEC3_FROM_BUFFER(geoBufferIndex: u32, wordIndex: u32) -> vec3<f32> {\n    switch bitcast<i32>(geoBufferIndex) {\n        case 0: {\n            return vec3<f32>(\n              bvhGeoBuffers_0_.fword[wordIndex],\n              bvhGeoBuffers_0_.fword[(wordIndex + 1u)],\n              bvhGeoBuffers_0_.fword[(wordIndex + 2u)],\n            );\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n*/\n/*/\n\nfn getTriVertIndices(iBufferIndex: u32, offset: u32, stride: u32, primitiveId: u32) -> vec3u {\n  let vioWordOffset: u32 =\n      (offset + primitiveId * stride) / 4;  // byte offset => word offset\n  let f3: vec3f = GET_VEC3_FROM_BUFFER(iBufferIndex, vioWordOffset);\n  // return floatBitsToUint(f3);\n  return vec3u(bitcast<u32>(f3.x), bitcast<u32>(f3.y), bitcast<u32>(f3.z));\n}\n  */\n\n/*\nfn getTriVertPosition(vBufferIndex: u32, offset: u32, stride: u32, vindex: u32) -> vec3f {\n  let vboWordOffset: u32 = (offset + vindex * stride) / 4;  // byte offset => word offset\n  return GET_VEC3_FROM_BUFFER(vBufferIndex, vboWordOffset);\n}\n*/\n/*\nfn getTriangleVertexPositions(g: BvhGeometryDescriptor, primitiveId: u32) -> array<vec3f, 3> {\n  var indices: vec3u;\n  if (g.iBufferIndex >= 0) {\n    indices = getTriVertIndices(u32(g.iBufferIndex), g.vioOffset, g.vioStride, primitiveId);\n  } else {\n    indices = vec3u(primitiveId * 3, primitiveId * 3 + 1, primitiveId * 3 + 2);\n  }\n  return array<vec3f, 3>(\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[0]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[1]),\n      getTriVertPosition(g.vBufferIndex, g.vboOffset, g.vboStride, indices[2]));\n}\n*/\n\n// https://tavianator.com/2011/ray_box.html\n// https://medium.com/@bromanz/another-view-on-the-classic-ray-aabb-intersection-algorithm-for-bvh-traversal-41125138b525\nfn intersect_aabb(rayOrigin: vec3f, invRayDir: vec3f,\n                    ray_tmin: f32, ray_tmax: f32,\n                    aabb: AABB) -> bool {\n  let t0: vec3f = (aabb.min - rayOrigin) * invRayDir;\n  let t1: vec3f = (aabb.max - rayOrigin) * invRayDir;\n  let tmin: vec3f = min(t0, t1);\n  let tmax: vec3f = max(t0, t1);\n  return max(ray_tmin, max(max(tmin.x, tmin.y), tmin.z)) <=\n         min(ray_tmax, min(min(tmax.x, tmax.y), tmax.z));\n}\n\nfn intersect_triangle_branchless(ray_origin: vec3f, ray_tmin: f32,\n                                   ray_dir: vec3f, ray_tmax: f32,\n                                   p0: vec3f, p1: vec3f, p2: vec3f,\n                                   n: ptr<function, vec3f>, t: ptr<function, f32>, beta: ptr<function, f32>,\n                                   gamma: ptr<function, f32>) -> bool {\n  let e0: vec3f = p1 - p0;\n  let e1: vec3f = p0 - p2;\n  *n = cross(e1, e0);\n\n  let e2: vec3f = (1.f / dot(*n, ray_dir)) * (p0 - ray_origin);\n  let i: vec3f = cross(ray_dir, e2);\n\n  *beta = dot(i, e1);\n  *gamma = dot(i, e0);\n  *t = dot(*n, e2);\n\n  return (*t < ray_tmax) &&\n    (*t > ray_tmin) &&\n    (*beta >= 0) &&\n    (*gamma >= 0) &&\n    (*beta + *gamma <= 1);\n}\nfn invokeShaderIndirect_intersect(\n    sbtByteIndex: u32, crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  // float _gl_RayTmaxEXT, uint _gl_HitKindEXT,\n    _crt_ObjectRayOriginEXT: vec3f, _CRT_POTENTIAL_HIT_T: ptr<function, f32>,\n    _crt_ObjectRayDirectionEXT: vec3f, _crt_WorldToObjectEXT: mat4x3f,\n    _crt_ObjectToWorldEXT: mat4x3f, _crt_GeometryIndexEXT: i32,\n    _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5>>) -> bool {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: f32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rint: u32 = RInt(hitShaderGroupIdentifier);\n  if (rint == WEBRTX_SHADER_UNUSED) {\n    return false;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  _CRT_POTENTIAL_HIT_T = _crt_RayTminEXT - 1.0;\n  // TODO: uint potential_hit_kind;\n  // intersection shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT` and `const\n  // _crt_RayTmaxEXT` and `out hit_attributes` and `out _CRT_POTENTIAL_HIT_T`.\n\n  //_CRT_USER_RINT_TABLE\n\n  return (_CRT_POTENTIAL_HIT_T > _crt_RayTminEXT &&\n          _CRT_POTENTIAL_HIT_T < _crt_RayTmaxEXT);\n}\n\n\n\n// TODO: unify hitgroup shaders: intersect, rchit, rahit\nfn invokeShaderIndirect_anyHit(\n    sbtByteIndex: u32, _crt_WorldRayOriginEXT: vec3f,\n    _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT: vec3f,\n    _crt_RayTmaxEXT: f32,  //  uint _gl_HitKindEXT,\n    _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32,\n    _CRT_PARAM_HIT_ATTRIBUTES: ptr<function, array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>>) -> u32 {\n  let _CRT_PARAM_SHADER_RECORD_WORD_OFFSET: u32 = sbtByteIndex / 4;\n  let hitShaderGroupIdentifier: u32 =\n      _CRT_SBT_BUFFER_NAME[_CRT_PARAM_SHADER_RECORD_WORD_OFFSET];\n  let rahit: u32 = RAHit(hitShaderGroupIdentifier);\n  if (rahit == WEBRTX_SHADER_UNUSED) {\n    // assume hit confirmed by default\n    return _CRT_HIT_REPORT_CONFIRMED;\n  }\n  _CRT_PARAM_SHADER_RECORD_WORD_OFFSET += SBT_HANDLE_SIZE_WORDS;\n  // TODO: alias\n  const _crt_HitTEXT: f32 = _crt_RayTmaxEXT;\n  // assume hit confirmed by default\n  let _CRT_INOUT_PARAM_HIT_REPORT: u32 = _CRT_HIT_REPORT_CONFIRMED;\n  // anyhit shaders take `inout _CRT_INOUT_PARAM_HIT_REPORT`.\n  //_CRT_USER_RAHIT_TABLE\n  return _CRT_INOUT_PARAM_HIT_REPORT;\n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n@group(0) @binding(x) var<storage, read> tlasBvhTreeNodes: array<TlasBvhNode>;\n@group(0) @binding(x) var<storage, read> blasesBvhTreeNodes: array<BlasBvhNode>;\n@group(0) @binding(x) var<storage, read> bvhReferencedGeomBuffer: array<BvhGeometryDescriptor>;\n@group(0) @binding(x) var<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4) var<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n\n\nalias AccelerationStructureEXT = vec2u;\nconst _CRT_HIT_ATTRIBUTES_MAX_WORDS: u32 = 5;\nconst TRAVERSE_MAX_INT: u32 = 0xffffffffu;\n\nfn traceRayEXT(topLevel: AccelerationStructureEXT, rayFlags: u32,\n                 cullMask: u32,\n                 rayType: u32,      // a.k.a sbtRecordOffset,\n                 numRayTypes: u32,  // a.k.a sbtRecordStride,\n                 missIndex: u32,  _crt_WorldRayOriginEXT:vec3f,\n                 _crt_RayTminEXT: f32,\n                 _crt_WorldRayDirectionEXT: vec3f, _crt_RayTmaxEXT: f32,\n                 payload: u32) {\n  // float wgrt_RayTmaxEXT = RAY_TMAX;\n  // uint wgrt_HitKindEXT = 0;\n  let invWorldRayDir: vec3f = 1.0 / _crt_WorldRayDirectionEXT;\n\n  var buf_closestHitAttributes: array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS*/>;\n\n  const closestSbtIndex: u32 = 0;\n  const localGeometryId: i32 = -1;\n  const localPrimitiveId: u32 = 0;\n  var _cur: u32 = 0;  // topLevel.handle\n  while (_cur < TRAVERSE_MAX_INT) {\n    const node: TlasBvhNode = tlasBvhTreeNodes[_cur];\n    if ((node.is_leaf > 0 && (node.mask & cullMask) == 0) ||\n        !intersect_aabb(_crt_WorldRayOriginEXT, invWorldRayDir, _crt_RayTminEXT,\n                        _crt_RayTmaxEXT, node.aabb)) {\n      _cur = node.exit_index;\n      continue;\n    }\n    if (node.is_leaf == 0) {  // interior node\n      // +offset if in blas tree\n      _cur = node.entry_index;\n      continue;\n    }\n\n    // TLAS leaf\n    let sbtInstanceOffset: u32 = node.sbtInstanceOffset;\n    let blas_geometry_id_offset: u32 = node.blas_geometry_id_offset;\n    // mat4x3 _crt_ObjectToWorldEXT = node.transformToWorld;\n    // mat4x3 _crt_WorldToObjectEXT = node.transformToObject;\n    // TODO: https://bugs.chromium.org/p/tint/issues/detail?id=1049\n    let _crt_ObjectToWorldEXT: mat4x3f =\n        mat4x3f(vec3(node.transformToWorld[0], node.transformToWorld[1],\n                    node.transformToWorld[2]),\n               vec3(node.transformToWorld[3], node.transformToWorld[4],\n                    node.transformToWorld[5]),\n               vec3(node.transformToWorld[6], node.transformToWorld[7],\n                    node.transformToWorld[8]),\n               vec3(node.transformToWorld[9], node.transformToWorld[10],\n                    node.transformToWorld[11]));\n    let _crt_WorldToObjectEXT: mat4x3<f32> =\n        mat4x3f(vec3(node.transformToObject[0], node.transformToObject[1],\n                    node.transformToObject[2]),\n               vec3(node.transformToObject[3], node.transformToObject[4],\n                    node.transformToObject[5]),\n               vec3(node.transformToObject[6], node.transformToObject[7],\n                    node.transformToObject[8]),\n               vec3(node.transformToObject[9], node.transformToObject[10],\n                    node.transformToObject[11]));\n    // // transpose\n    // mat3x4 _crt_ObjectToWorld3x4EXT;\n    // mat3x4 _crt_WorldToObject3x4EXT;\n    let _crt_ObjectRayOriginEXT: vec3f =\n        _crt_WorldToObjectEXT * vec4(_crt_WorldRayOriginEXT, 1.0);\n    let _crt_ObjectRayDirectionEXT: vec3f =\n        _crt_WorldToObjectEXT * vec4(_crt_WorldRayDirectionEXT, 0.0);\n    let invObjectRayDir: vec3f = 1.0 / _crt_ObjectRayDirectionEXT;\n    // reset previous instanceId?\n\n    // entering blas tree\n    _cur = node.entry_index;\n    let blas_index_offset = _cur;\n    let instance_exit_index = node.exit_index;\n    while (_cur < TRAVERSE_MAX_INT) {\n      let node = blasesBvhTreeNodes[_cur];\n      // TODO: skip blas root if instance transform matrix is absent or identity\n      if (!intersect_aabb(_crt_ObjectRayOriginEXT, invObjectRayDir,\n                          _crt_RayTminEXT, _crt_RayTmaxEXT, node.aabb)) {\n        if (node.exit_index ==\n            TRAVERSE_MAX_INT) {  // leaving blas into tlas tree\n          _cur = instance_exit_index;\n          break;\n        } else {\n          _cur = node.exit_index + blas_index_offset;\n        }\n        continue;\n      } else if (node.geometryId < 0) {  // interior node\n        _cur = node.entry_index_or_primitive_id + blas_index_offset;\n        continue;\n      }\n\n      var buf_hitAttributes: array<f32, 5/*_CRT_HIT_ATTRIBUTES_MAX_WORDS */>;\n      var t: f32 = _crt_RayTminEXT - 1.0;\n      var hitKind: u32 = 0;\n      // vBufferIndex always point to the geometry\n      let g: BvhGeometryDescriptor =\n          bvhReferencedGeomBuffer[u32(node.geometryId) + blas_geometry_id_offset];\n      let sbtIndex: u32 = sbtHitGroupIndex(sbtInstanceOffset, u32(node.geometryId),\n                                       numRayTypes, rayType);\n      let terminate_or_ignore: u32 = _CRT_HIT_REPORT_IGNORE;\n      // TODO: per spec, all instances in the leaf node should contain same\n      // geom type? if (node.geometryType == GEOM_TYPE_TRIANGLE) {\n      var hit = false;\n      if (g.owningGeometryType_todo_deprecate == GEOM_TYPE_TRIANGLE) {\n        let positions: array<vec3f, 3> =\n            getTriangleVertexPositions(g, node.entry_index_or_primitive_id);\n        var n: vec3f;\n        // TODO: use object ray instead?\n        hit = intersect_triangle_branchless(\n            _crt_ObjectRayOriginEXT, _crt_RayTminEXT,\n            _crt_ObjectRayDirectionEXT, _crt_RayTmaxEXT, positions[0],\n            positions[1], positions[2], &n, &t, &buf_hitAttributes[0],\n            &buf_hitAttributes[1]);\n        if (hit) {\n          n = normalize((n * _crt_WorldToObjectEXT).xyz);\n          buf_hitAttributes[2] = n.x;\n          buf_hitAttributes[3] = n.y;\n          buf_hitAttributes[4] = n.z;\n          hitKind = select(gl_HitKindBackFacingTriangleEXT, gl_HitKindFrontFacingTriangleEXT, dot(n, _crt_WorldRayDirectionEXT) > 0);\n        }\n      } else {\n        // skip duplicated AABB test if containing only one primitive\n        // TODO: or always skip this aabb test?\n        // TODO: aabb test tmax\n        // if (node.numPrimitives == 1 ||\n        //     intersect_aabb(_crt_WorldRayOriginEXT, invRayDir,\n        //     getGeometryAabb(g))) {\n        hit = invokeShaderIndirect_intersect(\n            sbtIndex, _crt_WorldRayOriginEXT, _crt_RayTminEXT,\n            _crt_WorldRayDirectionEXT, _crt_RayTmaxEXT, _crt_ObjectRayOriginEXT,\n            &t, _crt_ObjectRayDirectionEXT, _crt_WorldToObjectEXT,\n            _crt_ObjectToWorldEXT, node.geometryId,\n            node.entry_index_or_primitive_id, &buf_hitAttributes);\n        // }\n      }\n      // TODO: invoke more directly with identifier\n      // TODO: make sure hitT/rayTmax is correct here\n      if (hit) {\n        terminate_or_ignore = invokeShaderIndirect_anyHit(\n            sbtIndex, _crt_WorldRayOriginEXT, _crt_RayTminEXT,\n            _crt_WorldRayDirectionEXT, t /* _crt_RayTmaxEXT */, node.geometryId,\n            node.entry_index_or_primitive_id, &buf_hitAttributes);\n      }\n\n      if (terminate_or_ignore == _CRT_HIT_REPORT_TERMINATE) {\n        // TODO: need to invoke rchit?\n        // _cur = TRAVERSE_MAX_INT;\n        // break;\n        return;\n      }\n      // TODO(!!): this is wrong, skipping all hits\n      // opaque (or no anyhit shader)\n      // if ((g.owningGeometryFlags & GEOMETRY_OPAQUE_BIT) != 0)\n      if (terminate_or_ignore == _CRT_HIT_REPORT_CONFIRMED) {\n        // TODO(): make them global? if not supporting recursive call\n        // gl_HitKindEXT = hitKind;\n        closestSbtIndex = sbtIndex;\n        buf_closestHitAttributes = buf_hitAttributes;\n        _crt_RayTmaxEXT = t;\n        localGeometryId = node.geometryId;\n        localPrimitiveId = node.entry_index_or_primitive_id;\n      }\n\n      if (node.exit_index == TRAVERSE_MAX_INT) {\n        // leaving blas into tlas tree\n        _cur = instance_exit_index;\n        break;\n      } else {\n        _cur = node.exit_index + blas_index_offset;\n      }\n    }\n  }\n\n  // TODO: rchit should select ray payload based on the index\n  if (localGeometryId >= 0) {\n    invokeShaderIndirect_closestHit(closestSbtIndex, _crt_WorldRayOriginEXT,\n                                    _crt_RayTminEXT, _crt_WorldRayDirectionEXT,\n                                    _crt_RayTmaxEXT, localGeometryId,\n                                    localPrimitiveId, buf_closestHitAttributes);\n  } else {\n    invokeShaderIndirect_rayMiss(sbtRayMissIndex(missIndex),\n                                 _crt_WorldRayDirectionEXT);\n  }\n}\n";
+
+addWgslInclude('raytracer::commonv2', common);
+addWgslInclude('raytracer::geom', geom);
+addWgslInclude('raytracer::intersect', intersect);
+addWgslInclude('raytracer::sbt', sbt);
+addWgslInclude('raytracer::traceray', traceray);
+
+var raytracer_v2$1 = "struct BvhGeometryDescriptor {\n    vBufferIndex: u32,\n    iBufferIndex: i32,\n    vboOffset: u32,\n    vboStride: u32,\n    vioOffset: u32,\n    vioStride: u32,\n    owningGeometryType_todo_deprecate: u32,\n    owningGeometryFlags: u32,\n}\n\nstruct AABB {\n    min: vec3<f32>,\n    max: vec3<f32>,\n}\n\nstruct RtUniforms {\n    sbtStartRayGen: u32,\n    sbtStartRayMiss: u32,\n    sbtStrideRayMiss: u32,\n    sbtStartHit: u32,\n    sbtStrideHit: u32,\n    sbtStartCallable: u32,\n    sbtStrideCallable: u32,\n    webrtx_NumWorkGroups: vec3<u32>,\n}\n\nstruct BvhGeomBuffer_0_ {\n    fword: array<f32>,\n}\n\nstruct SBT {\n    _crt_sbt_buf: array<u32>,\n}\n\nstruct TlasBvhNode {\n    aabb: AABB,\n    entry_index: u32,\n    exit_index: u32,\n    is_leaf: u32,\n    mask: u32,\n    flags: u32,\n    instanceId: u32,\n    sbtInstanceOffset: u32,\n    instanceCustomIndex: i32,\n    transformToWorld: array<f32,12u>,\n    transformToObject: array<f32,12u>,\n    blas_geometry_id_offset: u32,\n}\n\nstruct TlasBvhTreeNodes {\n    tlasBvhTreeNodes: array<TlasBvhNode>,\n}\n\nstruct BlasBvhNode {\n    aabb: AABB,\n    entry_index_or_primitive_id: u32,\n    exit_index: u32,\n    geometryId: i32,\n}\n\nstruct BlasesBvhTreeNodes {\n    blasesBvhTreeNodes: array<BlasBvhNode>,\n}\n\nstruct SceneUniforms {\n    reset: u32,\n    mouse: vec4<f32>,\n}\n\nstruct _crt_AccelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\nstruct PixelBuffer {\n    pixels: array<vec4<f32>>,\n}\n\nvar<private> webrtx_LaunchIDEXT: vec3<u32>;\nvar<private> gl_GlobalInvocationID_1: vec3<u32>;\nvar<private> webrtx_LaunchSizeEXT: vec3<u32>;\n@group(1) @binding(0)\nvar<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4)\nvar<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n@group(1) @binding(1)\nvar<storage> unnamed: SBT;\n@group(1) @binding(2)\nvar<storage> unnamed_1: TlasBvhTreeNodes;\n@group(1) @binding(3)\nvar<storage> unnamed_2: BlasesBvhTreeNodes;\n@group(0) @binding(2)\nvar<uniform> uScene_notUsed: SceneUniforms;\nvar<private> _crt_ray_payload_loc_0_: vec3<f32>;\n@group(0) @binding(0)\nvar<uniform> unnamed_3: _crt_AccelerationStructureEXT;\n@group(0) @binding(1)\nvar<storage, read_write> pixelBuffer: PixelBuffer;\n\nfn invokeShaderIndirect_rayMissu1vf3_(sbtByteIndex: ptr<function, u32>, _crt_WorldRayDirectionEXT: vec3<f32>) {\n    var _crt_sr_wd_offset: u32;\n    var rmiss: u32;\n\n    let _e62 = (*sbtByteIndex);\n    _crt_sr_wd_offset = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rmiss = _e67;\n    let _e68 = rmiss;\n    if (_e68 == 255u) {\n        return;\n    }\n    let _e70 = _crt_sr_wd_offset;\n    _crt_sr_wd_offset = (_e70 + 1u);\n    return;\n}\n\nfn sbtRayMissIndexu1_(ray_type: ptr<function, u32>) -> u32 {\n    let _e60 = rtUniformParams.sbtStartRayMiss;\n    let _e61 = (*ray_type);\n    let _e63 = rtUniformParams.sbtStrideRayMiss;\n    return (_e60 + (_e61 * _e63));\n}\n\nfn _crt_user_rchit_0vf2u1_(baryCoord: ptr<function, vec2<f32>>, _crt_sr_wd_offset_1: ptr<function, u32>) {\n    let _e61 = (*baryCoord)[0u];\n    let _e64 = (*baryCoord)[1u];\n    let _e67 = (*baryCoord)[0u];\n    let _e69 = (*baryCoord)[1u];\n    _crt_ray_payload_loc_0_ = vec3<f32>(((1.0 - _e61) - _e64), _e67, _e69);\n    return;\n}\n\nfn invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_1: u32, _crt_WorldRayOriginEXT: vec3<f32>, _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT_1: vec3<f32>, _crt_RayTmaxEXT: f32, _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32, _crt_hattrs: array<f32,5u>) {\n    var _crt_sr_wd_offset_2: u32;\n    var hitShaderGroupIdentifier: u32;\n    var rchit: u32;\n    var _crt_HitTEXT: f32;\n    var baryCoord_1: vec2<f32>;\n    var param: vec2<f32>;\n    var param_1: u32;\n\n    _crt_sr_wd_offset_2 = (sbtByteIndex_1 / 4u);\n    let _e74 = _crt_sr_wd_offset_2;\n    let _e77 = unnamed._crt_sbt_buf[_e74];\n    hitShaderGroupIdentifier = _e77;\n    let _e78 = hitShaderGroupIdentifier;\n    rchit = ((_e78 & 65280u) >> bitcast<u32>(8));\n    let _e82 = rchit;\n    if (_e82 == 255u) {\n        return;\n    }\n    let _e84 = _crt_sr_wd_offset_2;\n    _crt_sr_wd_offset_2 = (_e84 + 1u);\n    _crt_HitTEXT = _crt_RayTmaxEXT;\n    baryCoord_1 = vec2<f32>(_crt_hattrs[0], _crt_hattrs[1]);\n    let _e89 = baryCoord_1;\n    param = _e89;\n    let _e90 = _crt_sr_wd_offset_2;\n    param_1 = _e90;\n    _crt_user_rchit_0vf2u1_((&param), (&param_1));\n    return;\n}\n\nfn invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_2: u32, _crt_WorldRayOriginEXT_1: vec3<f32>, _crt_RayTminEXT_1: f32, _crt_WorldRayDirectionEXT_2: vec3<f32>, _crt_RayTmaxEXT_1: f32, _crt_GeometryIndexEXT_1: i32, _crt_PrimitiveID_1: u32, _crt_hattrs_1: array<f32,5u>) -> u32 {\n    var _crt_sr_wd_offset_3: u32;\n    var hitShaderGroupIdentifier_1: u32;\n    var rahit: u32;\n    var _crt_HitTEXT_1: f32;\n    var _crt_hit_report: u32;\n\n    _crt_sr_wd_offset_3 = (sbtByteIndex_2 / 4u);\n    let _e72 = _crt_sr_wd_offset_3;\n    let _e75 = unnamed._crt_sbt_buf[_e72];\n    hitShaderGroupIdentifier_1 = _e75;\n    let _e76 = hitShaderGroupIdentifier_1;\n    rahit = ((_e76 & 16711680u) >> bitcast<u32>(16));\n    let _e80 = rahit;\n    if (_e80 == 255u) {\n        return 0u;\n    }\n    let _e82 = _crt_sr_wd_offset_3;\n    _crt_sr_wd_offset_3 = (_e82 + 1u);\n    _crt_HitTEXT_1 = _crt_RayTmaxEXT_1;\n    _crt_hit_report = 0u;\n    let _e84 = _crt_hit_report;\n    return _e84;\n}\n\nfn invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(sbtByteIndex_3: u32, _crt_WorldRayOriginEXT_2: vec3<f32>, _crt_RayTminEXT_2: f32, _crt_WorldRayDirectionEXT_3: vec3<f32>, _crt_RayTmaxEXT_2: f32, _crt_ObjectRayOriginEXT: vec3<f32>, _crt_potential_hit_t: ptr<function, f32>, _crt_ObjectRayDirectionEXT: vec3<f32>, _crt_WorldToObjectEXT: mat4x3<f32>, _crt_ObjectToWorldEXT: mat4x3<f32>, _crt_GeometryIndexEXT_2: i32, _crt_PrimitiveID_2: u32, _crt_hattrs_2: ptr<function, array<f32,5u>>) -> bool {\n    var _crt_sr_wd_offset_4: u32;\n    var hitShaderGroupIdentifier_2: u32;\n    var rint: u32;\n    var phi_545_: bool;\n\n    _crt_sr_wd_offset_4 = (sbtByteIndex_3 / 4u);\n    let _e75 = _crt_sr_wd_offset_4;\n    let _e78 = unnamed._crt_sbt_buf[_e75];\n    hitShaderGroupIdentifier_2 = _e78;\n    let _e79 = hitShaderGroupIdentifier_2;\n    rint = (_e79 & 255u);\n    let _e81 = rint;\n    if (_e81 == 255u) {\n        return false;\n    }\n    let _e83 = _crt_sr_wd_offset_4;\n    _crt_sr_wd_offset_4 = (_e83 + 1u);\n    (*_crt_potential_hit_t) = (_crt_RayTminEXT_2 - 1.0);\n    let _e86 = (*_crt_potential_hit_t);\n    let _e87 = (_e86 > _crt_RayTminEXT_2);\n    phi_545_ = _e87;\n    if _e87 {\n        let _e88 = (*_crt_potential_hit_t);\n        phi_545_ = (_e88 < _crt_RayTmaxEXT_2);\n    }\n    let _e91 = phi_545_;\n    return _e91;\n}\n\nfn intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(ray_origin: vec3<f32>, ray_tmin: f32, ray_dir: vec3<f32>, ray_tmax: f32, p0_: vec3<f32>, p1_: vec3<f32>, p2_: vec3<f32>, n: ptr<function, vec3<f32>>, t: ptr<function, f32>, beta: ptr<function, f32>, gamma: ptr<function, f32>) -> bool {\n    var e0_: vec3<f32>;\n    var e1_: vec3<f32>;\n    var e2_: vec3<f32>;\n    var i: vec3<f32>;\n    var phi_391_: bool;\n    var phi_396_: bool;\n    var phi_401_: bool;\n    var phi_408_: bool;\n\n    e0_ = (p1_ - p0_);\n    e1_ = (p0_ - p2_);\n    let _e75 = e1_;\n    let _e76 = e0_;\n    (*n) = cross(_e75, _e76);\n    let _e78 = (*n);\n    e2_ = ((p0_ - ray_origin) * (1.0 / dot(_e78, ray_dir)));\n    let _e83 = e2_;\n    i = cross(ray_dir, _e83);\n    let _e85 = i;\n    let _e86 = e1_;\n    (*beta) = dot(_e85, _e86);\n    let _e88 = i;\n    let _e89 = e0_;\n    (*gamma) = dot(_e88, _e89);\n    let _e91 = (*n);\n    let _e92 = e2_;\n    (*t) = dot(_e91, _e92);\n    let _e94 = (*t);\n    let _e95 = (_e94 < ray_tmax);\n    phi_391_ = _e95;\n    if _e95 {\n        let _e96 = (*t);\n        phi_391_ = (_e96 > ray_tmin);\n    }\n    let _e99 = phi_391_;\n    phi_396_ = _e99;\n    if _e99 {\n        let _e100 = (*beta);\n        phi_396_ = (_e100 >= 0.0);\n    }\n    let _e103 = phi_396_;\n    phi_401_ = _e103;\n    if _e103 {\n        let _e104 = (*gamma);\n        phi_401_ = (_e104 >= 0.0);\n    }\n    let _e107 = phi_401_;\n    phi_408_ = _e107;\n    if _e107 {\n        let _e108 = (*beta);\n        let _e109 = (*gamma);\n        phi_408_ = ((_e108 + _e109) <= 1.0);\n    }\n    let _e113 = phi_408_;\n    return _e113;\n}\n\nfn GET_VEC3_FROM_BUFFERu1u1_(geoBufferIndex: ptr<function, u32>, wordIndex: ptr<function, u32>) -> vec3<f32> {\n    let _e60 = (*geoBufferIndex);\n    switch bitcast<i32>(_e60) {\n        case 0: {\n            let _e62 = (*wordIndex);\n            let _e65 = bvhGeoBuffers_0_.fword[_e62];\n            let _e66 = (*wordIndex);\n            let _e70 = bvhGeoBuffers_0_.fword[(_e66 + 1u)];\n            let _e71 = (*wordIndex);\n            let _e75 = bvhGeoBuffers_0_.fword[(_e71 + 2u)];\n            return vec3<f32>(_e65, _e70, _e75);\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertPositionu1u1u1u1_(vBufferIndex: ptr<function, u32>, offset: ptr<function, u32>, stride: ptr<function, u32>, vindex: ptr<function, u32>) -> vec3<f32> {\n    var vboWordOffset: u32;\n    var param_2: u32;\n    var param_3: u32;\n\n    let _e65 = (*offset);\n    let _e66 = (*vindex);\n    let _e67 = (*stride);\n    vboWordOffset = ((_e65 + (_e66 * _e67)) / 4u);\n    let _e71 = (*vBufferIndex);\n    param_2 = _e71;\n    let _e72 = vboWordOffset;\n    param_3 = _e72;\n    let _e73 = GET_VEC3_FROM_BUFFERu1u1_((&param_2), (&param_3));\n    return _e73;\n}\n\nfn getTriVertIndicesu1u1u1u1_(iBufferIndex: ptr<function, u32>, offset_1: ptr<function, u32>, stride_1: ptr<function, u32>, primitiveId: ptr<function, u32>) -> vec3<u32> {\n    var vioWordOffset: u32;\n    var f3_: vec3<f32>;\n    var param_4: u32;\n    var param_5: u32;\n\n    let _e66 = (*offset_1);\n    let _e67 = (*primitiveId);\n    let _e68 = (*stride_1);\n    vioWordOffset = ((_e66 + (_e67 * _e68)) / 4u);\n    let _e72 = (*iBufferIndex);\n    param_4 = _e72;\n    let _e73 = vioWordOffset;\n    param_5 = _e73;\n    let _e74 = GET_VEC3_FROM_BUFFERu1u1_((&param_4), (&param_5));\n    f3_ = _e74;\n    let _e76 = f3_[0u];\n    let _e79 = f3_[1u];\n    let _e82 = f3_[2u];\n    return vec3<u32>(bitcast<u32>(_e76), bitcast<u32>(_e79), bitcast<u32>(_e82));\n}\n\nfn getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_(g: ptr<function, BvhGeometryDescriptor>, primitiveId_1: ptr<function, u32>) -> array<vec3<f32>,3u> {\n    var indices: vec3<u32>;\n    var param_6: u32;\n    var param_7: u32;\n    var param_8: u32;\n    var param_9: u32;\n    var param_10: u32;\n    var param_11: u32;\n    var param_12: u32;\n    var param_13: u32;\n    var param_14: u32;\n    var param_15: u32;\n    var param_16: u32;\n    var param_17: u32;\n    var param_18: u32;\n    var param_19: u32;\n    var param_20: u32;\n    var param_21: u32;\n\n    let _e78 = (*g).iBufferIndex;\n    if (_e78 >= 0) {\n        let _e81 = (*g).iBufferIndex;\n        param_6 = bitcast<u32>(_e81);\n        let _e84 = (*g).vioOffset;\n        param_7 = _e84;\n        let _e86 = (*g).vioStride;\n        param_8 = _e86;\n        let _e87 = (*primitiveId_1);\n        param_9 = _e87;\n        let _e88 = getTriVertIndicesu1u1u1u1_((&param_6), (&param_7), (&param_8), (&param_9));\n        indices = _e88;\n    } else {\n        let _e89 = (*primitiveId_1);\n        let _e91 = (*primitiveId_1);\n        let _e94 = (*primitiveId_1);\n        indices = vec3<u32>((_e89 * 3u), ((_e91 * 3u) + 1u), ((_e94 * 3u) + 2u));\n    }\n    let _e99 = (*g).vBufferIndex;\n    param_10 = _e99;\n    let _e101 = (*g).vboOffset;\n    param_11 = _e101;\n    let _e103 = (*g).vboStride;\n    param_12 = _e103;\n    let _e105 = indices[0u];\n    param_13 = _e105;\n    let _e106 = getTriVertPositionu1u1u1u1_((&param_10), (&param_11), (&param_12), (&param_13));\n    let _e108 = (*g).vBufferIndex;\n    param_14 = _e108;\n    let _e110 = (*g).vboOffset;\n    param_15 = _e110;\n    let _e112 = (*g).vboStride;\n    param_16 = _e112;\n    let _e114 = indices[1u];\n    param_17 = _e114;\n    let _e115 = getTriVertPositionu1u1u1u1_((&param_14), (&param_15), (&param_16), (&param_17));\n    let _e117 = (*g).vBufferIndex;\n    param_18 = _e117;\n    let _e119 = (*g).vboOffset;\n    param_19 = _e119;\n    let _e121 = (*g).vboStride;\n    param_20 = _e121;\n    let _e123 = indices[2u];\n    param_21 = _e123;\n    let _e124 = getTriVertPositionu1u1u1u1_((&param_18), (&param_19), (&param_20), (&param_21));\n    return array<vec3<f32>,3u>(_e106, _e115, _e124);\n}\n\nfn sbtHitGroupIndexu1i1u1u1_(instanceId: ptr<function, u32>, geometryId: ptr<function, i32>, num_ray_types: ptr<function, u32>, ray_type_1: ptr<function, u32>) -> u32 {\n    let _e63 = rtUniformParams.sbtStartHit;\n    let _e65 = rtUniformParams.sbtStrideHit;\n    let _e66 = (*instanceId);\n    let _e67 = (*geometryId);\n    let _e69 = (*num_ray_types);\n    let _e72 = (*ray_type_1);\n    return (_e63 + (_e65 * ((_e66 + (bitcast<u32>(_e67) * _e69)) + _e72)));\n}\n\nfn intersect_aabbvf3vf3f1f1structAABBvf3vf31_(rayOrigin: vec3<f32>, invRayDir: vec3<f32>, ray_tmin_1: f32, ray_tmax_1: f32, aabb: AABB) -> bool {\n    var t0_: vec3<f32>;\n    var t1_: vec3<f32>;\n    var tmin: vec3<f32>;\n    var tmax: vec3<f32>;\n\n    t0_ = ((aabb.min - rayOrigin) * invRayDir);\n    t1_ = ((aabb.max - rayOrigin) * invRayDir);\n    let _e73 = t0_;\n    let _e74 = t1_;\n    tmin = min(_e73, _e74);\n    let _e76 = t0_;\n    let _e77 = t1_;\n    tmax = max(_e76, _e77);\n    let _e80 = tmin[0u];\n    let _e82 = tmin[1u];\n    let _e85 = tmin[2u];\n    let _e89 = tmax[0u];\n    let _e91 = tmax[1u];\n    let _e94 = tmax[2u];\n    return (max(ray_tmin_1, max(max(_e80, _e82), _e85)) <= min(ray_tmax_1, min(min(_e89, _e91), _e94)));\n}\n\nfn traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_(topLevel: ptr<function, vec2<u32>>, rayFlags: ptr<function, u32>, cullMask: ptr<function, u32>, rayType: ptr<function, u32>, numRayTypes: ptr<function, u32>, missIndex: ptr<function, u32>, _crt_WorldRayOriginEXT_3: vec3<f32>, _crt_RayTminEXT_3: f32, _crt_WorldRayDirectionEXT_4: vec3<f32>, _crt_RayTmaxEXT_3: ptr<function, f32>, payload: ptr<function, i32>) {\n    var invWorldRayDir: vec3<f32>;\n    var closestSbtIndex: u32;\n    var localGeometryId: i32;\n    var localPrimitiveId: u32;\n    var _cur: u32;\n    var node: TlasBvhNode;\n    var sbtInstanceOffset: u32;\n    var blas_geometry_id_offset: u32;\n    var _crt_ObjectToWorldEXT_1: mat4x3<f32>;\n    var _crt_WorldToObjectEXT_1: mat4x3<f32>;\n    var _crt_ObjectRayOriginEXT_1: vec3<f32>;\n    var _crt_ObjectRayDirectionEXT_1: vec3<f32>;\n    var invObjectRayDir: vec3<f32>;\n    var blas_index_offset: u32;\n    var instance_exit_index: u32;\n    var node_1: BlasBvhNode;\n    var t_1: f32;\n    var hitKind: u32;\n    var g_1: BvhGeometryDescriptor;\n    var indexable: array<BvhGeometryDescriptor,1u>;\n    var sbtIndex: u32;\n    var param_22: u32;\n    var param_23: i32;\n    var param_24: u32;\n    var param_25: u32;\n    var terminate_or_ignore: u32;\n    var hit: bool;\n    var positions: array<vec3<f32>,3u>;\n    var param_26: BvhGeometryDescriptor;\n    var param_27: u32;\n    var n_1: vec3<f32>;\n    var buf_hitAttributes: array<f32,5u>;\n    var param_28: vec3<f32>;\n    var param_29: f32;\n    var param_30: f32;\n    var param_31: f32;\n    var param_32: f32;\n    var param_33: array<f32,5u>;\n    var buf_closestHitAttributes: array<f32,5u>;\n    var param_34: u32;\n    var param_35: u32;\n    var phi_673_: bool;\n    var phi_683_: bool;\n\n    invWorldRayDir = (vec3<f32>(1.0) / _crt_WorldRayDirectionEXT_4);\n    closestSbtIndex = 0u;\n    localGeometryId = -1;\n    localPrimitiveId = 0u;\n    _cur = 0u;\n    loop {\n        let _e112 = _cur;\n        if (_e112 < 4294967295u) {\n            let _e114 = _cur;\n            let _e117 = unnamed_1.tlasBvhTreeNodes[_e114];\n            node.aabb.min = _e117.aabb.min;\n            node.aabb.max = _e117.aabb.max;\n            node.entry_index = _e117.entry_index;\n            node.exit_index = _e117.exit_index;\n            node.is_leaf = _e117.is_leaf;\n            node.mask = _e117.mask;\n            node.flags = _e117.flags;\n            node.instanceId = _e117.instanceId;\n            node.sbtInstanceOffset = _e117.sbtInstanceOffset;\n            node.instanceCustomIndex = _e117.instanceCustomIndex;\n            node.transformToWorld[0] = _e117.transformToWorld[0];\n            node.transformToWorld[1] = _e117.transformToWorld[1];\n            node.transformToWorld[2] = _e117.transformToWorld[2];\n            node.transformToWorld[3] = _e117.transformToWorld[3];\n            node.transformToWorld[4] = _e117.transformToWorld[4];\n            node.transformToWorld[5] = _e117.transformToWorld[5];\n            node.transformToWorld[6] = _e117.transformToWorld[6];\n            node.transformToWorld[7] = _e117.transformToWorld[7];\n            node.transformToWorld[8] = _e117.transformToWorld[8];\n            node.transformToWorld[9] = _e117.transformToWorld[9];\n            node.transformToWorld[10] = _e117.transformToWorld[10];\n            node.transformToWorld[11] = _e117.transformToWorld[11];\n            node.transformToObject[0] = _e117.transformToObject[0];\n            node.transformToObject[1] = _e117.transformToObject[1];\n            node.transformToObject[2] = _e117.transformToObject[2];\n            node.transformToObject[3] = _e117.transformToObject[3];\n            node.transformToObject[4] = _e117.transformToObject[4];\n            node.transformToObject[5] = _e117.transformToObject[5];\n            node.transformToObject[6] = _e117.transformToObject[6];\n            node.transformToObject[7] = _e117.transformToObject[7];\n            node.transformToObject[8] = _e117.transformToObject[8];\n            node.transformToObject[9] = _e117.transformToObject[9];\n            node.transformToObject[10] = _e117.transformToObject[10];\n            node.transformToObject[11] = _e117.transformToObject[11];\n            node.blas_geometry_id_offset = _e117.blas_geometry_id_offset;\n            let _e195 = node.is_leaf;\n            let _e196 = (_e195 > 0u);\n            phi_673_ = _e196;\n            if _e196 {\n                let _e198 = node.mask;\n                let _e199 = (*cullMask);\n                phi_673_ = ((_e198 & _e199) == 0u);\n            }\n            let _e203 = phi_673_;\n            phi_683_ = _e203;\n            if !(_e203) {\n                let _e205 = invWorldRayDir;\n                let _e206 = (*_crt_RayTmaxEXT_3);\n                let _e208 = node.aabb;\n                let _e209 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_crt_WorldRayOriginEXT_3, _e205, _crt_RayTminEXT_3, _e206, _e208);\n                phi_683_ = !(_e209);\n            }\n            let _e212 = phi_683_;\n            if _e212 {\n                let _e214 = node.exit_index;\n                _cur = _e214;\n                continue;\n            }\n            let _e216 = node.is_leaf;\n            if (_e216 == 0u) {\n                let _e219 = node.entry_index;\n                _cur = _e219;\n                continue;\n            }\n            let _e221 = node.sbtInstanceOffset;\n            sbtInstanceOffset = _e221;\n            let _e223 = node.blas_geometry_id_offset;\n            blas_geometry_id_offset = _e223;\n            let _e226 = node.transformToWorld[0];\n            let _e229 = node.transformToWorld[1];\n            let _e232 = node.transformToWorld[2];\n            let _e233 = vec3<f32>(_e226, _e229, _e232);\n            let _e236 = node.transformToWorld[3];\n            let _e239 = node.transformToWorld[4];\n            let _e242 = node.transformToWorld[5];\n            let _e243 = vec3<f32>(_e236, _e239, _e242);\n            let _e246 = node.transformToWorld[6];\n            let _e249 = node.transformToWorld[7];\n            let _e252 = node.transformToWorld[8];\n            let _e253 = vec3<f32>(_e246, _e249, _e252);\n            let _e256 = node.transformToWorld[9];\n            let _e259 = node.transformToWorld[10];\n            let _e262 = node.transformToWorld[11];\n            let _e263 = vec3<f32>(_e256, _e259, _e262);\n            _crt_ObjectToWorldEXT_1 = mat4x3<f32>(vec3<f32>(_e233.x, _e233.y, _e233.z), vec3<f32>(_e243.x, _e243.y, _e243.z), vec3<f32>(_e253.x, _e253.y, _e253.z), vec3<f32>(_e263.x, _e263.y, _e263.z));\n            let _e283 = node.transformToObject[0];\n            let _e286 = node.transformToObject[1];\n            let _e289 = node.transformToObject[2];\n            let _e290 = vec3<f32>(_e283, _e286, _e289);\n            let _e293 = node.transformToObject[3];\n            let _e296 = node.transformToObject[4];\n            let _e299 = node.transformToObject[5];\n            let _e300 = vec3<f32>(_e293, _e296, _e299);\n            let _e303 = node.transformToObject[6];\n            let _e306 = node.transformToObject[7];\n            let _e309 = node.transformToObject[8];\n            let _e310 = vec3<f32>(_e303, _e306, _e309);\n            let _e313 = node.transformToObject[9];\n            let _e316 = node.transformToObject[10];\n            let _e319 = node.transformToObject[11];\n            let _e320 = vec3<f32>(_e313, _e316, _e319);\n            _crt_WorldToObjectEXT_1 = mat4x3<f32>(vec3<f32>(_e290.x, _e290.y, _e290.z), vec3<f32>(_e300.x, _e300.y, _e300.z), vec3<f32>(_e310.x, _e310.y, _e310.z), vec3<f32>(_e320.x, _e320.y, _e320.z));\n            let _e338 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayOriginEXT_1 = (_e338 * vec4<f32>(_crt_WorldRayOriginEXT_3.x, _crt_WorldRayOriginEXT_3.y, _crt_WorldRayOriginEXT_3.z, 1.0));\n            let _e344 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayDirectionEXT_1 = (_e344 * vec4<f32>(_crt_WorldRayDirectionEXT_4.x, _crt_WorldRayDirectionEXT_4.y, _crt_WorldRayDirectionEXT_4.z, 0.0));\n            let _e350 = _crt_ObjectRayDirectionEXT_1;\n            invObjectRayDir = (vec3<f32>(1.0) / _e350);\n            let _e354 = node.entry_index;\n            _cur = _e354;\n            let _e355 = _cur;\n            blas_index_offset = _e355;\n            let _e357 = node.exit_index;\n            instance_exit_index = _e357;\n            loop {\n                let _e358 = _cur;\n                if (_e358 < 4294967295u) {\n                    let _e360 = _cur;\n                    let _e363 = unnamed_2.blasesBvhTreeNodes[_e360];\n                    node_1.aabb.min = _e363.aabb.min;\n                    node_1.aabb.max = _e363.aabb.max;\n                    node_1.entry_index_or_primitive_id = _e363.entry_index_or_primitive_id;\n                    node_1.exit_index = _e363.exit_index;\n                    node_1.geometryId = _e363.geometryId;\n                    let _e376 = _crt_ObjectRayOriginEXT_1;\n                    let _e377 = invObjectRayDir;\n                    let _e378 = (*_crt_RayTmaxEXT_3);\n                    let _e380 = node_1.aabb;\n                    let _e381 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_e376, _e377, _crt_RayTminEXT_3, _e378, _e380);\n                    if !(_e381) {\n                        let _e384 = node_1.exit_index;\n                        if (_e384 == 4294967295u) {\n                            let _e386 = instance_exit_index;\n                            _cur = _e386;\n                            break;\n                        } else {\n                            let _e388 = node_1.exit_index;\n                            let _e389 = blas_index_offset;\n                            _cur = (_e388 + _e389);\n                        }\n                        continue;\n                    } else {\n                        let _e392 = node_1.geometryId;\n                        if (_e392 < 0) {\n                            let _e395 = node_1.entry_index_or_primitive_id;\n                            let _e396 = blas_index_offset;\n                            _cur = (_e395 + _e396);\n                            continue;\n                        }\n                    }\n                    t_1 = (_crt_RayTminEXT_3 - 1.0);\n                    hitKind = 0u;\n                    let _e400 = node_1.geometryId;\n                    let _e402 = blas_geometry_id_offset;\n                    indexable = array<BvhGeometryDescriptor,1u>(BvhGeometryDescriptor(0u, -1, 0u, 12u, 0u, 12u, 0u, 0u));\n                    let _e405 = indexable[(bitcast<u32>(_e400) + _e402)];\n                    g_1 = _e405;\n                    let _e406 = sbtInstanceOffset;\n                    param_22 = _e406;\n                    let _e408 = node_1.geometryId;\n                    param_23 = _e408;\n                    let _e409 = (*numRayTypes);\n                    param_24 = _e409;\n                    let _e410 = (*rayType);\n                    param_25 = _e410;\n                    let _e411 = sbtHitGroupIndexu1i1u1u1_((&param_22), (&param_23), (&param_24), (&param_25));\n                    sbtIndex = _e411;\n                    terminate_or_ignore = 1u;\n                    hit = false;\n                    let _e413 = g_1.owningGeometryType_todo_deprecate;\n                    if (_e413 == 0u) {\n                        let _e415 = g_1;\n                        param_26 = _e415;\n                        let _e417 = node_1.entry_index_or_primitive_id;\n                        param_27 = _e417;\n                        let _e418 = getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_((&param_26), (&param_27));\n                        positions = _e418;\n                        let _e419 = _crt_ObjectRayOriginEXT_1;\n                        let _e420 = _crt_ObjectRayDirectionEXT_1;\n                        let _e421 = (*_crt_RayTmaxEXT_3);\n                        let _e423 = positions[0];\n                        let _e425 = positions[1];\n                        let _e427 = positions[2];\n                        let _e428 = intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(_e419, _crt_RayTminEXT_3, _e420, _e421, _e423, _e425, _e427, (&param_28), (&param_29), (&param_30), (&param_31));\n                        let _e429 = param_28;\n                        n_1 = _e429;\n                        let _e430 = param_29;\n                        t_1 = _e430;\n                        let _e431 = param_30;\n                        buf_hitAttributes[0] = _e431;\n                        let _e433 = param_31;\n                        buf_hitAttributes[1] = _e433;\n                        hit = _e428;\n                        let _e435 = hit;\n                        if _e435 {\n                            let _e436 = n_1;\n                            let _e437 = _crt_WorldToObjectEXT_1;\n                            n_1 = normalize((_e436 * _e437).xyz);\n                            let _e442 = n_1[0u];\n                            buf_hitAttributes[2] = _e442;\n                            let _e445 = n_1[1u];\n                            buf_hitAttributes[3] = _e445;\n                            let _e448 = n_1[2u];\n                            buf_hitAttributes[4] = _e448;\n                            let _e450 = n_1;\n                            hitKind = select(255u, 254u, (dot(_e450, _crt_WorldRayDirectionEXT_4) > 0.0));\n                        }\n                    } else {\n                        let _e454 = sbtIndex;\n                        let _e455 = (*_crt_RayTmaxEXT_3);\n                        let _e456 = _crt_ObjectRayOriginEXT_1;\n                        let _e457 = _crt_ObjectRayDirectionEXT_1;\n                        let _e458 = _crt_WorldToObjectEXT_1;\n                        let _e459 = _crt_ObjectToWorldEXT_1;\n                        let _e461 = node_1.geometryId;\n                        let _e463 = node_1.entry_index_or_primitive_id;\n                        let _e464 = invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(_e454, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e455, _e456, (&param_32), _e457, _e458, _e459, _e461, _e463, (&param_33));\n                        let _e465 = param_32;\n                        t_1 = _e465;\n                        let _e466 = param_33;\n                        buf_hitAttributes = _e466;\n                        hit = _e464;\n                    }\n                    let _e467 = hit;\n                    if _e467 {\n                        let _e468 = sbtIndex;\n                        let _e469 = t_1;\n                        let _e471 = node_1.geometryId;\n                        let _e473 = node_1.entry_index_or_primitive_id;\n                        let _e474 = buf_hitAttributes;\n                        let _e475 = invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(_e468, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e469, _e471, _e473, _e474);\n                        terminate_or_ignore = _e475;\n                    }\n                    let _e476 = terminate_or_ignore;\n                    if (_e476 == 2u) {\n                        return;\n                    }\n                    let _e478 = terminate_or_ignore;\n                    if (_e478 == 0u) {\n                        let _e480 = sbtIndex;\n                        closestSbtIndex = _e480;\n                        let _e481 = buf_hitAttributes;\n                        buf_closestHitAttributes = _e481;\n                        let _e482 = t_1;\n                        (*_crt_RayTmaxEXT_3) = _e482;\n                        let _e484 = node_1.geometryId;\n                        localGeometryId = _e484;\n                        let _e486 = node_1.entry_index_or_primitive_id;\n                        localPrimitiveId = _e486;\n                    }\n                    let _e488 = node_1.exit_index;\n                    if (_e488 == 4294967295u) {\n                        let _e490 = instance_exit_index;\n                        _cur = _e490;\n                        break;\n                    } else {\n                        let _e492 = node_1.exit_index;\n                        let _e493 = blas_index_offset;\n                        _cur = (_e492 + _e493);\n                    }\n                    continue;\n                } else {\n                    break;\n                }\n            }\n            continue;\n        } else {\n            break;\n        }\n    }\n    let _e495 = localGeometryId;\n    if (_e495 >= 0) {\n        let _e497 = closestSbtIndex;\n        let _e498 = (*_crt_RayTmaxEXT_3);\n        let _e499 = localGeometryId;\n        let _e500 = localPrimitiveId;\n        let _e501 = buf_closestHitAttributes;\n        invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(_e497, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e498, _e499, _e500, _e501);\n    } else {\n        let _e502 = (*missIndex);\n        param_34 = _e502;\n        let _e503 = sbtRayMissIndexu1_((&param_34));\n        param_35 = _e503;\n        invokeShaderIndirect_rayMissu1vf3_((&param_35), _crt_WorldRayDirectionEXT_4);\n    }\n    return;\n}\n\nfn calcRayDirectionvf2_(pixel: vec2<f32>) -> vec3<f32> {\n    var aspectRatio: f32;\n    var imagePlaneSize: vec2<f32>;\n    var ixy: vec2<f32>;\n\n    let _e63 = webrtx_LaunchSizeEXT[0u];\n    let _e65 = webrtx_LaunchSizeEXT[1u];\n    aspectRatio = f32((_e63 / _e65));\n    let _e68 = aspectRatio;\n    imagePlaneSize = vec2<f32>((_e68 * 2.0), 2.0);\n    let _e71 = webrtx_LaunchSizeEXT;\n    let _e76 = imagePlaneSize;\n    ixy = ((vec2<f32>(-0.5, -0.5) + (pixel / vec2<f32>(_e71.xy))) * _e76);\n    let _e79 = ixy[0u];\n    let _e81 = ixy[1u];\n    return normalize(vec3<f32>(_e79, -(_e81), 1.0));\n}\n\nfn _crt_user_rgen_0u1_(_crt_sr_wd_offset_5: ptr<function, u32>) {\n    var rayDirection: vec3<f32>;\n    var rayTmax: f32;\n    var param_36: vec2<u32>;\n    var param_37: u32;\n    var param_38: u32;\n    var param_39: u32;\n    var param_40: u32;\n    var param_41: u32;\n    var param_42: f32;\n    var param_43: i32;\n    var pixelIndex: u32;\n\n    let _e70 = webrtx_LaunchIDEXT;\n    let _e71 = vec3<f32>(_e70);\n    let _e75 = calcRayDirectionvf2_(vec2<f32>(_e71.x, _e71.y));\n    rayDirection = _e75;\n    let _e78 = uScene_notUsed.mouse[0u];\n    rayTmax = max(100000.0, _e78);\n    _crt_ray_payload_loc_0_ = vec3<f32>(0.0, 0.0, 0.0);\n    let _e80 = rayDirection;\n    let _e82 = unnamed_3.topLevelAS;\n    param_36 = _e82;\n    param_37 = 1u;\n    param_38 = 255u;\n    param_39 = 0u;\n    param_40 = 1u;\n    param_41 = 0u;\n    let _e83 = rayTmax;\n    param_42 = _e83;\n    param_43 = 0;\n    traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_((&param_36), (&param_37), (&param_38), (&param_39), (&param_40), (&param_41), vec3<f32>(0.0, 0.0, -1.0), 0.0010000000474974513, _e80, (&param_42), (&param_43));\n    let _e85 = webrtx_LaunchIDEXT[1u];\n    let _e87 = webrtx_LaunchSizeEXT[0u];\n    let _e90 = webrtx_LaunchIDEXT[0u];\n    pixelIndex = ((_e85 * _e87) + _e90);\n    let _e92 = pixelIndex;\n    let _e93 = _crt_ray_payload_loc_0_;\n    pixelBuffer.pixels[_e92] = vec4<f32>(_e93.x, _e93.y, _e93.z, 1.0);\n    return;\n}\n\nfn invokeShaderIndirect_rayGenu1_(sbtByteIndex_4: ptr<function, u32>) {\n    var _crt_sr_wd_offset_6: u32;\n    var rgen: u32;\n    var param_44: u32;\n\n    let _e62 = (*sbtByteIndex_4);\n    _crt_sr_wd_offset_6 = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset_6;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rgen = _e67;\n    let _e68 = _crt_sr_wd_offset_6;\n    _crt_sr_wd_offset_6 = (_e68 + 1u);\n    let _e70 = _crt_sr_wd_offset_6;\n    param_44 = _e70;\n    _crt_user_rgen_0u1_((&param_44));\n    return;\n}\n\nfn main_1() {\n    var param_45: u32;\n\n    let _e59 = gl_GlobalInvocationID_1;\n    webrtx_LaunchIDEXT = _e59;\n    let _e61 = rtUniformParams.webrtx_NumWorkGroups;\n    webrtx_LaunchSizeEXT = (_e61 * vec3<u32>(8u, 8u, 1u));\n    let _e64 = rtUniformParams.sbtStartRayGen;\n    param_45 = _e64;\n    invokeShaderIndirect_rayGenu1_((&param_45));\n    return;\n}\n\n@compute @workgroup_size(8, 8, 1)\nfn compute_main(@builtin(global_invocation_id) gl_GlobalInvocationID: vec3<u32>) {\n    gl_GlobalInvocationID_1 = gl_GlobalInvocationID;\n    main_1();\n}\n";
+
+var raytracer_v3 = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n//#include raytracer::utils\n//#include raytracer::ray\n//#include raytracer::vec\n//#include raytracer::interval\n//#include raytracer::camera\n//#include raytracer::color\n//#include raytracer::material\n\n#include raytracer::commonv2\n#include raytracer::traceray\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  //@group(1) @binding(2) var<storage, read> materials: array<Material>;\n  @group(1) @binding(3) var<storage, read> textures: array<f32>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  struct SceneUniforms {\n    reset: u32,\n    mouse: vec4f,\n  }\n\nstruct accelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\n\n\n  @group(2) @binding(x) var<uniform> uScene_notUsed: SceneUniforms;\n  @group(2) @binding(x) var<uniform> topLevelAS: accelerationStructureEXT;\n\n#define gl_RayFlagsNoneEXT 0u\n#define gl_RayFlagsOpaqueEXT 1u\n#define gl_RayFlagsNoOpaqueEXT 2u\n#define gl_RayFlagsTerminateOnFirstHitEXT 4u\n#define gl_RayFlagsSkipClosestHitShaderEXT 8u\n#define gl_RayFlagsCullBackFacingTrianglesEXT 16u\n#define gl_RayFlagsCullFrontFacingTrianglesEXT 32u\n#define gl_RayFlagsCullOpaqueEXT 64u\n#define gl_RayFlagsCullNoOpaqueEXT 128u\n\nvar<private> payload: vec3f;\n\nfn calcRayDirection(pixel: vec2f) -> vec3f {\n  let aspectRatio: f32 = f32(cameraUniforms.viewportSize.x) / f32(cameraUniforms.viewportSize.y);\n  let imagePlaneSize: vec2f = vec2(aspectRatio * 2.0, 2.0);  // vertical fov: 45'\n  let ixy: vec2f = (vec2(-0.5, -0.5) + pixel / vec2f(cameraUniforms.viewportSize.xy)) * imagePlaneSize;\n  return normalize(vec3(ixy.x, -ixy.y, 1.0));\n}\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    const rayOrigin: vec3f = vec3f(0, 0, -1);\n  let rayDirection: vec3f = calcRayDirection(vec2f(globalInvocationId.xy));\n  const rayTmin: f32 = 1e-3;\n  // prevents uScene_notUsed binding being optimized out.\n  let rayTmax: f32 = max(1e5, uScene_notUsed.mouse.x);\n\n  payload = vec3(0.);\n  traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 1, 0, rayOrigin,\n              rayTmin, rayDirection, rayTmax, 0);\n\n  let pixelIndex: u32 = u32(globalInvocationId.y) * u32(cameraUniforms.viewportSize.x) + u32(globalInvocationId.x);\n  pixelBuffer.pixels[pixelIndex] = vec4(payload, 1.0);\n  }\n";
+
+var shadowray_triangle = "struct BvhGeometryDescriptor {\n    vBufferIndex: u32,\n    iBufferIndex: i32,\n    vboOffset: u32,\n    vboStride: u32,\n    vioOffset: u32,\n    vioStride: u32,\n    owningGeometryType_todo_deprecate: u32,\n    owningGeometryFlags: u32,\n}\n\nstruct AABB {\n    min: vec3<f32>,\n    max: vec3<f32>,\n}\n\nstruct RtUniforms {\n    sbtStartRayGen: u32,\n    sbtStartRayMiss: u32,\n    sbtStrideRayMiss: u32,\n    sbtStartHit: u32,\n    sbtStrideHit: u32,\n    sbtStartCallable: u32,\n    sbtStrideCallable: u32,\n    webrtx_NumWorkGroups: vec3<u32>,\n}\n\nstruct BvhGeomBuffer_0_ {\n    test1: f32,\n    fword: array<f32>,\n}\n\nstruct SBT {\n    _crt_sbt_buf: array<u32>,\n}\n\nstruct TlasBvhNode {\n    aabb: AABB,\n    entry_index: u32,\n    exit_index: u32,\n    is_leaf: u32,\n    mask: u32,\n    flags: u32,\n    instanceId: u32,\n    sbtInstanceOffset: u32,\n    instanceCustomIndex: i32,\n    transformToWorld: array<f32,12u>,\n    transformToObject: array<f32,12u>,\n    blas_geometry_id_offset: u32,\n}\n\nstruct TlasBvhTreeNodes {\n    tlasBvhTreeNodes: array<TlasBvhNode>,\n}\n\nstruct BlasBvhNode {\n    aabb: AABB,\n    entry_index_or_primitive_id: u32,\n    exit_index: u32,\n    geometryId: i32,\n}\n\nstruct BlasesBvhTreeNodes {\n    blasesBvhTreeNodes: array<BlasBvhNode>,\n}\n\nstruct SceneUniforms {\n    reset: u32,\n    mouse: vec4<f32>,\n}\n\nstruct _crt_AccelerationStructureEXT {\n    topLevelAS: vec2<u32>,\n}\n\nstruct PixelBuffer {\n    pixels: array<vec4<f32>>,\n}\n\nvar<private> webrtx_LaunchIDEXT: vec3<u32>;\nvar<private> gl_GlobalInvocationID_1: vec3<u32>;\nvar<private> webrtx_LaunchSizeEXT: vec3<u32>;\nvar<private> _crt_ray_payload_loc_0_: vec3<f32>;\n\n\n\n\n@group(0) @binding(0)\nvar<uniform> unnamed_3: _crt_AccelerationStructureEXT;\n@group(0) @binding(1)\nvar<storage, read_write> raytraceImageBuffer: array<vec3f>;\n@group(0) @binding(2)\nvar<uniform> uScene_notUsed: SceneUniforms;\n@group(1) @binding(0)\nvar<uniform> rtUniformParams: RtUniforms;\n@group(1) @binding(4)\nvar<storage> bvhGeoBuffers_0_: BvhGeomBuffer_0_;\n@group(1) @binding(1)\nvar<storage> unnamed: SBT;\n@group(1) @binding(2)\nvar<storage> unnamed_1: TlasBvhTreeNodes;\n@group(1) @binding(3)\nvar<storage> unnamed_2: BlasesBvhTreeNodes;\n\nfn invokeShaderIndirect_rayMissu1vf3_(sbtByteIndex: ptr<function, u32>, _crt_WorldRayDirectionEXT: vec3<f32>) {\n    var _crt_sr_wd_offset: u32;\n    var rmiss: u32;\n\n    let _e62 = (*sbtByteIndex);\n    _crt_sr_wd_offset = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rmiss = _e67;\n    let _e68 = rmiss;\n    if (_e68 == 255u) {\n        return;\n    }\n    let _e70 = _crt_sr_wd_offset;\n    _crt_sr_wd_offset = (_e70 + 1u);\n    return;\n}\n\nfn sbtRayMissIndexu1_(ray_type: ptr<function, u32>) -> u32 {\n    let _e60 = rtUniformParams.sbtStartRayMiss;\n    let _e61 = (*ray_type);\n    let _e63 = rtUniformParams.sbtStrideRayMiss;\n    return (_e60 + (_e61 * _e63));\n}\n\nfn _crt_user_rchit_0vf2u1_(baryCoord: ptr<function, vec2<f32>>, _crt_sr_wd_offset_1: ptr<function, u32>) {\n    let _e61 = (*baryCoord)[0u];\n    let _e64 = (*baryCoord)[1u];\n    let _e67 = (*baryCoord)[0u];\n    let _e69 = (*baryCoord)[1u];\n    _crt_ray_payload_loc_0_ = vec3<f32>(((1.0 - _e61) - _e64), _e67, _e69);\n    return;\n}\n\nfn invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_1: u32, _crt_WorldRayOriginEXT: vec3<f32>, _crt_RayTminEXT: f32, _crt_WorldRayDirectionEXT_1: vec3<f32>, _crt_RayTmaxEXT: f32, _crt_GeometryIndexEXT: i32, _crt_PrimitiveID: u32, _crt_hattrs: array<f32,5u>) {\n    var _crt_sr_wd_offset_2: u32;\n    var hitShaderGroupIdentifier: u32;\n    var rchit: u32;\n    var _crt_HitTEXT: f32;\n    var baryCoord_1: vec2<f32>;\n    var param: vec2<f32>;\n    var param_1: u32;\n\n    _crt_sr_wd_offset_2 = (sbtByteIndex_1 / 4u);\n    let _e74 = _crt_sr_wd_offset_2;\n    let _e77 = unnamed._crt_sbt_buf[_e74];\n    hitShaderGroupIdentifier = _e77;\n    let _e78 = hitShaderGroupIdentifier;\n    rchit = ((_e78 & 65280u) >> bitcast<u32>(8));\n    let _e82 = rchit;\n    if (_e82 == 255u) {\n        return;\n    }\n    let _e84 = _crt_sr_wd_offset_2;\n    _crt_sr_wd_offset_2 = (_e84 + 1u);\n    _crt_HitTEXT = _crt_RayTmaxEXT;\n    baryCoord_1 = vec2<f32>(_crt_hattrs[0], _crt_hattrs[1]);\n    let _e89 = baryCoord_1;\n    param = _e89;\n    let _e90 = _crt_sr_wd_offset_2;\n    param_1 = _e90;\n    _crt_user_rchit_0vf2u1_((&param), (&param_1));\n    return;\n}\n\nfn invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(sbtByteIndex_2: u32, _crt_WorldRayOriginEXT_1: vec3<f32>, _crt_RayTminEXT_1: f32, _crt_WorldRayDirectionEXT_2: vec3<f32>, _crt_RayTmaxEXT_1: f32, _crt_GeometryIndexEXT_1: i32, _crt_PrimitiveID_1: u32, _crt_hattrs_1: array<f32,5u>) -> u32 {\n    var _crt_sr_wd_offset_3: u32;\n    var hitShaderGroupIdentifier_1: u32;\n    var rahit: u32;\n    var _crt_HitTEXT_1: f32;\n    var _crt_hit_report: u32;\n\n    _crt_sr_wd_offset_3 = (sbtByteIndex_2 / 4u);\n    let _e72 = _crt_sr_wd_offset_3;\n    let _e75 = unnamed._crt_sbt_buf[_e72];\n    hitShaderGroupIdentifier_1 = _e75;\n    let _e76 = hitShaderGroupIdentifier_1;\n    rahit = ((_e76 & 16711680u) >> bitcast<u32>(16));\n    let _e80 = rahit;\n    if (_e80 == 255u) {\n        return 0u;\n    }\n    let _e82 = _crt_sr_wd_offset_3;\n    _crt_sr_wd_offset_3 = (_e82 + 1u);\n    _crt_HitTEXT_1 = _crt_RayTmaxEXT_1;\n    _crt_hit_report = 0u;\n    let _e84 = _crt_hit_report;\n    return _e84;\n}\n\nfn invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(sbtByteIndex_3: u32, _crt_WorldRayOriginEXT_2: vec3<f32>, _crt_RayTminEXT_2: f32, _crt_WorldRayDirectionEXT_3: vec3<f32>, _crt_RayTmaxEXT_2: f32, _crt_ObjectRayOriginEXT: vec3<f32>, _crt_potential_hit_t: ptr<function, f32>, _crt_ObjectRayDirectionEXT: vec3<f32>, _crt_WorldToObjectEXT: mat4x3<f32>, _crt_ObjectToWorldEXT: mat4x3<f32>, _crt_GeometryIndexEXT_2: i32, _crt_PrimitiveID_2: u32, _crt_hattrs_2: ptr<function, array<f32,5u>>) -> bool {\n    var _crt_sr_wd_offset_4: u32;\n    var hitShaderGroupIdentifier_2: u32;\n    var rint: u32;\n    var phi_545_: bool;\n\n    _crt_sr_wd_offset_4 = (sbtByteIndex_3 / 4u);\n    let _e75 = _crt_sr_wd_offset_4;\n    let _e78 = unnamed._crt_sbt_buf[_e75];\n    hitShaderGroupIdentifier_2 = _e78;\n    let _e79 = hitShaderGroupIdentifier_2;\n    rint = (_e79 & 255u);\n    let _e81 = rint;\n    if (_e81 == 255u) {\n        return false;\n    }\n    let _e83 = _crt_sr_wd_offset_4;\n    _crt_sr_wd_offset_4 = (_e83 + 1u);\n    (*_crt_potential_hit_t) = (_crt_RayTminEXT_2 - 1.0);\n    let _e86 = (*_crt_potential_hit_t);\n    let _e87 = (_e86 > _crt_RayTminEXT_2);\n    phi_545_ = _e87;\n    if _e87 {\n        let _e88 = (*_crt_potential_hit_t);\n        phi_545_ = (_e88 < _crt_RayTmaxEXT_2);\n    }\n    let _e91 = phi_545_;\n    return _e91;\n}\n\nfn intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(ray_origin: vec3<f32>, ray_tmin: f32, ray_dir: vec3<f32>, ray_tmax: f32, p0_: vec3<f32>, p1_: vec3<f32>, p2_: vec3<f32>, n: ptr<function, vec3<f32>>, t: ptr<function, f32>, beta: ptr<function, f32>, gamma: ptr<function, f32>) -> bool {\n    var e0_: vec3<f32>;\n    var e1_: vec3<f32>;\n    var e2_: vec3<f32>;\n    var i: vec3<f32>;\n    var phi_391_: bool;\n    var phi_396_: bool;\n    var phi_401_: bool;\n    var phi_408_: bool;\n\n    e0_ = (p1_ - p0_);\n    e1_ = (p0_ - p2_);\n    let _e75 = e1_;\n    let _e76 = e0_;\n    (*n) = cross(_e75, _e76);\n    let _e78 = (*n);\n    e2_ = ((p0_ - ray_origin) * (1.0 / dot(_e78, ray_dir)));\n    let _e83 = e2_;\n    i = cross(ray_dir, _e83);\n    let _e85 = i;\n    let _e86 = e1_;\n    (*beta) = dot(_e85, _e86);\n    let _e88 = i;\n    let _e89 = e0_;\n    (*gamma) = dot(_e88, _e89);\n    let _e91 = (*n);\n    let _e92 = e2_;\n    (*t) = dot(_e91, _e92);\n    let _e94 = (*t);\n    let _e95 = (_e94 < ray_tmax);\n    phi_391_ = _e95;\n    if _e95 {\n        let _e96 = (*t);\n        phi_391_ = (_e96 > ray_tmin);\n    }\n    let _e99 = phi_391_;\n    phi_396_ = _e99;\n    if _e99 {\n        let _e100 = (*beta);\n        phi_396_ = (_e100 >= 0.0);\n    }\n    let _e103 = phi_396_;\n    phi_401_ = _e103;\n    if _e103 {\n        let _e104 = (*gamma);\n        phi_401_ = (_e104 >= 0.0);\n    }\n    let _e107 = phi_401_;\n    phi_408_ = _e107;\n    if _e107 {\n        let _e108 = (*beta);\n        let _e109 = (*gamma);\n        phi_408_ = ((_e108 + _e109) <= 1.0);\n    }\n    let _e113 = phi_408_;\n    return _e113;\n}\n\nfn GET_VEC3_FROM_BUFFERu1u1_(geoBufferIndex: ptr<function, u32>, wordIndex: ptr<function, u32>) -> vec3<f32> {\n    let _e60 = (*geoBufferIndex);\n    switch bitcast<i32>(_e60) {\n        case 0: {\n            let _e62 = (*wordIndex);\n            let _e65 = bvhGeoBuffers_0_.fword[_e62];\n            let _e66 = (*wordIndex);\n            let _e70 = bvhGeoBuffers_0_.fword[(_e66 + 1u)];\n            let _e71 = (*wordIndex);\n            let _e75 = bvhGeoBuffers_0_.fword[(_e71 + 2u)];\n            return vec3<f32>(_e65, _e70, _e75);\n        }\n        default: {\n        }\n    }\n    return vec3<f32>(0.0, 0.0, 0.0);\n}\n\nfn getTriVertPositionu1u1u1u1_(vBufferIndex: ptr<function, u32>, offset: ptr<function, u32>, stride: ptr<function, u32>, vindex: ptr<function, u32>) -> vec3<f32> {\n    var vboWordOffset: u32;\n    var param_2: u32;\n    var param_3: u32;\n\n    let _e65 = (*offset);\n    let _e66 = (*vindex);\n    let _e67 = (*stride);\n    vboWordOffset = ((_e65 + (_e66 * _e67)) / 4u);\n    let _e71 = (*vBufferIndex);\n    param_2 = _e71;\n    let _e72 = vboWordOffset;\n    param_3 = _e72;\n    let _e73 = GET_VEC3_FROM_BUFFERu1u1_((&param_2), (&param_3));\n    return _e73;\n}\n\nfn getTriVertIndicesu1u1u1u1_(iBufferIndex: ptr<function, u32>, offset_1: ptr<function, u32>, stride_1: ptr<function, u32>, primitiveId: ptr<function, u32>) -> vec3<u32> {\n    var vioWordOffset: u32;\n    var f3_: vec3<f32>;\n    var param_4: u32;\n    var param_5: u32;\n\n    let _e66 = (*offset_1);\n    let _e67 = (*primitiveId);\n    let _e68 = (*stride_1);\n    vioWordOffset = ((_e66 + (_e67 * _e68)) / 4u);\n    let _e72 = (*iBufferIndex);\n    param_4 = _e72;\n    let _e73 = vioWordOffset;\n    param_5 = _e73;\n    let _e74 = GET_VEC3_FROM_BUFFERu1u1_((&param_4), (&param_5));\n    f3_ = _e74;\n    let _e76 = f3_[0u];\n    let _e79 = f3_[1u];\n    let _e82 = f3_[2u];\n    return vec3<u32>(bitcast<u32>(_e76), bitcast<u32>(_e79), bitcast<u32>(_e82));\n}\n\nfn getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_(g: ptr<function, BvhGeometryDescriptor>, primitiveId_1: ptr<function, u32>) -> array<vec3<f32>,3u> {\n    var indices: vec3<u32>;\n    var param_6: u32;\n    var param_7: u32;\n    var param_8: u32;\n    var param_9: u32;\n    var param_10: u32;\n    var param_11: u32;\n    var param_12: u32;\n    var param_13: u32;\n    var param_14: u32;\n    var param_15: u32;\n    var param_16: u32;\n    var param_17: u32;\n    var param_18: u32;\n    var param_19: u32;\n    var param_20: u32;\n    var param_21: u32;\n\n    let _e78 = (*g).iBufferIndex;\n    if (_e78 >= 0) {\n        let _e81 = (*g).iBufferIndex;\n        param_6 = bitcast<u32>(_e81);\n        let _e84 = (*g).vioOffset;\n        param_7 = _e84;\n        let _e86 = (*g).vioStride;\n        param_8 = _e86;\n        let _e87 = (*primitiveId_1);\n        param_9 = _e87;\n        let _e88 = getTriVertIndicesu1u1u1u1_((&param_6), (&param_7), (&param_8), (&param_9));\n        indices = _e88;\n    } else {\n        let _e89 = (*primitiveId_1);\n        let _e91 = (*primitiveId_1);\n        let _e94 = (*primitiveId_1);\n        indices = vec3<u32>((_e89 * 3u), ((_e91 * 3u) + 1u), ((_e94 * 3u) + 2u));\n    }\n    let _e99 = (*g).vBufferIndex;\n    param_10 = _e99;\n    let _e101 = (*g).vboOffset;\n    param_11 = _e101;\n    let _e103 = (*g).vboStride;\n    param_12 = _e103;\n    let _e105 = indices[0u];\n    param_13 = _e105;\n    let _e106 = getTriVertPositionu1u1u1u1_((&param_10), (&param_11), (&param_12), (&param_13));\n    let _e108 = (*g).vBufferIndex;\n    param_14 = _e108;\n    let _e110 = (*g).vboOffset;\n    param_15 = _e110;\n    let _e112 = (*g).vboStride;\n    param_16 = _e112;\n    let _e114 = indices[1u];\n    param_17 = _e114;\n    let _e115 = getTriVertPositionu1u1u1u1_((&param_14), (&param_15), (&param_16), (&param_17));\n    let _e117 = (*g).vBufferIndex;\n    param_18 = _e117;\n    let _e119 = (*g).vboOffset;\n    param_19 = _e119;\n    let _e121 = (*g).vboStride;\n    param_20 = _e121;\n    let _e123 = indices[2u];\n    param_21 = _e123;\n    let _e124 = getTriVertPositionu1u1u1u1_((&param_18), (&param_19), (&param_20), (&param_21));\n    return array<vec3<f32>,3u>(_e106, _e115, _e124);\n}\n\nfn sbtHitGroupIndexu1i1u1u1_(instanceId: ptr<function, u32>, geometryId: ptr<function, i32>, num_ray_types: ptr<function, u32>, ray_type_1: ptr<function, u32>) -> u32 {\n    let _e63 = rtUniformParams.sbtStartHit;\n    let _e65 = rtUniformParams.sbtStrideHit;\n    let _e66 = (*instanceId);\n    let _e67 = (*geometryId);\n    let _e69 = (*num_ray_types);\n    let _e72 = (*ray_type_1);\n    return (_e63 + (_e65 * ((_e66 + (bitcast<u32>(_e67) * _e69)) + _e72)));\n}\n\nfn intersect_aabbvf3vf3f1f1structAABBvf3vf31_(rayOrigin: vec3<f32>, invRayDir: vec3<f32>, ray_tmin_1: f32, ray_tmax_1: f32, aabb: AABB) -> bool {\n    var t0_: vec3<f32>;\n    var t1_: vec3<f32>;\n    var tmin: vec3<f32>;\n    var tmax: vec3<f32>;\n\n    t0_ = ((aabb.min - rayOrigin) * invRayDir);\n    t1_ = ((aabb.max - rayOrigin) * invRayDir);\n    let _e73 = t0_;\n    let _e74 = t1_;\n    tmin = min(_e73, _e74);\n    let _e76 = t0_;\n    let _e77 = t1_;\n    tmax = max(_e76, _e77);\n    let _e80 = tmin[0u];\n    let _e82 = tmin[1u];\n    let _e85 = tmin[2u];\n    let _e89 = tmax[0u];\n    let _e91 = tmax[1u];\n    let _e94 = tmax[2u];\n    return (max(ray_tmin_1, max(max(_e80, _e82), _e85)) <= min(ray_tmax_1, min(min(_e89, _e91), _e94)));\n}\n\nfn traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_(topLevel: ptr<function, vec2<u32>>, rayFlags: ptr<function, u32>, cullMask: ptr<function, u32>, rayType: ptr<function, u32>, numRayTypes: ptr<function, u32>, missIndex: ptr<function, u32>, _crt_WorldRayOriginEXT_3: vec3<f32>, _crt_RayTminEXT_3: f32, _crt_WorldRayDirectionEXT_4: vec3<f32>, _crt_RayTmaxEXT_3: ptr<function, f32>, payload: ptr<function, i32>) {\n    var invWorldRayDir: vec3<f32>;\n    var closestSbtIndex: u32;\n    var localGeometryId: i32;\n    var localPrimitiveId: u32;\n    var _cur: u32;\n    var node: TlasBvhNode;\n    var sbtInstanceOffset: u32;\n    var blas_geometry_id_offset: u32;\n    var _crt_ObjectToWorldEXT_1: mat4x3<f32>;\n    var _crt_WorldToObjectEXT_1: mat4x3<f32>;\n    var _crt_ObjectRayOriginEXT_1: vec3<f32>;\n    var _crt_ObjectRayDirectionEXT_1: vec3<f32>;\n    var invObjectRayDir: vec3<f32>;\n    var blas_index_offset: u32;\n    var instance_exit_index: u32;\n    var node_1: BlasBvhNode;\n    var t_1: f32;\n    var hitKind: u32;\n    var g_1: BvhGeometryDescriptor;\n    var indexable: array<BvhGeometryDescriptor,1u>;\n    var sbtIndex: u32;\n    var param_22: u32;\n    var param_23: i32;\n    var param_24: u32;\n    var param_25: u32;\n    var terminate_or_ignore: u32;\n    var hit: bool;\n    var positions: array<vec3<f32>,3u>;\n    var param_26: BvhGeometryDescriptor;\n    var param_27: u32;\n    var n_1: vec3<f32>;\n    var buf_hitAttributes: array<f32,5u>;\n    var param_28: vec3<f32>;\n    var param_29: f32;\n    var param_30: f32;\n    var param_31: f32;\n    var param_32: f32;\n    var param_33: array<f32,5u>;\n    var buf_closestHitAttributes: array<f32,5u>;\n    var param_34: u32;\n    var param_35: u32;\n    var phi_673_: bool;\n    var phi_683_: bool;\n\n    invWorldRayDir = (vec3<f32>(1.0) / _crt_WorldRayDirectionEXT_4);\n    closestSbtIndex = 0u;\n    localGeometryId = -1;\n    localPrimitiveId = 0u;\n    _cur = 0u;\n    loop {\n        let _e112 = _cur;\n        if (_e112 < 4294967295u) {\n            let _e114 = _cur;\n            let _e117 = unnamed_1.tlasBvhTreeNodes[_e114];\n            node.aabb.min = _e117.aabb.min;\n            node.aabb.max = _e117.aabb.max;\n            node.entry_index = _e117.entry_index;\n            node.exit_index = _e117.exit_index;\n            node.is_leaf = _e117.is_leaf;\n            node.mask = _e117.mask;\n            node.flags = _e117.flags;\n            node.instanceId = _e117.instanceId;\n            node.sbtInstanceOffset = _e117.sbtInstanceOffset;\n            node.instanceCustomIndex = _e117.instanceCustomIndex;\n            node.transformToWorld[0] = _e117.transformToWorld[0];\n            node.transformToWorld[1] = _e117.transformToWorld[1];\n            node.transformToWorld[2] = _e117.transformToWorld[2];\n            node.transformToWorld[3] = _e117.transformToWorld[3];\n            node.transformToWorld[4] = _e117.transformToWorld[4];\n            node.transformToWorld[5] = _e117.transformToWorld[5];\n            node.transformToWorld[6] = _e117.transformToWorld[6];\n            node.transformToWorld[7] = _e117.transformToWorld[7];\n            node.transformToWorld[8] = _e117.transformToWorld[8];\n            node.transformToWorld[9] = _e117.transformToWorld[9];\n            node.transformToWorld[10] = _e117.transformToWorld[10];\n            node.transformToWorld[11] = _e117.transformToWorld[11];\n            node.transformToObject[0] = _e117.transformToObject[0];\n            node.transformToObject[1] = _e117.transformToObject[1];\n            node.transformToObject[2] = _e117.transformToObject[2];\n            node.transformToObject[3] = _e117.transformToObject[3];\n            node.transformToObject[4] = _e117.transformToObject[4];\n            node.transformToObject[5] = _e117.transformToObject[5];\n            node.transformToObject[6] = _e117.transformToObject[6];\n            node.transformToObject[7] = _e117.transformToObject[7];\n            node.transformToObject[8] = _e117.transformToObject[8];\n            node.transformToObject[9] = _e117.transformToObject[9];\n            node.transformToObject[10] = _e117.transformToObject[10];\n            node.transformToObject[11] = _e117.transformToObject[11];\n            node.blas_geometry_id_offset = _e117.blas_geometry_id_offset;\n            let _e195 = node.is_leaf;\n            let _e196 = (_e195 > 0u);\n            phi_673_ = _e196;\n            if _e196 {\n                let _e198 = node.mask;\n                let _e199 = (*cullMask);\n                phi_673_ = ((_e198 & _e199) == 0u);\n            }\n            let _e203 = phi_673_;\n            phi_683_ = _e203;\n            if !(_e203) {\n                let _e205 = invWorldRayDir;\n                let _e206 = (*_crt_RayTmaxEXT_3);\n                let _e208 = node.aabb;\n                let _e209 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_crt_WorldRayOriginEXT_3, _e205, _crt_RayTminEXT_3, _e206, _e208);\n                phi_683_ = !(_e209);\n            }\n            let _e212 = phi_683_;\n            if _e212 {\n                let _e214 = node.exit_index;\n                _cur = _e214;\n                continue;\n            }\n            let _e216 = node.is_leaf;\n            if (_e216 == 0u) {\n                let _e219 = node.entry_index;\n                _cur = _e219;\n                continue;\n            }\n            let _e221 = node.sbtInstanceOffset;\n            sbtInstanceOffset = _e221;\n            let _e223 = node.blas_geometry_id_offset;\n            blas_geometry_id_offset = _e223;\n            let _e226 = node.transformToWorld[0];\n            let _e229 = node.transformToWorld[1];\n            let _e232 = node.transformToWorld[2];\n            let _e233 = vec3<f32>(_e226, _e229, _e232);\n            let _e236 = node.transformToWorld[3];\n            let _e239 = node.transformToWorld[4];\n            let _e242 = node.transformToWorld[5];\n            let _e243 = vec3<f32>(_e236, _e239, _e242);\n            let _e246 = node.transformToWorld[6];\n            let _e249 = node.transformToWorld[7];\n            let _e252 = node.transformToWorld[8];\n            let _e253 = vec3<f32>(_e246, _e249, _e252);\n            let _e256 = node.transformToWorld[9];\n            let _e259 = node.transformToWorld[10];\n            let _e262 = node.transformToWorld[11];\n            let _e263 = vec3<f32>(_e256, _e259, _e262);\n            _crt_ObjectToWorldEXT_1 = mat4x3<f32>(vec3<f32>(_e233.x, _e233.y, _e233.z), vec3<f32>(_e243.x, _e243.y, _e243.z), vec3<f32>(_e253.x, _e253.y, _e253.z), vec3<f32>(_e263.x, _e263.y, _e263.z));\n            let _e283 = node.transformToObject[0];\n            let _e286 = node.transformToObject[1];\n            let _e289 = node.transformToObject[2];\n            let _e290 = vec3<f32>(_e283, _e286, _e289);\n            let _e293 = node.transformToObject[3];\n            let _e296 = node.transformToObject[4];\n            let _e299 = node.transformToObject[5];\n            let _e300 = vec3<f32>(_e293, _e296, _e299);\n            let _e303 = node.transformToObject[6];\n            let _e306 = node.transformToObject[7];\n            let _e309 = node.transformToObject[8];\n            let _e310 = vec3<f32>(_e303, _e306, _e309);\n            let _e313 = node.transformToObject[9];\n            let _e316 = node.transformToObject[10];\n            let _e319 = node.transformToObject[11];\n            let _e320 = vec3<f32>(_e313, _e316, _e319);\n            _crt_WorldToObjectEXT_1 = mat4x3<f32>(vec3<f32>(_e290.x, _e290.y, _e290.z), vec3<f32>(_e300.x, _e300.y, _e300.z), vec3<f32>(_e310.x, _e310.y, _e310.z), vec3<f32>(_e320.x, _e320.y, _e320.z));\n            let _e338 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayOriginEXT_1 = (_e338 * vec4<f32>(_crt_WorldRayOriginEXT_3.x, _crt_WorldRayOriginEXT_3.y, _crt_WorldRayOriginEXT_3.z, 1.0));\n            let _e344 = _crt_WorldToObjectEXT_1;\n            _crt_ObjectRayDirectionEXT_1 = (_e344 * vec4<f32>(_crt_WorldRayDirectionEXT_4.x, _crt_WorldRayDirectionEXT_4.y, _crt_WorldRayDirectionEXT_4.z, 0.0));\n            let _e350 = _crt_ObjectRayDirectionEXT_1;\n            invObjectRayDir = (vec3<f32>(1.0) / _e350);\n            let _e354 = node.entry_index;\n            _cur = _e354;\n            let _e355 = _cur;\n            blas_index_offset = _e355;\n            let _e357 = node.exit_index;\n            instance_exit_index = _e357;\n            loop {\n                let _e358 = _cur;\n                if (_e358 < 4294967295u) {\n                    let _e360 = _cur;\n                    let _e363 = unnamed_2.blasesBvhTreeNodes[_e360];\n                    node_1.aabb.min = _e363.aabb.min;\n                    node_1.aabb.max = _e363.aabb.max;\n                    node_1.entry_index_or_primitive_id = _e363.entry_index_or_primitive_id;\n                    node_1.exit_index = _e363.exit_index;\n                    node_1.geometryId = _e363.geometryId;\n                    let _e376 = _crt_ObjectRayOriginEXT_1;\n                    let _e377 = invObjectRayDir;\n                    let _e378 = (*_crt_RayTmaxEXT_3);\n                    let _e380 = node_1.aabb;\n                    let _e381 = intersect_aabbvf3vf3f1f1structAABBvf3vf31_(_e376, _e377, _crt_RayTminEXT_3, _e378, _e380);\n                    if !(_e381) {\n                        let _e384 = node_1.exit_index;\n                        if (_e384 == 4294967295u) {\n                            let _e386 = instance_exit_index;\n                            _cur = _e386;\n                            break;\n                        } else {\n                            let _e388 = node_1.exit_index;\n                            let _e389 = blas_index_offset;\n                            _cur = (_e388 + _e389);\n                        }\n                        continue;\n                    } else {\n                        let _e392 = node_1.geometryId;\n                        if (_e392 < 0) {\n                            let _e395 = node_1.entry_index_or_primitive_id;\n                            let _e396 = blas_index_offset;\n                            _cur = (_e395 + _e396);\n                            continue;\n                        }\n                    }\n                    t_1 = (_crt_RayTminEXT_3 - 1.0);\n                    hitKind = 0u;\n                    let _e400 = node_1.geometryId;\n                    let _e402 = blas_geometry_id_offset;\n                    indexable = array<BvhGeometryDescriptor,1u>(BvhGeometryDescriptor(0u, -1, 0u, 12u, 0u, 12u, 0u, 0u));\n                    let _e405 = indexable[(bitcast<u32>(_e400) + _e402)];\n                    g_1 = _e405;\n                    let _e406 = sbtInstanceOffset;\n                    param_22 = _e406;\n                    let _e408 = node_1.geometryId;\n                    param_23 = _e408;\n                    let _e409 = (*numRayTypes);\n                    param_24 = _e409;\n                    let _e410 = (*rayType);\n                    param_25 = _e410;\n                    let _e411 = sbtHitGroupIndexu1i1u1u1_((&param_22), (&param_23), (&param_24), (&param_25));\n                    sbtIndex = _e411;\n                    terminate_or_ignore = 1u;\n                    hit = false;\n                    let _e413 = g_1.owningGeometryType_todo_deprecate;\n                    if (_e413 == 0u) {\n                        let _e415 = g_1;\n                        param_26 = _e415;\n                        let _e417 = node_1.entry_index_or_primitive_id;\n                        param_27 = _e417;\n                        let _e418 = getTriangleVertexPositionsstructBvhGeometryDescriptoru1i1u1u1u1u1u1u11u1_((&param_26), (&param_27));\n                        positions = _e418;\n                        let _e419 = _crt_ObjectRayOriginEXT_1;\n                        let _e420 = _crt_ObjectRayDirectionEXT_1;\n                        let _e421 = (*_crt_RayTmaxEXT_3);\n                        let _e423 = positions[0];\n                        let _e425 = positions[1];\n                        let _e427 = positions[2];\n                        let _e428 = intersect_triangle_branchlessvf3f1vf3f1vf3vf3vf3vf3f1f1f1_(_e419, _crt_RayTminEXT_3, _e420, _e421, _e423, _e425, _e427, (&param_28), (&param_29), (&param_30), (&param_31));\n                        let _e429 = param_28;\n                        n_1 = _e429;\n                        let _e430 = param_29;\n                        t_1 = _e430;\n                        let _e431 = param_30;\n                        buf_hitAttributes[0] = _e431;\n                        let _e433 = param_31;\n                        buf_hitAttributes[1] = _e433;\n                        hit = _e428;\n                        let _e435 = hit;\n                        if _e435 {\n                            let _e436 = n_1;\n                            let _e437 = _crt_WorldToObjectEXT_1;\n                            n_1 = normalize((_e436 * _e437).xyz);\n                            let _e442 = n_1[0u];\n                            buf_hitAttributes[2] = _e442;\n                            let _e445 = n_1[1u];\n                            buf_hitAttributes[3] = _e445;\n                            let _e448 = n_1[2u];\n                            buf_hitAttributes[4] = _e448;\n                            let _e450 = n_1;\n                            hitKind = select(255u, 254u, (dot(_e450, _crt_WorldRayDirectionEXT_4) > 0.0));\n                        }\n                    } else {\n                        let _e454 = sbtIndex;\n                        let _e455 = (*_crt_RayTmaxEXT_3);\n                        let _e456 = _crt_ObjectRayOriginEXT_1;\n                        let _e457 = _crt_ObjectRayDirectionEXT_1;\n                        let _e458 = _crt_WorldToObjectEXT_1;\n                        let _e459 = _crt_ObjectToWorldEXT_1;\n                        let _e461 = node_1.geometryId;\n                        let _e463 = node_1.entry_index_or_primitive_id;\n                        let _e464 = invokeShaderIndirect_intersectu1vf3f1vf3f1vf3f1vf3mf43mf43i1u1f15_(_e454, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e455, _e456, (&param_32), _e457, _e458, _e459, _e461, _e463, (&param_33));\n                        let _e465 = param_32;\n                        t_1 = _e465;\n                        let _e466 = param_33;\n                        buf_hitAttributes = _e466;\n                        hit = _e464;\n                    }\n                    let _e467 = hit;\n                    if _e467 {\n                        let _e468 = sbtIndex;\n                        let _e469 = t_1;\n                        let _e471 = node_1.geometryId;\n                        let _e473 = node_1.entry_index_or_primitive_id;\n                        let _e474 = buf_hitAttributes;\n                        let _e475 = invokeShaderIndirect_anyHitu1vf3f1vf3f1i1u1f15_(_e468, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e469, _e471, _e473, _e474);\n                        terminate_or_ignore = _e475;\n                    }\n                    let _e476 = terminate_or_ignore;\n                    if (_e476 == 2u) {\n                        return;\n                    }\n                    let _e478 = terminate_or_ignore;\n                    if (_e478 == 0u) {\n                        let _e480 = sbtIndex;\n                        closestSbtIndex = _e480;\n                        let _e481 = buf_hitAttributes;\n                        buf_closestHitAttributes = _e481;\n                        let _e482 = t_1;\n                        (*_crt_RayTmaxEXT_3) = _e482;\n                        let _e484 = node_1.geometryId;\n                        localGeometryId = _e484;\n                        let _e486 = node_1.entry_index_or_primitive_id;\n                        localPrimitiveId = _e486;\n                    }\n                    let _e488 = node_1.exit_index;\n                    if (_e488 == 4294967295u) {\n                        let _e490 = instance_exit_index;\n                        _cur = _e490;\n                        break;\n                    } else {\n                        let _e492 = node_1.exit_index;\n                        let _e493 = blas_index_offset;\n                        _cur = (_e492 + _e493);\n                    }\n                    continue;\n                } else {\n                    break;\n                }\n            }\n            continue;\n        } else {\n            break;\n        }\n    }\n    let _e495 = localGeometryId;\n    if (_e495 >= 0) {\n        let _e497 = closestSbtIndex;\n        let _e498 = (*_crt_RayTmaxEXT_3);\n        let _e499 = localGeometryId;\n        let _e500 = localPrimitiveId;\n        let _e501 = buf_closestHitAttributes;\n        invokeShaderIndirect_closestHitu1vf3f1vf3f1i1u1f15_(_e497, _crt_WorldRayOriginEXT_3, _crt_RayTminEXT_3, _crt_WorldRayDirectionEXT_4, _e498, _e499, _e500, _e501);\n    } else {\n        let _e502 = (*missIndex);\n        param_34 = _e502;\n        let _e503 = sbtRayMissIndexu1_((&param_34));\n        param_35 = _e503;\n        invokeShaderIndirect_rayMissu1vf3_((&param_35), _crt_WorldRayDirectionEXT_4);\n    }\n    return;\n}\n\nfn calcRayDirectionvf2_(pixel: vec2<f32>) -> vec3<f32> {\n    var aspectRatio: f32;\n    var imagePlaneSize: vec2<f32>;\n    var ixy: vec2<f32>;\n\n    let _e63 = webrtx_LaunchSizeEXT[0u];\n    let _e65 = webrtx_LaunchSizeEXT[1u];\n    aspectRatio = f32((_e63 / _e65));\n    let _e68 = aspectRatio;\n    imagePlaneSize = vec2<f32>((_e68 * 2.0), 2.0);\n    let _e71 = webrtx_LaunchSizeEXT;\n    let _e76 = imagePlaneSize;\n    ixy = ((vec2<f32>(-0.5, -0.5) + (pixel / vec2<f32>(_e71.xy))) * _e76);\n    let _e79 = ixy[0u];\n    let _e81 = ixy[1u];\n    return normalize(vec3<f32>(_e79, -(_e81), 1.0));\n}\n\nfn _crt_user_rgen_0u1_(_crt_sr_wd_offset_5: ptr<function, u32>) {\n    var rayDirection: vec3<f32>;\n    var rayTmax: f32;\n    var param_36: vec2<u32>;\n    var param_37: u32;\n    var param_38: u32;\n    var param_39: u32;\n    var param_40: u32;\n    var param_41: u32;\n    var param_42: f32;\n    var param_43: i32;\n    var pixelIndex: u32;\n\n    let _e70 = webrtx_LaunchIDEXT;\n    let _e71 = vec3<f32>(_e70);\n    let _e75 = calcRayDirectionvf2_(vec2<f32>(_e71.x, _e71.y));\n    rayDirection = _e75;\n    let _e78 = uScene_notUsed.mouse[0u];\n    rayTmax = max(100000.0, _e78);\n    _crt_ray_payload_loc_0_ = vec3<f32>(0.0, 0.0, 0.0);\n    let _e80 = rayDirection;\n    let _e82 = unnamed_3.topLevelAS;\n    param_36 = _e82;\n    param_37 = 1u;\n    param_38 = 255u;\n    param_39 = 0u;\n    param_40 = 1u;\n    param_41 = 0u;\n    let _e83 = rayTmax;\n    param_42 = _e83;\n    param_43 = 0;\n    traceRayEXTvu2u1u1u1u1u1vf3f1vf3f1i1_((&param_36), (&param_37), (&param_38), (&param_39), (&param_40), (&param_41), vec3<f32>(0.0, 0.0, -1.0), 0.0010000000474974513, _e80, (&param_42), (&param_43));\n    let _e85 = webrtx_LaunchIDEXT[1u];\n    let _e87 = webrtx_LaunchSizeEXT[0u];\n    let _e90 = webrtx_LaunchIDEXT[0u];\n    pixelIndex = ((_e85 * _e87) + _e90);\n    let _e92 = pixelIndex;\n    let _e93 = _crt_ray_payload_loc_0_;\n    //raytraceImageBuffer[_e92] = vec4<f32>(_e93.x, _e93.y, _e93.z, 1.0);\n    raytraceImageBuffer[_e92] = vec3<f32>(_e93.x, _e93.y, _e93.z);\n    return;\n}\n\nfn invokeShaderIndirect_rayGenu1_(sbtByteIndex_4: ptr<function, u32>) {\n    var _crt_sr_wd_offset_6: u32;\n    var rgen: u32;\n    var param_44: u32;\n\n    let _e62 = (*sbtByteIndex_4);\n    _crt_sr_wd_offset_6 = (_e62 / 4u);\n    let _e64 = _crt_sr_wd_offset_6;\n    let _e67 = unnamed._crt_sbt_buf[_e64];\n    rgen = _e67;\n    let _e68 = _crt_sr_wd_offset_6;\n    _crt_sr_wd_offset_6 = (_e68 + 1u);\n    let _e70 = _crt_sr_wd_offset_6;\n    param_44 = _e70;\n    _crt_user_rgen_0u1_((&param_44));\n    return;\n}\n\nfn main_1() {\n    var param_45: u32;\n\n    let _e59 = gl_GlobalInvocationID_1;\n    webrtx_LaunchIDEXT = _e59;\n    let _e61 = rtUniformParams.webrtx_NumWorkGroups;\n    webrtx_LaunchSizeEXT = (_e61 * vec3<u32>(8u, 8u, 1u));\n    let _e64 = rtUniformParams.sbtStartRayGen;\n    param_45 = _e64;\n    invokeShaderIndirect_rayGenu1_((&param_45));\n    return;\n}\n\n@compute @workgroup_size(8, 8, 1)\nfn compute_main(@builtin(global_invocation_id) gl_GlobalInvocationID: vec3<u32>) {\n    gl_GlobalInvocationID_1 = gl_GlobalInvocationID;\n    main_1();\n}\n";
+
+Shaders['raytracer_v2.wgsl'] = raytracer_v2$1;
+Shaders['raytracer_v3.wgsl'] = raytracer_v3;
+Shaders['shadowray_triangle.wgsl'] = shadowray_triangle;
+
+var bitangent_prepass = "#include raytracer::tri\n\n@group(0) @binding(x) var<storage, read_write> tris: array<Tri>;\n\noverride WORKGROUP_SIZE_X: u32;\n/**\n * compute the bitangent for each vertex\n*/\n@compute @workgroup_size(WORKGROUP_SIZE_X, 1)\nfn compute_main(@builtin(global_invocation_id) id : vec3<u32>,) {\n\tif (id.x > arrayLength(&tris)) {\n\t\treturn;\n\t}\n\n\tlet tri = &tris[id.x];\n\n\ttri.bitangent0 = cross(tri.normal0, tri.tangent0.xyz) * tri.tangent0.w;\n\ttri.bitangent1 = cross(tri.normal1, tri.tangent1.xyz) * tri.tangent1.w;\n\ttri.bitangent2 = cross(tri.normal2, tri.tangent2.xyz) * tri.tangent2.w;\n}\n";
+
+var debug_bvh = "#include matrix_uniforms\n#include raytracer::common\n\nstruct AABB2 {\n  min: vec3f,\n  max: vec3f,\n}\n\n@group(0) @binding(x) var<storage, read> AABBs: array<AABB>;\n@group(0) @binding(x) var<storage, read> bvhNodes: array<AABB2>;\n@group(0) @binding(x) var<uniform> viewProjectionMatrix: mat4x4f;\n\noverride highlight: bool = false;\noverride highlightIndex: u32 = 0;\n\nconst EDGES_PER_CUBE = 12u;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@interpolate(flat) @location(0) aabbInstanceIdx: u32,\n}\n\n@vertex\nfn vertex_main(\n  @builtin(instance_index) instanceIndex: u32,\n  @builtin(vertex_index) vertexIndex: u32\n) -> VertexOut {\n  let lineInstanceIdx = instanceIndex % EDGES_PER_CUBE;\n  let aabbInstanceIdx = instanceIndex / EDGES_PER_CUBE;\n#ifdef NEW_METHOD\n  let a = bvhNodes[aabbInstanceIdx];\n#else\n  let a = AABBs[aabbInstanceIdx];\n#endif\n  var pos: vec3f;\n  let fVertexIndex = f32(vertexIndex);\n\n  //        a7 _______________ a6\n  //         / |             /|\n  //        /  |            / |\n  //    a4 /   |       a5  /  |\n  //      /____|__________/   |\n  //      |    |__________|___|\n  //      |   / a3        |   / a2\n  //      |  /            |  /\n  //      | /             | /\n  //      |/______________|/\n  //      a0              a1\n\n  let dx = a.max.x - a.min.x;\n  let dy = a.max.y - a.min.y;\n  let dz = a.max.z - a.min.z;\n\n  let a0 = a.min;\n  let a1 = vec3f(a.min.x + dx, a.min.y,      a.min.z     );\n  let a2 = vec3f(a.min.x + dx, a.min.y,      a.min.z + dz);\n  let a3 = vec3f(a.min.x,      a.min.y,      a.min.z + dz);\n  let a4 = vec3f(a.min.x,      a.min.y + dy, a.min.z     );\n  let a5 = vec3f(a.min.x + dx, a.min.y + dy, a.min.z     );\n  let a6 = a.max;\n  let a7 = vec3f(a.min.x,      a.min.y + dy, a.min.z + dz);\n\n  if (lineInstanceIdx == 0) {\n    pos = mix(a0, a1, fVertexIndex);\n  } else if (lineInstanceIdx == 1) {\n    pos = mix(a1, a2, fVertexIndex);\n  } else if (lineInstanceIdx == 2) {\n    pos = mix(a2, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 3) {\n    pos = mix(a0, a3, fVertexIndex);\n  } else if (lineInstanceIdx == 4) {\n    pos = mix(a0, a4, fVertexIndex);\n  } else if (lineInstanceIdx == 5) {\n    pos = mix(a1, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 6) {\n    pos = mix(a2, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 7) {\n    pos = mix(a3, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 8) {\n    pos = mix(a4, a5, fVertexIndex);\n  } else if (lineInstanceIdx == 9) {\n    pos = mix(a5, a6, fVertexIndex);\n  } else if (lineInstanceIdx == 10) {\n    pos = mix(a6, a7, fVertexIndex);\n  } else if (lineInstanceIdx == 11) {\n    pos = mix(a7, a4, fVertexIndex);\n  }\n  return VertexOut(\n    matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix * vec4(pos, 1),\n    aabbInstanceIdx\n  );\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> @location(0) vec4f {\n  if (highlight) {\n    if (fragInput.aabbInstanceIdx != highlightIndex) {\n      discard;\n    }\n    return vec4f(1, 1, 1, 1);\n  } else {\n    return vec4f(1, 1, 1, 0.1);\n  }\n}\n";
 
 var presentation = "@group(0) @binding(x) var inTexture: texture_2d<f32>;\n@group(0) @binding(x) var inSampler: sampler;\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\t@location(y) vTextureCoord: vec2f,\n}\n\nstruct FragmentOutput {\n\t@location(0) color: vec4<f32>,\n};\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n\t@location(x) texCoord: vec2f,\n) -> VertexOut\n{\n\treturn VertexOut(vec4(position, 1.0), texCoord.xy);\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tlet color1: vec4f = textureSample(inTexture, inSampler, vec2f(fragInput.vTextureCoord.x, 1.0 - fragInput.vTextureCoord.y));\n\treturn FragmentOutput(color1);\n}\n";
 
-var raytracer = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::ray\n#include raytracer::vec\n#include raytracer::interval\n#include raytracer::camera\n#include raytracer::color\n#include raytracer::material\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  @group(1) @binding(2) var<storage, read> materials: array<Material>;\n  @group(1) @binding(3) var<storage, read> textures: array<f32>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    if (any(globalInvocationId.xy > cameraUniforms.viewportSize)) {\n      return;\n    }\n\n    let pos = globalInvocationId.xy;\n    let x = f32(pos.x);\n    let y = f32(pos.y);\n    let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n    var rngState = rngStateBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      rngState = idx;\n    }\n\n    var camera = cameraUniforms;\n    initCamera(&camera);\n\n    var hitRec: HitRecord;\n\n    var r = getCameraRay(&camera, x, y, &rngState);\n\n    var color = vec3f(0);\n\n    var mtlStack: array<vec3f, 16>;\n    var bLoop = true;\n    var i = 0u;\n\n    while(bLoop && rayIntersectBVH(&r, &hitRec, positiveUniverseInterval)) {\n      var scattered: Ray;\n      var material = materials[hitRec.materialIdx];\n      var albedo = material.albedo;\n\n      mtlStack[i] = material.albedo;\n\n      if (commonUniforms.debugNormals == 1u) {\n        color = abs(hitRec.normal);\n        break;\n      }\n\n\n      var i2 = i;\n\n      switch material.materialType {\n        case 0: {\n          color = material.albedo;\n          bLoop = false;\n          break;\n        }\n        case 1: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            if (scatters) {\n              i++;\n              r = scattered;\n            } else {\n              color = vec3f(0);\n              bLoop = false;\n              i = 0u;\n            }\n          } else {\n            color = material.albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 2: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            r = scattered;\n            i++;\n          } else {\n            color = mtlStack[i];\n            bLoop = false;\n          }\n          break;\n        }\n        case 3: {\n          var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 4: {// Source1Material\n          var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 5: {// Source1VertexLitGeneric\n          var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 6: {// LightMappedGeneric\n          var scatters = scatterSource1LightMappedGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 7: {// Source2Material\n          var scatters = scatterSource2Material(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        default: {\n          // ...\n          bLoop = false;\n        }\n      }\n      if (commonUniforms.debugColor == 1) {\n        i = i2;\n        break;\n      }\n    }\n\n\n    if (commonUniforms.debugColor == 1) {\n        color = mtlStack[i];\n    } else {\n      while (i > 0) {\n        i--;\n        color *= mtlStack[i];\n      }\n    }\n\n    var pixel = raytraceImageBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      pixel = vec3f(0);\n    }\n\n    pixel += color;\n    raytraceImageBuffer[idx] = pixel;\n\n\n    textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n    rngStateBuffer[idx] = rngState;\n  }\n";
+var raytracer_v2 = "requires unrestricted_pointer_parameters, pointer_composite_access;\n\n#ifndef MAX_BOUNCES\n\t#define MAX_BOUNCES 10\n#endif\n#define MAX_SUB_RAYS 5\n\nconst BV_MAX_STACK_DEPTH = 16;\nconst EPSILON = 0.001;\n\nstruct BvhNode {\n\taabbMinLeftFirst: vec4f,\n\taabbMaxTriCount: vec4f,\n};\n\nconst RayTypeCamera = 0;\nconst RayTypeDiffuse = 1;\nconst RayTypeReflected = 2;\nconst RayTypeRefracted = 3;\nconst RayTypeShadow = 4;\n\nstruct Ray {\n\torigin: vec3f,\n\tdirection: vec3f,\n\trD: vec3f,\n\tt: f32,// TODO: pack ?\n\t//triIndex: u32,// TODO: pack ?\n\tmaterialIdx: u32,\n\thitPos: vec3f,\n\thitNormal: vec3f,\n\tstartNormal: vec3f,\n\ttbn: mat3x3f,\n\tcoord: vec2f,\n\thitColor: vec4f,\n\tselfColor: vec4f,\n\ttotalColor: vec4f,\n\tstrength: f32,\n\n\tlightIndex: u32,\n\tlightDistance: f32,\n\n\tchilRays: array<u32, MAX_SUB_RAYS>,\n\tshadowRay: u32,\n\tchilId: u32,\n\trayType: u32,\n\tignoreBackFaces: bool,\n};\n\nstruct TextureDescriptor {\n\twidth: u32,\n\theight: u32,\n\toffset: u32,\n\telements: u32,\n\trepeat: u32,\n\tlayers: u32,\n}\n\n// The values should be consistent with enum RtMaterial\nconst EmissiveMaterial = 1;\nconst ReflectiveMaterial = 2;\nconst DielectricMaterial = 3;\nconst LambertianMaterial = 4;\nconst Source1Material = 1000;\n\nconst Source1VertexLitGenericMaterial = 1001;\nconst Source1LightMappedGenericMaterial = 1002;\nconst Source1EyeRefractMaterial = 1003;\nconst Source1RefractMaterial = 1004;\n\nconst Source2Material = 2000;\n\nstruct Material {\n\tmaterialType: u32,\n\treflectionRatio: f32,\n\treflectionGloss: f32,\n\trefractionIndex: f32,\n\ttransparent: f32,\n\talbedo: vec3f,\n\ttextures: array<TextureDescriptor, 8>,// TODO: setup a var for max textures\n\tv0: vec4f,\n\tv1: vec4f,\n\tv2: vec4f,\n\tv3: vec4f,\n};\n\n// The values should be consistent with enum LightType\nconst AmbientLight = 1;\nconst PointLight = 2;\nconst SpotLight = 3;\nconst DirectionalLight = 4;\n\nstruct Light {\n\tposition: vec3f,\n\tlightType: u32, // See above. lightType is packed after position\n\tdirection: vec3f,\n\tintensity: f32, // intensity is packed after direction\n\tcolor: vec3f,\n\tinnerAngleCos: f32,\n\touterAngleCos: f32,\n\trange: f32,\n\tradius: f32,\n};\n\nconst rootNodeIdx = 0;\n\n#include math::modulo\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::tri\n/*\n#include raytracer::ray\n*/\n#include raytracer::vec\n/*\n#include raytracer::interval\n*/\n#include raytracer::camera\n/*\n#include raytracer::color\n#include raytracer::material\n*/\n\nstruct Counters {\n\tinvocations: atomic<u32>,\n\trayCount: atomic<u32>,\n\tcounter0: atomic<u32>,\n\tcounter1: atomic<u32>,\n\tcounter2: atomic<u32>,\n\tcounter3: atomic<u32>,\n\tcounter4: atomic<u32>,\n\tcounter5: atomic<u32>,\n\tcounter6: atomic<u32>,\n\tcounter7: atomic<u32>,\n}\n\nstruct Context {\n\trayStackPtr: u32,\n\trayStackPtr2: u32,\n\trayStack: array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>,\n\t//currentRay: Ray,\n\trngState: u32,\n\tglobalInvocationId: vec3<u32>,\n\tbounces: u32,\n\tdone: bool,\n}\n\n@group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n@group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n@group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n@group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n@group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n//@group(1) @binding(0) var<storage, read> faces: array<Face>;\n//@group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n@group(1) @binding(2) var<storage, read> materials: array<Material>;\n@group(1) @binding(3) var<storage, read> textures: array<f32>;\n@group(1) @binding(4) var<storage, read> lights: array<Light>;\n\n@group(2) @binding(x) var<storage, read> indices: array<u32>;\n@group(2) @binding(x) var<storage, read> tris: array<Tri>;\n@group(2) @binding(x) var<storage, read> bvhNodes: array<BvhNode>;\n@group(2) @binding(x) var<storage, read_write> counters: Counters;\n\noverride WORKGROUP_SIZE_X: u32;\noverride WORKGROUP_SIZE_Y: u32;\noverride OBJECTS_COUNT_IN_SCENE: u32;\noverride MAX_BVs_COUNT_PER_MESH: u32;\noverride MAX_FACES_COUNT_PER_MESH: u32;\n\noverride maxBounces: u32 = 10;\n\n@compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\nfn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n\tif (any(globalInvocationId.xy >= cameraUniforms.viewportSize)) {\n\t\treturn;\n\t}\n\n\tlet rayStackPtr: u32 = 0;\n\n\tatomicAdd(&counters.invocations, 1);\n\n\tlet pos = globalInvocationId.xy;\n\tlet x = f32(pos.x);\n\tlet y = f32(pos.y);\n\tlet idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n\tvar rngState = rngStateBuffer[idx];\n\n\tif (commonUniforms.frameCounter == 0) {\n\t\trngState = idx;\n\t}\n\n\tvar camera = cameraUniforms;\n\tinitCamera(&camera);\n\tvar ray = getCameraRay(&camera, x, y, &rngState);\n\n\tvar rays = array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>();\n\trays[0] = ray;\n\tvar context: Context = Context(0, 0, rays, rngState, globalInvocationId, 0, false);\n\tvar color: vec4f = castRayLoop(&context);\n\n\tvar pixel = raytraceImageBuffer[idx];\n\n\tif (commonUniforms.frameCounter == 0) {\n\t\tpixel = vec3f(0);\n\t}\n\n\tpixel += color.rgb;\n\n\traytraceImageBuffer[idx] = pixel;\n\ttextureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n\trngStateBuffer[idx] = rngState;\n}\n\n@must_use\nfn castRayLoop(context: ptr<function, Context>) -> vec4f {\n\tvar color: vec4f = vec4f(1.0);\n\tloop {\n\t\tcastRay(context);\n\n\t\tif ((*context).done) {\n\t\t\tbreak;\n\t\t}\n\t}\n\n\t/*\n\tif (all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\tatomicStore(&counters.counter6, bitcast<u32>((*context).rayStackPtr));\n\t}\n\t*/\n\n\tlet ray: ptr<function, Ray> = &(*context).rayStack[0];\n\n\tif (all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\tatomicStore(&counters.counter6, bitcast<u32>((*context).rayStackPtr));\n\t}\n\n\tfor(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {\n\t\tlet ray: ptr<function, Ray> = &(*context).rayStack[i];\n\t\tlet material = &materials[ray.materialIdx];\n\n\t\tvar childsColor = vec4f(0.);\n\t\tvar lightColor = vec4f(1.);\n\t\tvar childsAddColor = vec4f(0.);\n\n\t\tif (i == 0) {\n\t\t\tif (all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\t\t\tatomicStore(&counters.counter6, bitcast<u32>(ray.chilId));\n\t\t\t}\n\t\t}\n\n\t\tif (ray.shadowRay != 0xFFFFFFFF) {\n\t\t\tlet shadowRay: ptr<function, Ray> = &(*context).rayStack[ray.shadowRay];\n\t\t\tlightColor = shadowRay.hitColor;\n\t\t}\n\n\t\tif (ray.chilId > 0) {\n\t\t\tvar found: bool = false;\n\t\t\tfor(var i: u32 = 0; i < MAX_SUB_RAYS; i++) {\n\t\t\t\tlet child: u32 = ray.chilRays[i];\n\t\t\t\tif (child == 0) {\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\n\t\t\t\tlet childRay = (*context).rayStack[child];\n\n\t\t\t\tif (childRay.t != 1.e30) {\n\t\t\t\t\tif (childRay.rayType == RayTypeReflected) {\n\t\t\t\t\t\tchildsAddColor += childRay.totalColor * childRay.strength;\n\t\t\t\t\t} else {\n\t\t\t\t\t\tchildsColor += childRay.totalColor * childRay.strength;\n\t\t\t\t\t}\n\t\t\t\t\tfound = true;\n\t\t\t\t}\n\t\t\t}\n\t\t\tif (found) {\n\t\t\t\tray.totalColor = ray.hitColor * childsColor + ray.selfColor + childsAddColor;\n\t\t\t} else {\n\t\t\t\tray.totalColor = ray.hitColor + ray.selfColor;\n\t\t\t}\n\t\t} else {\n\t\t\tray.totalColor = ray.hitColor + ray.selfColor;\n\t\t}\n\t}\n\n\tif (all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\tlet id: u32 = 1;\n\t\tatomicStore(&counters.counter0, bitcast<u32>((*context).rayStack[id].hitColor.x));\n\t\tatomicStore(&counters.counter1, bitcast<u32>((*context).rayStack[id].hitColor.y));\n\t\tatomicStore(&counters.counter2, bitcast<u32>((*context).rayStack[id].hitColor.z));\n\t\tatomicStore(&counters.counter3, bitcast<u32>((*context).rayStack[id].totalColor.x));\n\t\tatomicStore(&counters.counter4, bitcast<u32>((*context).rayStack[id].totalColor.y));\n\t\tatomicStore(&counters.counter5, bitcast<u32>((*context).rayStack[id].totalColor.z));\n\n\t\tatomicStore(&counters.counter6, bitcast<u32>((*context).rayStack[0].chilId));\n\t\tatomicStore(&counters.counter6, bitcast<u32>((*context).rayStack[0].chilRays[0]));\n\t\tatomicStore(&counters.counter7, bitcast<u32>((*context).rayStack[0].chilRays[1]));\n\t}\n\n\t/*\n\tfor(var i: i32 = i32((*context).rayStackPtr); i >= 0; i--) {\n\t\tlet ray: ptr<function, Ray> = &(*context).rayStack[i];\n\t\tlet material = &materials[ray.materialIdx];\n\n\t\tif ((*material).materialType == 1) {\n\t\t\t// Emissive\n\t\t\tcolor = ray.totalColor;\n\t\t} else {\n\t\t\tcolor *= ray.hitColor;\n\t\t}\n\t}\n\t*/\n\tcolor = ray.totalColor;\n\n\treturn color;\n}\n\nfn castRay(context: ptr<function, Context>) {\n\t(*context).done = true;\n\n\n\tvar color: vec4f;\n\n\tlet currentRay = (*context).rayStackPtr2;\n\t(*context).rayStackPtr2++;\n\tlet ray: ptr<function, Ray> = &(*context).rayStack[currentRay];\n\n\tlet p = intersectBvh(ray);\n\n\t/*\n\tif (false && all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\tatomicStore(&counters.counter0, bitcast<u32>((ray).hitNormal.x));\n\t\tatomicStore(&counters.counter1, bitcast<u32>((ray).hitNormal.y));\n\t\tatomicStore(&counters.counter2, bitcast<u32>((ray).hitNormal.z));\n\t}\n\t*/\n\n\tif (ray.lightIndex != 0xFFFFFFFF) {\n\n\t\t/*\n\t\tif (all((*context).globalInvocationId.xy == vec2u(200, 150))) {\n\t\t\tatomicStore(&counters.counter0, bitcast<u32>(ray.lightDistance));\n\t\t}\n\t\t*/\n\n\t\tif (ray.t > 0 && ray.t < ray.lightDistance) {\n\t\t\tray.hitColor = vec4f(0.0);\n\t\t\treturn;\n\t\t} else {\n\t\t\tray.t = ray.lightDistance;\n\t\t\tray.materialIdx = 1;// light material\n\t\t}\n\t}\n\n\tif (ray.t != 1.e30) {\n\t\t(*context).rayStack[currentRay].t = ray.t;\n\t\t//let tri = &tris[ray.triIndex];\n\t\tlet material = &materials[ray.materialIdx];\n\n\n\t\tswitch ((*material).materialType) {\n\t\t\tcase EmissiveMaterial: {\n\t\t\t\t//ray.hitColor = vec4f(1.0);\n\t\t\t\tray.hitColor = vec4f((*material).albedo, 1.0);\n\t\t\t}\n\t\t\tcase LambertianMaterial: {\n\t\t\t\tvar scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));\n\t\t\t\tscatterRay(scatterDirection, currentRay, 1, RayTypeDiffuse, context);\n\t\t\t\tshadowRay(currentRay, 1, context);\n\t\t\t\tray.hitColor = vec4f(1.0);\n\t\t\t\t(*context).bounces++;\n\t\t\t}\n\t\t\tcase Source1Material, Source1VertexLitGenericMaterial, Source1LightMappedGenericMaterial, Source2Material: {\n\t\t\t\tlet cubeMap = (*material).textures[3];\n\t\t\t\t//let random = select(0., 1., cubeMap.offset == 0xffffffff);\n\n\t\t\t\tvar scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));\n\t\t\t\t//scatterRay(scatterDirection, currentRay, 1, context);\n\t\t\t\t//shadowRay(currentRay, context);\n\n\t\t\t\tvar color: vec4f;\n\t\t\t\tlet texelColor = textureLookup((*material).textures[0], ray.coord);\n\n\t\t\t\tcolor = texelColor;\n\n\t\t\t\tif (cubeMap.offset != 0xffffffff) {\n\t\t\t\t\tlet cubeValue = textureCubeLookup(cubeMap, reflect(ray.direction, ray.hitNormal));\n\t\t\t\t\t//ray.selfColor = vec4f(cubeValue.rgb * texelColor.a * (*material).v0.rgb, 1.0);\n\t\t\t\t\t//color = color + cubeValue.rgb * texelColor.a * (*material).v0.rgb;\n\t\t\t\t\tcolor = vec4f(color.rgb + cubeValue.rgb * texelColor.a * (*material).v0.rgb, color.a);\n\t\t\t\t}\n\n\t\t\t\tif ((*material).transparent == 1) {\n\t\t\t\t\tlet reflectDirection = reflect(ray.direction, ray.hitNormal);\n\t\t\t\t\tlet refractDirection = refract(ray.direction, ray.hitNormal, 0.9);\n\t\t\t\t\tscatterRay(refractDirection + 0. * randomUnitVec3(&(*context).rngState), currentRay, 1, RayTypeRefracted, context);\n\t\t\t\t\tscatterRay(reflectDirection, currentRay, 0.1, RayTypeReflected, context);\n\t\t\t\t\t//scatterRay(refractDirection , currentRay, 1, context);\n\n\t\t\t\t\tray.hitColor = color;\n\t\t\t\t\tray.hitColor = vec4f(0.9);\n\t\t\t\t\t//ray.hitColor = vec4f(reflectDirection, 1.0);\n\t\t\t\t\treturn;\n\t\t\t\t} else {\n\t\t\t\t\tscatterRay(scatterDirection, currentRay, 1, RayTypeDiffuse, context);\n\t\t\t\t\tray.hitColor = color;\n\t\t\t\t}\n\t\t\t\tshadowRay(currentRay, 1, context);\n\n\t\t\t\t(*context).bounces++;\n\t\t\t}\n\t\t\tcase Source1EyeRefractMaterial: {\n\t\t\t\tvar scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));\n\t\t\t\tscatterRay(scatterDirection, currentRay, 1, RayTypeDiffuse, context);\n\t\t\t\tshadowRay(currentRay, 1, context);\n\t\t\t\tray.hitColor = vec4f(textureLookup((*material).textures[0], ray.coord).rgb, 1.0);\n\t\t\t\t(*context).bounces++;\n\t\t\t}\n\t\t\tcase Source1RefractMaterial: {\n\t\t\t\tlet refractRatio = select((*material).refractionIndex, 1.0 / (*material).refractionIndex, /*(*hitRec).frontFace*/ false);\n\t\t\t\tlet unitDirection = normalize((*ray).direction);\n\t\t\t\tlet cosTheta = dot(-unitDirection, ray.hitNormal);\n\t\t\t\tlet sinTheta = sqrt(1.0 - cosTheta * cosTheta);\n\t\t\t\tlet cannotRefract = refractRatio * sinTheta > 1.0;\n\t\t\t\tvar direction = select(\n\t\t\t\t\trefract(unitDirection, ray.hitNormal, refractRatio),\n\t\t\t\t\treflect(unitDirection, ray.hitNormal),\n\t\t\t\t\tfalse\n\t\t\t\t);\n\n\t\t\t\tvar dir = textureLookup((*material).textures[0], ray.coord).rgb;\n\t\t\t\tdir = vec3f(0.5, 0.5, 1);\n\n\t\t\t\tdirection = normalize((*ray).direction) + dir * 0.15;\n\t\t\t\tdirection = refract(ray.direction, ray.hitNormal, 0.15);\n\n\n\t\t\t\tlet surfaceNormal: vec3f = normalize((*ray).tbn * (dir.rgb * 2 - 1));\n\n\t\t\t\t//scatterRay(direction, currentRay, context);\n\t\t\t\tray.hitColor = vec4f(ray.coord, 0.0, 1.0);\n\t\t\t\tray.hitColor = vec4f(abs((*ray).tbn[1]), 1.0);\n\t\t\t\tray.hitColor = vec4f(abs(direction), 1.0);\n\t\t\t\tlet refractedRay = refract(normalize((*ray).direction), surfaceNormal, 0.15);\n\t\t\t\tray.hitColor = vec4f(abs(refractedRay), 1.0);\n\n\n\t\t\t\tscatterRay(refractedRay, currentRay, 1, RayTypeRefracted, context);ray.hitColor = vec4f(1.0);\n\t\t\t\t//ray.hitColor = vec4f(abs(surfaceNormal), 1.0);\n\t\t\t\t//ray.hitColor = vec4f(dir, 1.0);\n\t\t\t\t//ray.hitColor = vec4f(1.0);\n\t\t\t\t//ray.hitColor = vec4f(direction - (*ray).direction, 1.0);\n\t\t\t\t//ray.hitColor = vec4f(vec3f(sinTheta), 1.0);\n\t\t\t\t(*context).bounces++;\n\t\t\t}\n\t\t\tcase 0xFFFFFFFF: {// Light\n\n\t\t\t\tlet light = &lights[ray.lightIndex];\n\t\t\t\t//ray.hitColor = vec4f(ray.t / light.range);\n\t\t\t\tswitch (light.lightType) {\n\t\t\t\t\tcase SpotLight: {\n\n\t\t\t\t\t\tlet angleCos: f32 = dot( ray.direction, light.direction );\n\n\t\t\t\t\t\tif (angleCos > light.outerAngleCos ) {\n\t\t\t\t\t\t\tlet spotEffect: f32 = smoothstep( light.outerAngleCos, light.innerAngleCos, angleCos );\n\t\t\t\t\t\t\tray.hitColor = vec4f(light.intensity * light.range * 50 /* TODO: fix this const */ / (ray.lightDistance * ray.lightDistance)) * max(0, dot(ray.direction, ray.startNormal)) * spotEffect;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t\tdefault: {\n\t\t\t\t\t\tray.hitColor = vec4f(light.intensity * light.range * 50 /* TODO: fix this const */ / (ray.lightDistance * ray.lightDistance)) * max(0, dot(ray.direction, ray.startNormal));\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\tdefault: {\n\t\t\t\t// ...\n\t\t\t}\n\t\t}\n\t}\n}\n\nfn scatterRay(scatterDirection: vec3f, currentRay: u32, strength: f32, rayType: u32, context: ptr<function, Context>) {\n\tlet ray: ptr<function, Ray> = &(*context).rayStack[currentRay];\n\t//var scatterDirection: vec3f = normalize(ray.hitNormal + randomUnitVec3(&(*context).rngState));\n\tif (nearZero(scatterDirection)) {\n\t\treturn;\n\t}\n\n\tvar rD: vec3f = 1 / scatterDirection;\n\tvar newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, rayType, true);\n\tpushRay(&newRay, currentRay, context);\n}\n\nfn shadowRay(currentRay: u32, strength: f32, context: ptr<function, Context>) {\n\tlet ray: ptr<function, Ray> = &(*context).rayStack[currentRay];\n\tlet light = &lights[0];\n\tvar lightDir: vec3f = light.position + light.radius * randomUnitVec3(&(*context).rngState) - ray.hitPos;\n\tlet dist = length(lightDir);\n\tlightDir = normalize(lightDir);\n\n\tvar rD: vec3f = 1 / lightDir;\n\tvar newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0, dist, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, RayTypeShadow, false);\n\tsetShadowRay(&newRay, currentRay, context);\n}\n\nfn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {\n\tif ((*context).bounces >= MAX_BOUNCES) {\n\t\treturn;\n\t}\n\n\tlet parent: ptr<function, Ray> = &(*context).rayStack[parentId];\n\n\t(*context).rayStackPtr++;\n\tparent.chilRays[parent.chilId] = (*context).rayStackPtr;\n\tparent.chilId++;\n\n\n\t(*context).rayStack[(*context).rayStackPtr] = *ray;\n\t(*context).done = false;\n}\n\nfn setShadowRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {\n\tif ((*context).bounces >= MAX_BOUNCES) {\n\t\treturn;\n\t}\n\n\tlet parent: ptr<function, Ray> = &(*context).rayStack[parentId];\n\n\t(*context).rayStackPtr++;\n\tparent.shadowRay = (*context).rayStackPtr;\n\t(*context).rayStack[(*context).rayStackPtr] = *ray;\n\t(*context).done = false;\n}\n\n@must_use\nfn intersectBvh(ray: ptr<function, Ray>, /*globalInvocationId : vec3<u32> TODO: remove, used for debug */) -> f32{\n\tvar node: BvhNode = bvhNodes[rootNodeIdx];\n\tvar stack: array<u32, 64>;\n\tvar stackPtr: u32 = 0;\n\n\tatomicAdd(&counters.rayCount, 1);\n\n\tvar boxIteration: u32 = 0;\n\tvar r: f32 = 0;\n\tvar currentNode: u32 = 0;\n\n\tloop {\n\t\tlet nodeTriCount: u32 = bitcast<u32>(node.aabbMaxTriCount.a);\n\t\tif (nodeTriCount > 0) {\n\t\t\t// Node is a leaf\n\t\t\tlet nodeLeftFirst: u32 = bitcast<u32>(node.aabbMinLeftFirst.a);\n\t\t\tfor(var i: u32 = 0; i <= nodeTriCount; i++) {\n\t\t\t\tlet tri = &tris[indices[nodeLeftFirst + i]];\n\t\t\t\tintersectTri( ray, tri );\n\n\t\t\t\t/*\n\t\t\t\tif (all(globalInvocationId.xy == vec2u(100, 75))) {\n\t\t\t\t\tatomicStore(&counters.counter2, bitcast<u32>((*ray).t));\n\t\t\t\t}\n\t\t\t\t*/\n\n\t\t\t\tif ((*ray).t != 1.e30) {\n\t\t\t\t\tr = 100 / (*ray).t;\n\t\t\t\t\tr = f32(indices[nodeLeftFirst + i]) / f32(arrayLength(&indices));\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (stackPtr == 0) {\n\t\t\t\tbreak;\n\t\t\t} else {\n\t\t\t\t//atomicAdd(&counters.counter1, nodeTriCount);\n\t\t\t\tstackPtr = stackPtr - 1;\n\t\t\t\tnode = bvhNodes[stack[stackPtr]];\n\t\t\t}\n\t\t} else {\n\t\t\tlet nodeLeftFirst: u32 = bitcast<u32>(node.aabbMinLeftFirst.a);\n\t\t\tvar child1: BvhNode = bvhNodes[nodeLeftFirst];\n\t\t\tvar child2: BvhNode = bvhNodes[nodeLeftFirst + 1];\n\t\t\tvar child1Ptr: u32 = nodeLeftFirst;\n\t\t\tvar child2Ptr: u32 = nodeLeftFirst + 1;\n\t\t\t/*\n\t\t#ifdef USE_SSE\n\t\t\tfloat dist1 = IntersectAABB_SSE( ray, child1->aabbMin4, child1->aabbMax4 );\n\t\t\tfloat dist2 = IntersectAABB_SSE( ray, child2->aabbMin4, child2->aabbMax4 );\n\t\t#else\n\t\t*/\n\t\t\tvar dist1: f32 = intersectAABB( ray, child1.aabbMinLeftFirst.xyz, child1.aabbMaxTriCount.xyz );\n\t\t\tvar dist2: f32 = intersectAABB( ray, child2.aabbMinLeftFirst.xyz, child2.aabbMaxTriCount.xyz );\n\n\t\t\t/*\n\t\t\tif (false && boxIteration == 5 && all(globalInvocationId.xy == vec2u(100, 75))) {\n\t\t\t\tatomicStore(&counters.counter1, currentNode);\n\t\t\t\tatomicStore(&counters.counter2, bitcast<u32>(dist1));\n\t\t\t\tatomicStore(&counters.counter3, bitcast<u32>(dist2));\n\t\t\t\tatomicStore(&counters.counter4, child1Ptr);\n\t\t\t\tatomicStore(&counters.counter5, child2Ptr);\n\t\t\t\tatomicStore(&counters.counter7, currentNode);\n\t\t\t\t//atomicStore(&counters.counter1, nodeLeftFirst);\n\t\t\t}\n\t\t\t*/\n\n\t\t//#endif\n\t\t\tif (dist1 > dist2) {\n\t\t\t\tlet tmpDist: f32 = dist1;\n\t\t\t\tdist1 = dist2;\n\t\t\t\tdist2 = tmpDist;\n\t\t\t\tlet tmpChild: BvhNode = child1;\n\t\t\t\tchild1 = child2;\n\t\t\t\tchild2 = tmpChild;\n\t\t\t\tchild1Ptr = child1Ptr + 1;\n\t\t\t\tchild2Ptr = child2Ptr - 1;\n\t\t\t}\n\t\t\tif (dist1 == 1e30f) {\n\t\t\t\tif (stackPtr == 0) {\n\t\t\t\t\tbreak;\n\t\t\t\t} else {\n\t\t\t\t\tstackPtr = stackPtr - 1;\n\t\t\t\t\tnode = bvhNodes[stack[stackPtr]];\n\t\t\t\t\tcurrentNode = stack[stackPtr];\n\t\t\t\t}\n\t\t\t} else {\n\t\t\t\tnode = child1;\n\t\t\t\tcurrentNode = child1Ptr;\n\t\t\t\tif (dist2 != 1e30f) {\n\t\t\t\t\tstack[(stackPtr)] = child2Ptr;\n\t\t\t\t\tstackPtr++;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tboxIteration++;\n\t\tif (boxIteration > 1000) {\n\t\t\tbreak;\n\t\t}\n\t}\n\treturn r;\n}\n\nfn intersectTri(ray: ptr<function, Ray>, tri: ptr<storage, Tri, read>) {\n\t//let tri = &tris[triIndex];\n\n\tlet edge1: vec3f = (*tri).vertex1 - (*tri).vertex0;\n\tlet edge2: vec3f = (*tri).vertex2 - (*tri).vertex0;\n\n\tlet normal1 = (*tri).normal1 - (*tri).normal0;\n\tlet normal2 = (*tri).normal2 - (*tri).normal0;\n\n\tlet tangent1 = (*tri).tangent1.xyz - (*tri).tangent0.xyz;\n\tlet tangent2 = (*tri).tangent2.xyz - (*tri).tangent0.xyz;\n\n\tlet bitangent1 = (*tri).bitangent1 - (*tri).bitangent0;\n\tlet bitangent2 = (*tri).bitangent2 - (*tri).bitangent0;\n\n\tlet uv1 = (*tri).uv1 - (*tri).uv0;\n\tlet uv2 = (*tri).uv2 - (*tri).uv0;\n\n\tlet h: vec3f = cross( (*ray).direction, edge2 );\n\tlet a: f32 = dot( edge1, h );\n\tif (a > -0.0001f && a < 0.0001f) {\n\t\treturn; // ray parallel to triangle\n\t}\n\tlet f: f32 = 1 / a;\n\tlet s: vec3f = (*ray).origin - (*tri).vertex0;\n\tlet u: f32 = f * dot( s, h );\n\tif (u < 0 || u > 1) {\n\t\t// Ray passes outside edge2's bounds\n\t\treturn;\n\t}\n\tlet q: vec3f = cross( s, edge1 );\n\tlet v: f32 = f * dot( (*ray).direction, q );\n\tif (v < 0 || u + v > 1) {\n\t\t// Ray passes outside edge1's bounds\n\t\treturn;\n\t}\n\tlet t: f32 = f * dot( edge2, q );\n\tif (t > 0.0001f && !((*ray).ignoreBackFaces && dot( (*ray).direction, q ) < 0)/* TODO: properly reject backfaces */) {\n\t\tif (t < (*ray).t) {\n\t\t\tvar tangent: vec3f;\n\t\t\tvar bitangent: vec3f;\n\n\t\t\t(*ray).materialIdx = (*tri).materialIdx;\n\n\t\t\t(*ray).hitPos = (*tri).vertex0 + u * edge1 + v * edge2;\n\t\t\tif ((*tri).flatShading == 0) {\n\t\t\t\t(*ray).hitNormal = (*tri).normal0 + u * normal1 + v * normal2;\n\t\t\t\ttangent = (*tri).tangent0.xyz + u * tangent1 + v * tangent2;\n\t\t\t\tbitangent = (*tri).bitangent0 + u * bitangent1 + v * bitangent2;\n\t\t\t} else {\n\t\t\t\t(*ray).hitNormal = (*tri).faceNormal;\n\t\t\t\ttangent = vec3f(1, 0, 0);// TODO: compute actual tangent\n\t\t\t\tbitangent = vec3f(0, 1, 0);// TODO: compute actual bitangent\n\t\t\t}\n\t\t\t(*ray).coord = (*tri).uv0 + u * uv1 + v * uv2;\n\t\t\t(*ray).tbn = mat3x3f(tangent, bitangent, (*ray).hitNormal);\n\t\t}\n\t\t(*ray).t = min( (*ray).t, t );\n\t}\n}\n\n@must_use\nfn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<function, u32>) -> Ray {\n\tlet pixelCenter = (*camera).pixel00Loc + (i * (*camera).pixelDeltaU) + (j * (*camera).pixelDeltaV);\n\tlet pixelSample = pixelCenter + pixelSampleSquare(camera, rngState);\n\tlet rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);\n\tlet rayDirection = pixelSample - rayOrigin;\n\tlet rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );\n\treturn Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, RayTypeCamera, true);\n}\n\n@must_use\nfn defocusDiskSample(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3f {\n\tlet p = randomVec3InUnitDisc(rngState);\n\treturn (*camera).center + (p.x * (*camera).defocusDiscU) + (p.y * (*camera).defocusDiscV);\n}\n\n@must_use\nfn pixelSampleSquare(camera: ptr<function, Camera>, rngState: ptr<function, u32>) -> vec3<f32> {\n\tlet px = -0.5 + rngNextFloat(rngState);\n\tlet py = -0.5 + rngNextFloat(rngState);\n\treturn (px * (*camera).pixelDeltaU) + (py * (*camera).pixelDeltaV);\n}\n\n@must_use\nfn intersectAABB(ray: ptr<function, Ray>, bmin: vec3f, bmax: vec3f ) -> f32 {\n\tlet tx1: f32 = (bmin.x - (*ray).origin.x) * (*ray).rD.x;\n\tlet tx2: f32 = (bmax.x - (*ray).origin.x) * (*ray).rD.x;\n\tvar tmin: f32 = min( tx1, tx2 );\n\tvar tmax: f32 = max( tx1, tx2 );\n\tlet ty1: f32 = (bmin.y - (*ray).origin.y) * (*ray).rD.y;\n\tlet ty2: f32 = (bmax.y - (*ray).origin.y) * (*ray).rD.y;\n\ttmin = max( tmin, min( ty1, ty2 ) );\n\ttmax = min( tmax, max( ty1, ty2 ) );\n\tlet tz1: f32 = (bmin.z - (*ray).origin.z) * (*ray).rD.z;\n\tlet tz2: f32 = (bmax.z - (*ray).origin.z) * (*ray).rD.z;\n\ttmin = max( tmin, min( tz1, tz2 ) );\n\ttmax = min( tmax, max( tz1, tz2 ) );\n\tif (tmax >= tmin && tmin < (*ray).t && tmax > 0) {\n\t\treturn tmin;\n\t} else {\n\t\treturn 1e30f;\n\t}\n}\n\n@must_use\nfn textureLookup(desc: TextureDescriptor, uv: vec2f) -> vec4<f32> {\n\tif (desc.offset == 0xffffffff) {\n\t\treturn vec4f(0.0);\n\t}\n\n\tlet uv2 : vec2f = select(clamp(uv, vec2f(0), vec2f(1)), modulo_vec2f(uv, vec2f(1)), vec2<bool>((desc.repeat & 1) == 1, (desc.repeat & 2) == 2));\n\n\treturn textureLookup2(desc,\n\t\tu32(uv2.x * f32(desc.width - 1)),\n\t\tu32(uv2.y * f32(desc.height - 1)),\n\t);\n}\n\n@must_use\nfn textureLookupBilinear(desc: TextureDescriptor, uv: vec2f) -> vec4<f32> {\n\tif (desc.offset == 0xffffffff) {\n\t\treturn vec4f(0.0);\n\t}\n\n\tlet uv2 : vec2f = select(clamp(uv, vec2f(0), vec2f(1)), modulo_vec2f(uv, vec2f(1)), vec2<bool>((desc.repeat & 1) == 1, (desc.repeat & 2) == 2));\n\n\n\tlet x = uv2.x * f32(desc.width - 1);\n\tlet y = uv2.y * f32(desc.height - 1);\n\n\tlet x1 = floor(x);\n\tlet x2 = ceil(x);\n\tlet y1 = floor(y);\n\tlet y2 = ceil(y);\n\n\tlet q11 = textureLookup2(desc, u32(x1), u32(y1));\n\tlet q12 = textureLookup2(desc, u32(x1), u32(y2));\n\tlet q21 = textureLookup2(desc, u32(x2), u32(y1));\n\tlet q22 = textureLookup2(desc, u32(x2), u32(y2));\n\n\t//return vec4f(f32(x) / 1000, f32(y) / 1000, 0, 1);\n\t//return vec4f(vec3f((x2 - x) / (x2 - x1)), 1);\n\n\tlet f1 = (x2 - x);\n\tlet f2 = (x - x1);\n\n\tlet r1 = f1 * q11 + f2 * q21;\n\tlet r2 = f1 * q12 + f2 * q22;\n\n\t//return vec4f(f32(x) / 1000, f32(y) / 1000, 0, 1);\n\t//return vec4f(vec3f((x2 - x) / (x2 - x1)  ), 1);\n\n\treturn f1 * r1 + f2 * r2;\n}\n\n@must_use\nfn textureLookup2(desc: TextureDescriptor, u: u32, v: u32) -> vec4<f32> {\n\tlet idx = (v * desc.width + u) * desc.elements;\n\n\tlet elem = textures[desc.offset + idx];\n\treturn vec4f(\n\t\ttextures[desc.offset + idx + 0],\n\t\ttextures[desc.offset + idx + 1],\n\t\ttextures[desc.offset + idx + 2],\n\t\tselect(0., textures[desc.offset + idx + 3], desc.elements >= 4)\n\t) / 255.;\n}\n\n@must_use\nfn textureCubeLookup(desc: TextureDescriptor, dir: vec3f) -> vec4<f32> {\n\tif (desc.offset == 0xffffffff || desc.layers < 6) {\n\treturn vec4f(0.0);\n\t}\n\n\tlet coords = sampleCube(dir);\n\tlet u = coords.x;\n\tlet v = coords.y;\n\tlet faceIndex = coords.z;\n\n\tlet u2: f32 = select(clamp(u, 0f, 1f), modulo_f32(u, 1), (desc.repeat & 1) == 1);\n\tlet v2: f32 = select(clamp(v, 0f, 1f), modulo_f32(v, 1), (desc.repeat & 2) == 2);\n\n\tlet j = u32(u2 * f32(desc.width - 1));\n\tlet i = u32(v2 * f32(desc.height - 1));\n\tlet idx = (i * desc.width + j) * desc.elements + u32(faceIndex) * desc.height * desc.width * desc.elements;\n\n\tlet elem = textures[desc.offset + idx];\n\treturn vec4f(\n\ttextures[desc.offset + idx + 0],\n\ttextures[desc.offset + idx + 1],\n\ttextures[desc.offset + idx + 2],\n\tselect(0., textures[desc.offset + idx + 3], desc.elements >= 4)\n\t) / 255.;\n}\n\n// See https://gamedev.net/forums/topic/687535\nfn sampleCube(v: vec3f) -> vec3f {\n\tlet vAbs = abs(v);\n\tvar ma: f32;\n\tvar faceIndex: f32;\n\tvar uv: vec2f;\n\n\tif(vAbs.z >= vAbs.x && vAbs.z >= vAbs.y) {\n\t\tfaceIndex = select(4., 5., v.z < 0.0);\n\t\tma = 0.5 / vAbs.z;\n\t\tuv = vec2f(select(v.x, -v.x, v.z < 0.0), -v.y);\n\t} else if(vAbs.y >= vAbs.x) {\n\t\tfaceIndex = select(2., 3., v.y < 0.0);\n\t\tma = 0.5 / vAbs.y;\n\t\tuv = vec2f(v.x, select(v.z, -v.z, v.y < 0.0));\n\t} else {\n\t\tfaceIndex = select(0., 1., v.z < 0.0);\n\t\tma = 0.5 / vAbs.x;\n\t\tuv = vec2f(select(-v.z, v.z, v.x < 0.0), -v.y);\n\t}\n\treturn vec3f(uv * ma + 0.5, faceIndex);\n}\n";
+
+var raytracer = "  const BV_MAX_STACK_DEPTH = 16;\n  const EPSILON = 0.001;\n\n#include raytracer::utils\n#include raytracer::common\n#include raytracer::ray\n#include raytracer::vec\n#include raytracer::interval\n#include raytracer::camera\n#include raytracer::color\n#include raytracer::material\n\n  @group(0) @binding(0) var<storage, read_write> raytraceImageBuffer: array<vec3f>;\n  @group(0) @binding(1) var<storage, read_write> rngStateBuffer: array<u32>;\n  @group(0) @binding(2) var<uniform> commonUniforms: CommonUniforms;\n  @group(0) @binding(3) var<uniform> cameraUniforms: Camera;\n  @group(0) @binding(4) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n  @group(1) @binding(0) var<storage, read> faces: array<Face>;\n  @group(1) @binding(1) var<storage, read> AABBs: array<AABB>;\n  @group(1) @binding(2) var<storage, read> materials: array<Material>;\n  @group(1) @binding(3) var<storage, read> textures: array<f32>;\n\n  override WORKGROUP_SIZE_X: u32;\n  override WORKGROUP_SIZE_Y: u32;\n  override OBJECTS_COUNT_IN_SCENE: u32;\n  override MAX_BVs_COUNT_PER_MESH: u32;\n  override MAX_FACES_COUNT_PER_MESH: u32;\n\n  @compute @workgroup_size(WORKGROUP_SIZE_X, WORKGROUP_SIZE_Y)\n  fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) {\n    if (any(globalInvocationId.xy >= cameraUniforms.viewportSize)) {\n      return;\n    }\n\n    let pos = globalInvocationId.xy;\n    let x = f32(pos.x);\n    let y = f32(pos.y);\n    let idx = pos.x + pos.y * cameraUniforms.viewportSize.x;\n\n    var rngState = rngStateBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      rngState = idx;\n    }\n\n    var camera = cameraUniforms;\n    initCamera(&camera);\n\n    var hitRec: HitRecord;\n\n    var r = getCameraRay(&camera, x, y, &rngState);\n\n    var color = vec3f(0);\n\n    var mtlStack: array<vec3f, 16>;\n    var bLoop = true;\n    var i = 0u;\n\n    while(bLoop && rayIntersectBVH(&r, &hitRec, positiveUniverseInterval)) {\n      var scattered: Ray;\n      var material = materials[hitRec.materialIdx];\n      var albedo = material.albedo;\n\n      mtlStack[i] = material.albedo;\n\n      if (commonUniforms.debugNormals == 1u) {\n        color = abs(hitRec.normal);\n        break;\n      }\n\n\n      var i2 = i;\n\n      switch material.materialType {\n        case 1: {\n          color = material.albedo;\n          bLoop = false;\n          break;\n        }\n        case 2: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterMetal(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            if (scatters) {\n              i++;\n              r = scattered;\n            } else {\n              color = vec3f(0);\n              bLoop = false;\n              i = 0u;\n            }\n          } else {\n            color = material.albedo;\n            bLoop = false;\n          }\n          break;\n        }\n        case 3: {\n          if (i < commonUniforms.maxBounces) {\n            var scatters = scatterDielectric(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n            r = scattered;\n            i++;\n          } else {\n            color = mtlStack[i];\n            bLoop = false;\n          }\n          break;\n        }\n        case 4: {\n          var scatters = scatterLambertian(&material, &r, &scattered, &hitRec, &albedo, &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 5: {// Source1Material\n          var scatters = scatterSource1(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 6: {// Source1VertexLitGeneric\n          var scatters = scatterSource1VertexLitGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 7: {// LightMappedGeneric\n          var scatters = scatterSource1LightMappedGeneric(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        case 8: {// Source2Material\n          var scatters = scatterSource2Material(&material, &r, &scattered, &hitRec, &mtlStack[i], &rngState);\n          if (i < commonUniforms.maxBounces) {\n            i++;\n            r = scattered;\n          } else {\n            bLoop = false;\n          }\n          break;\n        }\n        default: {\n          // ...\n          bLoop = false;\n        }\n      }\n      if (commonUniforms.debugColor == 1) {\n        i = i2;\n        break;\n      }\n    }\n\n\n    if (commonUniforms.debugColor == 1) {\n        color = mtlStack[i];\n    } else {\n      while (i > 0) {\n        i--;\n        color *= mtlStack[i];\n      }\n    }\n\n    var pixel = raytraceImageBuffer[idx];\n\n    if (commonUniforms.frameCounter == 0) {\n      pixel = vec3f(0);\n    }\n\n    pixel += color;\n    raytraceImageBuffer[idx] = pixel;\n\n\n    textureStore(outTexture, globalInvocationId.xy, vec4(pixel / f32(commonUniforms.frameCounter) , 1.0));\n\n    rngStateBuffer[idx] = rngState;\n  }\n";
 
 var test = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#ifdef NO_DRAW\n\t\tdiscard;\n\t#endif\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_detail_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_phong_exponent_map\n\n\t#include calculate_fragment_normal\n\n\tvar phongMask: f32 = 1.0;\n\t#ifdef USE_NORMAL_MAP\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * texelNormal.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#else\n\t\t\tphongMask = texelNormal.a;\n\t\t#endif\n\t#else\n\t\tlet tangentSpaceNormal: vec3f = mix(2.0 * defaultNormalTexel.xyz - 1.0, vec3(0, 0, 1), f32(uBaseMapAlphaPhongMask));\n\t\t#ifdef USE_COLOR_ALPHA_AS_PHONG_MASK\n\t\t\tphongMask = texelColor.a;\n\t\t#endif\n\t#endif\n\t//float phongMask = mix(texelNormal.a, texelColor.a, float(uBaseMapAlphaPhongMask));\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\n\tdiffuseColor *= texelColor;\n\t#include calculate_fragment_alpha_test\n\n\tlet albedo: vec3f = texelColor.rgb;\n\t#include source1_blend_tint\n\t#include calculate_fragment_cube_map\n\n\tvar alpha: f32 = g_DiffuseModulation.a;\n\t#include source1_colormap_alpha\n\n\n\talpha = alpha;//lerp(alpha, alpha * vVertexColor.a, g_fVertexAlpha);\n\n\n\n\tlet fogFactor: f32 = 0.0;\n\t//gl_FragColor = FinalOutputConst(vec4(albedo, alpha), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, worldPos_projPosZ.w );\n\t//gl_FragColor = FinalOutputConst( float4( result.rgb, alpha ), fogFactor, g_fPixelFogType, TONEMAP_SCALE_LINEAR, g_fWriteDepthToAlpha, i.worldPos_projPosZ.w );\n\n\t//if (gl_FragCoord.x < 400.) {\n\t\t//gl_FragColor = vec4(texelColor.rgb, 1.);\n\t//}\n\t/*if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {\n\t\tdiscard;\n\t}*/\n\t//if (length(mod(gl_FragCoord.xy, vec2(2.0))) < 1.0) {\n\t//\tdiscard;\n\t//}\n\t//gl_FragColor = vec4(albedo, alpha);\n\t//gl_FragColor.rgb = g_DiffuseModulation.rgb;\n\n\n#ifdef USE_SHEEN_MAP\n\t//gl_FragColor.rgb = texture2D(sheenMaskTexture, vTextureCoord).rgb;\n#endif\n\n\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 0)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 1)\n\t\t\tfragColor = vec4f(fragColor.rgb + texelDetail.rgb * uDetailBlendFactor, fragColor.a);\n\t\t#elif (DETAIL_BLEND_MODE == 2)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 3) // TCOMBINE_FADE\n\t\t\talbedo = mix(albedo, texelDetail.rgb, uDetailBlendFactor);\n\t\t#endif\n\t#endif\n\n\n/* TEST SHADING BEGIN*/\n\t#include calculate_lights_setup_vars\n\n\n\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = albedo;//diffuseColor.rgb;//vec3(1.0);//diffuseColor.rgb;\n\tmaterial.specularColor = vec3(phongMask);\n#ifdef USE_PHONG_EXPONENT_MAP\n\t#ifdef USE_PHONG_ALBEDO_TINT\n\t\tmaterial.specularColor = mix(vec3(1.0), texelColor.rgb, texelPhongExponent.g);\n\t#endif\n\tmaterial.specularShininess = texelPhongExponent.r * phongUniforms.phongExponentFactor;\n#else\n\tmaterial.specularShininess = phongUniforms.phongBoost * phongUniforms.phongExponent;\n#endif\n\tmaterial.specularStrength = phongMask;\n#ifdef SOURCE1_SPECULAR_STRENGTH\n\tmaterial.specularStrength *= float(SOURCE1_SPECULAR_STRENGTH);\n#endif\n\n#include calculate_fragment_lights\n\n/* TEST SHADING END*/\n\n/* TEST SHADING BEGIN*/\n\nvar diffuse: vec3f = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;\n#include source1_calculate_selfillum\n\n\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4(reflectedLight.directSpecular + diffuse, fragColor.a);\n#else\n\tfragColor = vec4(diffuse, fragColor.a);\n#endif\nfragColor.a = alpha;\n\n//gl_FragColor.rgb = vec3(phongMask);\n/* TEST SHADING END*/\n//gl_FragColor.rgb = texelPhongExponent.rgb;\n//gl_FragColor.rgb = material.specularColor;\n//gl_FragColor.rgb = vec3(texelColor.a);\n\n\n#ifdef USE_CUBE_MAP\n\t#if defined(USE_NORMAL_MAP) && defined(USE_NORMAL_ALPHA_AS_ENVMAP_MASK)\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelNormal.a, fragColor.a);\n\t#else\n\t\t//gl_FragColor.rgb += cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a;\n\t\tfragColor = vec4(fragColor.rgb + cubeMapColor.rgb * uCubeMapTint.rgb * texelColor.a, fragColor.a);\n\t#endif\n#endif\n\n\n\n\n/*\n\n\n\tcomputePointLightIrradiance(uPointLights[0], geometry, directLight);\n\tRE_Direct( directLight, geometry, material, reflectedLight );\n\t\tfloat dotNL = saturate( dot( geometry.normal, directLight.direction ) );\n\t\tirradiance = dotNL * directLight.color;\n\n\tvec3 halfDir = normalize( directLight.direction + geometry.viewDir );\n\tfloat dotNH = saturate( dot( geometry.normal, halfDir ) );\n\tfloat dotLH = saturate( dot( directLight.direction, halfDir ) );\n\tvec3 F = F_Schlick( material.specularColor, dotLH );\n\tfloat D = D_BlinnPhong( material.specularShininess, dotNH );\n\n\tfloat D_BlinnPhong = RECIPROCAL_PI * ( material.specularShininess * 0.5 + 1.0 ) * pow( dotNH + 0.1, material.specularShininess );\n\n\ngl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);\n*/\n#ifdef SKIP_LIGHTING\n\tgl_FragColor.rgb = albedo;\n#endif\n\n\t#include source1_calculate_sheen\n\t#include calculate_fragment_standard\n\t#include calculate_fragment_log_depth\n\n\t#if defined(USE_DETAIL_MAP) && defined(DETAIL_BLEND_MODE)\n\t\t#if (DETAIL_BLEND_MODE == 5)\n\t\t//TODO\n\t\t#elif (DETAIL_BLEND_MODE == 6)\n\t\t\tlet f: f32 = uDetailBlendFactor - 0.5;\n\t\t\tlet fMult: f32 = select(4.0 * uDetailBlendFactor, 1.0 / uDetailBlendFactor, (f >= 0.0));\n\t\t\tlet fAdd: f32 = select(-0.5*fMult, 1.0-fMult, (f >= 0.0));\n\t\t\tfragColor = vec4(fragColor.rgb + saturate(fMult * texelDetail.rgb + fAdd), fragColor.a);\n\t\t#endif\n\t#endif\n\n\t#include output_fragment\n}\n";
 
 Shaders['bitangent_prepass.wgsl'] = bitangent_prepass;
 Shaders['debug_bvh.wgsl'] = debug_bvh;
 Shaders['presentation.wgsl'] = presentation;
+Shaders['raytracer_v2.wgsl'] = raytracer_v2;
 Shaders['raytracer.wgsl'] = raytracer;
 Shaders['test.wgsl'] = test;
 
@@ -23759,8 +23289,9 @@ const emptyTexture = {
 async function sceneToRtScene(scene) {
     const entitites = scene.getRenderableList();
     const meshes = [];
+    const lights = [];
     const materials = new Map();
-    let materialIndex = 0;
+    let materialIndex = 2;
     for (const entity of entitites) {
         if (entity.isMesh) {
             meshes.push(entity);
@@ -23769,6 +23300,9 @@ async function sceneToRtScene(scene) {
                 let rtMaterials = material.getRaytracingMaterial(materialIndex++);
                 materials.set(material, rtMaterials);
             }
+        }
+        else if (entity.isLight && !entity.isAmbientLight) {
+            lights.push(entity);
         }
     }
     return loadModels({
@@ -23780,9 +23314,9 @@ async function sceneToRtScene(scene) {
         AABBS_COUNT: 0,
         textures: new Float32Array(),
         textureDescriptors: new Map(),
-    }, meshes, materials);
+    }, meshes, materials, lights);
 }
-async function loadModels(context, meshes, sceneMaterials) {
+async function loadModels(context, meshes, sceneMaterials, lights) {
     const sceneModels = parseModel(meshes, sceneMaterials);
     context.MODELS_COUNT = sceneModels.length;
     let faces;
@@ -23897,7 +23431,33 @@ async function loadModels(context, meshes, sceneMaterials) {
         }
         // Prepare materials buffer
         {
-            context.MATERIALS_COUNT = sceneMaterials.size;
+            context.MATERIALS_COUNT = sceneMaterials.size + 2;
+            // Add a material for lights
+            const textures = [emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture, emptyTexture];
+            materials.push({
+                materialType: 0,
+                reflectionRatio: 0,
+                reflectionGloss: 0,
+                refractionIndex: 0,
+                albedo: vec3.create(),
+                textures,
+                v0: vec4.create(),
+                v1: vec4.create(),
+                v2: vec4.create(),
+                v3: vec4.create(),
+            });
+            materials.push({
+                materialType: 0xFFFFFFFF,
+                reflectionRatio: 0,
+                reflectionGloss: 0,
+                refractionIndex: 0,
+                albedo: vec3.create(),
+                textures,
+                v0: vec4.create(),
+                v1: vec4.create(),
+                v2: vec4.create(),
+                v3: vec4.create(),
+            });
             for (const [, mtl] of sceneMaterials) {
                 if (!mtl) {
                     materials.push(null);
@@ -23916,11 +23476,82 @@ async function loadModels(context, meshes, sceneMaterials) {
                     reflectionRatio: mtl.reflectionRatio,
                     reflectionGloss: mtl.reflectionGloss,
                     refractionIndex: mtl.refractionIndex,
-                    albedo: mtl.albedo,
+                    transparent: mtl.transparent,
+                    albedo: mtl.albedo ?? vec3.create(),
                     textures,
+                    v0: mtl.v0 ?? vec4.create(),
+                    v1: mtl.v1 ?? vec4.create(),
+                    v2: mtl.v2 ?? vec4.create(),
+                    v3: mtl.v3 ?? vec4.create(),
                 });
             }
         }
+    }
+    const start = performance.now();
+    const context_v2 = buildBVH_v2(meshes, sceneMaterials);
+    //console.info(context_v2.bvhNodes);
+    const end = performance.now();
+    console.info(`Building bvh took ${end - start} ms`);
+    const TRI_SIZE = 60; // 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
+    const LIGHT_SIZE = 17;
+    //const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
+    const v2_trisBuffer = new ArrayBuffer(context_v2.triIdx.length * TRI_SIZE * Float32Array.BYTES_PER_ELEMENT);
+    const v2_nodesBuffer = new ArrayBuffer(context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT); // 2 * vec4 per node
+    const v2_indices = new Uint8ClampedArray(context_v2.triIdx.buffer); //context_v2.triIdx);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
+    const v2_tris = new Uint8ClampedArray(v2_trisBuffer); //context_v2.triIdx.length * 12 * Float32Array.BYTES_PER_ELEMENT);// 3 * vec4 per tri
+    const v2_nodes = new Uint8ClampedArray(v2_nodesBuffer); //context_v2.nodesUsed * 8 * Float32Array.BYTES_PER_ELEMENT);// 2 * vec4 per node
+    const v2_lights = new Uint8ClampedArray(lights.length * LIGHT_SIZE * Float32Array.BYTES_PER_ELEMENT);
+    const trisFloat = new Float32Array(v2_trisBuffer);
+    const trisUint32 = new Uint32Array(v2_trisBuffer);
+    const nodesFloat = new Float32Array(v2_nodesBuffer);
+    const nodesUint32 = new Uint32Array(v2_nodesBuffer);
+    const tris = context_v2.tris;
+    for (let i = 0; i < tris.length; i++) {
+        const tri = tris[i];
+        const j = i * TRI_SIZE;
+        trisFloat.set(tri.vertex0, j + 0);
+        trisUint32[j + 3] = tri.materialIdx;
+        trisFloat.set(tri.vertex1, j + 4);
+        trisUint32[j + 7] = tri.flatShading ? 1 : 0;
+        trisFloat.set(tri.vertex2, j + 8);
+        trisFloat.set(tri.normal0, j + 12);
+        trisFloat.set(tri.normal1, j + 16);
+        trisFloat.set(tri.normal2, j + 20);
+        trisFloat.set(tri.tangent0, j + 24);
+        trisFloat.set(tri.tangent1, j + 28);
+        trisFloat.set(tri.tangent2, j + 32);
+        trisFloat.set(tri.uv0, j + 48);
+        trisFloat.set(tri.uv1, j + 50);
+        trisFloat.set(tri.uv2, j + 52);
+        trisFloat.set(tri.faceNormal, j + 56);
+    }
+    const bvhNodes = context_v2.bvhNodes;
+    for (let i = 0; i < context_v2.nodesUsed; i++) {
+        const bvhNode = bvhNodes[i];
+        const j = i * 8;
+        nodesFloat.set(bvhNode.aabbMin, j + 0);
+        nodesFloat.set(bvhNode.aabbMax, j + 4);
+        nodesUint32[j + 3] = bvhNode.leftFirst;
+        nodesUint32[j + 7] = bvhNode.triCount;
+    }
+    const lightsFloat = new Float32Array(v2_lights.buffer);
+    const lightsUint32 = new Uint32Array(v2_lights.buffer);
+    const tmpV = vec3.create();
+    quat.create();
+    for (let i = 0; i < lights.length; i++) {
+        const light = lights[i];
+        const j = i * LIGHT_SIZE;
+        lightsFloat.set(light.getWorldPosition(tmpV), j + 0); // position
+        lightsUint32[j + 3] = light.getRaytracingLight(); // type
+        if (light.isSpotLight) {
+            lightsFloat.set(light.getDirection(tmpV), j + 4); // orientation
+        }
+        lightsFloat[j + 7] = light.intensity; // intensity
+        lightsFloat.set(light.color, j + 8); // color
+        lightsFloat[j + 11] = light.innerAngleCos; // inner angle
+        lightsFloat[j + 12] = light.outerAngleCos; // outer angle
+        lightsFloat[j + 13] = light.range; // range
+        lightsFloat[j + 14] = light.radius; // radius
     }
     return {
         materials,
@@ -23932,6 +23563,11 @@ async function loadModels(context, meshes, sceneMaterials) {
         MODELS_COUNT: context.MODELS_COUNT,
         MAX_NUM_BVs_PER_MESH: context.MAX_NUM_BVs_PER_MESH,
         MAX_NUM_FACES_PER_MESH: context.MAX_NUM_FACES_PER_MESH,
+        v2_indices,
+        v2_tris,
+        v2_nodes,
+        v2_lights,
+        nodesUsed: context_v2.nodesUsed,
     };
 }
 function parseModel(meshes, materials) {
@@ -24074,9 +23710,312 @@ async function addToGlobalTextureData(context, texture) {
         layers: texture.isCube ? 6 : 1,
     };
 }
+class BVHNode {
+    aabbMin = vec3.create();
+    aabbMax = vec3.create();
+    leftFirst;
+    triCount;
+    static #tmp = vec3.create();
+    //union { struct { float3 aabbMin; uint leftFirst; }; __m128 aabbMin4; };
+    //union { struct { float3 aabbMax; uint triCount; }; __m128 aabbMax4; };
+    isLeaf() { return this.triCount > 0; }
+    grow(p) {
+        vec3.min(this.aabbMin, this.aabbMin, p);
+        vec3.max(this.aabbMax, this.aabbMax, p);
+    }
+    area() {
+        const tmp = BVHNode.#tmp;
+        vec3.sub(tmp, this.aabbMax, this.aabbMin);
+        return tmp[0] * tmp[1] + tmp[1] * tmp[2] + tmp[2] * tmp[0];
+    }
+}
+class Aabb {
+    bmin = vec3.fromValues(Infinity, Infinity, Infinity);
+    bmax = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+    static #tmp = vec3.create();
+    grow(p) {
+        vec3.min(this.bmin, this.bmin, p);
+        vec3.max(this.bmax, this.bmax, p);
+    }
+    growAabb(b) {
+        if (b.bmin[0] != Infinity) {
+            this.grow(b.bmin);
+            this.grow(b.bmax);
+        }
+    }
+    area() {
+        const tmp = Aabb.#tmp;
+        vec3.sub(tmp, this.bmax, this.bmin);
+        return tmp[0] * tmp[1] + tmp[1] * tmp[2] + tmp[2] * tmp[0];
+    }
+    reset() {
+        vec3.set(this.bmin, Infinity, Infinity, Infinity);
+        vec3.set(this.bmax, -Infinity, -Infinity, -Infinity);
+    }
+}
+const rootNodeIdx = 0;
+function buildBVH_v2(meshes, materials) {
+    const tris = createTris(meshes, materials);
+    // create the BVH node pool
+    const triCount = tris.length;
+    const bvhNodes = new Array(triCount * 2);
+    const triIdx = new Uint32Array(triCount);
+    // populate triangle index array
+    for (let i = 0; i < triCount; i++) {
+        triIdx[i] = i;
+        // calculate triangle centroids for partitioning
+        const tri = tris[i];
+        tri.centroid[0] = (tri.vertex0[0] + tri.vertex1[0] + tri.vertex2[0]) * 0.3333;
+        tri.centroid[1] = (tri.vertex0[1] + tri.vertex1[1] + tri.vertex2[1]) * 0.3333;
+        tri.centroid[2] = (tri.vertex0[2] + tri.vertex1[2] + tri.vertex2[2]) * 0.3333;
+    }
+    // assign all triangles to root node
+    const rootNode = new BVHNode();
+    bvhNodes[rootNodeIdx] = rootNode;
+    bvhNodes[rootNodeIdx + 1] = new BVHNode();
+    rootNode.leftFirst = 0, rootNode.triCount = triCount;
+    // Prepare arrays for findBestSplitPlane
+    const bin = new Array(BINS);
+    for (let i = 0; i < BINS; i++) {
+        bin[i] = new Bin(); //{ bounds: new Aabb(), triCount: 0 };
+    }
+    const leftArea = new Array(BINS - 1);
+    const rightArea = new Array(BINS - 1);
+    const leftCount = new Array(BINS - 1);
+    const rightCount = new Array(BINS - 1);
+    for (let i = 0; i < BINS - 1; i++) {
+        leftArea[i] = 0; //new Bin();//{ bounds: new Aabb(), triCount: 0 };
+        rightArea[i] = 0; //new Bin();//{ bounds: new Aabb(), triCount: 0 };
+        leftCount[i] = 0; //new Bin();//{ bounds: new Aabb(), triCount: 0 };
+        rightCount[i] = 0; //new Bin();//{ bounds: new Aabb(), triCount: 0 };
+    }
+    const context = {
+        bvhNodes,
+        triIdx,
+        tris,
+        nodesUsed: 2,
+        bin,
+        leftArea,
+        rightArea,
+        leftCount,
+        rightCount,
+    };
+    updateNodeBounds(rootNodeIdx, context);
+    // subdivide recursively
+    subdivide(rootNodeIdx, context);
+    return context;
+}
+function updateNodeBounds(nodeIdx, context) {
+    const node = context.bvhNodes[nodeIdx];
+    const triIdx = context.triIdx;
+    const tris = context.tris;
+    vec3.set(node.aabbMin, Infinity, Infinity, Infinity);
+    vec3.set(node.aabbMax, -Infinity, -Infinity, -Infinity);
+    for (let first = node.leftFirst, i = 0; i < node.triCount; i++) {
+        const leafTriIdx = triIdx[first + i];
+        const leafTri = tris[leafTriIdx];
+        node.grow(leafTri.vertex0);
+        node.grow(leafTri.vertex1);
+        node.grow(leafTri.vertex2);
+    }
+}
+function subdivide(nodeIdx, context) {
+    // terminate recursion
+    const bvhNodes = context.bvhNodes;
+    const node = bvhNodes[nodeIdx];
+    const triIdx = context.triIdx;
+    const tris = context.tris;
+    // determine split axis using SAH
+    const [splitCost, axis, splitPos] = findBestSplitPlane(node, context);
+    const nosplitCost = calculateNodeCost(node);
+    if (splitCost >= nosplitCost) {
+        return;
+    }
+    // in-place partition
+    let i = node.leftFirst;
+    let j = i + node.triCount - 1;
+    while (i <= j) {
+        if (tris[triIdx[i]].centroid[axis] < splitPos) {
+            i++;
+        }
+        else {
+            const t = triIdx[i];
+            triIdx[i] = triIdx[j];
+            triIdx[j] = t;
+            --j;
+        }
+    }
+    // abort split if one of the sides is empty
+    const leftCount = i - node.leftFirst;
+    if (leftCount == 0 || leftCount == node.triCount) {
+        return;
+    }
+    // create child nodes
+    const leftChildIdx = context.nodesUsed++;
+    const rightChildIdx = context.nodesUsed++;
+    const leftNode = new BVHNode();
+    const rightNode = new BVHNode();
+    bvhNodes[leftChildIdx] = leftNode;
+    bvhNodes[rightChildIdx] = rightNode;
+    leftNode.leftFirst = node.leftFirst;
+    leftNode.triCount = leftCount;
+    rightNode.leftFirst = i;
+    rightNode.triCount = node.triCount - leftCount;
+    node.leftFirst = leftChildIdx;
+    node.triCount = 0;
+    updateNodeBounds(leftChildIdx, context);
+    updateNodeBounds(rightChildIdx, context);
+    // recurse
+    subdivide(leftChildIdx, context);
+    subdivide(rightChildIdx, context);
+}
+class Bin {
+    bounds = new Aabb();
+    triCount = 0;
+    reset() {
+        this.bounds.reset();
+        this.triCount = 0;
+    }
+}
+const BINS = 8;
+function findBestSplitPlane(node, context) {
+    const triIdx = context.triIdx;
+    const tris = context.tris;
+    let axis = 0, splitPos = 0;
+    let bestCost = Infinity;
+    for (let a = 0; a < 3; a++) {
+        let boundsMin = Infinity, boundsMax = -Infinity;
+        for (let i = 0; i < node.triCount; i++) {
+            const triangle = tris[triIdx[node.leftFirst + i]];
+            boundsMin = Math.min(boundsMin, triangle.centroid[a]);
+            boundsMax = Math.max(boundsMax, triangle.centroid[a]);
+        }
+        if (boundsMin === boundsMax) {
+            continue;
+        }
+        // populate the bins
+        const bin = context.bin;
+        for (let i = 0; i < BINS; i++) {
+            bin[i].reset(); // = { bounds: new Aabb(), triCount: 0 };
+        }
+        let scale = BINS / (boundsMax - boundsMin);
+        for (let i = 0; i < node.triCount; i++) {
+            const triangle = tris[triIdx[node.leftFirst + i]];
+            const binIdx = Math.min(BINS - 1, Math.floor((triangle.centroid[a] - boundsMin) * scale));
+            bin[binIdx].triCount++;
+            bin[binIdx].bounds.grow(triangle.vertex0);
+            bin[binIdx].bounds.grow(triangle.vertex1);
+            bin[binIdx].bounds.grow(triangle.vertex2);
+        }
+        // gather data for the 7 planes between the 8 bins
+        const leftArea = context.leftArea; //new Array(BINS - 1);
+        const rightArea = context.rightArea; //new Array(BINS - 1);
+        const leftCount = context.leftCount; //new Array(BINS - 1);
+        const rightCount = context.rightCount; //new Array(BINS - 1);
+        for (let i = 0; i < BINS - 1; i++) {
+            leftArea[i] = 0; //.reset();// = { bounds: new Aabb(), triCount: 0 };
+            rightArea[i] = 0; //.reset();// = { bounds: new Aabb(), triCount: 0 };
+            leftCount[i] = 0; //.reset();// = { bounds: new Aabb(), triCount: 0 };
+            rightCount[i] = 0; //.reset();// = { bounds: new Aabb(), triCount: 0 };
+        }
+        const leftBox = new Aabb(), rightBox = new Aabb();
+        let leftSum = 0, rightSum = 0;
+        for (let i = 0; i < BINS - 1; i++) {
+            leftSum += bin[i].triCount;
+            leftCount[i] = leftSum;
+            leftBox.growAabb(bin[i].bounds);
+            leftArea[i] = leftBox.area();
+            rightSum += bin[BINS - 1 - i].triCount;
+            rightCount[BINS - 2 - i] = rightSum;
+            rightBox.growAabb(bin[BINS - 1 - i].bounds);
+            rightArea[BINS - 2 - i] = rightBox.area();
+        }
+        // calculate SAH cost for the 7 planes
+        scale = (boundsMax - boundsMin) / BINS;
+        for (let i = 0; i < BINS - 1; i++) {
+            const planeCost = leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i];
+            if (planeCost < bestCost) {
+                axis = a, splitPos = boundsMin + scale * (i + 1), bestCost = planeCost;
+            }
+        }
+    }
+    return [bestCost, axis, splitPos];
+}
+function calculateNodeCost(node) {
+    return node.triCount * node.area();
+}
+function createTris(meshes, materials) {
+    const p1p0Diff = vec3.create();
+    const p2p0Diff = vec3.create();
+    const tris = [];
+    for (const mesh of meshes) {
+        const rtMaterial = materials.get(mesh.getMaterial());
+        if (!rtMaterial) {
+            continue;
+        }
+        const obj = mesh.exportObj(true);
+        const faces = obj.f;
+        const vertexPos = obj.v;
+        const vertexNormal = obj.vn;
+        const vertexTangent = obj.tangent;
+        const vertexCoord = obj.vt;
+        let tangent0;
+        let tangent1;
+        let tangent2;
+        for (let vertexIndex = 0; vertexIndex < faces.length; vertexIndex += 3) {
+            const i0 = faces[vertexIndex + 0];
+            const i1 = faces[vertexIndex + 1];
+            const i2 = faces[vertexIndex + 2];
+            const vertex0 = new Float32Array(vertexPos.buffer, i0 * 4 * 3, 3);
+            const vertex1 = new Float32Array(vertexPos.buffer, i1 * 4 * 3, 3);
+            const vertex2 = new Float32Array(vertexPos.buffer, i2 * 4 * 3, 3);
+            const normal0 = new Float32Array(vertexNormal.buffer, i0 * 4 * 3, 3);
+            const normal1 = new Float32Array(vertexNormal.buffer, i1 * 4 * 3, 3);
+            const normal2 = new Float32Array(vertexNormal.buffer, i2 * 4 * 3, 3);
+            if (vertexTangent) {
+                tangent0 = new Float32Array(vertexTangent.buffer, i0 * 4 * 4, 4);
+                tangent1 = new Float32Array(vertexTangent.buffer, i1 * 4 * 4, 4);
+                tangent2 = new Float32Array(vertexTangent.buffer, i2 * 4 * 4, 4);
+            }
+            else {
+                tangent0 = vec4.create();
+                tangent1 = vec4.create();
+                tangent2 = vec4.create();
+            }
+            const uv0 = new Float32Array(vertexCoord.buffer, i0 * 4 * 2, 2);
+            const uv1 = new Float32Array(vertexCoord.buffer, i1 * 4 * 2, 2);
+            const uv2 = new Float32Array(vertexCoord.buffer, i2 * 4 * 2, 2);
+            vec3.sub(p1p0Diff, vertex1, vertex0);
+            vec3.sub(p2p0Diff, vertex2, vertex0);
+            const faceNormal = vec3.cross(vec3.create(), p1p0Diff, p2p0Diff);
+            vec3.normalize(faceNormal, faceNormal);
+            tris.push({
+                vertex0,
+                vertex1,
+                vertex2,
+                normal0,
+                normal1,
+                normal2,
+                tangent0,
+                tangent1,
+                tangent2,
+                uv0,
+                uv1,
+                uv2,
+                centroid: vec3.create(),
+                materialIdx: rtMaterial.index,
+                faceNormal,
+                flatShading: rtMaterial.flatShading,
+            });
+        }
+    }
+    return tris;
+}
 
 const COMPUTE_WORKGROUP_SIZE_X = 16;
 const COMPUTE_WORKGROUP_SIZE_Y = 16;
+const COUNTERS = 10;
+const COUNTERS_SIZE = COUNTERS * 4;
 class Raytracer {
     #frameId = 0;
     #running = false;
@@ -24084,7 +24023,7 @@ class Raytracer {
     #width = 0;
     #height = 0;
     #material = new ShaderMaterial({
-        shaderSource: 'raytracer',
+        shaderSource: 'raytracer_v2',
         uniforms: {
             commonUniforms: {
                 frameCounter: 0,
@@ -24112,15 +24051,21 @@ class Raytracer {
         },
         workgroupSize: vec3.fromValues(COMPUTE_WORKGROUP_SIZE_X, COMPUTE_WORKGROUP_SIZE_Y, 1),
     });
+    #mesh = new Mesh({ material: this.#material });
     #prepassMaterial = new ShaderMaterial({
         shaderSource: 'bitangent_prepass',
         gpuConstants: {
             WORKGROUP_SIZE_X: 256,
         },
     });
+    #prepassMesh = new Mesh({ material: this.#prepassMaterial });
     #debugBvhMaterial = new ShaderMaterial({
         shaderSource: 'debug_bvh',
         blendingMode: BlendingMode.Normal,
+        gpuConstants: {
+            highlight: 0,
+            highlightIndex: 0,
+        },
     });
     #debugBvhGeometry = new InstancedBufferGeometry({ count: 2, user: this });
     #debugBvhMesh = new Mesh({
@@ -24133,67 +24078,66 @@ class Raytracer {
     #outputTexture = null;
     #prepassDone = false;
     #facesCount = 0;
+    #zeroUint32 = new Uint32Array(COUNTERS);
+    #rpsCounter = new FpsCounter();
+    //#counters: number[] = new Array(COUNTERS);
+    #countersUint32;
+    #countersFloat32;
+    #oldInstanceCount = 0;
+    #newInstanceCount = 0;
+    #newMethod = true;
+    #scene;
     constructor() {
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
         this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm' /*WebGPUInternal.format*/);
+    }
+    async reset() {
+        this.#reset();
+        const activeCamera = this.#scene?.activeCamera;
+        if (!activeCamera) {
+            return;
+        }
+        this.#configureCamera(activeCamera, this.#width, this.#height);
     }
     async configure(scene, width, height) {
         const activeCamera = scene.activeCamera;
         if (!activeCamera) {
             return false;
         }
+        this.#scene = scene;
         this.#width = width;
         this.#height = height;
-        this.#prepassDone = false;
-        const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount } = await sceneToRtScene(scene);
+        const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);
         this.#facesCount = facesCount;
         this.#reset();
-        this.#debugBvhGeometry.instanceCount = aabbsCount * 12;
-        const lookFrom = activeCamera.getWorldPosition();
-        const cameraQuat = activeCamera.getWorldQuaternion();
-        const lookAt = vec3.fromValues(0, 0, -1);
-        vec3.transformQuat(lookAt, lookAt, cameraQuat);
-        vec3.add(lookAt, lookFrom, lookAt);
-        const vup = vec3.fromValues(0, 1, 0);
-        vec3.transformQuat(vup, vup, cameraQuat);
-        vec3.add(vup, vup, vup);
-        this.#material.setUniformValue('camera', computeCamera(activeCamera, width, height));
-        /*
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).viewportSize = new Uint32Array([width, height]);
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageWidth = width;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).imageHeight = height;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).aspectRatio = width / height;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vfov = activeCamera.getVerticalFov();
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookFrom = lookFrom;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).lookAt = lookAt;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).vup = vup;
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).defocusAngle = 0;// TODO: set an actual value
-        (this.#material.#uniforms.cameraUniforms as Record<string, UniformValue>).focusDist = 3.4;//activeCamera.focus;
-        */
-        this.#material.setUniformValue('cameraUniforms', {
-            viewportSize: new Uint32Array([width, height]),
-            imageWidth: width,
-            imageHeight: height,
-            aspectRatio: width / height,
-            vfov: activeCamera.getVerticalFov(),
-            lookFrom: lookFrom,
-            lookAt: lookAt,
-            vup: vup,
-            defocusAngle: 0, // TODO: set an actual value
-            focusDist: 3.4, //activeCamera.focus;
-        });
+        this.#oldInstanceCount = aabbsCount * 12;
+        this.#newInstanceCount = nodesUsed * 12;
+        this.#setInstanceCount();
+        this.#configureCamera(activeCamera, width, height);
+        this.#prepassDone = false;
         this.#material.setStorage('faces', {
             value: faces,
             raw: true,
         });
-        this.#prepassMaterial.setStorage('faces', {
-            value: faces,
+        /*
+        const triBuffer: StorageBufferParam = {
+            value: v2_tris,
             raw: true,
+            usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        };
+        */
+        this.#prepassMaterial.setStorage('tris', {
+            value: v2_tris,
+            raw: true,
+            usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
         });
         this.#material.setStorage('AABBs', {
             value: aabbs,
             raw: true,
         });
+        this.#material.setStorage('indices', { value: v2_indices, raw: true, });
+        this.#material.setStorage('tris', { value: v2_tris, shared: true, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE, });
+        this.#material.setStorage('bvhNodes', { value: v2_nodes, raw: true, });
         this.#material.setStorage('materials', materials);
         this.#material.setStorage('textures', textures);
         this.#material.gpuConstants.OBJECTS_COUNT_IN_SCENE = MODELS_COUNT;
@@ -24203,6 +24147,11 @@ class Raytracer {
             value: aabbs,
             raw: true,
         });
+        this.#debugBvhMaterial.setStorage('bvhNodes', {
+            value: v2_nodes,
+            raw: true,
+        });
+        this.#material.setStorage('lights', { value: v2_lights, raw: true, });
         if (this.#outputTexture) {
             if (this.#outputTexture.width !== width ||
                 this.#outputTexture.height !== height) {
@@ -24230,6 +24179,29 @@ class Raytracer {
         rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
         return true;
     }
+    async #configureCamera(camera, width, height) {
+        const lookFrom = camera.getWorldPosition();
+        const cameraQuat = camera.getWorldOrientation();
+        const lookAt = vec3.fromValues(0, 0, -1);
+        vec3.transformQuat(lookAt, lookAt, cameraQuat);
+        vec3.add(lookAt, lookFrom, lookAt);
+        const vup = vec3.fromValues(0, 1, 0);
+        vec3.transformQuat(vup, vup, cameraQuat);
+        vec3.add(vup, vup, vup);
+        this.#material.setUniformValue('camera', computeCamera(camera, width, height));
+        this.#material.setUniformValue('cameraUniforms', {
+            viewportSize: new Uint32Array([width, height]),
+            imageWidth: width,
+            imageHeight: height,
+            aspectRatio: width / height,
+            vfov: camera.getVerticalFov(),
+            lookFrom: lookFrom,
+            lookAt: lookAt,
+            vup: vup,
+            defocusAngle: 0, // TODO: set an actual value
+            focusDist: 3.4, //activeCamera.focus;
+        });
+    }
     play() {
         this.#running = true;
     }
@@ -24240,6 +24212,9 @@ class Raytracer {
         this.#frameId = 0;
         this.#material.setStorage('raytraceImageBuffer', this.#width * this.#height * 4 * 4);
         this.#material.setStorage('rngStateBuffer', this.#width * this.#height * 4);
+        this.#material.setStorage('counters', {
+            usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        });
     }
     #raytrace(event) {
         if (!this.#running) {
@@ -24248,7 +24223,7 @@ class Raytracer {
         //(this.#material.#uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
         this.#material.setSubUniformValue('commonUniforms.frameCounter', this.#frameId++);
         if (!this.#prepassDone) {
-            Graphics$1.compute(this.#prepassMaterial, {
+            Graphics$1.compute(this.#prepassMesh, {
                 width: this.#facesCount,
                 height: 1,
                 // TODO: fix that: we can hit the limit of 65536 workgroup * 256 workgroup size
@@ -24256,14 +24231,58 @@ class Raytracer {
                 workgroupCountX: Math.ceil(this.#facesCount / 256),
             });
             this.#prepassDone = true;
-            this.#material.getStorage('faces').buffer = this.#prepassMaterial.getStorage('faces').buffer;
+            this.#material.getStorage('tris').buffer = this.#prepassMaterial.getStorage('tris').buffer;
         }
-        Graphics$1.compute(this.#material, {
+        const rayCountCopyBuffer = WebGPUInternal.device.createBuffer({
+            size: COUNTERS_SIZE,
+            usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+        });
+        const rayCountBuffer = this.#material.getStorage('counters')?.buffer;
+        if (rayCountBuffer) {
+            WebGPUInternal.device.queue.writeBuffer(rayCountBuffer, 0, this.#zeroUint32);
+        }
+        Graphics$1.compute(this.#mesh, {
             width: this.#width,
             height: this.#height,
             workgroupCountX: Math.ceil(this.#width / COMPUTE_WORKGROUP_SIZE_X),
             workgroupCountY: Math.ceil(this.#height / COMPUTE_WORKGROUP_SIZE_Y),
+        }, (commandEncoder) => {
+            const outputBuffer = this.#material.getStorage('counters')?.buffer;
+            if (outputBuffer) {
+                commandEncoder.copyBufferToBuffer(outputBuffer, rayCountCopyBuffer);
+            }
         });
+        (async () => {
+            await rayCountCopyBuffer.mapAsync(GPUMapMode.READ, 0, // Offset
+            COUNTERS_SIZE // Length
+            );
+            const copyArrayBuffer = rayCountCopyBuffer.getMappedRange(0, COUNTERS_SIZE).slice();
+            this.#countersUint32 = new Uint32Array(copyArrayBuffer);
+            this.#countersFloat32 = new Float32Array(copyArrayBuffer);
+            const rays = this.#countersUint32[1];
+            const high = this.#countersUint32[9];
+            rayCountCopyBuffer.destroy();
+            if (high != 0) {
+                this.#debugBvhMaterial.gpuConstants.highlight = 1;
+                this.#debugBvhMaterial.gpuConstants.highlightIndex = high;
+            }
+            else {
+                this.#debugBvhMaterial.gpuConstants.highlight = 0;
+            }
+            this.#rpsCounter.addQuantity(rays);
+        })();
+    }
+    getRps() {
+        return this.#rpsCounter.getSpeed();
+    }
+    getInvocations() {
+        return this.#countersUint32?.[0] ?? 0;
+    }
+    getUint32Counter(index) {
+        return this.#countersUint32?.[index + 2];
+    }
+    getFloat32Counter(index) {
+        return this.#countersFloat32?.[index + 2];
     }
     getOutputTexture() {
         return this.#outputTexture;
@@ -24273,6 +24292,20 @@ class Raytracer {
     }
     debugBvh(debug) {
         this.#debugBvhMesh.setVisible(debug);
+    }
+    #setInstanceCount() {
+        if (this.#newMethod) {
+            this.#debugBvhGeometry.instanceCount = this.#newInstanceCount;
+            this.#debugBvhMesh.setDefine('NEW_METHOD');
+        }
+        else {
+            this.#debugBvhGeometry.instanceCount = this.#oldInstanceCount;
+            this.#debugBvhMesh.removeDefine('NEW_METHOD');
+        }
+    }
+    useNewBvh(newBvh) {
+        this.#newMethod = newBvh;
+        this.#setInstanceCount();
     }
     dispose() {
         GraphicsEvents.removeEventListener(GraphicsEvent.Tick, this.#tick);
@@ -32054,7 +32087,7 @@ class Source2ModelAttachmentInstance extends Entity {
         const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
         if (bone) {
             bone.getWorldPosition(vec);
-            bone.getWorldQuaternion(tempQuat$6);
+            bone.getWorldOrientation(tempQuat$6);
             const offset0 = this.attachment.influenceOffsets[0];
             if (offset0) {
                 vec3.transformQuat(tempPos$1, offset0, tempQuat$6);
@@ -32067,10 +32100,10 @@ class Source2ModelAttachmentInstance extends Entity {
         return vec;
     }
     //TODO: compute with all bones, not only the first one
-    getWorldQuaternion(q = quat.create()) {
+    getWorldOrientation(q = quat.create()) {
         const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
         if (bone) {
-            bone.getWorldQuaternion(q);
+            bone.getWorldOrientation(q);
             const quat0 = this.attachment.influenceRotations[0];
             if (quat0) {
                 quat.mul(q, q, quat0);
@@ -36549,7 +36582,11 @@ class ShaderEditor extends HTMLElement {
                 this.#htmlShaderNameSelect.value = shaderName;
             }
             this.#shaderEditor.setSession(editSession);
-            const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
+            let type = ShaderType.Vertex;
+            if (Graphics$1.isWebGPU) {
+                type = ShaderType.Wgsl;
+            }
+            const source = ShaderManager.getShaderSource(type, this.#editorShaderName, true);
             if (source) {
                 this.#shaderType = source.getType();
                 this.#editMode = EDIT_MODE_SHADER;
@@ -38175,7 +38212,7 @@ class Kv3Array {
     }
 }
 
-const tempVec3$j = vec3.create();
+const tempVec3$k = vec3.create();
 const tempQuat$5 = quat.create();
 const mat$2 = mat4.create();
 class ControlPoint extends Entity {
@@ -38201,17 +38238,23 @@ class ControlPoint extends Entity {
     snapshot;
     model;
     getWorldTransformation(mat = mat4.create()) {
-        this.getWorldQuaternion(tempQuat$5);
-        this.getWorldPosition(tempVec3$j);
-        return mat4.fromRotationTranslation(mat, tempQuat$5, tempVec3$j);
+        this.getWorldOrientation(tempQuat$5);
+        this.getWorldPosition(tempVec3$k);
+        return mat4.fromRotationTranslation(mat, tempQuat$5, tempVec3$k);
     }
+    /**
+     * @deprecated Use getWorldOrientation instead.
+     */
     getWorldQuaternion(q = quat.create()) {
+        return this.getWorldOrientation(q);
+    }
+    getWorldOrientation(q = quat.create()) {
         if (this.#parentControlPoint) {
-            this.#parentControlPoint.getWorldQuaternion(q);
+            this.#parentControlPoint.getWorldOrientation(q);
             quat.mul(q, q, this._quaternion);
         }
         else {
-            super.getWorldQuaternion(q);
+            super.getWorldOrientation(q);
         }
         return q;
     }
@@ -38245,7 +38288,7 @@ class ControlPoint extends Entity {
     }
     #compute() {
         super.getWorldPosition(this.currentWorldPosition);
-        super.getWorldQuaternion(this.currentWorldQuaternion);
+        super.getWorldOrientation(this.currentWorldQuaternion);
         mat4.fromRotationTranslation(this.currentWorldTransformation, this.currentWorldQuaternion, this.currentWorldPosition);
         // compute delta world position
         vec3.sub(this.deltaWorldPosition, this.currentWorldPosition, this.prevWorldPosition);
@@ -38258,17 +38301,17 @@ class ControlPoint extends Entity {
     }
     getForwardVector(out = vec3.create()) {
         vec3.set(out, 0, 1, 0); // +Y
-        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$5));
         return out;
     }
     getUpVector(out = vec3.create()) {
         vec3.set(out, 0, 0, 1); // +Z
-        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$5));
         return out;
     }
     getRightVector(out = vec3.create()) {
         vec3.set(out, 1, 0, 0); // +X
-        vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat$5));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$5));
         return out;
     }
     static constructFromJSON() {
@@ -39408,9 +39451,9 @@ class KvElement {
     toString(linePrefix) {
         linePrefix = linePrefix ?? '';
         const s = [linePrefix, '"' /*, this.type, '"\n'*/, linePrefix, '{\n'];
-        for (const i in this) {
-            s.push(this.toString(linePrefix + '\t'));
-        }
+        //for (const i in this) {
+        s.push(this.toString(linePrefix + '\t'));
+        //}
         s.push(linePrefix);
         s.push('}\n');
         return s.join('');
@@ -40722,7 +40765,7 @@ function parseVdf(context) {
     }
 }
 function parseEvent(context) {
-    let eventType = ChoreographyEventName.get(getNextToken(context));
+    const eventType = ChoreographyEventName.get(getNextToken(context));
     if (!eventType) {
         return null;
     }
@@ -40935,7 +40978,7 @@ function getNextTokenInternal(context) {
                     switch (c) {
                         case '"':
                         case '\'':
-                            throw "Quote in an unquoted string";
+                            throw new Error('Quote in an unquoted string');
                         case '{':
                         case '}':
                             // Get back one character
@@ -41518,8 +41561,8 @@ const BONE_ALWAYS_PROCEDURAL = 0x04;
 const BONE_USED_BY_BONE_MERGE = 0x00040000;
 const BONE_FIXED_ALIGNMENT = 0x00100000;
 const tempMat4$2 = mat4.create();
-vec3.create();
-quat.create();
+//const tempVec3 = vec3.create();
+//const tempQuat = quat.create();
 //TODOV4: cleanup unused code
 class MdlBone {
     _poseToBone = mat4.create();
@@ -41636,7 +41679,7 @@ const STUDIO_ANIM_ANIMROT = 0x08; // mstudioanim_valueptr_t
 const STUDIO_ANIM_DELTA = 0x10;
 const STUDIO_ANIM_RAWROT2 = 0x20; // Quaternion64
 const tempMat4$1 = mat4.create();
-quat.create();
+//const tempQuat = quat.create();
 const tempvec3 = vec3.create();
 /**
  *	MdlStudioAnimValuePtr
@@ -41675,39 +41718,26 @@ class MdlStudioAnim {
     getRot(rot, mdl, bone, frame) {
         const fromEuler5 = function (out, q, i, j, k, h, parity, repeat, frame) {
             const M = tempMat4$1; //Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-            let Nq;
             let s;
-            let xs;
-            let ys;
-            let zs;
-            let wx;
-            let wy;
-            let wz;
-            let xx;
-            let xy;
-            let xz;
-            let yy;
-            let yz;
-            let zz;
-            Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
+            const Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
             if (Nq > 0) {
                 s = 2.0 / Nq;
             }
             else {
                 s = 0;
             }
-            xs = q[0] * s;
-            ys = q[1] * s;
-            zs = q[2] * s;
-            wx = q[3] * xs;
-            wy = q[3] * ys;
-            wz = q[3] * zs;
-            xx = q[0] * xs;
-            xy = q[0] * ys;
-            xz = q[0] * zs;
-            yy = q[1] * ys;
-            yz = q[1] * zs;
-            zz = q[2] * zs;
+            const xs = q[0] * s;
+            const ys = q[1] * s;
+            const zs = q[2] * s;
+            const wx = q[3] * xs;
+            const wy = q[3] * ys;
+            const wz = q[3] * zs;
+            const xx = q[0] * xs;
+            const xy = q[0] * ys;
+            const xz = q[0] * zs;
+            const yy = q[1] * ys;
+            const yz = q[1] * zs;
+            const zz = q[2] * zs;
             M[0] = 1.0 - (yy + zz);
             M[1] = xy - wz;
             M[2] = xz + wy;
@@ -41727,7 +41757,7 @@ class MdlStudioAnim {
             out[2] = temp;
             return out;
         };
-        var Eul_FromHMatrix = function (out, M, i, j, k, h, parity, repeat, frame) {
+        const Eul_FromHMatrix = function (out, M, i, j, k, h, parity, repeat, frame) {
             const ea = tempvec3;
             if (repeat == 'yes') {
                 const sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k]);
@@ -41832,6 +41862,7 @@ class MdlStudioAnim {
         reader.seek(offset);
         let valid = 0;
         let total = 0;
+        //let value;
         let k = frame;
         let count = 0;
         do {
@@ -41951,8 +41982,7 @@ class MdlStudioSeqDesc {
         const previousTime = this.previousTime;
         const currentTime = this.currentTime;
         const seqEvents = this.events;
-        for (let eventIndex = 0; eventIndex < seqEvents.length; ++eventIndex) {
-            const event = seqEvents[eventIndex];
+        for (const event of seqEvents) {
             if (event.cycle > previousTime && event.cycle <= currentTime) {
                 this.processEvent(event, dynamicProp); //TODOv3
             }
@@ -47351,22 +47381,24 @@ class SourceModelMesh {
 
 class ModelLoader {
     load(repositoryName, fileName) {
-        const promise = new Promise(async (resolve) => {
-            fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
-            // First load mdl. We need the mdl version to load the vtx
-            const mdlLoader = getLoader('Source1MdlLoader');
-            const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
-            if (!mdl) {
-                resolve(null);
-                return;
-            }
-            const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
-            const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
-            Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
-                if (vvd && vtx) {
-                    this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
+        const promise = new Promise((resolve) => {
+            (async () => {
+                fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
+                // First load mdl. We need the mdl version to load the vtx
+                const mdlLoader = getLoader('Source1MdlLoader');
+                const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
+                if (!mdl) {
+                    resolve(null);
+                    return;
                 }
-            });
+                const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
+                const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+                Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
+                    if (vvd && vtx) {
+                        this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
+                    }
+                });
+            })();
         });
         return promise;
     }
@@ -48871,6 +48903,7 @@ class SourceBSP extends World {
 }
 
 const BSP_HEADER_LUMPS_COUNT = 64;
+//const BYTES_PER_LUMP_HEADER = 16;
 function initLZMALump(reader, lump) {
     if (reader.getString(4, lump.lumpOffset) === 'LZMA') {
         const uncompressedSize = reader.getUint32();
@@ -48923,6 +48956,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         }
     }
     #parseLump(reader, lump, bsp) {
+        //const lumpData = null;
         if (lump.lumpLen !== 0) {
             /*if (reader.getString(4, lump.lumpOffset) === 'LZMA') {
                 const uncompressedSize = reader.getUint32();
@@ -49314,7 +49348,7 @@ class Source1BspLoader extends SourceBinaryLoader {
             gamelump.lumpLen = reader.getInt32();
             lumpData.set(gamelump.id, gamelump);
         }
-        for (const [_, lump] of lumpData) {
+        for (const [, lump] of lumpData) {
             //const lump = lumpData[gameIndex];
             const lumpReader = initLZMALump(reader, lump);
             this.#parseLumpGame(lumpReader, lump);
@@ -49332,6 +49366,7 @@ class Source1BspLoader extends SourceBinaryLoader {
     #parseLumpGamePropStatic(reader, lump) {
         reader.seek(lump.lumpOffset);
         const STATIC_PROP_NAME_LENGTH = 128;
+        //const lumpData = [];
         const staticDir = new SourceBSPLumpPropStaticDirectory();
         //lump.map.map.staticDirRemoveMe = staticDir;//TODOv3 removeme
         const lumpVersion = lump.version;
@@ -49386,11 +49421,11 @@ class Source1BspLoader extends SourceBinaryLoader {
             }
             staticDir.props.push(prop);
         }
-        quat.create();
         lump.lumpData = staticDir;
     }
     #parseLumpPakFile(reader, lump) {
         reader.seek(lump.lumpOffset);
+        //const BYTES_PER_FILEHEADER = 46;
         const startOffset = lump.lumpOffset;
         let offset = reader.byteLength - 22; //sizeof ZIP_EndOfCentralDirRecord
         for (let sO = offset; (offset >= 0) && (offset <= sO); --offset) {
@@ -49409,7 +49444,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         reader.skip(2); //numberOfTheDiskWithStartOfCentralDirectory
         reader.skip(2); //nCentralDirectoryEntries_ThisDisk
         const nCentralDirectoryEntries_Total = reader.getUint16();
-        reader.getUint32();
+        /*const centralDirectorySize = TODO: use centralDirectorySize*/ reader.getUint32();
         const startOfCentralDirOffset = reader.getUint32();
         const lumpData = new Map();
         reader.seek(startOffset + startOfCentralDirOffset);
@@ -49427,9 +49462,9 @@ class Source1BspLoader extends SourceBinaryLoader {
             const fileNameLength = reader.getUint16();
             const extraFieldLength = reader.getUint16();
             const fileCommentLength = reader.getUint16();
-            reader.getUint16();
-            reader.getUint16();
-            reader.getUint32();
+            /*const diskNumberStart = TODO: use diskNumberStart*/ reader.getUint16();
+            /*const internalFileAttribs = TODO: use internalFileAttribs*/ reader.getUint16();
+            /*const externalFileAttribs = TODO: use externalFileAttribs*/ reader.getUint32();
             const relativeOffsetOfLocalHeader = reader.getUint32();
             const fileName = reader.getString(fileNameLength);
             const filepos = startOffset + relativeOffsetOfLocalHeader + fileNameLength + extraFieldLength + 30; //sizeof ZIP_LocalFileHeader
@@ -52021,7 +52056,7 @@ class Source1ParticleSystem extends Entity {
             }
         }
         if (this.parentSystem) {
-            this.setOrientation(this.parentSystem.getWorldQuaternion());
+            this.setOrientation(this.parentSystem.getWorldOrientation());
         }
     }
     setParam(element) {
@@ -53383,10 +53418,10 @@ MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
 const tempQuaternion$1 = quat.create();
-const tempVec3$i = vec3.create();
+const tempVec3$j = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
-    spotLight = new SpotLight();
+    spotLight = new SpotLight({ radius: 20 });
     //this.spotLight.visible = false;
     _angles = vec3.fromValues(-90, 0, 0);
     constructor(params) {
@@ -53421,9 +53456,9 @@ class PropLightSpot extends MapEntity {
                 this.setAngles();
                 break;
             case 'angles':
-                ParseAngles2(tempVec3$i, value);
-                this._angles[1] = tempVec3$i[1];
-                this._angles[2] = tempVec3$i[1];
+                ParseAngles2(tempVec3$j, value);
+                this._angles[1] = tempVec3$j[1];
+                this._angles[2] = tempVec3$j[1];
                 this.setAngles();
                 break;
             case '_quadratic_attn':
@@ -55522,6 +55557,20 @@ class EyeRefractMaterial extends Source1Material {
     getShaderSource() {
         return 'source1_eyerefract';
     }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
+    }
 }
 Source1VmtLoader.registerMaterial('eyerefract', EyeRefractMaterial);
 
@@ -56341,6 +56390,20 @@ class RefractMaterial extends Source1Material {
     getShaderSource() {
         return 'source1_refract';
     }
+    getRaytracingMaterial(index) {
+        return {
+            index,
+            materialType: RtMaterial.Source1Refract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            textures: new Map([
+                [0, this.getUniformValue('normalTexture')],
+            ]),
+            flatShading: false,
+            v0: vec4.fromValues(0.5 /*TODO: setup  material blur value*/, 0.15 /*TODO: setup  material refract value*/, 0, 0),
+        };
+    }
 }
 Source1VmtLoader.registerMaterial('refract', RefractMaterial);
 
@@ -56647,19 +56710,35 @@ class VertexLitGenericMaterial extends Source1Material {
         return 'source1_vertexlitgeneric';
     }
     getRaytracingMaterial(index) {
+        const cubeMapTint = vec4.fromValues(1, 1, 1, 1);
+        const uCubeMapTint = this.getUniformValue('uCubeMapTint');
+        if (uCubeMapTint) {
+            cubeMapTint[0] = uCubeMapTint[0];
+            cubeMapTint[1] = uCubeMapTint[1];
+            cubeMapTint[2] = uCubeMapTint[2];
+        }
+        let cubeMap;
+        if (this.variables.get('$envmap') == 'env_cubemap') {
+            cubeMap = null;
+        }
+        else {
+            cubeMap = this.getUniformValue('cubeTexture');
+        }
         return {
             index,
             materialType: RtMaterial.Source1VertexLitGeneric,
             reflectionRatio: 0.1,
             reflectionGloss: 1,
             refractionIndex: 0.1,
+            transparent: this.blend ? 1 : 0,
             albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
             textures: new Map([
                 [0, this.getUniformValue('colorMap')],
                 [1, this.getUniformValue('normalTexture')],
-                [3, this.getUniformValue('cubeTexture')],
+                [3, cubeMap],
             ]),
             flatShading: false,
+            v0: cubeMapTint,
         };
     }
 }
@@ -57707,7 +57786,7 @@ class EmitNoise extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(EmitNoise);
 
-const tempVec3$h = vec3.create();
+const tempVec3$i = vec3.create();
 let AttractToControlPoint$1 = class AttractToControlPoint extends Source1ParticleOperator {
     static functionName = 'Pull towards control point';
     constructor(system) {
@@ -57731,7 +57810,7 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends Source1Particl
             return;
         }
         const ofs = vec3.clone(particle.position);
-        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$h)); //TODO: add particle base cp
+        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$i)); //TODO: add particle base cp
         let len = vec3.length(ofs);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -57765,7 +57844,7 @@ let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(RandomForce$1);
 
-const tempVec3$g = vec3.create();
+const tempVec3$h = vec3.create();
 const tempVec3_2$6 = vec3.create();
 //const tempAxis = vec3.create();
 //const tempQuat = quat.create();
@@ -57783,7 +57862,7 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
         //TODO use param localSpace
         //const localSpace = this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
-        const offsetToAxis = vec3.sub(tempVec3$g, particle.position, cp.getWorldPosition(tempVec3$g));
+        const offsetToAxis = vec3.sub(tempVec3$h, particle.position, cp.getWorldPosition(tempVec3$h));
         /*
                 if (!localSpace) {
                     cp.getWorldQuaternion(tempQuat);
@@ -58016,7 +58095,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
 };
 Source1ParticleOperators.registerOperator(PositionFromParentParticles$1);
 
-const tempVec3$f = vec3.create();
+const tempVec3$g = vec3.create();
 class PositionModifyOffsetRandom extends Source1ParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor(system) {
@@ -58038,11 +58117,11 @@ class PositionModifyOffsetRandom extends Source1ParticleOperator {
         const offsetMax = this.getParameter('offset max');
         vec2.random(vec2.create(), 1.0);
         const controlPointNumber = this.getParameter('control_point_number');
-        const offset = vec3RandomBox(tempVec3$f, offsetMin, offsetMax);
+        const offset = vec3RandomBox(tempVec3$g, offsetMin, offsetMax);
         if (localSpace == 1) {
             const cp = particle.system.getControlPoint(controlPointNumber);
             if (cp) {
-                vec3.transformQuat(offset, offset, cp.getWorldQuaternion());
+                vec3.transformQuat(offset, offset, cp.getWorldOrientation());
             }
             /*const a = offset[1];
             offset[1] = offset[2];
@@ -58123,7 +58202,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionOnModelRandom);
 
-const tempVec3$e = vec3.create();
+const tempVec3$f = vec3.create();
 class PositionWithinBoxRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor(system) {
@@ -58143,15 +58222,15 @@ class PositionWithinBoxRandom extends Source1ParticleOperator {
         vec3.copy(particle.prevPosition, particle.position);
         const controlPoint = particle.system.getControlPoint(controlPointNumber);
         if (controlPoint) {
-            controlPoint.getWorldPosition(tempVec3$e);
-            vec3.add(particle.position, particle.position, tempVec3$e);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$e);
+            controlPoint.getWorldPosition(tempVec3$f);
+            vec3.add(particle.position, particle.position, tempVec3$f);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$f);
         }
     }
 }
 Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-const tempVec3$d = vec3.create();
+const tempVec3$e = vec3.create();
 class PositionWithinSphereRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor(system) {
@@ -58224,8 +58303,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 randpos += vecControlPoint;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    cp.getWorldPosition(tempVec3$d);
-                    vec3.add(randpos, randpos, tempVec3$d);
+                    cp.getWorldPosition(tempVec3$e);
+                    vec3.add(randpos, randpos, tempVec3$e);
                 }
             }
             else {
@@ -58236,9 +58315,9 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 randpos = vecTransformLocal;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    vec3.transformQuat(randpos, randpos, cp.getWorldQuaternion());
-                    cp.getWorldPosition(tempVec3$d);
-                    vec3.add(randpos, randpos, tempVec3$d);
+                    vec3.transformQuat(randpos, randpos, cp.getWorldOrientation());
+                    cp.getWorldPosition(tempVec3$e);
+                    vec3.add(randpos, randpos, tempVec3$e);
                 }
             }
         }
@@ -58246,13 +58325,13 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
         //vec3.add(particle.position, particle.position, v);
         //const cp = particle.system.getControlPoint(controlPointNumber);
         if (cp) {
-            cp.getWorldQuaternion(particle.cpOrientation);
+            cp.getWorldOrientation(particle.cpOrientation);
         }
         vec3.copy(particle.position, randpos);
         vec3RandomBox(particle.velocity, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //particle.velocity.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         particle.velocity[1] = -particle.velocity[1]; //For some reason y is inversed
         if (cp) {
-            vec3.transformQuat(particle.velocity, particle.velocity, cp.getWorldQuaternion());
+            vec3.transformQuat(particle.velocity, particle.velocity, cp.getWorldOrientation());
         }
         //vec3.transformQuat(particle.velocity, particle.velocity, particle.cpOrientation/*cp.getWorldQuaternion()*/);
         if (speed) {
@@ -58490,7 +58569,7 @@ Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
 */
 
 const tempQuat$4 = quat.create();
-const tempVec3$c = vec3.create();
+const tempVec3$d = vec3.create();
 const tempVec3_2$3 = vec3.create();
 class RemapScalarToVector extends Source1ParticleOperator {
     static functionName = 'Remap Scalar to Vector';
@@ -58524,25 +58603,25 @@ class RemapScalarToVector extends Source1ParticleOperator {
             return;
         }
         const input = particle.getField(m_nFieldInput);
-        tempVec3$c[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
-        tempVec3$c[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
-        tempVec3$c[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
+        tempVec3$d[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
+        tempVec3$d[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
+        tempVec3$d[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
         if (!cp) {
             return;
         }
         if (m_nFieldOutput == 0) { // Position
             if (!m_bLocalCoords) {
-                vec3.add(tempVec3$c, cp.getWorldPosition(tempVec3_2$3), tempVec3$c);
+                vec3.add(tempVec3$d, cp.getWorldPosition(tempVec3_2$3), tempVec3$d);
             }
             else {
                 if (cp) {
-                    cp.getWorldQuaternion(tempQuat$4);
-                    vec3.transformQuat(tempVec3$c, tempVec3$c, tempQuat$4);
-                    vec3.add(tempVec3$c, cp.getWorldPosition(tempVec3_2$3), tempVec3$c);
+                    cp.getWorldOrientation(tempQuat$4);
+                    vec3.transformQuat(tempVec3$d, tempVec3$d, tempQuat$4);
+                    vec3.add(tempVec3$d, cp.getWorldPosition(tempVec3_2$3), tempVec3$d);
                 }
-                particle.setField(0, tempVec3$c); //position
-                particle.setField(2, tempVec3$c); //previous position
+                particle.setField(0, tempVec3$d); //position
+                particle.setField(2, tempVec3$d); //previous position
             }
         }
         else {
@@ -58551,10 +58630,10 @@ class RemapScalarToVector extends Source1ParticleOperator {
                 //SetVectorFromAttribute ( vecScaleInitial, pOutput );
                 const vecScaleInitial = particle.getField(m_nFieldOutput, true);
                 //vecOutput *= vecScaleInitial;
-                vec3.mul(tempVec3$c, tempVec3$c, vecScaleInitial);
+                vec3.mul(tempVec3$d, tempVec3$d, vecScaleInitial);
             }
             //SetVectorAttribute( pOutput, vecOutput );
-            particle.setField(m_nFieldOutput, tempVec3$c);
+            particle.setField(m_nFieldOutput, tempVec3$d);
         }
     }
     initMultipleOverride() {
@@ -59040,7 +59119,7 @@ class VelocityNoise extends Source1ParticleOperator {
                 //TODO
                 const cp = particle.system.getControlPoint(m_nControlPointNumber);
                 if (cp) {
-                    vec3.transformQuat(fvOffset, fvOffset, cp.getWorldQuaternion());
+                    vec3.transformQuat(fvOffset, fvOffset, cp.getWorldOrientation());
                     //vec3.add(randpos, randpos, cp.getOrigin());
                 }
             }
@@ -59090,7 +59169,7 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 //const g_SIMD_lsbmask = 0xfffffffe;
 
 const identityVec3 = vec3.create();
-const tempVec3$b = vec3.create();
+const tempVec3$c = vec3.create();
 let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
     static functionName = 'Velocity Random';
     constructor(system) {
@@ -59122,12 +59201,12 @@ let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
             vec3RandomBox(randomVector, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //randomVector.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$b, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$b);
+            vec3.random(tempVec3$c, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$c);
         }
         const cp = particle.system.getControlPoint(m_nControlPointNumber);
         if (cp) {
-            vec3.transformQuat(randomVector, randomVector, cp.getWorldQuaternion());
+            vec3.transformQuat(randomVector, randomVector, cp.getWorldOrientation());
         }
         //vec3.copy(particle.velocity, randomVector);
         //vec3.add(particle.velocity, particle.velocity, randomVector);
@@ -59331,7 +59410,7 @@ let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(LifespanDecay$1);
 
-const tempVec3$a = vec3.create();
+const tempVec3$b = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
 let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
@@ -59361,7 +59440,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                     tempMat4[12] = 0;
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
-                    vec3.copy(tempVec3$a, initialVec);
+                    vec3.copy(tempVec3$b, initialVec);
                     for (const [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
@@ -59385,12 +59464,12 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                             tempMat4[14] += boneWeight * boneMat[14];
                         }
                     }
-                    vec3.transformMat4(tempVec3$a, tempVec3$a, tempMat4);
+                    vec3.transformMat4(tempVec3$b, tempVec3$b, tempMat4);
                     if (particle.initialVecOffset) {
-                        vec3.add(tempVec3$a, tempVec3$a, particle.initialVecOffset);
+                        vec3.add(tempVec3$b, tempVec3$b, particle.initialVecOffset);
                     }
                     vec3.copy(particle.prevPosition, particle.position);
-                    vec3.copy(particle.position, tempVec3$a);
+                    vec3.copy(particle.position, tempVec3$b);
                 }
             }
         }
@@ -59399,7 +59478,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
 Source1ParticleOperators.registerOperator(LockToBone$1);
 
 //const gravity_const = 0.5;
-const tempVec3$9 = vec3.create();
+const tempVec3$a = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
 class MovementBasic extends Source1ParticleOperator {
@@ -59422,7 +59501,7 @@ class MovementBasic extends Source1ParticleOperator {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
         particle.previousElapsedTime = elapsedTime;*/
-        const accumulatedForces = vec3.copy(tempVec3$9, gravity);
+        const accumulatedForces = vec3.copy(tempVec3$a, gravity);
         //vec3.scale(accumulatedForces, accumulatedForces, 0.5);
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
@@ -59543,13 +59622,13 @@ class MovementLocktoControlPoint extends Source1ParticleOperator {
                 particle.initialCPPosition = vec3.clone(particle.cpPosition);
             }
             if (!particle.initialCPQuaternion) {
-                particle.initialCPQuaternion = cp.getWorldQuaternion();
+                particle.initialCPQuaternion = cp.getWorldOrientation();
             }
             else {
                 particle.initialCPQuaternion = quat.clone(particle.cpOrientation);
             }
             cp.getWorldPosition(particle.cpPosition);
-            cp.getWorldQuaternion(particle.cpOrientation);
+            cp.getWorldOrientation(particle.cpOrientation);
             const invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion); //TODO: optimize
             const delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition); //TODO: optimize
             const deltaQuaternion = quat.mul(quat.create(), particle.cpOrientation, invertQuat);
@@ -59571,7 +59650,7 @@ class MovementLocktoControlPoint extends Source1ParticleOperator {
             vec3.add(particle.position, particle.position, delta);
             vec3.add(particle.prevPosition, particle.prevPosition, delta);
             if (lockRotation) {
-                cp.getWorldQuaternion(particle.cpOrientation);
+                cp.getWorldOrientation(particle.cpOrientation);
                 //TODO
             }
             else {
@@ -59608,7 +59687,7 @@ lock rotation
 This will update a particle relative to a Control Point's rotation as well as position.
 */
 
-const tempVec3$8 = vec3.create();
+const tempVec3$9 = vec3.create();
 class MovementMaxVelocity extends Source1ParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor(system) {
@@ -59617,7 +59696,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const maxVelocity = this.getParameter('Maximum Velocity');
-        const velocity = vec3.sub(tempVec3$8, particle.position, particle.prevPosition);
+        const velocity = vec3.sub(tempVec3$9, particle.position, particle.prevPosition);
         let speed = vec3.length(velocity);
         vec3.normalize(velocity, velocity);
         const maxVelocityNormalized = maxVelocity * elapsedTime;
@@ -59627,7 +59706,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(MovementMaxVelocity);
 
-const tempVec3$7 = vec3.create();
+const tempVec3$8 = vec3.create();
 let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -59654,11 +59733,11 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
         const cp = particle.system.getControlPoint(controlPointNumber);
         if (cp) {
             if (useLocalSpace == 1) {
-                quat.copy(q, cp.getWorldQuaternion());
+                quat.copy(q, cp.getWorldOrientation());
             }
-            cp.getWorldPosition(tempVec3$7);
-            vec3.sub(particle.position, particle.position, tempVec3$7);
-            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$7);
+            cp.getWorldPosition(tempVec3$8);
+            vec3.sub(particle.position, particle.position, tempVec3$8);
+            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$8);
             const axis2 = vec3.clone(axis); //TODO: memory
             //axis2[1] = -axis2[1];
             //const tempQuat = quat.fromEuler(quat.create(), vec3.scale(vec3.create(), vec3.normalize(vec3.create(), axis), Math.HALF_PI));
@@ -59667,9 +59746,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             vec3.transformQuat(axis2, axis2, q);
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
             vec3.transformMat4(particle.position, particle.position, modelView);
-            vec3.add(particle.position, particle.position, tempVec3$7);
+            vec3.add(particle.position, particle.position, tempVec3$8);
             vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$7);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$8);
         }
         else {
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
@@ -60030,7 +60109,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);
 
-const tempVec3$6 = vec3.create();
+const tempVec3$7 = vec3.create();
 class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor(system) {
@@ -60056,7 +60135,7 @@ class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
         const active = this.getParameter('only active within specified distance');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const delta = vec3.subtract(tempVec3$6, cp.getWorldPosition(tempVec3$6), particle.position);
+            const delta = vec3.subtract(tempVec3$7, cp.getWorldPosition(tempVec3$7), particle.position);
             const deltaL = vec3.length(delta);
             if (active && ((deltaL < dMin) || (deltaL > dMax))) {
                 return;
@@ -60097,7 +60176,7 @@ Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
                     'only active within specified distance' 'bool' '0'
                     */
 
-const tempVec3$5 = vec3.create();
+const tempVec3$6 = vec3.create();
 class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor(system) {
@@ -60125,14 +60204,14 @@ class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
         if (cp == undefined) {
             return;
         }
-        vec3.subtract(tempVec3$5, particle.cpPosition, particle.position);
-        const deltaL = vec3.length(tempVec3$5);
+        vec3.subtract(tempVec3$6, particle.cpPosition, particle.position);
+        const deltaL = vec3.length(tempVec3$6);
         if (activeDistance && (deltaL < distanceMin || deltaL > distanceMax)) {
             // Outside distance window
             return;
         }
-        vec3.lerp(tempVec3$5, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
-        particle.setField(field, tempVec3$5);
+        vec3.lerp(tempVec3$6, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
+        particle.setField(field, tempVec3$6);
     }
 }
 Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
@@ -60334,7 +60413,7 @@ class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator
 }
 Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
-const tempVec3$4 = vec3.create();
+const tempVec3$5 = vec3.create();
 let SetControlPointPositions$1 = class SetControlPointPositions extends Source1ParticleOperator {
     static functionName = 'set control point positions';
     constructor(system) {
@@ -60372,7 +60451,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$4, cpLocation, vecControlPoint);
+                const a = vec3.add(tempVec3$5, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -60380,7 +60459,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             }
             const controlPoint = this.particleSystem.getControlPoint(cpNumber);
             if (controlPoint) {
-                controlPoint.setWorldQuaternion(quat.create());
+                controlPoint.setWorldOrientation(quat.create());
             }
             //this.particleSystem.setControlPointParent(cpNumber, cpParent);
         }
@@ -60470,7 +60549,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         const orientationControlPointNumber = this.getParameter('orientation control point');
         const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
         if (orientationControlPoint) {
-            this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat$3));
+            this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldOrientation(tempQuat$3));
         }
         else {
             this.mesh.setUniformValue('uOrientationControlPoint', IDENTITY_QUAT);
@@ -60661,11 +60740,13 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
 Source1ParticleOperators.registerOperator(RenderAnimatedSprites);
 
 const tempVec2$1 = vec2.create();
+const tempVec3$4 = vec3.create();
 class RenderRope extends Source1ParticleOperator {
     static functionName = 'render rope';
     #maxParticles = 0;
     #texture;
-    geometry;
+    #geometry = new BeamBufferGeometry();
+    mesh = new Mesh({ geometry: this.#geometry });
     #imgData;
     constructor(system) {
         super(system);
@@ -60681,16 +60762,16 @@ class RenderRope extends Source1ParticleOperator {
     }
         */
     updateParticles(particleSystem, particleList /*, elapsedTime: number*/) {
-        if (!this.geometry || !this.mesh || !this.particleSystem.material) {
+        if (!this.particleSystem.material) {
             return;
         }
         // TODO: use param subdivision_count
-        //const subdivCount = this.getParameter('subdivision_count');
+        const subdivCount = this.getParameter('subdivision_count');
         const m_flTexelSizeInUnits = this.getParameter('texel_size');
         const m_flTextureScrollRate = this.getParameter('texture_scroll_rate');
         const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2$1)[1] * m_flTexelSizeInUnits);
         const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
-        const geometry = this.geometry;
+        const geometry = this.#geometry;
         //const vertices = [];
         //const indices = [];
         //const id = [];
@@ -60698,18 +60779,36 @@ class RenderRope extends Source1ParticleOperator {
         //let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
-        for (let i = 0, l = particleList.length; i < l; i++) {
+        let previousParticle = null;
+        const deltaPos = vec3.create();
+        for (const particle of particleList) {
             //for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-            const particle = particleList[i];
-            const segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
-            if (previousSegment) {
-                ropeLength += segment.distanceTo(previousSegment);
+            //const particle: Source1Particle = particleList[i]!;
+            if (previousParticle) {
+                vec3.sub(deltaPos, particle.position, previousParticle.position);
+                for (let i = 0; i < subdivCount; i++) {
+                    const j = i / subdivCount;
+                    const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
+                    const position = vec3.scaleAndAdd(tempVec3$4, previousParticle.position, deltaPos, i / 3);
+                    const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
+                    const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
+                    const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
+                    const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
+                    const segment = new BeamSegment(position, [colorR, colorG, colorB, alpha], 0.0, radius);
+                    if (previousSegment) {
+                        ropeLength += segment.distanceTo(previousSegment);
+                    }
+                    segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
+                    segments.push(segment);
+                    previousSegment = segment;
+                }
             }
-            segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
-            segments.push(segment);
-            previousSegment = segment;
+            previousParticle = particle;
         }
-        geometry.segments = segments;
+        const camera = particleSystem.root.activeCamera;
+        if (camera) {
+            geometry.setSegments(segments, camera);
+        }
     }
     set maxParticles(maxParticles) {
         this.#maxParticles = maxParticles;
@@ -60717,8 +60816,9 @@ class RenderRope extends Source1ParticleOperator {
         //this._initBuffers();
     }
     initRenderer() {
-        this.geometry = new BeamBufferGeometry();
-        this.mesh = new Mesh({ geometry: this.geometry, material: this.particleSystem.material });
+        if (this.particleSystem.material) {
+            this.mesh.setMaterial(this.particleSystem.material);
+        }
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('IS_ROPE');
@@ -60729,7 +60829,6 @@ class RenderRope extends Source1ParticleOperator {
         this.mesh.setUniformValue('uParticles', this.#texture);
         this.maxParticles = this.particleSystem.maxParticles;
         this.particleSystem.addChild(this.mesh);
-        this.setOrientationType(this.getParameter('orientation_type') ?? 0); //TODO: remove orientation_type : only for RenderAnimatedSprites
         this.particleSystem.material.renderFace(RenderFace.Both);
         /*
                 switch (orientation) {
@@ -60826,12 +60925,6 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         //	DMXELEMENT_UNPACK_FIELD('max length', '2000', float, m_flMaxLength)
         //	DMXELEMENT_UNPACK_FIELD('min length', '0', float, m_flMinLength)
     }
-    /*
-    doRender(particleList, elapsedTime, material) {
-        for (let i = 0; i < particleList.length; ++i) {
-            this.renderSpriteTrail(particleList[i], elapsedTime, material);
-        }
-    }*/
     updateParticles(particleSystem, particleList, elapsedTime) {
         if (!this.geometry || !this.mesh || !this.particleSystem.material) {
             return;
@@ -60842,17 +60935,10 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         let index = 0;
+        const uvs = this.geometry.attributes.get('aTextureCoord')._array;
         for (const particle of particleList) {
             const coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
-            const uvs = this.geometry.attributes.get('aTextureCoord')._array;
             if (coords && uvs) {
-                //coords = coords.m_TextureCoordData[0];
-                /*
-                const uMin = coords.m_fLeft_U0;
-                const vMin = coords.m_fTop_V0;
-                const uMax = coords.m_fRight_U0;
-                const vMax = coords.m_fBottom_V0;
-                */
                 uvs[index++] = coords.uMin;
                 uvs[index++] = coords.vMin;
                 uvs[index++] = coords.uMax;
@@ -60903,7 +60989,6 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.particleSystem.addChild(this.mesh);
         this.geometry = geometry;
         this.particleSystem.material.setDefine('RENDER_SPRITE_TRAIL');
-        //particleSystem.material.setDefine('PARTICLE_ORIENTATION_SCREEN_ALIGNED');
         this.setOrientationType(0);
     }
     createParticlesArray(maxParticles) {
@@ -60951,10 +61036,8 @@ class RenderSpriteTrail extends Source1ParticleOperator {
                     rate = material.sequenceLength / particle.timeToLive;
                 }
                     */
-        //const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
         const a = this.#imgData;
         let index = 0;
-        //const len = 0;
         for (const particle of particleList) {
             const flAge = particle.currentTime;
             const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
@@ -60995,71 +61078,13 @@ class RenderSpriteTrail extends Source1ParticleOperator {
             this.#updateParticlesTexture(maxParticles, a);
         }
     }
-    /*
-    setupParticlesTexture1(particleList, maxParticles, elapsedTime) {
-        const m_flMaxLength = this.getParameter('max length');
-        const m_flMinLength = this.getParameter('min length');
-        const m_flLengthFadeInTime = this.getParameter('length fade in time');
-        const rate = this.getParameter('animation rate') || 30;
-        const fit = this.getParameter('animation_fit_lifetime') || 0;
-        /*
-                if (fit) {
-                    rate = material.sequenceLength / particle.timeToLive;
-                }
-        * /
-
-        const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
-        let index = 0;
-
-        for (const particle of particleList) {
-            const flAge = particle.currentTime;
-            const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
-            const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position);//TODOv3: optimize
-            const flMag = vec3.length(vecDelta);
-            vec3.normalize(vecDelta, vecDelta);
-            const flOODt = (elapsedTime != 0.0) ? (1.0 / elapsedTime) : 1.0;
-            let flLength = flLengthScale * flMag * flOODt * particle.trailLength;
-            if (flLength <= 0.0) {
-                return;
-            }
-
-            flLength = clamp(flLength, m_flMinLength, m_flMaxLength);
-            //vec3.scale(vecDelta, vecDelta, flLength * 0.5);TODOv3
-
-            //const vTangentY = vec3.cross(vec3.create(), vDirToBeam, vecDelta);
-            let rad = particle.radius;
-            if (flLength < rad) {
-                rad = flLength;
-            }
-
-            a[index++] = particle.position[0];
-            a[index++] = particle.position[1];
-            a[index++] = particle.position[2];
-            index++;
-            a[index++] = particle.color.r;
-            a[index++] = particle.color.g;
-            a[index++] = particle.color.b;
-            a[index++] = particle.alpha;
-            a[index++] = rad;
-            index++;
-            a[index++] = particle.rotationRoll;
-            a[index++] = particle.rotationYaw * DEG_TO_RAD;
-            a[index++] = vecDelta[0];
-            a[index++] = vecDelta[1];
-            a[index++] = vecDelta[2];
-            a[index++] = flLength;
-            index += 16;
-        }
-
-        this.#updateParticlesTexture(maxParticles, a);
-    }
-    */
     dispose() {
         this.mesh?.dispose();
         this.#texture?.removeUser(this);
     }
 }
 Source1ParticleOperators.registerOperator(RenderSpriteTrail);
+//Source1ParticleOperators.registerOperator('render rope', RenderSpriteTrail);
 
 var source1_blend_pixel_fog_const = `
 vec3 BlendPixelFogConst( const vec3 vShaderColor, float pixelFogFactor, const vec3 vFogColor, float fPixelFogType )
@@ -64240,9 +64265,11 @@ addWgslInclude('source1_declare_phong', source1_declare_phong);
 addWgslInclude('source1_declare_selfillum', source1_declare_selfillum);
 addWgslInclude('source1_declare_sheen', source1_declare_sheen);
 
-var source1_eyerefract = "#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_camera_position\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_selfillum\n\n#include declare_lights\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n@group(0) @binding(x) var<uniform> uEyeOrigin: vec3f;\n@group(0) @binding(x) var<uniform> uIrisProjectionU: vec4f;\n@group(0) @binding(x) var<uniform> uIrisProjectionV: vec4f;\n\n@group(0) @binding(x) var corneaTexture: texture_2d<f32>;\n@group(0) @binding(x) var corneaSampler: sampler;\n\n/*#include varying_standard**/\n/*\nstruct EyeRefractOut {\n\tstdOut: VertexOut,\n\n\t//vWorldPosition_ProjPosZ: vec4f,\n\tvTangentViewVector: vec3f,\n\tvWorldNormal: vec3f,\n\tvWorldTangent: vec3f,\n\tvWorldBinormal: vec3f,\n}\n*/\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\n\t@location(y) vWorldPosition_ProjPosZ: vec3f,\n\t@location(y) vTangentViewVector: vec3f,\n\t@location(y) vWorldNormal: vec3f,\n\t@location(y) vWorldTangent: vec3f,\n\t@location(y) vWorldBinormal: vec3f,\n}\n\n\n#define g_flEyeballRadius\t5.51\n#define g_flParallaxStrength 0.25\n\nfn Vec3WorldToTangent( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\tvar vTangentVector: vec3f;\n\tvTangentVector.x = dot( iWorldVector.xyz, iWorldTangent.xyz );\n\tvTangentVector.y = dot( iWorldVector.xyz, iWorldBinormal.xyz );\n\tvTangentVector.z = dot( iWorldVector.xyz, iWorldNormal.xyz );\n\treturn vTangentVector; // Return without normalizing\n}\nfn Vec3WorldToTangentNormalized( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\treturn normalize( Vec3WorldToTangent( iWorldVector, iWorldNormal, iWorldTangent, iWorldBinormal ) );\n}\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output: VertexOut =  VertexOut();\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\n/********************************************/\n\toutput.vWorldPosition_ProjPosZ = vertexPositionWorldSpace.xyz;\n\n\tlet cViewProj: mat4x4f = matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix;\n\tlet vProjPos: vec4f = cViewProj * vertexPositionWorldSpace;//mul( vec4( vertexPositionWorldSpace, 1.0 ), cViewProj );\n\t//o.projPos = vProjPos;\n\t//vProjPos.z = dot(vertexPositionWorldSpace, cViewProjZ );\n\t//o.vWorldPosition_ProjPosZ.w = vProjPos.z;\n\n\tlet vEyeSocketUpVector: vec3f = normalize( -uIrisProjectionV.xyz );\n\tlet vEyeSocketLeftVector: vec3f = normalize( -uIrisProjectionU.xyz );\n\n\t//vEyeSocketUpVector = -vec3(0.0, 1.0, 0.0);\n\t//vEyeSocketLeftVector = -vec3(0.0, 0.0, 1.0);\n\n\toutput.vWorldNormal = normalize( vertexPositionWorldSpace.xyz - uEyeOrigin.xyz );\n\toutput.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );\n\toutput.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );\n\n\tlet vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);\n\toutput.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);\n\t//vTangentViewVector.xyz = vWorldViewVector;\n\t//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;\n\t//vTangentViewVector.xyz = vWorldBinormal;\n\n/********************************************/\n\n\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tfragColor = vec4f(1.0);\n\tfragColor = vec4f(abs(fragInput.vTangentViewVector), 1.0);\n\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t//#include compute_fragment_color_map_mod1\n\n\t#ifdef USE_COLOR_MAP\n\t\tvar texelColor: vec4f = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\t\tdiffuseColor *= texelColor;\n\t#endif\n\t#include compute_fragment_alpha_test\n\t\t//texelColor.a = 1.0;\n\t\t//fragColor = texelColor;\n#ifndef IS_TRANSLUCENT\n\tfragColor.a = 1.0;\n#endif\n\t//fragColor = vec4(vTextureCoord/2.0, 0.0, 1.0);\n\n\n\n/********************************************/\n\t//let vWorldPosition: vec3f = fragInput.vWorldPosition_ProjPosZ.xyz;\n\tvar vCorneaUv: vec2f; // Note: Cornea texture is a cropped version of the iris texture\n\tvCorneaUv.x = dot( uIrisProjectionU, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tvCorneaUv.y = dot( uIrisProjectionV, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tlet vSphereUv: vec2f = ( vCorneaUv.xy * 0.5 ) + 0.25;\n\n\tlet corneaColor: vec4f = textureSample(corneaTexture, corneaSampler, vCorneaUv);\n\tlet fIrisOffset: f32 = corneaColor.b;\n\n\tvar vParallaxVector: vec2f = ( fragInput.vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - fragInput.vTangentViewVector.z ); // Note: 0.25 is a magic number\n\tvParallaxVector = ( fragInput.vTangentViewVector.xy* g_flParallaxStrength) / ( 1.0 - fragInput.vTangentViewVector.z );\n\tvParallaxVector.x = -vParallaxVector.x; //Need to flip x...not sure why.\n\tvParallaxVector = vec2(0.0);\n\n\tlet vIrisUv: vec2f = vSphereUv.xy - vParallaxVector.xy;\n#ifdef USE_COLOR_MAP\n\tvar cIrisColor: vec4f = textureSample(colorTexture, colorSampler, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );\n#else\n\tvar cIrisColor: vec4f = vec4(1.0);\n#endif\n\t//cIrisColor = pow(cIrisColor, vec4(1./2.2));\n\tcIrisColor.a = 1.0;\n\tfragColor = cIrisColor;\n/********************************************/\n\t#include compute_fragment_standard\n\n#ifdef SKIP_PROJECTION\n#ifdef USE_COLOR_MAP\n\tfragColor = texture2D(colorTexture, mod(vTextureCoord.xy, 1.0));\n#else\n\tvec4 fragColor = vec4(1.0);\n#endif\n\tfragColor.a = 1.;\n#endif\n\t#include compute_fragment_render_mode\n\n\n\n\n\t#include output_fragment\n}\n";
+var source1_eyerefract = "#include math::modulo\n\n#include matrix_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n\n#include declare_camera_position\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_selfillum\n\n#include declare_lights\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n@group(0) @binding(x) var<uniform> uEyeOrigin: vec3f;\n@group(0) @binding(x) var<uniform> uIrisProjectionU: vec4f;\n@group(0) @binding(x) var<uniform> uIrisProjectionV: vec4f;\n\n@group(0) @binding(x) var corneaTexture: texture_2d<f32>;\n@group(0) @binding(x) var corneaSampler: sampler;\n\n/*#include varying_standard**/\n/*\nstruct EyeRefractOut {\n\tstdOut: VertexOut,\n\n\t//vWorldPosition_ProjPosZ: vec4f,\n\tvTangentViewVector: vec3f,\n\tvWorldNormal: vec3f,\n\tvWorldTangent: vec3f,\n\tvWorldBinormal: vec3f,\n}\n*/\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\n\t@location(y) vWorldPosition_ProjPosZ: vec3f,\n\t@location(y) vTangentViewVector: vec3f,\n\t@location(y) vWorldNormal: vec3f,\n\t@location(y) vWorldTangent: vec3f,\n\t@location(y) vWorldBinormal: vec3f,\n}\n\n\n#define g_flEyeballRadius\t5.51\n#define g_flParallaxStrength 0.25\n\nfn Vec3WorldToTangent( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\tvar vTangentVector: vec3f;\n\tvTangentVector.x = dot( iWorldVector.xyz, iWorldTangent.xyz );\n\tvTangentVector.y = dot( iWorldVector.xyz, iWorldBinormal.xyz );\n\tvTangentVector.z = dot( iWorldVector.xyz, iWorldNormal.xyz );\n\treturn vTangentVector; // Return without normalizing\n}\nfn Vec3WorldToTangentNormalized( iWorldVector: vec3f, iWorldNormal: vec3f, iWorldTangent: vec3f, iWorldBinormal: vec3f ) -> vec3f\n{\n\treturn normalize( Vec3WorldToTangent( iWorldVector, iWorldNormal, iWorldTangent, iWorldBinormal ) );\n}\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output: VertexOut =  VertexOut();\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\n/********************************************/\n\toutput.vWorldPosition_ProjPosZ = vertexPositionWorldSpace.xyz;\n\n\tlet cViewProj: mat4x4f = matrixUniforms.projectionMatrix * matrixUniforms.viewMatrix;\n\tlet vProjPos: vec4f = cViewProj * vertexPositionWorldSpace;//mul( vec4( vertexPositionWorldSpace, 1.0 ), cViewProj );\n\t//o.projPos = vProjPos;\n\t//vProjPos.z = dot(vertexPositionWorldSpace, cViewProjZ );\n\t//o.vWorldPosition_ProjPosZ.w = vProjPos.z;\n\n\tlet vEyeSocketUpVector: vec3f = normalize( -uIrisProjectionV.xyz );\n\tlet vEyeSocketLeftVector: vec3f = normalize( -uIrisProjectionU.xyz );\n\n\t//vEyeSocketUpVector = -vec3(0.0, 1.0, 0.0);\n\t//vEyeSocketLeftVector = -vec3(0.0, 0.0, 1.0);\n\n\toutput.vWorldNormal = normalize( vertexPositionWorldSpace.xyz - uEyeOrigin.xyz );\n\toutput.vWorldTangent = normalize( cross( vEyeSocketUpVector.xyz, output.vWorldNormal.xyz ) );\n\toutput.vWorldBinormal = normalize( cross( output.vWorldNormal.xyz, output.vWorldTangent.xyz ) );\n\n\tlet vWorldViewVector:vec3f = normalize (vertexPositionWorldSpace.xyz - matrixUniforms.cameraPosition);\n\toutput.vTangentViewVector = Vec3WorldToTangentNormalized(vWorldViewVector, output.vWorldNormal, output.vWorldTangent, output.vWorldBinormal);\n\t//vTangentViewVector.xyz = vWorldViewVector;\n\t//vTangentViewVector.xyz = vertexPositionWorldSpace.xyz;\n\t//vTangentViewVector.xyz = vWorldBinormal;\n\n/********************************************/\n\n\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tfragColor = vec4f(1.0);\n\tfragColor = vec4f(abs(fragInput.vTangentViewVector), 1.0);\n\n\n\tvar diffuseColor: vec4f = vec4(1.0);\n\t//#include compute_fragment_color_map_mod1\n\n\t#ifdef USE_COLOR_MAP\n\t\tvar texelColor: vec4f = textureSample(colorTexture, colorSampler, fragInput.vTextureCoord.xy);\n\t\tdiffuseColor *= texelColor;\n\t#endif\n\t#include compute_fragment_alpha_test\n\t\t//texelColor.a = 1.0;\n\t\t//fragColor = texelColor;\n#ifndef IS_TRANSLUCENT\n\tfragColor.a = 1.0;\n#endif\n\t//fragColor = vec4(vTextureCoord/2.0, 0.0, 1.0);\n\n\n\n/********************************************/\n\t//let vWorldPosition: vec3f = fragInput.vWorldPosition_ProjPosZ.xyz;\n\tvar vCorneaUv: vec2f; // Note: Cornea texture is a cropped version of the iris texture\n\tvCorneaUv.x = dot( uIrisProjectionU, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tvCorneaUv.y = dot( uIrisProjectionV, vec4( fragInput.vWorldPosition_ProjPosZ, 1.0 ) );\n\tlet vSphereUv: vec2f = ( vCorneaUv.xy * 0.5 ) + 0.25;\n\n\tlet corneaColor: vec4f = textureSample(corneaTexture, corneaSampler, vCorneaUv);\n\tlet fIrisOffset: f32 = corneaColor.b;\n\n\tvar vParallaxVector: vec2f = ( fragInput.vTangentViewVector.xy * fIrisOffset * g_flParallaxStrength ) / ( 1.0 - fragInput.vTangentViewVector.z ); // Note: 0.25 is a magic number\n\tvParallaxVector = ( fragInput.vTangentViewVector.xy* g_flParallaxStrength) / ( 1.0 - fragInput.vTangentViewVector.z );\n\tvParallaxVector.x = -vParallaxVector.x; //Need to flip x...not sure why.\n\tvParallaxVector = vec2(0.0);\n\n\tlet vIrisUv: vec2f = vSphereUv.xy - vParallaxVector.xy;\n#ifdef USE_COLOR_MAP\n\tvar cIrisColor: vec4f = textureSample(colorTexture, colorSampler, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );\n#else\n\tvar cIrisColor: vec4f = vec4(1.0);\n#endif\n\t//cIrisColor = pow(cIrisColor, vec4(1./2.2));\n\tcIrisColor.a = 1.0;\n\tfragColor = cIrisColor;\n/********************************************/\n\t#include compute_fragment_standard\n\n#ifdef SKIP_PROJECTION\n#ifdef USE_COLOR_MAP\n\tfragColor = textureSample(colorTexture, colorSampler, modulo_vec2f(fragInput.vTextureCoord.xy));\n#else\n\tvec4 fragColor = vec4(1.0);\n#endif\n\tfragColor.a = 1.;\n#endif\n\t#include compute_fragment_render_mode\n\n\n\n\n\t#include output_fragment\n}\n";
 
-var source1_lightmappedgeneric = "#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
+var source1_lightmappedgeneric = "#define FLAT_SHADING\n\n#include matrix_uniforms\n#include declare_texture_transform\n//#include declare_shadow_mapping\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_lights\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\n\tlet diffuseColor: vec4f = vec4(1.0);\n\n\tlet lightmapColor1: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor2: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet lightmapColor3: vec3f = vec3(1.0, 1.0, 1.0);\n\tlet diffuseLighting: vec3f = vec3(1.0);\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_alpha_test\n\n\t#include calculate_fragment_normal\n\n\tlet albedo: vec3f = texelColor.rgb;\n\n\t#ifdef USE_SSBUMP\n\t\tlet tangentSpaceNormal: vec3f = texelNormal.xyz;\n\n\t\tdiffuseLighting = texelNormal.x * lightmapColor1 +\n\t\t\t\t\t\t  texelNormal.y * lightmapColor2 +\n\t\t\t\t\t\t  texelNormal.z * lightmapColor3;\n\t#else\n\t\t#ifdef USE_NORMAL_MAP\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * texelNormal.xyz - 1.0;\n\t\t#else\n\t\t\tlet tangentSpaceNormal: vec3f = 2.0 * defaultNormalTexel.xyz - 1.0;\n\t\t#endif\n\t#endif\n\n\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * tangentSpaceNormal);\n\t#include calculate_lights_setup_vars\n\tvar material: BlinnPhongMaterial;\n\tmaterial.diffuseColor = texelColor.rgb * diffuseLighting;\n\tmaterial.specularColor = vec3(1.0);//specular;\n\tmaterial.specularShininess = 5.0;//shininess;\n\tmaterial.specularStrength = 1.0;//specularStrength;\n\n\t#include calculate_fragment_lights\n\n\t/*gl_FragColor = textureColor;*/\n\tfragColor.a = 1.0;\n#ifdef USE_PHONG_SHADING\n\tfragColor = vec4((reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse), fragColor.a);\n#else\n\tfragColor = vec4((reflectedLight.directDiffuse + reflectedLight.indirectDiffuse * 0.0/*TODO*/), fragColor.a);\n#endif\n\n\n#ifdef SKIP_LIGHTING\n\tfragColor = vec4(albedo, fragColor.a);\n#endif\n\n\n\t#include output_fragment\n}\n";
+
+var source1_refract = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_detail_uv\n#include declare_vertex_skinning\n\n#include declare_fragment_standard\n#include declare_fragment_color_map\n#include declare_fragment_detail_map\n#include declare_fragment_normal_map\n#include declare_fragment_phong_exponent_map\n#include declare_fragment_alpha_test\n#include source1_declare_phong\n#include source1_declare_sheen\n#include source1_declare_selfillum\n#include declare_fragment_cube_map\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex_detail_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n\n\toutput.vVertexPositionModelSpace = vertexPositionModelSpace;\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\t#include calculate_fragment_normal_map\n\tvar fragColor: vec4f = vec4f(texelNormal.rgb, 1.0);\n\tdiscard;\n\t#include output_fragment\n}\n";
 
 var source1_sprite = "#include matrix_uniforms\n#include common_uniforms\n#include declare_texture_transform\n#include declare_vertex_skinning\n#include source_declare_particle\n#include source1_declare_gamma_functions\n\n#include declare_fragment_standard\n#include declare_fragment_diffuse\n#include declare_fragment_color_map\n#include declare_fragment_alpha_test\n\n@group(0) @binding(x) var<uniform> uOverbrightFactor: f32;\n@group(0) @binding(x) var<uniform> uAddSelf: f32;\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\nstruct VertexOut {\n\t@builtin(position) position : vec4f,\n\n\t@location(y) vVertexPositionModelSpace: vec4f,\n\t@location(y) vVertexPositionWorldSpace: vec4f,\n\t@location(y) vVertexPositionCameraSpace: vec4f,\n\n\t@location(y) vVertexNormalModelSpace: vec4f,\n\t@location(y) vVertexNormalWorldSpace: vec3f,\n\t@location(y) vVertexNormalCameraSpace: vec3f,\n\n\t//@location(y) vVertexTangentModelSpace: vec4f,\n\t@location(y) vVertexTangentWorldSpace: vec3f,\n\t@location(y) vVertexTangentCameraSpace: vec3f,\n\n\t@location(y) vVertexBitangentWorldSpace: vec3f,\n\t@location(y) vVertexBitangentCameraSpace: vec3f,\n\n\t@location(y) vTextureCoord: vec4f,\n\t@location(y) vTexture2Coord: vec4f,\n\n\t#ifdef USE_VERTEX_COLOR\n\t\t@location(y) vVertexColor: vec4f,\n\t#endif\n\n\t#ifdef WRITE_DEPTH_TO_COLOR\n\t\t@location(y) vPosition: vec4f,\n\t#endif\n\t#ifdef USE_LOG_DEPTH\n\t\t@location(y) vFragDepth: f32,\n\t#endif\n\t#ifdef USE_DETAIL_MAP\n\t\t@location(y) vDetailTextureCoord: vec4f,\n\t#endif\n\t@location(y) vColor: vec4f,\n}\n\n@vertex\nfn vertex_main(\n\t@location(x) position: vec3f,\n#ifdef HAS_NORMALS\n\t// TODO: should we even have normals in this shader ?\n\t@location(x) normal: vec3f,\n#endif\n\t@location(x) texCoord: vec2f,\n#ifdef HARDWARE_PARTICLES\n\t@location(x) particleId: f32,// TODO: use instance id instead ? //TODO: turn into u32\n#endif\n#ifdef USE_VERTEX_COLOR\n\t@location(x) color: vec4f,\n#endif\n) -> VertexOut\n{\n\tvar output : VertexOut;\n#ifdef HARDWARE_PARTICLES\n\t#define SOURCE1_PARTICLES\n\t#include source1_calculate_particle_position\n\toutput.vColor = GammaToLinearVec4(p.color);\n#else\n\t#ifdef USE_VERTEX_COLOR\n\t\toutput.vColor = color;\n\t#else\n\t\toutput.vColor = vec4(1.0);\n\t#endif\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\t#include calculate_vertex_log_depth\n#endif\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\tvar fragColor: vec4f;\n\tvar fragDepth: f32;\n\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_alpha_test\n\tfragColor = texelColor;\n\tfragColor = vec4(fragColor.rgb * uOverbrightFactor, fragColor.a);\n\t#ifdef ADD_SELF\n\t\tfragColor.a *= fragInput.vColor.a;\n\t\tfragColor = vec4(fragColor.rgb * fragColor.a, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb + uOverbrightFactor * uAddSelf * fragInput.vColor.a * fragColor.rgb, fragColor.a);\n\t\tfragColor = vec4(fragColor.rgb * fragInput.vColor.rgb * fragInput.vColor.a, fragColor.a);\n\t#else\n\t\tfragColor *= fragInput.vColor;\n\t#endif\n\n\t#include calculate_fragment_standard\n\t#include output_fragment\n}\n";
 
@@ -64256,6 +64283,7 @@ var source1_vertexlitgeneric = "#include matrix_uniforms\n#include common_unifor
 
 Shaders['source1_eyerefract.wgsl'] = source1_eyerefract;
 Shaders['source1_lightmappedgeneric.wgsl'] = source1_lightmappedgeneric;
+Shaders['source1_refract.wgsl'] = source1_refract;
 Shaders['source1_sprite.wgsl'] = source1_sprite;
 Shaders['source1_spritecard.wgsl'] = source1_spritecard;
 Shaders['source1_unlitgeneric.wgsl'] = source1_unlitgeneric;
@@ -70363,7 +70391,7 @@ class CreateWithinBox extends Operator {
         if (controlPoint) {
             controlPoint.getWorldPosition(tempVec3_2$1);
             if (this.#localSpace) {
-                vec3.transformQuat(tempVec3$3, tempVec3$3, controlPoint.getWorldQuaternion(tempQuat$2));
+                vec3.transformQuat(tempVec3$3, tempVec3$3, controlPoint.getWorldOrientation(tempQuat$2));
                 vec3.add(tempVec3$3, tempVec3$3, tempVec3_2$1);
             }
             else {
@@ -71412,7 +71440,7 @@ class PositionOffset extends Operator {
         if (this.#localCoords) {
             const cp = particle.system.getControlPoint(this.controlPointNumber);
             if (cp) {
-                vec3.transformQuat(offset$1, offset$1, cp.getWorldQuaternion());
+                vec3.transformQuat(offset$1, offset$1, cp.getWorldOrientation());
             }
         }
         vec3.add(particle.position, particle.position, offset$1);
@@ -71950,7 +71978,7 @@ class VelocityRandom extends Operator {
         }
         const cp = particle.system.getControlPoint(this.controlPointNumber);
         if (cp) {
-            vec3.transformQuat(randomVector, randomVector, cp.getWorldQuaternion());
+            vec3.transformQuat(randomVector, randomVector, cp.getWorldOrientation());
         }
         if (!this.#ignoreDT) {
             vec3.scale(randomVector, randomVector, -elapsedTime);
@@ -73952,7 +73980,7 @@ class RemapCPOrientationToRotations extends Operator {
     doOperate(particle) {
         const cp = this.system.getControlPoint(this.#controlPointNumber);
         if (cp) {
-            cp.getWorldQuaternion(tempQuat$1);
+            cp.getWorldOrientation(tempQuat$1);
             quat.rotateY(tempQuat$1, tempQuat$1, this.#vecRotation[0] * DEG_TO_RAD);
             quat.rotateZ(tempQuat$1, tempQuat$1, this.#vecRotation[1] * DEG_TO_RAD);
             quat.rotateX(tempQuat$1, tempQuat$1, this.#vecRotation[2] * DEG_TO_RAD);
@@ -74659,7 +74687,7 @@ class SetRandomControlPointPosition extends Operator {
             vec3.add(v$2, v$2, headLocation.currentWorldPosition);
             cp1.setPosition(v$2);
             if (this.#orient) {
-                cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
+                cp1.setWorldOrientation(headLocation.currentWorldQuaternion);
             }
         }
     }
@@ -74753,7 +74781,7 @@ class SetToCP extends Operator {
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
             if (this.#offsetLocal) {
-                vec3.transformQuat(tempVec3$1, this.#offset, cp.getWorldQuaternion(tempQuat));
+                vec3.transformQuat(tempVec3$1, this.#offset, cp.getWorldOrientation(tempQuat));
                 vec3.add(tempVec3$1, tempVec3$1, tempVec3_2);
             }
             else {
@@ -75544,7 +75572,10 @@ class RenderRopes extends RenderBase {
             segments.push(segment);
             previousSegment = segment;
         }
-        geometry.segments = segments;
+        const camera = particleSystem.root.activeCamera;
+        if (camera) {
+            geometry.setSegments(segments, camera);
+        }
     }
     set maxParticles(maxParticles) {
         this.#maxParticles = maxParticles;
@@ -79388,6 +79419,97 @@ function getCommonVertexShader() {
 	`;
 }
 
+var canvasUiCSS = ":host {\n\tposition: absolute;\n\twidth: 100px;\n\theight: 100px;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n\tbackground-color: black;\n}\n";
+
+var CanvasUiType;
+(function (CanvasUiType) {
+    CanvasUiType[CanvasUiType["Integer"] = 0] = "Integer";
+    CanvasUiType[CanvasUiType["Float"] = 1] = "Float";
+    CanvasUiType[CanvasUiType["String"] = 2] = "String";
+    CanvasUiType[CanvasUiType["Boolean"] = 3] = "Boolean";
+})(CanvasUiType || (CanvasUiType = {}));
+class CanvasUi {
+    #top = 0;
+    #left = 0;
+    #width = 100;
+    #height = 100;
+    #canvas;
+    //#html: HTMLElement;
+    #shadowRoot;
+    #params = new Map();
+    constructor(params = {}) {
+        //this.#html = createElement('div');
+        this.#shadowRoot = createShadowRoot('div', {
+            adoptStyle: canvasUiCSS,
+            childs: [
+                createElement('div'),
+            ],
+        });
+        if (params.canvas) {
+            this.setCanvas(params.canvas);
+        }
+        if (params.params) {
+            for (const param of params.params) {
+                this.addParameter(param);
+            }
+        }
+    }
+    setCanvas(canvas) {
+        let c;
+        if (typeof canvas === 'string') {
+            c = Graphics$1.getCanvas(canvas);
+            if (!c) {
+                this.#canvas = undefined;
+                return;
+            }
+        }
+        else {
+            c = canvas;
+        }
+        this.#setCanvas(c);
+    }
+    #setCanvas(canvas) {
+        this.#canvas = canvas;
+        if (canvas) {
+            canvas.canvas.parentElement?.append(this.#shadowRoot.host);
+        }
+        else {
+            this.#shadowRoot.host.remove();
+        }
+    }
+    addParameter(param) {
+        this.#params.set(param.name, {
+            param,
+            element: this.#createParam(param.type),
+        });
+    }
+    #createParam(type) {
+        const container = createElement('div', {
+            parent: this.#shadowRoot,
+        });
+        switch (type) {
+            case CanvasUiType.Float:
+                const floatInput = createElement('input', { parent: container });
+                return floatInput;
+            default:
+                throw new Error('Missing case in createParam');
+        }
+    }
+    setValue(name, value) {
+        const param = this.#params.get(name);
+        if (!param) {
+            return;
+        }
+        switch (param.param.type) {
+            case CanvasUiType.Float:
+                param.element.value = value;
+                break;
+            default:
+                throw new Error('Missing case in setValue');
+        }
+    }
+}
+
 class ObjExporter {
     static #instance;
     #lines = [];
@@ -79637,7 +79759,7 @@ var calculate_fragment_mask2_map = "#ifdef USE_MASK2_MAP\n\tlet texelMask2 = tex
 
 var calculate_fragment_normal_map = "#ifdef USE_NORMAL_MAP\n\tlet texelNormal: vec4f = textureSample(normalTexture, normalSampler, fragInput.vTextureCoord.xy);\n#else\n\tlet texelNormal: vec4f = vec4(0.5, 0.5, 1.0, 0.0);\n#endif\n";
 
-var calculate_fragment_normal = "#ifdef FLAT_SHADING\n\tlet fdx:vec3f = dpdx(fragInput.vVertexPositionCameraSpace).xyz;\n\tlet fdy:vec3f = -dpdy(fragInput.vVertexPositionCameraSpace).xyz;\n\tlet fragmentNormalCameraSpace:vec3f = normalize(cross(fdx, fdy));\n\tlet fragmentTangentCameraSpace:vec3f = normalize(fdx);\n\tlet fragmentBitangentCameraSpace:vec3f = normalize(fdy);\n#else\n\tvar<function> fragmentNormalCameraSpace: vec3f = normalize(fragInput.vVertexNormalCameraSpace.xyz);\n\tvar<function> fragmentTangentCameraSpace: vec3f = normalize(fragInput.vVertexTangentCameraSpace.xyz);\n\tvar<function> fragmentBitangentCameraSpace: vec3f = normalize(fragInput.vVertexBitangentCameraSpace.xyz);\n#endif\nvar<function> TBNMatrixCameraSpace: mat3x3<f32> = mat3x3(fragmentTangentCameraSpace, fragmentBitangentCameraSpace, fragmentNormalCameraSpace);\n";
+var calculate_fragment_normal = "#ifdef FLAT_SHADING\n\tlet fdx: vec3f = dpdx(fragInput.vVertexPositionCameraSpace).xyz;\n\tlet fdy: vec3f = -dpdy(fragInput.vVertexPositionCameraSpace).xyz;\n\tvar<function> fragmentNormalCameraSpace: vec3f = normalize(cross(fdx, fdy));\n\tvar<function> fragmentTangentCameraSpace: vec3f = normalize(fdx);\n\tvar<function> fragmentBitangentCameraSpace: vec3f = normalize(fdy);\n#else\n\tvar<function> fragmentNormalCameraSpace: vec3f = normalize(fragInput.vVertexNormalCameraSpace.xyz);\n\tvar<function> fragmentTangentCameraSpace: vec3f = normalize(fragInput.vVertexTangentCameraSpace.xyz);\n\tvar<function> fragmentBitangentCameraSpace: vec3f = normalize(fragInput.vVertexBitangentCameraSpace.xyz);\n#endif\nvar<function> TBNMatrixCameraSpace: mat3x3<f32> = mat3x3(fragmentTangentCameraSpace, fragmentBitangentCameraSpace, fragmentNormalCameraSpace);\n";
 
 var calculate_fragment_phong_exponent_map = "#ifdef USE_PHONG_EXPONENT_MAP\n\tlet texelPhongExponent: vec4f = textureSample(phongExponentTexture, phongExponentSampler, fragInput.vTextureCoord.xy);\n#endif\n";
 
@@ -79834,4 +79956,4 @@ var texturedatas = "@group(0) @binding(0) var input: texture_2d<f32>;\n@group(0)
 Shaders['texture_cube_datas.wgsl'] = texture_cube_datas;
 Shaders['texturedatas.wgsl'] = texturedatas;
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, vec3ClampScalar, vec3RandomBox };

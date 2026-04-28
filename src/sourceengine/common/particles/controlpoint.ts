@@ -39,17 +39,24 @@ export class ControlPoint extends Entity {
 	model?: Source2ModelInstance;
 
 	getWorldTransformation(mat = mat4.create()): mat4 {
-		this.getWorldQuaternion(tempQuat);
+		this.getWorldOrientation(tempQuat);
 		this.getWorldPosition(tempVec3);
 		return mat4.fromRotationTranslation(mat, tempQuat, tempVec3);
 	}
 
+	/**
+	 * @deprecated Use getWorldOrientation instead.
+	 */
 	getWorldQuaternion(q = quat.create()): quat {
+		return this.getWorldOrientation(q);
+	}
+
+	getWorldOrientation(q = quat.create()): quat {
 		if (this.#parentControlPoint) {
-			this.#parentControlPoint.getWorldQuaternion(q);
+			this.#parentControlPoint.getWorldOrientation(q);
 			quat.mul(q, q, this._quaternion);
 		} else {
-			super.getWorldQuaternion(q);
+			super.getWorldOrientation(q);
 		}
 		return q;
 	}
@@ -89,7 +96,7 @@ export class ControlPoint extends Entity {
 
 	#compute(): void {
 		super.getWorldPosition(this.currentWorldPosition);
-		super.getWorldQuaternion(this.currentWorldQuaternion);
+		super.getWorldOrientation(this.currentWorldQuaternion);
 		mat4.fromRotationTranslation(this.currentWorldTransformation, this.currentWorldQuaternion, this.currentWorldPosition);
 
 		// compute delta world position
@@ -106,19 +113,19 @@ export class ControlPoint extends Entity {
 
 	getForwardVector(out: vec3 = vec3.create()): vec3 {
 		vec3.set(out, 0, 1, 0);// +Y
-		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat));
 		return out;
 	}
 
 	getUpVector(out: vec3 = vec3.create()): vec3 {
 		vec3.set(out, 0, 0, 1);// +Z
-		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat));
 		return out;
 	}
 
 	getRightVector(out: vec3 = vec3.create()): vec3 {
 		vec3.set(out, 1, 0, 0);// +X
-		vec3.transformQuat(out, out, this.getWorldQuaternion(tempQuat));
+		vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat));
 		return out;
 	}
 
