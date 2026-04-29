@@ -8,7 +8,7 @@ import { Choreography } from './choreography';
 import { CurveData } from './curvedata';
 import { ChoreographyEvent, EventType } from './event';
 
-const CHOREOGRAPHIES_CHUNK_SIZE = 200000;
+//const CHOREOGRAPHIES_CHUNK_SIZE = 200000;
 
 interface SceneEntry {
 	do: any,
@@ -18,7 +18,7 @@ interface SceneEntry {
 
 export class Choreographies {
 	// TODO: multiple repos
-	#repository: string = '';
+	#repository = '';
 	choreographies: Record<string, Choreography> = {};//TODO: use map instead ?
 	stringPool: Record<string, string> = {};//TODO: use map instead ?
 	#reader!: BinaryReader;
@@ -30,7 +30,7 @@ export class Choreographies {
 	#sceneEntries = new Map<number, SceneEntry>();
 	#initialized = false;
 
-	async loadFile(repositoryName: string, fileName: string) {
+	async loadFile(repositoryName: string, fileName: string): Promise<null | undefined> {
 		this.#repository = repositoryName;
 		/*
 		if (!repository) {
@@ -56,10 +56,10 @@ export class Choreographies {
 
 		//this.#reader = new RemoteBinaryReader(new URL(fileName, repository.base), undefined, CHOREOGRAPHIES_CHUNK_SIZE);
 		this.#reader = new BinaryReader(respone.buffer!, undefined, undefined, true);
-		await this.#parseHeader();
+		this.#parseHeader();
 	}
 
-	async #parseHeader() {
+	#parseHeader(): void {
 		this.fileId = this.#reader.getUint32(0);
 		this.fileVersion = this.#reader.getUint32();
 		this.scenesCount = this.#reader.getUint32();
@@ -67,11 +67,11 @@ export class Choreographies {
 		this.scenesOffset = this.#reader.getUint32();
 	}
 
-	async getChoreography(fileName: string) {
+	getChoreography(fileName: string): Choreography | null {
 		const choreoCRC = crc32(fileName.replace(/\//g, '\\').toLowerCase());
 
 		if (!this.#initialized) {
-			await this.#parseSceneEntries();
+			this.#parseSceneEntries();
 			this.#initialized = true;
 			if (!this.#initialized) {
 				return null;
@@ -83,7 +83,7 @@ export class Choreographies {
 		}
 
 		if (this.#sceneEntries.get(choreoCRC)) {
-			const choreo = await this.#parseSceneData(this.#repository, choreoCRC);
+			const choreo = this.#parseSceneData(this.#repository, choreoCRC);
 			if (choreo) {
 				this.choreographies[choreoCRC] = choreo;
 				//console.info(choreo);
@@ -93,10 +93,10 @@ export class Choreographies {
 		return null;
 	}
 
-	async #parseSceneEntries() {
+	#parseSceneEntries(): void {
 		//await this.#reader.getLock();
 		if (this.scenesOffset && this.scenesCount) {
-			const size = this.scenesCount * 16;
+			//const size = this.scenesCount * 16;
 
 			// Ensure we have enough data
 			//if (this.hasChunk(this.scenesOffset, size))
@@ -118,7 +118,7 @@ export class Choreographies {
 		//this.#reader.releaseLock();
 	}
 
-	async #parseSceneData(repository: string, sceneCRC: number) {
+	#parseSceneData(repository: string, sceneCRC: number): Choreography | null {
 		//await this.#reader.getLock();
 		let choreography = null;
 
@@ -134,7 +134,7 @@ export class Choreographies {
 					if (format == 'LZMA') {
 						const HEADER_SIZE = 17;// 4 + 4 + 4 + 5
 						const uncompressedSize = this.#reader.getUint32();
-						const compressedSize = this.#reader.getUint32();
+						/*const compressedSize = */this.#reader.getUint32();
 						const properties = this.#reader.getBytes(5);
 						const compressedDatas = this.#reader.getBytes(sceneEntry['dl'] - HEADER_SIZE);
 
@@ -144,7 +144,7 @@ export class Choreographies {
 						decompressedDatas = this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
 					}
 					if (decompressedDatas) {
-						choreography = await this.#loadChoreography(repository, decompressedDatas);
+						choreography = this.#loadChoreography(repository, decompressedDatas);
 					}
 				} catch (e) {
 					//fixme: add error code
@@ -160,17 +160,17 @@ export class Choreographies {
 		return choreography;
 	}
 
-	async #loadChoreography(repository: string, fileContent: string | Uint8Array) {
+	#loadChoreography(repository: string, fileContent: string | Uint8Array): Choreography {
 		const reader = new BinaryReader(fileContent, undefined, undefined, true);
 		//saveFile(new File([new Blob([reader.buffer])], '#parseSceneData'));
 		const choreography = new Choreography(repository);
 
-		const formatId = await reader.getInt32();
-		const formatVersion = await reader.getInt8();
-		const crc = await reader.getInt32();
+		/*const formatId =  */reader.getInt32();
+		/*const formatVersion =  */reader.getInt8();
+		/*const crc =  */reader.getInt32();
 
-		await this.#loadChoreoEvents(reader, choreography);
-		await this.#loadChoreoActors(reader, choreography);
+		this.#loadChoreoEvents(reader, choreography);
+		this.#loadChoreoActors(reader, choreography);
 
 		if (DEBUG) {
 			console.log(choreography.toString());
@@ -182,11 +182,11 @@ export class Choreographies {
 	* load choreography events
 	* @param {Object jDataView} reader File reader
 	*/
-	async #loadChoreoEvents(reader: BinaryReader, choreography: Choreography) {
+	#loadChoreoEvents(reader: BinaryReader, choreography: Choreography): void {
 		const repository = choreography.getRepository();
-		const eventCount = await reader.getUint8();
+		const eventCount = reader.getUint8();
 		for (let eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
-			choreography.addEvent(await this.#loadChoreoEvent(reader, repository, choreography));
+			choreography.addEvent(this.#loadChoreoEvent(reader, repository, choreography));
 		}
 	}
 
@@ -194,10 +194,10 @@ export class Choreographies {
 	* load choreography actors
 	* @param {Object jDataView} reader File reader
 	*/
-	async #loadChoreoActors(reader: BinaryReader, choreography: Choreography) {
-		const actorCount = await reader.getUint8();
+	#loadChoreoActors(reader: BinaryReader, choreography: Choreography): void {
+		const actorCount = reader.getUint8();
 		for (let actorIndex = 0; actorIndex < actorCount; ++actorIndex) {
-			choreography.addActor(await this.#loadChoreoActor(reader, choreography.getRepository(), choreography));
+			choreography.addActor(this.#loadChoreoActor(reader, choreography.getRepository(), choreography));
 		}
 	}
 
@@ -205,13 +205,13 @@ export class Choreographies {
 	* load an actor
 	* @param {Object jDataView} reader File reader
 	*/
-	async #loadChoreoActor(reader: BinaryReader, repository: string, choreography: Choreography) {
-		const actorName = await this.readString(reader);
+	#loadChoreoActor(reader: BinaryReader, repository: string, choreography: Choreography): Actor {
+		const actorName = this.readString(reader);
 		const actor = new Actor(choreography, actorName);
 
-		const channelCount = await reader.getUint8();
+		const channelCount = reader.getUint8();
 		for (let channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
-			actor.addChannel(await this.#loadChoreoChannel(reader, repository, choreography));
+			actor.addChannel(this.#loadChoreoChannel(reader, repository, choreography));
 		}
 
 		actor.setActive(reader.getInt8() != 0);
@@ -222,45 +222,45 @@ export class Choreographies {
 	* load an channel
 	* @param {Object jDataView} reader File reader
 	*/
-	async #loadChoreoChannel(reader: BinaryReader, repository: string, choreography: Choreography) {
-		const channelName = await this.readString(reader);
+	#loadChoreoChannel(reader: BinaryReader, repository: string, choreography: Choreography): Channel {
+		const channelName = this.readString(reader);
 		const channel = new Channel(channelName);
 
-		const eventCount = await reader.getUint8();
+		const eventCount = reader.getUint8();
 		for (let eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
-			channel.addEvent(await this.#loadChoreoEvent(reader, repository, choreography));
+			channel.addEvent(this.#loadChoreoEvent(reader, repository, choreography));
 		}
 
 		channel.setActive(reader.getInt8() != 0);
-		return channel
+		return channel;
 	}
 
 	/**
 	* load an event
 	* @param {Object jDataView} reader File reader
 	*/
-	async #loadChoreoEvent(reader: BinaryReader, repository: string, choreography: Choreography) {
-		const eventType = await reader.getInt8();
-		const eventName = await this.readString(reader);
-		const startTime = await reader.getFloat32();
-		const endTime = await reader.getFloat32();
-		const param1 = await this.readString(reader);
-		const param2 = await this.readString(reader);
-		const param3 = await this.readString(reader);
+	#loadChoreoEvent(reader: BinaryReader, repository: string, choreography: Choreography): ChoreographyEvent {
+		const eventType = reader.getInt8();
+		const eventName = this.readString(reader);
+		const startTime = reader.getFloat32();
+		const endTime = reader.getFloat32();
+		const param1 = this.readString(reader);
+		const param2 = this.readString(reader);
+		const param3 = this.readString(reader);
 
-		const ramp = await this.#loadCurveData(reader);
-		const flags = await reader.getUint8();
-		const distToTarget = await reader.getFloat32();
+		const ramp = this.#loadCurveData(reader);
+		const flags = reader.getUint8();
+		const distToTarget = reader.getFloat32();
 
 		const event = new ChoreographyEvent(choreography, repository, eventType, eventName, startTime, endTime, param1, param2, param3, flags, distToTarget);
 		event.setRamp(ramp);
 
 		// Relative & timing tags
 		for (let tagtype = 0; tagtype < 2; ++tagtype) {
-			const numTags = await reader.getUint8();
+			const numTags = reader.getUint8();
 			for (let j = 0; j < numTags; ++j) {
-				const tagName = await this.readString(reader);
-				const percentage = await reader.getUint8() / 255.0;
+				/*const tagName = */this.readString(reader);
+				/*const percentage = */reader.getUint8() /*/ 255.0*/;
 				if (tagtype == 0) {
 					event.addRelativeTag(/*tagName, percentage*/);
 				} else {
@@ -271,36 +271,36 @@ export class Choreographies {
 
 		// Absolute tags PLAYBACK / ORIGINAL
 		for (let tagtype = 0; tagtype < 2; ++tagtype) {
-			const numTags = await reader.getUint8();
+			const numTags = reader.getUint8();
 			for (let j = 0; j < numTags; ++j) {
-				const tagName = await this.readString(reader);
-				const percentage = await reader.getUint16() / 4096.0;
+				/*const tagName = */this.readString(reader);
+				/*const percentage = */reader.getUint16()  /* / 4096.0*/;
 
 				event.addAbsoluteTag(/*tagtype, tagName, percentage*/);
 			}
 		}
 
 		if (event.getType() == EventType.Gesture) {
-			const duration = await reader.getFloat32();
+			/*const duration = */reader.getFloat32();
 			console.error('TODO');
 		}
 
-		if (await reader.getInt8()) {
-			const tagname = await this.readString(reader);
-			const wavname = await this.readString(reader);
+		if (reader.getInt8()) {
+			/*const tagname = */this.readString(reader);
+			/*const wavname = */this.readString(reader);
 			console.error('TODO');
 		}
 
-		await this.#loadFlexAnimations(reader, event);
+		this.#loadFlexAnimations(reader, event);
 
 		if (event.getType() == EventType.Loop) {
-			event.m_nNumLoops = await reader.getInt8();
+			event.m_nNumLoops = reader.getInt8();
 		}
 
 		if (event.getType() == EventType.Speak) {
-			event.setCloseCaptionType(await reader.getInt8());
-			event.setCloseCaptionToken(await this.readString(reader));
-			const flags = await reader.getInt8();
+			event.setCloseCaptionType(reader.getInt8());
+			event.setCloseCaptionToken(this.readString(reader));
+			/*const flags = */reader.getInt8();
 			console.error('TODO');
 		}
 
@@ -311,7 +311,7 @@ export class Choreographies {
 	* load flex animations
 	* @param {Object jDataView} reader File reader
 	*/
-	#loadFlexAnimations(reader: BinaryReader, event: ChoreographyEvent) {
+	#loadFlexAnimations(reader: BinaryReader, event: ChoreographyEvent): void {
 		const numTracks = reader.getUint8();
 		for (let i = 0; i < numTracks; ++i) {
 			console.error('TODO');
@@ -366,7 +366,7 @@ export class Choreographies {
 	* Read string index, return the string
 	* @return {String} The read string or null
 	*/
-	readString(reader: BinaryReader) {
+	readString(reader: BinaryReader): string {
 		return this.getString(reader.getInt16());
 	}
 
@@ -375,7 +375,7 @@ export class Choreographies {
 	* @param {Number} stringIndex stringIndex
 	* @return {String} The read string or error string
 	*/
-	getString(stringIndex: number) {
+	getString(stringIndex: number): string {
 		const s = this.stringPool[stringIndex];
 		if (s === undefined) {
 			const stringOffsetOffset = 20 + stringIndex * 4;
@@ -400,7 +400,7 @@ export class Choreographies {
 	}*/
 }
 
-function makeCRCTable() {
+function makeCRCTable(): number[] {
 	let c;
 	const crcTable = [];
 	for (let n = 0; n < 256; n++) {
@@ -414,7 +414,7 @@ function makeCRCTable() {
 }
 
 let CacheCrcTable: number[];
-function crc32(str: string) {
+function crc32(str: string): number {
 	const crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
 	let crc = 0 ^ (-1);
 

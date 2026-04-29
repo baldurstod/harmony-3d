@@ -1,5 +1,6 @@
 import { TimelineElement } from '../../../timeline/element';
 import { TimelineGroup } from '../../../timeline/group';
+import { Source1ModelInstance } from '../export';
 import { Channel } from './channel';
 import { Choreography } from './choreography';
 
@@ -14,33 +15,33 @@ export class Actor {
 		this.name = name;
 	}
 
-	addChannel(channel: Channel) {
+	addChannel(channel: Channel): void {
 		this.channels.push(channel);
 		channel.setActor(this);
 	}
 
-	getCharacter() {
+	getCharacter(): Source1ModelInstance | undefined {
 		return this.#choreography.actors2[0];//fixme: variable
 	}
 
-	setActive(active: boolean) {
+	setActive(active: boolean): void {
 		this.active = active;
 	}
 
-	toString(indent: string) {
+	toString(indent: string): string {
 		indent = indent || '';
 		const subindent = indent + '\t';
 		const arr = [indent + 'Actor ' + this.name];
-		for (let i = 0; i < this.channels.length; ++i) {
-			arr.push(this.channels[i]!.toString(subindent));
+		for (const channel of this.channels) {
+			arr.push(channel.toString(subindent));
 		}
 		return arr.join('\n');
 	}
 
-	step(previousTime: number, currentTime: number) {
+	step(previousTime: number, currentTime: number): void {
 		//TODOv2
-		for (let i = 0; i < this.channels.length; ++i) {
-			this.channels[i]!.step(previousTime, currentTime);
+		for (const channel of this.channels) {
+			channel.step(previousTime, currentTime);
 		}
 	}
 

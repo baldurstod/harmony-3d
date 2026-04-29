@@ -1,6 +1,5 @@
 import { TimelineChannel } from '../../../timeline/channel';
 import { TimelineElement } from '../../../timeline/element';
-import { TimelineGroup } from '../../../timeline/group';
 import { Actor } from './actor';
 import { ChoreographyEvent } from './event';
 
@@ -18,7 +17,7 @@ export class Channel {
 	 * Add an event
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
-	addEvent(event: ChoreographyEvent) {
+	addEvent(event: ChoreographyEvent): void {
 		this.events.push(event);
 		event.setChannel(this);
 	}
@@ -26,14 +25,14 @@ export class Channel {
 	/**
 	 * TODO
 	 */
-	setActor(actor: Actor) {
+	setActor(actor: Actor): void {
 		this.actor = actor;
 	}
 
 	/**
 	 * TODO
 	 */
-	getActor() {
+	getActor(): Actor | undefined {
 		return this.actor;
 	}
 
@@ -41,19 +40,20 @@ export class Channel {
 	 * Set active
 	 * @param {Bool} active active
 	 */
-	setActive(active: boolean) {
+	setActive(active: boolean): void {
 		this.active = active;
 	}
 
 	/**
 	 * toString
 	 */
-	toString(indent?: string) {
+	toString(indent?: string): string {
 		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [indent + 'Channel ' + this.name];
-		for (let i = 0; i < this.events.length; ++i) {
-			arr.push(this.events[i]!.toString(subindent));
+		//for (let i = 0; i < this.events.length; ++i) {
+		for (const event of this.events) {
+			arr.push(event.toString(subindent));
 		}
 		if (!this.active) {
 			arr.push(indent + 'active 0')
@@ -64,10 +64,10 @@ export class Channel {
 	/**
 	 * Step
 	 */
-	step(previousTime: number, currentTime: number) {
+	step(previousTime: number, currentTime: number): void {
 		//TODOv2
-		for (let i = 0; i < this.events.length; ++i) {
-			this.events[i]!.step(previousTime, currentTime);
+		for (const event of this.events) {
+			event.step(previousTime, currentTime);
 		}
 	}
 

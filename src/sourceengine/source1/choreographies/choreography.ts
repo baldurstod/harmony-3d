@@ -20,7 +20,7 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	currentTime = 0;
 	animsSpeed = 1;
 	shouldLoop = false;
-	sceneLength: number = 0;
+	sceneLength = 0;
 	//onStop: () => void;
 
 	constructor(repository: string) {
@@ -28,7 +28,7 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 		this.#repository = repository;
 	}
 
-	getRepository() {
+	getRepository(): string {
 		return this.#repository;
 	}
 
@@ -36,7 +36,7 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	 * Add an event
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
-	addEvent(event: ChoreographyEvent) {
+	addEvent(event: ChoreographyEvent): void {
 		this.#events.push(event);
 	}
 
@@ -44,20 +44,20 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	 * Add an actor
 	 * @param {Object ChoreographyActor} actor The actor to add
 	 */
-	addActor(actor: Actor) {
+	addActor(actor: Actor): void {
 		this.#actors.push(actor);
 	}
 
 	/**
 	 * toString
 	 */
-	toString(indent = '') {
+	toString(indent = ''): string {
 		const arr = [];
-		for (let i = 0; i < this.#events.length; ++i) {
-			arr.push(this.#events[i]!.toString(indent));
+		for (const event of this.#events) {
+			arr.push(event.toString(indent));
 		}
-		for (let i = 0; i < this.#actors.length; ++i) {
-			arr.push(this.#actors[i]!.toString(indent));
+		for (const actor of this.#actors) {
+			arr.push(actor.toString(indent));
 		}
 		return arr.join('\n');
 	}
@@ -65,18 +65,18 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	/**
 	 * Step
 	 */
-	step(delta: number) {
+	step(delta: number): boolean {
 		if (this.animsSpeed > 0) {
 			const currentTime = this.previousTime == -1 ? 0 : this.previousTime + delta * this.animsSpeed;
 			if (this.previousTime != -0.5) {
 				this.currentTime = currentTime;
 			}
 
-			for (let i = 0; i < this.#events.length; ++i) {
-				this.#events[i]!.step(this.previousTime, this.currentTime);
+			for (const event of this.#events) {
+				event.step(this.previousTime, this.currentTime);
 			}
-			for (let i = 0; i < this.#actors.length; ++i) {
-				this.#actors[i]!.step(this.previousTime, this.currentTime);
+			for (const actor of this.#actors) {
+				actor.step(this.previousTime, this.currentTime);
 			}
 			if (this.shouldLoop) {
 				this.shouldLoop = false;
@@ -94,7 +94,7 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	/**
 	 * Reset
 	 */
-	reset() {
+	reset(): void {
 		this.previousTime = -1;
 		this.currentTime = 0;
 	}
@@ -102,14 +102,14 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	/**
 	 * Stop
 	 */
-	stop() {
+	stop(): void {
 		this.dispatchEvent(new Event(ChoreographyEventType.Stop));
 	}
 
 	/**
 	 * Step
 	 */
-	loop(startTime: number) {
+	loop(startTime: number): void {
 		this.previousTime = startTime - EPSILON;
 		this.currentTime = startTime;
 		this.shouldLoop = true;
@@ -118,14 +118,14 @@ export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	/**
 	 * Step
 	 */
-	setActors(actors: Source1ModelInstance[]) {
+	setActors(actors: Source1ModelInstance[]): void {
 		this.actors2 = actors;
 	}
 
 	toTimelineElement(): TimelineElement {
 		const timeline = new Timeline();
 		const events = timeline.addChild(new TimelineGroup('Events')) as TimelineGroup;
-		const actors = timeline.addChild(new TimelineGroup('Actors')) as TimelineGroup;
+		//const actors = timeline.addChild(new TimelineGroup('Actors')) as TimelineGroup;
 
 		for (const event of this.#events) {
 			events.addChild(event.toTimelineElement());

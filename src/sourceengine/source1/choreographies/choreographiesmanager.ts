@@ -31,7 +31,7 @@ export class ChoreographiesManager {
 		let choreography: Choreography | undefined | null = this.#vcds.get(repository, choreoName);
 
 		if (!choreography && this.#sceneImage) {
-			choreography = await (await this.#sceneImage).getChoreography(choreoName);
+			choreography = (await this.#sceneImage).getChoreography(choreoName);
 		}
 
 		if (!choreography) {
@@ -52,13 +52,13 @@ export class ChoreographiesManager {
 	}
 
 	static async getChoreography(repository: string, choreoName: string): Promise<Choreography | null> {
-		let choreography: Choreography | undefined | null = this.#vcds.get(repository, choreoName);
+		const choreography: Choreography | undefined | null = this.#vcds.get(repository, choreoName);
 		if (choreography) {
 			return choreography;
 		}
 
 		if (this.#sceneImage) {
-			return await (await this.#sceneImage).getChoreography(choreoName);
+			return (await this.#sceneImage).getChoreography(choreoName);
 		}
 		return null;
 	}

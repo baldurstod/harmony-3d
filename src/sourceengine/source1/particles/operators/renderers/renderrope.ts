@@ -143,7 +143,7 @@ export class RenderRope extends Source1ParticleOperator {
 
 	#createParticlesArray(): void {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
-		this.mesh!.setStorage('particles', this.#imgData);
+		this.mesh.setStorage('particles', this.#imgData);
 	}
 
 	#createParticlesTexture(): void {

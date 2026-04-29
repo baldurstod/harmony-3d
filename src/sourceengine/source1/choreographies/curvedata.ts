@@ -33,15 +33,15 @@ export class CurveData {
 	/**
 	 * toString
 	 */
-	toString(indent?: string) {
+	toString(indent?: string): string {
 		if (!this.#ramp.length) {
 			return '';
 		}
 		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [indent + 'event_ramp'];
-		for (let i = 0; i < this.#ramp.length; ++i) {
-			const rampData = this.#ramp[i]!;
+		for (const rampData of this.#ramp) {
+			//const rampData = this.#ramp[i]!;
 			arr.push(subindent + rampData.time + ' ' + rampData.value);
 		}
 		return arr.join('\n');
