@@ -1008,6 +1008,9 @@ class Graphics {
 	}
 
 	static setShaderPrecision(shaderPrecision: ShaderPrecision) {
+		this.removeDefine('LOW_PRECISION');
+		this.removeDefine('MEDIUM_PRECISION');
+		this.removeDefine('HIGH_PRECISION');
 		switch (shaderPrecision) {
 			case ShaderPrecision.Low:
 				this.setDefine('LOW_PRECISION');

@@ -21,7 +21,6 @@ import { ReadonlyQuat } from 'gl-matrix';
 import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
 import { Shape } from './shape';
-import { Source1ModelInstance as Source1ModelInstance_2 } from '../export';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { TypedArrayNumber } from 'harmony-types';
@@ -38,7 +37,7 @@ declare class Actor {
     active: boolean;
     constructor(choreography: Choreography, name: string);
     addChannel(channel: Channel): void;
-    getCharacter(): Source1ModelInstance_2 | undefined;
+    getCharacter(): Source1ModelInstance | undefined;
     setActive(active: boolean): void;
     toString(indent: string): string;
     step(previousTime: number, currentTime: number): void;
