@@ -3,4 +3,5 @@ export { Graphics } from './graphics2';
 export * from './graphicsevents';
 export * from './render';
 export * from './viewport';
+export * from './webglinternal';
 export * from './webgpuinternal';
