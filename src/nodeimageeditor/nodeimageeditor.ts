@@ -3,8 +3,10 @@ import { MyEventTarget } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
+import { Source1TextureManager } from '../sourceengine/export';
 import { Node } from './node';
 import { getOperation } from './operations';
 
@@ -35,7 +37,8 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 	#scene = new Scene();
 	#nodes = new Set<Node>();
 	#camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
-	#fullScreenQuadMesh = new FullScreenQuad();
+	#material = new MeshBasicMaterial();
+	#fullScreenQuadMesh = new FullScreenQuad({ material: this.#material });
 	textureSize = DEFAULT_TEXTURE_SIZE;
 
 	constructor() {
@@ -46,7 +49,8 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 	render(material: Material, width: number, height: number) {
 		this.#fullScreenQuadMesh.setMaterial(material);
 		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
-
+		// Set the material back to default to free the material
+		this.#fullScreenQuadMesh.setMaterial(this.#material);
 	}
 
 	addNode(operationName: string, params: AddNodeParameters = {}): Node | null {
@@ -90,6 +94,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		this.#nodes.clear();
 		this.#dispatchEvent(NodeImageEditorEventType.AllNodesRemoved, null);
 		//TODO :remove all inputs / output
+		Source1TextureManager.cleanup();
 	}
 
 	getVariable(name: string) {

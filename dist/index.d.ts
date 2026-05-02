@@ -2160,8 +2160,10 @@ declare class Channel {
                       }
 
                       export declare class FullScreenQuad extends Mesh {
-                          constructor(params?: MeshParameters);
+                          constructor(params?: FullScreenQuadParameters);
                       }
+
+                      declare type FullScreenQuadParameters = Omit<MeshParameters, 'geometry' | 'topology'>;
 
                       declare type FuncBrush = {
                           model: number;
@@ -7149,6 +7151,7 @@ declare class Channel {
                           };
                           setTexture(repository: string, path: string, texture: AnimatedTexture): void;
                           removeTexture(repository: string, path: string): void;
+                          cleanup(): void;
                       }
 
                       export declare const Source1VmtLoader: Source1VmtLoaderClass;

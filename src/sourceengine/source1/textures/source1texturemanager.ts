@@ -38,7 +38,7 @@ class Source1TextureManagerClass {
 			this.#defaultTextureCube.addUser(this);
 		});
 
-		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
+		setInterval(() => this.cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
 	getTexture(repository: string, path: string, needCubeMap = false, srgb = true): AnimatedTexture | null {
@@ -152,12 +152,29 @@ class Source1TextureManagerClass {
 		}
 	}
 
-	#cleanup(): void {
+	cleanup(): void {
+		textureLoop:
 		for (const [repo, path, texture] of this.#texturesList) {
-			if (texture.hasOnlyUser(this)) {
-				texture.removeUser(this);
-				this.#texturesList.delete(repo, path);
+			// Check if the texture is used elsewhere
+			if (!texture.hasOnlyUser(this)) {
+				return;
 			}
+
+			// Check if every frame is unused
+			for (const subTexture of texture.frames) {
+				if (!subTexture.hasOnlyUser(texture)) {
+					continue textureLoop;
+				}
+			}
+
+			// Remove the sub textures
+			for (const subTexture of texture.frames) {
+				subTexture.removeUser(texture);
+			}
+
+			// Remove the texture
+			texture.removeUser(this);
+			this.#texturesList.delete(repo, path);
 		}
 	}
 }

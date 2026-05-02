@@ -176,12 +176,9 @@ export class ApplySticker extends Node {
 
 	override dispose() {
 		super.dispose();
-		if (this.#renderTarget) {
-			this.#renderTarget.dispose();
-		}
-		if (this.material) {
-			this.material.removeUser(this);
-		}
+		this.#renderTarget?.dispose();
+		this.material?.removeUser(this);
+		this.#inputTexture?.removeUser(this);
 	}
 }
 registerOperation('apply_sticker', ApplySticker);

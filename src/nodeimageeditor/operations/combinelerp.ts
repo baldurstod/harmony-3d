@@ -112,12 +112,9 @@ export class CombineLerp extends Node {
 
 	override dispose() {
 		super.dispose();
-		if (this.#renderTarget) {
-			this.#renderTarget.dispose();
-		}
-		if (this.material) {
-			this.material.removeUser(this);
-		}
+		this.#renderTarget?.dispose();
+		this.material?.removeUser(this);
+		this.#mesh.dispose();
 	}
 }
 registerOperation('combine_lerp', CombineLerp);

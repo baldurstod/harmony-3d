@@ -149,9 +149,8 @@ export class TextureLookup extends Node {
 
 	override dispose() {
 		super.dispose();
-		if (this.#renderTarget) {
-			this.#renderTarget.dispose();
-		}
+		this.#renderTarget?.dispose();
+		this.#inputTexture?.removeUser(this);
 	}
 }
 registerOperation('texture lookup', TextureLookup);
