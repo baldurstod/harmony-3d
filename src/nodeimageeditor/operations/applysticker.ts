@@ -17,7 +17,7 @@ const texTransform = mat3.create();
 export class ApplySticker extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
-	inputTexture: Texture | null = null;
+	#inputTexture: Texture | null = null;
 	#outputTexture?: Texture;
 
 
@@ -60,7 +60,7 @@ export class ApplySticker extends Node {
 			return;
 		}
 		const params = this.params;
-		this.material.setTexture('uSticker', this.inputTexture);
+		this.material.setTexture('uSticker', this.#inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
 		this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
 		this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
@@ -117,7 +117,7 @@ export class ApplySticker extends Node {
 		}
 
 		const params = this.params;
-		this.material.setTexture('stickerTexture', this.inputTexture);
+		this.material.setTexture('stickerTexture', this.#inputTexture);
 		this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
 		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
 		this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
@@ -167,6 +167,12 @@ export class ApplySticker extends Node {
 		}
 		return ret.join('\n');
 	}
+
+	setInputTexture(texture: Texture | null): void {
+		this.#inputTexture?.removeUser(this);
+		texture?.addUser(this);
+		this.#inputTexture = texture;
+	};
 
 	override dispose() {
 		super.dispose();

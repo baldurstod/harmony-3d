@@ -51,7 +51,7 @@ async function dropFiles(evt: DragEvent, node: Node): Promise<void> {
 			texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
 			await TextureManager.fillTextureWithImage(texture, image);
-			(node as ApplySticker | TextureLookup).inputTexture = texture;
+			(node as ApplySticker | TextureLookup).setInputTexture(texture);
 			node.invalidate();
 			node.validate({ updatePreview: true });
 		}

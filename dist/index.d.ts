@@ -225,11 +225,11 @@ declare type AnyTexture = Texture | CubeTexture;
 
 export declare class ApplySticker extends Node_2 {
     #private;
-    inputTexture: Texture | null;
     constructor(editor: NodeImageEditor, params?: any);
     operate(context: NodeContext): Promise<void>;
     get title(): string;
     toString(tabs?: string): Promise<string>;
+    setInputTexture(texture: Texture | null): void;
     dispose(): void;
 }
 
@@ -9005,11 +9005,11 @@ declare class Channel {
 
                       export declare class TextureLookup extends Node_2 {
                           #private;
-                          inputTexture: Texture | null;
                           constructor(editor: NodeImageEditor, params?: any);
                           operate(context: NodeContext): Promise<void>;
                           get title(): string;
                           toString(tabs?: string): Promise<string>;
+                          setInputTexture(texture: Texture | null): void;
                           dispose(): void;
                       }
 
@@ -9196,6 +9196,8 @@ declare class Channel {
                       }
 
                       export declare function trackGPUBuffers(): Set<GPUBuffer>;
+
+                      export declare function trackWebGLTextures(): Set<WebGLTexture>;
 
                       export declare class TrailLengthRandom extends Source1ParticleOperator {
                           static functionName: string;

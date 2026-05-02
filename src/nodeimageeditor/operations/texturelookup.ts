@@ -16,7 +16,7 @@ const tempVec2 = vec2.create();
 export class TextureLookup extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
-	inputTexture: Texture | null = null;
+	#inputTexture: Texture | null = null;
 	#outputTexture?: Texture;
 
 	constructor(editor: NodeImageEditor, params?: any) {
@@ -59,7 +59,7 @@ export class TextureLookup extends Node {
 		if (!this.material) {
 			return;
 		}
-		this.material.setTexture('uInput', this.inputTexture);
+		this.material.setTexture('uInput', this.#inputTexture);
 		this.material.setUniformValue('uAdjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
@@ -90,7 +90,7 @@ export class TextureLookup extends Node {
 		if (!this.material) {
 			return;
 		}
-		this.material.setTexture('inputTexture', this.inputTexture);
+		this.material.setTexture('inputTexture', this.#inputTexture);
 		this.material.setUniformValue('adjustLevels', vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0));
 
 		const texTransform = mat3.create();
@@ -140,6 +140,12 @@ export class TextureLookup extends Node {
 		ret.push(tabs1 + `black : ${this.getValue('adjust black')}, white : ${this.getValue('adjust white')}, gamma : ${this.getValue('adjust gamma')}`);
 		return ret.join('\n');
 	}
+
+	setInputTexture(texture: Texture | null): void {
+		this.#inputTexture?.removeUser(this);
+		texture?.addUser(this);
+		this.#inputTexture = texture;
+	};
 
 	override dispose() {
 		super.dispose();
