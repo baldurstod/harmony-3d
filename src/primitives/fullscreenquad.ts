@@ -1,7 +1,7 @@
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh, MeshParameters } from '../objects/mesh'
+import { Mesh, MeshParameters } from '../objects/mesh';
 
 class FullScreenQuadGeometry extends BufferGeometry {
 	constructor() {
@@ -19,11 +19,14 @@ class FullScreenQuadGeometry extends BufferGeometry {
 	}
 }
 
+export type FullScreenQuadParameters = Omit<MeshParameters, 'geometry' | 'topology'>;
+
 export class FullScreenQuad extends Mesh {
-	constructor(params: MeshParameters = {}) {
-		params.geometry = new FullScreenQuadGeometry();
-		params.material = params.material ?? new MeshBasicMaterial();
-		super(params);
+	constructor(params?: FullScreenQuadParameters) {
+		super({
+			geometry: new FullScreenQuadGeometry(),
+			material: params?.material ?? new MeshBasicMaterial(),
+		});
 		this.setDefine('SKIP_PROJECTION');
 		super.setParameters(arguments[0]);
 	}
