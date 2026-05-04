@@ -1,6 +1,6 @@
 import { Ace } from 'ace-builds';
 import { loadScript } from 'harmony-browser-utils';
-import { createElement, hide, I18n, shadowRootStyle } from 'harmony-ui';
+import { createElement, defineElement, hide, I18n, shadowRootStyle } from 'harmony-ui';
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
 import shaderEditorCSS from '../css/shadereditor.css';
@@ -491,6 +491,4 @@ export class ShaderEditor extends HTMLElement {
 
 }
 
-if (window.customElements) {
-	customElements.define('shader-editor', ShaderEditor);
-}
+defineElement('shader-editor', ShaderEditor);

@@ -234,7 +234,7 @@ export class NodeGui {
 			class: 'node-image-editor-node-preview',
 			child: this.#node.previewPic,
 			events: {
-				dragover: (event: DragEvent) => this.#handlePreviewDragOver(event),
+				dragover: (event: Event) => this.#handlePreviewDragOver(event as DragEvent),
 			}
 		});
 

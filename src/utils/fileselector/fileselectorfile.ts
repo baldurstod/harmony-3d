@@ -1,4 +1,4 @@
-import { display } from 'harmony-ui';
+import { defineElement, display } from 'harmony-ui';
 import { FileSelectorFile } from './file';
 import { FileSelector } from './fileselector';
 
@@ -59,8 +59,8 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 
 let definedFile = false;
 export function defineFileSelectorFile(): void {
-	if (window.customElements && !definedFile) {
-		customElements.define('file-selector-file', HTMLFileSelectorFileElement);
+	if (!definedFile) {
+		defineElement('file-selector-file', HTMLFileSelectorFileElement);
 		definedFile = true;
 	}
 }

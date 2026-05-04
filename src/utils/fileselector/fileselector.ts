@@ -1,4 +1,4 @@
-import { createElement } from 'harmony-ui';
+import { createElement, defineElement } from 'harmony-ui';
 import { FileSelectorFile } from './file';
 import { FileSelectorDirectory } from './fileselectordirectory';
 import { defineFileSelectorTile, HTMLFileSelectorTileElement } from './fileselectortile';
@@ -193,6 +193,4 @@ export class FileSelector extends HTMLElement {
 	}
 }
 
-if (customElements) {
-	customElements.define('file-selector', FileSelector);
-}
+defineElement('file-selector', FileSelector);

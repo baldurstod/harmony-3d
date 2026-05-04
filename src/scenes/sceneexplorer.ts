@@ -118,7 +118,7 @@ export class SceneExplorer {
 				this.#isVisible = e.isIntersecting;
 			}
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
-				this.applyFilter();
+				this.#applyFilter();
 				if (this.#selectedEntity) {
 					SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
 				}
@@ -152,7 +152,7 @@ export class SceneExplorer {
 	setScene(scene: Scene) {
 		this.#scene = scene;
 		this.selectEntity(scene, true);
-		this.applyFilter();
+		this.#applyFilter();
 	}
 
 	get scene(): Scene | undefined {
@@ -173,15 +173,15 @@ export class SceneExplorer {
 	#initHtml() {
 		defineHarmonyAccordion();
 		this.#shadowRoot = createShadowRoot('scene-explorer', {
-			attributes: { tabindex: 1, },
+			attributes: { tabindex: '1', },
 			adoptStyle: sceneExplorerCSS,
 			childs: [
 				this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
-				this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, }),
+				this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: '1', }, }),
 				this.htmlFileSelector = createElement('div', {
 					class: 'scene-explorer-file-selector',
 					hidden: true,
-					attributes: { tabindex: 1, },
+					attributes: { tabindex: '1', },
 				}),
 				this.#htmlExtra = createElement('harmony-accordion', {
 					multiple: 1,
@@ -197,7 +197,7 @@ export class SceneExplorer {
 									class: 'scene-explorer-properties',
 									slot: 'content',
 									attributes: {
-										tabindex: 1,
+										tabindex: '1',
 									},
 								}),
 							],
@@ -214,7 +214,7 @@ export class SceneExplorer {
 									class: 'file-explorer',
 									slot: 'content',
 									attributes: {
-										tabindex: 1,
+										tabindex: '1',
 									},
 								}),
 							],
@@ -231,7 +231,7 @@ export class SceneExplorer {
 									class: 'material-editor',
 									slot: 'content',
 									attributes: {
-										tabindex: 1,
+										tabindex: '1',
 									},
 								}),
 							],
@@ -247,7 +247,7 @@ export class SceneExplorer {
 
 		this.#initHtmlHeader();
 		this.#initHtmlProperties();
-		this.applyFilter();
+		this.#applyFilter();
 		ShortcutHandler.addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
 		ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
 		ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
@@ -365,8 +365,8 @@ export class SceneExplorer {
 		htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
 		*/
 
-		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.applyFilter(); });
-		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.applyFilter(); });
+		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.#applyFilter(); });
+		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.#applyFilter(); });
 		//htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
 
 		this.#populateTypeFilter();
@@ -379,7 +379,7 @@ export class SceneExplorer {
 		}
 	}
 
-	applyFilter() {
+	#applyFilter() {
 		if (this.#isVisible) {
 			if (this.#filterName == '' && this.#filterType == '') {
 				this.#refreshScene();
