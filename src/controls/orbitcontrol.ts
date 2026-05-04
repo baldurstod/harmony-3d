@@ -409,23 +409,18 @@ export class OrbitControl extends CameraControl {
 
 	#handleMouseMoveDolly(event: MouseEvent) {
 		const movementX = event.movementX;
-		const movementY = event.movementY;
+		const movementY = -event.movementY;
 
-		const dollyAmount = 0.99;
-		const dollyAmountSlow = 0.999;
+		let dollyAmount = 0.99;
+		if (Math.abs(movementX) > Math.abs(movementY)) {
+			dollyAmount = 0.999;
+		}
 
-		if (Math.abs(event.movementX) > Math.abs(event.movementY)) {
-			if (movementX < 0) {
-				this.#dollyIn(dollyAmountSlow);
-			} else if (movementX > 0) {
-				this.#dollyOut(dollyAmountSlow);
-			}
-		} else {
-			if (movementY > 0) {
-				this.#dollyIn(dollyAmount);
-			} else if (movementY < 0) {
-				this.#dollyOut(dollyAmount);
-			}
+		const movement = movementX + movementY;
+		if (movement < 0) {
+			this.#dollyIn(dollyAmount);
+		} else if (movement > 0) {
+			this.#dollyOut(dollyAmount);
 		}
 
 		this.update();
