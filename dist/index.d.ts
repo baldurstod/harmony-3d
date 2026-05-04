@@ -6143,7 +6143,6 @@ declare class Channel {
                           setScene(scene: Scene): void;
                           get scene(): Scene | undefined;
                           get htmlElement(): HTMLElement;
-                          applyFilter(): void;
                           selectEntity(entity: Entity | null, scrollIntoView?: boolean): void;
                           getSelectedEntity(): Entity | null;
                           getEntityHtml(entity: Entity): void;

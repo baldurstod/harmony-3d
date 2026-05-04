@@ -408,26 +408,25 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleMouseMoveDolly(event: MouseEvent) {
-		//console.error(event.movementX, event.movementY, ...this.#dollyDelta);
-		//dollyEnd.set(event.clientX, event.clientY);
-		vec2.set(this.#dollyEnd, event.movementX, event.movementY)
+		const movementX = event.movementX;
+		const movementY = event.movementY;
 
-		//dollyDelta.subVectors(dollyEnd, dollyStart);
-		//vec2.sub(this.#dollyDelta, this.#dollyEnd, this.#dollyStart);
-		vec2.sub(this.#dollyDelta, this.#dollyDelta, this.#dollyEnd);
+		const dollyAmount = 0.99;
+		const dollyAmountSlow = 0.999;
 
-		if (this.#dollyDelta[1] > 0) {
-
-			this.#dollyIn(this.zoomScale);
-
-		} else if (this.#dollyDelta[1] < 0) {
-
-			this.#dollyOut(this.zoomScale);
-
+		if (Math.abs(event.movementX) > Math.abs(event.movementY)) {
+			if (movementX < 0) {
+				this.#dollyIn(dollyAmountSlow);
+			} else if (movementX > 0) {
+				this.#dollyOut(dollyAmountSlow);
+			}
+		} else {
+			if (movementY > 0) {
+				this.#dollyIn(dollyAmount);
+			} else if (movementY < 0) {
+				this.#dollyOut(dollyAmount);
+			}
 		}
-
-		//dollyStart.copy(dollyEnd);
-		//vec2.copy(this.#dollyStart, this.#dollyEnd);
 
 		this.update();
 

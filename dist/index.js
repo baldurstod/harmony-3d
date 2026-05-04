@@ -1,7 +1,7 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
 import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$1, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue } from 'harmony-utils';
-import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
+import { defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { WgslReflect } from 'wgsl_reflect';
@@ -4552,8 +4552,8 @@ class HTMLFileSelectorTileElement extends HTMLElement {
 }
 let definedTile = false;
 function defineFileSelectorTile() {
-    if (window.customElements && !definedTile) {
-        customElements.define('file-selector-tile', HTMLFileSelectorTileElement);
+    if (!definedTile) {
+        defineElement('file-selector-tile', HTMLFileSelectorTileElement);
         definedTile = true;
     }
 }
@@ -4605,8 +4605,8 @@ class HTMLFileSelectorFileElement extends HTMLElement {
 }
 let definedFile = false;
 function defineFileSelectorFile() {
-    if (window.customElements && !definedFile) {
-        customElements.define('file-selector-file', HTMLFileSelectorFileElement);
+    if (!definedFile) {
+        defineElement('file-selector-file', HTMLFileSelectorFileElement);
         definedFile = true;
     }
 }
@@ -4788,9 +4788,7 @@ class FileSelectorDirectory extends HTMLElement {
         }
     }
 }
-if (customElements) {
-    customElements.define('file-selector-directory', FileSelectorDirectory);
-}
+defineElement('file-selector-directory', FileSelectorDirectory);
 
 const FILTER_NAME_DELAY = 200;
 class FileSelector extends HTMLElement {
@@ -4960,9 +4958,7 @@ class FileSelector extends HTMLElement {
         return this.#filter;
     }
 }
-if (customElements) {
-    customElements.define('file-selector', FileSelector);
-}
+defineElement('file-selector', FileSelector);
 
 const DATALIST_ID = 'interaction-datalist';
 class Interaction {
@@ -9530,20 +9526,26 @@ class OrbitControl extends CameraControl {
         this.update();
     }
     #handleMouseMoveDolly(event) {
-        //console.error(event.movementX, event.movementY, ...this.#dollyDelta);
-        //dollyEnd.set(event.clientX, event.clientY);
-        vec2.set(this.#dollyEnd, event.movementX, event.movementY);
-        //dollyDelta.subVectors(dollyEnd, dollyStart);
-        //vec2.sub(this.#dollyDelta, this.#dollyEnd, this.#dollyStart);
-        vec2.sub(this.#dollyDelta, this.#dollyDelta, this.#dollyEnd);
-        if (this.#dollyDelta[1] > 0) {
-            this.#dollyIn(this.zoomScale);
+        const movementX = event.movementX;
+        const movementY = event.movementY;
+        const dollyAmount = 0.99;
+        const dollyAmountSlow = 0.999;
+        if (Math.abs(event.movementX) > Math.abs(event.movementY)) {
+            if (movementX < 0) {
+                this.#dollyIn(dollyAmountSlow);
+            }
+            else if (movementX > 0) {
+                this.#dollyOut(dollyAmountSlow);
+            }
         }
-        else if (this.#dollyDelta[1] < 0) {
-            this.#dollyOut(this.zoomScale);
+        else {
+            if (movementY > 0) {
+                this.#dollyIn(dollyAmount);
+            }
+            else if (movementY < 0) {
+                this.#dollyOut(dollyAmount);
+            }
         }
-        //dollyStart.copy(dollyEnd);
-        //vec2.copy(this.#dollyStart, this.#dollyEnd);
         this.update();
     }
     #handleMouseMovePan(event) {
@@ -74456,7 +74458,7 @@ class SceneExplorer {
                 this.#isVisible = e.isIntersecting;
             }
             if (this.#isVisible && (this.#isVisible != isVisible)) {
-                this.applyFilter();
+                this.#applyFilter();
                 if (this.#selectedEntity) {
                     SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
                 }
@@ -74484,7 +74486,7 @@ class SceneExplorer {
     setScene(scene) {
         this.#scene = scene;
         this.selectEntity(scene, true);
-        this.applyFilter();
+        this.#applyFilter();
     }
     get scene() {
         return this.#scene;
@@ -74501,15 +74503,15 @@ class SceneExplorer {
     #initHtml() {
         defineHarmonyAccordion();
         this.#shadowRoot = createShadowRoot('scene-explorer', {
-            attributes: { tabindex: 1, },
+            attributes: { tabindex: '1', },
             adoptStyle: sceneExplorerCSS,
             childs: [
                 this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
-                this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, }),
+                this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: '1', }, }),
                 this.htmlFileSelector = createElement('div', {
                     class: 'scene-explorer-file-selector',
                     hidden: true,
-                    attributes: { tabindex: 1, },
+                    attributes: { tabindex: '1', },
                 }),
                 this.#htmlExtra = createElement('harmony-accordion', {
                     multiple: 1,
@@ -74525,7 +74527,7 @@ class SceneExplorer {
                                     class: 'scene-explorer-properties',
                                     slot: 'content',
                                     attributes: {
-                                        tabindex: 1,
+                                        tabindex: '1',
                                     },
                                 }),
                             ],
@@ -74542,7 +74544,7 @@ class SceneExplorer {
                                     class: 'file-explorer',
                                     slot: 'content',
                                     attributes: {
-                                        tabindex: 1,
+                                        tabindex: '1',
                                     },
                                 }),
                             ],
@@ -74559,7 +74561,7 @@ class SceneExplorer {
                                     class: 'material-editor',
                                     slot: 'content',
                                     attributes: {
-                                        tabindex: 1,
+                                        tabindex: '1',
                                     },
                                 }),
                             ],
@@ -74573,7 +74575,7 @@ class SceneExplorer {
         this.#htmlContextMenu = createElement('harmony-menu');
         this.#initHtmlHeader();
         this.#initHtmlProperties();
-        this.applyFilter();
+        this.#applyFilter();
         ShortcutHandler.addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
         ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
         ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
@@ -74684,8 +74686,8 @@ class SceneExplorer {
         this.#htmlHeader.append(htmlDisplayPropertiesSpan);
         htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
         */
-        this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = event.target.value.toLowerCase(); this.applyFilter(); });
-        this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = event.target.value; this.applyFilter(); });
+        this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = event.target.value.toLowerCase(); this.#applyFilter(); });
+        this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = event.target.value; this.#applyFilter(); });
         //htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
         this.#populateTypeFilter();
     }
@@ -74695,7 +74697,7 @@ class SceneExplorer {
             this.#htmlTypeFilter.append(option);
         }
     }
-    applyFilter() {
+    #applyFilter() {
         if (this.#isVisible) {
             if (this.#filterName == '' && this.#filterType == '') {
                 this.#refreshScene();
@@ -77248,9 +77250,7 @@ class ShaderEditor extends HTMLElement {
     }
     ;
 }
-if (window.customElements) {
-    customElements.define('shader-editor', ShaderEditor);
-}
+defineElement('shader-editor', ShaderEditor);
 
 var meshbasic_fs = `
 #include declare_fragment_standard
