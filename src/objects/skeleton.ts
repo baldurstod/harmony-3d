@@ -1,5 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
+import { Rig } from '../animations/rig';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
@@ -21,6 +22,7 @@ export class Skeleton extends Entity {
 	readonly imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
 	#texture!: Texture;
 	lastComputed = 0;
+	rig?: Rig
 
 	constructor(params?: any/*TODO: improve type*/) {
 		super(params);

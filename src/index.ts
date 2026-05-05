@@ -2,6 +2,7 @@
 export * from './webgpu/const';
 
 export * from './algorithm/export';
+export * from './animations/export';
 export * from './audio/export';
 export * from './backgrounds/export';
 export * from './cameras/export';
