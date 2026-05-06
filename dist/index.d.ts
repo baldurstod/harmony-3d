@@ -5996,11 +5996,40 @@ declare class Channel {
 
                       declare type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 
+                      export declare class Retarget {
+                          #private;
+                          constructor(params?: RetargetParameters);
+                          setSource(source: Skeleton): void;
+                          setTarget(target: Skeleton): void;
+                          setMode(mode: RetargetMode): void;
+                          update(): void;
+                      }
+
+                      export declare enum RetargetMode {
+                          Animation = 0,
+                          Skeleton = 1,
+                          AnimationScaled = 2
+                      }
+
+                      export declare interface RetargetParameters {
+                          source?: Skeleton;
+                          target?: Skeleton;
+                          mode?: RetargetMode;
+                      }
+
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
                           fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
+                      }
+
+                      export declare class Rig {
+                          #private;
+                          constructor(bones?: [string, string][] | Map<string, string> | Record<string, string>);
+                          setBone(source: string, target: string): void;
+                          setBones(bones: [string, string][] | Map<string, string> | Record<string, string>): void;
+                          getTarget(source: string): string | undefined;
                       }
 
                       export declare class RingWave extends Operator {
@@ -6576,6 +6605,7 @@ declare class Channel {
                           _dirty: boolean;
                           readonly imgData: Float32Array<ArrayBuffer>;
                           lastComputed: number;
+                          rig?: Rig;
                           constructor(params?: any);
                           dirty(): void;
                           getTexture(): Texture;
@@ -9610,6 +9640,11 @@ declare class Channel {
                           getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          /**
+                           * Delete an URL from the cache. Does nothing if caching is disabled
+                           * @param url The url to delete
+                           */
+                          delete(url: URL): void;
                       }
 
                       declare type WgslModule = {

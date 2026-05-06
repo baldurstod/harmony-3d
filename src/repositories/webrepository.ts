@@ -130,4 +130,12 @@ export class WebRepository implements Repository {
 			return response;
 		}
 	}
+
+	/**
+	 * Delete an URL from the cache. Does nothing if caching is disabled
+	 * @param url The url to delete
+	 */
+	delete(url: URL): void {
+		this.#cache?.delete(url);
+	}
 }
