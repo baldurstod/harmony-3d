@@ -9643,8 +9643,14 @@ declare class Channel {
                           /**
                            * Delete an URL from the cache. Does nothing if caching is disabled
                            * @param url The url to delete
+                           * @returns A promise resolving to void
                            */
-                          delete(url: URL): void;
+                          delete(url: URL): Promise<void>;
+                          /**
+                           * Purge the cache. Does nothing if caching is disabled
+                           * @returns A promise resolving to void
+                           */
+                          purge(): Promise<void>;
                       }
 
                       declare type WgslModule = {

@@ -73725,9 +73725,22 @@ class WebRepository {
     /**
      * Delete an URL from the cache. Does nothing if caching is disabled
      * @param url The url to delete
+     * @returns A promise resolving to void
      */
-    delete(url) {
+    async delete(url) {
         this.#cache?.delete(url);
+    }
+    /**
+     * Purge the cache. Does nothing if caching is disabled
+     * @returns A promise resolving to void
+     */
+    async purge() {
+        if (!this.#cache) {
+            return;
+        }
+        for (const key of await this.#cache.keys()) {
+            this.#cache.delete(key);
+        }
     }
 }
 
