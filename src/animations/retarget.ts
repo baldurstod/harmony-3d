@@ -50,15 +50,19 @@ export class Retarget {
 		for (const bone of this.#target._bones) {
 			const sourceBone = this.#source.getBoneByName(bone.name);
 			if (!sourceBone) {
-				// TODO: What should ve do ?
-
 				bone.setPosition(bone._initialPosition);
 				bone.setOrientation(bone._initialQuaternion);
+			} else {
+				if ((sourceBone.parent as Skeleton).isSkeleton) {
+					// If the bone is a root, copy the retargeted position
+					bone.setPosition(sourceBone.getPosition(v));
+				} else {
+					// Otherwise, use the default bone position
+					bone.setPosition(bone._initialPosition);
+				}
 
-				continue;
+				bone.setOrientation(sourceBone.getOrientation(q));
 			}
-			bone.setPosition(bone._initialPosition);
-			bone.setOrientation(sourceBone.getOrientation(q));
 		}
 
 		this.#target.setBonesMatrix();
