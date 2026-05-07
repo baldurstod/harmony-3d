@@ -34,8 +34,18 @@ export class Cylinder extends Mesh {
 		this.#updateGeometry();
 	}
 
-	#updateGeometry() {
-		(this.geometry as CylinderBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
+	setHeight(height: number): void {
+		this.#height = height;
+		this.#updateGeometry();
+	}
+
+	setRadius(radius: number): void {
+		this.#radius = radius;
+		this.#updateGeometry();
+	}
+
+	#updateGeometry(): void {
+		(this.getGeometry() as CylinderBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
