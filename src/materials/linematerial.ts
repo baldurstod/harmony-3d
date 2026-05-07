@@ -1,12 +1,18 @@
 import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
-import { Material } from './material';
+import { Material, MaterialParams } from './material';
+
+export type LineMaterialParams = MaterialParams & {
+	// Line width, in pixels. Default to 1
+	lineWidth?: number;
+};
 
 export class LineMaterial extends Material {
 	#lineWidth = 1;
-	constructor(params: any = {}) {
+
+	constructor(params: LineMaterialParams = {}) {
 		super(params);
-		this.lineWidth = params?.lineWidth ?? 10;
+		this.lineWidth = params?.lineWidth ?? 1;
 		this.setValues(params);
 	}
 
