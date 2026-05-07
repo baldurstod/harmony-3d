@@ -5,6 +5,8 @@ import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../grap
 import { HasSkeleton } from '../../interfaces/hasskeleton';
 import { LineMaterial } from '../../materials/linematerial';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
+import { MeshPhongMaterial } from '../../materials/meshphongmaterial';
+import { Cylinder } from '../../primitives/cylinder';
 import { Line } from '../../primitives/line';
 import { Sphere } from '../../primitives/sphere';
 import { Raycaster } from '../../raycasting/raycaster';
@@ -14,18 +16,25 @@ import { Bone } from '../bone';
 import { Skeleton } from '../skeleton';
 
 const tempVec3 = vec3.create();
+const tempVec3_1 = vec3.create();
+const tempQuat = quat.create();
 
 export type SkeletonHelperParameters = EntityParameters & {
 	skeleton?: Skeleton,
 };
 
+const BONE_RADIUS = 0.5;
 
 export class SkeletonHelper extends Entity {
 	#skeleton: Skeleton | null = null;
-	#lines = new Map<Bone, Line>();
-	#lineMaterial;
-	#highlitLineMaterial;
-	#boneTipMaterial;
+	readonly #lines = new Map<Bone, Line>();
+	readonly #bones = new Map<Bone, Cylinder>();
+	readonly #joints = new Map<Bone, Sphere>();
+	readonly #lineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, });
+	readonly #highlitLineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
+	readonly #boneTipMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
+	readonly #boneMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [27 / 255, 106 / 255, 0, 1], });
+	readonly #jointMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 235 / 255, 0, 1], });
 	#raycaster;
 	#highlitLine?: Line;
 	#boneStart: Sphere;
@@ -35,19 +44,6 @@ export class SkeletonHelper extends Entity {
 
 	constructor(parameters: SkeletonHelperParameters) {
 		super(parameters);
-
-		this.#lineMaterial = new LineMaterial({ user: this });
-		this.#lineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#lineMaterial.lineWidth = 3;
-
-		this.#highlitLineMaterial = new LineMaterial({ user: this });
-		this.#highlitLineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#highlitLineMaterial.lineWidth = 3;
-		this.#highlitLineMaterial.setMeshColor([1, 0, 0, 1]);
-
-		this.#boneTipMaterial = new MeshBasicMaterial({ user: this });
-		this.#boneTipMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#boneTipMaterial.setMeshColor([1, 0, 1, 1]);
 
 		this.hideInExplorer = true;
 		this.#skeleton = parameters?.skeleton ?? null;
@@ -82,7 +78,11 @@ export class SkeletonHelper extends Entity {
 
 	#clearSkeleton() {
 		this.#lines.forEach(value => value.dispose());
+		this.#bones.forEach(value => value.dispose());
+		this.#joints.forEach(value => value.dispose());
 		this.#lines.clear();
+		this.#bones.clear();
+		this.#joints.clear();
 		this.#boneStart.setVisible(false);
 		this.#boneEnd.setVisible(false);
 	}
@@ -110,21 +110,50 @@ export class SkeletonHelper extends Entity {
 
 		for (const bone of this.#skeleton.bones) {
 			let boneLine = this.#lines.get(bone);
+			let boneCylinder = this.#bones.get(bone);
+			let boneSphere = this.#joints.get(bone);
 
 			if (!boneLine) {
 				boneLine = new Line({ material: this.#lineMaterial, parent: this });
 				boneLine.properties.setObject('bone', bone);
 				this.#lines.set(bone, boneLine);
 				this.addChild(boneLine);
+
+				boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this, radius: BONE_RADIUS, });
+				this.#bones.set(bone, boneCylinder);
+
+				boneSphere = new Sphere({ material: this.#jointMaterial, parent: this, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
+				this.#joints.set(bone, boneSphere);
 			}
 
 			//boneLine.position = bone.worldPos;
-			boneLine.start = bone.worldPos;
-			boneLine.end = bone.worldPos;
+			let start = bone.worldPos;
+			let end = bone.worldPos;
 			const boneParent = bone.parent;
 			if ((boneParent as Bone)?.isBone) {
-				boneLine.start = (boneParent as Bone).getWorldPosition(/*TODO: optimize*/);
+				start = (boneParent as Bone).getWorldPosition(/*TODO: optimize*/);
 				boneLine.properties.setObject('boneParent', (boneParent as Bone));
+			}
+
+			boneLine.start = start;
+			boneLine.end = end;
+			boneSphere!.setPosition(end);
+
+			if (start !== end) {
+				vec3.sub(tempVec3, end, start);
+				//const mid = vec3.add(tempVec3_1, start, end);
+				vec3.scaleAndAdd(tempVec3_1, start, tempVec3, 0.5);
+
+				boneCylinder!.setHeight(vec3.len(tempVec3));
+				vec3.normalize(tempVec3, tempVec3)
+				quat.rotationTo(tempQuat, vec3.fromValues(0, 0, 1), tempVec3);
+
+				boneCylinder!.setOrientation(tempQuat);
+				boneCylinder!.setPosition(tempVec3_1);
+				boneCylinder!.setVisible();
+
+			} else {
+				boneCylinder!.setVisible(false);
 			}
 		}
 	}
