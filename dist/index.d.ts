@@ -4571,7 +4571,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | string[] | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -5021,9 +5021,8 @@ declare class Channel {
                       }
 
                       export declare class Path extends Curve {
+                          #private;
                           looping: boolean;
-                          _curves: Curve[];
-                          cursor: vec3;
                           constructor(looping?: boolean);
                           set curves(curves: Curve[]);
                           get curves(): Curve[];
@@ -5304,9 +5303,7 @@ declare class Channel {
                       }
 
                       export declare class QuadraticBezierCurve extends Curve {
-                          p0: vec3;
-                          p1: vec3;
-                          p2: vec3;
+                          #private;
                           constructor(p0?: vec3, p1?: vec3, p2?: vec3);
                           getPosition(t: number, out?: vec3): vec3;
                       }

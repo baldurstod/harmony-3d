@@ -1,4 +1,4 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { ReadonlyVec3, vec2, vec3 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics2';
 import { RenderFace } from '../../../../../materials/constants';
 import { Mesh } from '../../../../../objects/mesh';
@@ -43,6 +43,12 @@ export class RenderRope extends Source1ParticleOperator {
 			return;
 		}
 
+		const l = particleList.length;
+		if (l < 2) {
+			// Can't make a rope
+			return;
+		}
+
 		// TODO: use param subdivision_count
 		const subdivCount = this.getParameter('subdivision_count');
 		const m_flTexelSizeInUnits = this.getParameter('texel_size');
@@ -63,34 +69,43 @@ export class RenderRope extends Source1ParticleOperator {
 		let previousParticle: Source1Particle | null = null;
 		const deltaPos = vec3.create();
 
-		for (const particle of particleList) {
-			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-			//const particle: Source1Particle = particleList[i]!;
-			if (previousParticle) {
+		let p1: vec3;// = vec3.create();
+		let p2: vec3;// = vec3.create();
+		let p3: vec3;// = vec3.create();
+		let p4: vec3;// = vec3.create();
+		const segmentPosition = vec3.create();
 
-				vec3.sub(deltaPos, particle.position, previousParticle.position);
+		const l1 = l - 1;
 
-				for (let i = 0; i < subdivCount; i++) {
-					const j = i / subdivCount;
-					const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
-					const position = vec3.scaleAndAdd(tempVec3, previousParticle.position, deltaPos, i / 3);
-					const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
-					const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
-					const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
-					const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
-					const segment = new BeamSegment(position, [colorR, colorG, colorB, alpha], 0.0, radius);
-					if (previousSegment) {
-						ropeLength += segment.distanceTo(previousSegment);
-					}
+		for (let i = 0; i < l - 1; i++) {
+			const particle: Source1Particle = particleList[i]!;
+			const nextParticle: Source1Particle = particleList[i + 1]!;
+			const previousParticle: Source1Particle = particleList[i - 1] ?? particle;
+			const nextNextParticle: Source1Particle = particleList[i + 2] ?? nextParticle;
 
+			p1 = previousParticle.position;
+			p2 = particle.position;
+			p3 = nextParticle.position;
+			p4 = nextNextParticle.position;
 
-					segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
-					segments.push(segment);
-					previousSegment = segment;
-
+			for (let i = 0; i < subdivCount; i++) {
+				const j = i / subdivCount;
+				catmullRomSpline(p1, p2, p3, p4, j, segmentPosition);
+				const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
+				const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
+				const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
+				const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
+				const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
+				const segment = new BeamSegment(segmentPosition, [colorR, colorG, colorB, alpha], 0.0, radius);
+				if (previousSegment) {
+					ropeLength += segment.distanceTo(previousSegment);
 				}
+
+				segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
+				segments.push(segment);
+				previousSegment = segment;
+
 			}
-			previousParticle = particle;
 		}
 
 		const camera = (particleSystem.root as Scene).activeCamera;
@@ -171,3 +186,56 @@ export class RenderRope extends Source1ParticleOperator {
 	}
 }
 Source1ParticleOperators.registerOperator(RenderRope);
+
+
+const a = vec3.create();
+const b = vec3.create();
+const c = vec3.create();
+const d = vec3.create();
+
+function catmullRomSpline(
+	p1: ReadonlyVec3,
+	p2: ReadonlyVec3,
+	p3: ReadonlyVec3,
+	p4: ReadonlyVec3,
+	t: number,
+	output: vec3
+): void {
+	const tSqr = t * t * 0.5;
+	const tSqrSqr = t * tSqr;
+	t *= 0.5;
+
+	vec3.zero(output);
+
+	// matrix row 1
+	vec3.scale(a, p1, -tSqrSqr);		// 0.5 t^3 * [ (-1*p1) + ( 3*p2) + (-3*p3) + p4 ]
+	vec3.scale(b, p2, tSqrSqr * 3);
+	vec3.scale(c, p3, tSqrSqr * -3);
+	vec3.scale(d, p4, tSqrSqr);
+
+	vec3.add(output, a, output);
+	vec3.add(output, b, output);
+	vec3.add(output, c, output);
+	vec3.add(output, d, output);
+
+	// matrix row 2
+	vec3.scale(a, p1, tSqr * 2);		// 0.5 t^2 * [ ( 2*p1) + (-5*p2) + ( 4*p3) - p4 ]
+	vec3.scale(b, p2, tSqr * -5);
+	vec3.scale(c, p3, tSqr * 4);
+	vec3.scale(d, p4, -tSqr);
+
+	vec3.add(output, a, output);
+	vec3.add(output, b, output);
+	vec3.add(output, c, output);
+	vec3.add(output, d, output);
+
+	// matrix row 3
+	vec3.scale(a, p1, -t);			// 0.5 t * [ (-1*p1) + p3 ]
+	vec3.scale(b, p3, t);
+
+	vec3.add(output, a, output);
+	vec3.add(output, b, output);
+
+	// matrix row 4
+	vec3.add(output, p2, output);	// p2
+}

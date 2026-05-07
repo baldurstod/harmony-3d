@@ -2370,7 +2370,7 @@ class MeshBasicMaterial extends Material {
 Material.materialList['MeshBasic'] = MeshBasicMaterial;
 registerEntity(MeshBasicMaterial);
 
-const tempVec3$w = vec3.create();
+const tempVec3$v = vec3.create();
 const tempMin = vec3.create();
 const tempMax = vec3.create();
 class BoundingBox {
@@ -2385,11 +2385,11 @@ class BoundingBox {
         vec3.set(tempMin, +Infinity, +Infinity, +Infinity);
         vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
         for (let i = 0; i < pointArray.length; i += 3) {
-            tempVec3$w[0] = pointArray[i + 0];
-            tempVec3$w[1] = pointArray[i + 1];
-            tempVec3$w[2] = pointArray[i + 2];
-            vec3.min(tempMin, tempMin, tempVec3$w);
-            vec3.max(tempMax, tempMax, tempVec3$w);
+            tempVec3$v[0] = pointArray[i + 0];
+            tempVec3$v[1] = pointArray[i + 1];
+            tempVec3$v[2] = pointArray[i + 2];
+            vec3.min(tempMin, tempMin, tempVec3$v);
+            vec3.max(tempMax, tempMax, tempVec3$v);
         }
         if (pointArray.length) {
             if (!this.empty) {
@@ -5282,7 +5282,7 @@ function getViewDimension(info) {
     return dim;
 }
 
-const tempVec3$v = vec3.create();
+const tempVec3$u = vec3.create();
 const identityVec2 = vec2.create();
 const v1$2 = vec3.create();
 const v2$1 = vec3.create();
@@ -5506,11 +5506,11 @@ class Mesh extends Entity {
             return;
         }
         for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
-            tempVec3$v[0] = vertexPosition[i + 0];
-            tempVec3$v[1] = vertexPosition[i + 1];
-            tempVec3$v[2] = vertexPosition[i + 2];
-            vec3.min(min, min, tempVec3$v);
-            vec3.max(max, max, tempVec3$v);
+            tempVec3$u[0] = vertexPosition[i + 0];
+            tempVec3$u[1] = vertexPosition[i + 1];
+            tempVec3$u[2] = vertexPosition[i + 2];
+            vec3.min(min, min, tempVec3$u);
+            vec3.max(max, max, tempVec3$u);
         }
         //console.error(min, max);
     }
@@ -6658,7 +6658,7 @@ var RenderBufferInternalFormat;
     RenderBufferInternalFormat[RenderBufferInternalFormat["DEPTH32F_STENCIL8"] = 36013] = "DEPTH32F_STENCIL8";
 })(RenderBufferInternalFormat || (RenderBufferInternalFormat = {}));
 
-const tempVec3$u = vec3.create();
+const tempVec3$t = vec3.create();
 class CubeBackground extends BackGround {
     #box = new Box();
     #scene = new Scene();
@@ -6676,7 +6676,7 @@ class CubeBackground extends BackGround {
         }
     }
     render(renderer, camera, context) {
-        this.#box.setPosition(camera.getPosition(tempVec3$u));
+        this.#box.setPosition(camera.getPosition(tempVec3$t));
         renderer.render(this.#scene, camera, 0, context);
         return {
             clearColor: false,
@@ -6737,7 +6737,7 @@ var CameraProjection;
     CameraProjection[CameraProjection["Mixed"] = 2] = "Mixed";
 })(CameraProjection || (CameraProjection = {}));
 const tempQuat$a = quat.create();
-const tempVec3$t = vec3.create();
+const tempVec3$s = vec3.create();
 const proj1 = mat4.create();
 const proj2 = mat4.create();
 const DEFAULT_NEAR_PLANE = 1;
@@ -6803,7 +6803,7 @@ class Camera extends Entity {
         //this._renderMode = 2;
     }
     computeCameraMatrix() {
-        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$a), this.getWorldPosition(tempVec3$t));
+        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$a), this.getWorldPosition(tempVec3$s));
         mat4.invert(this.#cameraMatrix, this.#cameraMatrix);
     }
     #computeProjectionMatrix() {
@@ -8890,7 +8890,7 @@ const xUnitVec3$1 = vec3.fromValues(1, 0, 0);
 vec3.fromValues(0, 1, 0);
 const zUnitVec3$2 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
-const tempVec3$s = vec3.create();
+const tempVec3$r = vec3.create();
 const spherical$1 = new Spherical();
 class FirstPersonControl extends CameraControl {
     #enableDamping = false;
@@ -9152,12 +9152,12 @@ class FirstPersonControl extends CameraControl {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
         const position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
-        spherical$1.toCartesian(tempVec3$s);
+        spherical$1.toCartesian(tempVec3$r);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
         //vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(position, position, tempVec3$s);
+        vec3.add(position, position, tempVec3$r);
         this.camera?.lookAt(position); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -9246,9 +9246,9 @@ class FirstPersonControl extends CameraControl {
         // angle from z-axis around y-axis
         spherical.setFromVector3(tempVec3);
         */
-        vec3.copy(tempVec3$s, xUnitVec3$1 /*minusZUnitVec3*/);
-        vec3.transformQuat(tempVec3$s, tempVec3$s, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
-        spherical$1.setFromVector3(tempVec3$s);
+        vec3.copy(tempVec3$r, xUnitVec3$1 /*minusZUnitVec3*/);
+        vec3.transformQuat(tempVec3$r, tempVec3$r, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
+        spherical$1.setFromVector3(tempVec3$r);
         this.#lat = -(90 - RAD_TO_DEG * (spherical$1.phi));
         this.#lon = -RAD_TO_DEG * (spherical$1.theta);
         this.#startLat = this.#lat;
@@ -9278,8 +9278,8 @@ class FirstPersonControl extends CameraControl {
         if (this.camera) {
             quat.rotationTo(this.#q, this.camera.upVector, zUnitVec3$2);
             this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
-            vec3.transformQuat(tempVec3$s, minusZUnitVec3, this.camera.quaternion);
-            spherical$1.setFromVector3(tempVec3$s);
+            vec3.transformQuat(tempVec3$r, minusZUnitVec3, this.camera.quaternion);
+            spherical$1.setFromVector3(tempVec3$r);
         }
     }
     handleEnabled() {
@@ -9313,7 +9313,7 @@ registerEntity(Target);
 // Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 // Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 const zUnitVec3$1 = vec3.fromValues(0, 0, 1);
-const tempVec3$r = vec3.create();
+const tempVec3$q = vec3.create();
 const tempVec3_2$9 = vec3.create();
 const spherical = new Spherical();
 // Mouse buttons
@@ -9436,12 +9436,12 @@ class OrbitControl extends CameraControl {
         }
         const position = this.camera._position;
         //offset.copy(position).sub(this.target);
-        vec3.sub(tempVec3$r, position, this.#target.getWorldPosition()); //TODO: optimise
+        vec3.sub(tempVec3$q, position, this.#target.getWorldPosition()); //TODO: optimise
         // rotate offset to 'y-axis-is-up' space
         //offset.applyQuaternion(q);
-        vec3.transformQuat(tempVec3$r, tempVec3$r, this.#q);
+        vec3.transformQuat(tempVec3$q, tempVec3$q, this.#q);
         // angle from z-axis around y-axis
-        spherical.setFromVector3(tempVec3$r);
+        spherical.setFromVector3(tempVec3$q);
         if (this.#autoRotate && this.#state === STATE.NONE) {
             this.#rotateLeft(this.#autoRotateSpeed);
         }
@@ -9477,13 +9477,13 @@ class OrbitControl extends CameraControl {
             vec3.add(tempVec3_2$9, this.#target._position, this.#panOffset);
             this.#target.setPosition(tempVec3_2$9);
         }
-        spherical.toCartesian(tempVec3$r);
+        spherical.toCartesian(tempVec3$q);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
-        vec3.transformQuat(tempVec3$r, tempVec3$r, this.#quatInverse);
+        vec3.transformQuat(tempVec3$q, tempVec3$q, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(tempVec3$r, this.#target.getWorldPosition(), tempVec3$r);
-        this.camera.setPosition(tempVec3$r);
+        vec3.add(tempVec3$q, this.#target.getWorldPosition(), tempVec3$q);
+        this.camera.setPosition(tempVec3$q);
         this.camera.lookAt(this.#target.getWorldPosition(), this.#upVector); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -9523,14 +9523,14 @@ class OrbitControl extends CameraControl {
         this.#sphericalDelta.phi -= angle;
     }
     #panLeft(distance, rotation) {
-        vec3.transformQuat(tempVec3$r, [1, 0, 0], rotation);
-        vec3.scale(tempVec3$r, tempVec3$r, -distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$r);
+        vec3.transformQuat(tempVec3$q, [1, 0, 0], rotation);
+        vec3.scale(tempVec3$q, tempVec3$q, -distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$q);
     }
     #panUp(distance, rotation) {
-        vec3.transformQuat(tempVec3$r, [0, 1, 0], rotation);
-        vec3.scale(tempVec3$r, tempVec3$r, distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$r);
+        vec3.transformQuat(tempVec3$q, [0, 1, 0], rotation);
+        vec3.scale(tempVec3$q, tempVec3$q, distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$q);
     }
     #pan(deltaX, deltaY, element) {
         if (!this.camera) {
@@ -9540,8 +9540,8 @@ class OrbitControl extends CameraControl {
             // perspective
             const position = this.camera.position;
             //offset.copy(position).sub(this.target);
-            vec3.sub(tempVec3$r, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
-            let targetDistance = vec3.len(tempVec3$r);
+            vec3.sub(tempVec3$q, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
+            let targetDistance = vec3.len(tempVec3$q);
             // half of the fov is center to top of screen
             targetDistance *= this.camera.getTanHalfVerticalFov(); //Math.tan((this.camera.fov / 2)* Math.PI / 180.0);
             // we use only clientHeight here so aspect ratio does not distort speed
@@ -10783,7 +10783,7 @@ class SphereBufferGeometry extends BufferGeometry {
 const intersectionPoint1 = vec3.create();
 const intersectionPoint2 = vec3.create();
 const intersectionNormal$1 = vec3.create();
-const tempVec3$q = vec3.create();
+const tempVec3$p = vec3.create();
 const v$d = vec3.create();
 class Sphere extends Mesh {
     radius;
@@ -10836,7 +10836,7 @@ class Sphere extends Mesh {
         const ray = raycaster.ray;
         const worldPosition = this.getWorldPosition(v$d);
         const inverseRadius = 1 / this.radius;
-        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$q), intersectionPoint1, intersectionPoint2)) {
+        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$p), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
             //TODO: case when the ray spawn from inside the sphere
             vec3.sub(intersectionNormal$1, intersectionPoint1, worldPosition);
@@ -10891,7 +10891,7 @@ const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const xyUnitVec3 = vec3.fromValues(1, 1, 0);
 const xzUnitVec3 = vec3.fromValues(1, 0, 1);
 const yzUnitVec3 = vec3.fromValues(0, 1, 1);
-const tempVec3$p = vec3.create();
+const tempVec3$o = vec3.create();
 const tempVec3_b = vec3.create();
 const translationManipulatorTempQuat = quat.create();
 const tempQuat$8 = quat.create();
@@ -11050,9 +11050,9 @@ class Manipulator extends Entity {
         if (camera) {
             this.camera = camera;
             if (camera.isPerspective) {
-                this.getWorldPosition(tempVec3$p);
+                this.getWorldPosition(tempVec3$o);
                 camera.getWorldPosition(tempVec3_b);
-                scaleFactor = vec3.distance(tempVec3$p, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
+                scaleFactor = vec3.distance(tempVec3$o, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
                 scaleFactor *= 0.02;
             }
             else if (camera.isOrthographic) {
@@ -11060,7 +11060,7 @@ class Manipulator extends Entity {
                 scaleFactor *= 0.02;
             }
             scaleFactor *= this.size;
-            this.scale = vec3.set(tempVec3$p, scaleFactor, scaleFactor, scaleFactor);
+            this.scale = vec3.set(tempVec3$o, scaleFactor, scaleFactor, scaleFactor);
             this.#setupAxis();
         }
     }
@@ -11251,45 +11251,45 @@ class Manipulator extends Entity {
         }
     }
     #translationMoveHandler(x, y, width, height) {
-        this.#computeTranslationPosition(tempVec3$p, x, y, width, height);
-        vec3.sub(tempVec3$p, tempVec3$p, this.#startDragPosition);
+        this.#computeTranslationPosition(tempVec3$o, x, y, width, height);
+        vec3.sub(tempVec3$o, tempVec3$o, this.#startDragPosition);
         switch (this.#axis) {
             case ManipulatorAxis.None:
                 break;
             case ManipulatorAxis.X:
-                tempVec3$p[1] = 0;
-                tempVec3$p[2] = 0;
+                tempVec3$o[1] = 0;
+                tempVec3$o[2] = 0;
                 break;
             case ManipulatorAxis.Y:
-                tempVec3$p[0] = 0;
-                tempVec3$p[2] = 0;
+                tempVec3$o[0] = 0;
+                tempVec3$o[2] = 0;
                 break;
             case ManipulatorAxis.Z:
-                tempVec3$p[0] = 0;
-                tempVec3$p[1] = 0;
+                tempVec3$o[0] = 0;
+                tempVec3$o[1] = 0;
                 break;
             case ManipulatorAxis.XY:
-                tempVec3$p[2] = 0;
+                tempVec3$o[2] = 0;
                 break;
             case ManipulatorAxis.XZ:
-                tempVec3$p[1] = 0;
+                tempVec3$o[1] = 0;
                 break;
             case ManipulatorAxis.YZ:
-                tempVec3$p[0] = 0;
+                tempVec3$o[0] = 0;
                 break;
             default:
-                tempVec3$p[0] = 0;
-                tempVec3$p[1] = 0;
-                tempVec3$p[2] = 0;
+                tempVec3$o[0] = 0;
+                tempVec3$o[1] = 0;
+                tempVec3$o[2] = 0;
         }
-        vec3.transformQuat(tempVec3$p, tempVec3$p, this.getWorldQuaternion());
-        vec3.add(tempVec3$p, this.#startPosition, tempVec3$p);
+        vec3.transformQuat(tempVec3$o, tempVec3$o, this.getWorldQuaternion());
+        vec3.add(tempVec3$o, this.#startPosition, tempVec3$o);
         if (this._parent) {
-            this._parent.setWorldPosition(tempVec3$p);
+            this._parent.setWorldPosition(tempVec3$o);
             this._parent.lockPosition = true;
         }
         else {
-            this.setWorldPosition(tempVec3$p);
+            this.setWorldPosition(tempVec3$o);
         }
     }
     #rotationMoveHandler(x, y, width, height) {
@@ -11328,7 +11328,7 @@ class Manipulator extends Entity {
         }
     }
     #scaleMoveHandler(x, y, width, height) {
-        const v3 = this.#computeTranslationPosition(tempVec3$p, x, y, width, height);
+        const v3 = this.#computeTranslationPosition(tempVec3$o, x, y, width, height);
         if (!v3) {
             return;
         }
@@ -11441,10 +11441,10 @@ class Manipulator extends Entity {
         // transform the screen coordinates to normalized coordinates
         const normalizedX = (x / width) * 2.0 - 1.0;
         const normalizedY = 1.0 - (y / height) * 2.0;
-        this.getWorldPosition(tempVec3$p);
-        vec3.transformMat4(tempVec3$p, tempVec3$p, camera.cameraMatrix);
-        vec3.transformMat4(tempVec3$p, tempVec3$p, camera.projectionMatrix);
-        return Math.atan2(normalizedY - tempVec3$p[1], normalizedX - tempVec3$p[0]);
+        this.getWorldPosition(tempVec3$o);
+        vec3.transformMat4(tempVec3$o, tempVec3$o, camera.cameraMatrix);
+        vec3.transformMat4(tempVec3$o, tempVec3$o, camera.projectionMatrix);
+        return Math.atan2(normalizedY - tempVec3$o[1], normalizedX - tempVec3$o[0]);
     }
     setCamera(camera) {
         this.camera = camera;
@@ -11540,14 +11540,14 @@ class Manipulator extends Entity {
         }
         this.getWorldQuaternion(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-        this.getPositionFrom(camera, tempVec3$p);
-        vec3.normalize(tempVec3$p, tempVec3$p);
-        vec3.transformQuat(tempVec3$p, tempVec3$p, translationManipulatorTempQuat);
-        this.#circle.quaternion = quat.rotationTo(tempQuat$8, zUnitVec3, tempVec3$p);
+        this.getPositionFrom(camera, tempVec3$o);
+        vec3.normalize(tempVec3$o, tempVec3$o);
+        vec3.transformQuat(tempVec3$o, tempVec3$o, translationManipulatorTempQuat);
+        this.#circle.quaternion = quat.rotationTo(tempQuat$8, zUnitVec3, tempVec3$o);
         this.#viewCircle.quaternion = tempQuat$8;
-        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$8, xUnitVec3, Math.atan2(tempVec3$p[1], -tempVec3$p[2]));
-        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$8, yUnitVec3, Math.atan2(tempVec3$p[0], tempVec3$p[2]));
-        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$8, zUnitVec3, Math.atan2(tempVec3$p[1], tempVec3$p[0]));
+        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$8, xUnitVec3, Math.atan2(tempVec3$o[1], -tempVec3$o[2]));
+        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$8, yUnitVec3, Math.atan2(tempVec3$o[0], tempVec3$o[2]));
+        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$8, zUnitVec3, Math.atan2(tempVec3$o[1], tempVec3$o[0]));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -12307,7 +12307,7 @@ class WebGLRenderingState {
 }
 
 const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
-const a$7 = vec4.create();
+const a$8 = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -12317,7 +12317,7 @@ class ShadowMap {
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$7);
+        WebGLRenderingState.getClearColor(a$8);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -12370,7 +12370,7 @@ class ShadowMap {
         else {
             WebGLRenderingState.disable(GL_DEPTH_TEST);
         }
-        WebGLRenderingState.clearColor(a$7);
+        WebGLRenderingState.clearColor(a$8);
         //Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         Graphics$1.removeDefine('WRITE_DEPTH_TO_COLOR');
     }
@@ -16077,22 +16077,22 @@ class LinearBezierCurve extends Curve {
 }
 
 class QuadraticBezierCurve extends Curve {
-    p0 = vec3.create();
-    p1 = vec3.create();
-    p2 = vec3.create();
+    #p0 = vec3.create();
+    #p1 = vec3.create();
+    #p2 = vec3.create();
     constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT, p2 = DEFAULT_POINT) {
         super();
-        vec3.copy(this.p0, p0);
-        vec3.copy(this.p1, p1);
-        vec3.copy(this.p2, p2);
+        vec3.copy(this.#p0, p0);
+        vec3.copy(this.#p1, p1);
+        vec3.copy(this.#p2, p2);
         this.arcLength = this.getArcLength();
     }
     getPosition(t, out = vec3.create()) {
         //P = (1 - t)² * P0 + 2 * (1 - t) * t * P1 + t² * P2
         const oneMinusT = 1 - t;
-        vec3.scale(out, this.p0, oneMinusT * oneMinusT);
-        vec3.scaleAndAdd(out, out, this.p1, 2 * oneMinusT * t);
-        vec3.scaleAndAdd(out, out, this.p2, t * t);
+        vec3.scale(out, this.#p0, oneMinusT * oneMinusT);
+        vec3.scaleAndAdd(out, out, this.#p1, 2 * oneMinusT * t);
+        vec3.scaleAndAdd(out, out, this.#p2, t * t);
         return out;
     }
 }
@@ -16103,26 +16103,26 @@ const p2$1 = vec3.create();
 const p3$1 = vec3.create();
 class Path extends Curve {
     looping;
-    _curves = [];
-    cursor = vec3.create();
+    #curves = [];
+    #cursor = vec3.create();
     constructor(looping = false) {
         super();
         this.looping = looping;
     }
     set curves(curves) {
-        this._curves.splice(0, Infinity, ...curves);
+        this.#curves.splice(0, Infinity, ...curves);
         this.arcLength = this.getArcLength();
     }
     get curves() {
-        return this._curves;
+        return this.#curves;
     }
     addCurve(curve) {
-        this._curves.push(curve);
+        this.#curves.push(curve);
         this.arcLength = this.getArcLength();
     }
     getArcLength(divisions) {
         let length = 0;
-        for (const curve of this._curves) {
+        for (const curve of this.#curves) {
             length += curve.getArcLength(divisions);
         }
         return length;
@@ -16131,7 +16131,7 @@ class Path extends Curve {
         const l = this.arcLength * t;
         let accumulate = 0;
         let accumulateTmp = 0;
-        for (const curve of this._curves) {
+        for (const curve of this.#curves) {
             accumulateTmp += curve.arcLength;
             if (accumulateTmp > l) {
                 const t2 = (l - accumulate) / curve.arcLength;
@@ -16142,25 +16142,25 @@ class Path extends Curve {
         return out;
     }
     moveTo(p0) {
-        vec3.copy(this.cursor, p0);
+        vec3.copy(this.#cursor, p0);
     }
     lineTo(p1) {
-        this.addCurve(new LinearBezierCurve(this.cursor, p1));
-        vec3.copy(this.cursor, p1);
+        this.addCurve(new LinearBezierCurve(this.#cursor, p1));
+        vec3.copy(this.#cursor, p1);
     }
     quadraticCurveTo(p1, p2) {
-        this.addCurve(new QuadraticBezierCurve(this.cursor, p1, p2));
-        vec3.copy(this.cursor, p2);
+        this.addCurve(new QuadraticBezierCurve(this.#cursor, p1, p2));
+        vec3.copy(this.#cursor, p2);
     }
     bezierCurveTo(p1, p2, p3) {
-        const curve = new CubicBezierCurve(this.cursor, p1, p2, p3);
+        const curve = new CubicBezierCurve(this.#cursor, p1, p2, p3);
         this.curves.push(curve);
-        vec3.copy(this.cursor, p3);
+        vec3.copy(this.#cursor, p3);
         return this;
     }
     cubicCurveTo(p1, p2, p3) {
-        this.addCurve(new CubicBezierCurve(this.cursor, p1, p2, p3));
-        vec3.copy(this.cursor, p3);
+        this.addCurve(new CubicBezierCurve(this.#cursor, p1, p2, p3));
+        vec3.copy(this.#cursor, p3);
     }
     getPoints(divisions = 12) {
         const points = [];
@@ -18148,7 +18148,7 @@ class Kv3File {
 }
 //export type Kv3ValueType = null | number | Kv3Element;
 
-const tempVec3$o = vec3.create();
+const tempVec3$n = vec3.create();
 const tempQuat$6 = quat.create();
 const mat$2 = mat4.create();
 class ControlPoint extends Entity {
@@ -18175,8 +18175,8 @@ class ControlPoint extends Entity {
     model;
     getWorldTransformation(mat = mat4.create()) {
         this.getWorldOrientation(tempQuat$6);
-        this.getWorldPosition(tempVec3$o);
-        return mat4.fromRotationTranslation(mat, tempQuat$6, tempVec3$o);
+        this.getWorldPosition(tempVec3$n);
+        return mat4.fromRotationTranslation(mat, tempQuat$6, tempVec3$n);
     }
     /**
      * @deprecated Use getWorldOrientation instead.
@@ -34725,7 +34725,7 @@ MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
 const tempQuaternion$1 = quat.create();
-const tempVec3$n = vec3.create();
+const tempVec3$m = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
     spotLight = new SpotLight({ radius: 20 });
@@ -34763,9 +34763,9 @@ class PropLightSpot extends MapEntity {
                 this.setAngles();
                 break;
             case 'angles':
-                ParseAngles2(tempVec3$n, value);
-                this._angles[1] = tempVec3$n[1];
-                this._angles[2] = tempVec3$n[1];
+                ParseAngles2(tempVec3$m, value);
+                this._angles[1] = tempVec3$m[1];
+                this._angles[2] = tempVec3$m[1];
                 this.setAngles();
                 break;
             case '_quadratic_attn':
@@ -39487,9 +39487,9 @@ class WorldVertexTransitionMaterial extends Source1Material {
 }
 Source1VmtLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
 
-const a$6 = vec3.create();
-const b$3 = vec3.create();
-const c$1 = vec3.create();
+const a$7 = vec3.create();
+const b$4 = vec3.create();
+const c$2 = vec3.create();
 class Raycaster {
     near;
     far;
@@ -39508,13 +39508,13 @@ class Raycaster {
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
         const projectionMatrixInverse = camera.projectionMatrixInverse;
-        const nearP = vec3.set(a$6, normalizedX, normalizedY, -1);
-        const farP = vec3.set(b$3, normalizedX, normalizedY, 1);
+        const nearP = vec3.set(a$7, normalizedX, normalizedY, -1);
+        const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
         vec3.transformQuat(nearP, nearP, camera.quaternion);
         vec3.transformQuat(farP, farP, camera.quaternion);
-        const rayDirection = vec3.sub(c$1, farP, nearP);
+        const rayDirection = vec3.sub(c$2, farP, nearP);
         vec3.normalize(rayDirection, rayDirection);
         return this.castRay(camera.position, rayDirection, entities, recursive);
     }
@@ -40291,7 +40291,7 @@ class EmitNoise extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(EmitNoise);
 
-const tempVec3$m = vec3.create();
+const tempVec3$l = vec3.create();
 let AttractToControlPoint$1 = class AttractToControlPoint extends Source1ParticleOperator {
     static functionName = 'Pull towards control point';
     constructor(system) {
@@ -40315,7 +40315,7 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends Source1Particl
             return;
         }
         const ofs = vec3.clone(particle.position);
-        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$m)); //TODO: add particle base cp
+        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$l)); //TODO: add particle base cp
         let len = vec3.length(ofs);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -40349,7 +40349,7 @@ let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(RandomForce$1);
 
-const tempVec3$l = vec3.create();
+const tempVec3$k = vec3.create();
 const tempVec3_2$6 = vec3.create();
 //const tempAxis = vec3.create();
 //const tempQuat = quat.create();
@@ -40367,7 +40367,7 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
         //TODO use param localSpace
         //const localSpace = this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
-        const offsetToAxis = vec3.sub(tempVec3$l, particle.position, cp.getWorldPosition(tempVec3$l));
+        const offsetToAxis = vec3.sub(tempVec3$k, particle.position, cp.getWorldPosition(tempVec3$k));
         /*
                 if (!localSpace) {
                     cp.getWorldQuaternion(tempQuat);
@@ -40462,7 +40462,7 @@ class LifetimeRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(LifetimeRandom);
 
-const a$5 = vec3.create();
+const a$6 = vec3.create();
 class PositionAlongPathRandom extends Source1ParticleOperator {
     static functionName = 'Position Along Path Random';
     #sequence = 0;
@@ -40489,7 +40489,7 @@ class PositionAlongPathRandom extends Source1ParticleOperator {
         const delta = startCP.deltaPosFrom(endCP);
         //const s = this.#sequence / nbPart;
         vec3.scale(delta, delta, Math.random());
-        vec3.add(particle.position, startCP.getWorldPosition(a$5), delta);
+        vec3.add(particle.position, startCP.getWorldPosition(a$6), delta);
         vec3.copy(particle.prevPosition, particle.position);
         ++this.#sequence;
         if (this.#sequence > nbPart) { //TODO: handle loop
@@ -40600,7 +40600,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
 };
 Source1ParticleOperators.registerOperator(PositionFromParentParticles$1);
 
-const tempVec3$k = vec3.create();
+const tempVec3$j = vec3.create();
 class PositionModifyOffsetRandom extends Source1ParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor(system) {
@@ -40622,7 +40622,7 @@ class PositionModifyOffsetRandom extends Source1ParticleOperator {
         const offsetMax = this.getParameter('offset max');
         vec2.random(vec2.create(), 1.0);
         const controlPointNumber = this.getParameter('control_point_number');
-        const offset = vec3RandomBox(tempVec3$k, offsetMin, offsetMax);
+        const offset = vec3RandomBox(tempVec3$j, offsetMin, offsetMax);
         if (localSpace == 1) {
             const cp = particle.system.getControlPoint(controlPointNumber);
             if (cp) {
@@ -40655,7 +40655,7 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 }
 Source1ParticleOperators.registerOperator(PositionModifyOffsetRandom);
 
-const a$4 = vec3.create();
+const a$5 = vec3.create();
 class PositionOnModelRandom extends Source1ParticleOperator {
     static functionName = 'Position on Model Random';
     constructor(system) {
@@ -40699,7 +40699,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
         }
         else {
             if (controlPoint) {
-                vec3.copy(particle.position, controlPoint.getWorldPosition(a$4));
+                vec3.copy(particle.position, controlPoint.getWorldPosition(a$5));
                 vec3.copy(particle.prevPosition, particle.position);
             }
         }
@@ -40707,7 +40707,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionOnModelRandom);
 
-const tempVec3$j = vec3.create();
+const tempVec3$i = vec3.create();
 class PositionWithinBoxRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor(system) {
@@ -40727,15 +40727,15 @@ class PositionWithinBoxRandom extends Source1ParticleOperator {
         vec3.copy(particle.prevPosition, particle.position);
         const controlPoint = particle.system.getControlPoint(controlPointNumber);
         if (controlPoint) {
-            controlPoint.getWorldPosition(tempVec3$j);
-            vec3.add(particle.position, particle.position, tempVec3$j);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$j);
+            controlPoint.getWorldPosition(tempVec3$i);
+            vec3.add(particle.position, particle.position, tempVec3$i);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$i);
         }
     }
 }
 Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-const tempVec3$i = vec3.create();
+const tempVec3$h = vec3.create();
 class PositionWithinSphereRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor(system) {
@@ -40808,8 +40808,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 randpos += vecControlPoint;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    cp.getWorldPosition(tempVec3$i);
-                    vec3.add(randpos, randpos, tempVec3$i);
+                    cp.getWorldPosition(tempVec3$h);
+                    vec3.add(randpos, randpos, tempVec3$h);
                 }
             }
             else {
@@ -40821,8 +40821,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
                     vec3.transformQuat(randpos, randpos, cp.getWorldOrientation());
-                    cp.getWorldPosition(tempVec3$i);
-                    vec3.add(randpos, randpos, tempVec3$i);
+                    cp.getWorldPosition(tempVec3$h);
+                    vec3.add(randpos, randpos, tempVec3$h);
                 }
             }
         }
@@ -41074,7 +41074,7 @@ Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
 */
 
 const tempQuat$5 = quat.create();
-const tempVec3$h = vec3.create();
+const tempVec3$g = vec3.create();
 const tempVec3_2$3 = vec3.create();
 class RemapScalarToVector extends Source1ParticleOperator {
     static functionName = 'Remap Scalar to Vector';
@@ -41108,25 +41108,25 @@ class RemapScalarToVector extends Source1ParticleOperator {
             return;
         }
         const input = particle.getField(m_nFieldInput);
-        tempVec3$h[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
-        tempVec3$h[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
-        tempVec3$h[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
+        tempVec3$g[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
+        tempVec3$g[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
+        tempVec3$g[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
         if (!cp) {
             return;
         }
         if (m_nFieldOutput == 0) { // Position
             if (!m_bLocalCoords) {
-                vec3.add(tempVec3$h, cp.getWorldPosition(tempVec3_2$3), tempVec3$h);
+                vec3.add(tempVec3$g, cp.getWorldPosition(tempVec3_2$3), tempVec3$g);
             }
             else {
                 if (cp) {
                     cp.getWorldOrientation(tempQuat$5);
-                    vec3.transformQuat(tempVec3$h, tempVec3$h, tempQuat$5);
-                    vec3.add(tempVec3$h, cp.getWorldPosition(tempVec3_2$3), tempVec3$h);
+                    vec3.transformQuat(tempVec3$g, tempVec3$g, tempQuat$5);
+                    vec3.add(tempVec3$g, cp.getWorldPosition(tempVec3_2$3), tempVec3$g);
                 }
-                particle.setField(0, tempVec3$h); //position
-                particle.setField(2, tempVec3$h); //previous position
+                particle.setField(0, tempVec3$g); //position
+                particle.setField(2, tempVec3$g); //previous position
             }
         }
         else {
@@ -41135,10 +41135,10 @@ class RemapScalarToVector extends Source1ParticleOperator {
                 //SetVectorFromAttribute ( vecScaleInitial, pOutput );
                 const vecScaleInitial = particle.getField(m_nFieldOutput, true);
                 //vecOutput *= vecScaleInitial;
-                vec3.mul(tempVec3$h, tempVec3$h, vecScaleInitial);
+                vec3.mul(tempVec3$g, tempVec3$g, vecScaleInitial);
             }
             //SetVectorAttribute( pOutput, vecOutput );
-            particle.setField(m_nFieldOutput, tempVec3$h);
+            particle.setField(m_nFieldOutput, tempVec3$g);
         }
     }
     initMultipleOverride() {
@@ -41674,7 +41674,7 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 //const g_SIMD_lsbmask = 0xfffffffe;
 
 const identityVec3$1 = vec3.create();
-const tempVec3$g = vec3.create();
+const tempVec3$f = vec3.create();
 let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
     static functionName = 'Velocity Random';
     constructor(system) {
@@ -41706,8 +41706,8 @@ let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
             vec3RandomBox(randomVector, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //randomVector.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$g, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$g);
+            vec3.random(tempVec3$f, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$f);
         }
         const cp = particle.system.getControlPoint(m_nControlPointNumber);
         if (cp) {
@@ -41915,7 +41915,7 @@ let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(LifespanDecay$1);
 
-const tempVec3$f = vec3.create();
+const tempVec3$e = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
 let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
@@ -41945,7 +41945,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                     tempMat4[12] = 0;
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
-                    vec3.copy(tempVec3$f, initialVec);
+                    vec3.copy(tempVec3$e, initialVec);
                     for (const [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
@@ -41969,12 +41969,12 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                             tempMat4[14] += boneWeight * boneMat[14];
                         }
                     }
-                    vec3.transformMat4(tempVec3$f, tempVec3$f, tempMat4);
+                    vec3.transformMat4(tempVec3$e, tempVec3$e, tempMat4);
                     if (particle.initialVecOffset) {
-                        vec3.add(tempVec3$f, tempVec3$f, particle.initialVecOffset);
+                        vec3.add(tempVec3$e, tempVec3$e, particle.initialVecOffset);
                     }
                     vec3.copy(particle.prevPosition, particle.position);
-                    vec3.copy(particle.position, tempVec3$f);
+                    vec3.copy(particle.position, tempVec3$e);
                 }
             }
         }
@@ -41983,7 +41983,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
 Source1ParticleOperators.registerOperator(LockToBone$1);
 
 //const gravity_const = 0.5;
-const tempVec3$e = vec3.create();
+const tempVec3$d = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
 class MovementBasic extends Source1ParticleOperator {
@@ -42006,7 +42006,7 @@ class MovementBasic extends Source1ParticleOperator {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
         particle.previousElapsedTime = elapsedTime;*/
-        const accumulatedForces = vec3.copy(tempVec3$e, gravity);
+        const accumulatedForces = vec3.copy(tempVec3$d, gravity);
         //vec3.scale(accumulatedForces, accumulatedForces, 0.5);
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
@@ -42192,7 +42192,7 @@ lock rotation
 This will update a particle relative to a Control Point's rotation as well as position.
 */
 
-const tempVec3$d = vec3.create();
+const tempVec3$c = vec3.create();
 class MovementMaxVelocity extends Source1ParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor(system) {
@@ -42201,7 +42201,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const maxVelocity = this.getParameter('Maximum Velocity');
-        const velocity = vec3.sub(tempVec3$d, particle.position, particle.prevPosition);
+        const velocity = vec3.sub(tempVec3$c, particle.position, particle.prevPosition);
         let speed = vec3.length(velocity);
         vec3.normalize(velocity, velocity);
         const maxVelocityNormalized = maxVelocity * elapsedTime;
@@ -42211,7 +42211,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(MovementMaxVelocity);
 
-const tempVec3$c = vec3.create();
+const tempVec3$b = vec3.create();
 let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -42240,9 +42240,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             if (useLocalSpace == 1) {
                 quat.copy(q, cp.getWorldOrientation());
             }
-            cp.getWorldPosition(tempVec3$c);
-            vec3.sub(particle.position, particle.position, tempVec3$c);
-            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$c);
+            cp.getWorldPosition(tempVec3$b);
+            vec3.sub(particle.position, particle.position, tempVec3$b);
+            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$b);
             const axis2 = vec3.clone(axis); //TODO: memory
             //axis2[1] = -axis2[1];
             //const tempQuat = quat.fromEuler(quat.create(), vec3.scale(vec3.create(), vec3.normalize(vec3.create(), axis), Math.HALF_PI));
@@ -42251,9 +42251,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             vec3.transformQuat(axis2, axis2, q);
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
             vec3.transformMat4(particle.position, particle.position, modelView);
-            vec3.add(particle.position, particle.position, tempVec3$c);
+            vec3.add(particle.position, particle.position, tempVec3$b);
             vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$c);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$b);
         }
         else {
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
@@ -42580,7 +42580,7 @@ class RadiusScale extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RadiusScale);
 
-const a$3 = vec3.create();
+const a$4 = vec3.create();
 class RemapCPSpeedToCP extends Source1ParticleOperator {
     static functionName = 'remap cp speed to cp';
     constructor(system) {
@@ -42606,7 +42606,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
         const outcp = this.particleSystem.getControlPoint(outCPNumber);
         if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
             //const v = vec3.length(incp.getWorldPosition(a));
-            const position = outcp.getPosition(a$3); //TODO optimize
+            const position = outcp.getPosition(a$4); //TODO optimize
             position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
             outcp.setPosition(position);
         }
@@ -42614,7 +42614,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);
 
-const tempVec3$b = vec3.create();
+const tempVec3$a = vec3.create();
 class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor(system) {
@@ -42640,7 +42640,7 @@ class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
         const active = this.getParameter('only active within specified distance');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const delta = vec3.subtract(tempVec3$b, cp.getWorldPosition(tempVec3$b), particle.position);
+            const delta = vec3.subtract(tempVec3$a, cp.getWorldPosition(tempVec3$a), particle.position);
             const deltaL = vec3.length(delta);
             if (active && ((deltaL < dMin) || (deltaL > dMax))) {
                 return;
@@ -42681,7 +42681,7 @@ Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
                     'only active within specified distance' 'bool' '0'
                     */
 
-const tempVec3$a = vec3.create();
+const tempVec3$9 = vec3.create();
 class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor(system) {
@@ -42709,14 +42709,14 @@ class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
         if (cp == undefined) {
             return;
         }
-        vec3.subtract(tempVec3$a, particle.cpPosition, particle.position);
-        const deltaL = vec3.length(tempVec3$a);
+        vec3.subtract(tempVec3$9, particle.cpPosition, particle.position);
+        const deltaL = vec3.length(tempVec3$9);
         if (activeDistance && (deltaL < distanceMin || deltaL > distanceMax)) {
             // Outside distance window
             return;
         }
-        vec3.lerp(tempVec3$a, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
-        particle.setField(field, tempVec3$a);
+        vec3.lerp(tempVec3$9, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
+        particle.setField(field, tempVec3$9);
     }
 }
 Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
@@ -42918,7 +42918,7 @@ class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator
 }
 Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
-const tempVec3$9 = vec3.create();
+const tempVec3$8 = vec3.create();
 let SetControlPointPositions$1 = class SetControlPointPositions extends Source1ParticleOperator {
     static functionName = 'set control point positions';
     constructor(system) {
@@ -42956,7 +42956,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$9, cpLocation, vecControlPoint);
+                const a = vec3.add(tempVec3$8, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -43285,7 +43285,9 @@ class BeamBufferGeometry extends BufferGeometry {
         const dirToBeam = vec3.create();
         const normal = vec3.create();
         const p = vec3.create();
-        for (const segment of segments) {
+        const len = segments.length;
+        for (let i = 0; i < len; i++) {
+            const segment = segments[i];
             if (previousSegment) {
                 indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
                 vec3.sub(tangentY, segment.pos, previousSegment.pos);
@@ -43294,11 +43296,13 @@ class BeamBufferGeometry extends BufferGeometry {
                 vec3.normalize(normal, normal);
                 vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, -previousSegment.width / 2.0));
                 vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, previousSegment.width / 2.0));
-                vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
-                vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
+                if (i === len - 1) {
+                    vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
+                    vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
+                }
                 uvs.push(0, previousSegment.texCoordY, 1, previousSegment.texCoordY, 0, segment.texCoordY, 1, segment.texCoordY);
                 colors.push(...previousSegment.color, ...previousSegment.color, ...segment.color, ...segment.color);
-                indiceBase += 4;
+                indiceBase += 2;
             }
             previousSegment = segment;
         }
@@ -43312,7 +43316,7 @@ class BeamBufferGeometry extends BufferGeometry {
 }
 
 const tempVec2$2 = vec2.create();
-const tempVec3$8 = vec3.create();
+vec3.create();
 class RenderRope extends Source1ParticleOperator {
     static functionName = 'render rope';
     #maxParticles = 0;
@@ -43337,6 +43341,11 @@ class RenderRope extends Source1ParticleOperator {
         if (!this.particleSystem.material) {
             return;
         }
+        const l = particleList.length;
+        if (l < 2) {
+            // Can't make a rope
+            return;
+        }
         // TODO: use param subdivision_count
         const subdivCount = this.getParameter('subdivision_count');
         const m_flTexelSizeInUnits = this.getParameter('texel_size');
@@ -43351,31 +43360,37 @@ class RenderRope extends Source1ParticleOperator {
         //let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
-        let previousParticle = null;
-        const deltaPos = vec3.create();
-        for (const particle of particleList) {
-            //for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-            //const particle: Source1Particle = particleList[i]!;
-            if (previousParticle) {
-                vec3.sub(deltaPos, particle.position, previousParticle.position);
-                for (let i = 0; i < subdivCount; i++) {
-                    const j = i / subdivCount;
-                    const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
-                    const position = vec3.scaleAndAdd(tempVec3$8, previousParticle.position, deltaPos, i / 3);
-                    const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
-                    const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
-                    const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
-                    const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
-                    const segment = new BeamSegment(position, [colorR, colorG, colorB, alpha], 0.0, radius);
-                    if (previousSegment) {
-                        ropeLength += segment.distanceTo(previousSegment);
-                    }
-                    segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
-                    segments.push(segment);
-                    previousSegment = segment;
+        vec3.create();
+        let p1; // = vec3.create();
+        let p2; // = vec3.create();
+        let p3; // = vec3.create();
+        let p4; // = vec3.create();
+        const segmentPosition = vec3.create();
+        for (let i = 0; i < l - 1; i++) {
+            const particle = particleList[i];
+            const nextParticle = particleList[i + 1];
+            const previousParticle = particleList[i - 1] ?? particle;
+            const nextNextParticle = particleList[i + 2] ?? nextParticle;
+            p1 = previousParticle.position;
+            p2 = particle.position;
+            p3 = nextParticle.position;
+            p4 = nextNextParticle.position;
+            for (let i = 0; i < subdivCount; i++) {
+                const j = i / subdivCount;
+                catmullRomSpline(p1, p2, p3, p4, j, segmentPosition);
+                const radius = previousParticle.radius + (particle.radius - previousParticle.radius) * j;
+                const alpha = previousParticle.alpha + (particle.alpha - previousParticle.alpha) * j;
+                const colorR = previousParticle.color.r + (particle.color.r - previousParticle.color.r) * j;
+                const colorG = previousParticle.color.g + (particle.color.g - previousParticle.color.g) * j;
+                const colorB = previousParticle.color.b + (particle.color.b - previousParticle.color.b) * j;
+                const segment = new BeamSegment(segmentPosition, [colorR, colorG, colorB, alpha], 0.0, radius);
+                if (previousSegment) {
+                    ropeLength += segment.distanceTo(previousSegment);
                 }
+                segment.texCoordY = (ropeLength + flTexOffset) * m_flTextureScale;
+                segments.push(segment);
+                previousSegment = segment;
             }
-            previousParticle = particle;
         }
         const camera = particleSystem.root.activeCamera;
         if (camera) {
@@ -43448,6 +43463,41 @@ class RenderRope extends Source1ParticleOperator {
     }
 }
 Source1ParticleOperators.registerOperator(RenderRope);
+const a$3 = vec3.create();
+const b$3 = vec3.create();
+const c$1 = vec3.create();
+const d = vec3.create();
+function catmullRomSpline(p1, p2, p3, p4, t, output) {
+    const tSqr = t * t * 0.5;
+    const tSqrSqr = t * tSqr;
+    t *= 0.5;
+    vec3.zero(output);
+    // matrix row 1
+    vec3.scale(a$3, p1, -tSqrSqr); // 0.5 t^3 * [ (-1*p1) + ( 3*p2) + (-3*p3) + p4 ]
+    vec3.scale(b$3, p2, tSqrSqr * 3);
+    vec3.scale(c$1, p3, tSqrSqr * -3);
+    vec3.scale(d, p4, tSqrSqr);
+    vec3.add(output, a$3, output);
+    vec3.add(output, b$3, output);
+    vec3.add(output, c$1, output);
+    vec3.add(output, d, output);
+    // matrix row 2
+    vec3.scale(a$3, p1, tSqr * 2); // 0.5 t^2 * [ ( 2*p1) + (-5*p2) + ( 4*p3) - p4 ]
+    vec3.scale(b$3, p2, tSqr * -5);
+    vec3.scale(c$1, p3, tSqr * 4);
+    vec3.scale(d, p4, -tSqr);
+    vec3.add(output, a$3, output);
+    vec3.add(output, b$3, output);
+    vec3.add(output, c$1, output);
+    vec3.add(output, d, output);
+    // matrix row 3
+    vec3.scale(a$3, p1, -t); // 0.5 t * [ (-1*p1) + p3 ]
+    vec3.scale(b$3, p3, t);
+    vec3.add(output, a$3, output);
+    vec3.add(output, b$3, output);
+    // matrix row 4
+    vec3.add(output, p2, output); // p2
+}
 
 // Note: this operator doesn't render anything, it simply orientate the particle for other renderers
 class RenderScreenVelocityRotate extends Source1ParticleOperator {
