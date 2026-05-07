@@ -55,6 +55,8 @@ export type MaterialParams = {
 	user?: ObjectUser;
 
 	blendingMode?: BlendingMode;
+
+	meshColor?: vec4;
 };
 
 export class Material implements HasUsers {
@@ -147,6 +149,10 @@ export class Material implements HasUsers {
 
 		if (params.user) {
 			this.addUser(params.user);
+		}
+
+		if (params.meshColor) {
+			this.setMeshColor(params.meshColor);
 		}
 	}
 

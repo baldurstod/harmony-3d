@@ -1,8 +1,8 @@
+import { vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
 import { RaytracingMaterial, RtMaterial } from '../raytracing/material';
 import { Material } from './material';
-import { vec3 } from 'gl-matrix';
 
 export class MeshBasicMaterial extends Material {
 	map = null;
@@ -28,10 +28,6 @@ export class MeshBasicMaterial extends Material {
 
 	skinning = false;
 	morphTargets = false;
-	constructor(params?: any) {
-		super(params);
-		this.setValues(params);
-	}
 
 	override getShaderSource(): string {
 		return 'meshbasic';
