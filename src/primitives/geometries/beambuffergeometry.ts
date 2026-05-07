@@ -1,4 +1,4 @@
-import { quat, vec3, vec4 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
@@ -53,7 +53,10 @@ export class BeamBufferGeometry extends BufferGeometry {
 		const normal = vec3.create();
 		const p = vec3.create();
 
-		for (const segment of segments) {
+		const len = segments.length;
+		for (let i = 0; i < len; i++) {
+			const segment = segments[i]!;
+
 			if (previousSegment) {
 				indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
 
@@ -64,8 +67,10 @@ export class BeamBufferGeometry extends BufferGeometry {
 
 				vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, -previousSegment.width / 2.0));
 				vertices.push(...vec3.scaleAndAdd(p, previousSegment.pos, normal, previousSegment.width / 2.0));
-				vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
-				vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
+				if (i === len - 1) {
+					vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, -segment.width / 2.0));
+					vertices.push(...vec3.scaleAndAdd(p, segment.pos, normal, segment.width / 2.0));
+				}
 
 				uvs.push(0, previousSegment.texCoordY,
 					1, previousSegment.texCoordY,
@@ -73,7 +78,7 @@ export class BeamBufferGeometry extends BufferGeometry {
 					1, segment.texCoordY);
 
 				colors.push(...previousSegment.color, ...previousSegment.color, ...segment.color, ...segment.color);
-				indiceBase += 4;
+				indiceBase += 2;
 			}
 			previousSegment = segment;
 		}
