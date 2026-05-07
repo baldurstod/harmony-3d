@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-
 import { CubicBezierCurve } from './cubicbeziercurve';
 import { Curve } from './curve';
 import { LinearBezierCurve } from './linearbeziercurve';
@@ -12,8 +11,8 @@ const p3 = vec3.create();
 
 export class Path extends Curve {
 	looping: boolean;
-	_curves: Curve[] = [];
-	cursor = vec3.create();
+	readonly #curves: Curve[] = [];
+	readonly #cursor = vec3.create();
 
 	constructor(looping = false) {
 		super();
@@ -21,32 +20,32 @@ export class Path extends Curve {
 	}
 
 	set curves(curves) {
-		this._curves.splice(0, Infinity, ...curves);
+		this.#curves.splice(0, Infinity, ...curves);
 		this.arcLength = this.getArcLength();
 	}
 
-	get curves() {
-		return this._curves;
+	get curves(): Curve[] {
+		return this.#curves;
 	}
 
-	addCurve(curve: Curve) {
-		this._curves.push(curve);
+	addCurve(curve: Curve): void {
+		this.#curves.push(curve);
 		this.arcLength = this.getArcLength();
 	}
 
-	getArcLength(divisions?: number) {
+	getArcLength(divisions?: number): number {
 		let length = 0;
-		for (const curve of this._curves) {
+		for (const curve of this.#curves) {
 			length += curve.getArcLength(divisions);
 		}
 		return length;
 	}
 
-	getPosition(t: number, out = vec3.create()) {
+	getPosition(t: number, out = vec3.create()): vec3 {
 		const l = this.arcLength * t;
 		let accumulate = 0;
 		let accumulateTmp = 0;
-		for (const curve of this._curves) {
+		for (const curve of this.#curves) {
 			accumulateTmp += curve.arcLength;
 			if (accumulateTmp > l) {
 				const t2 = (l - accumulate) / curve.arcLength;
@@ -57,24 +56,24 @@ export class Path extends Curve {
 		return out;
 	}
 
-	moveTo(p0: vec3) {
-		vec3.copy(this.cursor, p0);
+	moveTo(p0: vec3): void {
+		vec3.copy(this.#cursor, p0);
 	}
 
-	lineTo(p1: vec3) {
-		this.addCurve(new LinearBezierCurve(this.cursor, p1));
-		vec3.copy(this.cursor, p1);
+	lineTo(p1: vec3): void {
+		this.addCurve(new LinearBezierCurve(this.#cursor, p1));
+		vec3.copy(this.#cursor, p1);
 	}
 
-	quadraticCurveTo(p1: vec3, p2: vec3) {
-		this.addCurve(new QuadraticBezierCurve(this.cursor, p1, p2));
-		vec3.copy(this.cursor, p2);
+	quadraticCurveTo(p1: vec3, p2: vec3): void {
+		this.addCurve(new QuadraticBezierCurve(this.#cursor, p1, p2));
+		vec3.copy(this.#cursor, p2);
 	}
 
 	bezierCurveTo(p1: vec3, p2: vec3, p3: vec3): Path {
 
 		const curve = new CubicBezierCurve(
-			this.cursor,
+			this.#cursor,
 			p1,
 			p2,
 			p3,
@@ -82,15 +81,15 @@ export class Path extends Curve {
 
 		this.curves.push(curve);
 
-		vec3.copy(this.cursor, p3);
+		vec3.copy(this.#cursor, p3);
 
 		return this;
 
 	}
 
-	cubicCurveTo(p1: vec3, p2: vec3, p3: vec3) {
-		this.addCurve(new CubicBezierCurve(this.cursor, p1, p2, p3));
-		vec3.copy(this.cursor, p3);
+	cubicCurveTo(p1: vec3, p2: vec3, p3: vec3): void {
+		this.addCurve(new CubicBezierCurve(this.#cursor, p1, p2, p3));
+		vec3.copy(this.#cursor, p3);
 	}
 
 	getPoints(divisions = 12): vec3[] {
@@ -102,8 +101,7 @@ export class Path extends Curve {
 			const resolution = curve.getAppropriateDivision(divisions);
 			const pts = curve.getPoints(resolution);
 
-			for (let j = 0; j < pts.length; j++) {
-				const point = pts[j]!;
+			for (const point of pts) {
 				if (last && vec3.equals(last, point)) {
 					continue;
 				}
@@ -118,9 +116,9 @@ export class Path extends Curve {
 		return points;
 	}
 
-	fromSvgPath(path: string) {
+	fromSvgPath(path: string): void {
 		const pathArray = path.split(' ');
-		let cmd;
+		//let cmd;
 		for (let i = 0, l = pathArray.length; i < l;) {
 			switch (pathArray[i++]) {
 				case 'm':
