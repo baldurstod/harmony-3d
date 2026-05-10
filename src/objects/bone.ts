@@ -66,8 +66,13 @@ export class Bone extends Entity implements Lockable {
 		return vec3.clone(this._position);
 	}
 
-	setWorldPosition(position: vec3) {
+	setWorldPosition(position: ReadonlyVec3) {
 		super.setWorldPosition(position);
+		this.dirty = true;
+	}
+
+	setWorldOrientation(quaternion: ReadonlyQuat): void {
+		super.setWorldOrientation(quaternion);
 		this.dirty = true;
 	}
 
