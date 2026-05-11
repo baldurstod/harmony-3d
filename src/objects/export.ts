@@ -6,6 +6,7 @@ export { SkeletalMesh } from './skeletalmesh';
 export { Skeleton } from './skeleton';
 export { Mesh } from './mesh';
 export { Target } from './target';
+export { Text2D } from './text2d';
 export { Text3D } from './text3d';
 export { Wireframe } from './wireframe';
 export { World } from './world';

@@ -24,6 +24,7 @@ import { Manipulator, ManipulatorMode } from '../objects/helpers/manipulator';
 import { SkeletonHelper } from '../objects/helpers/skeletonhelper';
 import { WireframeHelper } from '../objects/helpers/wireframehelper';
 import { Target } from '../objects/target';
+import { Text2D } from '../objects/text2d';
 import { Text3D } from '../objects/text3d';
 import { Wireframe } from '../objects/wireframe';
 import { Box } from '../primitives/box';
@@ -539,7 +540,8 @@ function initEntitySubmenu() {
 					{ i18n: '#metaballs', f: (entity: Entity) => entity.addChild(new Metaballs()) },
 					{ i18n: '#plane', f: (entity: Entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
 					{ i18n: '#sphere', f: (entity: Entity) => entity.addChild(new Sphere()) },
-					{ i18n: '#text', f: (entity: Entity) => entity.addChild(new Text3D()) },
+					{ i18n: '#text_2d', f: (entity: Entity) => entity.addChild(new Text2D({ text: 'Text2D' })) },
+					{ i18n: '#text_3d', f: (entity: Entity) => entity.addChild(new Text3D({ text: 'Text3D' })) },
 				]
 		},
 		{
