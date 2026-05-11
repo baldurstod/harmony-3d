@@ -18,7 +18,7 @@ export class FontManager {
 		this.#manifestPromise = new Promise(async resolve => {
 
 			if (!this.#fontsPath) {
-				throw 'No manifest set';
+				throw 'No manifest set, did you forgot to call FontManager.setFontsPath() ?';
 			}
 			const response = await customFetch(this.#fontsPath + 'manifest.json');
 			resolve(await response.json());

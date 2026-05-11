@@ -126,7 +126,7 @@ export class OrbitControl extends CameraControl {
 	}
 
 	setTargetPosition(position: vec3) {
-		this.#target.position = position;
+		this.#target.setPosition(position);
 		this.update();
 	}
 

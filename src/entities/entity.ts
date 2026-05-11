@@ -247,7 +247,7 @@ export class Entity {
 
 	setWorldOrientation(quaternion: ReadonlyQuat): void {
 		if (this._parent) {
-			this._parent.getWorldQuaternion(tempQuat);
+			this._parent.getWorldOrientation(tempQuat);
 			quat.invert(tempQuat, tempQuat);
 			quat.mul(this._quaternion, tempQuat, quaternion);
 		} else {
