@@ -94,11 +94,11 @@ export class Manipulator extends Entity {
 	#xzMaterial = new MeshBasicMaterial();
 	#yzMaterial = new MeshBasicMaterial();
 	#xyzMaterial = new MeshBasicMaterial();
-	#xLineMaterial = new LineMaterial();
-	#yLineMaterial = new LineMaterial();
-	#zLineMaterial = new LineMaterial();
-	#xyzLineMaterial = new LineMaterial();
-	#viewLineMaterial = new LineMaterial();
+	#xLineMaterial = new LineMaterial({ lineWidth: 10 });
+	#yLineMaterial = new LineMaterial({ lineWidth: 10 });
+	#zLineMaterial = new LineMaterial({ lineWidth: 10 });
+	#xyzLineMaterial = new LineMaterial({ lineWidth: 10 });
+	#viewLineMaterial = new LineMaterial({ lineWidth: 10 });
 	#xyzSphere = new Sphere({ radius: ARROW_RADIUS * 6.0, material: this.#xyzMaterial, segments: 32, rings: 32, name: 'Manipulator XYZ sphere' });
 	#xArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial, name: 'Manipulator X arrow' });
 	#yArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial, name: 'Manipulator Y arrow' });

@@ -25,7 +25,7 @@ export class Line extends Mesh {
 
 	constructor(params: LineParameters = {}) {
 		params.geometry = new LineSegmentsGeometry();
-		params.material = params.material ?? new LineMaterial();
+		params.material = params.material ?? new LineMaterial({ lineWidth: 10 });
 		super(params);
 		if (params.start) {
 			vec3.copy(this.#start, params.start);

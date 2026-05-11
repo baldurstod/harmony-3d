@@ -15,7 +15,7 @@ export class LineSegments extends Mesh {
 
 	constructor(params: LineSegmentsParameters = {}) {
 		params.geometry = new LineSegmentsGeometry();
-		params.material = params.material ?? new LineMaterial();
+		params.material = params.material ?? new LineMaterial({ lineWidth: 10 });
 		super(params);
 		this.#lineStrip = params.lineStrip ?? true;
 	}
