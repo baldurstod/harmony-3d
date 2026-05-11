@@ -65,6 +65,14 @@ export class Text2D extends Entity {
 		const pos = vec3.create();
 		const mat = camera.getViewProjectionMatrix();
 		vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
+		if (pos[2] > 1) {
+			// Text is behind the camera
+			// TODO: we may also use camera near and far plane
+			display(this.#html, false);
+			return;
+		} else {
+			display(this.#html, this.isVisible());
+		}
 		//console.log(pos);
 		vec3.scale(pos, pos, 50);
 		vec3.add(pos, pos, [50, 50, 0]);
