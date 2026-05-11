@@ -42,7 +42,7 @@ export class SkeletonHelper extends Entity {
 	enumerable = false;
 	#displayJoints = true;
 
-	constructor(parameters: SkeletonHelperParameters) {
+	constructor(parameters: SkeletonHelperParameters = {}) {
 		super(parameters);
 
 		this.hideInExplorer = true;

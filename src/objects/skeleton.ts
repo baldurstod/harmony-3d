@@ -3,7 +3,7 @@ import { JSONObject } from 'harmony-types';
 import { Rig } from '../animations/rig';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { registerEntity } from '../entities/entities';
-import { Entity } from '../entities/entity';
+import { Entity, EntityParameters } from '../entities/entity';
 import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
@@ -24,7 +24,7 @@ export class Skeleton extends Entity {
 	lastComputed = 0;
 	rig?: Rig
 
-	constructor(params?: any/*TODO: improve type*/) {
+	constructor(params?: EntityParameters) {
 		super(params);
 		//this.bones = Object.create(null);//TODOv3: rename
 
@@ -192,7 +192,7 @@ export class Skeleton extends Entity {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		const entity = new Skeleton({ name: json.name });
+		const entity = new Skeleton({ name: json.name as string });
 		let loadedPromiseResolve: (value: any) => void;
 		entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
 		loadedPromise.then(() => {
