@@ -14,6 +14,7 @@ import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material, MaterialColorMode } from '../materials/material';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, pickedPrimitive } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Renderer } from '../renderers/renderer';
@@ -53,11 +54,11 @@ export class WebGPURenderer implements Renderer {
 	//readonly #pointerPosition = vec2.create();
 	//#pickedPrimitive?: GPUBuffer;
 	readonly #identityVec2 = vec2.create();
-	readonly #fullScreenQuad: FullScreenQuad;
-
-	constructor() {
-		this.#fullScreenQuad = new FullScreenQuad();
-	}
+	readonly #fullScreenQuadMat = new MeshBasicMaterial({
+		colorMode: MaterialColorMode.PerMesh,
+		defines: { ALWAYS_BEHIND: '' },
+	});
+	readonly #fullScreenQuad: FullScreenQuad = new FullScreenQuad({ material: this.#fullScreenQuadMat, });
 
 	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = this.#renderList;
@@ -160,10 +161,7 @@ export class WebGPURenderer implements Renderer {
 		}
 
 		if (clearValue && context.viewport) {
-			const material = this.#fullScreenQuad.getMaterial();
-			material.setDefine('ALWAYS_BEHIND');
-			material.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
-			material.setColorMode(MaterialColorMode.PerMesh);
+			this.#fullScreenQuadMat.setColor(vec4.fromValues(clearValue.r, clearValue.g, clearValue.b, clearValue.a));
 			renderList.addObject(this.#fullScreenQuad);
 		}
 

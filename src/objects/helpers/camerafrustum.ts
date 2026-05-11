@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
 import { Entity } from '../../entities/entity';
-import { Float32BufferAttribute, Uint16BufferAttribute, Uint8BufferAttribute } from '../../geometry/bufferattribute';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
@@ -100,11 +100,10 @@ export class CameraFrustum extends Mesh {
 
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
-		params.material = new LineBasicMaterial();
+		params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerVertex });
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.getMaterial().setColorMode(MaterialColorMode.PerVertex);
 		this.castShadow = false;
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
@@ -115,7 +114,7 @@ export class CameraFrustum extends Mesh {
 		const vertices: number[] = [];
 		const normals: number[] = [];
 		const texCoords: number[] = [];
-		const colors:number[] = [];
+		const colors: number[] = [];
 
 		for (const point of Points) {
 			vertices.push(...point.p);

@@ -1,22 +1,21 @@
 import { vec4 } from 'gl-matrix';
-import { Entity } from '../entities/entity';
-import { LineSegmentsGeometry } from '../primitives/geometries/linesegmentsgeometry';
-import { Mesh } from './mesh';
+import { Entity, EntityParameters } from '../entities/entity';
 import { LineMaterial } from '../materials/linematerial';
 import { Material, MaterialColorMode } from '../materials/material';
+import { LineSegmentsGeometry } from '../primitives/geometries/linesegmentsgeometry';
+import { Mesh } from './mesh';
 
 export class Wireframe extends Entity {
-	#material: Material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this });
+	readonly #material: Material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this, colorMode: MaterialColorMode.PerMesh });
 	#color: vec4 = vec4.fromValues(0, 0, 0, 1);
 	enumerable = false;
 	#meshes = new Set<Mesh>();
-	constructor(params?: any) {
+	constructor(params: EntityParameters = {}) {
 		super(params);
 		//const material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
 
 		//this.#material = material;
 
-		this.#material.setColorMode(MaterialColorMode.PerMesh);
 		this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 
 		//this.setParameters(params);

@@ -14,14 +14,12 @@ const RAYS_RADIUS = 3;
 export class PointLightHelper extends Mesh {
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
-		params.material = new LineBasicMaterial();
+		params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerMesh, defines: { ALWAYS_ON_TOP: '', } });
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.material.setColorMode(MaterialColorMode.PerMesh);
-		this.material.setDefine('ALWAYS_ON_TOP');
 		const sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
-		sphere.material.setDefine('ALWAYS_ON_TOP');
+		sphere.getMaterial().setDefine('ALWAYS_ON_TOP');
 		this.addChild(sphere);
 	}
 
