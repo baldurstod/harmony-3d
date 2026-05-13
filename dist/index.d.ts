@@ -388,7 +388,8 @@ export declare class Bone extends Entity implements Lockable {
     set position(position: vec3);
     setPosition(position: ReadonlyVec3): void;
     get position(): vec3;
-    setWorldPosition(position: vec3): void;
+    setWorldPosition(position: ReadonlyVec3): void;
+    setWorldOrientation(quaternion: ReadonlyQuat): void;
     set refPosition(refPosition: vec3);
     get refPosition(): vec3;
     getTotalRefPosition(position?: vec3): vec3;
@@ -1503,6 +1504,8 @@ declare class Channel {
                   export declare class Cylinder extends Mesh {
                       #private;
                       constructor(params?: CylinderParameters);
+                      setHeight(height: number): void;
+                      setRadius(radius: number): void;
                       buildContextMenu(): HarmonyMenuItemsDict;
                       toJSON(): JSONObject;
                       static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null>;
@@ -2176,7 +2179,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
+                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3555,7 +3558,7 @@ declare class Channel {
 
                       export declare class LineMaterial extends Material {
                           #private;
-                          constructor(params?: any);
+                          constructor(params?: LineMaterialParams);
                           getShaderSource(): string;
                           set lineWidth(lineWidth: number);
                           toJSON(): any;
@@ -3564,6 +3567,10 @@ declare class Channel {
                           static getEntityName(): string;
                           getRaytracingMaterial(index: number): null;
                       }
+
+                      declare type LineMaterialParams = MaterialParams & {
+                          lineWidth?: number;
+                      };
 
                       declare type LineParameters = MeshParameters & {
                           start?: vec3;
@@ -3896,6 +3903,8 @@ declare class Channel {
                           workgroupSize?: vec3;
                           user?: ObjectUser;
                           blendingMode?: BlendingMode;
+                          meshColor?: vec4;
+                          colorMode?: MaterialColorMode;
                       };
 
                       declare type MaterialUniform = Record<string, UniformValue | Record<string, UniformValue>>;
@@ -4370,7 +4379,6 @@ declare class Channel {
                           wireframeLinejoin: string;
                           skinning: boolean;
                           morphTargets: boolean;
-                          constructor(params?: any);
                           getShaderSource(): string;
                           getRaytracingMaterial(index: number): RaytracingMaterial;
                           toJSON(): any;
@@ -4571,7 +4579,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | string[] | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -6603,7 +6611,7 @@ declare class Channel {
                           readonly imgData: Float32Array<ArrayBuffer>;
                           lastComputed: number;
                           rig?: Rig;
-                          constructor(params?: any);
+                          constructor(params?: EntityParameters);
                           dirty(): void;
                           getTexture(): Texture;
                           setBonesMatrix(): void;
@@ -6627,7 +6635,7 @@ declare class Channel {
                       export declare class SkeletonHelper extends Entity {
                           #private;
                           enumerable: boolean;
-                          constructor(parameters: SkeletonHelperParameters);
+                          constructor(parameters?: SkeletonHelperParameters);
                           parentChanged(parent: Entity): void;
                           getWorldPosition(vec?: vec3): vec3;
                           getWorldQuaternion(q?: quat): quat;
@@ -8832,6 +8840,32 @@ declare class Channel {
 
                       export declare const TAU: number;
 
+                      export declare class Text2D extends Entity {
+                          #private;
+                          isText3D: boolean;
+                          constructor(params?: Text2DParameters);
+                          setParentElement(parentElement?: HTMLElement): void;
+                          setVisible(visible?: boolean): void;
+                          setText(text?: string): void;
+                          setSize(size?: string): void;
+                          setFont(font?: string): void;
+                          update(scene: Scene, camera: Camera, delta: number): void;
+                          toJSON(): JSONObject;
+                          static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text2D | null>;
+                          fromJSON(json: JSONObject): void;
+                          buildContextMenu(): HarmonyMenuItemsDict;
+                          static getEntityName(): string;
+                      }
+
+                      declare type Text2DParameters = EntityParameters & {
+                          text?: string;
+                          size?: string;
+                          font?: string;
+                          style?: string;
+                          clickable?: boolean;
+                          parentElement?: HTMLElement;
+                      };
+
                       export declare class Text3D extends Mesh {
                           #private;
                           isText3D: boolean;
@@ -9660,7 +9694,7 @@ declare class Channel {
                       export declare class Wireframe extends Entity {
                           #private;
                           enumerable: boolean;
-                          constructor(params?: any);
+                          constructor(params?: EntityParameters);
                           setColor(color: vec4): void;
                           parentChanged(parent: Entity | null): void;
                           dispose(): void;

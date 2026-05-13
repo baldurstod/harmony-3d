@@ -5,14 +5,14 @@ import { Kv3Type, Kv3Value, Kv3ValueType } from './kv3value';
  * Kv3File
  */
 export class Kv3File {
-	isKv3File: true = true;
+	isKv3File = true as const;
 	root: null | Kv3Element = null;
 
-	setRoot(root: Kv3Element) {
+	setRoot(root: Kv3Element): void {
 		this.root = root;
 	}
 
-	exportAsText() {
+	exportAsText(): string | null {
 		if (this.root) {
 			return this.root.exportAsText('');
 		}

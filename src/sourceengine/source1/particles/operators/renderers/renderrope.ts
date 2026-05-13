@@ -15,7 +15,7 @@ import { Source1ParticleSystem } from '../../source1particlesystem';
 import { Source1ParticleOperator } from '../operator';
 
 const tempVec2 = vec2.create();
-const tempVec3 = vec3.create();
+//const tempVec3 = vec3.create();
 
 export class RenderRope extends Source1ParticleOperator {
 	static functionName = 'render rope';
@@ -66,8 +66,8 @@ export class RenderRope extends Source1ParticleOperator {
 		//let particle;
 		let ropeLength = 0.0;
 		let previousSegment: BeamSegment | null = null;
-		let previousParticle: Source1Particle | null = null;
-		const deltaPos = vec3.create();
+		//let previousParticle: Source1Particle | null = null;
+		//const deltaPos = vec3.create();
 
 		let p1: vec3;// = vec3.create();
 		let p2: vec3;// = vec3.create();
@@ -75,7 +75,7 @@ export class RenderRope extends Source1ParticleOperator {
 		let p4: vec3;// = vec3.create();
 		const segmentPosition = vec3.create();
 
-		const l1 = l - 1;
+		//const l1 = l - 1;
 
 		for (let i = 0; i < l - 1; i++) {
 			const particle: Source1Particle = particleList[i]!;

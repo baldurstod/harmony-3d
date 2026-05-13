@@ -50,7 +50,7 @@ export type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
 export type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
 export class Kv3Value {
-	isKv3Value: true = true;
+	isKv3Value = true as const;
 	#type: Kv3Type;
 	#subType: Kv3Type;
 	#value: Kv3ValueType;
@@ -168,12 +168,12 @@ export class Kv3Value {
 			}
 		}
 
-		const linePrefix2 = linePrefix + '\t';
+		//const linePrefix2 = linePrefix + '\t';
 		switch (this.#type) {
 			case Kv3Type.Null:
 				return flagString + 'null';
 			case Kv3Type.String:
-				return flagString + '"' + this.#value + '"';
+				return flagString + '"' + (this.#value as string) + '"';
 			case Kv3Type.Element:
 				return flagString + '\n' + (this.#value as Kv3Element).exportAsText(linePrefix);
 			/*
@@ -185,22 +185,22 @@ export class Kv3Value {
 			return `\n${linePrefix}[\n${arrayString}${linePrefix}]`;
 			*/
 			case Kv3Type.Array:
-				return formatArray(this.#value as Kv3ValueTypeAll[], linePrefix);
+				return formatArray(this.#value as Kv3ValueTypeAll[]/*, linePrefix*/);
 			case Kv3Type.TypedArray:
 			case Kv3Type.TypedArray2:
 			case Kv3Type.TypedArray3:
 				return formatTypedArray(this.#type, this.#subType, flagString, this.#value as Kv3ValueTypeAll[], linePrefix);
 
 		}
-		return flagString + String(this.#value);
+		return flagString + String(this.#value as string);
 	}
 }
 
 function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, arr: Kv3ValueTypeAll[], linePrefix: string): string {
 	const linePrefix2 = linePrefix + '\t';
 	let typedArrayString = '';
-	for (let i = 0, l = (arr as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
-		const value = (arr as Kv3ValueTypeAll[])[i]!;
+	for (let i = 0, l = arr.length, m = l - 1; i < l; i++) {
+		const value = arr[i]!;
 		switch (subType) {
 			case Kv3Type.Double:
 			case Kv3Type.DoubleZero:
@@ -213,7 +213,7 @@ function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, a
 			case Kv3Type.UnsignedInt32:
 			case Kv3Type.UnsignedInt64:
 				//typedArrayString += flagString + value + ', ';
-				typedArrayString += flagString + value;
+				typedArrayString += flagString + String(value as number);
 				if (i == m) {
 					typedArrayString += ' ';
 				} else {
@@ -224,10 +224,10 @@ function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, a
 			case Kv3Type.TypedArray:
 			case Kv3Type.TypedArray2:
 			case Kv3Type.TypedArray3:
-				typedArrayString += linePrefix2 + formatArray(value as Kv3ValueTypeAll[], linePrefix2) + ',\n';
+				typedArrayString += linePrefix2 + formatArray(value as Kv3ValueTypeAll[]/*, linePrefix2*/) + ',\n';
 				break;
 			case Kv3Type.String:
-				typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
+				typedArrayString += linePrefix2 + flagString + '"' + (value as string) + '"' + ',\n';
 				break;
 			case Kv3Type.Element:
 				if (flagString) {
@@ -241,7 +241,7 @@ function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, a
 				break;
 			*/
 			default:
-				typedArrayString += linePrefix2 + flagString + value + ',\n';
+				typedArrayString += linePrefix2 + flagString + (value as string) + ',\n';
 				break;
 		}
 	}
@@ -264,21 +264,21 @@ function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, a
 	}
 }
 
-function formatArray(arr: Kv3ValueTypeAll[], linePrefix: string): string {
-	const linePrefix2 = linePrefix + '\t';
+function formatArray(arr: Kv3ValueTypeAll[]/*, linePrefix: string*/): string {
+	//const linePrefix2 = linePrefix + '\t';
 	let typedArrayString = '';
-	for (let i = 0, l = (arr as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
-		const value = (arr as Kv3ValueTypeAll[])[i]!;
+	for (let i = 0, l = arr.length, m = l - 1; i < l; i++) {
+		const value = arr[i]!;
 		//typedArrayString += flagString + value + ', ';
 
 		if ((value as Kv3Value).isKv3Value) {
-			typedArrayString += (value as Kv3Value).getValue();
+			typedArrayString += (value as Kv3Value).getValue() as string;
 		} else {
-			typedArrayString += value;
+			typedArrayString += value as string;
 		}
-			if (i != m) {
-				typedArrayString += ', ';
-			}
+		if (i != m) {
+			typedArrayString += ', ';
+		}
 	}
 	return `[ ${typedArrayString} ]`;
 	//return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;

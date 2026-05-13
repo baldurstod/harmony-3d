@@ -40,47 +40,47 @@ export function OrSIMD(a: boolean, b: boolean): boolean {
 	return a || b;
 }
 
-export function AndNotSIMD(a: number, b: number) {
+export function AndNotSIMD(a: boolean, b: boolean): boolean {
 	return !a && b;
 }
 
-export function MulSIMD(a: number, b: number) {
+export function MulSIMD(a: number, b: number): number {
 	return a * b;
 }
 
-export function DivSIMD(a: number, b: number) {
+export function DivSIMD(a: number, b: number): number {
 	return a / b;
 }
 
-export function AddSIMD(a: number, b: number) {
+export function AddSIMD(a: number, b: number): number {
 	return a + b;
 }
 
-export function SubSIMD(a: number, b: number) {
+export function SubSIMD(a: number, b: number): number {
 	return a - b;
 }
 
-export function ReciprocalEstSIMD(a: number) {
+export function ReciprocalEstSIMD(a: number): number {
 	return 1 / a;
 }
 
-export function ReciprocalSIMD(a: number) {
+export function ReciprocalSIMD(a: number): number {
 	return 1 / a;
 }
 
-export function IsAnyNegative(a: number) {
+export function IsAnyNegative(a: number): boolean {
 	return a != 0;
 }
 
-export function MaxSIMD(a: number, b: number) {
+export function MaxSIMD(a: number, b: number): number {
 	return Math.max(a, b);
 }
 
-export function MinSIMD(a: number, b: number) {
+export function MinSIMD(a: number, b: number): number {
 	return Math.min(a, b);
 }
 
-export function BiasSIMD(val: number, precalc_param: number) {
+export function BiasSIMD(val: number, precalc_param: number): number {
 	// similar to bias function except pass precalced bias value from calling PreCalcBiasParameter.
 
 	// !!speed!! use reciprocal est?
@@ -88,7 +88,7 @@ export function BiasSIMD(val: number, precalc_param: number) {
 	return DivSIMD(val, AddSIMD(MulSIMD(precalc_param, SubSIMD(Four_Ones, val)), Four_Ones));
 }
 
-export function MaskedAssign(ReplacementMask: boolean, NewValue: number, OldValue: number) {
+export function MaskedAssign(ReplacementMask: boolean, NewValue: number, OldValue: number): number {
 	// TODO: params are vec4
 	return ReplacementMask ? NewValue : OldValue;
 	/*return OrSIMD(
@@ -96,13 +96,11 @@ export function MaskedAssign(ReplacementMask: boolean, NewValue: number, OldValu
 		AndNotSIMD(ReplacementMask, OldValue));*/
 }
 
-export function SinEst01SIMD(val: number) {
+export function SinEst01SIMD(val: number): number {
 	return Math.sin(val * Math.PI);
 }
 
-
-
-export function SimpleSplineRemapValWithDeltasClamped(val: number, A: number, BMinusA: number, OneOverBMinusA: number, C: number, DMinusC: number) {
+export function SimpleSplineRemapValWithDeltasClamped(val: number, A: number, BMinusA: number, OneOverBMinusA: number, C: number, DMinusC: number): number {
 	//	if (A == B)
 	//		return val >= B ? D : C;
 	let cVal = (val - A) * OneOverBMinusA;//fltx4 cVal = MulSIMD(SubSIMD(val, A), OneOverBMinusA);

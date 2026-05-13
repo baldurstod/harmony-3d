@@ -26,7 +26,9 @@ export class SourceBinaryLoader {
 		return promise;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any/*TODO: fix that*/> | SourceVvd | SourceVtx | Source1Vtf | SourcePCF | SourceMdl | SourceBSP | null {
-		throw 'override me';
+		throw new Error('override me');
+
 	}
 }

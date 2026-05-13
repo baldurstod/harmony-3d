@@ -21,7 +21,7 @@ const arrayBuffer = new ArrayBuffer(4);
 const uint32Array = new Uint32Array(arrayBuffer);
 const float32Array = new Float32Array(arrayBuffer);
 
-export function NoiseSIMD_old(pos: vec3, timeOffset: number) {
+export function NoiseSIMD_old(pos: vec3, timeOffset: number): number {// TODO: remove this function
 	const x = pos[0] + timeOffset;
 	const y = pos[1] + timeOffset;
 	const z = pos[2] + timeOffset;
@@ -114,7 +114,7 @@ const MAGIC_NUMBER = 1 << 15;
 const Four_MagicNumbers = MAGIC_NUMBER;
 const DATAVIEW = new DataView(new ArrayBuffer(4));
 const INV_256 = 1 / 256.;
-export function NoiseSIMD(x: number, y: number, z: number) {
+export function NoiseSIMD(x: number, y: number, z: number): number {
 	// use magic to convert to integer index
 	/*fltx4 x_idx = AndSIMD( MASK255, AddSIMD( x, Four_MagicNumbers ) );
 	fltx4 y_idx = AndSIMD( MASK255, AddSIMD( y, Four_MagicNumbers ) );
@@ -159,7 +159,8 @@ export function NoiseSIMD(x: number, y: number, z: number) {
 			SubFloat( lattice110, i ) = GetLatticePointValue( xi+1,yi+1,zi );	\
 			SubFloat( lattice111, i ) = GetLatticePointValue( xi+1,yi+1,zi+1 );	\
 		}*/
-	function DOPASS(i: number) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function DOPASS(i: number): void {
 		/*unsigned int xi = SubInt( x_idx, i );
 		unsigned int yi = SubInt( y_idx, i );
 		unsigned int zi = SubInt( z_idx, i );*/

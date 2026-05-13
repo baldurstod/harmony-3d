@@ -4,7 +4,7 @@ let randomFloats: number[];
 
 export const MAX_FLOATS = 4096;
 
-export function initRandomFloats() {
+export function initRandomFloats(): void {
 	randomFloats = new Array(MAX_FLOATS)
 	for (let i = 0; i < MAX_FLOATS; i++) {
 		randomFloats[i] = Math.random();

@@ -5,10 +5,10 @@ import { Kv3Type, Kv3Value, Kv3ValueType } from './kv3value';
  * Kv3Element
  */
 export class Kv3Element {
-	isKv3Element: true = true;
+	isKv3Element = true as const;
 	#properties = new Map<string, Kv3Element | Kv3Value | null>();
 
-	setProperty(property: string, value: Kv3Element | Kv3Value | null) {
+	setProperty(property: string, value: Kv3Element | Kv3Value | null): void {
 		this.#properties.set(property, value);
 	}
 
@@ -152,6 +152,7 @@ export class Kv3Element {
 
 	getSubValue(path: string): Kv3Element | Kv3Value | null {
 		const arr = path.split('.');
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		let data: Kv3Element | Kv3Value | null | undefined = this;
 
 		for (const subPath of arr) {
