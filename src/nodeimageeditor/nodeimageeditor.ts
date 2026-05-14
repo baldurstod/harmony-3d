@@ -36,7 +36,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
 	#nodes = new Set<Node>();
-	#camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+	#camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false, });
 	#material = new MeshBasicMaterial();
 	#fullScreenQuadMesh = new FullScreenQuad({ material: this.#material });
 	textureSize = DEFAULT_TEXTURE_SIZE;

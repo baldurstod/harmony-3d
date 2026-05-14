@@ -1748,8 +1748,16 @@ declare class Channel {
                        */
                       get quaternion(): quat;
                       get quaternionAsString(): string;
-                      set scale(scale: vec3);
+                      /**
+                       * @deprecated Please use `setScale` instead.
+                       */
+                      set scale(scale: vec3 | number);
+                      setScale(scale: vec3 | number): void;
+                      /**
+                       * @deprecated Please use `getScale` instead.
+                       */
                       get scale(): vec3;
+                      getScale(): vec3;
                       get worldMatrix(): mat4;
                       setVisible(visible?: boolean): void;
                       /**
@@ -2978,6 +2986,7 @@ declare class Channel {
                           #private;
                           constructor(params?: GridParameters);
                           buildContextMenu(): HarmonyMenuItemsDict;
+                          static getEntityName(): string;
                       }
 
                       export declare class GRIDCELL {
@@ -4579,7 +4588,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | string[] | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -6639,6 +6648,7 @@ declare class Channel {
                           parentChanged(parent: Entity): void;
                           getWorldPosition(vec?: vec3): vec3;
                           getWorldQuaternion(q?: quat): quat;
+                          getWorldScale(scale?: vec3): vec3;
                           get wireframe(): number;
                           displayBoneJoints(display: boolean): void;
                           setJointsRadius(radius: number): void;

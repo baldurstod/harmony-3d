@@ -552,8 +552,7 @@ enum RenderMode {
 async function renderMaterial(material: Material, materialsParams: DynamicParams, renderMode: RenderMode): Promise<ArrayBuffer | null> {
 	if (!scene) {
 		scene = new Scene();
-		camera = new Camera();
-		camera.position = [0, 0, 100];
+		camera = new Camera({ position: [0, 0, 100], autoResize: false, });
 		fullScreenQuadMesh = new FullScreenQuad();
 		scene.addChild(fullScreenQuadMesh);
 	}

@@ -28,7 +28,7 @@ const DIRECTIONS = [
 
 export class PointLightShadow extends LightShadow {
 	constructor(light: PointLight) {
-		super(light, new Camera({ nearPlane: 1, farPlane: 1000, verticalFov: 90 }));//TODO: adjust default variables
+		super(light, new Camera({ nearPlane: 1, farPlane: 1000, verticalFov: 90, autoResize: false, }));//TODO: adjust default variables
 		this.range = this.light.range;
 		this.viewPorts = [
 			vec4.fromValues(0.5, 0.5, 0.25, 0.5),

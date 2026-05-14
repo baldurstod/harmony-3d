@@ -9,7 +9,7 @@ const DEFAULT_SIZE = 256;
 
 export class RenderTargetViewer {
 	#scene = new Scene();
-	#camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1] });
+	#camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1], autoResize: false });
 	#plane = new Plane();
 	#renderTarget: RenderTarget;
 	#position = vec2.create();

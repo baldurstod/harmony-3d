@@ -34,7 +34,7 @@ const DEFAULT_LEFT = -1;
 const DEFAULT_RIGHT = 1;
 const DEFAULT_TOP = 1;
 const DEFAULT_BOTTOM = -1;
-const DEFAULT_AUTO_RESIZE = false;
+const DEFAULT_AUTO_RESIZE = true;
 
 const FrontVector = vec3.fromValues(0, 0, -1);
 

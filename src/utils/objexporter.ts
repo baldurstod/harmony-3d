@@ -14,7 +14,7 @@ export class ObjExporter {
 	#startIndex = 1;
 	#fullScreenQuadMesh = new FullScreenQuad();
 	scene = new Scene();
-	camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+	camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false });
 	constructor() {
 		if (ObjExporter.#instance) {
 			return ObjExporter.#instance;

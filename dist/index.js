@@ -3026,13 +3026,30 @@ class Entity {
     get quaternionAsString() {
         return `${this._quaternion[0].toFixed(2)} ${this._quaternion[1].toFixed(2)} ${this._quaternion[2].toFixed(2)} ${this._quaternion[3].toFixed(2)}`;
     }
+    /**
+     * @deprecated Please use `setScale` instead.
+     */
     set scale(scale) {
+        this.setScale(scale);
+    }
+    setScale(scale) {
         if (this.locked) {
             return;
         }
-        vec3.copy(this._scale, scale);
+        if (typeof scale === 'number') {
+            vec3.set(this._scale, scale, scale, scale);
+        }
+        else {
+            vec3.copy(this._scale, scale);
+        }
     }
+    /**
+     * @deprecated Please use `getScale` instead.
+     */
     get scale() {
+        return this.getScale();
+    }
+    getScale() {
         return vec3.clone(this._scale);
     }
     get worldMatrix() {
@@ -6754,7 +6771,7 @@ const DEFAULT_LEFT = -1;
 const DEFAULT_RIGHT = 1;
 const DEFAULT_TOP = 1;
 const DEFAULT_BOTTOM = -1;
-const DEFAULT_AUTO_RESIZE = false;
+const DEFAULT_AUTO_RESIZE = true;
 const FrontVector = vec3.fromValues(0, 0, -1);
 const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
@@ -10547,7 +10564,7 @@ class Cylinder extends Mesh {
         super(params);
         super.setParameters(params);
         this.#radius = params.radius ?? 1;
-        this.#height = params.height ?? 1;
+        this.#height = params.height ?? 10;
         this.#segments = params.segments ?? 24;
         this.#hasCap = params.hasCap ?? true;
         this.#updateGeometry();
@@ -12056,8 +12073,7 @@ var RenderMode$1;
 async function renderMaterial(material, materialsParams, renderMode) {
     if (!scene$1) {
         scene$1 = new Scene();
-        camera$2 = new Camera();
-        camera$2.position = [0, 0, 100];
+        camera$2 = new Camera({ position: [0, 0, 100], autoResize: false, });
         fullScreenQuadMesh = new FullScreenQuad();
         scene$1.addChild(fullScreenQuadMesh);
     }
@@ -15693,7 +15709,7 @@ class LightShadow {
 
 class SpotLightShadow extends LightShadow {
     constructor(light) {
-        super(light, new Camera()); //TODO: adjust default variables
+        super(light, new Camera({ autoResize: false, })); //TODO: adjust default variables
         const textureSize = this.textureSize;
         this.aspect = textureSize[0] / textureSize[1];
         this.angle = this.light.angle;
@@ -15899,7 +15915,7 @@ const DIRECTIONS = [
 ];
 class PointLightShadow extends LightShadow {
     constructor(light) {
-        super(light, new Camera({ nearPlane: 1, farPlane: 1000, verticalFov: 90 })); //TODO: adjust default variables
+        super(light, new Camera({ nearPlane: 1, farPlane: 1000, verticalFov: 90, autoResize: false, })); //TODO: adjust default variables
         this.range = this.light.range;
         this.viewPorts = [
             vec4.fromValues(0.5, 0.5, 0.25, 0.5),
@@ -17696,6 +17712,7 @@ class Kv3Value {
                 flagString = '<unknown flag ' + this.#flag + '>';
             }
         }
+        //const linePrefix2 = linePrefix + '\t';
         switch (this.#type) {
             case Kv3Type.Null:
                 return flagString + 'null';
@@ -17712,7 +17729,7 @@ class Kv3Value {
             return `\n${linePrefix}[\n${arrayString}${linePrefix}]`;
             */
             case Kv3Type.Array:
-                return formatArray(this.#value);
+                return formatArray(this.#value /*, linePrefix*/);
             case Kv3Type.TypedArray:
             case Kv3Type.TypedArray2:
             case Kv3Type.TypedArray3:
@@ -17738,7 +17755,7 @@ function formatTypedArray(type, subType, flagString, arr, linePrefix) {
             case Kv3Type.UnsignedInt32:
             case Kv3Type.UnsignedInt64:
                 //typedArrayString += flagString + value + ', ';
-                typedArrayString += flagString + value;
+                typedArrayString += flagString + String(value);
                 if (i == m) {
                     typedArrayString += ' ';
                 }
@@ -17750,7 +17767,7 @@ function formatTypedArray(type, subType, flagString, arr, linePrefix) {
             case Kv3Type.TypedArray:
             case Kv3Type.TypedArray2:
             case Kv3Type.TypedArray3:
-                typedArrayString += linePrefix2 + formatArray(value) + ',\n';
+                typedArrayString += linePrefix2 + formatArray(value /*, linePrefix2*/) + ',\n';
                 break;
             case Kv3Type.String:
                 typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
@@ -17789,7 +17806,8 @@ function formatTypedArray(type, subType, flagString, arr, linePrefix) {
             return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
     }
 }
-function formatArray(arr, linePrefix) {
+function formatArray(arr /*, linePrefix: string*/) {
+    //const linePrefix2 = linePrefix + '\t';
     let typedArrayString = '';
     for (let i = 0, l = arr.length, m = l - 1; i < l; i++) {
         const value = arr[i];
@@ -17940,6 +17958,7 @@ class Kv3Element {
     }
     getSubValue(path) {
         const arr = path.split('.');
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let data = this;
         for (const subPath of arr) {
             if (data.isKv3Value) {
@@ -21064,8 +21083,9 @@ class SourceBinaryLoader {
         });
         return promise;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     parse(repository, fileName, arrayBuffer) {
-        throw 'override me';
+        throw new Error('override me');
     }
 }
 
@@ -22634,6 +22654,45 @@ class MapEntityConnection {
     }
 }
 
+/**
+ * Update buffers vertice count.
+ */
+//const g1RemoveMe = 1;
+//const g2RemoveMe = 1;
+/*
+function GetEulerAngles(q: quat) {
+    const x = q[0];
+    const y = q[1];
+    const z = q[2];
+    const w = q[3];
+    return calculate(x, y, z, w);
+}
+*/
+/*
+function calculate(qx: number, qy: number, qz: number, qw: number): vec3 {
+    //const qw2 = qw * qw;
+    const qx2 = qx * qx;
+    const qy2 = qy * qy;
+    const qz2 = qz * qz;
+    const test = qx * qy + qz * qw;
+    if (test > 0.499) {
+        const h = 2 * Math.atan2(qx, qw);
+        const a = Math.PI * 0.5;
+        const b = 0;
+        return [h, a, b];
+    }
+    if (test < -0.499) {
+        const h = 2 * Math.atan2(qx, qw);
+        const a = Math.PI * 0.5;
+        const b = 0;
+        return [h, a, b];
+    }
+    const h = Math.atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy2 - 2 * qz2);
+    const a = Math.asin(2 * qx * qy + 2 * qz * qw);
+    const b = Math.atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx2 - 2 * qz2);
+    return [h, a, b];
+}
+*/
 //-----------------------------------------------------------------------------
 // Purpose: returns array of animations and weightings for a sequence based on current pose parameters
 //-----------------------------------------------------------------------------
@@ -22769,7 +22828,7 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
     const pos2 = CalcPoseSingle_pos2$1; //[];//vec3.create();//TODOv2: optimize (see source)
     const q2 = CalcPoseSingle_q2$1; //[];//quat.create();//TODOv2: optimize (see source)
     const pos3 = CalcPoseSingle_pos3$1; //[];//vec3.create();//TODOv2: optimize (see source)
-    const q3 = CalcPoseSingle_q3$1;
+    const q3 = CalcPoseSingle_q3$1; //[];//quat.create();//TODOv2: optimize (see source)
     for (let i = 0; i < SOURCE_MODEL_MAX_BONES$1; ++i) {
         vec3.zero(pos2[i]);
         quat.identity(q2[i]);
@@ -22907,7 +22966,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
     if (!animdesc) {
         return;
     }
-    pStudioHdr.getBone(0);
+    //const pbone = pStudioHdr.getBone(0);
     //const mstudiolinearbone_t *pLinearBones = pStudioHdr->pLinearBones();TODOV2
     let pLinearBones;
     const fFrame = cycle * (animdesc.numframes - 1);
@@ -22918,6 +22977,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
     pStudioHdr.getAnimFrame(dynamicProp, animdesc, iFrame);
     //console.log(iFrame);
     let iLocalFrame = iFrame;
+    //let flStall;
     const panims = animdesc.pAnim(iLocalFrame /*, flStall*/);
     //animdesc.mdl.getAnimFrame(animdesc, 31);
     //const pweight = seqdesc.pBoneweight(0);
@@ -23005,7 +23065,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
     //console.error(animdesc.numlocalhierarchy);
     if (animdesc.localHierarchy.length) {
         const boneToWorld = allocBoneToWorld(); //TODOv2
-        let boneComputed = new Map();
+        const boneComputed = new Map();
         for (const pHierarchy of animdesc.localHierarchy) {
             //const pHierarchy = animdesc.pHierarchy(i);
             {
@@ -23048,7 +23108,7 @@ function _CalcBoneQuaternion(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSca
         }
         return;
     }
-    panim.animValuePtrRot;
+    //const pValuesPtr = panim.animValuePtrRot;
     if (s > 0.001) {
         const angle1 = vec3.create(), angle2 = vec3.create(); // TODO: optimize
         const q1 = quat.create();
@@ -23123,7 +23183,7 @@ function _CalcBonePosition(pStudioHdr, frame, s, basePos, baseBoneScale, panim, 
         }
         return;
     }
-    panim.animValuePtrPos;
+    //const pValuesPtr = panim.animValuePtrPos;
     /*
         mstudioanim_valueptr_t *pPosV = panim.pPosV();
         int					j;
@@ -23207,6 +23267,7 @@ function QuaternionAlign(p, q, qt) {
         }
     }
 }
+/* eslint-enable @typescript-eslint/no-unused-vars */
 function PoseIsAllZeros(pStudioHdr, sequence, seqdesc, i0, i1) {
     // remove 'zero' positional blends
     //const baseanim = pStudioHdr.iRelativeAnim(sequence, seqdesc.getBlend(i0 , i1));//TODOv2
@@ -23609,6 +23670,7 @@ function QuaternionScale(p, t, q) {
     int boneMask)*/
 function BlendBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMask) {
     const q3 = quat.create();
+    //const pSeqGroup = null;
     /*virtualmodel_t *pVModel = pStudioHdr.GetVirtualModel();TODO
     const virtualgroup_t *pSeqGroup = NULL;
     if (pVModel)
@@ -23693,9 +23755,9 @@ function QuaternionSlerp(p, q, t, qt) {
 //void QuaternionSlerpNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
 function QuaternionSlerpNoAlign(p, q, t, qt) {
     //Assert(s_bMathlibInitialized);
-    let omega, cosom, sinom, sclp, sclq;
+    let omega, sinom, sclp, sclq;
     // 0.0 returns p, 1.0 return q.
-    cosom = p[0] * q[0] + p[1] * q[1] + p[2] * q[2] + p[3] * q[3];
+    const cosom = p[0] * q[0] + p[1] * q[1] + p[2] * q[2] + p[3] * q[3];
     if ((1.0 + cosom) > 0.000001) {
         if ((1.0 - cosom) > 0.000001) {
             omega = Math.acos(cosom);
@@ -23863,6 +23925,7 @@ iNewParent, //int iNewParent,
 cycle, //float cycle,
 iFrame, //int iFrame,
 flFraq, //float flFraq,
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 boneMask) {
     const localPos = vec3.create(); //Vector localPos;
     const localQ = quat.create(); //Quaternion localQ;
@@ -41422,6 +41485,7 @@ function NoiseSIMD(x, y, z) {
             SubFloat( lattice110, i ) = GetLatticePointValue( xi+1,yi+1,zi );	\
             SubFloat( lattice111, i ) = GetLatticePointValue( xi+1,yi+1,zi+1 );	\
         }*/
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     function DOPASS(i) {
         /*unsigned int xi = SubInt( x_idx, i );
         unsigned int yi = SubInt( y_idx, i );
@@ -67261,7 +67325,7 @@ class NodeImageEditor extends MyEventTarget {
     #variables = new Map();
     #scene = new Scene();
     #nodes = new Set();
-    #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+    #camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false, });
     #material = new MeshBasicMaterial();
     #fullScreenQuadMesh = new FullScreenQuad({ material: this.#material });
     textureSize = DEFAULT_TEXTURE_SIZE;
@@ -70400,6 +70464,9 @@ class Grid extends Mesh {
                 } } }
         });
     }
+    static getEntityName() {
+        return 'Grid';
+    }
 }
 
 vec3.create();
@@ -70536,6 +70603,9 @@ class SkeletonHelper extends Entity {
     }
     getWorldQuaternion(q = quat.create()) {
         return quat.identity(q);
+    }
+    getWorldScale(scale = vec3.create()) {
+        return vec3.copy(scale, this._scale);
     }
     #update() {
         if (!this.#skeleton) {
@@ -78985,7 +79055,7 @@ const EXTRA_LOD_SIGMA = [0.125, 0.215, 0.35, 0.446, 0.526, 0.582];
 // The maximum length of the blur for loop. Smaller sigmas will use fewer
 // samples and exit early, but not recompile the shader.
 const MAX_SAMPLES = 20;
-const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1) });
+const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1), autoResize: false });
 const clearColor$1 = vec4.create();
 // Golden Ratio
 const PHI = (1 + Math.sqrt(5)) / 2;
@@ -79190,7 +79260,7 @@ class RemGenerator {
     #sceneToCubeUV(scene, near, far, cubeUVRenderTarget) {
         const fov = 90;
         const aspect = 1;
-        const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far });
+        const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far, autoResize: false });
         const upSign = [1, -1, 1, 1, 1, 1];
         const forwardSign = [1, 1, 1, -1, -1, -1];
         const renderer = this.#renderer;
@@ -79880,7 +79950,7 @@ class ObjExporter {
     #startIndex = 1;
     #fullScreenQuadMesh = new FullScreenQuad();
     scene = new Scene();
-    camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+    camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false });
     constructor() {
         if (ObjExporter.#instance) {
             return ObjExporter.#instance;
@@ -80034,7 +80104,7 @@ class ObjExporter {
 const DEFAULT_SIZE = 256;
 class RenderTargetViewer {
     #scene = new Scene();
-    #camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1] });
+    #camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1], autoResize: false });
     #plane = new Plane();
     #renderTarget;
     #position = vec2.create();

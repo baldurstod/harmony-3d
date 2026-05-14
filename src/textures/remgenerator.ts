@@ -28,7 +28,7 @@ const EXTRA_LOD_SIGMA = [0.125, 0.215, 0.35, 0.446, 0.526, 0.582];
 // samples and exit early, but not recompile the shader.
 const MAX_SAMPLES = 20;
 
-const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1) });
+const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1), autoResize: false });
 const clearColor = vec4.create();
 
 // Golden Ratio
@@ -286,7 +286,7 @@ export class RemGenerator {
 
 		const fov = 90;
 		const aspect = 1;
-		const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far });
+		const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far, autoResize: false });
 		const upSign = [1, - 1, 1, 1, 1, 1];
 		const forwardSign = [1, 1, 1, - 1, - 1, - 1];
 		const renderer = this.#renderer;
