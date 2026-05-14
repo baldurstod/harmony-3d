@@ -103,6 +103,10 @@ export class SkeletonHelper extends Entity {
 		return quat.identity(q);
 	}
 
+	getWorldScale(scale = vec3.create()): vec3 {
+		return vec3.copy(scale, this._scale);
+	}
+
 	#update() {
 		if (!this.#skeleton) {
 			return;
