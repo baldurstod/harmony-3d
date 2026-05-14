@@ -28,7 +28,7 @@ export class Cylinder extends Mesh {
 		super(params);
 		super.setParameters(params);
 		this.#radius = params.radius ?? 1;
-		this.#height = params.height ?? 1;
+		this.#height = params.height ?? 10;
 		this.#segments = params.segments ?? 24;
 		this.#hasCap = params.hasCap ?? true;
 		this.#updateGeometry();
