@@ -316,14 +316,33 @@ export class Entity {
 		return `${this._quaternion[0].toFixed(2)} ${this._quaternion[1].toFixed(2)} ${this._quaternion[2].toFixed(2)} ${this._quaternion[3].toFixed(2)}`;
 	}
 
-	set scale(scale) {
+	/**
+	 * @deprecated Please use `setScale` instead.
+	 */
+	set scale(scale: vec3 | number) {
+		this.setScale(scale);
+	}
+
+	setScale(scale: vec3 | number): void {
 		if (this.locked) {
 			return;
 		}
-		vec3.copy(this._scale, scale);
+
+		if (typeof scale === 'number') {
+			vec3.set(this._scale, scale, scale, scale);
+		} else {
+			vec3.copy(this._scale, scale);
+		}
 	}
 
+	/**
+	 * @deprecated Please use `getScale` instead.
+	 */
 	get scale(): vec3 {
+		return this.getScale();
+	}
+
+	getScale(): vec3 {
 		return vec3.clone(this._scale);
 	}
 
