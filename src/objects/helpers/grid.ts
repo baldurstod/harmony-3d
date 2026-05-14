@@ -37,4 +37,8 @@ export class Grid extends Mesh {
 			spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) { this.#spacing = (this.material as GridMaterial).spacing = Number(spacing); } } }
 		});
 	}
+
+	static getEntityName(): string {
+		return 'Grid';
+	}
 }
