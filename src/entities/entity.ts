@@ -249,9 +249,10 @@ export class Entity {
 		if (this._parent) {
 			this._parent.getWorldOrientation(tempQuat);
 			quat.invert(tempQuat, tempQuat);
-			quat.mul(this._quaternion, tempQuat, quaternion);
+			quat.mul(tempQuat, tempQuat, quaternion);
+			this.setOrientation(tempQuat);
 		} else {
-			quat.copy(this._quaternion, quaternion);
+			this.setOrientation(quaternion);
 		}
 	}
 
