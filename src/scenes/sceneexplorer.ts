@@ -76,7 +76,7 @@ export class SceneExplorer {
 	#scene?: Scene;
 	#selectedEntity: Entity | null = null;
 	#manipulator!: Manipulator;
-	#skeletonHelper = new SkeletonHelper({ visible: false });
+	#skeletonHelper = new SkeletonHelper({ visible: false, hideInExplorer: true, });
 	#htmlProperties!: HTMLElement;
 	#htmlFileExplorer!: HTMLElement;
 	#htmlMaterialEditor!: HTMLElement;

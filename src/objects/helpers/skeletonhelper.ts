@@ -5,7 +5,6 @@ import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../grap
 import { HasSkeleton } from '../../interfaces/hasskeleton';
 import { LineMaterial } from '../../materials/linematerial';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
-import { MeshPhongMaterial } from '../../materials/meshphongmaterial';
 import { Cylinder } from '../../primitives/cylinder';
 import { Line } from '../../primitives/line';
 import { Sphere } from '../../primitives/sphere';
@@ -21,6 +20,7 @@ const tempQuat = quat.create();
 
 export type SkeletonHelperParameters = EntityParameters & {
 	skeleton?: Skeleton,
+	hideInExplorer?: boolean,
 };
 
 const BONE_RADIUS = 0.5;
@@ -45,7 +45,7 @@ export class SkeletonHelper extends Entity {
 	constructor(parameters: SkeletonHelperParameters = {}) {
 		super(parameters);
 
-		this.hideInExplorer = true;
+		this.hideInExplorer = parameters.hideInExplorer ?? false;
 		this.#skeleton = parameters?.skeleton ?? null;
 		this.#raycaster = new Raycaster();
 		this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
@@ -285,5 +285,9 @@ export class SkeletonHelper extends Entity {
 		this.#clearSkeleton();
 		this.#lineMaterial.removeUser(this);
 		this.#highlitLineMaterial.removeUser(this);
+	}
+
+	static getEntityName(): string {
+		return 'SkeletonHelper';
 	}
 }
