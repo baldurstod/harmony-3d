@@ -344,10 +344,24 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
-		return Object.assign(super.buildContextMenu(), this.isAnyLocked() ? {
-			Bone_1: null,
-			unlock: { i18n: '#unlock', f: (entity: Bone) => entity.lockAll(false) },
-		} : null);
+		return Object.assign(super.buildContextMenu(),
+			{
+				Bone_1: null,
+			},
+			this.isAnyLocked() ? {
+				unlock: { i18n: '#unlock', f: (entity: Bone) => entity.lockAll(false) },
+			} : null,
+			{
+				resetQuat: { i18n: '#reset_orientation', f: (entity: Bone) => entity.setOrientation(entity._initialQuaternion) },
+				resetPos: { i18n: '#reset_position', f: (entity: Bone) => entity.setPosition(entity._initialPosition) },
+				resetBone: {
+					i18n: '#reset_bone', f: (entity: Bone) => {
+						entity.setOrientation(entity._initialQuaternion);
+						entity.setPosition(entity._initialPosition);
+					}
+				},
+			},
+		);
 	}
 
 	toJSON() {
