@@ -87,6 +87,7 @@ export class SceneExplorer {
 	#htmlContextMenu!: HTMLHarmonyMenuElement;
 	#htmlTypeFilter!: HTMLSelectElement;
 	#htmlDisplayBoneJoints!: HTMLElement;
+	#htmlDisplayBoneAsLines!: HTMLElement;
 	#shadowRoot!: ShadowRoot;
 	#htmlName!: HTMLElement;
 	#htmlId!: HTMLElement;
@@ -325,6 +326,7 @@ export class SceneExplorer {
 							const checked = (event.target as HTMLInputElement).checked;
 							this.#skeletonHelper.setVisible(checked);
 							display(this.#htmlDisplayBoneJoints, checked);
+							display(this.#htmlDisplayBoneAsLines, checked);
 						}
 					}
 				}),
@@ -347,6 +349,22 @@ export class SceneExplorer {
 				}),
 				createElement('span', {
 					i18n: '#display_bone_joints',
+				}),
+			]
+		});
+
+		this.#htmlDisplayBoneAsLines = createElement('label', {
+			parent: this.#htmlHeader,
+			hidden: true,
+			childs: [
+				createElement('input', {
+					type: 'checkbox',
+					events: {
+						change: (event: Event) => SkeletonHelper.displayBonesAsLines((event.target as HTMLInputElement).checked)
+					}
+				}),
+				createElement('span', {
+					i18n: '#display_bones_as_lines',
 				}),
 			]
 		});

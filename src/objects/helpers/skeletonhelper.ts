@@ -12,6 +12,7 @@ import { Raycaster } from '../../raycasting/raycaster';
 import { Scene } from '../../scenes/scene';
 import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
 import { Bone } from '../bone';
+import { Group } from '../group';
 import { Skeleton } from '../skeleton';
 
 const tempVec3 = vec3.create();
@@ -26,6 +27,7 @@ export type SkeletonHelperParameters = EntityParameters & {
 const BONE_RADIUS = 0.5;
 
 export class SkeletonHelper extends Entity {
+	static readonly #helpers = new Set<SkeletonHelper>();
 	#skeleton: Skeleton | null = null;
 	readonly #lines = new Map<Bone, Line>();
 	readonly #bones = new Map<Bone, Cylinder>();
@@ -35,6 +37,8 @@ export class SkeletonHelper extends Entity {
 	readonly #boneTipMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
 	readonly #boneMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [27 / 255, 106 / 255, 0, 1], });
 	readonly #jointMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 235 / 255, 0, 1], });
+	readonly #lineGroup = new Group({ name: 'lines', parent: this, visible: false });
+	readonly #bonesGroup = new Group({ name: 'bones', parent: this, });
 	#raycaster;
 	#highlitLine?: Line;
 	#boneStart: Sphere;
@@ -44,13 +48,12 @@ export class SkeletonHelper extends Entity {
 
 	constructor(parameters: SkeletonHelperParameters = {}) {
 		super(parameters);
-
+		SkeletonHelper.#helpers.add(this);
 		this.hideInExplorer = parameters.hideInExplorer ?? false;
 		this.#skeleton = parameters?.skeleton ?? null;
 		this.#raycaster = new Raycaster();
-		this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
-		this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
-		this.addChilds(this.#boneStart, this.#boneEnd);
+		this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
+		this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
 
 		this.#initListeners();
 	}
@@ -118,15 +121,14 @@ export class SkeletonHelper extends Entity {
 			let boneSphere = this.#joints.get(bone);
 
 			if (!boneLine) {
-				boneLine = new Line({ material: this.#lineMaterial, parent: this });
+				boneLine = new Line({ material: this.#lineMaterial, parent: this.#lineGroup });
 				boneLine.properties.setObject('bone', bone);
 				this.#lines.set(bone, boneLine);
-				this.addChild(boneLine);
 
-				boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this, radius: BONE_RADIUS, });
+				boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS, });
 				this.#bones.set(bone, boneCylinder);
 
-				boneSphere = new Sphere({ material: this.#jointMaterial, parent: this, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
+				boneSphere = new Sphere({ material: this.#jointMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
 				this.#joints.set(bone, boneSphere);
 			}
 
@@ -210,9 +212,16 @@ export class SkeletonHelper extends Entity {
 	}
 
 	displayBoneJoints(display: boolean) {
-		this.#boneStart.setVisible(this.#highlitLine && display);
-		this.#boneEnd.setVisible(this.#highlitLine && display);
+		this.#boneStart.setVisible(this.#highlitLine && display && undefined);
+		this.#boneEnd.setVisible(this.#highlitLine && display && undefined);
 		this.#displayJoints = display;
+	}
+
+	static displayBonesAsLines(showLines: boolean): void {
+		for (const helper of SkeletonHelper.#helpers) {
+			helper.#lineGroup.setVisible(showLines && undefined);
+			helper.#bonesGroup.setVisible((!showLines) && undefined);
+		}
 	}
 
 	setJointsRadius(radius: number) {
@@ -272,8 +281,8 @@ export class SkeletonHelper extends Entity {
 			line.setMaterial(this.#highlitLineMaterial);
 			this.#boneStart.setPosition(line.getStart(tempVec3));
 			this.#boneEnd.setPosition(line.getEnd(tempVec3));
-			this.#boneStart.setVisible(this.#displayJoints);
-			this.#boneEnd.setVisible(this.#displayJoints);
+			this.#boneStart.setVisible(this.#displayJoints && undefined);
+			this.#boneEnd.setVisible(this.#displayJoints && undefined);
 
 			this.#boneStart.properties.set('bone', line.properties.get('boneParent')!);
 			this.#boneEnd.properties.set('bone', line.properties.get('bone')!);
