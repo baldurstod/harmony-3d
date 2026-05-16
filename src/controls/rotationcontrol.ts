@@ -11,7 +11,6 @@ const tempQuat = quat.create();
 export type RotationControlParameters = EntityParameters & {
 	axis?: vec3;
 	speed?: number;
-
 };
 
 export class RotationControl extends Entity {
@@ -99,5 +98,9 @@ export class RotationControl extends Entity {
 			rotation_axis: { i18n: '#rotation_axis', f: () => { const v = prompt('Rotation axis', this.axis.join(' ')); if (v !== null) { this.axis = stringToVec3(v); } } },
 			rotation_speed: { i18n: '#rotation_speed', f: () => { const s = prompt('Rotation speed', String(this.rotationSpeed * RAD_TO_DEG)); if (s !== null) { this.rotationSpeed = Number(s) * DEG_TO_RAD; } } },
 		});
+	}
+
+	static override getEntityName(): string {
+		return 'RotationControl';
 	}
 }
