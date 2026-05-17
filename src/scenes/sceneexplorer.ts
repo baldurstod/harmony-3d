@@ -584,19 +584,10 @@ function initEntitySubmenu() {
 			i18n: '#control', submenu:
 				[
 					{
-						i18n: '#rotation_control', f: (entity: Entity) => {
-							new RotationControl({ parent: entity });
-						}
+						i18n: '#rotation_control', f: (entity: Entity) => new RotationControl({ parent: entity }),
 					},
 					{
-						i18n: '#translation_control', f: (entity: Entity) => {
-							const control = new TranslationControl();
-							const parent = entity.parent;
-							if (parent) {
-								parent.addChild(control);
-							}
-							control.addChild(entity);
-						}
+						i18n: '#translation_control', f: (entity: Entity) => new TranslationControl({ parent: entity }),
 					},
 				]
 		},
