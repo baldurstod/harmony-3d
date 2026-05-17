@@ -24,7 +24,7 @@ export type BoneParameters = EntityParameters & {
 };
 
 export class Bone extends Entity implements Lockable {
-	isBone = true;
+	isBone = true as const;
 	isLockable: true = true;
 	#boneId: number;
 	#poseToBone = mat4.create();

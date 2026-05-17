@@ -10,15 +10,16 @@ import { BoundingBox } from '../math/boundingbox';
 import { Texture } from '../textures/texture';
 import { phonyWebGPUTextureDescriptor, TextureManager } from '../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../webgl/constants';
+import { Attachment } from './attachment';
 import { Bone } from './bone';
 
-const identityMatrix = mat4.create();
 export class Skeleton extends Entity {
 	isSkeleton = true;
-	#bonesByName = new Map<string, Bone>();
-	#rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
-	_bones: Bone[] = [];//TODOv3: rename set private
-	_dirty = true;
+	readonly #bonesByName = new Map<string, Bone>();
+	readonly #rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
+	readonly _bones: Bone[] = [];//TODOv3: rename set private
+	readonly #attachments: Attachment[] = [];
+	readonly #attachmentsByName = new Map<string, Attachment>();
 	readonly imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
 	#texture!: Texture;
 	lastComputed = 0;
@@ -36,30 +37,25 @@ export class Skeleton extends Entity {
 		this.dirty();
 	}
 
-	dirty() {
-		this._dirty = true;
+	dirty(): void {
 		for (const bone of this._bones) {
 			bone.dirty = true;
 		}
-		/*if (this._bones[0]) {
-			this._bones[0].dirty = true;
-		}*/
 	}
 
-	getTexture() {
+	getTexture(): Texture {
 		return this.#texture;
 	}
 
-	#createBoneMatrixArray() {
+	#createBoneMatrixArray(): void {
 		//this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
 		mat4.identity(this.imgData);
-		const index = 0;
 		for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
 			this.imgData.copyWithin(i * 16, 0, 16);
 		}
 	}
 
-	#createBoneMatrixTexture() {
+	#createBoneMatrixTexture(): void {
 		this.#texture = TextureManager.createTexture({
 			// Notice: this texture is not used in WebGPU
 			webgpuDescriptor: phonyWebGPUTextureDescriptor,
@@ -71,7 +67,7 @@ export class Skeleton extends Entity {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#updateBoneMatrixTexture() {//removeme
+	#updateBoneMatrixTexture(): void {//removeme
 		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (Graphics.isWebGL2) {
@@ -82,7 +78,7 @@ export class Skeleton extends Entity {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setBonesMatrix() {
+	setBonesMatrix(): void {
 		let index = 0;
 		const bones = this._bones;
 		const imgData = this.imgData;
@@ -107,7 +103,7 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	get position() {
+	get position(): vec3 {
 		if (this._parent) {
 			return vec3.clone(this._parent._position);
 		} else {
@@ -115,11 +111,13 @@ export class Skeleton extends Entity {
 		}
 	}
 
+	// TODO: deprecate
 	set quaternion(quaternion) {
-		super.quaternion = quaternion;
+		super.setOrientation(quaternion);
 	}
 
-	get quaternion() {
+	/// TODO: deprecate
+	get quaternion(): quat {
 		if (this._parent) {
 			return quat.clone(this._parent._quaternion);
 		} else {
@@ -129,9 +127,9 @@ export class Skeleton extends Entity {
 
 	addBone(boneId: number, boneName: string): Bone {
 		const boneNameLowerCase = boneName.toLowerCase();
-		let bone = this.#bonesByName.get(boneNameLowerCase);
+		const bone = this.#bonesByName.get(boneNameLowerCase);
 		if (!bone) {
-			const bone = new Bone({ name: boneName, boneId: boneId, skeleton: this });
+			const bone = new Bone({ name: boneName, boneId, skeleton: this });
 			//this.addChild(bone);
 			this._bones[boneId] = bone;
 			this.#bonesByName.set(boneNameLowerCase, bone);
@@ -142,7 +140,21 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	async setParentSkeleton(skeleton: Skeleton | null) {
+	addAttachment(attachmentId: number, attachmentName: string): Attachment {
+		const attachmentNameLowerCase = attachmentName.toLowerCase();
+		const attachment = this.#attachmentsByName.get(attachmentNameLowerCase);
+		if (!attachment) {
+			const attachment = new Attachment({ name: attachmentName, boneId: attachmentId, skeleton: this });
+			this.#attachments[attachmentId] = attachment;
+			this.#attachmentsByName.set(attachmentNameLowerCase, attachment);
+			return attachment;
+		} else {
+			this.#attachments[attachmentId] = attachment;
+			return attachment;
+		}
+	}
+
+	async setParentSkeleton(skeleton: Skeleton | null): Promise<void> {
 		await this.loadedPromise;
 		if (skeleton) {
 			await skeleton.loadedPromise;
@@ -153,45 +165,45 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	getBoneByName(boneName: string) {
+	getBoneByName(boneName: string): Bone | undefined {
 		return this.#bonesByName.get(boneName.toLowerCase());
 	}
 
-	getBoneById(boneId: number) {
+	getBoneById(boneId: number): Bone | undefined {
 		return this._bones[boneId];
 	}
 
-	toString() {
+	toString(): string {
 		return 'Skeleton ' + super.toString();
 	}
 
-	getBoundingBox(boundingBox = new BoundingBox()) {
+	getBoundingBox(boundingBox = new BoundingBox()): BoundingBox {
 		boundingBox.reset();
 		return boundingBox;
 	}
 
-	get bones() {
+	get bones(): Bone[] {
 		return this._bones;
 	}
 
-	reset() {
+	reset(): void {
 		for (const bone of this._bones) {
 			bone.reset();
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		const jBones = [];
-		const bones = this._bones;
-		for (let i = 0; i < bones.length; ++i) {
-			jBones.push(bones[i]?.id);
+		for (const bone of this._bones) {
+			jBones.push(bone.id);
 		}
 		json.bones = jBones;
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Skeleton> {
 		const entity = new Skeleton({ name: json.name as string });
 		let loadedPromiseResolve: (value: any) => void;
 		entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
@@ -211,12 +223,12 @@ export class Skeleton extends Entity {
 		return entity;
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#texture.dispose();
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Skeleton';
 	}
 }

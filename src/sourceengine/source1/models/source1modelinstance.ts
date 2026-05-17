@@ -20,6 +20,7 @@ import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { vec3RandomBox } from '../../../math/functions';
 import { Hitbox } from '../../../misc/hitbox';
+import { Attachment } from '../../../objects/attachment';
 import { Bone } from '../../../objects/bone';
 import { Mesh } from '../../../objects/mesh';
 import { SkeletalMesh } from '../../../objects/skeletalmesh';
@@ -602,7 +603,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		const localMat3 = mat3.create();//todo: optimize
 		if (attachments) {
 			for (const attachment of attachments) {
-				const attachmentBone = new Bone({ name: attachment.name });
+				const attachmentBone = new Attachment({ name: attachment.name });
 				localMat3[0] = attachment.local[0];
 				localMat3[3] = attachment.local[1];
 				localMat3[6] = attachment.local[2];
