@@ -186,6 +186,10 @@ export class Skeleton extends Entity {
 		return this._bones;
 	}
 
+	getAttachments(): Attachment[] {
+		return [...this.#attachments];
+	}
+
 	reset(): void {
 		for (const bone of this._bones) {
 			bone.reset();

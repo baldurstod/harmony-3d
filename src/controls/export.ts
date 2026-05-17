@@ -1,5 +1,6 @@
 export { CameraControl } from './cameracontrol';
 export { FirstPersonControl } from './firstpersoncontrol';
-export { OrbitControl, MOUSE } from './orbitcontrol';
+export { MOUSE, OrbitControl } from './orbitcontrol';
+export { RetargetControl } from './retargetcontrol';
 export { RotationControl } from './rotationcontrol';
 export { TranslationControl } from './translationcontrol';
