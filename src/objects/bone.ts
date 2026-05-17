@@ -385,8 +385,16 @@ export class Bone extends Entity implements Lockable {
 		this.boneId = json.boneid;
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Bone';
+	}
+
+	override is(s: string): boolean {
+		if (s == 'Bone') {
+			return true;
+		} else {
+			return super.is(s);
+		}
 	}
 }
 registerEntity(Bone);
