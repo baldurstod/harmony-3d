@@ -318,6 +318,12 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
+	static showAll(): void {
+		for (const [, a] of SceneExplorerEntity.#entitiesHTML) {
+			show(a);
+		}
+	}
+
 	#updateVisibility() {
 		if (this.#entity?.isVisible()) {
 			this.#htmlVisible.innerHTML = visibilityOnSVG;
@@ -341,13 +347,13 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	expand() {
+	expand(visibleEntities?: Set<Entity>): void {
 		show(this.#htmlChilds);
-		this.#expandChilds();
+		this.#expandChilds(visibleEntities);
 		//this.select();
 	}
 
-	#expandChilds() {
+	#expandChilds(visibleEntities?: Set<Entity>): void {
 		this.#htmlChilds.innerText = '';
 		const entity = this.#entity;
 
@@ -358,6 +364,13 @@ export class SceneExplorerEntity extends HTMLElement {
 		for (const child of entity.children) {
 			const childHtml = SceneExplorerEntity.getEntityElement(child);
 			if (childHtml) {
+				if (visibleEntities) {
+					if (visibleEntities.has(child)) {
+						childHtml.expand(visibleEntities);
+					} else {
+						hide(childHtml);
+					}
+				}
 				this.#htmlChilds.append(childHtml);
 			}
 		}

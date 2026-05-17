@@ -161,10 +161,10 @@ export class SceneExplorer {
 		return this.#scene;
 	}
 
-	#refreshScene() {
+	#refreshScene(visibleEntities?: Set<Entity>) {
 		if (this.#scene) {
 			this.#htmlScene.innerText = '';
-			this.#htmlScene.append(this.#createEntityElement(this.#scene, true)!);
+			this.#htmlScene.append(this.#createEntityElement(this.#scene, true, visibleEntities)!);
 		}
 	}
 
@@ -400,20 +400,31 @@ export class SceneExplorer {
 
 	#applyFilter() {
 		if (this.#isVisible) {
+			SceneExplorerEntity.showAll();
 			if (this.#filterName == '' && this.#filterType == '') {
 				this.#refreshScene();
 			} else {
+				const filteredEntities = new Set<Entity>();
+
+				const addEntity = (entity: Entity): void => {
+					if (!filteredEntities.has(entity)) { // Prevent a potential recursion loop
+						filteredEntities.add(entity);
+						if (entity.parent) {
+							addEntity(entity.parent);
+						}
+					}
+				}
+
 				if (this.#scene) {
 					const allEntities = this.#scene.getChildList();
 					this.#htmlScene.innerText = '';
 					for (const entity of allEntities) {
 						if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
-							const htmlEntityElement = this.#createEntityElement(entity);
-							if (htmlEntityElement) {
-								this.#htmlScene.append();
-							}
+							addEntity(entity);
 						}
 					}
+
+					this.#refreshScene(filteredEntities);
 				}
 			}
 		}
@@ -453,11 +464,11 @@ export class SceneExplorer {
 		this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale/*, htmlVisibleLabel, this.#htmlVisible*/);
 	}
 
-	#createEntityElement(entity: Entity, createExpanded = false) {
+	#createEntityElement(entity: Entity, createExpanded: boolean, visibleEntities?: Set<Entity>) {
 		const htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
 
 		if (createExpanded) {
-			htmlEntityElement?.expand();
+			htmlEntityElement?.expand(visibleEntities);
 		}
 		return htmlEntityElement;
 	}
