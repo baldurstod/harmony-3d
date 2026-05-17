@@ -68,12 +68,14 @@ function retarget(source: Skeleton, target: Skeleton): void {
 		retargetBone(sourceBone, target);
 	}
 
+	/*
 	for (const sourceBone of source.getAttachments()) {
 		if (once) {
 			console.info(sourceBone.name);
 		}
 		retargetBone(sourceBone, target);
 	}
+	*/
 	once = false;
 }
 
@@ -117,6 +119,11 @@ function retargetBone(sourceBone: Bone | Attachment, target: Skeleton): void {
 	}
 
 	const targetDeltaPos = vec3.sub(vec3.create(), targetBonePos, targetBoneParentPos);
+
+	if (sourceBone.name.startsWith('weapon_bone') || sourceBone.name.startsWith('prop_bone')) {
+		// TODO: find a way to select the bones properly
+		targetBone.setPosition(sourceBone.getPosition());
+	}
 
 	if (count === 0) {
 		// End bone, rotate this very bone
