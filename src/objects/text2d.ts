@@ -130,7 +130,7 @@ export class Text2D extends Entity {
 		});
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Text2D';
 	}
 }

@@ -55,7 +55,7 @@ export class HitboxHelper extends Entity {
 		return new HitboxHelper();
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'HitboxHelper';
 	}
 }

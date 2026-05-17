@@ -1043,7 +1043,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		return entity;
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Source1ParticleSystem';
 	}
 }

@@ -83,11 +83,11 @@ export class Wireframe extends Entity {
 		this.#disposeMeshes();
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		return s == 'Wireframe';
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Wireframe';
 	}
 }

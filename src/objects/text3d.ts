@@ -127,7 +127,7 @@ export class Text3D extends Mesh {
 		});
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Text3D';
 	}
 }

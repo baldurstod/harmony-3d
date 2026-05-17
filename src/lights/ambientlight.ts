@@ -14,11 +14,11 @@ export class AmbientLight extends Light {
 		return new AmbientLight(json);
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'AmbientLight';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'AmbientLight') {
 			return true;
 		} else {

@@ -81,7 +81,7 @@ export class Line extends Mesh {
 		return new Line({ start: json.start as vec3, end: json.end as vec3, material: material });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Line';
 	}
 }

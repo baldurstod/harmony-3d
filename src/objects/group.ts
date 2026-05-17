@@ -8,7 +8,7 @@ export class Group extends Entity {
 		return new Group({ name: json.name as string });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Group';
 	}
 }

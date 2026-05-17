@@ -4,7 +4,7 @@ import { Bone } from './bone';
 export class Attachment extends Bone {
 	isAttachment = true as const;
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Attachment';
 	}
 }

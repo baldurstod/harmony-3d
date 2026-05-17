@@ -81,7 +81,7 @@ export class Plane extends Mesh {
 		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Plane';
 	}
 }

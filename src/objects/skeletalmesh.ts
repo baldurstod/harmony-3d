@@ -546,7 +546,7 @@ export class SkeletalMesh extends Mesh {
 		return [this.#skinnedVertexPosition!, this.#skinnedVertexNormal!];
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Skeletal mesh';
 	}
 }

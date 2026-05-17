@@ -488,11 +488,11 @@ export class Camera extends Entity {
 		return new Camera(json);
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Camera';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'Camera') {
 			return true;
 		} else {

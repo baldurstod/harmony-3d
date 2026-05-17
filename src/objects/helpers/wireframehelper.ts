@@ -70,7 +70,7 @@ export class WireframeHelper extends Entity {
 	}
 
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Wireframe helper';
 	}
 }

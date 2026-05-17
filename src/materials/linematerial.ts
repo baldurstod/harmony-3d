@@ -40,7 +40,7 @@ export class LineMaterial extends Material {
 		this.lineWidth = json.linewidth as number;
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'LineMaterial';
 	}
 

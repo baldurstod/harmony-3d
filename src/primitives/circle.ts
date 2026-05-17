@@ -51,7 +51,7 @@ export class Circle extends LineSegments {
 		return new Circle({ radius: json.radius, segments: json.segments, material: material, startAngle: json.startAngle, endAngle: json.endAngle });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Circle';
 	}
 }

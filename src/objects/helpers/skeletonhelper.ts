@@ -296,7 +296,7 @@ export class SkeletonHelper extends Entity {
 		this.#highlitLineMaterial.removeUser(this);
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'SkeletonHelper';
 	}
 }

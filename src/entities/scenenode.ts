@@ -14,7 +14,7 @@ export class SceneNode extends Entity {
 		this.entity = params?.entity ?? null;
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Scene node';
 	}
 }

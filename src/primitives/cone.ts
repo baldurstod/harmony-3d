@@ -43,7 +43,7 @@ export class Cone extends Mesh {
 		});
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Cone';
 	}
 }

@@ -107,7 +107,7 @@ export class Sphere extends Mesh {
 		return new Sphere({ radius: json.radius as number, material: material, segments: json.segments as number, rings: json.rings as number, phiStart: json.phistart as number, phiLength: json.philength as number, thetaStart: json.thetastart as number, thetaLength: json.thetalength as number });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Sphere';
 	}
 }

@@ -14,11 +14,11 @@ export class World extends Entity {
 		}
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'World';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'World') {
 			return true;
 		} else {

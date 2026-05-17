@@ -73,7 +73,7 @@ export class Cylinder extends Mesh {
 		return new Cylinder({ radius: json.radius as number, height: json.height as number, material: material, segments: json.segments as number, hasCap: json.hasCap as boolean });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Cylinder';
 	}
 }

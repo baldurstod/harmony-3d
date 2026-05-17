@@ -70,11 +70,11 @@ export class Scene extends Entity {
 		return new Scene({ name: json.name as string });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Scene';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'Scene') {
 			return true;
 		} else {

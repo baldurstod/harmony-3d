@@ -67,7 +67,7 @@ export class Decal extends Mesh {
 		return new Decal(json);
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Decal';
 	}
 }

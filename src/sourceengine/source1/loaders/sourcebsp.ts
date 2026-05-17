@@ -713,7 +713,7 @@ export class SourceBSP extends World {
 		this.#dynamicProps.addChild(prop);
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'BSP Map';
 	}
 }

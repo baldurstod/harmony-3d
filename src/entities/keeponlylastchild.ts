@@ -10,7 +10,7 @@ export class KeepOnlyLastChild extends Entity {
 		return super.addChild(child);
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Keep only last child';
 	}
 }

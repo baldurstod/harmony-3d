@@ -593,7 +593,7 @@ export class Source2ParticleSystem extends Entity {
 		});
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Source 2 particle system';
 	}
 }

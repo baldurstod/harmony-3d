@@ -478,11 +478,11 @@ export class Mesh extends Entity {
 		}
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Static mesh';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'Mesh') {
 			return true;
 		} else {

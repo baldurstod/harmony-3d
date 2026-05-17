@@ -40,7 +40,7 @@ export class ColorBackground extends BackGround {
 	override dispose() {
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'ColorBackground') {
 			return true;
 		} else {

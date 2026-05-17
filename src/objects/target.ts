@@ -7,7 +7,7 @@ export class Target extends Entity {
 		return new Target({ name: json.name });
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Target';
 	}
 }

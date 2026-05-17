@@ -60,7 +60,7 @@ export class MeshBasicMaterial extends Material {
 		this.skinning = json.skinning as boolean;
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'MeshBasicMaterial';
 	}
 }

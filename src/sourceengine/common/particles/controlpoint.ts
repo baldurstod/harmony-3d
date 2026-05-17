@@ -133,7 +133,7 @@ export class ControlPoint extends Entity {
 		return Promise.resolve(new ControlPoint());
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'ControlPoint';
 	}
 }

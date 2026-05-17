@@ -75,7 +75,7 @@ export class SpotLight extends Light {
 		});
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'SpotLight';
 	}
 

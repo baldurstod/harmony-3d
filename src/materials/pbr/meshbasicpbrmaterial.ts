@@ -73,7 +73,7 @@ export class MeshBasicPbrMaterial extends Material {
 		super.fromJSON(json);
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'MeshBasicPbrMaterial';
 	}
 }

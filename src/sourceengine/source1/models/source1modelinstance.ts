@@ -1209,11 +1209,11 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Source1Model';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'Source1ModelInstance') {
 			return true;
 		} else {

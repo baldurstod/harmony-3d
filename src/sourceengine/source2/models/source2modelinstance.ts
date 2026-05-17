@@ -514,7 +514,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Source 2 model';
 	}
 }

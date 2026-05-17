@@ -51,11 +51,11 @@ export class PointLight extends Light {
 		});
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'PointLight';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'PointLight') {
 			return true;
 		} else {

@@ -38,7 +38,7 @@ export class Grid extends Mesh {
 		});
 	}
 
-	static getEntityName(): string {
+	static override getEntityName(): string {
 		return 'Grid';
 	}
 }

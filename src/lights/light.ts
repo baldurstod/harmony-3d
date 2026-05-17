@@ -114,11 +114,11 @@ export class Light extends Entity {
 		defaultTextureSize = textureSize;
 	}
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Light';
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		return s == 'Light';
 	}
 

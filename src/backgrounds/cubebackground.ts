@@ -56,7 +56,7 @@ export class CubeBackground extends BackGround {
 		this.#box.dispose();
 	}
 
-	is(s: string): boolean {
+	override is(s: string): boolean {
 		if (s == 'CubeBackground') {
 			return true;
 		} else {

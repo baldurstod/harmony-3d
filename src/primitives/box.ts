@@ -77,7 +77,7 @@ export class Box extends Mesh {
 		this.material.dispose();
 	}*/
 
-	static getEntityName() {
+	static override getEntityName(): string {
 		return 'Box';
 	}
 
