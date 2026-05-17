@@ -12,7 +12,7 @@ import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
 import { Properties, Property } from '../utils/properties';
-import { stringToQuat, stringToVec3 } from '../utils/utils';
+import { promptI18n, stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';
 import { EntityObserver } from './entityobserver';
 import { pickList } from './picklist';
@@ -963,29 +963,31 @@ export class Entity {
 					{ i18n: '#remove_similar_siblings', f: (): void => this.removeSimilarSiblings() },
 				]
 			},
-			name: { i18n: '#name', f: (): void => { const n = prompt('Name', this.name); if (n !== null) { this.name = n; } } },
+			name: { i18n: '#name', f: (): void => { const n = promptI18n('#name', this.name); if (n !== null) { this.name = n; } } },
 			add: { i18n: '#add', submenu: Entity.addSubMenu },
 			entitynull_1: null,
-			position: { i18n: '#position', f: (): void => { const v = prompt('Position', this.getPosition().join(' ')); if (v !== null) { this.lockPos = true; this.setPosition(stringToVec3(v)); } } },
-			translate: { i18n: '#translate', f: (): void => { const t = prompt('Translation', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
+			position: { i18n: '#position', f: (): void => { const v = promptI18n('#position', this.getPosition().join(' ')); if (v !== null) { this.lockPos = true; this.setPosition(stringToVec3(v)); } } },
+			translate: { i18n: '#translate', f: (): void => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
 			reset_position: { i18n: '#reset_position', f: (): void => this.setPosition(IDENTITY_VEC3) },
 			entitynull_2: null,
-			quaternion: { i18n: '#quaternion', f: (): void => { const v = prompt('Quaternion', this.getQuaternion().join(' ')); if (v !== null) { this.lockRot = true; this.setQuaternion(stringToQuat(v)); } } },
+			local_orientation: { i18n: '#local_orientation', f: (): void => { const v = promptI18n('#local_orientation', this.getOrientation().join(' ')); if (v !== null) { this.lockRot = true; this.setOrientation(stringToQuat(v)); } } },
+			global_orientation: { i18n: '#global_orientation', f: (): void => { const v = promptI18n('#global_orientation', this.getWorldOrientation().join(' ')); if (v !== null) { this.lockRot = true; this.setWorldOrientation(stringToQuat(v)); } } },
 			rotate: {
 				i18n: '#rotate', submenu: [
-					{ i18n: '#rotate_x_global', f: (): void => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y_global', f: (): void => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z_global', f: (): void => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_x', f: (): void => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y', f: (): void => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z', f: (): void => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x_global', f: (): void => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y_global', f: (): void => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z_global', f: (): void => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x', f: (): void => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y', f: (): void => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z', f: (): void => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
 				]
 			},
-			reset_rotation: { i18n: '#reset_rotation', f: (): void => this.setQuaternion(IDENTITY_QUAT) },
+			reset_orientation: { i18n: '#reset_local_orientation', f: (): void => this.setOrientation(IDENTITY_QUAT) },
+			reset_global_orientation: { i18n: '#reset_global_orientation', f: (): void => this.setWorldOrientation(IDENTITY_QUAT) },
 			entitynull_3: null,
 			scale: {
 				i18n: '#scale', f: (): void => {
-					const s = prompt('Scale', this.scale.join(' ')); if (s !== null) {
+					const s = promptI18n('#scale', this.scale.join(' ')); if (s !== null) {
 						const arr = s.split(' ');
 						if (arr.length == 3) {
 							this.scale = vec3.set(tempVec3_1, Number(arr[0]), Number(arr[1]), Number(arr[2]));
