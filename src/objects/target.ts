@@ -3,7 +3,7 @@ import { Entity } from '../entities/entity';
 
 // It is just a basic entity
 export class Target extends Entity {
-	static async constructFromJSON(json: any) {
+	static override async constructFromJSON(json: any) {
 		return new Target({ name: json.name });
 	}
 

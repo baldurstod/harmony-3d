@@ -1,4 +1,2 @@
 export class Environment  {
-	constructor() {
-	}
 }

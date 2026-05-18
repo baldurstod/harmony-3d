@@ -88,7 +88,7 @@ export class Text3D extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null> {
 		return new Text3D({});// TODO: add params
 	}
 

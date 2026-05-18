@@ -484,7 +484,7 @@ export class Camera extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new Camera(json);
 	}
 

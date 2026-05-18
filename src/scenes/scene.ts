@@ -12,11 +12,13 @@ export type SceneParameters = EntityParameters & {
 	environment?: Environment;
 };
 
+type Layer = any;
+
 export class Scene extends Entity {
-	#layers = new Map<any/*TODO: create a layer type*/, number>();
+	#layers = new Map<Layer, number>();
 	#world: World | null = null;
 	background: BackGround | null;
-	layers = new Set<any/*TODO: create a layer type*/>();
+	layers = new Set<Layer>();
 	environment: Environment | null = null;
 	activeCamera: Camera | null = null;
 
@@ -36,37 +38,38 @@ export class Scene extends Entity {
 		}
 	}
 
-	addLayer(layer: any/*TODO: create a layer type*/, index: number) {
+	addLayer(layer: Layer, index: number): Layer {
 		this.#layers.set(layer, index);
 		this.#updateLayers();
 		return layer;
 	}
 
-	removeLayer(layer: any/*TODO: create a layer type*/) {
+	removeLayer(layer: Layer): void {
 		this.#layers.delete(layer);
 		this.#updateLayers();
 	}
 
-	#updateLayers() {
+	#updateLayers(): void {
 		this.layers.clear();
-		for (const [layer, index] of this.#layers) {
+		for (const [layer] of this.#layers) {
 			this.layers.add(layer);
 		}
 	}
 
-	setWorld(world: World) {
+	setWorld(world: World): void {
 		this.#world = world;
 	}
 
-	getWorld() {
+	getWorld(): World | null {
 		return this.#world;
 	}
 
-	toString() {
+	toString(): string {
 		return 'Scene ' + super.toString();
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject): Promise<Scene> {
 		return new Scene({ name: json.name as string });
 	}
 

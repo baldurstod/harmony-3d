@@ -99,7 +99,7 @@ export class Light extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new Light(json);
 	}
 

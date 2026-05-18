@@ -51,7 +51,7 @@ export class HitboxHelper extends Entity {
 		this.#hitboxes = [];
 	}
 
-	static async constructFromJSON() {
+	static override async constructFromJSON() {
 		return new HitboxHelper();
 	}
 

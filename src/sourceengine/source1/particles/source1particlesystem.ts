@@ -1018,7 +1018,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		return json;
 	}
 
-	static async constructFromJSON(json: any/*TODO: better type*/, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem | null> {
+	static override async constructFromJSON(json: any/*TODO: better type*/, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem | null> {
 		const entity = await Source1ParticleControler.createSystem(json.repository, json.name);
 		if (entity) {
 			loadedPromise.then(() => {

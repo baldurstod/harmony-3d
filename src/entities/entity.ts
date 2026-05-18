@@ -1,6 +1,6 @@
 import { mat3, mat4, quat, ReadonlyQuat, ReadonlyVec3, vec3, vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
-import { HarmonyMenuItemsDict } from 'harmony-ui';
+import { HarmonyMenuItems, HarmonyMenuItemsDict } from 'harmony-ui';
 import { DEBUG, VERBOSE } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { JSONLoader } from '../importers/jsonloader';
@@ -60,7 +60,7 @@ export type DynamicParams = Record<string, DynamicParam>//TODO: create a map;
 export type DynamicParam = any/*TODO: create an actual type*/;
 
 export class Entity {
-	static addSubMenu: any;
+	static addSubMenu: HarmonyMenuItems;
 	id = generateRandomUUID();
 	#wireframe?: number = 0;
 	#hideInExplorer = false;
@@ -343,8 +343,8 @@ export class Entity {
 		return this.getScale();
 	}
 
-	getScale(): vec3 {
-		return vec3.clone(this._scale);
+	getScale(out: vec3 = vec3.create()): vec3 {
+		return vec3.copy(out, this._scale);
 	}
 
 	get worldMatrix(): mat4 {//TODO: remove ?
@@ -997,7 +997,7 @@ export class Entity {
 					}
 				}
 			},
-			reset_scale: { i18n: '#reset_scale', f: (): vec3 => this.scale = UNITY_VEC3 },
+			reset_scale: { i18n: '#reset_scale', f: (): void => { this.scale = UNITY_VEC3 } },
 			entitynull_4: null,
 			wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: (): void => this.toggleWireframe() },
 			cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: (): void => this.toggleCastShadow() },

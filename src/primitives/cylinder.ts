@@ -68,7 +68,7 @@ export class Cylinder extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null> {
 		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise) as Material;
 		return new Cylinder({ radius: json.radius as number, height: json.height as number, material: material, segments: json.segments as number, hasCap: json.hasCap as boolean });
 	}

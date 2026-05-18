@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import { Source2ModelInstance, Source2ParticleSystem } from '../../../export';
 import { Source2ModelManager } from '../../../models/source2modelmanager';
 import { Source2Particle } from '../../source2particle';
@@ -6,7 +5,7 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const tempVec3 = vec3.create();
+//const tempVec3 = vec3.create();
 
 export class RenderModels extends Operator {
 	#modelList = new Map<string, number>();
@@ -145,7 +144,7 @@ export class RenderModels extends Operator {
 		if (model) {
 			model.setPosition(particle.position);
 			const radius = particle.radius;
-			model.scale = vec3.set(tempVec3, radius, radius, radius);
+			model.setScale(radius);
 			model.setOrientation(particle.quaternion);
 			model.playSequence(activityName, activityModifiers);
 			if (particle.color[3] == 0) { //TODO: add an actual rendering tint / alpha on models

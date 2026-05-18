@@ -63,7 +63,7 @@ export class Decal extends Mesh {
 		});
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null> {
 		return new Decal(json);
 	}
 

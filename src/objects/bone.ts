@@ -373,7 +373,7 @@ export class Bone extends Entity implements Lockable {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new Bone({ name: json.name as string });
 	}
 

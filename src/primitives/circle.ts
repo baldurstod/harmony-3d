@@ -46,7 +46,7 @@ export class Circle extends LineSegments {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Circle | null> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Circle | null> {
 		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise);
 		return new Circle({ radius: json.radius, segments: json.segments, material: material, startAngle: json.startAngle, endAngle: json.endAngle });
 	}

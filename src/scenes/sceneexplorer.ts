@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 import { dragPanSVG, panZoomSVG, rotateSVG } from 'harmony-svg';
 import { HTMLHarmonyAccordionElement, HTMLHarmonyMenuElement, HarmonyMenuItems, I18n, createElement, createShadowRoot, defineHarmonyAccordion, defineHarmonyMenu, display, show } from 'harmony-ui';
@@ -43,7 +43,7 @@ import { Scene } from './scene';
 import { SceneExplorerEntity } from './sceneexplorerentity';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 
-function FormatArray(array: number[] | vec3): string {
+function FormatArray(array: number[] | vec3 | quat): string {
 	const arr: string[] = [];
 	array.forEach((element) =>
 		arr.push(element.toFixed(2))
@@ -64,7 +64,7 @@ const ENTITIES = [
 ]
 
 let sceneExplorer: SceneExplorer | null = null;
-export function getSceneExplorer() {
+export function getSceneExplorer(): SceneExplorer {
 	if (!sceneExplorer) {
 		sceneExplorer = new SceneExplorer();
 	}
@@ -114,7 +114,7 @@ export class SceneExplorer {
 		SceneExplorerEntity.setExplorer(this);
 		this.#manipulator = new Manipulator({ visible: false });
 
-		new IntersectionObserver((entries, observer) => {
+		new IntersectionObserver((entries) => {
 			const isVisible = this.#isVisible;
 			for (const e of entries) {
 				this.#isVisible = e.isIntersecting;
@@ -151,17 +151,17 @@ export class SceneExplorer {
 		this.setScene(scene);
 	}
 
-	setScene(scene: Scene) {
+	get scene(): Scene | undefined {
+		return this.#scene;
+	}
+
+	setScene(scene: Scene): void {
 		this.#scene = scene;
 		this.selectEntity(scene, true);
 		this.#applyFilter();
 	}
 
-	get scene(): Scene | undefined {
-		return this.#scene;
-	}
-
-	#refreshScene(visibleEntities?: Set<Entity>) {
+	#refreshScene(visibleEntities?: Set<Entity>): void {
 		if (this.#scene) {
 			this.#htmlScene.innerText = '';
 			this.#htmlScene.append(this.#createEntityElement(this.#scene, true, visibleEntities)!);
@@ -172,7 +172,7 @@ export class SceneExplorer {
 		return this.#shadowRoot.host as HTMLElement;
 	}
 
-	#initHtml() {
+	#initHtml(): void {
 		defineHarmonyAccordion();
 		this.#shadowRoot = createShadowRoot('scene-explorer', {
 			attributes: { tabindex: '1', },
@@ -255,7 +255,7 @@ export class SceneExplorer {
 		ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
 	}
 
-	#initHtmlHeader() {
+	#initHtmlHeader(): void {
 		this.#htmlNameFilter = createElement('input', {
 			parent: this.#htmlHeader,
 		}) as HTMLInputElement;
@@ -391,14 +391,14 @@ export class SceneExplorer {
 		this.#populateTypeFilter();
 	}
 
-	#populateTypeFilter() {
+	#populateTypeFilter(): void {
 		for (const type of ENTITIES) {
 			const option = createElement('option', { innerText: type, value: type });
 			this.#htmlTypeFilter.append(option);
 		}
 	}
 
-	#applyFilter() {
+	#applyFilter(): void {
 		if (this.#isVisible) {
 			SceneExplorerEntity.showAll();
 			if (this.#filterName == '' && this.#filterType == '') {
@@ -430,11 +430,11 @@ export class SceneExplorer {
 		}
 	}
 
-	#matchFilter(entity: Entity, name: string, type: string) {
-		return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
+	#matchFilter(entity: Entity, name: string, type: string): boolean {
+		return (name ? entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
 	}
 
-	#initHtmlProperties() {
+	#initHtmlProperties(): void {
 		this.#htmlName = createElement('div', { class: 'scene-explorer-entity-title' });
 		const htmlIdLabel = createElement('label', { i18n: '#id' });
 		this.#htmlId = createElement('div', { class: 'scene-explorer-entity-id' });
@@ -464,7 +464,7 @@ export class SceneExplorer {
 		this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale/*, htmlVisibleLabel, this.#htmlVisible*/);
 	}
 
-	#createEntityElement(entity: Entity, createExpanded: boolean, visibleEntities?: Set<Entity>) {
+	#createEntityElement(entity: Entity, createExpanded: boolean, visibleEntities?: Set<Entity>): SceneExplorerEntity | null {
 		const htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
 
 		if (createExpanded) {
@@ -473,7 +473,7 @@ export class SceneExplorer {
 		return htmlEntityElement;
 	}
 
-	selectEntity(entity: Entity | null, scrollIntoView = false) {
+	selectEntity(entity: Entity | null, scrollIntoView = false): void {
 		if (this.#selectedEntity == entity || entity == this.#manipulator || (entity && entity?.isParent(this.#manipulator))) {
 			return;
 		}
@@ -493,20 +493,20 @@ export class SceneExplorer {
 		}
 	}
 
-	getSelectedEntity() {
+	getSelectedEntity(): Entity | null {
 		return this.#selectedEntity;
 	}
 
-	#updateEntityElement(entity: Entity | null) {
+	#updateEntityElement(entity: Entity | null): void {
 		if (entity) {
 			//this.#updateEntityTitle(entity);
 			this.#htmlName.innerText = entity.name ?? (entity.constructor as typeof Entity).getEntityName();
 			this.#htmlId.innerText = entity.id;
-			this.#htmlPos.innerText = FormatArray(entity.position);
-			this.#htmlQuat.innerText = FormatArray(entity.quaternion);
-			this.#htmlScale.innerText = FormatArray(entity.scale);
+			this.#htmlPos.innerText = FormatArray(entity.getPosition());
+			this.#htmlQuat.innerText = FormatArray(entity.getOrientation());
+			this.#htmlScale.innerText = FormatArray(entity.getScale());
 			this.#htmlWorldPos.innerText = FormatArray(entity.getWorldPosition());
-			this.#htmlWorldQuat.innerText = FormatArray(entity.getWorldQuaternion());
+			this.#htmlWorldQuat.innerText = FormatArray(entity.getWorldOrientation());
 			this.#htmlWorldScale.innerText = FormatArray(entity.getWorldScale());
 			//this.#htmlVisible.checked = entity.visible;
 			/*
@@ -519,12 +519,7 @@ export class SceneExplorer {
 		}
 	}
 
-	getEntityHtml(entity: Entity) {
-		throw 'remove me';
-		//return this._entitiesHtml.get(entity);
-	}
-
-	#handlePropertyChanged(detail: EntityObserverPropertyChangedEvent) {
+	#handlePropertyChanged(detail: EntityObserverPropertyChangedEvent): void {
 		if (this.#isVisible && detail.entity == this.#selectedEntity) {
 			this.#updateEntityElement(this.#selectedEntity);
 		}
@@ -538,12 +533,12 @@ export class SceneExplorer {
 		}*/
 	}
 
-	showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity) {
+	showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void {
 		this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
 		this.selectEntity(entity);
 	}
 
-	editMaterial(material: Material) {
+	editMaterial(material: Material): void {
 		const materialEditor = getMaterialEditor();
 		materialEditor.editMaterial(material);
 
@@ -552,66 +547,67 @@ export class SceneExplorer {
 		this.#htmlExtra.expand('material');
 	}
 
-	setJointsRadius(radius: number) {
+	setJointsRadius(radius: number): void {
 		this.#skeletonHelper.setJointsRadius(radius);
 	}
 }
 
-function initEntitySubmenu() {
+function initEntitySubmenu(): void {
 	Entity.addSubMenu = [
 		{
 			i18n: '#primitives', submenu:
 				[
-					{ i18n: '#box', f: (entity: Entity) => entity.addChild(new Box()) },
-					{ i18n: '#cone', f: (entity: Entity) => entity.addChild(new Cone()) },
-					{ i18n: '#cylinder', f: (entity: Entity) => entity.addChild(new Cylinder()) },
-					{ i18n: '#fullscreenquad', f: (entity: Entity) => entity.addChild(new FullScreenQuad()) },
-					{ i18n: '#metaballs', f: (entity: Entity) => entity.addChild(new Metaballs()) },
-					{ i18n: '#plane', f: (entity: Entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
-					{ i18n: '#sphere', f: (entity: Entity) => entity.addChild(new Sphere()) },
-					{ i18n: '#text_2d', f: (entity: Entity) => entity.addChild(new Text2D({ text: 'Text2D' })) },
-					{ i18n: '#text_3d', f: (entity: Entity) => entity.addChild(new Text3D({ text: 'Text3D' })) },
+					{ i18n: '#box', f: (entity: Entity): void => { entity.addChild(new Box()) } },
+					{ i18n: '#cone', f: (entity: Entity): void => { entity.addChild(new Cone()) } },
+					{ i18n: '#cylinder', f: (entity: Entity): void => { entity.addChild(new Cylinder()) } },
+					{ i18n: '#fullscreenquad', f: (entity: Entity): void => { entity.addChild(new FullScreenQuad()) } },
+					{ i18n: '#metaballs', f: (entity: Entity): void => { entity.addChild(new Metaballs()) } },
+					{ i18n: '#plane', f: (entity: Entity): void => { entity.addChild(new Plane({ width: 1000, height: 1000 })) } },
+					{ i18n: '#sphere', f: (entity: Entity): void => { entity.addChild(new Sphere()) } },
+					{ i18n: '#text_2d', f: (entity: Entity): void => { entity.addChild(new Text2D({ text: 'Text2D' })) } },
+					{ i18n: '#text_3d', f: (entity: Entity): void => { entity.addChild(new Text3D({ text: 'Text3D' })) } },
 				]
 		},
 		{
 			i18n: '#entities', submenu:
 				[
-					{ i18n: '#group', f: (entity: Entity) => entity.addChild(new Group()) },
-					{ i18n: '#target', f: (entity: Entity) => entity.addChild(new Target()) },
-					{ i18n: '#keeponlylastchild', f: (entity: Entity) => entity.addChild(new KeepOnlyLastChild()) },
-					{ i18n: '#decal', f: (entity: Entity) => entity.addChild(new Decal()) },
+					{ i18n: '#group', f: (entity: Entity): void => { entity.addChild(new Group()) } },
+					{ i18n: '#target', f: (entity: Entity): void => { entity.addChild(new Target()) } },
+					{ i18n: '#keeponlylastchild', f: (entity: Entity): void => { entity.addChild(new KeepOnlyLastChild()) } },
+					{ i18n: '#decal', f: (entity: Entity): void => { entity.addChild(new Decal()) } },
 				]
 		},
 		{
 			i18n: '#lights', submenu:
 				[
-					{ i18n: '#ambient_light', f: (entity: Entity) => entity.addChild(new AmbientLight()) },
-					{ i18n: '#point_light', f: (entity: Entity) => entity.addChild(new PointLight()) },
-					{ i18n: '#spot_light', f: (entity: Entity) => entity.addChild(new SpotLight()) },
+					{ i18n: '#ambient_light', f: (entity: Entity): void => { entity.addChild(new AmbientLight()) } },
+					{ i18n: '#point_light', f: (entity: Entity): void => { entity.addChild(new PointLight()) } },
+					{ i18n: '#spot_light', f: (entity: Entity): void => { entity.addChild(new SpotLight()) } },
 				]
 		},
-		{ i18n: '#camera', f: (entity: Entity) => entity.addChild(new Camera()) },
+		{ i18n: '#camera', f: (entity: Entity): void => { entity.addChild(new Camera()) } },
 		{
 			i18n: '#control', submenu:
 				[
 					{
-						i18n: '#rotation_control', f: (entity: Entity) => new RotationControl({ parent: entity }),
+						i18n: '#rotation_control', f: (entity: Entity): void => { new RotationControl({ parent: entity }) },
 					},
 					{
-						i18n: '#translation_control', f: (entity: Entity) => new TranslationControl({ parent: entity }),
+						i18n: '#translation_control', f: (entity: Entity): void => { new TranslationControl({ parent: entity }) },
 					},
 				]
 		},
-		{ i18n: '#helper', f: (entity: Entity) => { const helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
-		{ i18n: '#wireframe', f: (entity: Entity) => entity.addChild(new WireframeHelper()) },
-		{ i18n: '#wireframe2', f: (entity: Entity) => entity.addChild(new Wireframe()) },
-		{ i18n: '#hitboxes', f: (entity: Entity) => entity.addChild(new HitboxHelper()) },
+		{ i18n: '#helper', f: (entity: Entity): void => { const helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
+		{ i18n: '#wireframe', f: (entity: Entity): void => { entity.addChild(new WireframeHelper()) } },
+		{ i18n: '#wireframe2', f: (entity: Entity): void => { entity.addChild(new Wireframe()) } },
+		{ i18n: '#hitboxes', f: (entity: Entity): void => { entity.addChild(new HitboxHelper()) } },
 		{
 			i18n: '#source1', submenu:
 				[
 					{
-						i18n: '#model', f: async (entity: Entity) => {
+						i18n: '#model', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
+							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
@@ -628,8 +624,9 @@ function initEntitySubmenu() {
 						}
 					},
 					{
-						i18n: '#particle_system', f: async (entity: Entity) => {
+						i18n: '#particle_system', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
+							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
 								const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]!);
@@ -644,8 +641,9 @@ function initEntitySubmenu() {
 			i18n: '#source2', submenu:
 				[
 					{
-						i18n: '#model', f: async (entity: Entity) => {
+						i18n: '#model', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
+							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								const instance = await Source2ModelManager.createInstance(repository, modelName, true);
@@ -658,8 +656,9 @@ function initEntitySubmenu() {
 						}
 					},
 					{
-						i18n: '#particle_system', f: async (entity: Entity) => {
+						i18n: '#particle_system', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
+							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
 								const sys = await Source2ParticleManager.getSystem(repository, systemPath);
@@ -676,7 +675,7 @@ function initEntitySubmenu() {
 	];
 }
 
-Entity.editMaterial = function (entity) {
+Entity.editMaterial = function (entity): void {
 	const material = (entity as any).material;
 
 	if (!material) {

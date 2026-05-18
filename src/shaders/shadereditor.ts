@@ -34,15 +34,15 @@ export class ShaderEditor extends HTMLElement {
 	#htmlExpandSourceButton?: HTMLButtonElement;
 	#htmlShaderRenderMode?: HTMLInputElement;
 	#recompileTimeout?: number;
-	#editorShaderName: string = '';
-	#editorIncludeName: string = '';
+	#editorShaderName = '';
+	#editorIncludeName = '';
 	#shaderType: ShaderType = ShaderType.Vertex;
 	#uuid?: Token;//TODO: change name
 	#isOpen = false;
 	#marker = -1;
 	#sessions = new Map<string, Ace.EditSession>;
 
-	initEditor(options: ShaderEditorInit = {}) {
+	initEditor(options: ShaderEditorInit = {}): void {
 		if (this.#initialized) {
 			return;
 		}
@@ -81,7 +81,7 @@ export class ShaderEditor extends HTMLElement {
 							if (selectedOption.getAttribute('data-shader')) {
 								const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
 								if (source) {
-									const compileSource = source.getCompileSource(new Map());
+									//const compileSource = source.getCompileSource(new Map());
 									const expandedName = this.#editorShaderName + '_expanded';
 									ShaderManager.setCustomSource(ShaderType.Vertex, expandedName, source.getCompileSource(new Map()));
 									this.#reloadGLSLList();
@@ -137,11 +137,12 @@ export class ShaderEditor extends HTMLElement {
 		} else {
 			loadScript(aceScript).then(() => this.#initEditor2(options, c));
 		}
-		ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
-		ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
+		ShaderEventTarget.addEventListener('shaderadded', () => this.#reloadGLSLList());
+		ShaderEventTarget.addEventListener('includeadded', () => this.#reloadGLSLList());
 	}
 
-	#initEditor2(options: ShaderEditorInit, id: HTMLElement) {
+	#initEditor2(options: ShaderEditorInit, id: HTMLElement): void {
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 		this.#shaderEditor = (globalThis as any).ace.edit(id) as Ace.Editor;
 		this.#shaderEditor.renderer.attachToShadowRoot();
 		//this.#shaderEditor.$blockScrolling = Infinity;
@@ -179,7 +180,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 	}
 
-	#reloadGLSLList() {
+	#reloadGLSLList(): void {
 		if (!this.#shaderEditor) {
 			return;
 		}
@@ -228,7 +229,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 	}
 
-	getEditorShaderName() {
+	getEditorShaderName(): string {
 		return this.#editorShaderName;
 	}
 
@@ -266,7 +267,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 	}
 
-	getEditorIncludeName() {
+	getEditorIncludeName(): string {
 		return this.#editorIncludeName;
 	}
 
@@ -299,7 +300,9 @@ export class ShaderEditor extends HTMLElement {
 		let session = this.#sessions.get(name);
 		if (!session) {
 			const ace = (globalThis as any).ace;
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 			session = new ace.EditSession('', 'ace/mode/glsl') as Ace.EditSession;
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 			session.setUndoManager(new ace.UndoManager());
 			session.on('change', () => {
 				clearTimeout(this.#recompileTimeout);
@@ -341,7 +344,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 	}
 
-	#setAnnotations(shaderName: string) {
+	#setAnnotations(shaderName: string): void {
 		if (!this.#shaderEditor) {
 			return;
 		}
@@ -358,7 +361,7 @@ export class ShaderEditor extends HTMLElement {
 		this.#annotationsDelay = delay;
 	}
 
-	#saveCustomShader() {
+	#saveCustomShader(): void {
 		if (!this.#shaderEditor) {
 			return;
 		}
@@ -367,7 +370,7 @@ export class ShaderEditor extends HTMLElement {
 		this.dispatchEvent(new CustomEvent('save-custom-shader', { detail: { type: type, name: name, source: this.#shaderEditor.getValue() } }));
 	}
 
-	#loadCustomShader() {
+	#loadCustomShader(): void {
 		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
 		const name = this.#editMode == EDIT_MODE_SHADER ? this.getEditorShaderName() : this.getEditorIncludeName();
 		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
@@ -375,16 +378,16 @@ export class ShaderEditor extends HTMLElement {
 
 	}
 
-	#removeCustomShader() {
+	#removeCustomShader(): void {
 		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
 		const name = this.#editMode == EDIT_MODE_SHADER ? this.getEditorShaderName() : this.getEditorIncludeName();
 		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('remove-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 	}
 
-	#initEditorEvents() {
+	#initEditorEvents(): void {
 		this.#shaderEditor!.renderer.content.addEventListener('mousemove', (event: MouseEvent) => this.#onMouseMove(event));
-		this.#shaderEditor!.renderer.content.addEventListener('click', (event: MouseEvent) => this.#onClick(event));
+		this.#shaderEditor!.renderer.content.addEventListener('click', () => this.#onClick());
 	}
 
 	#onMouseMove(event: MouseEvent): void {
@@ -420,11 +423,12 @@ export class ShaderEditor extends HTMLElement {
 
 		session.removeMarker(this.#marker);
 
-		const range = new (globalThis as any).ace.Range(token.row, token.start, token.row, token.start + token.value.length);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-call
+		const range = new (globalThis as any).ace.Range(token.row, token.start, token.row, token.start + token.value.length) as Ace.Range;
 		this.#marker = session.addMarker(range, 'ace_link_marker', 'text', true);
 	}
 
-	#onClick(event: MouseEvent) {
+	#onClick(): void {
 		if (!this.#uuid) {
 			return;
 		}
@@ -455,7 +459,7 @@ export class ShaderEditor extends HTMLElement {
 		return match;
 	};
 
-	#getMatchAround(regExp: RegExp, line: string, col: number) {
+	#getMatchAround(regExp: RegExp, line: string, col: number): Token | undefined {
 		let match: undefined | Token;
 		regExp.lastIndex = 0;
 		line.replace(regExp, (str: string, ...args: any[]): string => {
@@ -474,11 +478,11 @@ export class ShaderEditor extends HTMLElement {
 		return match;
 	};
 
-	#selectToken(token: string) {
+	#selectToken(token: string): void {
 		this.setEditorIncludeName(token);
 	}
 
-	#clearMarkers() {
+	#clearMarkers(): void {
 		if (!this.#shaderEditor) {
 			return;
 		}

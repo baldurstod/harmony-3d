@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import { Camera } from '../../../../cameras/camera';
 import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
@@ -10,7 +9,7 @@ export class SkyCamera extends MapEntity {
 	override setKeyValues(kvElement: KvElement): void {
 		super.setKeyValues(kvElement);
 		const scale = (kvElement as any/*TODO: fix that*/).scale;
-		this.camera.scale = vec3.fromValues(scale, scale, scale);
+		this.camera.setScale(scale);
 		this.camera.setPosition(this._position);
 	}
 }

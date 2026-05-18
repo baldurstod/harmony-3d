@@ -4,7 +4,7 @@ import { JSONObject } from 'harmony-types';
 
 // It is just a basic entity
 export class Group extends Entity {
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new Group({ name: json.name as string });
 	}
 

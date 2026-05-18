@@ -129,7 +129,7 @@ export class ControlPoint extends Entity {
 		return out;
 	}
 
-	static constructFromJSON(): Promise<ControlPoint> {
+	static override constructFromJSON(): Promise<ControlPoint> {
 		return Promise.resolve(new ControlPoint());
 	}
 

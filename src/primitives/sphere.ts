@@ -102,7 +102,7 @@ export class Sphere extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Sphere> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Sphere> {
 		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise) as Material;
 		return new Sphere({ radius: json.radius as number, material: material, segments: json.segments as number, rings: json.rings as number, phiStart: json.phistart as number, phiLength: json.philength as number, thetaStart: json.thetastart as number, thetaLength: json.thetalength as number });
 	}

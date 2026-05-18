@@ -11,7 +11,7 @@ import { SceneExplorer } from './sceneexplorer';
 const MAX_ANIMATIONS = 3;
 
 let dataListId = 0;
-function getDataListId() {
+function getDataListId(): string {
 	return `animations-datalist${++dataListId}`;
 }
 
@@ -89,6 +89,7 @@ export class SceneExplorerEntity extends HTMLElement {
 								}),
 							],
 							events: {
+								// eslint-disable-next-line @typescript-eslint/no-misused-promises
 								change: (event: Event) => this.#displayAnimations((event.target as HTMLHarmonyToggleButtonElement).state),
 							}
 						}) as HTMLHarmonyToggleButtonElement,
@@ -152,7 +153,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		});
 	}
 
-	connectedCallback() {
+	connectedCallback(): void {
 		if (this.#doOnce) {
 			this.#doOnce = false;
 			this.#htmlHeader.draggable = true;
@@ -165,10 +166,10 @@ export class SceneExplorerEntity extends HTMLElement {
 				SceneExplorerEntity.#draggedEntity = this.#entity;
 				event.stopPropagation();
 			});
-			this.addEventListener('dragenter', event => {
+			this.addEventListener('dragenter', () => {
 				this.classList.add('dragged-over');
 			});
-			this.addEventListener('dragleave', event => {
+			this.addEventListener('dragleave', () => {
 				this.classList.remove('dragged-over');
 			});
 			this.addEventListener('dragover', event => {
@@ -199,7 +200,7 @@ export class SceneExplorerEntity extends HTMLElement {
 
 	}
 
-	setEntity(entity: Entity) {
+	setEntity(entity: Entity): void {
 		this.#entity = entity;
 		this.#update();
 		this.#updateVisibility();
@@ -211,7 +212,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlLockedButton, (entity as unknown as Lockable)?.isLockable);
 	}
 
-	static setExplorer(explorer: SceneExplorer) {
+	static setExplorer(explorer: SceneExplorer): void {
 		SceneExplorerEntity.#explorer = explorer;
 	}
 
@@ -221,7 +222,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 	*/
 
-	select() {
+	select(): void {
 		this.classList.add('selected');
 		const selectedEntity = SceneExplorerEntity.#selectedEntity;
 		if (selectedEntity != this) {
@@ -231,13 +232,13 @@ export class SceneExplorerEntity extends HTMLElement {
 		SceneExplorerEntity.#selectedEntity = this;
 	}
 
-	display() {
+	display(): void {
 		this.#display();
 
 		this.scrollIntoView();
 	}
 
-	#display() {
+	#display(): void {
 		const parentEntity = this.#entity?.parent;
 		if (parentEntity) {
 			const htmlParent = SceneExplorerEntity.getEntityElement(parentEntity);
@@ -248,11 +249,11 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	unselect() {
+	unselect(): void {
 		this.classList.remove('selected');
 	}
 
-	static getEntityElement(entity: Entity) {
+	static getEntityElement(entity: Entity): SceneExplorerEntity | null {
 		if (entity.hideInExplorer) {
 			return null;
 		}
@@ -267,10 +268,10 @@ export class SceneExplorerEntity extends HTMLElement {
 		return entityElement;
 	}
 
-	static #handlePropertyChanged(detail: EntityObserverPropertyChangedEvent) {
+	static #handlePropertyChanged(detail: EntityObserverPropertyChangedEvent): void {
 		const entity = detail.entity;
 		SceneExplorerEntity.#updateEntity(entity);
-		let entityElement;
+		//let entityElement;
 		switch (detail.propertyName) {
 			case 'visible':
 				this.#updateEntityVisibility(entity);
@@ -284,26 +285,26 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #handleEntityDeleted(detail: any) {
+	static #handleEntityDeleted(detail: any): void {
 		SceneExplorerEntity.#entitiesHTML.delete(detail.entity);
 		//console.log('deleted entity', detail.entity);
 	}
 
-	static #updateEntity(entity: any) {
+	static #updateEntity(entity: any): void {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#update();
 		}
 	}
 
-	static #expandEntityChilds(entity: Entity) {
+	static #expandEntityChilds(entity: Entity): void {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#expandChilds();
 		}
 	}
 
-	#update() {
+	#update(): void {
 		const entity = this.#entity;
 		if (entity) {
 			const className = (entity.constructor as typeof Entity).getEntityName();
@@ -311,7 +312,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #updateEntityVisibility(entity: Entity) {
+	static #updateEntityVisibility(entity: Entity): void {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#updateVisibility();
@@ -324,7 +325,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	#updateVisibility() {
+	#updateVisibility(): void {
 		if (this.#entity?.isVisible()) {
 			this.#htmlVisible.innerHTML = visibilityOnSVG;
 		} else {
@@ -332,14 +333,14 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #updateEntityPlaying(entity: Entity) {
+	static #updateEntityPlaying(entity: Entity): void {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#updatePlaying();
 		}
 	}
 
-	#updatePlaying() {
+	#updatePlaying(): void {
 		if (this.#entity?.isPlaying()) {
 			this.#htmlPlaying.innerHTML = playSVG;
 		} else {
@@ -376,7 +377,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	#titleClick() {
+	#titleClick(): void {
 		if (this == SceneExplorerEntity.#selectedEntity) {
 			toggle(this.#htmlChilds);
 		} else {
@@ -386,7 +387,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		SceneExplorerEntity.#explorer?.selectEntity(this.#entity);
 	}
 
-	#contextMenuHandler(event: MouseEvent) {
+	#contextMenuHandler(event: MouseEvent): void {
 		if (!event.shiftKey && this.#entity) {
 			SceneExplorerEntity.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
 			event.preventDefault();
@@ -394,7 +395,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	async #displayAnimations(display: boolean) {
+	async #displayAnimations(display: boolean): Promise<void> {
 		if (!this.#entity) {
 			return;
 		}
@@ -415,7 +416,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		(this.#htmlInputDataList as HTMLDataListElement).innerText = '';
 		for (const value of animList) {
 			createElement('option', {
-				innerText: value as string,
+				innerText: value,
 				parent: this.#htmlInputDataList,
 			});
 		}
@@ -424,7 +425,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		show(this.#htmlContent);
 	}
 
-	#initAnimations() {
+	#initAnimations(): void {
 		if (this.#htmlAnimations) {
 			return;
 		}
@@ -458,7 +459,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}) as HTMLDataListElement;
 	}
 
-	#setAnimName(id: number, name: string) {
+	#setAnimName(id: number, name: string): void {
 		if (!this.#entity) {
 			return;
 		}

@@ -233,6 +233,11 @@ export declare class ApplySticker extends Node_2 {
     dispose(): void;
 }
 
+export declare class Attachment extends Bone {
+    isAttachment: true;
+    static getEntityName(): string;
+}
+
 export declare class AttractToControlPoint extends Operator {
     #private;
     _paramChanged(paramName: string, param: OperatorParam): void;
@@ -373,7 +378,7 @@ declare type BodyPartMesh = BufferGeometry[];
 
 export declare class Bone extends Entity implements Lockable {
     #private;
-    isBone: boolean;
+    isBone: true;
     isLockable: true;
     dirty: boolean;
     lastComputed: number;
@@ -435,6 +440,7 @@ export declare class Bone extends Entity implements Lockable {
     static constructFromJSON(json: JSONObject): Promise<Bone>;
     fromJSON(json: any): void;
     static getEntityName(): string;
+    is(s: string): boolean;
 }
 
 declare type BoneParameters = EntityParameters & {
@@ -1676,7 +1682,7 @@ declare class Channel {
 
                   export declare class Entity {
                       #private;
-                      static addSubMenu: any;
+                      static addSubMenu: HarmonyMenuItems;
                       id: string;
                       enumerable: boolean;
                       animable: boolean;
@@ -2187,7 +2193,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -4588,7 +4594,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | string[] | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -5245,6 +5251,11 @@ declare class Channel {
                           isValid(): boolean;
                           getProgram(): WebGLProgram;
                       }
+
+                      /**
+                       * Wrapper around window.prompt(), but the message is an i18n key
+                       */
+                      export declare function promptI18n(messageI18n: string, defaultValue?: string): string | null;
 
                       export declare class Properties {
                           #private;
@@ -6019,6 +6030,20 @@ declare class Channel {
                           update(): void;
                       }
 
+                      export declare class RetargetControl extends Entity {
+                          #private;
+                          enabled: boolean;
+                          constructor(params?: RetargetControlParameters);
+                          parentChanged(parent: Entity | null): void;
+                          buildContextMenu(): HarmonyMenuItemsDict;
+                          static getEntityName(): string;
+                      }
+
+                      declare type RetargetControlParameters = EntityParameters & {
+                          source?: Skeleton;
+                          enabled?: boolean;
+                      };
+
                       export declare enum RetargetMode {
                           Animation = 0,
                           Skeleton = 1,
@@ -6083,6 +6108,7 @@ declare class Channel {
                           get axis(): vec3;
                           reset(): void;
                           buildContextMenu(): HarmonyMenuItemsDict;
+                          static getEntityName(): string;
                       }
 
                       declare type RotationControlParameters = EntityParameters & {
@@ -6615,8 +6641,7 @@ declare class Channel {
                       export declare class Skeleton extends Entity {
                           #private;
                           isSkeleton: boolean;
-                          _bones: Bone[];
-                          _dirty: boolean;
+                          readonly _bones: Bone[];
                           readonly imgData: Float32Array<ArrayBuffer>;
                           lastComputed: number;
                           rig?: Rig;
@@ -6625,15 +6650,17 @@ declare class Channel {
                           getTexture(): Texture;
                           setBonesMatrix(): void;
                           get position(): vec3;
-                          set quaternion(quaternion: vec4);
-                          get quaternion(): vec4;
+                          set quaternion(quaternion: quat);
+                          get quaternion(): quat;
                           addBone(boneId: number, boneName: string): Bone;
+                          addAttachment(attachmentId: number, attachmentName: string): Attachment;
                           setParentSkeleton(skeleton: Skeleton | null): Promise<void>;
                           getBoneByName(boneName: string): Bone | undefined;
                           getBoneById(boneId: number): Bone | undefined;
                           toString(): string;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           get bones(): Bone[];
+                          getAttachments(): Attachment[];
                           reset(): void;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Skeleton>;
@@ -6651,12 +6678,15 @@ declare class Channel {
                           getWorldScale(scale?: vec3): vec3;
                           get wireframe(): number;
                           displayBoneJoints(display: boolean): void;
+                          static displayBonesAsLines(showLines: boolean): void;
                           setJointsRadius(radius: number): void;
                           dispose(): void;
+                          static getEntityName(): string;
                       }
 
                       declare type SkeletonHelperParameters = EntityParameters & {
                           skeleton?: Skeleton;
+                          hideInExplorer?: boolean;
                       };
 
                       export declare class SketchPass extends Pass {
@@ -9280,8 +9310,23 @@ declare class Channel {
 
                       export declare class TranslationControl extends Entity {
                           #private;
-                          constructor(params?: any);
+                          constructor(params?: TranslationControlParameters);
                           buildContextMenu(): HarmonyMenuItemsDict;
+                          static getEntityName(): string;
+                      }
+
+                      declare type TranslationControlParameters = EntityParameters & {
+                          start?: vec3;
+                          end?: vec3;
+                          speed?: number;
+                          mode?: TranslationMode;
+                          amount?: number;
+                      };
+
+                      declare enum TranslationMode {
+                          Bounce = 0,
+                          Teleport = 1,
+                          Stop = 2
                       }
 
                       export declare class TRIANGLE {

@@ -8,7 +8,7 @@ const includeSources2 = new Set<string>();
 const customIncludeSourcesGlsl = new Map<string, string>();
 const customIncludeSourcesWgsl = new Map<string, string>();
 
-export function addIncludeSource(name: string, source = '') {
+export function addIncludeSource(name: string, source = ''): void {
 	includeSources.set(name, source);
 	includeSources2.add(name);
 	ShaderEventTarget.dispatchEvent(new CustomEvent('includeadded'));
@@ -44,7 +44,7 @@ function getIncludeSourceWgsl(name: string): string | undefined {
 	return customIncludeSourcesWgsl.get(name) ?? includeSources.get(name);
 }
 
-export function setCustomIncludeSource(name: string, source: string, type: ShaderType) {
+export function setCustomIncludeSource(name: string, source: string, type: ShaderType): void {
 	if (type == ShaderType.Wgsl) {
 		return setCustomIncludeSourceWgsl(name, source);
 	} else {
@@ -52,7 +52,7 @@ export function setCustomIncludeSource(name: string, source: string, type: Shade
 	}
 }
 
-function setCustomIncludeSourceGlsl(name: string, source: string) {
+function setCustomIncludeSourceGlsl(name: string, source: string): void {
 	if (source == '') {
 		customIncludeSourcesGlsl.delete(name);
 	} else {
@@ -60,7 +60,7 @@ function setCustomIncludeSourceGlsl(name: string, source: string) {
 	}
 }
 
-function setCustomIncludeSourceWgsl(name: string, source: string) {
+function setCustomIncludeSourceWgsl(name: string, source: string): void {
 	if (source == '') {
 		customIncludeSourcesWgsl.delete(name);
 	} else {
@@ -69,7 +69,7 @@ function setCustomIncludeSourceWgsl(name: string, source: string) {
 	WgslPreprocessor.setWgslInclude(name, getIncludeSourceWgsl(name) ?? '');
 }
 
-export function getIncludeList() {
+export function getIncludeList(): Set<string> {
 	return includeSources2;
 }
 

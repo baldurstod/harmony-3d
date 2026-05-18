@@ -1,7 +1,7 @@
 import { vec3, quat, vec4, vec2, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
-import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$1, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue } from 'harmony-utils';
-import { defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
+import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$2, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue } from 'harmony-utils';
+import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { WgslReflect } from 'wgsl_reflect';
@@ -2372,7 +2372,7 @@ class MeshBasicMaterial extends Material {
 Material.materialList['MeshBasic'] = MeshBasicMaterial;
 registerEntity(MeshBasicMaterial);
 
-const tempVec3$v = vec3.create();
+const tempVec3$u = vec3.create();
 const tempMin = vec3.create();
 const tempMax = vec3.create();
 class BoundingBox {
@@ -2387,11 +2387,11 @@ class BoundingBox {
         vec3.set(tempMin, +Infinity, +Infinity, +Infinity);
         vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
         for (let i = 0; i < pointArray.length; i += 3) {
-            tempVec3$v[0] = pointArray[i + 0];
-            tempVec3$v[1] = pointArray[i + 1];
-            tempVec3$v[2] = pointArray[i + 2];
-            vec3.min(tempMin, tempMin, tempVec3$v);
-            vec3.max(tempMax, tempMax, tempVec3$v);
+            tempVec3$u[0] = pointArray[i + 0];
+            tempVec3$u[1] = pointArray[i + 1];
+            tempVec3$u[2] = pointArray[i + 2];
+            vec3.min(tempMin, tempMin, tempVec3$u);
+            vec3.max(tempMax, tempMax, tempVec3$u);
         }
         if (pointArray.length) {
             if (!this.empty) {
@@ -2736,6 +2736,12 @@ function stringToQuat(s, q = quat.create()) {
     }
     return q;
 }
+/**
+ * Wrapper around window.prompt(), but the message is an i18n key
+ */
+function promptI18n(messageI18n, defaultValue) {
+    return prompt(I18n.getString(messageI18n), defaultValue);
+}
 
 var EntityObserverEventType;
 (function (EntityObserverEventType) {
@@ -2967,10 +2973,11 @@ class Entity {
         if (this._parent) {
             this._parent.getWorldOrientation(tempQuat$c);
             quat.invert(tempQuat$c, tempQuat$c);
-            quat.mul(this._quaternion, tempQuat$c, quaternion);
+            quat.mul(tempQuat$c, tempQuat$c, quaternion);
+            this.setOrientation(tempQuat$c);
         }
         else {
-            quat.copy(this._quaternion, quaternion);
+            this.setOrientation(quaternion);
         }
     }
     getWorldScale(vec = vec3.create()) {
@@ -3601,58 +3608,63 @@ class Entity {
                     { i18n: '#remove_similar_siblings', f: () => this.removeSimilarSiblings() },
                 ]
             },
-            name: { i18n: '#name', f: () => { const n = prompt('Name', this.name); if (n !== null) {
+            name: { i18n: '#name', f: () => { const n = promptI18n('#name', this.name); if (n !== null) {
                     this.name = n;
                 } } },
             add: { i18n: '#add', submenu: Entity.addSubMenu },
             entitynull_1: null,
-            position: { i18n: '#position', f: () => { const v = prompt('Position', this.getPosition().join(' ')); if (v !== null) {
+            position: { i18n: '#position', f: () => { const v = promptI18n('#position', this.getPosition().join(' ')); if (v !== null) {
                     this.lockPos = true;
                     this.setPosition(stringToVec3(v));
                 } } },
-            translate: { i18n: '#translate', f: () => { const t = prompt('Translation', '0 0 0'); if (t !== null) {
+            translate: { i18n: '#translate', f: () => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) {
                     this.lockPos = true;
                     this.translate(stringToVec3(t));
                 } } },
             reset_position: { i18n: '#reset_position', f: () => this.setPosition(IDENTITY_VEC3) },
             entitynull_2: null,
-            quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.getQuaternion().join(' ')); if (v !== null) {
+            local_orientation: { i18n: '#local_orientation', f: () => { const v = promptI18n('#local_orientation', this.getOrientation().join(' ')); if (v !== null) {
                     this.lockRot = true;
-                    this.setQuaternion(stringToQuat(v));
+                    this.setOrientation(stringToQuat(v));
+                } } },
+            global_orientation: { i18n: '#global_orientation', f: () => { const v = promptI18n('#global_orientation', this.getWorldOrientation().join(' ')); if (v !== null) {
+                    this.lockRot = true;
+                    this.setWorldOrientation(stringToQuat(v));
                 } } },
             rotate: {
                 i18n: '#rotate', submenu: [
-                    { i18n: '#rotate_x_global', f: () => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) {
+                    { i18n: '#rotate_x_global', f: () => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalX(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_y_global', f: () => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) {
+                    { i18n: '#rotate_y_global', f: () => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalY(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_z_global', f: () => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) {
+                    { i18n: '#rotate_z_global', f: () => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalZ(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_x', f: () => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) {
+                    { i18n: '#rotate_x', f: () => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateX(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_y', f: () => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) {
+                    { i18n: '#rotate_y', f: () => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateY(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_z', f: () => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) {
+                    { i18n: '#rotate_z', f: () => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateZ(r * DEG_TO_RAD);
                         } } },
                 ]
             },
-            reset_rotation: { i18n: '#reset_rotation', f: () => this.setQuaternion(IDENTITY_QUAT$1) },
+            reset_orientation: { i18n: '#reset_local_orientation', f: () => this.setOrientation(IDENTITY_QUAT$1) },
+            reset_global_orientation: { i18n: '#reset_global_orientation', f: () => this.setWorldOrientation(IDENTITY_QUAT$1) },
             entitynull_3: null,
             scale: {
                 i18n: '#scale', f: () => {
-                    const s = prompt('Scale', this.scale.join(' '));
+                    const s = promptI18n('#scale', this.scale.join(' '));
                     if (s !== null) {
                         const arr = s.split(' ');
                         if (arr.length == 3) {
@@ -3664,7 +3676,7 @@ class Entity {
                     }
                 }
             },
-            reset_scale: { i18n: '#reset_scale', f: () => this.scale = UNITY_VEC3 },
+            reset_scale: { i18n: '#reset_scale', f: () => { this.scale = UNITY_VEC3; } },
             entitynull_4: null,
             wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: () => this.toggleWireframe() },
             cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: () => this.toggleCastShadow() },
@@ -5301,7 +5313,7 @@ function getViewDimension(info) {
     return dim;
 }
 
-const tempVec3$u = vec3.create();
+const tempVec3$t = vec3.create();
 const identityVec2 = vec2.create();
 const v1$2 = vec3.create();
 const v2$1 = vec3.create();
@@ -5525,11 +5537,11 @@ class Mesh extends Entity {
             return;
         }
         for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
-            tempVec3$u[0] = vertexPosition[i + 0];
-            tempVec3$u[1] = vertexPosition[i + 1];
-            tempVec3$u[2] = vertexPosition[i + 2];
-            vec3.min(min, min, tempVec3$u);
-            vec3.max(max, max, tempVec3$u);
+            tempVec3$t[0] = vertexPosition[i + 0];
+            tempVec3$t[1] = vertexPosition[i + 1];
+            tempVec3$t[2] = vertexPosition[i + 2];
+            vec3.min(min, min, tempVec3$t);
+            vec3.max(max, max, tempVec3$t);
         }
         //console.error(min, max);
     }
@@ -6677,7 +6689,7 @@ var RenderBufferInternalFormat;
     RenderBufferInternalFormat[RenderBufferInternalFormat["DEPTH32F_STENCIL8"] = 36013] = "DEPTH32F_STENCIL8";
 })(RenderBufferInternalFormat || (RenderBufferInternalFormat = {}));
 
-const tempVec3$t = vec3.create();
+const tempVec3$s = vec3.create();
 class CubeBackground extends BackGround {
     #box = new Box();
     #scene = new Scene();
@@ -6695,7 +6707,7 @@ class CubeBackground extends BackGround {
         }
     }
     render(renderer, camera, context) {
-        this.#box.setPosition(camera.getPosition(tempVec3$t));
+        this.#box.setPosition(camera.getPosition(tempVec3$s));
         renderer.render(this.#scene, camera, 0, context);
         return {
             clearColor: false,
@@ -6756,7 +6768,7 @@ var CameraProjection;
     CameraProjection[CameraProjection["Mixed"] = 2] = "Mixed";
 })(CameraProjection || (CameraProjection = {}));
 const tempQuat$b = quat.create();
-const tempVec3$s = vec3.create();
+const tempVec3$r = vec3.create();
 const proj1 = mat4.create();
 const proj2 = mat4.create();
 const DEFAULT_NEAR_PLANE = 1;
@@ -6822,7 +6834,7 @@ class Camera extends Entity {
         //this._renderMode = 2;
     }
     computeCameraMatrix() {
-        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$b), this.getWorldPosition(tempVec3$s));
+        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$b), this.getWorldPosition(tempVec3$r));
         mat4.invert(this.#cameraMatrix, this.#cameraMatrix);
     }
     #computeProjectionMatrix() {
@@ -8909,7 +8921,7 @@ const xUnitVec3$1 = vec3.fromValues(1, 0, 0);
 vec3.fromValues(0, 1, 0);
 const zUnitVec3$2 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
-const tempVec3$r = vec3.create();
+const tempVec3$q = vec3.create();
 const spherical$1 = new Spherical();
 class FirstPersonControl extends CameraControl {
     #enableDamping = false;
@@ -9171,12 +9183,12 @@ class FirstPersonControl extends CameraControl {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
         const position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
-        spherical$1.toCartesian(tempVec3$r);
+        spherical$1.toCartesian(tempVec3$q);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
         //vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(position, position, tempVec3$r);
+        vec3.add(position, position, tempVec3$q);
         this.camera?.lookAt(position); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -9265,9 +9277,9 @@ class FirstPersonControl extends CameraControl {
         // angle from z-axis around y-axis
         spherical.setFromVector3(tempVec3);
         */
-        vec3.copy(tempVec3$r, xUnitVec3$1 /*minusZUnitVec3*/);
-        vec3.transformQuat(tempVec3$r, tempVec3$r, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
-        spherical$1.setFromVector3(tempVec3$r);
+        vec3.copy(tempVec3$q, xUnitVec3$1 /*minusZUnitVec3*/);
+        vec3.transformQuat(tempVec3$q, tempVec3$q, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
+        spherical$1.setFromVector3(tempVec3$q);
         this.#lat = -(90 - RAD_TO_DEG * (spherical$1.phi));
         this.#lon = -RAD_TO_DEG * (spherical$1.theta);
         this.#startLat = this.#lat;
@@ -9297,8 +9309,8 @@ class FirstPersonControl extends CameraControl {
         if (this.camera) {
             quat.rotationTo(this.#q, this.camera.upVector, zUnitVec3$2);
             this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
-            vec3.transformQuat(tempVec3$r, minusZUnitVec3, this.camera.quaternion);
-            spherical$1.setFromVector3(tempVec3$r);
+            vec3.transformQuat(tempVec3$q, minusZUnitVec3, this.camera.quaternion);
+            spherical$1.setFromVector3(tempVec3$q);
         }
     }
     handleEnabled() {
@@ -9332,7 +9344,7 @@ registerEntity(Target);
 // Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 // Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 const zUnitVec3$1 = vec3.fromValues(0, 0, 1);
-const tempVec3$q = vec3.create();
+const tempVec3$p = vec3.create();
 const tempVec3_2$9 = vec3.create();
 const spherical = new Spherical();
 // Mouse buttons
@@ -9455,12 +9467,12 @@ class OrbitControl extends CameraControl {
         }
         const position = this.camera._position;
         //offset.copy(position).sub(this.target);
-        vec3.sub(tempVec3$q, position, this.#target.getWorldPosition()); //TODO: optimise
+        vec3.sub(tempVec3$p, position, this.#target.getWorldPosition()); //TODO: optimise
         // rotate offset to 'y-axis-is-up' space
         //offset.applyQuaternion(q);
-        vec3.transformQuat(tempVec3$q, tempVec3$q, this.#q);
+        vec3.transformQuat(tempVec3$p, tempVec3$p, this.#q);
         // angle from z-axis around y-axis
-        spherical.setFromVector3(tempVec3$q);
+        spherical.setFromVector3(tempVec3$p);
         if (this.#autoRotate && this.#state === STATE.NONE) {
             this.#rotateLeft(this.#autoRotateSpeed);
         }
@@ -9496,13 +9508,13 @@ class OrbitControl extends CameraControl {
             vec3.add(tempVec3_2$9, this.#target._position, this.#panOffset);
             this.#target.setPosition(tempVec3_2$9);
         }
-        spherical.toCartesian(tempVec3$q);
+        spherical.toCartesian(tempVec3$p);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
-        vec3.transformQuat(tempVec3$q, tempVec3$q, this.#quatInverse);
+        vec3.transformQuat(tempVec3$p, tempVec3$p, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(tempVec3$q, this.#target.getWorldPosition(), tempVec3$q);
-        this.camera.setPosition(tempVec3$q);
+        vec3.add(tempVec3$p, this.#target.getWorldPosition(), tempVec3$p);
+        this.camera.setPosition(tempVec3$p);
         this.camera.lookAt(this.#target.getWorldPosition(), this.#upVector); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -9542,14 +9554,14 @@ class OrbitControl extends CameraControl {
         this.#sphericalDelta.phi -= angle;
     }
     #panLeft(distance, rotation) {
-        vec3.transformQuat(tempVec3$q, [1, 0, 0], rotation);
-        vec3.scale(tempVec3$q, tempVec3$q, -distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$q);
+        vec3.transformQuat(tempVec3$p, [1, 0, 0], rotation);
+        vec3.scale(tempVec3$p, tempVec3$p, -distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$p);
     }
     #panUp(distance, rotation) {
-        vec3.transformQuat(tempVec3$q, [0, 1, 0], rotation);
-        vec3.scale(tempVec3$q, tempVec3$q, distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$q);
+        vec3.transformQuat(tempVec3$p, [0, 1, 0], rotation);
+        vec3.scale(tempVec3$p, tempVec3$p, distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$p);
     }
     #pan(deltaX, deltaY, element) {
         if (!this.camera) {
@@ -9559,8 +9571,8 @@ class OrbitControl extends CameraControl {
             // perspective
             const position = this.camera.position;
             //offset.copy(position).sub(this.target);
-            vec3.sub(tempVec3$q, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
-            let targetDistance = vec3.len(tempVec3$q);
+            vec3.sub(tempVec3$p, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
+            let targetDistance = vec3.len(tempVec3$p);
             // half of the fov is center to top of screen
             targetDistance *= this.camera.getTanHalfVerticalFov(); //Math.tan((this.camera.fov / 2)* Math.PI / 180.0);
             // we use only clientHeight here so aspect ratio does not distort speed
@@ -10072,6 +10084,122 @@ OrbitControls.prototype.constructor = OrbitControls;*/
 MapControls.prototype = Object.create(EventTarget.prototype);
 MapControls.prototype.constructor = MapControls;*/
 
+vec3.fromValues(0, 0, 1);
+quat.create();
+class RetargetControl extends Entity {
+    #source;
+    #target;
+    enabled;
+    constructor(params = {}) {
+        super(params);
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => this.#update());
+        this.#source = params.source;
+        this.enabled = params.enabled ?? true;
+    }
+    parentChanged(parent) {
+        this.#target = undefined;
+        if (parent && parent.isSkeleton) {
+            this.#target = parent;
+        }
+    }
+    #update() {
+        if (this.enabled && this.#source && this.#target) {
+            retarget(this.#source, this.#target);
+        }
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            rotation_control1: null,
+            rotation_control_enabled: { i18n: '#enabled', selected: this.enabled, f: () => this.enabled = !this.enabled },
+        });
+    }
+    static getEntityName() {
+        return 'RetargetControl';
+    }
+}
+let once$1 = true;
+function retarget(source, target) {
+    for (const targetBone of target.bones) {
+        targetBone.setPosition(targetBone._initialPosition);
+        targetBone.setOrientation(targetBone._initialQuaternion);
+    }
+    for (const sourceBone of source.bones) {
+        if (once$1) {
+            console.info(sourceBone.name);
+        }
+        retargetBone(sourceBone, target);
+    }
+    /*
+    for (const sourceBone of source.getAttachments()) {
+        if (once) {
+            console.info(sourceBone.name);
+        }
+        retargetBone(sourceBone, target);
+    }
+    */
+    once$1 = false;
+}
+function retargetBone(sourceBone, target) {
+    const targetBone = target.getBoneByName(sourceBone.name);
+    const sourceBoneParent = sourceBone.parent;
+    const targetBoneParent = targetBone?.parent;
+    if (!sourceBoneParent || !targetBone || !targetBoneParent) {
+        return;
+    }
+    if (!targetBoneParent.isBone) {
+        // It's a root bone, give the source orientation / position
+        targetBone.setWorldOrientation(sourceBone.getWorldOrientation());
+        targetBone.setPosition(sourceBone.getPosition());
+        return;
+    }
+    const sourceBonePos = sourceBone.getWorldPosition();
+    const sourceBoneParentPos = sourceBoneParent.getWorldPosition();
+    const targetBonePos = targetBone.getWorldPosition();
+    const targetBoneParentPos = targetBoneParent.getWorldPosition();
+    const sourceDeltaPos = vec3.sub(vec3.create(), sourceBonePos, sourceBoneParentPos);
+    const sourceDeltaPosNorm = vec3.normalize(vec3.create(), sourceDeltaPos);
+    let count = 0;
+    for (const child of targetBone.children) {
+        if (child.isBone
+            // TODO: find a way to automatically disqualify some bones
+            && (!child.name.startsWith('hlp'))
+            && (!child.name.startsWith('bip_dogtag'))
+            && (!child.name.startsWith('weapon_bone'))
+            && (!vec3.equals(child.getPosition(), [0, 0, 0]))) {
+            ++count;
+        }
+    }
+    const targetDeltaPos = vec3.sub(vec3.create(), targetBonePos, targetBoneParentPos);
+    if (sourceBone.name.startsWith('weapon_bone') || sourceBone.name.startsWith('prop_bone')) {
+        // TODO: find a way to select the bones properly
+        targetBone.setPosition(sourceBone.getPosition());
+    }
+    if (count === 0) {
+        // End bone, rotate this very bone
+        targetBone.setWorldOrientation(sourceBone.getWorldOrientation());
+    }
+    else {
+        let parentChildCount = 0;
+        for (const child of targetBoneParent.children) {
+            if (child.isBone
+                // TODO: find a way to automatically disqualify some bones
+                && (!child.name.startsWith('hlp'))
+                && (!child.name.startsWith('bip_dogtag'))
+                && (!vec3.equals(child.getPosition(), [0, 0, 0]))) {
+                ++parentChildCount;
+            }
+        }
+        if (parentChildCount < 2) {
+            // Align bone to the source ref pose, by rotating parent bone
+            const targetDeltaPosNorm = vec3.normalize(vec3.create(), targetDeltaPos);
+            const deltaQuat = quat.rotationTo(quat.create(), targetDeltaPosNorm, sourceDeltaPosNorm);
+            const q = quat.mul(quat.create(), deltaQuat, targetBoneParent.getWorldOrientation());
+            targetBoneParent.setWorldOrientation(q);
+            targetBoneParent.forEach(ent => ent.dirty = true);
+        }
+    }
+}
+
 const Z_VECTOR$1 = vec3.fromValues(0, 0, 1);
 const tempQuat$a = quat.create();
 class RotationControl extends Entity {
@@ -10149,42 +10277,63 @@ class RotationControl extends Entity {
                 } } },
         });
     }
+    static getEntityName() {
+        return 'RotationControl';
+    }
 }
 
 var TranslationMode;
 (function (TranslationMode) {
+    // Bounce back and forth
     TranslationMode[TranslationMode["Bounce"] = 0] = "Bounce";
-    TranslationMode[TranslationMode["Loop"] = 1] = "Loop";
-    TranslationMode[TranslationMode["Continue"] = 2] = "Continue";
+    // Teleport back to the starting point and keep going
+    TranslationMode[TranslationMode["Teleport"] = 1] = "Teleport";
+    // Stop when arriving at the end point
+    TranslationMode[TranslationMode["Stop"] = 2] = "Stop";
 })(TranslationMode || (TranslationMode = {}));
 class TranslationControl extends Entity {
-    #speed = 1;
     #startPoint = vec3.create();
     #endPoint = vec3.fromValues(10, 0, 0);
-    #mode = TranslationMode.Bounce;
-    #percent = 0;
+    #speed;
+    #amount;
+    #mode;
     #bounceDirection = 1;
-    constructor(params) {
+    constructor(params = {}) {
         super(params);
+        if (params.start) {
+            vec3.copy(this.#startPoint, params.start);
+        }
+        if (params.end) {
+            vec3.copy(this.#endPoint, params.end);
+        }
+        this.#speed = params.speed ?? 1;
+        this.#amount = params.amount ?? 0;
+        this.#mode = params.mode ?? TranslationMode.Bounce;
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => this.#update(event.detail.delta));
     }
     #update(delta) {
+        const parent = this._parent;
+        if (!parent) {
+            return;
+        }
         switch (this.#mode) {
             case TranslationMode.Bounce:
                 const distance = vec3.distance(this.#startPoint, this.#endPoint);
                 const deltaL = distance ? this.#speed * delta / distance : 1;
-                let percent = this.#percent + deltaL * this.#bounceDirection;
-                if (percent >= 1) {
+                let amount = this.#amount + deltaL * this.#bounceDirection;
+                if (amount >= 1) {
                     this.#bounceDirection = -1;
-                    percent = 1;
+                    amount = 1;
                 }
-                if (percent <= 0) {
+                if (amount <= 0) {
                     this.#bounceDirection = 1;
-                    percent = 0;
+                    amount = 0;
                 }
-                this.#percent = percent;
-                vec3.lerp(this._position, this.#startPoint, this.#endPoint, this.#percent);
+                this.#amount = amount;
+                vec3.lerp(parent._position, this.#startPoint, this.#endPoint, this.#amount);
                 break;
+            default:
+                errorOnce(`Code this mode:${this.#mode}`);
         }
     }
     buildContextMenu() {
@@ -10200,6 +10349,9 @@ class TranslationControl extends Entity {
                     stringToVec3(v, this.#endPoint);
                 } } },
         });
+    }
+    static getEntityName() {
+        return 'TranslationControl';
     }
 }
 
@@ -10810,7 +10962,7 @@ class SphereBufferGeometry extends BufferGeometry {
 const intersectionPoint1 = vec3.create();
 const intersectionPoint2 = vec3.create();
 const intersectionNormal$1 = vec3.create();
-const tempVec3$p = vec3.create();
+const tempVec3$o = vec3.create();
 const v$d = vec3.create();
 class Sphere extends Mesh {
     radius;
@@ -10863,7 +11015,7 @@ class Sphere extends Mesh {
         const ray = raycaster.ray;
         const worldPosition = this.getWorldPosition(v$d);
         const inverseRadius = 1 / this.radius;
-        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$p), intersectionPoint1, intersectionPoint2)) {
+        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$o), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
             //TODO: case when the ray spawn from inside the sphere
             vec3.sub(intersectionNormal$1, intersectionPoint1, worldPosition);
@@ -10918,7 +11070,7 @@ const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const xyUnitVec3 = vec3.fromValues(1, 1, 0);
 const xzUnitVec3 = vec3.fromValues(1, 0, 1);
 const yzUnitVec3 = vec3.fromValues(0, 1, 1);
-const tempVec3$o = vec3.create();
+const tempVec3$n = vec3.create();
 const tempVec3_b = vec3.create();
 const translationManipulatorTempQuat = quat.create();
 const tempQuat$9 = quat.create();
@@ -11077,9 +11229,9 @@ class Manipulator extends Entity {
         if (camera) {
             this.camera = camera;
             if (camera.isPerspective) {
-                this.getWorldPosition(tempVec3$o);
+                this.getWorldPosition(tempVec3$n);
                 camera.getWorldPosition(tempVec3_b);
-                scaleFactor = vec3.distance(tempVec3$o, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
+                scaleFactor = vec3.distance(tempVec3$n, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
                 scaleFactor *= 0.02;
             }
             else if (camera.isOrthographic) {
@@ -11087,7 +11239,7 @@ class Manipulator extends Entity {
                 scaleFactor *= 0.02;
             }
             scaleFactor *= this.size;
-            this.scale = vec3.set(tempVec3$o, scaleFactor, scaleFactor, scaleFactor);
+            this.scale = vec3.set(tempVec3$n, scaleFactor, scaleFactor, scaleFactor);
             this.#setupAxis();
         }
     }
@@ -11278,45 +11430,45 @@ class Manipulator extends Entity {
         }
     }
     #translationMoveHandler(x, y, width, height) {
-        this.#computeTranslationPosition(tempVec3$o, x, y, width, height);
-        vec3.sub(tempVec3$o, tempVec3$o, this.#startDragPosition);
+        this.#computeTranslationPosition(tempVec3$n, x, y, width, height);
+        vec3.sub(tempVec3$n, tempVec3$n, this.#startDragPosition);
         switch (this.#axis) {
             case ManipulatorAxis.None:
                 break;
             case ManipulatorAxis.X:
-                tempVec3$o[1] = 0;
-                tempVec3$o[2] = 0;
+                tempVec3$n[1] = 0;
+                tempVec3$n[2] = 0;
                 break;
             case ManipulatorAxis.Y:
-                tempVec3$o[0] = 0;
-                tempVec3$o[2] = 0;
+                tempVec3$n[0] = 0;
+                tempVec3$n[2] = 0;
                 break;
             case ManipulatorAxis.Z:
-                tempVec3$o[0] = 0;
-                tempVec3$o[1] = 0;
+                tempVec3$n[0] = 0;
+                tempVec3$n[1] = 0;
                 break;
             case ManipulatorAxis.XY:
-                tempVec3$o[2] = 0;
+                tempVec3$n[2] = 0;
                 break;
             case ManipulatorAxis.XZ:
-                tempVec3$o[1] = 0;
+                tempVec3$n[1] = 0;
                 break;
             case ManipulatorAxis.YZ:
-                tempVec3$o[0] = 0;
+                tempVec3$n[0] = 0;
                 break;
             default:
-                tempVec3$o[0] = 0;
-                tempVec3$o[1] = 0;
-                tempVec3$o[2] = 0;
+                tempVec3$n[0] = 0;
+                tempVec3$n[1] = 0;
+                tempVec3$n[2] = 0;
         }
-        vec3.transformQuat(tempVec3$o, tempVec3$o, this.getWorldQuaternion());
-        vec3.add(tempVec3$o, this.#startPosition, tempVec3$o);
+        vec3.transformQuat(tempVec3$n, tempVec3$n, this.getWorldQuaternion());
+        vec3.add(tempVec3$n, this.#startPosition, tempVec3$n);
         if (this._parent) {
-            this._parent.setWorldPosition(tempVec3$o);
+            this._parent.setWorldPosition(tempVec3$n);
             this._parent.lockPosition = true;
         }
         else {
-            this.setWorldPosition(tempVec3$o);
+            this.setWorldPosition(tempVec3$n);
         }
     }
     #rotationMoveHandler(x, y, width, height) {
@@ -11355,7 +11507,7 @@ class Manipulator extends Entity {
         }
     }
     #scaleMoveHandler(x, y, width, height) {
-        const v3 = this.#computeTranslationPosition(tempVec3$o, x, y, width, height);
+        const v3 = this.#computeTranslationPosition(tempVec3$n, x, y, width, height);
         if (!v3) {
             return;
         }
@@ -11468,10 +11620,10 @@ class Manipulator extends Entity {
         // transform the screen coordinates to normalized coordinates
         const normalizedX = (x / width) * 2.0 - 1.0;
         const normalizedY = 1.0 - (y / height) * 2.0;
-        this.getWorldPosition(tempVec3$o);
-        vec3.transformMat4(tempVec3$o, tempVec3$o, camera.cameraMatrix);
-        vec3.transformMat4(tempVec3$o, tempVec3$o, camera.projectionMatrix);
-        return Math.atan2(normalizedY - tempVec3$o[1], normalizedX - tempVec3$o[0]);
+        this.getWorldPosition(tempVec3$n);
+        vec3.transformMat4(tempVec3$n, tempVec3$n, camera.cameraMatrix);
+        vec3.transformMat4(tempVec3$n, tempVec3$n, camera.projectionMatrix);
+        return Math.atan2(normalizedY - tempVec3$n[1], normalizedX - tempVec3$n[0]);
     }
     setCamera(camera) {
         this.camera = camera;
@@ -11567,14 +11719,14 @@ class Manipulator extends Entity {
         }
         this.getWorldQuaternion(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-        this.getPositionFrom(camera, tempVec3$o);
-        vec3.normalize(tempVec3$o, tempVec3$o);
-        vec3.transformQuat(tempVec3$o, tempVec3$o, translationManipulatorTempQuat);
-        this.#circle.quaternion = quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$o);
+        this.getPositionFrom(camera, tempVec3$n);
+        vec3.normalize(tempVec3$n, tempVec3$n);
+        vec3.transformQuat(tempVec3$n, tempVec3$n, translationManipulatorTempQuat);
+        this.#circle.quaternion = quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$n);
         this.#viewCircle.quaternion = tempQuat$9;
-        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$o[1], -tempVec3$o[2]));
-        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$o[0], tempVec3$o[2]));
-        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$o[1], tempVec3$o[0]));
+        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$n[1], -tempVec3$n[2]));
+        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$n[0], tempVec3$n[2]));
+        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$n[1], tempVec3$n[0]));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -13278,8 +13430,8 @@ const MAX_PARTICLES_IN_A_SYSTEM$1 = 5000;
 const TEXTURE_WIDTH = 8;
 
 // remove these when unused
-const clearColorError = once$1(() => console.error('TODO clearColor'));
-const clearError = once$1(() => console.error('TODO clear'));
+const clearColorError = once$2(() => console.error('TODO clearColor'));
+const clearError = once$2(() => console.error('TODO clear'));
 const tempViewProjectionMatrix = mat4.create();
 const pickBufferSize = 8;
 const lightDirection = vec3.create();
@@ -17432,7 +17584,7 @@ for(var i = 0; i < rawLength; i++) {
   }
 }
 
-function loopSubdivision(imports){return _loadWasmModule(0, null, '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DgsgDkUNACALKAIUIgcoAgAiACALKAIQIgIoAgQ2AgQgAigCBCAANgIAIAtBADYCGCAHIAtBEGpGDQADQCAHKAIEIQAgBxA9IAAiByALQRBqRw0ACwsgC0EgaiQACwJAIARFBEAgAyECDAELQQAhAANAIBUgAzYCDCAVIAE2AgggAyADKAIEQQFqNgIEIBUgFSkDCDcDAEEAIQdBACEaIwBBIGsiDCQAIAwgFSgCACILIgE2AghBfyABKAIgIgZBBXQiCEEIciAGQf///z9xIAZHGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQQdxIgoEQANAIAFCADcDACABQQA6ABwgAUIANwMIIAFCADcDECABQSBqIQEgB0EBaiIHIApHDQALCyAGQQFrQf///z9xQQdJDQAgAiAIaiEGA0AgAUIANwMAIAFBADoAHCABQgA3AyAgAUIANwNAIAFCADcDYCABQgA3A4ABIAFCADcDCCABQgA3AxAgAUEAOgA8IAFCADcDKCABQgA3AzAgAUEAOgBcIAFCADcDSCABQgA3A1AgAUEAOgB8IAFCADcDaCABQgA3A3AgAUEAOgCcASABQgA3A5ABIAFCADcDiAEgAUIANwOgASABQQA6ALwBIAFCADcDqAEgAUIANwOwASABQQA6ANwBIAFCADcDwAEgAUIANwPIASABQgA3A9ABIAFBADoA/AEgAUIANwPgASABQgA3A+gBIAFCADcD8AEgAUGAAmoiASAGRw0ACwsgDCACNgIMIAwoAggiAigCHCIBIAJBGGpHBEBBACEHA0AgASgCCCAMKAIMIAdBBXRqNgJQIAdBAWohByABKAIEIgEgDCgCCCICQRhqRw0ACwtBfyACKAIIIgatQjB+IiynQQhyICxCIIinGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQTBsIgZBMGsiCEEwbkEBakEHcSIKBEBBACEHA0AgAUIANwMgIAFCADcDCCABQQA2AiggAUIANwMQIAFCADcAFSABQTBqIQEgB0EBaiIHIApHDQALCyAIQdACSQ0AIAIgBmohBgNAIAFCADcDICABQgA3AwggAUEANgIoIAFCADcDECABQgA3ABUgAUIANwNQIAFBADYCWCABQgA3AzggAUFAa0IANwMAIAFCADcARSABQgA3A4ABIAFB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IABBKGoiBSEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBSADKAIAIgINAQwCCyABIAJMDQIgAygCBCICDQALIANBBGohBQtBGBA8IgIgATYCECACIAM2AgggAkIANwIAIAIgBDYCFCAFIAI2AgAgACgCJCgCACIBBEAgACABNgIkIAUoAgAhAgsgACgCKCACEBUgACAAKAIsQQFqNgIsCyAEC5QEAQN/IAEgACABRiICOgAMAkAgAg0AA0AgASgCCCICLQAMDQECQCACIAIoAggiAygCACIERgRAAkAgAygCBCIERQ0AIAQtAAwNAAwCCwJAIAEgAigCAEYEQCACIQEMAQsgAiACKAIEIgEoAgAiADYCBCABIAAEfyAAIAI2AgggAigCCAUgAws2AgggAigCCCIAIAAoAgAgAkdBAnRqIAE2AgAgASACNgIAIAIgATYCCCABKAIIIgMoAgAhAgsgAUEBOgAMIANBADoADCADIAIoAgQiADYCACAABEAgACADNgIICyACIAMoAgg2AgggAygCCCIAIAAoAgAgA0dBAnRqIAI2AgAgAiADNgIEIAMgAjYCCA8LAkAgBEUNACAELQAMDQAMAQsCQCABIAIoAgBHBEAgAiEBDAELIAIgASgCBCIANgIAIAEgAAR/IAAgAjYCCCACKAIIBSADCzYCCCACKAIIIgAgACgCACACR0ECdGogATYCACABIAI2AgQgAiABNgIIIAEoAgghAwsgAUEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIARBDGohASACQQE6AAwgAyAAIANGOgAMIAFBAToAACADIgEgAEcNAAsLC5QKAQl/IwBBMGsiCCQAIABBMGohBAJ/IAhBGGohAyABKAIIIQUCQCABKAIAIgcoAgAiCiABKAIEIgYoAgAiC0YNACALIAUoAgAiCUYNACAJIApGDQAgCiALSARAIAkgC0oEQCADIAY2AgQgAyAHNgIAIAMgBTYCCCADDAMLIAkgCkoEQCADIAU2AgQgAyAHNgIAIAMgBjYCCCADDAMLIAMgBzYCBCADIAU2AgAgAyAGNgIIIAMMAgsCQCAJIAtKBEAg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ChsoAhBPDQQLA0AgACIDKAIQIgAgBUsEQCADIgEoAgAiAA0BDAILIAAgBU8NAiADKAIEIgANAAsgA0EEaiEBC0EUEDwiAiADNgIIIAJCADcCACACIAU2AhAgASACNgIAIAYoAgAoAgAiAARAIAYgADYCACABKAIAIQILIAIgAiAGKAIEIgdGIgA6AAwCQCAADQADQCACKAIIIgEtAAwNAQJAIAEgASgCCCIDKAIAIgBGBEACQCADKAIEIgBFDQAgAC0ADA0ADAILAkAgAiABKAIARgRAIAEhAgwBCyABIAEoAgQiAigCACIANgIEIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgAgASACNgIIIAIoAggiAygCACEBCyACQQE6AAwgA0EAOgAMIAMgASgCBCIANgIAIAAEQCAAIAM2AggLIAEgAygCCDYCCCADKAIIIgAgACgCACADR0ECdGogATYCACABIAM2AgQgAyABNgIIDAMLAkAgAEUNACAALQAMDQAMAQsCQCACIAEoAgBHBEAgASECDAELIAEgAigCBCIANgIAIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgQgASACNgIIIAIoAgghAwsgAkEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIAFBAToADCADIAMgB0Y6AAwgAEEBOgAMIAcgAyICRw0ACwsgBiAGKAIIQQFqNgIICyAFKAIAIgAgACgCACAFRkECdGooAgANAAsgBigCBCEACyAJIAU2AkggBiAAEBoLIAgoAgQiCCALRw0ACwsgBkEQaiQAC70BAQN/IABBKGoiBCEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBCADKAIAIgINAQwCCyABIAJMBEAgAyECDAMLIAMoAgQiAg0ACyADQQRqIQQLQRgQPCICIAE2AhAgAiADNgIIIAJCADcCACACQQA2AhQgBCACNgIAIAIhAyAAKAIkKAIAIgEEQCAAIAE2AiQgBCgCACEDCyAAKAIo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CwsgAEEwIAxBEmpBEkEAEDQgACAPIBEgD2sQMAwCCyAMIQYLIABBMCAGQQlqQQlBABA0CyAAQSAgAiAFIARBgMAAcxA0IAUgAiACIAVIGyEJDAELIBMgBUEadEEfdUEJcWohDAJAIANBC0sNAEEMIANrIQZEAAAAAAAAMEAhGANAIBhEAAAAAAAAMECiIRggBkEBayIGDQALIAwtAABBLUYEQCAYIAGaIBihoJohAQwBCyABIBigIBihIQELIBEgCygCLCIGIAZBH3UiBnMgBmutIBEQMyIGRgRAIAtBMDoADyALQQ9qIQYLIBBBAnIhCiAFQSBxIQggCygCLCEHIAZBAmsiDSAFQQ9qOgAAIAZBAWtBLUErIAdBAEgbOgAAIARBCHEhBiALQRBqIQcDQCAHIgUCfyABmUQAAAAAAADgQWMEQCABqgwBC0GAgICAeAsiB0HQJmotAAAgCHI6AAAgASAHt6FEAAAAAAAAMECiIQECQCAFQQFqIgcgC0EQamtBAUcNAAJAIAYNACADQQBKDQAgAUQAAAAAAAAAAGENAQsgBUEuOgABIAVBAmohBwsgAUQAAAAAAAAAAGINAAtBfyEJQf3///8HIAogESANayIFaiIGayADSA0AIABBICACIAYCfwJAIANFDQAgByALQRBqayIIQQJrIANODQAgA0ECagwBCyAHIAtBEGprIggLIgdqIgMgBBA0IAAgDCAKEDAgAEEwIAIgAyAEQYCABHMQNCAAIAtBEGogCBAwIABBMCAHIAhrQQBBABA0IAAgDSAFEDAgAEEgIAIgAyAEQYDAAHMQNCADIAIgAiADSBshCQsgC0GwBGokACAJC4kFAgZ+AX8gASABKAIAQQdqQXhxIgFBEGo2AgAgAAJ8IAEpAwAhBCABKQMIIQUjAEEgayIAJAACQCAFQv///////////wCDIgNCgICAgICAwIA8fSADQoCAgICAgMD/wwB9VARAIAVCBIYgBEI8iIQhAyAEQv//////////D4MiBEKBgICAgICAgAhaBEAgA0KBgICAgICAgMAAfCECDAILIANCgICAgICAgIBAfSECIARCgICAgICAgIAIUg0BIAIgA0IBg3whAgwBCyAEUCADQoCAgICAgMD//wBUIANCgICAgICAwP//AFEbRQRAIAVCBIYgBEI8iIRC/////////wODQoCAgICAgID8/wCEIQIMAQtCgICAgICAgPj/ACECIANC////////v//DAFYNAEIAIQIgA0IwiKciAUGR9wBJDQAgBCECIAVC////////P4NCgICAgICAwACEIgMhBgJAIAFBgfcAayIIQcAAcQRAIAIgCEFAaq2GIQZCACECDAELIAhFDQAgBiAIrSIHhiACQcAAIAhrrYiEIQYgAiAHhiECCyAAIAI3AxAgACAGNwMYAkBBgfgAIAFrIgFBwABxBEAgAyABQUBqrYghBEIAIQMMAQsgAUUNACADQcAAIAFrrYYgBCABrSICiIQhBCADIAKIIQMLIAAgBDcDACAAIAM3AwggACkDCEIEhiAAKQMAIgRCPIiEIQIgACkDECAAKQMYhEIAUq0gBEL//////////w+DhCIEQoGAgICAgICACFoEQCACQgF8IQIMAQsgBEKAgICAgICAgAhSDQAgAkIBgyACfCECCyAAQSBqJAAgAiAFQoCAgICAgICAgH+DhL8LOQMAC5cCACAARQRAQQAPCwJ/AkAgAAR/IAFB/wBNDQECQEH0LSgCACgCAEUEQCABQYB/cUGAvwNGDQMMAQsgAUH/D00EQCAAIAFBP3FBgAFyOgABIAAgAUEGdkHAAXI6AABBAgwECyABQYBAcUGAwANHIAFBgLADT3FFBEAgACABQT9xQYABcjoAAiAAIAFBDHZB4AFyOgAAIAAgAUEGdkE/cUGAAXI6AAFBAwwECyABQYCABGtB//8/TQRAIAAgAUE/cUGAAXI6AAMgACABQRJ2QfABcjoAACAAIAFBBnZBP3FBgAFyOgACIAAgAUEMdkE/cUGAAXI6AAFBBAwECwtB0CxBGTYCAEF/BUEBCwwBCyAAIAE6AABBAQsL8iwBC38jAEEQayILJAACQAJAAkACQAJAAkACQAJAAkACQAJAIABB9AFNBEBBlC4oAgAiBUEQIABBC2pBeHEgAEELSRsiBkEDdiIAdiIBQQNxBEACQCABQX9zQQFxIABqIgJBA3QiAUG8LmoiACABQcQuaigCACIBKAIIIgNGBEBBlC4gBUF+IAJ3cTYCAAwBCyADIAA2AgwgACADNgIICyABQQhqIQAgASACQQN0IgJBA3I2AgQgASACaiIBIAEoAgRBAXI2AgQMDAsgBkGcLigCACIHTQ0BIAEEQAJAQQIgAHQi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AEF/CzcBAX8CQCAAQQhqIgEoAgAEQCABIAEoAgBBAWsiATYCACABQX9HDQELIAAgACgCACgCEBEAAAsLMgEBfyAAQQEgABshAAJAA0AgABA4IgENAUGEMigCACIBBEAgAREIAAwBCwsQIwALIAELBgAgABA5C3QBAX8gAkUEQCAAKAIEIAEoAgRGDwsgACABRgRAQQEPCyABKAIEIgItAAAhAQJAIAAoAgQiAy0AACIARQ0AIAAgAUcNAANAIAItAAEhASADLQABIgBFDQEgAkEBaiECIANBAWohAyAAIAFGDQALCyAAIAFGC80DAQR/IwBBQGoiBCQAAn9BASAAIAFBABA+DQAaQQAgAUUNABojAEFAaiIDJAAgASgCACIFQQRrKAIAIQYgBUEIaygCACEFIANCADcDICADQgA3AyggA0IANwMwIANCADcANyADQgA3AxggA0EANgIUIANB4Cc2AhAgAyABNgIMIANBkCg2AgggASAFaiEBQQAhBQJAIAZBkChBABA+BEAgA0EBNgI4IAYgA0EIaiABIAFBAUEAIAYoAgAoAhQRBwAgAUEAIAMoAiBBAUYbIQUMAQsgBiADQQhqIAFBAUEAIAYoAgAoAhgRBgACQAJAIAMoAiwOAgABAgsgAygCHEEAIAMoAihBAUYbQQAgAygCJEEBRhtBACADKAIwQQFGGyEFDAELIAMoAiBBAUcEQCADKAIwDQEgAygCJEEBRw0BIAMoAihBAUcNAQsgAygCGCEFCyADQUBrJABBACAFIgFFDQAaIARBCGoiA0EEckEAQTQQJyAEQQE2AjggBEF/NgIUIAQgADYCECAEIAE2AgggASADIAIoAgBBASABKAIAKAIcEQIAIAQoAiAiAEEBRgRAIAIgBCgCGDYCAAsgAEEBRgshACAEQUBrJAAgAAtdAQF/IAAoAhAiA0UEQCAAQQE2AiQgACACNgIYIAAgATYCEA8LAkAgASADRgRAIAAoAhhBAkcNASAAIAI2AhgPCyAAQQE6ADYgAEECNgIYIAAgACgCJEEBajYCJAsLGAAgACABKAIIQQAQPgRAIAEgAiADEEALCzEAIAAgASgCCEEAED4EQCABIAIgAxBADwsgACgCCCIAIAEgAiADIAAoAgAoAhwRAgALUgEBfyAAKAIEIQQgACgCACIAIAECf0EAIAJFDQAaIARB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', imports)}
+function loopSubdivision(imports){return _loadWasmModule(0, null, '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DgsgDkUNACALKAIUIgcoAgAiACALKAIQIgIoAgQ2AgQgAigCBCAANgIAIAtBADYCGCAHIAtBEGpGDQADQCAHKAIEIQAgBxA9IAAiByALQRBqRw0ACwsgC0EgaiQACwJAIARFBEAgAyECDAELQQAhAANAIBUgAzYCDCAVIAE2AgggAyADKAIEQQFqNgIEIBUgFSkDCDcDAEEAIQdBACEaIwBBIGsiDCQAIAwgFSgCACILIgE2AghBfyABKAIgIgZBBXQiCEEIciAGQf///z9xIAZHGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQQdxIgoEQANAIAFCADcDACABQQA6ABwgAUIANwMIIAFCADcDECABQSBqIQEgB0EBaiIHIApHDQALCyAGQQFrQf///z9xQQdJDQAgAiAIaiEGA0AgAUIANwMAIAFBADoAHCABQgA3AyAgAUIANwNAIAFCADcDYCABQgA3A4ABIAFCADcDCCABQgA3AxAgAUEAOgA8IAFCADcDKCABQgA3AzAgAUEAOgBcIAFCADcDSCABQgA3A1AgAUEAOgB8IAFCADcDaCABQgA3A3AgAUEAOgCcASABQgA3A5ABIAFCADcDiAEgAUIANwOgASABQQA6ALwBIAFCADcDqAEgAUIANwOwASABQQA6ANwBIAFCADcDwAEgAUIANwPIASABQgA3A9ABIAFBADoA/AEgAUIANwPgASABQgA3A+gBIAFCADcD8AEgAUGAAmoiASAGRw0ACwsgDCACNgIMIAwoAggiAigCHCIBIAJBGGpHBEBBACEHA0AgASgCCCAMKAIMIAdBBXRqNgJQIAdBAWohByABKAIEIgEgDCgCCCICQRhqRw0ACwtBfyACKAIIIgatQjB+IiynQQhyICxCIIinGxA8IgEgBjYCBCABQQhqIQICQCAGRQ0AIAIhASAGQTBsIgZBMGsiCEEwbkEBakEHcSIKBEBBACEHA0AgAUIANwMgIAFCADcDCCABQQA2AiggAUIANwMQIAFCADcAFSABQTBqIQEgB0EBaiIHIApHDQALCyAIQdACSQ0AIAIgBmohBgNAIAFCADcDICABQgA3AwggAUEANgIoIAFCADcDECABQgA3ABUgAUIANwNQIAFBADYCWCABQgA3AzggAUFAa0IANwMAIAFCADcARSABQgA3A4ABIAFBADYCiAEgAUIANwNoIAFCADcDcCABQgA3AHUgAUEANgK4ASABQgA3A7ABIAFCADcApQEgAUIANwOgASABQgA3A5gBIAFCADcD4AEgAUEANgLoASABQgA3A8gBIAFCADcD0AEgAUIANwDVASABQgA3A5ACIAFBADYCmAIgAUIANwP4ASABQgA3A4ACIAFCADcAhQIgAUIANwPAAiABQQA2AsgCIAFCADcDqAIgAUIANwOwAiABQgA3ALUCIAFBADYC+AIgAUIANwPwAiABQgA3AOUCIAFCADcD4AIgAUIANwPYAiABQYADaiIBIAZHDQALCyAMIAI2AhAgDCgCCCIBKAIEIgIgAUcEQEEAIQcgAiEBA0AgASgCCCAMKAIQIAdBMGxqNgIIIAdBAWohByABKAIEIgEgDCgCCEcNAAsLQX9BfyABKAIUIgFBA2wiAq1CKH4iLKciBkEIaiIHIAYgB0sbICxCIIinGxA8IgYgAjYCBCAGQQhqIQIgAQRAIAJBACABQfgAbCIBIAFBKGtBKHBrECcLIAwgAjYCFCAMKAIIIgIoAhAiASACQQxqRwRAQQAhBwNAIAEoAggoAgQiBiAHQShsIgIgDCgCFGo2AhQgBigCECIGIAIgDCgCFGpBKGo2AhQgBigCECACIAwoAhRqQdAAajYCFCAHQQNqIQcgASgCBCIBIAwoAggiAkEMakcNAAsLQQAhAUF/QX8gAigCFCICQQRqIgYgAiAGSxsgAkEASBsQPCIGIAI2AgAgBkEEaiEGIAIEQCAGQQAgAhAnCyAMIAY2AhggDCgCCCICKAIQIgcgAkEMakcEQANAIAcoAgggDCgCGCABajYCCCABQQFqIQEgBygCBCIHIAwoAghBDGpHDQALC0HIABA8Ig9BADYCCCAPQShqIgFCADcCACAPQQA2AiAgDyAPQRhqIgI2AhwgDyACNgIYIA9BADYCFCAPIA9BDGoiAjYCECAPIAI2AgwgD0E0aiICQgA3AgAgDyABNgIkIA9BQGsiAUIANwIAIA8gAjYCMCAPIAE2AjwgDyAPNgIEIA8gDzYCACAMIA82AgQgDCALNgIAIwBBIGsiCSQAIAwoAgAiBygCHCIbIAdBGGoiH0cEQCAJQQRyIRAgCUEQakEEciELA0AgGygCCCERIAwoAgQgGkEBaiIaEBQhFgJAIBEtAEwEQCARKAJIIQogCSALNgIQIAlCADcCFAJAIAooAhAiASgCACICIAIoAgAgAUZBAnRqKAIARQ0AA0AgCigCECIBKAIAIgIgAigCACABRkECdGooAgAhCiAJKAIUIgchAiALIgEhBgJAAkAgB0UNAANAIAEiBiACIgggAigCECAKSSIOGyEBIAJBBGogAiAOGygCACICDQALIAEgC0cEQCAKIAYgCCAOGygCEE8NBAsDQCAHIgYoAhAiASAKSwRAIAYiASgCACIHDQEMAgsgASAKTw0CIAYoAgQiBw0ACyAGQQRqIQELQRQQPCICIAY2AgggAkIANwIAIAIgCjYCECABIAI2AgAgCSgCECgCACIGBEAgCSAGNgIQIAEoAgAhAgsgAiACIAkoAhQiCEYiAToADAJAIAENAANAIAIoAggiAS0ADA0BAkAgASABKAIIIgYoAgAiB0YEQAJAIAYoAgQiB0UNACAHLQAMDQAMAgsCQCACIAEoAgBGBEAgASECDAELIAEgASgCBCICKAIAIgc2AgQgAiAHBH8gByABNgIIIAEoAggFIAYLNgIIIAEoAggiBiAGKAIAIAFHQQJ0aiACNgIAIAIgATYCACABIAI2AgggAigCCCIGKAIAIQELIAJBAToADCAGQQA6AAwgBiABKAIEIgI2AgAgAgRAIAIgBjYCCAsgASAGKAIINgIIIAYoAggiAiACKAIAIAZHQQJ0aiABNgIAIAEgBjYCBCAGIAE2AggMAwsCQCAHRQ0AIActAAwNAAwBCwJAIAIgASgCAEcEQCABIQIMAQsgASACKAIEIgc2AgAgAiAHBH8gByABNgIIIAEoAggFIAYLNgIIIAEoAggiBiAGKAIAIAFHQQJ0aiACNgIAIAIgATYCBCABIAI2AgggAigCCCEGCyACQQE6AAwgBkEAOgAMIAYgBigCBCIBKAIAIgI2AgQgAgRAIAIgBjYCCAsgASAGKAIINgIIIAYoAggiAiACKAIAIAZHQQJ0aiABNgIAIAEgBjYCACAGIAE2AggMAgsgAUEBOgAMIAYgBiAIRjoADCAHQQE6AAwgCCAGIgJHDQALCyAJIAkoAhhBAWo2AhgLIAooAhAiASgCACICIAIoAgAgAUZBAnRqKAIADQALCyAKKAIQIQ0gESgCSCEKIAlBEGogCSgCFBAaIAkgCzYCECAJQgA3AhQCQCAKKAIAIgEgASgCACAKRkECdGooAgAiAQR/IAEoAgwFQQALRQ0AA0AgCigCECIBKAIAIgIgAigCACABRkECdGooAgAhCiAJKAIUIgchAiALIgEhBgJAAkAgB0UNAANAIAEiBiACIgggAigCECAKSSIOGyEBIAJBBGogAiAOGygCACICDQALIAEgC0cEQCAKIAYgCCAOGygCEE8NBAsDQCAHIgYoAhAiASAKSwRAIAYiASgCACIHDQEMAgsgASAKTw0CIAYoAgQiBw0ACyAGQQRqIQELQRQQPCICIAY2AgggAkIANwIAIAIgCjYCECABIAI2AgAgCSgCECgCACIGBEAgCSAGNgIQIAEoAgAhAgsgAiACIAkoAhQiCEYiAToADAJAIAENAANAIAIoAggiAS0ADA0BAkAgASABKAIIIgYoAgAiB0YEQAJAIAYoAgQiB0UNACAHLQAMDQAMAgsCQCACIAEoAgBGBEAgASECDAELIAEgASgCBCICKAIAIgc2AgQgAiAHBH8gByABNgIIIAEoAggFIAYLNgIIIAEoAggiBiAGKAIAIAFHQQJ0aiACNgIAIAIgATYCACABIAI2AgggAigCCCIGKAIAIQELIAJBAToADCAGQQA6AAwgBiABKAIEIgI2AgAgAgRAIAIgBjYCCAsgASAGKAIINgIIIAYoAggiAiACKAIAIAZHQQJ0aiABNgIAIAEgBjYCBCAGIAE2AggMAwsCQCAHRQ0AIActAAwNAAwBCwJAIAIgASgCAEcEQCABIQIMAQsgASACKAIEIgc2AgAgAiAHBH8gByABNgIIIAEoAggFIAYLNgIIIAEoAggiBiAGKAIAIAFHQQJ0aiACNgIAIAIgATYCBCABIAI2AgggAigCCCEGCyACQQE6AAwgBkEAOgAMIAYgBigCBCIBKAIAIgI2AgQgAgRAIAIgBjYCCAsgASAGKAIINgIIIAYoAggiAiACKAIAIAZHQQJ0aiABNgIAIAEgBjYCACAGIAE2AggMAgsgAUEBOgAMIAYgBiAIRjoADCAHQQE6AAwgCCAGIgJHDQALCyAJIAkoAhhBAWo2AhgLIAooAgAiASABKAIAIApGQQJ0aigCACIBBH8gASgCDAVBAAsNAAsLIBErAxAhJSANKAIIIgErAxAhJiAKKAIMKAIIIgIrAxAhJyARKwMYISggASsDGCEpIAIrAxghKiAWIBErAwhEAAAAAAAA6D+iIAIrAwggASsDCKBEAAAAAAAAwD+ioDkDCCAWIChEAAAAAAAA6D+iICogKaBEAAAAAAAAwD+ioDkDGCAWICVEAAAAAAAA6D+iICcgJqBEAAAAAAAAwD+ioDkDECAJQRBqIAkoAhQQGgwBC0EAIRQgCUEANgIYIAlCADcDECARKAJIIQogCSAQNgIAIAlCADcCBAJAAkACQAJAA0AgCigCDCgCCCEHAkAgCSgCFCIGIAkoAhhHBEAgBiAHKQMINwMAIAYgBykDGDcDECAGIAcpAxA3AwggCSAGQRhqNgIUDAELIAYgCSgCECICa0EYbSIBQQFqIghBq9Wq1QBPDQMgAUEBdCIOIAggCCAOSRtBqtWq1QAgAUHVqtUqSRsiCAR/IAhBq9Wq1QBPDQMgCEEYbBA8BUEACyIOIAFBGGxqIgEgBykDCDcDACABIAcpAxg3AxAgASAHKQMQNwMIIAFBGGohByACIAZHBEADQCABQRhrIgEgBkEYayIGKQMANwMAIAEgBikDEDcDECABIAYpAwg3AwggAiAGRw0ACyACIQYLIAkgDiAIQRhsajYCGCAJIAc2AhQgCSABNgIQIAZFDQAgBhA9CyAKKAIQIgEoAgAiAiACKAIAIAFGQQJ0aigCACEKIAkoAgQiByECIBAiASEGAkACQAJAIAdFDQADQCABIgYgAiIIIAIoAhAgCkkiDhshASACQQRqIAIgDhsoAgAiAg0ACyABIBBHBEAgCiAGIAggDhsoAhBPDQMLA0AgByIGKAIQIgEgCksEQCAGIgEoAgAiBw0BDAILIAEgCk8NAiAGKAIEIgcNAAsgBkEEaiEBC0EUEDwiAiAGNgIIIAJCADcCACACIAo2AhAgASACNgIAIAkoAgAoAgAiBgRAIAkgBjYCACABKAIAIQILIAIgAiAJKAIEIghGIgE6AAwCQCABDQADQCACKAIIIgEtAAwNAQJAIAEgASgCCCIGKAIAIgdGBEACQCAGKAIEIgdFDQAgBy0ADA0ADAILAkAgAiABKAIARgRAIAEhAgwBCyABIAEoAgQiAigCACIHNgIEIAIgBwR/IAcgATYCCCABKAIIBSAGCzYCCCABKAIIIgYgBigCACABR0ECdGogAjYCACACIAE2AgAgASACNgIIIAIoAggiBigCACEBCyACQQE6AAwgBkEAOgAMIAYgASgCBCICNgIAIAIEQCACIAY2AggLIAEgBigCCDYCCCAGKAIIIgIgAigCACAGR0ECdGogATYCACABIAY2AgQgBiABNgIIDAMLAkAgB0UNACAHLQAMDQAMAQsCQCACIAEoAgBHBEAgASECDAELIAEgAigCBCIHNgIAIAIgBwR/IAcgATYCCCABKAIIBSAGCzYCCCABKAIIIgYgBigCACABR0ECdGogAjYCACACIAE2AgQgASACNgIIIAIoAgghBgsgAkEBOgAMIAZBADoADCAGIAYoAgQiASgCACICNgIEIAIEQCACIAY2AggLIAEgBigCCDYCCCAGKAIIIgIgAigCACAGR0ECdGogATYCACABIAY2AgAgBiABNgIIDAILIAFBAToADCAGIAYgCEY6AAwgB0EBOgAMIAggBiICRw0ACwsgCSAJKAIIQQFqNgIICyAUQQFqIRQgCiARKAJIRw0BCwsgFEEETgRAIwBBEGsiEyQAAn1D2w/JQCAUsiItlSIFvCICQf////8HcSIBQdqfpPoDTQRAQwAAgD8gAUGAgIDMA0kNARogBbsQJQwBCyABQdGn7YMETQRAIAFB5JfbgARPBEBEGC1EVPshCUBEGC1EVPshCcAgAkEASBsgBbugECWMDAILIAW7ISUgAkEASARAICVEGC1EVPsh+T+gECYMAgtEGC1EVPsh+T8gJaEQJgwBCyABQdXjiIcETQRAIAFB4Nu/hQRPBEBEGC1EVPshGUBEGC1EVPshGcAgAkEASBsgBbugECUMAgsgAkEASARARNIhM3982RLAIAW7oRAmDAILIAW7RNIhM3982RLAoBAmDAELIAUgBZMgAUGAgID8B08NABojAEEQayIYJAACQCAFvCIgQf////8HcSIBQdqfpO4ETQRAIBMgBbsiJiAmRIPIyW0wX+Q/okQAAAAAAAA4Q6BEAAAAAAAAOMOgIiVEAAAAUPsh+b+ioCAlRGNiGmG0EFG+oqAiJzkDCCAnRAAAAGD7Iem/YyEBAn8gJZlEAAAAAAAA4EFjBEAgJaoMAQtBgICAgHgLIQIgAQRAIBMgJiAlRAAAAAAAAPC/oCIlRAAAAFD7Ifm/oqAgJURjYhphtBBRvqKgOQMIIAJBAWshAgwCCyAnRAAAAGD7Iek/ZEUNASATICYgJUQAAAAAAADwP6AiJUQAAABQ+yH5v6KgICVEY2IaYbQQUb6ioDkDCCACQQFqIQIMAQsgAUGAgID8B08EQCATIAUgBZO7OQMIQQAhAgwBCyAYIAEgAUEXdkGWAWsiAUEXdGu+uzkDCEEAIQYjAEGwBGsiDSQAIAEgAUEDa0EYbSICQQAgAkEAShsiDkFobGohB0HgDCgCACIKQQBOBEAgCkEBaiEBIA4hAgNAIA1BwAJqIAZBA3RqIAJBAEgEfEQAAAAAAAAAAAUgAkECdEHwDGooAgC3CzkDACACQQFqIQIgBkEBaiIGIAFHDQALCyAYQQhqIRwgB0EYayEIQQAhASAKQQAgCkEAShshBgNAQQAhAkQAAAAAAAAAACElA0AgHCACQQN0aisDACANQcACaiABIAJrQQN0aisDAKIgJaAhJSACQQFqIgJBAUcNAAsgDSABQQN0aiAlOQMAIAEgBkYhAiABQQFqIQEgAkUNAAtBLyAHayEhQTAgB2shHSAHQRlrISIgCiEBAkADQCANIAFBA3RqKwMAISVBACECIAEhBiABQQBMIhJFBEADQCANQeADaiACQQJ0agJ/An8gJUQAAAAAAABwPqIiJplEAAAAAAAA4EFjBEAgJqoMAQtBgICAgHgLtyImRAAAAAAAAHDBoiAloCIlmUQAAAAAAADgQWMEQCAlqgwBC0GAgICAeAs2AgAgDSAGQQFrIgZBA3RqKwMAICagISUgAkEBaiICIAFHDQALCwJ/ICUgCBAtIiUgJUQAAAAAAADAP6KcRAAAAAAAACDAoqAiJZlEAAAAAAAA4EFjBEAgJaoMAQtBgICAgHgLIRcgJSAXt6EhJQJAAkACQAJ/IAhBAEwiI0UEQCABQQJ0IA1qIgIgAigC3AMiAiACIB11IgIgHXRrIgY2AtwDIAIgF2ohFyAGICF1DAELIAgNASABQQJ0IA1qKALcA0EXdQsiGUEATA0CDAELQQIhGSAlRAAAAAAAAOA/Zg0AQQAhGQwBC0EAIQJBACEGIBJFBEADQCANQeADaiACQQJ0aiIkKAIAIR5B////ByESAn8CQCAGDQBBgICACCESIB4NAEEADAELICQgEiAeazYCAEEBCyEGIAJBAWoiAiABRw0ACwsCQCAjDQBB////AyECAkACQCAiDgIBAAILQf///wEhAgsgAUECdCANaiISIBIoAtwDIAJxNgLcAwsgF0EBaiEXIBlBAkcNAEQAAAAAAADwPyAloSElQQIhGSAGRQ0AICVEAAAAAAAA8D8gCBAtoSElCyAlRAAAAAAAAAAAYQRAQQAhBgJAIAogASICTg0AA0AgDUHgA2ogAkEBayICQQJ0aigCACAGciEGIAIgCkoNAAsgBkUNACAIIQcDQCAHQRhrIQcgDUHgA2ogAUEBayIBQQJ0aigCAEUNAAsMAwtBASECA0AgAiIGQQFqIQIgDUHgA2ogCiAGa0ECdGooAgBFDQALIAEgBmohBgNAIA1BwAJqIAFBAWoiAUEDdGogASAOakECdEHwDGooAgC3OQMAQQAhAkQAAAAAAAAAACElA0AgHCACQQN0aisDACANQcACaiABIAJrQQN0aisDAKIgJaAhJSACQQFqIgJBAUcNAAsgDSABQQN0aiAlOQMAIAEgBkgNAAsgBiEBDAELCwJAICVBGCAHaxAtIiVEAAAAAAAAcEFmBEAgDUHgA2ogAUECdGoCfwJ/ICVEAAAAAAAAcD6iIiaZRAAAAAAAAOBBYwRAICaqDAELQYCAgIB4CyICt0QAAAAAAABwwaIgJaAiJZlEAAAAAAAA4EFjBEAgJaoMAQtBgICAgHgLNgIAIAFBAWohAQwBCwJ/ICWZRAAAAAAAAOBBYwRAICWqDAELQYCAgIB4CyECIAghBwsgDUHgA2ogAUECdGogAjYCAAtEAAAAAAAA8D8gBxAtISUCQCABQQBIDQAgASECA0AgDSACIgZBA3RqICUgDUHgA2ogAkECdGooAgC3ojkDACACQQFrIQIgJUQAAAAAAABwPqIhJSAGDQALQQAhEiABQQBIDQAgCkEAIApBAEobIQcgASEGA0AgByASIAcgEkkbIQggASAGayEKQQAhAkQAAAAAAAAAACElA0AgAkEDdEHAImorAwAgDSACIAZqQQN0aisDAKIgJaAhJSACIAhHIQ4gAkEBaiECIA4NAAsgDUGgAWogCkEDdGogJTkDACAGQQFrIQYgASASRyECIBJBAWohEiACDQALC0QAAAAAAAAAACElIAFBAE4EQANAIAEiAkEBayEBICUgDUGgAWogAkEDdGorAwCgISUgAg0ACwsgGCAlmiAlIBkbOQMAIA1BsARqJAAgF0EHcSECIBgrAwAhJSAgQQBIBEAgEyAlmjkDCEEAIAJrIQIMAQsgEyAlOQMICyAYQRBqJAACQAJAAkACQCACQQNxDgMAAQIDCyATKwMIECUMAwsgEysDCJoQJgwCCyATKwMIECWMDAELIBMrAwgQJgshBSATQRBqJABDAAAgPyAFQwAAgD6UQwAAwD6SIgUgBZSTIC2VIQUMAwtDAABAPiEFIBRBAEoNAkQAAAAAAAAAACEmRAAAAAAAAAAAISdEAAAAAAAAAAAhJQwDC0G7ChAeAAtB3wkQHgALIAkoAhQhBiAUQQFxIQdEAAAAAAAAAAAhJQJAIBRBAUYEQEQAAAAAAAAAACEnRAAAAAAAAAAAISYMAQsgFEF+cSEIQQAhAUQAAAAAAAAAACEnRAAAAAAAAAAAISYDQCAmIAZBGGsiAisDAKAgBkEwayIGKwMAoCEmICUgAisDEKAgBisDEKAhJSAnIAIrAwigIAYrAwigIScgAUECaiIBIAhHDQALCyAHRQ0AICYgBkEYayIBKwMAoCEmICUgASsDEKAhJSAnIAErAwigIScLIBErAxAhKSARKwMIISogFiAlIAW7IiWiIBErAxhDAACAPyAUsiAFlJO7IiiioDkDGCAWICcgJaIgKSAooqA5AxAgFiAmICWiICogKKKgOQMIIAkgCSgCBBAaIAkoAhAiAUUNACABED0LIBEoAlAgFjYCGCAbKAIEIhsgH0cNAAsgDCgCACEHCyAHIAcoAgQiAUcEQANAIAEoAggiBigCACICKAIIIQsgAigCDCgCCCEIIAwoAgQgGkEBaiIaEBQhAiAIKwMYIAsrAxigISUgCCsDECALKwMQoCEmIAgrAwggCysDCKAhJwJAQQAgBigCAEEARyILIAYoAgRFIghyIAggC3EbRQRAIAIgJUQAAAAAAADgP6I5AxggAiAmRAAAAAAAAOA/ojkDECACICdEAAAAAAAA4D+iOQMIDAELIAIgJUQAAAAAAADYP6IiJTkDGCACICZEAAAAAAAA2D+iIiY5AxAgAiAnRAAAAAAAANg/oiInOQMIIAYoAgQoAhAoAggiCysDECEoIAYoAgAoAhAoAggiCCsDECEpIAsrAxghKiAIKwMYISsgAiAnIAgrAwggCysDCKBEAAAAAAAAwD+ioDkDCCACICUgKyAqoEQAAAAAAADAP6KgOQMYIAIgKSAooEQAAAAAAADAP6IgJqA5AxALIAYoAgggAjYCACABKAIEIgEgB0cNAAsgDCgCACEHCyAHKAIQIgEgB0EMaiIKRwRAQQAhBgNAIAEoAggoAgQiAigCECIHKAIQIQsgCSACKAIAKAIIKAIANgIQIAkgBygCACgCCCgCADYCFCAJIAsoAgAoAggoAgA2AhggDCgCBCAJQRBqIgggBkEBchAWIAkgAigCDCgCCCgCUCgCGDYCECAJIAIoAgAoAggoAgA2AhQgCSALKAIAKAIIKAIANgIYIAwoAgQgCCAGQQJyEBYgCSAHKAIMKAIIKAJQKAIYNgIQIAkgBygCACgCCCgCADYCFCAJIAIoAgAoAggoAgA2AhggDCgCBCAIIAZBA3IQFiAJIAsoAgwoAggoAlAoAhg2AhAgCSALKAIAKAIIKAIANgIUIAkgBygCACgCCCgCADYCGCAMKAIEIAggBkEEaiIGEBYgASgCBCIBIApHDQALCyAMKAIEEBcgCUEgaiQAIAwoAggiAigCHCIGIAJBGGpHBEADQCAGKAIIQQA2AlAgBigCBCIGIAwoAggiAkEYakcNAAsLIAwoAgwiAQRAIAFBCGsQECAMKAIIIQILIAIgAigCBCIBRwRAIAEhAgNAIAIoAghBADYCCCACKAIEIgIgDCgCCEcNAAsLIAwoAhAiAQRAIAFBBGsoAgAiAgRAIAEgAkEwbGohAgNAIAJBBWssAABBAEgEQCACQRBrKAIAED0LIAJBMGsiAiABRw0ACwsgAUEIaxAQIAwoAgghAgsgAigCECIGIAJBDGpHBEADQCAGKAIIKAIEIgFBADYCFCABKAIQIgFBADYCFCABKAIQQQA2AhQgBigCBCIGIAwoAggiAkEMakcNAAsLIAwoAhQiAQRAIAFBCGsQECAMKAIIIQILIAIoAhAiBiACQQxqRwRAA0AgBigCCEEANgIIIAYoAgQiBiAMKAIIQQxqRw0ACwsgDCgCGCIBBEAgAUEEaxAQCwJAIBUoAgQiAUUNACABIAEoAgQiAkEBazYCBCACDQAgASABKAIAKAIIEQAAIAEQOwsgDEEgaiQAIA8hAUEQEDwiAiABNgIMIAJBiAg2AgAgAkIANwIEIAMgAygCBCIGQQFrNgIEIAZFBEAgAyADKAIAKAIIEQAAIAMQOwsgAiEDIABBAWoiACAERw0ACwtBfyABKAIgQQNsIgRBAnQgBEH/////A3EgBEcbEDwhBiABKAIcIgMgAUEYaiIIRwRAQQAhAANAIAYgAEECdGoiByADKAIIIgsrAwi2OAIAIAcgCysDELY4AgQgByALKwMYtjgCCCAAQQNqIQAgAygCBCIDIAhHDQALC0F/IAEoAhRBA2wiAEECdCAAQf////8DcSAARxsQPCEHIAEoAhAiAyABQQxqIghHBEBBACEBA0AgByABQQJ0aiILIAMoAggoAgQiCigCCCgCACIQIBBBAEprNgIAIAsgCigCECIKKAIIKAIAIhAgEEEASms2AgQgCyAKKAIQKAIIKAIAIgsgC0EASms2AgggAUEDaiEBIAMoAgQiAyAIRw0ACwtBzCwgBDYCAEHILCAGNgIAQcQsIAA2AgBBwCwgBzYCACACIAIoAgQiAEEBazYCBCAARQRAIAIgAigCACgCCBEAACACEDsLIBVBEGokAEHALAsOACAAQX8gAEEAThsQPAsLACAABEAgABA9Cws0AQJ/QcgsKAIAIQBBwCwoAgAiAQRAIAEQPQsgAARAIAAQPQtBwCxCADcDAEHILEIANwMACwYAIAAQOQuQCQEJfyAAKAIMIgIEQCMAQRBrIgMkACACKAIcIgAgAkEYaiIFRwRAA0AgACgCCCIBBEAgASwAX0EASARAIAEoAlQQPQsgARA9CyAAKAIEIgAgBUcNAAsLAkAgAigCIEUNACACKAIcIgAoAgAiASACKAIYIgcoAgQ2AgQgBygCBCABNgIAIAJBADYCICAAIAVGDQADQCAAKAIEIQEgABA9IAEiACAFRw0ACwsgAigCECIJIAJBDGoiB0cEQANAIAkoAggiBCgCBCEGIAMgAzYCBCADIQBBACEIA0AgBigCECEGQQwQPCIBIAY2AgggASAANgIAIAEgAzYCBCAAIAE2AgQgCEEBaiEIIAEhACAGIAQoAgRHDQALIAMgCDYCCCADIAA2AgACQCADIAMoAgQiAEcEfwNAIAAoAggiAQRAIAEsACNBAEgEQCABKAIYED0LIAEQPQsgACgCBCIAIANHDQALIAMoAggFIAgLRQ0AIAMoAgQiACgCACIBIAMoAgAiBigCBDYCBCAGKAIEIAE2AgAgA0EANgIIIAAgA0YNAANAIAAoAgQhASAAED0gASIAIANHDQALCyAELAAXQQBIBEAgBCgCDBA9CyAEED0CQCADKAIIRQ0AIAMoAgQiACgCACIBIAMoAgAiBCgCBDYCBCAEKAIEIAE2AgAgA0EANgIIIAAgA0YNAANAIAAoAgQhASAAED0gASIAIANHDQALCyAJKAIEIgkgB0cNAAsLAkAgAigCFEUNACACKAIQIgAoAgAiASACKAIMIgQoAgQ2AgQgBCgCBCABNgIAIAJBADYCFCAAIAdGDQADQCAAKAIEIQEgABA9IAEiACAHRw0ACwsgAiACKAIEIgBHBEADQCAAKAIIIgEEQCABLAAXQQBIBEAgASgCDBA9CyABED0LIAAoAgQiACACRw0ACwsCQCACKAIIRQ0AIAIoAgQiACgCACIBIAIoAgAiBCgCBDYCBCAEKAIEIAE2AgAgAkEANgIIIAAgAkYNAANAIAAoAgQhASAAED0gASIAIAJHDQALCyACQSRqIgEgAkEoaiIAKAIAEBEgAiAANgIkIAJCADcCKCACQTBqIgQgAkE0aiIAKAIAEBIgAiAANgIwIAJCADcCNCACQTxqIgYgAkFAayIAKAIAEBMgAiAANgI8IABCADcCACAGQQAQEyAEIAIoAjQQEiABIAIoAigQEQJAIAIoAiBFDQAgAigCHCIAKAIAIgEgAigCGCIEKAIENgIEIAQoAgQgATYCACACQQA2AiAgACAFRg0AA0AgACgCBCEBIAAQPSABIgAgBUcNAAsLAkAgAigCFEUNACACKAIQIgAoAgAiASACKAIMIgUoAgQ2AgQgBSgCBCABNgIAIAJBADYCFCAAIAdGDQADQCAAKAIEIQEgABA9IAEiACAHRw0ACwsCQCACKAIIRQ0AIAIoAgQiACgCACIBIAIoAgAiBSgCBDYCBCAFKAIEIAE2AgAgAkEANgIIIAAgAkYNAANAIAAoAgQhASAAED0gASIAIAJHDQALCyADQRBqJAAgAhA5CwsTACAAQQxqQQAgASgCBEGICUYbCwYAIAAQPQsdACABBEAgACABKAIAEBEgACABKAIEEBEgARA5CwsdACABBEAgACABKAIAEBIgACABKAIEEBIgARA5CwsdACABBEAgACABKAIAEBMgACABKAIEEBMgARA5CwuRAgEEf0HgABA8IgRBCGpBAEHFABAnIARCADcDWCAEQgA3A1AgBCABNgIAQQwQPCIDIABBGGo2AgQgAyAENgIIIAMgACgCGCICNgIAIAIgAzYCBCAAIAM2AhggACAAKAIgQQFqNgIgIABBKGoiBSEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBSADKAIAIgINAQwCCyABIAJMDQIgAygCBCICDQALIANBBGohBQtBGBA8IgIgATYCECACIAM2AgggAkIANwIAIAIgBDYCFCAFIAI2AgAgACgCJCgCACIBBEAgACABNgIkIAUoAgAhAgsgACgCKCACEBUgACAAKAIsQQFqNgIsCyAEC5QEAQN/IAEgACABRiICOgAMAkAgAg0AA0AgASgCCCICLQAMDQECQCACIAIoAggiAygCACIERgRAAkAgAygCBCIERQ0AIAQtAAwNAAwCCwJAIAEgAigCAEYEQCACIQEMAQsgAiACKAIEIgEoAgAiADYCBCABIAAEfyAAIAI2AgggAigCCAUgAws2AgggAigCCCIAIAAoAgAgAkdBAnRqIAE2AgAgASACNgIAIAIgATYCCCABKAIIIgMoAgAhAgsgAUEBOgAMIANBADoADCADIAIoAgQiADYCACAABEAgACADNgIICyACIAMoAgg2AgggAygCCCIAIAAoAgAgA0dBAnRqIAI2AgAgAiADNgIEIAMgAjYCCA8LAkAgBEUNACAELQAMDQAMAQsCQCABIAIoAgBHBEAgAiEBDAELIAIgASgCBCIANgIAIAEgAAR/IAAgAjYCCCACKAIIBSADCzYCCCACKAIIIgAgACgCACACR0ECdGogATYCACABIAI2AgQgAiABNgIIIAEoAgghAwsgAUEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIARBDGohASACQQE6AAwgAyAAIANGOgAMIAFBAToAACADIgEgAEcNAAsLC5QKAQl/IwBBMGsiCCQAIABBMGohBAJ/IAhBGGohAyABKAIIIQUCQCABKAIAIgcoAgAiCiABKAIEIgYoAgAiC0YNACALIAUoAgAiCUYNACAJIApGDQAgCiALSARAIAkgC0oEQCADIAY2AgQgAyAHNgIAIAMgBTYCCCADDAMLIAkgCkoEQCADIAU2AgQgAyAHNgIAIAMgBjYCCCADDAMLIAMgBzYCBCADIAU2AgAgAyAGNgII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CyABIARHBEAgBSADIAcgChsoAhBPDQQLA0AgACIDKAIQIgAgBUsEQCADIgEoAgAiAA0BDAILIAAgBU8NAiADKAIEIgANAAsgA0EEaiEBC0EUEDwiAiADNgIIIAJCADcCACACIAU2AhAgASACNgIAIAYoAgAoAgAiAARAIAYgADYCACABKAIAIQILIAIgAiAGKAIEIgdGIgA6AAwCQCAADQADQCACKAIIIgEtAAwNAQJAIAEgASgCCCIDKAIAIgBGBEACQCADKAIEIgBFDQAgAC0ADA0ADAILAkAgAiABKAIARgRAIAEhAgwBCyABIAEoAgQiAigCACIANgIEIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgAgASACNgIIIAIoAggiAygCACEBCyACQQE6AAwgA0EAOgAMIAMgASgCBCIANgIAIAAEQCAAIAM2AggLIAEgAygCCDYCCCADKAIIIgAgACgCACADR0ECdGogATYCACABIAM2AgQgAyABNgIIDAMLAkAgAEUNACAALQAMDQAMAQsCQCACIAEoAgBHBEAgASECDAELIAEgAigCBCIANgIAIAIgAAR/IAAgATYCCCABKAIIBSADCzYCCCABKAIIIgAgACgCACABR0ECdGogAjYCACACIAE2AgQgASACNgIIIAIoAgghAwsgAkEBOgAMIANBADoADCADIAMoAgQiACgCACIBNgIEIAEEQCABIAM2AggLIAAgAygCCDYCCCADKAIIIgEgASgCACADR0ECdGogADYCACAAIAM2AgAgAyAANgIIDAILIAFBAToADCADIAMgB0Y6AAwgAEEBOgAMIAcgAyICRw0ACwsgBiAGKAIIQQFqNgIICyAFKAIAIgAgACgCACAFRkECdGooAgANAAsgBigCBCEACyAJIAU2AkggBiAAEBoLIAgoAgQiCCALRw0ACwsgBkEQaiQAC70BAQN/IABBKGoiBCEDAkACQCAAKAIoIgJFDQADQCABIAIiAygCECICSARAIAMhBCADKAIAIgINAQwCCyABIAJMBEAgAyECDAMLIAMoAgQiAg0ACyADQQRqIQQLQRgQPCICIAE2AhAgAiADNgIIIAJCADcCACACQQA2AhQgBCACNgIAIAIhAyAAKAIkKAIAIgEEQCAAIAE2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aiIHIAlPDQEgDEEATg0ACwsgAEEwIAxBEmpBEkEAEDQgACAPIBEgD2sQMAwCCyAMIQYLIABBMCAGQQlqQQlBABA0CyAAQSAgAiAFIARBgMAAcxA0IAUgAiACIAVIGyEJDAELIBMgBUEadEEfdUEJcWohDAJAIANBC0sNAEEMIANrIQZEAAAAAAAAMEAhGANAIBhEAAAAAAAAMECiIRggBkEBayIGDQALIAwtAABBLUYEQCAYIAGaIBihoJohAQwBCyABIBigIBihIQELIBEgCygCLCIGIAZBH3UiBnMgBmutIBEQMyIGRgRAIAtBMDoADyALQQ9qIQYLIBBBAnIhCiAFQSBxIQggCygCLCEHIAZBAmsiDSAFQQ9qOgAAIAZBAWtBLUErIAdBAEgbOgAAIARBCHEhBiALQRBqIQcDQCAHIgUCfyABmUQAAAAAAADgQWMEQCABqgwBC0GAgICAeAsiB0HQJmotAAAgCHI6AAAgASAHt6FEAAAAAAAAMECiIQECQCAFQQFqIgcgC0EQamtBAUcNAAJAIAYNACADQQBKDQAgAUQAAAAAAAAAAGENAQsgBUEuOgABIAVBAmohBwsgAUQAAAAAAAAAAGINAAtBfyEJQf3///8HIAogESANayIFaiIGayADSA0AIABBICACIAYCfwJAIANFDQAgByALQRBqayIIQQJrIANODQAgA0ECagwBCyAHIAtBEGprIggLIgdqIgMgBBA0IAAgDCAKEDAgAEEwIAIgAyAEQYCABHMQNCAAIAtBEGogCBAwIABBMCAHIAhrQQBBABA0IAAgDSAFEDAgAEEgIAIgAyAEQYDAAHMQNCADIAIgAiADSBshCQsgC0GwBGokACAJC4kFAgZ+AX8gASABKAIAQQdqQXhxIgFBEGo2AgAgAAJ8IAEpAwAhBCABKQMIIQUjAEEgayIAJAACQCAFQv///////////wCDIgNCgICAgICAwIA8fSADQoCAgICAgMD/wwB9VARAIAVCBIYgBEI8iIQhAyAEQv//////////D4MiBEKBgICAgICAgAhaBEAgA0KBgICAgICAgMAAfCECDAILIANCgICAgICAgIBAfSECIARCgICAgICAgIAIUg0BIAIgA0IBg3whAgwBCyAEUCADQoCAgICAgMD//wBUIANCgICAgICAwP//AFEbRQRAIAVCBIYgBEI8iIRC/////////wODQoCAgICAgID8/wCEIQIMAQtCgICAgICAgPj/ACECIANC////////v//DAFYNAEIAIQIgA0IwiKciAUGR9wBJDQAgBCECIAVC////////P4NCgICAgICAwACEIgMhBgJAIAFBgfcAayIIQcAAcQRAIAIgCEFAaq2GIQZCACECDAELIAhFDQAgBiAIrSIHhiACQcAAIAhrrYiEIQYgAiAHhiECCyAAIAI3AxAgACAGNwMYAkBBgfgAIAFrIgFBwABxBEAgAyABQUBqrYghBEIAIQMMAQsgAUUNACADQcAAIAFrrYYgBCABrSICiIQhBCADIAKIIQMLIAAgBDcDACAAIAM3AwggACkDCEIEhiAAKQMAIgRCPIiEIQIgACkDECAAKQMYhEIAUq0gBEL//////////w+DhCIEQoGAgICAgICACFoEQCACQgF8IQIMAQsgBEKAgICAgICAgAhSDQAgAkIBgyACfCECCyAAQSBqJAAgAiAFQoCAgICAgICAgH+DhL8LOQMAC5cCACAARQRAQQAPCwJ/AkAgAAR/IAFB/wBNDQECQEH0LSgCACgCAEUEQCABQYB/cUGAvwNGDQMMAQsgAUH/D00EQCAAIAFBP3FBgAFyOgABIAAgAUEGdkHAAXI6AABBAgwECyABQYBAcUGAwANHIAFBgLADT3FFBEAgACABQT9xQYABcjoAAiAAIAFBDHZB4AFyOgAAIAAgAUEGdkE/cUGAAXI6AAFBAwwECyABQYCABGtB//8/TQRAIAAgAUE/cUGAAXI6AAMgACABQRJ2QfABcjoAACAAIAFBBnZBP3FBgAFyOgACIAAgAUEMdkE/cUGAAXI6AAFBBAwECwtB0CxBGTYCAEF/BUEBCwwBCyAAIAE6AABBAQsL8iwBC38jAEEQayILJAACQAJAAkACQAJAAkACQAJAAkACQAJAIABB9AFNBEBBlC4oAgAiBUEQIABBC2pBeHEgAEELSRsiBkEDdiIAdiIBQQNxBEACQCABQX9zQQFxIABqIgJBA3QiAUG8LmoiACABQcQuaigCACIBKAIIIgNGBEBBlC4gBUF+IAJ3cTYCAAwBCyADIAA2AgwgACADNgIICyABQQhqIQAgASACQQN0IgJBA3I2AgQgASACaiIBIAEoAgRBAXI2AgQMDAsgBkGcLigCACIH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ADYCACABDwtB0CxBMDYCAEF/CzcBAX8CQCAAQQhqIgEoAgAEQCABIAEoAgBBAWsiATYCACABQX9HDQELIAAgACgCACgCEBEAAAsLMgEBfyAAQQEgABshAAJAA0AgABA4IgENAUGEMigCACIBBEAgAREIAAwBCwsQIwALIAELBgAgABA5C3QBAX8gAkUEQCAAKAIEIAEoAgRGDwsgACABRgRAQQEPCyABKAIEIgItAAAhAQJAIAAoAgQiAy0AACIARQ0AIAAgAUcNAANAIAItAAEhASADLQABIgBFDQEgAkEBaiECIANBAWohAyAAIAFGDQALCyAAIAFGC80DAQR/IwBBQGoiBCQAAn9BASAAIAFBABA+DQAaQQAgAUUNABojAEFAaiIDJAAgASgCACIFQQRrKAIAIQYgBUEIaygCACEFIANCADcDICADQgA3AyggA0IANwMwIANCADcANyADQgA3AxggA0EANgIUIANB4Cc2AhAgAyABNgIMIANBkCg2AgggASAFaiEBQQAhBQJAIAZBkChBABA+BEAgA0EBNgI4IAYgA0EIaiABIAFBAUEAIAYoAgAoAhQRBwAgAUEAIAMoAiBBAUYbIQUMAQsgBiADQQhqIAFBAUEAIAYoAgAoAhgRBgACQAJAIAMoAiwOAgABAgsgAygCHEEAIAMoAihBAUYbQQAgAygCJEEBRhtBACADKAIwQQFGGyEFDAELIAMoAiBBAUcEQCADKAIwDQEgAygCJEEBRw0BIAMoAihBAUcNAQsgAygCGCEFCyADQUBrJABBACAFIgFFDQAaIARBCGoiA0EEckEAQTQQJyAEQQE2AjggBEF/NgIUIAQgADYCECAEIAE2AgggASADIAIoAgBBASABKAIAKAIcEQIAIAQoAiAiAEEBRgRAIAIgBCgCGDYCAAsgAEEBRgshACAEQUBrJAAgAAtdAQF/IAAoAhAiA0UEQCAAQQE2AiQgACACNgIYIAAgATYCEA8LAkAgASADRgRAIAAoAhhBAkcNASAAIAI2AhgPCyAAQQE6ADYgAEECNgIYIAAgACgCJEEBajYCJAsLGAAgACABKAIIQQAQPgRAIAEgAiADEEALCzEAIAAgASgCCEEAED4EQCABIAIgAxBADwsgACgCCCIAIAEgAiADIAAoAgAoAhwRAgALUgEBfyAAKAIEIQQgACgCACIA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', imports)}
 
 class LoopSubdivision {
     static #instance;
@@ -18173,7 +18325,7 @@ class Kv3File {
 }
 //export type Kv3ValueType = null | number | Kv3Element;
 
-const tempVec3$n = vec3.create();
+const tempVec3$m = vec3.create();
 const tempQuat$7 = quat.create();
 const mat$2 = mat4.create();
 class ControlPoint extends Entity {
@@ -18200,8 +18352,8 @@ class ControlPoint extends Entity {
     model;
     getWorldTransformation(mat = mat4.create()) {
         this.getWorldOrientation(tempQuat$7);
-        this.getWorldPosition(tempVec3$n);
-        return mat4.fromRotationTranslation(mat, tempQuat$7, tempVec3$n);
+        this.getWorldPosition(tempVec3$m);
+        return mat4.fromRotationTranslation(mat, tempQuat$7, tempVec3$m);
     }
     /**
      * @deprecated Use getWorldOrientation instead.
@@ -25754,10 +25906,20 @@ class Bone extends Entity {
         quat.identity(this._quaternion);
     }
     buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), this.isAnyLocked() ? {
+        return Object.assign(super.buildContextMenu(), {
             Bone_1: null,
+        }, this.isAnyLocked() ? {
             unlock: { i18n: '#unlock', f: (entity) => entity.lockAll(false) },
-        } : null);
+        } : null, {
+            resetQuat: { i18n: '#reset_orientation', f: (entity) => entity.setOrientation(entity._initialQuaternion) },
+            resetPos: { i18n: '#reset_position', f: (entity) => entity.setPosition(entity._initialPosition) },
+            resetBone: {
+                i18n: '#reset_bone', f: (entity) => {
+                    entity.setOrientation(entity._initialQuaternion);
+                    entity.setPosition(entity._initialPosition);
+                }
+            },
+        });
     }
     toJSON() {
         const json = super.toJSON();
@@ -25780,8 +25942,24 @@ class Bone extends Entity {
     static getEntityName() {
         return 'Bone';
     }
+    is(s) {
+        if (s == 'Bone') {
+            return true;
+        }
+        else {
+            return super.is(s);
+        }
+    }
 }
 registerEntity(Bone);
+
+class Attachment extends Bone {
+    isAttachment = true;
+    static getEntityName() {
+        return 'Attachment';
+    }
+}
+registerEntity(Attachment);
 
 const IDENTITY_MAT4$4 = mat4.create();
 const v1$1 = vec3.create();
@@ -26250,13 +26428,13 @@ class SkeletalMesh extends Mesh {
     }
 }
 
-mat4.create();
 class Skeleton extends Entity {
     isSkeleton = true;
     #bonesByName = new Map();
     #rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
     _bones = []; //TODOv3: rename set private
-    _dirty = true;
+    #attachments = [];
+    #attachmentsByName = new Map();
     imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4 /* 4 by 4 matrix*/);
     #texture;
     lastComputed = 0;
@@ -26271,13 +26449,9 @@ class Skeleton extends Entity {
         this.dirty();
     }
     dirty() {
-        this._dirty = true;
         for (const bone of this._bones) {
             bone.dirty = true;
         }
-        /*if (this._bones[0]) {
-            this._bones[0].dirty = true;
-        }*/
     }
     getTexture() {
         return this.#texture;
@@ -26340,9 +26514,11 @@ class Skeleton extends Entity {
             return vec3.clone(this._position);
         }
     }
+    // TODO: deprecate
     set quaternion(quaternion) {
-        super.quaternion = quaternion;
+        super.setOrientation(quaternion);
     }
+    /// TODO: deprecate
     get quaternion() {
         if (this._parent) {
             return quat.clone(this._parent._quaternion);
@@ -26353,9 +26529,9 @@ class Skeleton extends Entity {
     }
     addBone(boneId, boneName) {
         const boneNameLowerCase = boneName.toLowerCase();
-        let bone = this.#bonesByName.get(boneNameLowerCase);
+        const bone = this.#bonesByName.get(boneNameLowerCase);
         if (!bone) {
-            const bone = new Bone({ name: boneName, boneId: boneId, skeleton: this });
+            const bone = new Bone({ name: boneName, boneId, skeleton: this });
             //this.addChild(bone);
             this._bones[boneId] = bone;
             this.#bonesByName.set(boneNameLowerCase, bone);
@@ -26364,6 +26540,20 @@ class Skeleton extends Entity {
         else {
             this._bones[boneId] = bone;
             return bone;
+        }
+    }
+    addAttachment(attachmentId, attachmentName) {
+        const attachmentNameLowerCase = attachmentName.toLowerCase();
+        const attachment = this.#attachmentsByName.get(attachmentNameLowerCase);
+        if (!attachment) {
+            const attachment = new Attachment({ name: attachmentName, boneId: attachmentId, skeleton: this });
+            this.#attachments[attachmentId] = attachment;
+            this.#attachmentsByName.set(attachmentNameLowerCase, attachment);
+            return attachment;
+        }
+        else {
+            this.#attachments[attachmentId] = attachment;
+            return attachment;
         }
     }
     async setParentSkeleton(skeleton) {
@@ -26392,6 +26582,9 @@ class Skeleton extends Entity {
     get bones() {
         return this._bones;
     }
+    getAttachments() {
+        return [...this.#attachments];
+    }
     reset() {
         for (const bone of this._bones) {
             bone.reset();
@@ -26400,13 +26593,13 @@ class Skeleton extends Entity {
     toJSON() {
         const json = super.toJSON();
         const jBones = [];
-        const bones = this._bones;
-        for (let i = 0; i < bones.length; ++i) {
-            jBones.push(bones[i]?.id);
+        for (const bone of this._bones) {
+            jBones.push(bone.id);
         }
         json.bones = jBones;
         return json;
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json, entities, loadedPromise) {
         const entity = new Skeleton({ name: json.name });
         let loadedPromiseResolve;
@@ -28056,7 +28249,7 @@ class Source1ModelInstance extends Entity {
         const localMat3 = mat3.create(); //todo: optimize
         if (attachments) {
             for (const attachment of attachments) {
-                const attachmentBone = new Bone({ name: attachment.name });
+                const attachmentBone = new Attachment({ name: attachment.name });
                 localMat3[0] = attachment.local[0];
                 localMat3[3] = attachment.local[1];
                 localMat3[6] = attachment.local[2];
@@ -34801,7 +34994,7 @@ MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
 const tempQuaternion$1 = quat.create();
-const tempVec3$m = vec3.create();
+const tempVec3$l = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
     spotLight = new SpotLight({ radius: 20 });
@@ -34839,9 +35032,9 @@ class PropLightSpot extends MapEntity {
                 this.setAngles();
                 break;
             case 'angles':
-                ParseAngles2(tempVec3$m, value);
-                this._angles[1] = tempVec3$m[1];
-                this._angles[2] = tempVec3$m[1];
+                ParseAngles2(tempVec3$l, value);
+                this._angles[1] = tempVec3$l[1];
+                this._angles[2] = tempVec3$l[1];
                 this.setAngles();
                 break;
             case '_quadratic_attn':
@@ -34887,7 +35080,7 @@ class SkyCamera extends MapEntity {
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         const scale = kvElement /*TODO: fix that*/.scale;
-        this.camera.scale = vec3.fromValues(scale, scale, scale);
+        this.camera.setScale(scale);
         this.camera.setPosition(this._position);
     }
 }
@@ -40367,7 +40560,7 @@ class EmitNoise extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(EmitNoise);
 
-const tempVec3$l = vec3.create();
+const tempVec3$k = vec3.create();
 let AttractToControlPoint$1 = class AttractToControlPoint extends Source1ParticleOperator {
     static functionName = 'Pull towards control point';
     constructor(system) {
@@ -40391,7 +40584,7 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends Source1Particl
             return;
         }
         const ofs = vec3.clone(particle.position);
-        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$l)); //TODO: add particle base cp
+        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$k)); //TODO: add particle base cp
         let len = vec3.length(ofs);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -40425,7 +40618,7 @@ let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(RandomForce$1);
 
-const tempVec3$k = vec3.create();
+const tempVec3$j = vec3.create();
 const tempVec3_2$6 = vec3.create();
 //const tempAxis = vec3.create();
 //const tempQuat = quat.create();
@@ -40443,7 +40636,7 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
         //TODO use param localSpace
         //const localSpace = this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
-        const offsetToAxis = vec3.sub(tempVec3$k, particle.position, cp.getWorldPosition(tempVec3$k));
+        const offsetToAxis = vec3.sub(tempVec3$j, particle.position, cp.getWorldPosition(tempVec3$j));
         /*
                 if (!localSpace) {
                     cp.getWorldQuaternion(tempQuat);
@@ -40676,7 +40869,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
 };
 Source1ParticleOperators.registerOperator(PositionFromParentParticles$1);
 
-const tempVec3$j = vec3.create();
+const tempVec3$i = vec3.create();
 class PositionModifyOffsetRandom extends Source1ParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor(system) {
@@ -40698,7 +40891,7 @@ class PositionModifyOffsetRandom extends Source1ParticleOperator {
         const offsetMax = this.getParameter('offset max');
         vec2.random(vec2.create(), 1.0);
         const controlPointNumber = this.getParameter('control_point_number');
-        const offset = vec3RandomBox(tempVec3$j, offsetMin, offsetMax);
+        const offset = vec3RandomBox(tempVec3$i, offsetMin, offsetMax);
         if (localSpace == 1) {
             const cp = particle.system.getControlPoint(controlPointNumber);
             if (cp) {
@@ -40783,7 +40976,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionOnModelRandom);
 
-const tempVec3$i = vec3.create();
+const tempVec3$h = vec3.create();
 class PositionWithinBoxRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor(system) {
@@ -40803,15 +40996,15 @@ class PositionWithinBoxRandom extends Source1ParticleOperator {
         vec3.copy(particle.prevPosition, particle.position);
         const controlPoint = particle.system.getControlPoint(controlPointNumber);
         if (controlPoint) {
-            controlPoint.getWorldPosition(tempVec3$i);
-            vec3.add(particle.position, particle.position, tempVec3$i);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$i);
+            controlPoint.getWorldPosition(tempVec3$h);
+            vec3.add(particle.position, particle.position, tempVec3$h);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$h);
         }
     }
 }
 Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-const tempVec3$h = vec3.create();
+const tempVec3$g = vec3.create();
 class PositionWithinSphereRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor(system) {
@@ -40884,8 +41077,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 randpos += vecControlPoint;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    cp.getWorldPosition(tempVec3$h);
-                    vec3.add(randpos, randpos, tempVec3$h);
+                    cp.getWorldPosition(tempVec3$g);
+                    vec3.add(randpos, randpos, tempVec3$g);
                 }
             }
             else {
@@ -40897,8 +41090,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
                     vec3.transformQuat(randpos, randpos, cp.getWorldOrientation());
-                    cp.getWorldPosition(tempVec3$h);
-                    vec3.add(randpos, randpos, tempVec3$h);
+                    cp.getWorldPosition(tempVec3$g);
+                    vec3.add(randpos, randpos, tempVec3$g);
                 }
             }
         }
@@ -41150,7 +41343,7 @@ Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
 */
 
 const tempQuat$6 = quat.create();
-const tempVec3$g = vec3.create();
+const tempVec3$f = vec3.create();
 const tempVec3_2$3 = vec3.create();
 class RemapScalarToVector extends Source1ParticleOperator {
     static functionName = 'Remap Scalar to Vector';
@@ -41184,25 +41377,25 @@ class RemapScalarToVector extends Source1ParticleOperator {
             return;
         }
         const input = particle.getField(m_nFieldInput);
-        tempVec3$g[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
-        tempVec3$g[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
-        tempVec3$g[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
+        tempVec3$f[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
+        tempVec3$f[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
+        tempVec3$f[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
         if (!cp) {
             return;
         }
         if (m_nFieldOutput == 0) { // Position
             if (!m_bLocalCoords) {
-                vec3.add(tempVec3$g, cp.getWorldPosition(tempVec3_2$3), tempVec3$g);
+                vec3.add(tempVec3$f, cp.getWorldPosition(tempVec3_2$3), tempVec3$f);
             }
             else {
                 if (cp) {
                     cp.getWorldOrientation(tempQuat$6);
-                    vec3.transformQuat(tempVec3$g, tempVec3$g, tempQuat$6);
-                    vec3.add(tempVec3$g, cp.getWorldPosition(tempVec3_2$3), tempVec3$g);
+                    vec3.transformQuat(tempVec3$f, tempVec3$f, tempQuat$6);
+                    vec3.add(tempVec3$f, cp.getWorldPosition(tempVec3_2$3), tempVec3$f);
                 }
-                particle.setField(0, tempVec3$g); //position
-                particle.setField(2, tempVec3$g); //previous position
+                particle.setField(0, tempVec3$f); //position
+                particle.setField(2, tempVec3$f); //previous position
             }
         }
         else {
@@ -41211,10 +41404,10 @@ class RemapScalarToVector extends Source1ParticleOperator {
                 //SetVectorFromAttribute ( vecScaleInitial, pOutput );
                 const vecScaleInitial = particle.getField(m_nFieldOutput, true);
                 //vecOutput *= vecScaleInitial;
-                vec3.mul(tempVec3$g, tempVec3$g, vecScaleInitial);
+                vec3.mul(tempVec3$f, tempVec3$f, vecScaleInitial);
             }
             //SetVectorAttribute( pOutput, vecOutput );
-            particle.setField(m_nFieldOutput, tempVec3$g);
+            particle.setField(m_nFieldOutput, tempVec3$f);
         }
     }
     initMultipleOverride() {
@@ -41751,7 +41944,7 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 //const g_SIMD_lsbmask = 0xfffffffe;
 
 const identityVec3$1 = vec3.create();
-const tempVec3$f = vec3.create();
+const tempVec3$e = vec3.create();
 let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
     static functionName = 'Velocity Random';
     constructor(system) {
@@ -41783,8 +41976,8 @@ let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
             vec3RandomBox(randomVector, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //randomVector.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$f, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$f);
+            vec3.random(tempVec3$e, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$e);
         }
         const cp = particle.system.getControlPoint(m_nControlPointNumber);
         if (cp) {
@@ -41992,7 +42185,7 @@ let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(LifespanDecay$1);
 
-const tempVec3$e = vec3.create();
+const tempVec3$d = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
 let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
@@ -42022,7 +42215,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                     tempMat4[12] = 0;
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
-                    vec3.copy(tempVec3$e, initialVec);
+                    vec3.copy(tempVec3$d, initialVec);
                     for (const [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
@@ -42046,12 +42239,12 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                             tempMat4[14] += boneWeight * boneMat[14];
                         }
                     }
-                    vec3.transformMat4(tempVec3$e, tempVec3$e, tempMat4);
+                    vec3.transformMat4(tempVec3$d, tempVec3$d, tempMat4);
                     if (particle.initialVecOffset) {
-                        vec3.add(tempVec3$e, tempVec3$e, particle.initialVecOffset);
+                        vec3.add(tempVec3$d, tempVec3$d, particle.initialVecOffset);
                     }
                     vec3.copy(particle.prevPosition, particle.position);
-                    vec3.copy(particle.position, tempVec3$e);
+                    vec3.copy(particle.position, tempVec3$d);
                 }
             }
         }
@@ -42060,7 +42253,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
 Source1ParticleOperators.registerOperator(LockToBone$1);
 
 //const gravity_const = 0.5;
-const tempVec3$d = vec3.create();
+const tempVec3$c = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
 class MovementBasic extends Source1ParticleOperator {
@@ -42083,7 +42276,7 @@ class MovementBasic extends Source1ParticleOperator {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
         particle.previousElapsedTime = elapsedTime;*/
-        const accumulatedForces = vec3.copy(tempVec3$d, gravity);
+        const accumulatedForces = vec3.copy(tempVec3$c, gravity);
         //vec3.scale(accumulatedForces, accumulatedForces, 0.5);
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
@@ -42269,7 +42462,7 @@ lock rotation
 This will update a particle relative to a Control Point's rotation as well as position.
 */
 
-const tempVec3$c = vec3.create();
+const tempVec3$b = vec3.create();
 class MovementMaxVelocity extends Source1ParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor(system) {
@@ -42278,7 +42471,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const maxVelocity = this.getParameter('Maximum Velocity');
-        const velocity = vec3.sub(tempVec3$c, particle.position, particle.prevPosition);
+        const velocity = vec3.sub(tempVec3$b, particle.position, particle.prevPosition);
         let speed = vec3.length(velocity);
         vec3.normalize(velocity, velocity);
         const maxVelocityNormalized = maxVelocity * elapsedTime;
@@ -42288,7 +42481,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(MovementMaxVelocity);
 
-const tempVec3$b = vec3.create();
+const tempVec3$a = vec3.create();
 let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -42317,9 +42510,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             if (useLocalSpace == 1) {
                 quat.copy(q, cp.getWorldOrientation());
             }
-            cp.getWorldPosition(tempVec3$b);
-            vec3.sub(particle.position, particle.position, tempVec3$b);
-            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$b);
+            cp.getWorldPosition(tempVec3$a);
+            vec3.sub(particle.position, particle.position, tempVec3$a);
+            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$a);
             const axis2 = vec3.clone(axis); //TODO: memory
             //axis2[1] = -axis2[1];
             //const tempQuat = quat.fromEuler(quat.create(), vec3.scale(vec3.create(), vec3.normalize(vec3.create(), axis), Math.HALF_PI));
@@ -42328,9 +42521,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             vec3.transformQuat(axis2, axis2, q);
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
             vec3.transformMat4(particle.position, particle.position, modelView);
-            vec3.add(particle.position, particle.position, tempVec3$b);
+            vec3.add(particle.position, particle.position, tempVec3$a);
             vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$b);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$a);
         }
         else {
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
@@ -42691,7 +42884,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);
 
-const tempVec3$a = vec3.create();
+const tempVec3$9 = vec3.create();
 class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor(system) {
@@ -42717,7 +42910,7 @@ class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
         const active = this.getParameter('only active within specified distance');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const delta = vec3.subtract(tempVec3$a, cp.getWorldPosition(tempVec3$a), particle.position);
+            const delta = vec3.subtract(tempVec3$9, cp.getWorldPosition(tempVec3$9), particle.position);
             const deltaL = vec3.length(delta);
             if (active && ((deltaL < dMin) || (deltaL > dMax))) {
                 return;
@@ -42758,7 +42951,7 @@ Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
                     'only active within specified distance' 'bool' '0'
                     */
 
-const tempVec3$9 = vec3.create();
+const tempVec3$8 = vec3.create();
 class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor(system) {
@@ -42786,14 +42979,14 @@ class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
         if (cp == undefined) {
             return;
         }
-        vec3.subtract(tempVec3$9, particle.cpPosition, particle.position);
-        const deltaL = vec3.length(tempVec3$9);
+        vec3.subtract(tempVec3$8, particle.cpPosition, particle.position);
+        const deltaL = vec3.length(tempVec3$8);
         if (activeDistance && (deltaL < distanceMin || deltaL > distanceMax)) {
             // Outside distance window
             return;
         }
-        vec3.lerp(tempVec3$9, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
-        particle.setField(field, tempVec3$9);
+        vec3.lerp(tempVec3$8, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
+        particle.setField(field, tempVec3$8);
     }
 }
 Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
@@ -42995,7 +43188,7 @@ class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator
 }
 Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
-const tempVec3$8 = vec3.create();
+const tempVec3$7 = vec3.create();
 let SetControlPointPositions$1 = class SetControlPointPositions extends Source1ParticleOperator {
     static functionName = 'set control point positions';
     constructor(system) {
@@ -43033,7 +43226,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$8, cpLocation, vecControlPoint);
+                const a = vec3.add(tempVec3$7, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -58869,7 +59062,7 @@ class Source2ParticleRandomParams {
 }
 
 const tempQuat$3 = quat.create();
-const tempVec3$7 = vec3.create();
+const tempVec3$6 = vec3.create();
 const tempVec3_2$1 = vec3.create();
 const DEFAULT_LOCAl_SPACE = false;
 const DEFAULT_USE_NEW_CODE = false;
@@ -58902,7 +59095,7 @@ class CreateWithinBox extends Operator {
         //TODO: useNewCode ??
         this.getParamVectorValue(this.#vecMin, 'm_vecMin', particle);
         this.getParamVectorValue(this.#vecMax, 'm_vecMax', particle);
-        vec3RandomBox(tempVec3$7, this.#vecMin, this.#vecMax);
+        vec3RandomBox(tempVec3$6, this.#vecMin, this.#vecMax);
         /*
         if (this.#scaleCP !== -1) {
             const scaleCp = this.system.getControlPointForScale(this.#scaleCP);
@@ -58916,15 +59109,15 @@ class CreateWithinBox extends Operator {
         if (controlPoint) {
             controlPoint.getWorldPosition(tempVec3_2$1);
             if (this.#localSpace) {
-                vec3.transformQuat(tempVec3$7, tempVec3$7, controlPoint.getWorldOrientation(tempQuat$3));
-                vec3.add(tempVec3$7, tempVec3$7, tempVec3_2$1);
+                vec3.transformQuat(tempVec3$6, tempVec3$6, controlPoint.getWorldOrientation(tempQuat$3));
+                vec3.add(tempVec3$6, tempVec3$6, tempVec3_2$1);
             }
             else {
-                vec3.add(tempVec3$7, tempVec3$7, tempVec3_2$1);
+                vec3.add(tempVec3$6, tempVec3$6, tempVec3_2$1);
             }
         }
-        vec3.copy(particle.position, tempVec3$7);
-        vec3.copy(particle.prevPosition, tempVec3$7);
+        vec3.copy(particle.position, tempVec3$6);
+        vec3.copy(particle.prevPosition, tempVec3$6);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_CreateWithinBox', CreateWithinBox);
@@ -60463,7 +60656,7 @@ RegisterSource2ParticleOperator('C_INIT_SetRigidAttachment', SetRigidAttachment)
 
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
-const tempVec3$6 = vec3.create();
+const tempVec3$5 = vec3.create();
 const velocityRandomTempVec4_0 = vec4.create();
 const velocityRandomTempVec4_1 = vec4.create();
 const DEFAULT_IGNORE_DT$1 = false; // TODO: check default value
@@ -60498,8 +60691,8 @@ class VelocityRandom extends Operator {
             vec3RandomBox(randomVector, localCoordinateSystemSpeedMin, localCoordinateSystemSpeedMax);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$6, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$6);
+            vec3.random(tempVec3$5, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$5);
         }
         const cp = particle.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -61351,7 +61544,7 @@ class LockToBone extends Operator {
     }
 }
 RegisterSource2ParticleOperator('C_OP_LockToBone', LockToBone);
-const error = once$1(() => console.error('TODO C_OP_LockToBone'));
+const error = once$2(() => console.error('TODO C_OP_LockToBone'));
 
 const vec$3 = vec3.create();
 const DEFAULT_NUM_TO_ASSIGN = 100; // TODO: check default value
@@ -63283,7 +63476,7 @@ class SetSingleControlPointPosition extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetSingleControlPointPosition', SetSingleControlPointPosition);
 
 const tempQuat$1 = quat.create();
-const tempVec3$5 = vec3.create();
+const tempVec3$4 = vec3.create();
 const tempVec3_2 = vec3.create();
 const DEFAULT_OFFSET_LOCAL = false; // TODO: check default value
 class SetToCP extends Operator {
@@ -63306,14 +63499,14 @@ class SetToCP extends Operator {
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
             if (this.#offsetLocal) {
-                vec3.transformQuat(tempVec3$5, this.#offset, cp.getWorldOrientation(tempQuat$1));
-                vec3.add(tempVec3$5, tempVec3$5, tempVec3_2);
+                vec3.transformQuat(tempVec3$4, this.#offset, cp.getWorldOrientation(tempQuat$1));
+                vec3.add(tempVec3$4, tempVec3$4, tempVec3_2);
             }
             else {
-                vec3.add(tempVec3$5, this.#offset, tempVec3_2);
+                vec3.add(tempVec3$4, this.#offset, tempVec3_2);
             }
-            vec3.copy(particle.position, tempVec3$5);
-            vec3.copy(particle.prevPosition, tempVec3$5);
+            vec3.copy(particle.position, tempVec3$4);
+            vec3.copy(particle.prevPosition, tempVec3$4);
         }
     }
 }
@@ -63978,7 +64171,7 @@ class RenderDeferredLight extends RenderBase {
 }
 RegisterSource2ParticleOperator('C_OP_RenderDeferredLight', RenderDeferredLight);
 
-const tempVec3$4 = vec3.create();
+//const tempVec3 = vec3.create();
 class RenderModels extends Operator {
     #modelList = new Map();
     #models = new Map();
@@ -64098,7 +64291,7 @@ class RenderModels extends Operator {
         if (model) {
             model.setPosition(particle.position);
             const radius = particle.radius;
-            model.scale = vec3.set(tempVec3$4, radius, radius, radius);
+            model.setScale(radius);
             model.setOrientation(particle.quaternion);
             model.playSequence(activityName, activityModifiers);
             if (particle.color[3] == 0) { //TODO: add an actual rendering tint / alpha on models
@@ -70536,6 +70729,7 @@ const tempVec3_1 = vec3.create();
 const tempQuat = quat.create();
 const BONE_RADIUS = 0.5;
 class SkeletonHelper extends Entity {
+    static #helpers = new Set();
     #skeleton = null;
     #lines = new Map();
     #bones = new Map();
@@ -70545,6 +70739,8 @@ class SkeletonHelper extends Entity {
     #boneTipMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
     #boneMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [27 / 255, 106 / 255, 0, 1], });
     #jointMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 235 / 255, 0, 1], });
+    #lineGroup = new Group({ name: 'lines', parent: this, visible: false });
+    #bonesGroup = new Group({ name: 'bones', parent: this, });
     #raycaster;
     #highlitLine;
     #boneStart;
@@ -70553,12 +70749,12 @@ class SkeletonHelper extends Entity {
     #displayJoints = true;
     constructor(parameters = {}) {
         super(parameters);
-        this.hideInExplorer = true;
+        SkeletonHelper.#helpers.add(this);
+        this.hideInExplorer = parameters.hideInExplorer ?? false;
         this.#skeleton = parameters?.skeleton ?? null;
         this.#raycaster = new Raycaster();
-        this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
-        this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
-        this.addChilds(this.#boneStart, this.#boneEnd);
+        this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
+        this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
         this.#initListeners();
     }
     parentChanged(parent) {
@@ -70616,13 +70812,12 @@ class SkeletonHelper extends Entity {
             let boneCylinder = this.#bones.get(bone);
             let boneSphere = this.#joints.get(bone);
             if (!boneLine) {
-                boneLine = new Line({ material: this.#lineMaterial, parent: this });
+                boneLine = new Line({ material: this.#lineMaterial, parent: this.#lineGroup });
                 boneLine.properties.setObject('bone', bone);
                 this.#lines.set(bone, boneLine);
-                this.addChild(boneLine);
-                boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this, radius: BONE_RADIUS, });
+                boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS, });
                 this.#bones.set(bone, boneCylinder);
-                boneSphere = new Sphere({ material: this.#jointMaterial, parent: this, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
+                boneSphere = new Sphere({ material: this.#jointMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
                 this.#joints.set(bone, boneSphere);
             }
             //boneLine.position = bone.worldPos;
@@ -70693,9 +70888,15 @@ class SkeletonHelper extends Entity {
         }
     }
     displayBoneJoints(display) {
-        this.#boneStart.setVisible(this.#highlitLine && display);
-        this.#boneEnd.setVisible(this.#highlitLine && display);
+        this.#boneStart.setVisible(this.#highlitLine && display && undefined);
+        this.#boneEnd.setVisible(this.#highlitLine && display && undefined);
         this.#displayJoints = display;
+    }
+    static displayBonesAsLines(showLines) {
+        for (const helper of SkeletonHelper.#helpers) {
+            helper.#lineGroup.setVisible(showLines && undefined);
+            helper.#bonesGroup.setVisible((!showLines) && undefined);
+        }
     }
     setJointsRadius(radius) {
         this.#boneStart.setRadius(radius);
@@ -70747,8 +70948,8 @@ class SkeletonHelper extends Entity {
             line.setMaterial(this.#highlitLineMaterial);
             this.#boneStart.setPosition(line.getStart(tempVec3$1));
             this.#boneEnd.setPosition(line.getEnd(tempVec3$1));
-            this.#boneStart.setVisible(this.#displayJoints);
-            this.#boneEnd.setVisible(this.#displayJoints);
+            this.#boneStart.setVisible(this.#displayJoints && undefined);
+            this.#boneEnd.setVisible(this.#displayJoints && undefined);
             this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
             this.#boneEnd.properties.set('bone', line.properties.get('bone'));
         }
@@ -70758,6 +70959,9 @@ class SkeletonHelper extends Entity {
         this.#clearSkeleton();
         this.#lineMaterial.removeUser(this);
         this.#highlitLineMaterial.removeUser(this);
+    }
+    static getEntityName() {
+        return 'SkeletonHelper';
     }
 }
 
@@ -74434,6 +74638,7 @@ class SceneExplorerEntity extends HTMLElement {
                                 }),
                             ],
                             events: {
+                                // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                 change: (event) => this.#displayAnimations(event.target.state),
                             }
                         }),
@@ -74509,10 +74714,10 @@ class SceneExplorerEntity extends HTMLElement {
                 _a.#draggedEntity = this.#entity;
                 event.stopPropagation();
             });
-            this.addEventListener('dragenter', event => {
+            this.addEventListener('dragenter', () => {
                 this.classList.add('dragged-over');
             });
-            this.addEventListener('dragleave', event => {
+            this.addEventListener('dragleave', () => {
                 this.classList.remove('dragged-over');
             });
             this.addEventListener('dragover', event => {
@@ -74599,6 +74804,7 @@ class SceneExplorerEntity extends HTMLElement {
     static #handlePropertyChanged(detail) {
         const entity = detail.entity;
         _a.#updateEntity(entity);
+        //let entityElement;
         switch (detail.propertyName) {
             case 'visible':
                 this.#updateEntityVisibility(entity);
@@ -74640,6 +74846,11 @@ class SceneExplorerEntity extends HTMLElement {
             entityElement.#updateVisibility();
         }
     }
+    static showAll() {
+        for (const [, a] of _a.#entitiesHTML) {
+            show(a);
+        }
+    }
     #updateVisibility() {
         if (this.#entity?.isVisible()) {
             this.#htmlVisible.innerHTML = visibilityOnSVG;
@@ -74662,12 +74873,12 @@ class SceneExplorerEntity extends HTMLElement {
             this.#htmlPlaying.innerHTML = pauseSVG;
         }
     }
-    expand() {
+    expand(visibleEntities) {
         show(this.#htmlChilds);
-        this.#expandChilds();
+        this.#expandChilds(visibleEntities);
         //this.select();
     }
-    #expandChilds() {
+    #expandChilds(visibleEntities) {
         this.#htmlChilds.innerText = '';
         const entity = this.#entity;
         if (!entity) {
@@ -74676,6 +74887,14 @@ class SceneExplorerEntity extends HTMLElement {
         for (const child of entity.children) {
             const childHtml = _a.getEntityElement(child);
             if (childHtml) {
+                if (visibleEntities) {
+                    if (visibleEntities.has(child)) {
+                        childHtml.expand(visibleEntities);
+                    }
+                    else {
+                        hide(childHtml);
+                    }
+                }
                 this.#htmlChilds.append(childHtml);
             }
         }
@@ -74790,7 +75009,7 @@ class SceneExplorer {
     #scene;
     #selectedEntity = null;
     #manipulator;
-    #skeletonHelper = new SkeletonHelper({ visible: false });
+    #skeletonHelper = new SkeletonHelper({ visible: false, hideInExplorer: true, });
     #htmlProperties;
     #htmlFileExplorer;
     #htmlMaterialEditor;
@@ -74801,6 +75020,7 @@ class SceneExplorer {
     #htmlContextMenu;
     #htmlTypeFilter;
     #htmlDisplayBoneJoints;
+    #htmlDisplayBoneAsLines;
     #shadowRoot;
     #htmlName;
     #htmlId;
@@ -74864,10 +75084,10 @@ class SceneExplorer {
     get scene() {
         return this.#scene;
     }
-    #refreshScene() {
+    #refreshScene(visibleEntities) {
         if (this.#scene) {
             this.#htmlScene.innerText = '';
-            this.#htmlScene.append(this.#createEntityElement(this.#scene, true));
+            this.#htmlScene.append(this.#createEntityElement(this.#scene, true, visibleEntities));
         }
     }
     get htmlElement() {
@@ -75021,6 +75241,7 @@ class SceneExplorer {
                             const checked = event.target.checked;
                             this.#skeletonHelper.setVisible(checked);
                             display(this.#htmlDisplayBoneJoints, checked);
+                            display(this.#htmlDisplayBoneAsLines, checked);
                         }
                     }
                 }),
@@ -75042,6 +75263,21 @@ class SceneExplorer {
                 }),
                 createElement('span', {
                     i18n: '#display_bone_joints',
+                }),
+            ]
+        });
+        this.#htmlDisplayBoneAsLines = createElement('label', {
+            parent: this.#htmlHeader,
+            hidden: true,
+            childs: [
+                createElement('input', {
+                    type: 'checkbox',
+                    events: {
+                        change: (event) => SkeletonHelper.displayBonesAsLines(event.target.checked)
+                    }
+                }),
+                createElement('span', {
+                    i18n: '#display_bones_as_lines',
                 }),
             ]
         });
@@ -75072,21 +75308,29 @@ class SceneExplorer {
     }
     #applyFilter() {
         if (this.#isVisible) {
+            SceneExplorerEntity.showAll();
             if (this.#filterName == '' && this.#filterType == '') {
                 this.#refreshScene();
             }
             else {
+                const filteredEntities = new Set();
+                const addEntity = (entity) => {
+                    if (!filteredEntities.has(entity)) { // Prevent a potential recursion loop
+                        filteredEntities.add(entity);
+                        if (entity.parent) {
+                            addEntity(entity.parent);
+                        }
+                    }
+                };
                 if (this.#scene) {
                     const allEntities = this.#scene.getChildList();
                     this.#htmlScene.innerText = '';
                     for (const entity of allEntities) {
                         if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
-                            const htmlEntityElement = this.#createEntityElement(entity);
-                            if (htmlEntityElement) {
-                                this.#htmlScene.append();
-                            }
+                            addEntity(entity);
                         }
                     }
+                    this.#refreshScene(filteredEntities);
                 }
             }
         }
@@ -75123,10 +75367,10 @@ class SceneExplorer {
         //this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
         this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale /*, htmlVisibleLabel, this.#htmlVisible*/);
     }
-    #createEntityElement(entity, createExpanded = false) {
+    #createEntityElement(entity, createExpanded, visibleEntities) {
         const htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
         if (createExpanded) {
-            htmlEntityElement?.expand();
+            htmlEntityElement?.expand(visibleEntities);
         }
         return htmlEntityElement;
     }
@@ -75172,7 +75416,7 @@ class SceneExplorer {
         }
     }
     getEntityHtml(entity) {
-        throw 'remove me';
+        throw new Error('remove me');
         //return this._entitiesHtml.get(entity);
     }
     #handlePropertyChanged(detail) {
@@ -75205,58 +75449,49 @@ function initEntitySubmenu() {
     Entity.addSubMenu = [
         {
             i18n: '#primitives', submenu: [
-                { i18n: '#box', f: (entity) => entity.addChild(new Box()) },
-                { i18n: '#cone', f: (entity) => entity.addChild(new Cone()) },
-                { i18n: '#cylinder', f: (entity) => entity.addChild(new Cylinder()) },
-                { i18n: '#fullscreenquad', f: (entity) => entity.addChild(new FullScreenQuad()) },
-                { i18n: '#metaballs', f: (entity) => entity.addChild(new Metaballs()) },
-                { i18n: '#plane', f: (entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
-                { i18n: '#sphere', f: (entity) => entity.addChild(new Sphere()) },
-                { i18n: '#text_2d', f: (entity) => entity.addChild(new Text2D({ text: 'Text2D' })) },
-                { i18n: '#text_3d', f: (entity) => entity.addChild(new Text3D({ text: 'Text3D' })) },
+                { i18n: '#box', f: (entity) => { entity.addChild(new Box()); } },
+                { i18n: '#cone', f: (entity) => { entity.addChild(new Cone()); } },
+                { i18n: '#cylinder', f: (entity) => { entity.addChild(new Cylinder()); } },
+                { i18n: '#fullscreenquad', f: (entity) => { entity.addChild(new FullScreenQuad()); } },
+                { i18n: '#metaballs', f: (entity) => { entity.addChild(new Metaballs()); } },
+                { i18n: '#plane', f: (entity) => { entity.addChild(new Plane({ width: 1000, height: 1000 })); } },
+                { i18n: '#sphere', f: (entity) => { entity.addChild(new Sphere()); } },
+                { i18n: '#text_2d', f: (entity) => { entity.addChild(new Text2D({ text: 'Text2D' })); } },
+                { i18n: '#text_3d', f: (entity) => { entity.addChild(new Text3D({ text: 'Text3D' })); } },
             ]
         },
         {
             i18n: '#entities', submenu: [
-                { i18n: '#group', f: (entity) => entity.addChild(new Group()) },
-                { i18n: '#target', f: (entity) => entity.addChild(new Target()) },
-                { i18n: '#keeponlylastchild', f: (entity) => entity.addChild(new KeepOnlyLastChild()) },
-                { i18n: '#decal', f: (entity) => entity.addChild(new Decal()) },
+                { i18n: '#group', f: (entity) => { entity.addChild(new Group()); } },
+                { i18n: '#target', f: (entity) => { entity.addChild(new Target()); } },
+                { i18n: '#keeponlylastchild', f: (entity) => { entity.addChild(new KeepOnlyLastChild()); } },
+                { i18n: '#decal', f: (entity) => { entity.addChild(new Decal()); } },
             ]
         },
         {
             i18n: '#lights', submenu: [
-                { i18n: '#ambient_light', f: (entity) => entity.addChild(new AmbientLight()) },
-                { i18n: '#point_light', f: (entity) => entity.addChild(new PointLight()) },
-                { i18n: '#spot_light', f: (entity) => entity.addChild(new SpotLight()) },
+                { i18n: '#ambient_light', f: (entity) => { entity.addChild(new AmbientLight()); } },
+                { i18n: '#point_light', f: (entity) => { entity.addChild(new PointLight()); } },
+                { i18n: '#spot_light', f: (entity) => { entity.addChild(new SpotLight()); } },
             ]
         },
-        { i18n: '#camera', f: (entity) => entity.addChild(new Camera()) },
+        { i18n: '#camera', f: (entity) => { entity.addChild(new Camera()); } },
         {
             i18n: '#control', submenu: [
                 {
-                    i18n: '#rotation_control', f: (entity) => {
-                        new RotationControl({ parent: entity });
-                    }
+                    i18n: '#rotation_control', f: (entity) => { new RotationControl({ parent: entity }); },
                 },
                 {
-                    i18n: '#translation_control', f: (entity) => {
-                        const control = new TranslationControl();
-                        const parent = entity.parent;
-                        if (parent) {
-                            parent.addChild(control);
-                        }
-                        control.addChild(entity);
-                    }
+                    i18n: '#translation_control', f: (entity) => { new TranslationControl({ parent: entity }); },
                 },
             ]
         },
         { i18n: '#helper', f: (entity) => { const helper = getHelper(entity); if (helper) {
                 entity.addChild(helper);
             } } },
-        { i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
-        { i18n: '#wireframe2', f: (entity) => entity.addChild(new Wireframe()) },
-        { i18n: '#hitboxes', f: (entity) => entity.addChild(new HitboxHelper()) },
+        { i18n: '#wireframe', f: (entity) => { entity.addChild(new WireframeHelper()); } },
+        { i18n: '#wireframe2', f: (entity) => { entity.addChild(new Wireframe()); } },
+        { i18n: '#hitboxes', f: (entity) => { entity.addChild(new HitboxHelper()); } },
         {
             i18n: '#source1', submenu: [
                 {
@@ -77269,7 +77504,7 @@ class ShaderEditor extends HTMLElement {
                             if (selectedOption.getAttribute('data-shader')) {
                                 const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
                                 if (source) {
-                                    source.getCompileSource(new Map());
+                                    //const compileSource = source.getCompileSource(new Map());
                                     const expandedName = this.#editorShaderName + '_expanded';
                                     ShaderManager.setCustomSource(ShaderType.Vertex, expandedName, source.getCompileSource(new Map()));
                                     this.#reloadGLSLList();
@@ -77320,10 +77555,11 @@ class ShaderEditor extends HTMLElement {
         else {
             loadScript(aceScript).then(() => this.#initEditor2(options, c));
         }
-        ShaderEventTarget.addEventListener('shaderadded', event => this.#reloadGLSLList());
-        ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
+        ShaderEventTarget.addEventListener('shaderadded', () => this.#reloadGLSLList());
+        ShaderEventTarget.addEventListener('includeadded', () => this.#reloadGLSLList());
     }
     #initEditor2(options, id) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         this.#shaderEditor = globalThis.ace.edit(id);
         this.#shaderEditor.renderer.attachToShadowRoot();
         //this.#shaderEditor.$blockScrolling = Infinity;
@@ -77463,7 +77699,9 @@ class ShaderEditor extends HTMLElement {
         let session = this.#sessions.get(name);
         if (!session) {
             const ace = globalThis.ace;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             session = new ace.EditSession('', 'ace/mode/glsl');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
             session.setUndoManager(new ace.UndoManager());
             session.on('change', () => {
                 clearTimeout(this.#recompileTimeout);
@@ -77540,7 +77778,7 @@ class ShaderEditor extends HTMLElement {
     }
     #initEditorEvents() {
         this.#shaderEditor.renderer.content.addEventListener('mousemove', (event) => this.#onMouseMove(event));
-        this.#shaderEditor.renderer.content.addEventListener('click', (event) => this.#onClick(event));
+        this.#shaderEditor.renderer.content.addEventListener('click', () => this.#onClick());
     }
     #onMouseMove(event) {
         if (!this.#shaderEditor) {
@@ -77563,10 +77801,11 @@ class ShaderEditor extends HTMLElement {
         this.#isOpen = true;
         this.#shaderEditor.renderer.setCursorStyle('pointer');
         session.removeMarker(this.#marker);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         const range = new globalThis.ace.Range(token.row, token.start, token.row, token.start + token.value.length);
         this.#marker = session.addMarker(range, 'ace_link_marker', 'text', true);
     }
-    #onClick(event) {
+    #onClick() {
         if (!this.#uuid) {
             return;
         }
@@ -80390,4 +80629,4 @@ var texturedatas = "@group(0) @binding(0) var input: texture_2d<f32>;\n@group(0)
 Shaders['texture_cube_datas.wgsl'] = texture_cube_datas;
 Shaders['texturedatas.wgsl'] = texturedatas;
 
-export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, Attachment, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetControl, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, promptI18n, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };

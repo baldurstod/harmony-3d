@@ -1166,7 +1166,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null> {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null> {
 		const entity = await Source1ModelManager.createInstance(json.repository as string, json.filename as string, false/*dynamic*/, true);
 		if (!entity) {
 			return null;

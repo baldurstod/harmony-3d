@@ -36,7 +36,7 @@ export class PointLight extends Light {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new PointLight(json);
 	}
 

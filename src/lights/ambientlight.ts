@@ -10,7 +10,7 @@ export class AmbientLight extends Light {
 		super(params);
 	}
 
-	static async constructFromJSON(json: any) {
+	static override async constructFromJSON(json: any) {
 		return new AmbientLight(json);
 	}
 

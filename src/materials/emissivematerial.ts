@@ -51,7 +51,7 @@ export class EmissiveMaterial extends Material {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	static override async constructFromJSON(json: JSONObject) {
 		return new EmissiveMaterial();
 	}
 
