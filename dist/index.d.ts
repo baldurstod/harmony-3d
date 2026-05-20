@@ -1102,6 +1102,8 @@ declare class Channel {
                  doOperate(): void;
              }
 
+             export declare function cleanupFilename(filename: string): string;
+
              export declare class ClearPass extends Pass {
                  #private;
                  swapBuffers: boolean;
@@ -1763,7 +1765,7 @@ declare class Channel {
                        * @deprecated Please use `getScale` instead.
                        */
                       get scale(): vec3;
-                      getScale(): vec3;
+                      getScale(out?: vec3): vec3;
                       get worldMatrix(): mat4;
                       setVisible(visible?: boolean): void;
                       /**
@@ -1949,7 +1951,6 @@ declare class Channel {
                       declare type EntityPropertyValue = any;
 
                       export declare class Environment {
-                          constructor();
                       }
 
                       export declare const EPSILON = 1e-7;
@@ -3453,6 +3454,8 @@ declare class Channel {
                           newLine(): void;
                           comma(): void;
                       }
+
+                      declare type Layer = any;
 
                       export declare function lerp(min: number, max: number, v: number): number;
 
@@ -6191,8 +6194,8 @@ declare class Channel {
                           environment: Environment | null;
                           activeCamera: Camera | null;
                           constructor(parameters?: SceneParameters);
-                          addLayer(layer: any, index: number): any;
-                          removeLayer(layer: any): void;
+                          addLayer(layer: Layer, index: number): Layer;
+                          removeLayer(layer: Layer): void;
                           setWorld(world: World): void;
                           getWorld(): World | null;
                           toString(): string;
@@ -6209,12 +6212,11 @@ declare class Channel {
                            * @deprecated Please use `setScene` instead.
                            */
                           set scene(scene: Scene);
-                          setScene(scene: Scene): void;
                           get scene(): Scene | undefined;
+                          setScene(scene: Scene): void;
                           get htmlElement(): HTMLElement;
                           selectEntity(entity: Entity | null, scrollIntoView?: boolean): void;
                           getSelectedEntity(): Entity | null;
-                          getEntityHtml(entity: Entity): void;
                           showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
                           editMaterial(material: Material): void;
                           setJointsRadius(radius: number): void;
@@ -9716,10 +9718,11 @@ declare class Channel {
 
                       export declare class WebRepository implements Repository {
                           #private;
+                          readonly name: string;
+                          readonly base: string;
+                          readonly useCacheApi: boolean;
                           active: boolean;
                           constructor(name: string, base: string, useCacheApi?: boolean);
-                          get name(): string;
-                          get base(): string;
                           getFile(fileName: string): Promise<RepositoryFileResponse>;
                           getFileAsArrayBuffer(fileName: string): Promise<RepositoryArrayBufferResponse>;
                           getFileAsText(fileName: string): Promise<RepositoryTextResponse>;

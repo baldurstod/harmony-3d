@@ -537,7 +537,7 @@ export class Material implements HasUsers {
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	static async constructFromJSON(json: JSONObject) {
 		return new Material(json.parameters as MaterialParams/*TODO: check validity*/);
 	}
 

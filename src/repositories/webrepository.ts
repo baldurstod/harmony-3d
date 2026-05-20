@@ -2,32 +2,24 @@ import { customFetch } from '../utils/customfetch';
 import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class WebRepository implements Repository {
-	#name: string;
-	#base: string;
-	#useCacheApi: boolean;
+	readonly name: string;
+	readonly base: string;
+	readonly useCacheApi: boolean;
 	#cache?: Cache;
 	active: boolean = true;
 
 	constructor(name: string, base: string, useCacheApi = false) {
 		checkRepositoryName(name);
-		this.#name = name;
-		this.#base = base;
-		this.#useCacheApi = useCacheApi;
-	}
-
-	get name() {
-		return this.#name;
-	}
-
-	get base() {
-		return this.#base;
+		this.name = name;
+		this.base = base;
+		this.useCacheApi = useCacheApi;
 	}
 
 	async getFile(fileName: string): Promise<RepositoryFileResponse> {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.#base);
+		const url = new URL(fileName, this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
@@ -44,7 +36,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.#base);
+		const url = new URL(fileName, this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { buffer: await response.arrayBuffer() };
@@ -61,7 +53,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.#base);
+		const url = new URL(fileName, this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { text: await response.text() };
@@ -78,7 +70,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.#base);
+		const url = new URL(fileName, this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
@@ -95,7 +87,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.#base);
+		const url = new URL(fileName, this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { json: await response.json() };
@@ -113,7 +105,7 @@ export class WebRepository implements Repository {
 	}
 
 	async #fetch(url: URL): Promise<Response> {
-		if (!this.#useCacheApi) {
+		if (!this.useCacheApi) {
 			return await customFetch(url);
 		} else {
 
