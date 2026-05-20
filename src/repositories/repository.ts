@@ -36,3 +36,10 @@ export function checkRepositoryName(name: string): void {
 export function sanitizeRepositoryName(name: string): string {
 	return name.replace(/[^a-zA-Z0-9_]/g, '_');
 }
+
+export function cleanupFilename(filename: string): string {
+	filename = filename.toLowerCase().replaceAll('\\', '/');
+	const arr = filename.split('/');
+
+	return arr.filter((path) => path != '').join('/');
+}

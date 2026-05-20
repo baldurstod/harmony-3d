@@ -97,10 +97,3 @@ export class VpkRepository implements Repository {
 		return { root: root };
 	}
 }
-
-function cleanupFilename(filename: string): string {
-	filename = filename.toLowerCase().replaceAll('\\', '/');
-	const arr = filename.split('/');
-
-	return arr.filter((path) => path != '').join('/');
-}

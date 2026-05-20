@@ -1,5 +1,5 @@
 import { BlobReader, BlobWriter, ZipReader } from '@zip.js/zip.js';
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
@@ -90,11 +90,4 @@ export class ZipRepository implements Repository {
 		}
 		return { root: root };
 	}
-}
-
-function cleanupFilename(filename: string): string {
-	filename = filename.toLowerCase().replaceAll('\\', '/');
-	const arr = filename.split('/');
-
-	return arr.filter((path) => path != '').join('/');
 }
