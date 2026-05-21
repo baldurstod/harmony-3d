@@ -1,6 +1,10 @@
 import { customFetch } from '../utils/customfetch';
 import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
+function encodeHash(uri: string): string {
+	return uri.replaceAll('#', '%23');
+}
+
 export class WebRepository implements Repository {
 	readonly name: string;
 	readonly base: string;
@@ -19,7 +23,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.base);
+		const url = new URL(encodeHash(fileName), this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
@@ -36,7 +40,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.base);
+		const url = new URL(encodeHash(fileName), this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { buffer: await response.arrayBuffer() };
@@ -53,7 +57,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.base);
+		const url = new URL(encodeHash(fileName), this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { text: await response.text() };
@@ -70,7 +74,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.base);
+		const url = new URL(encodeHash(fileName), this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
@@ -87,7 +91,7 @@ export class WebRepository implements Repository {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
 		}
-		const url = new URL(fileName, this.base);
+		const url = new URL(encodeHash(fileName), this.base);
 		const response = await this.#fetch(url);
 		if (response.ok) {
 			return { json: await response.json() };

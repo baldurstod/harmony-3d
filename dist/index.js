@@ -74071,6 +74071,9 @@ class VpkRepository {
     }
 }
 
+function encodeHash(uri) {
+    return uri.replaceAll('#', '%23');
+}
 class WebRepository {
     name;
     base;
@@ -74087,7 +74090,7 @@ class WebRepository {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
         }
-        const url = new URL(fileName, this.base);
+        const url = new URL(encodeHash(fileName), this.base);
         const response = await this.#fetch(url);
         if (response.ok) {
             return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
@@ -74104,7 +74107,7 @@ class WebRepository {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
         }
-        const url = new URL(fileName, this.base);
+        const url = new URL(encodeHash(fileName), this.base);
         const response = await this.#fetch(url);
         if (response.ok) {
             return { buffer: await response.arrayBuffer() };
@@ -74121,7 +74124,7 @@ class WebRepository {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
         }
-        const url = new URL(fileName, this.base);
+        const url = new URL(encodeHash(fileName), this.base);
         const response = await this.#fetch(url);
         if (response.ok) {
             return { text: await response.text() };
@@ -74138,7 +74141,7 @@ class WebRepository {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
         }
-        const url = new URL(fileName, this.base);
+        const url = new URL(encodeHash(fileName), this.base);
         const response = await this.#fetch(url);
         if (response.ok) {
             return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
@@ -74155,7 +74158,7 @@ class WebRepository {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
         }
-        const url = new URL(fileName, this.base);
+        const url = new URL(encodeHash(fileName), this.base);
         const response = await this.#fetch(url);
         if (response.ok) {
             return { json: await response.json() };
