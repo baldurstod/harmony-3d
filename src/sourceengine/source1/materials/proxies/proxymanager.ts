@@ -1,3 +1,4 @@
+import { errorOnce } from 'harmony-utils';
 import { Proxy } from './proxy';
 
 /**
@@ -13,6 +14,7 @@ export class ProxyManager {
 		proxyName = proxyName.toLowerCase();
 		const proxy = this.#proxyList[proxyName];
 		if (!proxy) {
+			errorOnce('Proxy no found: ' + proxyName);
 			return null;
 		}
 		return new proxy();

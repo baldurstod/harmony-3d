@@ -1,3 +1,4 @@
+export { Abs } from './abs';
 export { Add } from './add';
 export { AnimatedTextureProxy } from './animatedtexture';
 export { AnimatedWeaponSheen } from './animatedweaponsheen';
@@ -25,6 +26,7 @@ export { SpyInvis } from './spyinvis';
 export { StatTrakDigit } from './stattrakdigit';
 export { StatTrakIllum } from './stattrakillum';
 export { StickybombGlowColor } from './stickybombglowcolor';
+export { Subtract } from './subtract';
 export { TextureScroll } from './texturescroll';
 export { TextureTransform } from './texturetransform';
 export { UniformNoiseProxy } from './uniformnoiseproxy';

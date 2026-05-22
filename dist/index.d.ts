@@ -30,6 +30,15 @@ import { vec3 } from 'gl-matrix';
 import { vec4 } from 'gl-matrix';
 import { WgslReflect } from 'wgsl_reflect';
 
+/**
+ * Abs proxy. Return the absolute value of srcvar1
+ * @comment input variable name: srcvar1
+ * @comment ouput variable name: resultVar
+ */
+export declare class Abs extends Proxy_2 {
+    execute(variables: Map<string, Source1MaterialVariables>): void;
+}
+
 declare class Actor {
     #private;
     name: string;
@@ -45,7 +54,7 @@ declare class Actor {
 }
 
 /**
- * Add proxy. Copies the value of a variable to another.
+ * Add proxy. Return srcvar1 + srcvar2.
  * @comment input variable name: srcvar1
  * @comment input variable name: srcvar2
  * @comment ouput variable name: resultVar
@@ -8884,6 +8893,16 @@ declare class Channel {
                           iStart: int32;
                           localAnim: StudioCompressedIkError;
                       };
+
+                      /**
+                       * Subtract proxy. Return srcvar1 - srcvar2.
+                       * @comment input variable name: srcvar1
+                       * @comment input variable name: srcvar2
+                       * @comment ouput variable name: resultVar
+                       */
+                      export declare class Subtract extends Proxy_2 {
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
+                      }
 
                       export declare class Target extends Entity {
                           static constructFromJSON(json: any): Promise<Target>;

@@ -676,9 +676,6 @@ export class Source1Material extends Material {
 			this.setDefine('DETAIL_BLEND_MODE', variables.get('$detailblendmode') ?? 0);
 			this.setUniformValue('uDetailBlendFactor', variables.get('$detailblendfactor') ?? 0);
 		}
-
-
-
 	}
 
 	/* eslint-disable @typescript-eslint/no-unused-vars */

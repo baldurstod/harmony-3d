@@ -4,12 +4,12 @@ import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
 /**
- * Add proxy. Return srcvar1 + srcvar2.
+ * Subtract proxy. Return srcvar1 - srcvar2.
  * @comment input variable name: srcvar1
  * @comment input variable name: srcvar2
  * @comment ouput variable name: resultVar
  */
-export class Add extends Proxy {
+export class Subtract extends Proxy {
 	override execute(variables: Map<string, Source1MaterialVariables>/*, proxyParams: DynamicParams, time: number*/): void {
 		super.setResult(variables, variables.get(this.getData('srcvar1')));
 
@@ -22,17 +22,17 @@ export class Add extends Proxy {
 
 		if (typeof v1 == 'number') {
 			if (typeof v2 == 'number') {
-				super.setResult(variables, v1 + v2);
+				super.setResult(variables, v1 - v2);
 			} else {//array
-				super.setResult(variables, vec3.fromValues(v1 + v2[0], v1 + v2[1], v1 + v2[2]));
+				super.setResult(variables, vec3.fromValues(v1 - v2[0], v1 - v2[1], v1 - v2[2]));
 			}
 		} else {
 			if (typeof v2 == 'number') {
-				super.setResult(variables, vec3.fromValues(v1[0] + v2, v1[1] + v2, v1[2] + v2));
+				super.setResult(variables, vec3.fromValues(v1[0] - v2, v1[1] - v2, v1[2] - v2));
 			} else {//array
-				super.setResult(variables, vec3.fromValues(v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]));
+				super.setResult(variables, vec3.fromValues(v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]));
 			}
 		}
 	}
 }
-ProxyManager.registerProxy('Add', Add);
+ProxyManager.registerProxy('Subtract', Subtract);
