@@ -1485,6 +1485,16 @@ declare class Channel {
 
                   export declare function customFetch(resource: string | URL | Request, options?: RequestInit): Promise<Response>;
 
+                  export declare class CustomHeroMaterial extends Source1Material {
+                      #private;
+                      useSrgb: boolean;
+                      init(): void;
+                      afterProcessProxies(proxyParams: DynamicParams): void;
+                      clone(): CustomHeroMaterial;
+                      getShaderSource(): string;
+                      getRaytracingMaterial(index: number): RaytracingMaterial;
+                  }
+
                   /**
                    * CustomSteamImageOnModel proxy.
                    * @comment ouput variable name: resultVar

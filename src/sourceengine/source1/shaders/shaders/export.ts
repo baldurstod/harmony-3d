@@ -5,6 +5,11 @@ import source1_character_vs from './source1_character.vs';
 Shaders['source1_character.fs'] = source1_character_fs;
 Shaders['source1_character.vs'] = source1_character_vs;
 
+import source1_customhero_fs from './source1_customhero.fs';
+import source1_customhero_vs from './source1_customhero.vs';
+Shaders['source1_customhero.fs'] = source1_customhero_fs;
+Shaders['source1_customhero.vs'] = source1_customhero_vs;
+
 import source1_customweapon_fs from './source1_customweapon.fs';
 import source1_customweapon_vs from './source1_customweapon.vs';
 Shaders['source1_customweapon.fs'] = source1_customweapon_fs;

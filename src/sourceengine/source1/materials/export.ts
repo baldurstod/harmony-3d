@@ -1,4 +1,5 @@
 export { CharacterMaterial } from './charactermaterial';
+export { CustomHeroMaterial } from './customhero';
 export { CustomWeaponMaterial } from './customweaponmaterial';
 export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
