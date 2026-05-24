@@ -3,6 +3,7 @@ import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
 	#name: string;
+	description = '';
 	#base: Repository;
 	prefix: string;
 	active: boolean = true;

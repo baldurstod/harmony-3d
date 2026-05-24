@@ -18,6 +18,7 @@ export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: Re
 export interface Repository {
 	// Repository name. Authorized characters are a-z, A-Z, 0-9 and _
 	name: string;
+	description: string;
 	active: boolean;
 	getFile: (path: string) => Promise<RepositoryFileResponse>;
 	getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;

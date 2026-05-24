@@ -73704,6 +73704,7 @@ const STORAGE_PREFIX = 'repository_content';
  * Cache the result of the underlying repository in persistent storage
  */
 class StorageRepository {
+    description = '';
     #base;
     #fileList;
     active = true;
@@ -73771,6 +73772,7 @@ class StorageRepository {
 }
 
 class OverrideRepository {
+    description = '';
     #base;
     #overrides = new Map();
     active = true;
@@ -73841,6 +73843,7 @@ class OverrideRepository {
 }
 
 class ManifestRepository {
+    description = '';
     #base;
     active = true;
     constructor(base) {
@@ -73919,6 +73922,7 @@ class ManifestRepository {
  * Cache the result of the underlying repository
  */
 class MemoryCacheRepository {
+    description = '';
     #base;
     #files = new Map();
     #fileList;
@@ -73980,6 +73984,7 @@ class MemoryCacheRepository {
 
 class MemoryRepository {
     #name;
+    description = '';
     #files = new Map();
     active = true;
     constructor(name) {
@@ -74250,6 +74255,7 @@ function match(name, filter) {
 
 class MergeRepository {
     #name;
+    description = '';
     #repositories = [];
     active = true;
     constructor(name, ...repositories) {
@@ -74347,6 +74353,7 @@ class MergeRepository {
 
 class PathPrefixRepository {
     #name;
+    description = '';
     #base;
     prefix;
     active = true;
@@ -74410,6 +74417,7 @@ class PathPrefixRepository {
 
 class VpkRepository {
     #name;
+    description = '';
     #vpk = new Vpk();
     #initPromiseResolve;
     #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
@@ -74500,6 +74508,7 @@ function encodeHash(uri) {
 }
 class WebRepository {
     name;
+    description = '';
     base;
     useCacheApi;
     #cache;
@@ -74638,6 +74647,7 @@ class WebRepository {
 
 class ZipRepository {
     #name;
+    description = '';
     #zip;
     #reader;
     #zipEntries = new Map();

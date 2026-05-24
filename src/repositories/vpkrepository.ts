@@ -4,6 +4,7 @@ import { RepositoryEntry } from './repositoryentry';
 
 export class VpkRepository implements Repository {
 	#name: string;
+	description = '';
 	#vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);

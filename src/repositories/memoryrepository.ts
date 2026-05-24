@@ -2,6 +2,7 @@ import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, Reposit
 
 export class MemoryRepository implements Repository {
 	#name: string;
+	description = '';
 	#files = new Map<string, File>();
 	active: boolean = true;
 

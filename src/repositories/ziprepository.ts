@@ -4,6 +4,7 @@ import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
 	#name: string;
+	description = '';
 	#zip: File;
 	#reader: ZipReader<BlobReader>;
 	#zipEntries = new Map<string, File>();

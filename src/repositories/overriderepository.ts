@@ -1,6 +1,7 @@
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class OverrideRepository implements Repository {
+	description = '';
 	#base: Repository;
 	#overrides = new Map<string, File>();
 	active: boolean = true;

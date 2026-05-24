@@ -3,6 +3,7 @@ import { RepositoryEntry } from './repositoryentry';
 
 export class MergeRepository implements Repository {
 	#name: string;
+	description = '';
 	#repositories: Repository[] = [];
 	active: boolean = true;
 

@@ -7,6 +7,7 @@ function encodeHash(uri: string): string {
 
 export class WebRepository implements Repository {
 	readonly name: string;
+	description = '';
 	readonly base: string;
 	readonly useCacheApi: boolean;
 	#cache?: Cache;

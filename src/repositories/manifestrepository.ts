@@ -5,6 +5,7 @@ import { OverrideRepository } from './overriderepository';
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
+	description = '';
 	#base: OverrideRepository;
 	active: boolean = true;
 

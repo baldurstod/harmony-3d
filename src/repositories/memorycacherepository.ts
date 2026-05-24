@@ -4,6 +4,7 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
  * Cache the result of the underlying repository
  */
 export class MemoryCacheRepository implements Repository {
+	description = '';
 	#base: Repository;
 	#files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;
