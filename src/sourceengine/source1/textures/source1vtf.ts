@@ -70,11 +70,14 @@ export class Source1Vtf {
 	setFlags(flags: number): void {
 		this.flags = flags;
 		if (flags & TEXTUREFLAGS_ENVMAP) {
+			this.faceCount = 6;
+			/*
 			if (this.isHigherThan74()) {
 				this.faceCount = 6;
 			} else {
 				this.faceCount = 7;// WTF ?
 			}
+			*/
 		}
 	}
 
