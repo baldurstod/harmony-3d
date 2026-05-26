@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 function encodeHash(uri: string): string {
 	return uri.replaceAll('#', '%23');
@@ -7,7 +7,7 @@ function encodeHash(uri: string): string {
 
 export class WebRepository implements Repository {
 	readonly name: string;
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	readonly base: string;
 	readonly useCacheApi: boolean;
 	#cache?: Cache;

@@ -1,9 +1,9 @@
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
 	#name: string;
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	prefix: string;
 	active: boolean = true;

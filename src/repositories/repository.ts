@@ -15,10 +15,12 @@ export interface RepositoryBlobResponse { blob?: Blob | null, error?: Repository
 export interface RepositoryJsonResponse { json?: JSON | null, error?: RepositoryError }
 export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
 
+export type RepositoryProperty = any;
+
 export interface Repository {
 	// Repository name. Authorized characters are a-z, A-Z, 0-9 and _
 	name: string;
-	description: string;
+	properties: Map<string, RepositoryProperty>;
 	active: boolean;
 	getFile: (path: string) => Promise<RepositoryFileResponse>;
 	getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;

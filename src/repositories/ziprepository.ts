@@ -1,10 +1,10 @@
 import { BlobReader, BlobWriter, ZipReader } from '@zip.js/zip.js';
-import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
 	#name: string;
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#zip: File;
 	#reader: ZipReader<BlobReader>;
 	#zipEntries = new Map<string, File>();

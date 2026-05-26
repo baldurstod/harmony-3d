@@ -1,6 +1,6 @@
 import { PersistentStorage } from 'harmony-browser-utils';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from '../repository';
 import { joinPath } from 'harmony-utils';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from '../repository';
 
 const STORAGE_PREFIX = 'repository_content';
 
@@ -8,6 +8,7 @@ const STORAGE_PREFIX = 'repository_content';
  * Cache the result of the underlying repository in persistent storage
  */
 export class StorageRepository implements Repository {
+	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	#fileList?: RepositoryFileListResponse;
 	active: boolean = true;

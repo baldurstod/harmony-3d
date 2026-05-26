@@ -1,10 +1,10 @@
 import { Vpk } from 'harmony-vpk';
-import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class VpkRepository implements Repository {
 	#name: string;
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);

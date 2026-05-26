@@ -1,10 +1,10 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 /**
  * Cache the result of the underlying repository
  */
 export class MemoryCacheRepository implements Repository {
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	#files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;

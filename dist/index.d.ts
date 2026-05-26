@@ -2209,6 +2209,12 @@ declare class Channel {
                           dirty?: boolean;
                       };
 
+                      export declare class GaussianNoiseProxy extends Proxy_2 {
+                          #private;
+                          init(): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                      }
+
                       export declare function generateRandomUUID(): string;
 
                       export declare function getCurrentTexture(): Texture;
@@ -3271,6 +3277,15 @@ declare class Channel {
                       export declare class Invis extends Proxy_2 {
                       }
 
+                      /**
+                       * InvulnLevel Proxy
+                       */
+                      export declare class InvulnLevelProxy extends Proxy_2 {
+                          #private;
+                          init(): void;
+                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams): void;
+                      }
+
                       export declare function isNumeric(n: any): boolean;
 
                       /**
@@ -3685,7 +3700,7 @@ declare class Channel {
 
                       export declare class ManifestRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(base: Repository);
                           get name(): string;
@@ -4303,7 +4318,7 @@ declare class Channel {
                        */
                       export declare class MemoryCacheRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(base: Repository);
                           get name(): string;
@@ -4317,7 +4332,7 @@ declare class Channel {
 
                       export declare class MemoryRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(name: string);
                           get name(): string;
@@ -4332,7 +4347,7 @@ declare class Channel {
 
                       export declare class MergeRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(name: string, ...repositories: Repository[]);
                           get name(): string;
@@ -4994,7 +5009,7 @@ declare class Channel {
 
                       export declare class OverrideRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(base: Repository);
                           get name(): string;
@@ -5098,7 +5113,7 @@ declare class Channel {
 
                       export declare class PathPrefixRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           prefix: string;
                           active: boolean;
                           constructor(name: string, base: Repository, prefix?: string);
@@ -5970,7 +5985,7 @@ declare class Channel {
 
                       export declare interface Repository {
                           name: string;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           getFile: (path: string) => Promise<RepositoryFileResponse>;
                           getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
@@ -8854,7 +8869,7 @@ declare class Channel {
                        */
                       export declare class StorageRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(base: Repository);
                           get name(): string;
@@ -9548,7 +9563,7 @@ declare class Channel {
 
                       export declare class VpkRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(name: string, files: File[]);
                           get name(): string;
@@ -9757,7 +9772,7 @@ declare class Channel {
                       export declare class WebRepository implements Repository {
                           #private;
                           readonly name: string;
-                          description: string;
+                          properties: Map<string, any>;
                           readonly base: string;
                           readonly useCacheApi: boolean;
                           active: boolean;
@@ -9821,7 +9836,7 @@ declare class Channel {
 
                       export declare class ZipRepository implements Repository {
                           #private;
-                          description: string;
+                          properties: Map<string, any>;
                           active: boolean;
                           constructor(name: string, zip: File);
                           get name(): string;

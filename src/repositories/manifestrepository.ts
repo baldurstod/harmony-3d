@@ -2,10 +2,10 @@ import { getLoader } from '../loaders/loaderfactory';
 import { Source1PcfLoader } from '../sourceengine/export';
 import { SourcePCF } from '../sourceengine/source1/loaders/sourcepcf';
 import { OverrideRepository } from './overriderepository';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#base: OverrideRepository;
 	active: boolean = true;
 

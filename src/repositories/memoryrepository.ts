@@ -1,8 +1,8 @@
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class MemoryRepository implements Repository {
 	#name: string;
-	description = '';
+	properties = new Map<string, RepositoryProperty>();
 	#files = new Map<string, File>();
 	active: boolean = true;
 
