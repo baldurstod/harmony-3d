@@ -608,7 +608,7 @@ function initEntitySubmenu(): void {
 						i18n: '#model', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
-							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
+							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
 								const instance = await Source1ModelManager.createInstance(repository, modelName, true);
@@ -627,7 +627,7 @@ function initEntitySubmenu(): void {
 						i18n: '#particle_system', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
-							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
+							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
 								const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]!);
 								sys.start();
@@ -644,7 +644,7 @@ function initEntitySubmenu(): void {
 						i18n: '#model', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
-							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
+							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								const instance = await Source2ModelManager.createInstance(repository, modelName, true);
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
@@ -659,7 +659,7 @@ function initEntitySubmenu(): void {
 						i18n: '#particle_system', f: async (entity: Entity): Promise<void> => {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
-							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
+							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
 								const sys = await Source2ParticleManager.getSystem(repository, systemPath);
 								if (sys) {

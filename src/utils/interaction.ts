@@ -8,24 +8,15 @@ export { FileSelector } from './fileselector/fileselector';
 const DATALIST_ID = 'interaction-datalist';
 
 export class Interaction {
-	static #instance: Interaction;
-	#htmlColorPicker?: HTMLElement;
-	#shadowRoot?: ShadowRoot;
-	#htmlInput?: HTMLInputElement;
-	#htmlInputDataList?: HTMLDataListElement;
-	#htmlFileSelector?: HTMLElement;
-	//#htmlColorPickeronDone?: (color: any) => void;
-	#htmlColorPickeronChange?: (color: any) => void;
-	#htmlColorPickerCancel?: () => void;
+	static #htmlColorPicker?: HTMLElement;
+	static #shadowRoot?: ShadowRoot;
+	static #htmlInput?: HTMLInputElement;
+	static #htmlInputDataList?: HTMLDataListElement;
+	static #htmlFileSelector?: HTMLElement;
+	static  #htmlColorPickeronChange?: (color: any) => void;
+	static #htmlColorPickerCancel?: () => void;
 
-	constructor() {
-		if (Interaction.#instance) {
-			return Interaction.#instance;
-		}
-		Interaction.#instance = this;
-	}
-
-	#initHTML(): HTMLElement {
+	static #initHTML(): HTMLElement {
 		if (this.#shadowRoot) {
 			return this.#shadowRoot.host as HTMLElement;
 		}
@@ -77,17 +68,17 @@ export class Interaction {
 		return this.#shadowRoot.host as HTMLElement;
 	}
 
-	show(): void {
+	static show(): void {
 		show(this.#initHTML());
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
-	hide(): void {
+	static hide(): void {
 		hide(this.#shadowRoot?.host as (HTMLElement | undefined));
 	}
 
-	getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void): void {
+	static getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void): void {
 		this.show();
 		//this.#htmlColorPicker.setOptions({alpha:false});
 		show(this.#htmlColorPicker);
@@ -124,7 +115,7 @@ export class Interaction {
 		return;
 	}
 
-	getString(x: number, y: number, list: Set<string> | string[] | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
+	static getString(x: number, y: number, list: Set<string> | string[] | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
 		this.show();
 		show(this.#htmlInput);
 		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
@@ -220,7 +211,7 @@ export class Interaction {
 	}
 		*/
 
-	selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void): void {
+	static selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void): void {
 		this.#initHTML();
 		//htmlContainer.append(this.#htmlFileSelector);
 		//this.show();
@@ -242,7 +233,7 @@ export class Interaction {
 		});
 	}
 
-	get htmlElement(): HTMLElement {
+	static get htmlElement(): HTMLElement {
 		return this.#shadowRoot?.host as (HTMLElement | undefined) ?? this.#initHTML();
 	}
 }

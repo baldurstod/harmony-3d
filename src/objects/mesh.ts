@@ -369,7 +369,7 @@ export class Mesh extends Entity {
 
 		materialSubmenu.setMaterial = {
 			i18n: '#set_material', f: async () => {
-				const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
+				const materialName = await Interaction.getString(0, 0, MaterialManager.getMaterialList());
 				if (materialName) {
 					MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 				}
