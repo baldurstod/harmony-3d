@@ -1,4 +1,4 @@
-import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
+import { lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
@@ -6,6 +6,8 @@ import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverChildRemov
 import { Animated } from '../interfaces/animated';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
+import { Tintable } from '../interfaces/tintable';
+import { Interaction } from '../utils/interaction';
 import { SceneExplorer } from './sceneexplorer';
 
 const MAX_ANIMATIONS = 3;
@@ -30,6 +32,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlLoopedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlLockedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
+	#htmlTint: HTMLElement;
 
 	static #entitiesHTML = new Map<Entity, SceneExplorerEntity>();
 	static #selectedEntity?: SceneExplorerEntity;
@@ -50,6 +53,14 @@ export class SceneExplorerEntity extends HTMLElement {
 		this.#htmlHeader = createElement('div', {
 			class: 'scene-explorer-entity-header',
 			childs: [
+				this.#htmlVisible = createElement('div', {
+					class: 'scene-explorer-entity-button-visible',
+					events: {
+						click: () => {
+							this.#entity?.toggleVisibility();
+						},
+					}
+				}),
 				this.#htmlTitle = createElement('div', {
 					class: 'scene-explorer-entity-title',
 					events: {
@@ -59,14 +70,6 @@ export class SceneExplorerEntity extends HTMLElement {
 				createElement('div', {
 					class: 'scene-explorer-entity-buttons',
 					childs: [
-						this.#htmlVisible = createElement('div', {
-							class: 'scene-explorer-entity-button-visible',
-							events: {
-								click: () => {
-									this.#entity?.toggleVisibility();
-								},
-							}
-						}),
 						this.#htmlPlaying = createElement('div', {
 							hidden: true,
 							class: 'scene-explorer-entity-button-play',
@@ -136,6 +139,18 @@ export class SceneExplorerEntity extends HTMLElement {
 							events: {
 								click: () => {
 									this.#entity?.do('reset');
+								},
+							}
+						}),
+						this.#htmlTint = createElement('div', {
+							hidden: true,
+							class: 'scene-explorer-entity-button-tint',
+							innerHTML: paletteSVG,
+							events: {
+								click: () => {
+									if ((this.#entity as unknown as Tintable).isTintable) {
+										Interaction.getColor(0, 0, undefined, (tint) => { (this.#entity as unknown as Tintable).setTint(tint); }, (tint = (this.#entity as unknown as Tintable).getTint()) => { (this.#entity as unknown as Tintable).setTint(tint); });
+									}
 								},
 							}
 						}),
@@ -210,6 +225,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlReset, entity?.resetable);
 		display(this.#htmlLoopedButton, (entity as unknown as Loopable)?.isLoopable);
 		display(this.#htmlLockedButton, (entity as unknown as Lockable)?.isLockable);
+		display(this.#htmlTint, (this.#entity as unknown as Tintable)?.isTintable);
 	}
 
 	static setExplorer(explorer: SceneExplorer): void {

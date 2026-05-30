@@ -11,7 +11,7 @@ import { clamp, generateRandomUUID } from '../math/functions';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
-import { Properties, Property } from '../utils/properties';
+import { Properties, Property, PropertyValues } from '../utils/properties';
 import { promptI18n, stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';
 import { EntityObserver } from './entityobserver';
@@ -450,7 +450,7 @@ export class Entity {
 	}
 
 	do(action: string, params?: any): void {
-		throw new Error('override me' + String(action) + String(params));
+		console.error('override me ', action, params);
 	}
 
 	#setParent(parent: Entity | null): void {
@@ -1133,6 +1133,10 @@ export class Entity {
 
 	getProperty(name: string): Property | undefined {
 		return this.properties.get(name);
+	}
+
+	getPropertyValue(name: string): PropertyValues | undefined {
+		return this.properties.get(name)?.value;
 	}
 
 	setProperty(name: string, value: Property): void {

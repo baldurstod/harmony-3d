@@ -85,6 +85,12 @@ scene-explorer-entity .animation input {
 	cursor: pointer;
 }
 
+.scene-explorer-entity-button-visible {
+	padding: 0rem 0.25rem;
+	display: flex;
+	align-items: center;
+}
+
 .scene-explorer-entity-button-properties {
 	background-color: blue;
 }

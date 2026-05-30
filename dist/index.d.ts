@@ -1880,6 +1880,7 @@ declare class Channel {
                        propagate(): void;
                        copy(source: Entity): void;
                        getProperty(name: string): Property | undefined;
+                       getPropertyValue(name: string): PropertyValues | undefined;
                        setProperty(name: string, value: Property): void;
                        setLayer(layer?: number): void;
                        getLayer(): number | undefined;
@@ -2219,7 +2220,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
+                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -5985,7 +5986,7 @@ declare class Channel {
 
                       export declare interface Repository {
                           name: string;
-                          properties: Map<string, any>;
+                          properties: Map<string, RepositoryProperty>;
                           active: boolean;
                           getFile: (path: string) => Promise<RepositoryFileResponse>;
                           getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
@@ -6057,6 +6058,8 @@ declare class Channel {
                           json?: JSON | null;
                           error?: RepositoryError;
                       }
+
+                      export declare type RepositoryProperty = any;
 
                       export declare interface RepositoryTextResponse {
                           text?: string | null;
@@ -6825,9 +6828,10 @@ declare class Channel {
                           weight: number;
                       };
 
-                      export declare class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel {
+                      export declare class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel, Tintable {
                           #private;
                           isSource1ModelInstance: boolean;
+                          isTintable: true;
                           animable: boolean;
                           hasAnimations: true;
                           sourceModel: SourceModel;
@@ -9343,6 +9347,12 @@ declare class Channel {
                           String = 4,
                           Bool = 5,
                           Color = 6
+                      }
+
+                      declare interface Tintable {
+                          isTintable: true;
+                          setTint(tint: vec4 | null): void;
+                          getTint(out?: vec4): vec4 | null;
                       }
 
                       export declare enum ToneMapping {

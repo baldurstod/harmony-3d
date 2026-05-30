@@ -13,7 +13,7 @@ export class Interaction {
 	static #htmlInput?: HTMLInputElement;
 	static #htmlInputDataList?: HTMLDataListElement;
 	static #htmlFileSelector?: HTMLElement;
-	static  #htmlColorPickeronChange?: (color: any) => void;
+	static #htmlColorPickeronChange?: (color: any) => void;
 	static #htmlColorPickerCancel?: () => void;
 
 	static #initHTML(): HTMLElement {

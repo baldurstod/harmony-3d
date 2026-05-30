@@ -10,7 +10,7 @@ import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reade
 import { decode } from 'fast-png';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash';
-import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, paletteSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 
@@ -3157,7 +3157,7 @@ class Entity {
         this.setPlaying(!this.#playing);
     }
     do(action, params) {
-        throw new Error('override me' + String(action) + String(params));
+        console.error('override me ', action, params);
     }
     #setParent(parent) {
         EntityObserver.parentChanged(this, this._parent, parent);
@@ -3795,6 +3795,9 @@ class Entity {
     }
     getProperty(name) {
         return this.properties.get(name);
+    }
+    getPropertyValue(name) {
+        return this.properties.get(name)?.value;
     }
     setProperty(name, value) {
         return this.properties.set(name, value);
@@ -5076,22 +5079,14 @@ defineElement('file-selector', FileSelector);
 
 const DATALIST_ID = 'interaction-datalist';
 class Interaction {
-    static #instance;
-    #htmlColorPicker;
-    #shadowRoot;
-    #htmlInput;
-    #htmlInputDataList;
-    #htmlFileSelector;
-    //#htmlColorPickeronDone?: (color: any) => void;
-    #htmlColorPickeronChange;
-    #htmlColorPickerCancel;
-    constructor() {
-        if (Interaction.#instance) {
-            return Interaction.#instance;
-        }
-        Interaction.#instance = this;
-    }
-    #initHTML() {
+    static #htmlColorPicker;
+    static #shadowRoot;
+    static #htmlInput;
+    static #htmlInputDataList;
+    static #htmlFileSelector;
+    static #htmlColorPickeronChange;
+    static #htmlColorPickerCancel;
+    static #initHTML() {
         if (this.#shadowRoot) {
             return this.#shadowRoot.host;
         }
@@ -5134,15 +5129,15 @@ class Interaction {
         });
         return this.#shadowRoot.host;
     }
-    show() {
+    static show() {
         show(this.#initHTML());
         hide(this.#htmlInput);
         hide(this.#htmlColorPicker);
     }
-    hide() {
+    static hide() {
         hide(this.#shadowRoot?.host);
     }
-    getColor(x, y, defaultValue, onChange, onCancel) {
+    static getColor(x, y, defaultValue, onChange, onCancel) {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
         show(this.#htmlColorPicker);
@@ -5176,7 +5171,7 @@ class Interaction {
         };
         return;
     }
-    getString(x, y, list, defaultValue) {
+    static getString(x, y, list, defaultValue) {
         this.show();
         show(this.#htmlInput);
         this.#htmlInput.value = defaultValue ? defaultValue : '';
@@ -5268,7 +5263,7 @@ class Interaction {
         }
     }
         */
-    selectFile(htmlContainer, fileList, callback) {
+    static selectFile(htmlContainer, fileList, callback) {
         this.#initHTML();
         //htmlContainer.append(this.#htmlFileSelector);
         //this.show();
@@ -5288,7 +5283,7 @@ class Interaction {
             callback(file.root, file.path + file.name);
         });
     }
-    get htmlElement() {
+    static get htmlElement() {
         return this.#shadowRoot?.host ?? this.#initHTML();
     }
 }
@@ -5588,7 +5583,7 @@ class Mesh extends Entity {
         materialSubmenu.mesh1 = null;
         materialSubmenu.setMaterial = {
             i18n: '#set_material', f: async () => {
-                const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
+                const materialName = await Interaction.getString(0, 0, MaterialManager.getMaterialList());
                 if (materialName) {
                     MaterialManager.getMaterial(materialName, (material) => { if (material) {
                         this.setMaterial(material);
@@ -27766,6 +27761,7 @@ class Source1ModelManager {
 var _a$6;
 class Source1ModelInstance extends Entity {
     isSource1ModelInstance = true;
+    isTintable = true;
     #poseParameters = new Map();
     #flexParameters = new Map();
     #flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
@@ -28424,12 +28420,12 @@ class Source1ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source1ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            tint: { i18n: '#tint', f: (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
+            tint: { i18n: '#tint', f: (entity) => Interaction.getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
             reset_tint: { i18n: '#reset_tint', f: (entity) => entity.setTint(null), disabled: this.#tint === undefined },
-            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { const animation = await Interaction.getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
                 } } },
-            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) {
+            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { const material = await Interaction.getString(0, 0, Object.keys(Material.materialList)); if (material) {
                     entity.material = new Material.materialList[material];
                 } } },
             Source1ModelInstance_2: null,
@@ -52461,7 +52457,7 @@ class Source2ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source2ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, entity.sourceModel.getAnimations()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { const animation = await Interaction.getString(0, 0, entity.sourceModel.getAnimations()); if (animation) {
                     entity.playAnimation(animation);
                 } } },
             Source2ModelInstance_2: null,
@@ -71826,7 +71822,7 @@ class Text2D extends Entity {
                             fontList2.add(`${fontName}, ${style}`);
                         }
                     }
-                    const font = (await new Interaction().getString(0, 0, fontList2)).split(',');
+                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
                     if (font) {
                         this.setFont(font[0]);
                         //this.style = font[1]!;
@@ -72355,7 +72351,7 @@ class Text3D extends Mesh {
                             fontList2.add(`${fontName}, ${style}`);
                         }
                     }
-                    const font = (await new Interaction().getString(0, 0, fontList2)).split(',');
+                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
                     if (font) {
                         this.#font = font[0];
                         this.#style = font[1];
@@ -74778,7 +74774,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -75050,6 +75046,7 @@ class SceneExplorerEntity extends HTMLElement {
     #htmlLoopedButton;
     #htmlLockedButton;
     #htmlReset;
+    #htmlTint;
     static #entitiesHTML = new Map();
     static #selectedEntity;
     static #explorer;
@@ -75067,6 +75064,14 @@ class SceneExplorerEntity extends HTMLElement {
         this.#htmlHeader = createElement('div', {
             class: 'scene-explorer-entity-header',
             childs: [
+                this.#htmlVisible = createElement('div', {
+                    class: 'scene-explorer-entity-button-visible',
+                    events: {
+                        click: () => {
+                            this.#entity?.toggleVisibility();
+                        },
+                    }
+                }),
                 this.#htmlTitle = createElement('div', {
                     class: 'scene-explorer-entity-title',
                     events: {
@@ -75076,14 +75081,6 @@ class SceneExplorerEntity extends HTMLElement {
                 createElement('div', {
                     class: 'scene-explorer-entity-buttons',
                     childs: [
-                        this.#htmlVisible = createElement('div', {
-                            class: 'scene-explorer-entity-button-visible',
-                            events: {
-                                click: () => {
-                                    this.#entity?.toggleVisibility();
-                                },
-                            }
-                        }),
                         this.#htmlPlaying = createElement('div', {
                             hidden: true,
                             class: 'scene-explorer-entity-button-play',
@@ -75156,6 +75153,18 @@ class SceneExplorerEntity extends HTMLElement {
                                 },
                             }
                         }),
+                        this.#htmlTint = createElement('div', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-tint',
+                            innerHTML: paletteSVG,
+                            events: {
+                                click: () => {
+                                    if (this.#entity.isTintable) {
+                                        Interaction.getColor(0, 0, undefined, (tint) => { this.#entity.setTint(tint); }, (tint = this.#entity.getTint()) => { this.#entity.setTint(tint); });
+                                    }
+                                },
+                            }
+                        }),
                     ]
                 }),
             ]
@@ -75223,6 +75232,7 @@ class SceneExplorerEntity extends HTMLElement {
         display(this.#htmlReset, entity?.resetable);
         display(this.#htmlLoopedButton, entity?.isLoopable);
         display(this.#htmlLockedButton, entity?.isLockable);
+        display(this.#htmlTint, this.#entity?.isTintable);
     }
     static setExplorer(explorer) {
         _a.#explorer = explorer;
@@ -75962,7 +75972,7 @@ function initEntitySubmenu() {
                     i18n: '#model', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
                             const instance = await Source1ModelManager.createInstance(repository, modelName, true);
@@ -75981,7 +75991,7 @@ function initEntitySubmenu() {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
                             const systemName = systemPath.split('/');
                             const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
                             sys.start();
@@ -75997,7 +76007,7 @@ function initEntitySubmenu() {
                     i18n: '#model', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             const instance = await Source2ModelManager.createInstance(repository, modelName, true);
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
@@ -76012,7 +76022,7 @@ function initEntitySubmenu() {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
-                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
                             const systemName = systemPath.split('/');
                             const sys = await Source2ParticleManager.getSystem(repository, systemPath);
                             if (sys) {

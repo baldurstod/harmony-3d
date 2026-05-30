@@ -16,6 +16,7 @@ import { HasHitBoxes } from '../../../interfaces/hashitboxes';
 import { HasMaterials } from '../../../interfaces/hasmaterials';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
+import { Tintable } from '../../../interfaces/tintable';
 import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { vec3RandomBox } from '../../../math/functions';
@@ -42,8 +43,9 @@ import { Source1ParticleSystem } from '../particles/source1particlesystem';
 export type Source1ModelSequences = Record<string, { frame?: number, startTime?: number, s?: MdlStudioSeqDesc }>/*TODO: improve type*/;
 export type Source1ModelAnimation = { name: string, weight: number }/*TODO: improve type*/;
 
-export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel {
+export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel, Tintable {
 	isSource1ModelInstance = true;
+	isTintable = true as const;
 	readonly #poseParameters = new Map<string, number>();
 	readonly #flexParameters = new Map<string, number>();
 	#flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
