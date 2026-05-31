@@ -2220,7 +2220,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 

@@ -5152,6 +5152,9 @@ class Interaction {
     static getColor(x, y, defaultValue, onChange, onCancel) {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
+        if (defaultValue) {
+            this.#htmlColorPicker?.setRgba(defaultValue);
+        }
         show(this.#htmlColorPicker);
         /*
         let promiseResolve: (value: vec4) => void;
@@ -75172,7 +75175,8 @@ class SceneExplorerEntity extends HTMLElement {
                             events: {
                                 click: () => {
                                     if (this.#entity.isTintable) {
-                                        Interaction.getColor(0, 0, undefined, (tint) => { this.#entity.setTint(tint); }, (tint = this.#entity.getTint()) => { this.#entity.setTint(tint); });
+                                        const initialTint = this.#entity.getTint();
+                                        Interaction.getColor(0, 0, initialTint, (tint) => { this.#entity.setTint(tint); }, () => { this.#entity.setTint(initialTint); });
                                     }
                                 },
                             }

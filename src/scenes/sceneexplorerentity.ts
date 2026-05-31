@@ -149,7 +149,10 @@ export class SceneExplorerEntity extends HTMLElement {
 							events: {
 								click: () => {
 									if ((this.#entity as unknown as Tintable).isTintable) {
-										Interaction.getColor(0, 0, undefined, (tint) => { (this.#entity as unknown as Tintable).setTint(tint); }, (tint = (this.#entity as unknown as Tintable).getTint()) => { (this.#entity as unknown as Tintable).setTint(tint); });
+										const initialTint =  (this.#entity as unknown as Tintable).getTint();
+										Interaction.getColor(0, 0, initialTint,
+											 (tint) => { (this.#entity as unknown as Tintable).setTint(tint); },
+											 () => { (this.#entity as unknown as Tintable).setTint(initialTint); });
 									}
 								},
 							}

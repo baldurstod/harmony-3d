@@ -1,5 +1,5 @@
-import { vec4 } from 'gl-matrix';
-import { createElement, createShadowRoot, defineHarmonyColorPicker, hide, show } from 'harmony-ui';
+import { ReadonlyVec4, vec4 } from 'gl-matrix';
+import { createElement, createShadowRoot, defineHarmonyColorPicker, hide, HTMLHarmonyColorPickerElement, show } from 'harmony-ui';
 import interactionCSS from '../css/interaction.css';
 import { FileSelectorFile } from './fileselector/file';
 import { FileSelector } from './fileselector/fileselector';
@@ -8,7 +8,7 @@ export { FileSelector } from './fileselector/fileselector';
 const DATALIST_ID = 'interaction-datalist';
 
 export class Interaction {
-	static #htmlColorPicker?: HTMLElement;
+	static #htmlColorPicker?: HTMLHarmonyColorPickerElement;
 	static #shadowRoot?: ShadowRoot;
 	static #htmlInner?: HTMLElement;
 	static #htmlInput?: HTMLInputElement;
@@ -53,7 +53,7 @@ export class Interaction {
 					hide(this.#htmlColorPicker)
 				},
 			},
-		});
+		}) as HTMLHarmonyColorPickerElement;
 
 		this.#htmlInput = createElement('input', {
 			style: 'pointer-events: all;',
@@ -88,9 +88,12 @@ export class Interaction {
 		hide(this.#shadowRoot?.host as (HTMLElement | undefined));
 	}
 
-	static getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void): void {
+	static getColor(x: number, y: number, defaultValue?: ReadonlyVec4 | null, onChange?: (color: vec4) => void, onCancel?: () => void): void {
 		this.show();
 		//this.#htmlColorPicker.setOptions({alpha:false});
+		if (defaultValue) {
+			this.#htmlColorPicker?.setRgba((defaultValue as [number, number, number, number]));
+		}
 		show(this.#htmlColorPicker);
 
 		/*
