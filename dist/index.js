@@ -4627,7 +4627,7 @@ class Ray {
     }
 }
 
-var interactionCSS = ":host {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n}\n\nharmony-color-picker{\n\tpointer-events: all;\n}\n\ninput{\n\tpointer-events: all;\n}\n";
+var interactionCSS = ":host {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n}\n\n.inner{\n\tdisplay: inline-block;\n}\n\nharmony-color-picker{\n\tpointer-events: all;\n}\n\ninput{\n\tpointer-events: all;\n}\n";
 
 class HTMLFileSelectorTileElement extends HTMLElement {
     #visible = true;
@@ -5081,11 +5081,13 @@ const DATALIST_ID = 'interaction-datalist';
 class Interaction {
     static #htmlColorPicker;
     static #shadowRoot;
+    static #htmlInner;
     static #htmlInput;
     static #htmlInputDataList;
     static #htmlFileSelector;
     static #htmlColorPickeronChange;
     static #htmlColorPickerCancel;
+    static #enableClosing = false;
     static #initHTML() {
         if (this.#shadowRoot) {
             return this.#shadowRoot.host;
@@ -5093,11 +5095,18 @@ class Interaction {
         this.#shadowRoot = createShadowRoot('div', {
             parent: document.body,
             hidden: true,
-            adoptStyle: interactionCSS
+            adoptStyle: interactionCSS,
+            child: this.#htmlInner = createElement('div', {
+                class: 'inner',
+                $click: (event) => event.stopPropagation(),
+            }),
         });
+        document.body.addEventListener('click', (event) => { if (this.#enableClosing) {
+            this.hide();
+        } });
         defineHarmonyColorPicker();
         this.#htmlColorPicker = createElement('harmony-color-picker', {
-            parent: this.#shadowRoot,
+            parent: this.#htmlInner,
             hidden: true,
             events: {
                 change: (event) => {
@@ -5117,12 +5126,12 @@ class Interaction {
         this.#htmlInput = createElement('input', {
             style: 'pointer-events: all;',
             list: DATALIST_ID,
-            parent: this.#shadowRoot,
+            parent: this.#htmlInner,
             hidden: true,
         });
         this.#htmlInputDataList = createElement('datalist', {
             id: DATALIST_ID,
-            parent: this.#shadowRoot,
+            parent: this.#htmlInner,
         });
         this.#htmlFileSelector = createElement('div', {
             style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
@@ -5133,6 +5142,9 @@ class Interaction {
         show(this.#initHTML());
         hide(this.#htmlInput);
         hide(this.#htmlColorPicker);
+        // Debounce
+        this.#enableClosing = false;
+        setTimeout(() => this.#enableClosing = true, 0);
     }
     static hide() {
         hide(this.#shadowRoot?.host);

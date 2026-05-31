@@ -10,11 +10,13 @@ const DATALIST_ID = 'interaction-datalist';
 export class Interaction {
 	static #htmlColorPicker?: HTMLElement;
 	static #shadowRoot?: ShadowRoot;
+	static #htmlInner?: HTMLElement;
 	static #htmlInput?: HTMLInputElement;
 	static #htmlInputDataList?: HTMLDataListElement;
 	static #htmlFileSelector?: HTMLElement;
 	static #htmlColorPickeronChange?: (color: any) => void;
 	static #htmlColorPickerCancel?: () => void;
+	static #enableClosing = false;
 
 	static #initHTML(): HTMLElement {
 		if (this.#shadowRoot) {
@@ -24,12 +26,18 @@ export class Interaction {
 		this.#shadowRoot = createShadowRoot('div', {
 			parent: document.body,
 			hidden: true,
-			adoptStyle: interactionCSS
+			adoptStyle: interactionCSS,
+			child: this.#htmlInner = createElement('div', {
+				class: 'inner',
+				$click: (event: Event) => event.stopPropagation(),
+			}),
 		});
+
+		document.body.addEventListener('click', (event: Event) => { if (this.#enableClosing) { this.hide() } });
 
 		defineHarmonyColorPicker();
 		this.#htmlColorPicker = createElement('harmony-color-picker', {
-			parent: this.#shadowRoot,
+			parent: this.#htmlInner,
 			hidden: true,
 			events: {
 				change: (event: CustomEvent) => {
@@ -47,17 +55,16 @@ export class Interaction {
 			},
 		});
 
-
 		this.#htmlInput = createElement('input', {
 			style: 'pointer-events: all;',
 			list: DATALIST_ID,
-			parent: this.#shadowRoot,
+			parent: this.#htmlInner,
 			hidden: true,
 		}) as HTMLInputElement;
 
 		this.#htmlInputDataList = createElement('datalist', {
 			id: DATALIST_ID,
-			parent: this.#shadowRoot,
+			parent: this.#htmlInner,
 		}) as HTMLDataListElement;
 
 
@@ -72,6 +79,9 @@ export class Interaction {
 		show(this.#initHTML());
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
+		// Debounce
+		this.#enableClosing = false;
+		setTimeout(() => this.#enableClosing = true, 0);
 	}
 
 	static hide(): void {

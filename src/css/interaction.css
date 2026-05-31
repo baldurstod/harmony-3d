@@ -8,6 +8,10 @@
 	pointer-events: none;
 }
 
+.inner{
+	display: inline-block;
+}
+
 harmony-color-picker{
 	pointer-events: all;
 }
