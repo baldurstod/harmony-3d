@@ -37164,6 +37164,7 @@ const VMT_PARAMETERS = {
     $color: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $color2: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $envmaptint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
+    $colortint_base: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $phong: [SHADER_PARAM_TYPE_BOOL, 0],
     $phongalbedotint: [SHADER_PARAM_TYPE_BOOL, false],
     $phongexponent: [SHADER_PARAM_TYPE_FLOAT, 5.0],
