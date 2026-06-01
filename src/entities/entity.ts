@@ -1175,7 +1175,7 @@ export class Entity {
 
 	fromJSON(json: JSONObject): void {
 		this.id = json.id as string ?? generateRandomUUID();
-		this.#name = json.name as string;
+		this.#name = (json.name as string) ?? '';
 		this.#visible = json.visible as boolean;
 		if (json.position) {
 			this.setPosition(json.position as vec3);
