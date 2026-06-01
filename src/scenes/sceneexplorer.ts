@@ -1,7 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 import { dragPanSVG, panZoomSVG, rotateSVG } from 'harmony-svg';
-import { HTMLHarmonyAccordionElement, HTMLHarmonyMenuElement, HarmonyMenuItems, I18n, createElement, createShadowRoot, defineHarmonyAccordion, defineHarmonyMenu, display, show } from 'harmony-ui';
+import { HTMLHarmonyAccordionElement, HTMLHarmonyMenuElement, I18n, createElement, createShadowRoot, defineHarmonyAccordion, defineHarmonyMenu, display, show } from 'harmony-ui';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
 import { TranslationControl } from '../controls/translationcontrol';
@@ -75,6 +75,7 @@ export class SceneExplorer {
 	static #instance: SceneExplorer;
 	#scene?: Scene;
 	#selectedEntity: Entity | null = null;
+	#selectedEntities = new Set<Entity>();
 	#manipulator!: Manipulator;
 	#skeletonHelper = new SkeletonHelper({ visible: false, hideInExplorer: true, });
 	#htmlProperties!: HTMLElement;
@@ -122,11 +123,10 @@ export class SceneExplorer {
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
 				this.#applyFilter();
 				if (this.#selectedEntity) {
-					SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
+					this.#selectEntity(this.#selectedEntity);
 				}
 			}
 		}).observe(this.#shadowRoot.host);
-
 
 		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent<EntityObserverPropertyChangedEvent>).detail));
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
@@ -484,13 +484,28 @@ export class SceneExplorer {
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
 			if (entity) {
-				SceneExplorerEntity.getEntityElement(entity)?.select();
-
+				this.#selectEntity(entity);
 				if (scrollIntoView) {
 					SceneExplorerEntity.getEntityElement(entity)?.display();
 				}
 			}
 		}
+	}
+
+	#selectEntity(entity: Entity): void {
+		for (const ent of this.#selectedEntities) {
+			SceneExplorerEntity.getEntityElement(ent)?.unselect();
+		}
+
+		this.#selectedEntities.clear();
+
+		this.#selectedEntities.add(entity);
+		SceneExplorerEntity.getEntityElement(entity)?.select();
+	}
+
+	addToSelection(entity: Entity): void {
+		this.#selectedEntities.add(entity);
+		SceneExplorerEntity.getEntityElement(entity)?.select(true);
 	}
 
 	getSelectedEntity(): Entity | null {
@@ -533,9 +548,17 @@ export class SceneExplorer {
 		}*/
 	}
 
-	showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void {
-		this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
-		this.selectEntity(entity);
+	showContextMenu(x: number, y: number, entity: Entity): void {
+		if (this.#selectedEntities.has(entity) && this.#selectedEntities.size !== 1) {
+			// Entity is part of the selection: show a special context menu
+			const contextMenu = entity.buildContextMenuMultiple(this.#selectedEntities);
+			this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+		} else {
+			// Entity is not part of the selection: discard the selection, select the entity, show the context menu
+			const contextMenu = entity.buildContextMenu();
+			this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+			this.selectEntity(entity);
+		}
 	}
 
 	editMaterial(material: Material): void {

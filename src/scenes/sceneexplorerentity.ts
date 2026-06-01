@@ -1,3 +1,4 @@
+import { ShortcutHandler } from 'harmony-browser-utils';
 import { lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
@@ -149,10 +150,10 @@ export class SceneExplorerEntity extends HTMLElement {
 							events: {
 								click: () => {
 									if ((this.#entity as unknown as Tintable).isTintable) {
-										const initialTint =  (this.#entity as unknown as Tintable).getTint();
+										const initialTint = (this.#entity as unknown as Tintable).getTint();
 										Interaction.getColor(0, 0, initialTint,
-											 (tint) => { (this.#entity as unknown as Tintable).setTint(tint); },
-											 () => { (this.#entity as unknown as Tintable).setTint(initialTint); });
+											(tint) => { (this.#entity as unknown as Tintable).setTint(tint); },
+											() => { (this.#entity as unknown as Tintable).setTint(initialTint); });
 									}
 								},
 							}
@@ -241,10 +242,10 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 	*/
 
-	select(): void {
+	select(addToSelection: boolean = false): void {
 		this.classList.add('selected');
 		const selectedEntity = SceneExplorerEntity.#selectedEntity;
-		if (selectedEntity != this) {
+		if (selectedEntity != this && !addToSelection) {
 			selectedEntity?.unselect();
 		}
 
@@ -397,6 +398,13 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#titleClick(): void {
+		if (ShortcutHandler.getControlState()) {
+			if (this.#entity) {
+				SceneExplorerEntity.#explorer?.addToSelection(this.#entity);
+			}
+			return;
+		}
+
 		if (this == SceneExplorerEntity.#selectedEntity) {
 			toggle(this.#htmlChilds);
 		} else {
@@ -408,7 +416,7 @@ export class SceneExplorerEntity extends HTMLElement {
 
 	#contextMenuHandler(event: MouseEvent): void {
 		if (!event.shiftKey && this.#entity) {
-			SceneExplorerEntity.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+			SceneExplorerEntity.#explorer?.showContextMenu(event.clientX, event.clientY, this.#entity);
 			event.preventDefault();
 			event.stopPropagation();
 		}

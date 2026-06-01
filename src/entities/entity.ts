@@ -950,69 +950,11 @@ export class Entity {
 	}
 
 	buildContextMenu(): HarmonyMenuItemsDict {
-		const menu = {
-			visibility: { i18n: '#visibility', selected: this.isVisible(), f: (): void => this.toggleVisibility() },
+		return buildContextMenu(new Set([this]));
+	}
 
-			remove: { i18n: '#remove', f: (): void => this.remove() },
-			destroy: { i18n: '#destroy', f: (): void => this.dispose() },
-			remove_more: {
-				i18n: '#remove_more', submenu: [
-					{ i18n: '#remove_this', f: (): void => this.removeThis() },
-					{ i18n: '#remove_childs', f: (): void => this.removeChildren() },
-					{ i18n: '#remove_siblings', f: (): void => this.removeSiblings() },
-					{ i18n: '#remove_similar_siblings', f: (): void => this.removeSimilarSiblings() },
-				]
-			},
-			name: { i18n: '#name', f: (): void => { const n = promptI18n('#name', this.name); if (n !== null) { this.name = n; } } },
-			add: { i18n: '#add', submenu: Entity.addSubMenu },
-			entitynull_1: null,
-			position: { i18n: '#position', f: (): void => { const v = promptI18n('#position', this.getPosition().join(' ')); if (v !== null) { this.lockPos = true; this.setPosition(stringToVec3(v)); } } },
-			translate: { i18n: '#translate', f: (): void => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
-			reset_position: { i18n: '#reset_position', f: (): void => this.setPosition(IDENTITY_VEC3) },
-			entitynull_2: null,
-			local_orientation: { i18n: '#local_orientation', f: (): void => { const v = promptI18n('#local_orientation', this.getOrientation().join(' ')); if (v !== null) { this.lockRot = true; this.setOrientation(stringToQuat(v)); } } },
-			global_orientation: { i18n: '#global_orientation', f: (): void => { const v = promptI18n('#global_orientation', this.getWorldOrientation().join(' ')); if (v !== null) { this.lockRot = true; this.setWorldOrientation(stringToQuat(v)); } } },
-			rotate: {
-				i18n: '#rotate', submenu: [
-					{ i18n: '#rotate_x_global', f: (): void => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y_global', f: (): void => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z_global', f: (): void => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_x', f: (): void => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y', f: (): void => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z', f: (): void => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
-				]
-			},
-			reset_orientation: { i18n: '#reset_local_orientation', f: (): void => this.setOrientation(IDENTITY_QUAT) },
-			reset_global_orientation: { i18n: '#reset_global_orientation', f: (): void => this.setWorldOrientation(IDENTITY_QUAT) },
-			entitynull_3: null,
-			scale: {
-				i18n: '#scale', f: (): void => {
-					const s = promptI18n('#scale', this.scale.join(' ')); if (s !== null) {
-						const arr = s.split(' ');
-						if (arr.length == 3) {
-							this.scale = vec3.set(tempVec3_1, Number(arr[0]), Number(arr[1]), Number(arr[2]));
-						} else if (arr.length == 1) {
-							this.scale = vec3.set(tempVec3_1, Number(arr[0]), Number(arr[0]), Number(arr[0]));
-						}
-					}
-				}
-			},
-			reset_scale: { i18n: '#reset_scale', f: (): void => { this.scale = UNITY_VEC3 } },
-			entitynull_4: null,
-			wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: (): void => this.toggleWireframe() },
-			cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: (): void => this.toggleCastShadow() },
-			receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: (): void => this.toggleReceiveShadow() },
-			material: { i18n: '#material', submenu: {} },
-		};
-
-		if ((this as any).material) {
-			Object.assign(menu.material.submenu, {
-				entitynull_5: null,
-				edit_material: { i18n: '#edit_material', f: (): void => Entity.editMaterial(this) }
-			})
-		}
-
-		return menu;
+	buildContextMenuMultiple(entities: Set<Entity>): HarmonyMenuItemsDict {
+		return buildContextMenu(entities);
 	}
 
 	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
@@ -1261,3 +1203,78 @@ export class Entity {
 	}
 }
 registerEntity(Entity);
+
+function buildContextMenu(entities: Set<Entity>): HarmonyMenuItemsDict {
+	const one = entities.size === 1;
+	let ent: Entity | undefined;
+	if (one) {
+		ent = entities.entries().next().value?.[0];
+	}
+
+	const menu = {
+		visibility: { i18n: '#visibility', selected: ent?.isVisible(), f: (): void => entities.forEach((entity: Entity) => entity.toggleVisibility()) },
+
+		remove: { i18n: '#remove', f: (): void => entities.forEach((entity: Entity) => entity.remove()) },
+		destroy: { i18n: '#destroy', f: (): void => entities.forEach((entity: Entity) => entity.dispose()) },
+		remove_more: {
+			i18n: '#remove_more', submenu: [
+				{ i18n: '#remove_this', f: (): void => entities.forEach((entity: Entity) => entity.removeThis()) },
+				{ i18n: '#remove_childs', f: (): void => entities.forEach((entity: Entity) => entity.removeChildren()) },
+				{ i18n: '#remove_siblings', f: (): void => entities.forEach((entity: Entity) => entity.removeSiblings()) },
+				{ i18n: '#remove_similar_siblings', f: (): void => entities.forEach((entity: Entity) => entity.removeSimilarSiblings()) },
+			]
+		},
+		...(one) && { name: { i18n: '#name', f: (): void => { const n = promptI18n('#name', ent!.name); if (n !== null) { ent!.name = n; } } } },
+		...(one) && { add: { i18n: '#add', submenu: Entity.addSubMenu } },
+		entitynull_1: null,
+		position: { i18n: '#position', f: (): void => { const v = promptI18n('#position', ent?.getPosition().join(' ')); if (v !== null) { entities.forEach((entity: Entity) => { entity.lockPos = true; entity.setPosition(stringToVec3(v)); }) } } },
+		translate: { i18n: '#translate', f: (): void => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) { entities.forEach((entity: Entity) => { entity.lockPos = true; entity.translate(stringToVec3(t)); }) } } },
+		reset_position: { i18n: '#reset_position', f: (): void => entities.forEach((entity: Entity) => entity.setPosition(IDENTITY_VEC3)) },
+		entitynull_2: null,
+		local_orientation: { i18n: '#local_orientation', f: (): void => { const v = promptI18n('#local_orientation', ent?.getOrientation().join(' ')); if (v !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.setOrientation(stringToQuat(v)); }) } } },
+		global_orientation: { i18n: '#global_orientation', f: (): void => { const v = promptI18n('#global_orientation', ent?.getWorldOrientation().join(' ')); if (v !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.setWorldOrientation(stringToQuat(v)); }) } } },
+		rotate: {
+			i18n: '#rotate', submenu: [
+				{ i18n: '#rotate_x_global', f: (): void => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateGlobalX(r * DEG_TO_RAD); }) } } },
+				{ i18n: '#rotate_y_global', f: (): void => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateGlobalY(r * DEG_TO_RAD); }) } } },
+				{ i18n: '#rotate_z_global', f: (): void => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateGlobalZ(r * DEG_TO_RAD); }) } } },
+				{ i18n: '#rotate_x', f: (): void => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateX(r * DEG_TO_RAD); }) } } },
+				{ i18n: '#rotate_y', f: (): void => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateY(r * DEG_TO_RAD); }) } } },
+				{ i18n: '#rotate_z', f: (): void => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) { entities.forEach((entity: Entity) => { entity.lockRot = true; entity.rotateZ(r * DEG_TO_RAD); }) } } },
+			]
+		},
+		reset_orientation: { i18n: '#reset_local_orientation', f: (): void => entities.forEach((entity: Entity) => entity.setOrientation(IDENTITY_QUAT)) },
+		reset_global_orientation: { i18n: '#reset_global_orientation', f: (): void => entities.forEach((entity: Entity) => entity.setWorldOrientation(IDENTITY_QUAT)) },
+		entitynull_3: null,
+		scale: {
+			i18n: '#scale', f: (): void => {
+				const s = promptI18n('#scale', ent?.getScale().join(' '));
+				if (s !== null) {
+					const arr = s.split(' ');
+					entities.forEach((entity: Entity) => {
+						if (arr.length === 3) {
+							entity.setScale(vec3.set(tempVec3_1, Number(arr[0]), Number(arr[1]), Number(arr[2])));
+						} else if (arr.length === 1) {
+							entity.setScale(Number(arr[0]));
+						}
+					});
+				}
+			}
+		},
+		reset_scale: { i18n: '#reset_scale', f: (): void => entities.forEach((entity: Entity) => { entity.setScale(UNITY_VEC3) }) },
+		entitynull_4: null,
+		wireframe: { i18n: '#wireframe', selected: (ent?.wireframe ?? 0) > 0, f: (): void => entities.forEach((entity: Entity) => entity.toggleWireframe()) },
+		cast_shadows: { i18n: '#cast_shadows', selected: ent?.castShadow, f: (): void => entities.forEach((entity: Entity) => entity.toggleCastShadow()) },
+		receive_shadows: { i18n: '#receive_shadows', selected: ent?.receiveShadow, f: (): void => entities.forEach((entity: Entity) => entity.toggleReceiveShadow()) },
+		material: { i18n: '#material', submenu: {} },
+	};
+
+	if (one && (ent as any).material) {
+		Object.assign(menu.material.submenu, {
+			entitynull_5: null,
+			edit_material: { i18n: '#edit_material', f: (): void => Entity.editMaterial(ent!) }
+		})
+	}
+
+	return menu;
+}

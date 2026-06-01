@@ -3596,100 +3596,10 @@ class Entity {
         return this.#hideInExplorer;
     }
     buildContextMenu() {
-        const menu = {
-            visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
-            remove: { i18n: '#remove', f: () => this.remove() },
-            destroy: { i18n: '#destroy', f: () => this.dispose() },
-            remove_more: {
-                i18n: '#remove_more', submenu: [
-                    { i18n: '#remove_this', f: () => this.removeThis() },
-                    { i18n: '#remove_childs', f: () => this.removeChildren() },
-                    { i18n: '#remove_siblings', f: () => this.removeSiblings() },
-                    { i18n: '#remove_similar_siblings', f: () => this.removeSimilarSiblings() },
-                ]
-            },
-            name: { i18n: '#name', f: () => { const n = promptI18n('#name', this.name); if (n !== null) {
-                    this.name = n;
-                } } },
-            add: { i18n: '#add', submenu: Entity.addSubMenu },
-            entitynull_1: null,
-            position: { i18n: '#position', f: () => { const v = promptI18n('#position', this.getPosition().join(' ')); if (v !== null) {
-                    this.lockPos = true;
-                    this.setPosition(stringToVec3(v));
-                } } },
-            translate: { i18n: '#translate', f: () => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) {
-                    this.lockPos = true;
-                    this.translate(stringToVec3(t));
-                } } },
-            reset_position: { i18n: '#reset_position', f: () => this.setPosition(IDENTITY_VEC3) },
-            entitynull_2: null,
-            local_orientation: { i18n: '#local_orientation', f: () => { const v = promptI18n('#local_orientation', this.getOrientation().join(' ')); if (v !== null) {
-                    this.lockRot = true;
-                    this.setOrientation(stringToQuat(v));
-                } } },
-            global_orientation: { i18n: '#global_orientation', f: () => { const v = promptI18n('#global_orientation', this.getWorldOrientation().join(' ')); if (v !== null) {
-                    this.lockRot = true;
-                    this.setWorldOrientation(stringToQuat(v));
-                } } },
-            rotate: {
-                i18n: '#rotate', submenu: [
-                    { i18n: '#rotate_x_global', f: () => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateGlobalX(r * DEG_TO_RAD);
-                        } } },
-                    { i18n: '#rotate_y_global', f: () => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateGlobalY(r * DEG_TO_RAD);
-                        } } },
-                    { i18n: '#rotate_z_global', f: () => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateGlobalZ(r * DEG_TO_RAD);
-                        } } },
-                    { i18n: '#rotate_x', f: () => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateX(r * DEG_TO_RAD);
-                        } } },
-                    { i18n: '#rotate_y', f: () => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateY(r * DEG_TO_RAD);
-                        } } },
-                    { i18n: '#rotate_z', f: () => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) {
-                            this.lockRot = true;
-                            this.rotateZ(r * DEG_TO_RAD);
-                        } } },
-                ]
-            },
-            reset_orientation: { i18n: '#reset_local_orientation', f: () => this.setOrientation(IDENTITY_QUAT$1) },
-            reset_global_orientation: { i18n: '#reset_global_orientation', f: () => this.setWorldOrientation(IDENTITY_QUAT$1) },
-            entitynull_3: null,
-            scale: {
-                i18n: '#scale', f: () => {
-                    const s = promptI18n('#scale', this.scale.join(' '));
-                    if (s !== null) {
-                        const arr = s.split(' ');
-                        if (arr.length == 3) {
-                            this.scale = vec3.set(tempVec3_1$4, Number(arr[0]), Number(arr[1]), Number(arr[2]));
-                        }
-                        else if (arr.length == 1) {
-                            this.scale = vec3.set(tempVec3_1$4, Number(arr[0]), Number(arr[0]), Number(arr[0]));
-                        }
-                    }
-                }
-            },
-            reset_scale: { i18n: '#reset_scale', f: () => { this.scale = UNITY_VEC3; } },
-            entitynull_4: null,
-            wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: () => this.toggleWireframe() },
-            cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: () => this.toggleCastShadow() },
-            receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: () => this.toggleReceiveShadow() },
-            material: { i18n: '#material', submenu: {} },
-        };
-        if (this.material) {
-            Object.assign(menu.material.submenu, {
-                entitynull_5: null,
-                edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(this) }
-            });
-        }
-        return menu;
+        return buildContextMenu(new Set([this]));
+    }
+    buildContextMenuMultiple(entities) {
+        return buildContextMenu(entities);
     }
     raycast(raycaster, intersections) {
         //throw new Error('override me');
@@ -3912,6 +3822,99 @@ class Entity {
     }
 }
 registerEntity(Entity);
+function buildContextMenu(entities) {
+    const one = entities.size === 1;
+    let ent;
+    if (one) {
+        ent = entities.entries().next().value?.[0];
+    }
+    const menu = {
+        visibility: { i18n: '#visibility', selected: ent?.isVisible(), f: () => entities.forEach((entity) => entity.toggleVisibility()) },
+        remove: { i18n: '#remove', f: () => entities.forEach((entity) => entity.remove()) },
+        destroy: { i18n: '#destroy', f: () => entities.forEach((entity) => entity.dispose()) },
+        remove_more: {
+            i18n: '#remove_more', submenu: [
+                { i18n: '#remove_this', f: () => entities.forEach((entity) => entity.removeThis()) },
+                { i18n: '#remove_childs', f: () => entities.forEach((entity) => entity.removeChildren()) },
+                { i18n: '#remove_siblings', f: () => entities.forEach((entity) => entity.removeSiblings()) },
+                { i18n: '#remove_similar_siblings', f: () => entities.forEach((entity) => entity.removeSimilarSiblings()) },
+            ]
+        },
+        ...(one) && { name: { i18n: '#name', f: () => { const n = promptI18n('#name', ent.name); if (n !== null) {
+                    ent.name = n;
+                } } } },
+        ...(one) && { add: { i18n: '#add', submenu: Entity.addSubMenu } },
+        entitynull_1: null,
+        position: { i18n: '#position', f: () => { const v = promptI18n('#position', ent?.getPosition().join(' ')); if (v !== null) {
+                entities.forEach((entity) => { entity.lockPos = true; entity.setPosition(stringToVec3(v)); });
+            } } },
+        translate: { i18n: '#translate', f: () => { const t = promptI18n('#translate', '0 0 0'); if (t !== null) {
+                entities.forEach((entity) => { entity.lockPos = true; entity.translate(stringToVec3(t)); });
+            } } },
+        reset_position: { i18n: '#reset_position', f: () => entities.forEach((entity) => entity.setPosition(IDENTITY_VEC3)) },
+        entitynull_2: null,
+        local_orientation: { i18n: '#local_orientation', f: () => { const v = promptI18n('#local_orientation', ent?.getOrientation().join(' ')); if (v !== null) {
+                entities.forEach((entity) => { entity.lockRot = true; entity.setOrientation(stringToQuat(v)); });
+            } } },
+        global_orientation: { i18n: '#global_orientation', f: () => { const v = promptI18n('#global_orientation', ent?.getWorldOrientation().join(' ')); if (v !== null) {
+                entities.forEach((entity) => { entity.lockRot = true; entity.setWorldOrientation(stringToQuat(v)); });
+            } } },
+        rotate: {
+            i18n: '#rotate', submenu: [
+                { i18n: '#rotate_x_global', f: () => { const r = Number(promptI18n('#rotate_x_global', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateGlobalX(r * DEG_TO_RAD); });
+                    } } },
+                { i18n: '#rotate_y_global', f: () => { const r = Number(promptI18n('#rotate_y_global', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateGlobalY(r * DEG_TO_RAD); });
+                    } } },
+                { i18n: '#rotate_z_global', f: () => { const r = Number(promptI18n('#rotate_z_global', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateGlobalZ(r * DEG_TO_RAD); });
+                    } } },
+                { i18n: '#rotate_x', f: () => { const r = Number(promptI18n('#rotate_x', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateX(r * DEG_TO_RAD); });
+                    } } },
+                { i18n: '#rotate_y', f: () => { const r = Number(promptI18n('#rotate_y', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateY(r * DEG_TO_RAD); });
+                    } } },
+                { i18n: '#rotate_z', f: () => { const r = Number(promptI18n('#rotate_z', '0')); if (r !== null) {
+                        entities.forEach((entity) => { entity.lockRot = true; entity.rotateZ(r * DEG_TO_RAD); });
+                    } } },
+            ]
+        },
+        reset_orientation: { i18n: '#reset_local_orientation', f: () => entities.forEach((entity) => entity.setOrientation(IDENTITY_QUAT$1)) },
+        reset_global_orientation: { i18n: '#reset_global_orientation', f: () => entities.forEach((entity) => entity.setWorldOrientation(IDENTITY_QUAT$1)) },
+        entitynull_3: null,
+        scale: {
+            i18n: '#scale', f: () => {
+                const s = promptI18n('#scale', ent?.getScale().join(' '));
+                if (s !== null) {
+                    const arr = s.split(' ');
+                    entities.forEach((entity) => {
+                        if (arr.length === 3) {
+                            entity.setScale(vec3.set(tempVec3_1$4, Number(arr[0]), Number(arr[1]), Number(arr[2])));
+                        }
+                        else if (arr.length === 1) {
+                            entity.setScale(Number(arr[0]));
+                        }
+                    });
+                }
+            }
+        },
+        reset_scale: { i18n: '#reset_scale', f: () => entities.forEach((entity) => { entity.setScale(UNITY_VEC3); }) },
+        entitynull_4: null,
+        wireframe: { i18n: '#wireframe', selected: (ent?.wireframe ?? 0) > 0, f: () => entities.forEach((entity) => entity.toggleWireframe()) },
+        cast_shadows: { i18n: '#cast_shadows', selected: ent?.castShadow, f: () => entities.forEach((entity) => entity.toggleCastShadow()) },
+        receive_shadows: { i18n: '#receive_shadows', selected: ent?.receiveShadow, f: () => entities.forEach((entity) => entity.toggleReceiveShadow()) },
+        material: { i18n: '#material', submenu: {} },
+    };
+    if (one && ent.material) {
+        Object.assign(menu.material.submenu, {
+            entitynull_5: null,
+            edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(ent) }
+        });
+    }
+    return menu;
+}
 
 const TypedArrayProto = Object.getPrototypeOf(Int8Array); // we can't use TypedArray directly
 var BufferUsage;
@@ -75258,10 +75261,10 @@ class SceneExplorerEntity extends HTMLElement {
         return SceneExplorerEntity.#selectedEntity.#entity;
     }
     */
-    select() {
+    select(addToSelection = false) {
         this.classList.add('selected');
         const selectedEntity = _a.#selectedEntity;
-        if (selectedEntity != this) {
+        if (selectedEntity != this && !addToSelection) {
             selectedEntity?.unselect();
         }
         _a.#selectedEntity = this;
@@ -75394,6 +75397,12 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     #titleClick() {
+        if (ShortcutHandler.getControlState()) {
+            if (this.#entity) {
+                _a.#explorer?.addToSelection(this.#entity);
+            }
+            return;
+        }
         if (this == _a.#selectedEntity) {
             toggle(this.#htmlChilds);
         }
@@ -75405,7 +75414,7 @@ class SceneExplorerEntity extends HTMLElement {
     }
     #contextMenuHandler(event) {
         if (!event.shiftKey && this.#entity) {
-            _a.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+            _a.#explorer?.showContextMenu(event.clientX, event.clientY, this.#entity);
             event.preventDefault();
             event.stopPropagation();
         }
@@ -75502,6 +75511,7 @@ class SceneExplorer {
     static #instance;
     #scene;
     #selectedEntity = null;
+    #selectedEntities = new Set();
     #manipulator;
     #skeletonHelper = new SkeletonHelper({ visible: false, hideInExplorer: true, });
     #htmlProperties;
@@ -75547,7 +75557,7 @@ class SceneExplorer {
             if (this.#isVisible && (this.#isVisible != isVisible)) {
                 this.#applyFilter();
                 if (this.#selectedEntity) {
-                    SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
+                    this.#selectEntity(this.#selectedEntity);
                 }
             }
         }).observe(this.#shadowRoot.host);
@@ -75878,12 +75888,24 @@ class SceneExplorer {
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
             if (entity) {
-                SceneExplorerEntity.getEntityElement(entity)?.select();
+                this.#selectEntity(entity);
                 if (scrollIntoView) {
                     SceneExplorerEntity.getEntityElement(entity)?.display();
                 }
             }
         }
+    }
+    #selectEntity(entity) {
+        for (const ent of this.#selectedEntities) {
+            SceneExplorerEntity.getEntityElement(ent)?.unselect();
+        }
+        this.#selectedEntities.clear();
+        this.#selectedEntities.add(entity);
+        SceneExplorerEntity.getEntityElement(entity)?.select();
+    }
+    addToSelection(entity) {
+        this.#selectedEntities.add(entity);
+        SceneExplorerEntity.getEntityElement(entity)?.select(true);
     }
     getSelectedEntity() {
         return this.#selectedEntity;
@@ -75921,9 +75943,18 @@ class SceneExplorer {
             }
         }*/
     }
-    showContextMenu(contextMenu, x, y, entity) {
-        this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
-        this.selectEntity(entity);
+    showContextMenu(x, y, entity) {
+        if (this.#selectedEntities.has(entity) && this.#selectedEntities.size !== 1) {
+            // Entity is part of the selection: show a special context menu
+            const contextMenu = entity.buildContextMenuMultiple(this.#selectedEntities);
+            this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+        }
+        else {
+            // Entity is not part of the selection: discard the selection, select the entity, show the context menu
+            const contextMenu = entity.buildContextMenu();
+            this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
+            this.selectEntity(entity);
+        }
     }
     editMaterial(material) {
         const materialEditor = getMaterialEditor();

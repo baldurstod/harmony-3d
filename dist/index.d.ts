@@ -1866,6 +1866,7 @@ declare class Channel {
                        set hideInExplorer(hideInExplorer: boolean);
                        get hideInExplorer(): boolean;
                        buildContextMenu(): HarmonyMenuItemsDict;
+                       buildContextMenuMultiple(entities: Set<Entity>): HarmonyMenuItemsDict;
                        raycast(raycaster: Raycaster, intersections: Intersection[]): void;
                        setWireframe(wireframe: number, recursive?: boolean): void;
                        set wireframe(wireframe: number | undefined);
@@ -2220,7 +2221,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | Grid | SkeletonHelper | CameraFrustum | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -6260,8 +6261,9 @@ declare class Channel {
                           setScene(scene: Scene): void;
                           get htmlElement(): HTMLElement;
                           selectEntity(entity: Entity | null, scrollIntoView?: boolean): void;
+                          addToSelection(entity: Entity): void;
                           getSelectedEntity(): Entity | null;
-                          showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
+                          showContextMenu(x: number, y: number, entity: Entity): void;
                           editMaterial(material: Material): void;
                           setJointsRadius(radius: number): void;
                       }
