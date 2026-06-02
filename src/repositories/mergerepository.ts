@@ -26,6 +26,11 @@ export class MergeRepository implements Repository {
 			return { error: RepositoryError.RepoInactive };
 		}
 		for (const repository of this.#repositories) {
+			const hasFile = await repository.hasFile(filename);
+			if (hasFile.exist === false) {
+				break;
+			}
+
 			const response = await repository.getFile(filename);
 			if (!response.error) {
 				return response;
@@ -39,6 +44,11 @@ export class MergeRepository implements Repository {
 			return { error: RepositoryError.RepoInactive };
 		}
 		for (const repository of this.#repositories) {
+			const hasFile = await repository.hasFile(filename);
+			if (hasFile.exist === false) {
+				break;
+			}
+
 			const response = await repository.getFileAsArrayBuffer(filename);
 			if (!response.error) {
 				return response;
@@ -52,6 +62,11 @@ export class MergeRepository implements Repository {
 			return { error: RepositoryError.RepoInactive };
 		}
 		for (const repository of this.#repositories) {
+			const hasFile = await repository.hasFile(filename);
+			if (hasFile.exist === false) {
+				break;
+			}
+
 			const response = await repository.getFileAsText(filename);
 			if (!response.error) {
 				return response;
@@ -65,6 +80,11 @@ export class MergeRepository implements Repository {
 			return { error: RepositoryError.RepoInactive };
 		}
 		for (const repository of this.#repositories) {
+			const hasFile = await repository.hasFile(filename);
+			if (hasFile.exist === false) {
+				break;
+			}
+
 			const response = await repository.getFileAsBlob(filename);
 			if (!response.error) {
 				return response;
@@ -78,6 +98,11 @@ export class MergeRepository implements Repository {
 			return { error: RepositoryError.RepoInactive };
 		}
 		for (const repository of this.#repositories) {
+			const hasFile = await repository.hasFile(filename);
+			if (hasFile.exist === false) {
+				break;
+			}
+
 			const response = await repository.getFileAsJson(filename);
 			if (!response.error) {
 				return response;
@@ -100,11 +125,11 @@ export class MergeRepository implements Repository {
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
 		let error = false;
 		for (const repository of this.#repositories) {
-			const response = await repository.hasFile(path);
-			if (response.exist) {
-				return response;
+			const hasFile = await repository.hasFile(path);
+			if (hasFile.exist) {
+				return hasFile;
 			}
-			if (response.error) {
+			if (hasFile.error) {
 				error = true;
 			}
 		}
