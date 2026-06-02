@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class OverrideRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
@@ -72,6 +72,10 @@ export class OverrideRepository implements Repository {
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		//TODO: added overriden files ?
 		return this.#base.getFileList();
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 
 	async overrideFile(filename: string, file: File): Promise<RepositoryError | null> {

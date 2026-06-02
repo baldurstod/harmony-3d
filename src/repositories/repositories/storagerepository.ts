@@ -1,6 +1,6 @@
 import { PersistentStorage } from 'harmony-browser-utils';
 import { joinPath } from 'harmony-utils';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from '../repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from '../repository';
 
 const STORAGE_PREFIX = 'repository_content';
 
@@ -91,5 +91,9 @@ export class StorageRepository implements Repository {
 		this.#fileList = await this.#base.getFileList();
 
 		return this.#fileList;
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 }

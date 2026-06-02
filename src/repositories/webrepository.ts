@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryDir, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 function encodeHash(uri: string): string {
 	return uri.replaceAll('#', '%23');
@@ -106,6 +106,10 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileList(): Promise<RepositoryFileListResponse> {
+		return { error: RepositoryError.NotSupported };
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
 		return { error: RepositoryError.NotSupported };
 	}
 

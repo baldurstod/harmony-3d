@@ -1,4 +1,4 @@
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class MergeRepository implements Repository {
@@ -95,6 +95,10 @@ export class MergeRepository implements Repository {
 			}
 		}
 		return { root: root };
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 
 	pushRepository(repo: Repository) {

@@ -1,4 +1,4 @@
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
@@ -75,5 +75,9 @@ export class PathPrefixRepository implements Repository {
 		}
 
 		return { root: root };
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 }

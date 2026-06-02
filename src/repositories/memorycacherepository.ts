@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 /**
  * Cache the result of the underlying repository
@@ -76,5 +76,9 @@ export class MemoryCacheRepository implements Repository {
 		this.#fileList = await this.#base.getFileList();
 
 		return this.#fileList;
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 }

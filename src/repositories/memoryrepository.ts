@@ -1,4 +1,4 @@
-import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class MemoryRepository implements Repository {
 	#name: string;
@@ -71,6 +71,10 @@ export class MemoryRepository implements Repository {
 	}
 
 	async getFileList(): Promise<RepositoryFileListResponse> {
+		return { error: RepositoryError.NotSupported };
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
 		return { error: RepositoryError.NotSupported };
 	}
 

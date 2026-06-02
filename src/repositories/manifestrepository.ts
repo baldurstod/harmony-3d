@@ -2,7 +2,7 @@ import { getLoader } from '../loaders/loaderfactory';
 import { Source1PcfLoader } from '../sourceengine/export';
 import { SourcePCF } from '../sourceengine/source1/loaders/sourcepcf';
 import { OverrideRepository } from './overriderepository';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
@@ -54,6 +54,10 @@ export class ManifestRepository implements Repository {
 
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		return this.#base.getFileList();
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 
 	async generateModelManifest(name = 'models_manifest.json'): Promise<RepositoryError | null> {

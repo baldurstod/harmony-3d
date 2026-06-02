@@ -1,5 +1,5 @@
 import { BlobReader, BlobWriter, ZipReader } from '@zip.js/zip.js';
-import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
@@ -90,5 +90,9 @@ export class ZipRepository implements Repository {
 			root.addPath(filename);
 		}
 		return { root: root };
+	}
+
+	async hasFile(): Promise<RepositoryHasFileResponse> {
+		return { error: RepositoryError.NotSupported };
 	}
 }

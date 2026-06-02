@@ -14,6 +14,7 @@ export interface RepositoryTextResponse { text?: string | null, error?: Reposito
 export interface RepositoryBlobResponse { blob?: Blob | null, error?: RepositoryError }
 export interface RepositoryJsonResponse { json?: JSON | null, error?: RepositoryError }
 export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
+export interface RepositoryHasFileResponse { result?: boolean, error?: RepositoryError }
 
 export type RepositoryProperty = any;
 
@@ -28,6 +29,7 @@ export interface Repository {
 	getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
 	getFileList: () => Promise<RepositoryFileListResponse>;
+	hasFile: (path: string) => Promise<RepositoryHasFileResponse>;
 }
 
 export function checkRepositoryName(name: string): void {
@@ -46,3 +48,9 @@ export function cleanupFilename(filename: string): string {
 
 	return arr.filter((path) => path != '').join('/');
 }
+
+export type RepositoryDir = {
+	[key: string]: RepositoryDir | number;
+}
+
+export type RepositoryFileList = RepositoryDir
