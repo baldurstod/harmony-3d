@@ -1,5 +1,6 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14 } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
+import { Repositories } from '../../../repositories/repositories';
 import { SpriteSheet } from '../../../textures/spritesheet';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, Source1Vtf, VTF_ENTRY_IMAGE_DATAS, VTFMipMap, VTFResourceEntry } from '../textures/source1vtf';
@@ -8,6 +9,10 @@ import { MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSampl
 export class Source1VtfLoader extends SourceBinaryLoader {
 
 	async load(repositoryName: string, path: string): Promise<Source1Vtf | null> {
+		const hasFile = await Repositories.hasFile(repositoryName, path);
+		if (hasFile.exist === false) {
+			return null;
+		}
 		return super.load(repositoryName, path) as Promise<Source1Vtf | null>;
 	}
 
