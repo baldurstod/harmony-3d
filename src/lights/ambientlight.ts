@@ -6,10 +6,6 @@ export type AmbientLightParameters = LightParameters;
 export class AmbientLight extends Light {
 	readonly isAmbientLight = true;
 
-	constructor(params: AmbientLightParameters = {}) {
-		super(params);
-	}
-
 	static override async constructFromJSON(json: any) {
 		return new AmbientLight(json);
 	}
