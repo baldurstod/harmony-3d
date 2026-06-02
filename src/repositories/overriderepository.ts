@@ -74,8 +74,11 @@ export class OverrideRepository implements Repository {
 		return this.#base.getFileList();
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		if (this.#overrides.has(path)) {
+			return { exist: true };
+		}
+		return this.#base.hasFile(path);
 	}
 
 	async overrideFile(filename: string, file: File): Promise<RepositoryError | null> {

@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class Repositories {
 	static #repositories = new Map<string, Repository>();
@@ -59,6 +59,22 @@ export class Repositories {
 		}
 
 		return repo?.getFileAsJson(filepath);
+	}
+
+	static async getFileList(repositoryName: string): Promise<RepositoryFileListResponse> {
+		const repo = this.#repositories.get(repositoryName);
+		if (!repo) {
+			return { error: RepositoryError.RepoNotFound };
+		}
+		return repo?.getFileList();
+	}
+
+	static async hasFile(repositoryName: string, path: string): Promise<RepositoryHasFileResponse> {
+		const repo = this.#repositories.get(repositoryName);
+		if (!repo) {
+			return { error: RepositoryError.RepoNotFound };
+		}
+		return repo?.hasFile(path);
 	}
 
 	static getRepositories(): Map<string, Repository> {

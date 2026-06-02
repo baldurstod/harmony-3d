@@ -77,7 +77,7 @@ export class PathPrefixRepository implements Repository {
 		return { root: root };
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		return this.#base.hasFile(this.prefix + '/' + path);
 	}
 }

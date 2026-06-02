@@ -97,8 +97,23 @@ export class MergeRepository implements Repository {
 		return { root: root };
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		let error = false;
+		for (const repository of this.#repositories) {
+			const response = await repository.hasFile(path);
+			if (response.exist) {
+				return response;
+			}
+			if (response.error) {
+				error = true;
+			}
+		}
+
+		if (error) {
+			return { error: RepositoryError.UnknownError };
+		} else {
+			return { exist: false };
+		}
 	}
 
 	pushRepository(repo: Repository) {

@@ -2276,7 +2276,11 @@ class JSONLoader {
     }
     static async loadEntity(jsonEntity, entities, loadedPromise) {
         if (jsonEntity) {
-            const constructor = getEntity(jsonEntity['constructor']);
+            const c = jsonEntity['constructor'];
+            if (typeof c !== 'string') {
+                return null;
+            }
+            const constructor = getEntity(c);
             if (constructor) {
                 const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
                 if (!entity) {
@@ -3796,7 +3800,7 @@ class Entity {
     }
     fromJSON(json) {
         this.id = json.id ?? generateRandomUUID();
-        this.#name = json.name;
+        this.#name = json.name ?? '';
         this.#visible = json.visible;
         if (json.position) {
             this.setPosition(json.position);
@@ -10074,29 +10078,6 @@ class OrbitControl extends CameraControl {
         }
     }
 }
-/*OrbitControls.prototype = Object.create(EventTarget.prototype);
-OrbitControls.prototype.constructor = OrbitControls;*/
-// This set of controls performs orbiting, dollying(zooming), and panning.
-// Unlike TrackballControls, it maintains the 'up' direction object.up(+Y by default).
-// This is very similar to OrbitControls, another set of touch behavior
-//
-// Orbit - right mouse, or left mouse + ctrl/meta/shiftKey / touch: two-finger rotate
-// Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
-// Pan - left mouse, or arrow keys / touch: one-finger move
-/*var MapControls = function(object, htmlElement) {
-
-    OrbitControls.call(this, object, htmlElement);
-
-    this.#mouseButtons.LEFT = MOUSE.PAN;
-    this.#mouseButtons.RIGHT = MOUSE.ROTATE;
-
-    this.touches.ONE = TOUCH.PAN;
-    this.touches.TWO = TOUCH.DOLLY_ROTATE;
-
-};
-
-MapControls.prototype = Object.create(EventTarget.prototype);
-MapControls.prototype.constructor = MapControls;*/
 
 vec3.fromValues(0, 0, 1);
 quat.create();
@@ -16038,9 +16019,6 @@ class SpotLightHelper extends Mesh {
 
 class AmbientLight extends Light {
     isAmbientLight = true;
-    constructor(params = {}) {
-        super(params);
-    }
     static async constructFromJSON(json) {
         return new AmbientLight(json);
     }
@@ -18542,9 +18520,12 @@ var RepositoryError;
 (function (RepositoryError) {
     RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
     RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
+    // Method not supported by the repository
     RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
-    RepositoryError[RepositoryError["RepoNotFound"] = 4] = "RepoNotFound";
-    RepositoryError[RepositoryError["RepoInactive"] = 5] = "RepoInactive";
+    // The repository have to be initialized before using this method. Initialization is repository specific
+    RepositoryError[RepositoryError["Uninitialized"] = 4] = "Uninitialized";
+    RepositoryError[RepositoryError["RepoNotFound"] = 5] = "RepoNotFound";
+    RepositoryError[RepositoryError["RepoInactive"] = 6] = "RepoInactive";
 })(RepositoryError || (RepositoryError = {}));
 function checkRepositoryName(name) {
     if (!/^[a-zA-Z0-9_]+$/.test(name)) {
@@ -18606,6 +18587,20 @@ class Repositories {
             return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsJson(filepath);
+    }
+    static async getFileList(repositoryName) {
+        const repo = this.#repositories.get(repositoryName);
+        if (!repo) {
+            return { error: RepositoryError.RepoNotFound };
+        }
+        return repo?.getFileList();
+    }
+    static async hasFile(repositoryName, path) {
+        const repo = this.#repositories.get(repositoryName);
+        if (!repo) {
+            return { error: RepositoryError.RepoNotFound };
+        }
+        return repo?.hasFile(path);
     }
     static getRepositories() {
         return new Map(this.#repositories);
@@ -29087,6 +29082,10 @@ class Source1VmtLoaderClass {
     #materials = new Map();
     #extraMaterials = new Map(); //TODO: this is used for maps create a map repo instead
     async load(repository, path) {
+        const hasFile = await Repositories.hasFile(repository, path);
+        if (hasFile.exist === false) {
+            return null;
+        }
         const response = await Repositories.getFileAsText(repository, path);
         if (!response.error) {
             return this.parse(repository, path, response.text);
@@ -73827,6 +73826,9 @@ class StorageRepository {
         this.#fileList = await this.#base.getFileList();
         return this.#fileList;
     }
+    async hasFile(path) {
+        return this.#base.hasFile(path);
+    }
 }
 
 class OverrideRepository {
@@ -73894,6 +73896,12 @@ class OverrideRepository {
         //TODO: added overriden files ?
         return this.#base.getFileList();
     }
+    async hasFile(path) {
+        if (this.#overrides.has(path)) {
+            return { exist: true };
+        }
+        return this.#base.hasFile(path);
+    }
     async overrideFile(filename, file) {
         this.#overrides.set(filename, file);
         return null;
@@ -73942,6 +73950,9 @@ class ManifestRepository {
     }
     async getFileList() {
         return this.#base.getFileList();
+    }
+    async hasFile(path) {
+        return this.#base.hasFile(path);
     }
     async generateModelManifest(name = 'models_manifest.json') {
         const response = await this.#base.getFileList();
@@ -74038,6 +74049,9 @@ class MemoryCacheRepository {
         this.#fileList = await this.#base.getFileList();
         return this.#fileList;
     }
+    async hasFile(path) {
+        return this.#base.hasFile(path);
+    }
 }
 
 class MemoryRepository {
@@ -74104,6 +74118,9 @@ class MemoryRepository {
     }
     async getFileList() {
         return { error: RepositoryError.NotSupported };
+    }
+    async hasFile(path) {
+        return { exist: this.#files.has(path) };
     }
     async setFile(path, file) {
         this.#files.set(path, file);
@@ -74398,6 +74415,24 @@ class MergeRepository {
         }
         return { root: root };
     }
+    async hasFile(path) {
+        let error = false;
+        for (const repository of this.#repositories) {
+            const response = await repository.hasFile(path);
+            if (response.exist) {
+                return response;
+            }
+            if (response.error) {
+                error = true;
+            }
+        }
+        if (error) {
+            return { error: RepositoryError.UnknownError };
+        }
+        else {
+            return { exist: false };
+        }
+    }
     pushRepository(repo) {
         this.#repositories.push(repo);
     }
@@ -74470,6 +74505,9 @@ class PathPrefixRepository {
             entry.setRepository(this);
         }
         return { root: root };
+    }
+    async hasFile(path) {
+        return this.#base.hasFile(this.prefix + '/' + path);
     }
 }
 
@@ -74559,6 +74597,9 @@ class VpkRepository {
         }
         return { root: root };
     }
+    async hasFile(path) {
+        return { exist: this.#vpk.hasFile(path) };
+    }
 }
 
 function encodeHash(uri) {
@@ -74571,6 +74612,7 @@ class WebRepository {
     useCacheApi;
     #cache;
     active = true;
+    #files;
     constructor(name, base, useCacheApi = false) {
         checkRepositoryName(name);
         this.name = name;
@@ -74663,7 +74705,46 @@ class WebRepository {
         }
     }
     async getFileList() {
-        return { error: RepositoryError.NotSupported };
+        if (!this.#files) {
+            return { error: RepositoryError.Uninitialized };
+        }
+        const populateFiles = (level, path) => {
+            for (const segment in level) {
+                const f = level[segment];
+                if (f > 0) {
+                    root.addPath(path + segment);
+                }
+                else {
+                    populateFiles(f, path + segment + '/');
+                }
+            }
+        };
+        const root = new RepositoryEntry(this, '', true, 0);
+        populateFiles(this.#files, '');
+        return { root: root };
+    }
+    async hasFile(path) {
+        if (!this.#files) {
+            return { error: RepositoryError.Uninitialized };
+        }
+        const split = path.split('/');
+        let current = this.#files;
+        for (const segment of split) {
+            if (typeof current === 'number') {
+                // We have a file but need another segment
+                return { exist: false };
+            }
+            const sub = current[segment];
+            if (sub === undefined) {
+                // Segment not found
+                return { exist: false };
+            }
+            current = sub;
+        }
+        return { exist: true };
+    }
+    setFiles(files) {
+        this.#files = structuredClone(files);
     }
     async #fetch(url) {
         if (!this.useCacheApi) {
@@ -74780,6 +74861,9 @@ class ZipRepository {
             root.addPath(filename);
         }
         return { root: root };
+    }
+    async hasFile(path) {
+        return { exist: this.#zipEntries.has(path) };
     }
 }
 

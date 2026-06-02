@@ -74,8 +74,8 @@ export class MemoryRepository implements Repository {
 		return { error: RepositoryError.NotSupported };
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		return { exist: this.#files.has(path) };
 	}
 
 	async setFile(path: string, file: File): Promise<RepositoryError | null> {

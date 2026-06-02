@@ -98,7 +98,7 @@ export class VpkRepository implements Repository {
 		return { root: root };
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		return { exist: this.#vpk.hasFile(path) };
 	}
 }

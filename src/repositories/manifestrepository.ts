@@ -56,8 +56,8 @@ export class ManifestRepository implements Repository {
 		return this.#base.getFileList();
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		return this.#base.hasFile(path);
 	}
 
 	async generateModelManifest(name = 'models_manifest.json'): Promise<RepositoryError | null> {

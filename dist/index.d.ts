@@ -131,14 +131,11 @@ export declare class AlphaRandom extends Source1ParticleOperator {
 
 export declare class AmbientLight extends Light {
     readonly isAmbientLight = true;
-    constructor(params?: AmbientLightParameters);
     static constructFromJSON(json: any): Promise<AmbientLight>;
     static getEntityName(): string;
     is(s: string): boolean;
     getRaytracingLight(): LightType;
 }
-
-declare type AmbientLightParameters = LightParameters;
 
 export declare interface Animated {
     hasAnimations: true;
@@ -2221,7 +2218,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | Grid | SkeletonHelper | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3712,6 +3709,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                           generateModelManifest(name?: string): Promise<RepositoryError | null>;
                           generateParticlesManifest(filename?: string): Promise<RepositoryError | null>;
                       }
@@ -4330,6 +4328,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare class MemoryRepository implements Repository {
@@ -4344,6 +4343,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                           setFile(path: string, file: File): Promise<RepositoryError | null>;
                       }
 
@@ -4359,6 +4359,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                           pushRepository(repo: Repository): void;
                           unshiftRepository(repo: Repository): void;
                           getSubRepositories(): Set<Repository>;
@@ -5021,6 +5022,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                           overrideFile(filename: string, file: File): Promise<RepositoryError | null>;
                       }
 
@@ -5126,6 +5128,7 @@ declare class Channel {
                           getFileAsBlob(path: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(path: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare function pcfToSTring(pcf: SourcePCF): {
@@ -5982,6 +5985,8 @@ declare class Channel {
                           static getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
                           static getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
                           static getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
+                          static getFileList(repositoryName: string): Promise<RepositoryFileListResponse>;
+                          static hasFile(repositoryName: string, path: string): Promise<RepositoryHasFileResponse>;
                           static getRepositories(): Map<string, Repository>;
                       }
 
@@ -5995,6 +6000,7 @@ declare class Channel {
                           getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
                           getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
                           getFileList: () => Promise<RepositoryFileListResponse>;
+                          hasFile: (path: string) => Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare interface RepositoryArrayBufferResponse {
@@ -6006,6 +6012,10 @@ declare class Channel {
                           blob?: Blob | null;
                           error?: RepositoryError;
                       }
+
+                      export declare type RepositoryDir = {
+                          [key: string]: RepositoryDir | number;
+                      };
 
                       export declare class RepositoryEntry {
                           #private;
@@ -6033,9 +6043,12 @@ declare class Channel {
                           FileNotFound = 1,
                           UnknownError = 2,
                           NotSupported = 3,
-                          RepoNotFound = 4,
-                          RepoInactive = 5
+                          Uninitialized = 4,
+                          RepoNotFound = 5,
+                          RepoInactive = 6
                       }
+
+                      export declare type RepositoryFileList = RepositoryDir;
 
                       export declare interface RepositoryFileListResponse {
                           root?: RepositoryEntry;
@@ -6053,6 +6066,11 @@ declare class Channel {
                           directories?: boolean;
                           files?: boolean;
                           maxDepth?: number;
+                      }
+
+                      export declare interface RepositoryHasFileResponse {
+                          exist?: boolean;
+                          error?: RepositoryError;
                       }
 
                       export declare interface RepositoryJsonResponse {
@@ -8885,6 +8903,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare type StorageValue = StorageValueArray | StorageValueStruct;
@@ -9585,6 +9604,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare const VTEX_TO_INTERNAL_IMAGE_FORMAT: Record<number, number>;
@@ -9795,6 +9815,8 @@ declare class Channel {
                           getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
+                          setFiles(files: RepositoryDir): void;
                           /**
                            * Delete an URL from the cache. Does nothing if caching is disabled
                            * @param url The url to delete
@@ -9858,6 +9880,7 @@ declare class Channel {
                           getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
+                          hasFile(path: string): Promise<RepositoryHasFileResponse>;
                       }
 
                       export declare class Zstd {

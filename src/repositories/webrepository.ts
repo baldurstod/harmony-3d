@@ -1,5 +1,7 @@
+import { JSONObject } from 'harmony-types';
 import { customFetch } from '../utils/customfetch';
 import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryDir, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
+import { RepositoryEntry } from './repositoryentry';
 
 function encodeHash(uri: string): string {
 	return uri.replaceAll('#', '%23');
@@ -12,6 +14,7 @@ export class WebRepository implements Repository {
 	readonly useCacheApi: boolean;
 	#cache?: Cache;
 	active: boolean = true;
+	#files?: RepositoryDir;
 
 	constructor(name: string, base: string, useCacheApi = false) {
 		checkRepositoryName(name);
@@ -106,11 +109,52 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileList(): Promise<RepositoryFileListResponse> {
-		return { error: RepositoryError.NotSupported };
+		if (!this.#files) {
+			return { error: RepositoryError.Uninitialized };
+		}
+
+		const populateFiles = (level: JSONObject, path: string) => {
+			for (const segment in level) {
+				const f = level[segment];
+				if ((f as number) > 0) {
+					root.addPath(path + segment);
+				} else {
+					populateFiles((f as JSONObject), path + segment + '/')
+				}
+			}
+		}
+
+		const root = new RepositoryEntry(this, '', true, 0);
+		populateFiles(this.#files, '');
+		return { root: root };
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		if (!this.#files) {
+			return { error: RepositoryError.Uninitialized };
+		}
+
+		const split = path.split('/');
+		let current: RepositoryDir | number = this.#files;
+		for (const segment of split) {
+			if (typeof current === 'number') {
+				// We have a file but need another segment
+				return { exist: false };
+			}
+			const sub: RepositoryDir | number | undefined = current[segment];
+			if (sub === undefined) {
+				// Segment not found
+				return { exist: false };
+			}
+
+			current = sub;
+		}
+
+		return { exist: true };
+	}
+
+	setFiles(files: RepositoryDir): void {
+		this.#files = structuredClone(files);
 	}
 
 	async #fetch(url: URL): Promise<Response> {

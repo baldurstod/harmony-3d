@@ -3,7 +3,10 @@ import { RepositoryEntry } from './repositoryentry';
 export enum RepositoryError {
 	FileNotFound = 1,
 	UnknownError,
+	// Method not supported by the repository
 	NotSupported,
+	// The repository have to be initialized before using this method. Initialization is repository specific
+	Uninitialized,
 	RepoNotFound,
 	RepoInactive,
 }
@@ -14,7 +17,7 @@ export interface RepositoryTextResponse { text?: string | null, error?: Reposito
 export interface RepositoryBlobResponse { blob?: Blob | null, error?: RepositoryError }
 export interface RepositoryJsonResponse { json?: JSON | null, error?: RepositoryError }
 export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
-export interface RepositoryHasFileResponse { result?: boolean, error?: RepositoryError }
+export interface RepositoryHasFileResponse { exist?: boolean, error?: RepositoryError }
 
 export type RepositoryProperty = any;
 

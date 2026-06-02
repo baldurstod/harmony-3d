@@ -10,6 +10,11 @@ class Source1VmtLoaderClass {// TODO: improve singleton
 	#extraMaterials = new Map<string, string>();//TODO: this is used for maps create a map repo instead
 
 	async load(repository: string, path: string): Promise<Source1Material | null> {
+		const hasFile = await Repositories.hasFile(repository, path);
+		if (hasFile.exist === false) {
+			return null;
+		}
+
 		const response = await Repositories.getFileAsText(repository, path);
 		if (!response.error) {
 			return this.parse(repository, path, response.text!);

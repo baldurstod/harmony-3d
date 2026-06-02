@@ -93,7 +93,7 @@ export class StorageRepository implements Repository {
 		return this.#fileList;
 	}
 
-	async hasFile(): Promise<RepositoryHasFileResponse> {
-		return { error: RepositoryError.NotSupported };
+	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		return this.#base.hasFile(path);
 	}
 }
