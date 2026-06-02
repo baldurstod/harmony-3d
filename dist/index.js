@@ -36308,6 +36308,10 @@ class SheetSequenceSample_t {
 
 class Source1VtfLoader extends SourceBinaryLoader {
     async load(repositoryName, path) {
+        const hasFile = await Repositories.hasFile(repositoryName, path);
+        if (hasFile.exist === false) {
+            return null;
+        }
         return super.load(repositoryName, path);
     }
     parse(repository, fileName, arrayBuffer) {
@@ -74350,6 +74354,10 @@ class MergeRepository {
             return { error: RepositoryError.RepoInactive };
         }
         for (const repository of this.#repositories) {
+            const hasFile = await repository.hasFile(filename);
+            if (hasFile.exist === false) {
+                break;
+            }
             const response = await repository.getFile(filename);
             if (!response.error) {
                 return response;
@@ -74362,6 +74370,10 @@ class MergeRepository {
             return { error: RepositoryError.RepoInactive };
         }
         for (const repository of this.#repositories) {
+            const hasFile = await repository.hasFile(filename);
+            if (hasFile.exist === false) {
+                break;
+            }
             const response = await repository.getFileAsArrayBuffer(filename);
             if (!response.error) {
                 return response;
@@ -74374,6 +74386,10 @@ class MergeRepository {
             return { error: RepositoryError.RepoInactive };
         }
         for (const repository of this.#repositories) {
+            const hasFile = await repository.hasFile(filename);
+            if (hasFile.exist === false) {
+                break;
+            }
             const response = await repository.getFileAsText(filename);
             if (!response.error) {
                 return response;
@@ -74386,6 +74402,10 @@ class MergeRepository {
             return { error: RepositoryError.RepoInactive };
         }
         for (const repository of this.#repositories) {
+            const hasFile = await repository.hasFile(filename);
+            if (hasFile.exist === false) {
+                break;
+            }
             const response = await repository.getFileAsBlob(filename);
             if (!response.error) {
                 return response;
@@ -74398,6 +74418,10 @@ class MergeRepository {
             return { error: RepositoryError.RepoInactive };
         }
         for (const repository of this.#repositories) {
+            const hasFile = await repository.hasFile(filename);
+            if (hasFile.exist === false) {
+                break;
+            }
             const response = await repository.getFileAsJson(filename);
             if (!response.error) {
                 return response;
@@ -74418,11 +74442,11 @@ class MergeRepository {
     async hasFile(path) {
         let error = false;
         for (const repository of this.#repositories) {
-            const response = await repository.hasFile(path);
-            if (response.exist) {
-                return response;
+            const hasFile = await repository.hasFile(path);
+            if (hasFile.exist) {
+                return hasFile;
             }
-            if (response.error) {
+            if (hasFile.error) {
                 error = true;
             }
         }
@@ -74613,6 +74637,8 @@ class WebRepository {
     #cache;
     active = true;
     #files;
+    // hasFile will return an error for unsupported extensions
+    supportedExtensions = new Set();
     constructor(name, base, useCacheApi = false) {
         checkRepositoryName(name);
         this.name = name;
@@ -74724,6 +74750,22 @@ class WebRepository {
         return { root: root };
     }
     async hasFile(path) {
+        if (!this.supportedExtensions.size) {
+            // If no extensions supported, return an error
+            return { error: RepositoryError.NotSupported };
+        }
+        // Check for supported extensions
+        let found = false;
+        for (const ext of this.supportedExtensions) {
+            if (path.toLowerCase().endsWith(ext)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            // File extension is not supported
+            return { error: RepositoryError.NotSupported };
+        }
         if (!this.#files) {
             return { error: RepositoryError.Uninitialized };
         }

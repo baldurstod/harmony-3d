@@ -15,6 +15,8 @@ export class WebRepository implements Repository {
 	#cache?: Cache;
 	active: boolean = true;
 	#files?: RepositoryDir;
+	// hasFile will return an error for unsupported extensions
+	readonly supportedExtensions = new Set<string>();
 
 	constructor(name: string, base: string, useCacheApi = false) {
 		checkRepositoryName(name);
@@ -130,6 +132,25 @@ export class WebRepository implements Repository {
 	}
 
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
+		if (!this.supportedExtensions.size) {
+			// If no extensions supported, return an error
+			return { error: RepositoryError.NotSupported };
+		}
+
+		// Check for supported extensions
+		let found = false;
+		for (const ext of this.supportedExtensions) {
+			if (path.toLowerCase().endsWith(ext)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			// File extension is not supported
+			return { error: RepositoryError.NotSupported };
+		}
+
 		if (!this.#files) {
 			return { error: RepositoryError.Uninitialized };
 		}
