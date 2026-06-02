@@ -17,7 +17,11 @@ export class JSONLoader {
 
 	static async loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null> {
 		if (jsonEntity) {
-			const constructor = getEntity(jsonEntity['constructor'] as string);
+			const c = jsonEntity['constructor'];
+			if (typeof c !== 'string') {
+				return null;
+			}
+			const constructor = getEntity(c);
 			if (constructor) {
 				const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
 				if (!entity) {
