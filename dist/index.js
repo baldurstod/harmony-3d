@@ -74356,7 +74356,7 @@ class MergeRepository {
         for (const repository of this.#repositories) {
             const hasFile = await repository.hasFile(filename);
             if (hasFile.exist === false) {
-                break;
+                continue;
             }
             const response = await repository.getFile(filename);
             if (!response.error) {
@@ -74372,7 +74372,7 @@ class MergeRepository {
         for (const repository of this.#repositories) {
             const hasFile = await repository.hasFile(filename);
             if (hasFile.exist === false) {
-                break;
+                continue;
             }
             const response = await repository.getFileAsArrayBuffer(filename);
             if (!response.error) {
@@ -74388,7 +74388,7 @@ class MergeRepository {
         for (const repository of this.#repositories) {
             const hasFile = await repository.hasFile(filename);
             if (hasFile.exist === false) {
-                break;
+                continue;
             }
             const response = await repository.getFileAsText(filename);
             if (!response.error) {
@@ -74404,7 +74404,7 @@ class MergeRepository {
         for (const repository of this.#repositories) {
             const hasFile = await repository.hasFile(filename);
             if (hasFile.exist === false) {
-                break;
+                continue;
             }
             const response = await repository.getFileAsBlob(filename);
             if (!response.error) {
@@ -74420,7 +74420,7 @@ class MergeRepository {
         for (const repository of this.#repositories) {
             const hasFile = await repository.hasFile(filename);
             if (hasFile.exist === false) {
-                break;
+                continue;
             }
             const response = await repository.getFileAsJson(filename);
             if (!response.error) {

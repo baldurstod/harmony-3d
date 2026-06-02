@@ -28,7 +28,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const hasFile = await repository.hasFile(filename);
 			if (hasFile.exist === false) {
-				break;
+				continue;
 			}
 
 			const response = await repository.getFile(filename);
@@ -46,7 +46,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const hasFile = await repository.hasFile(filename);
 			if (hasFile.exist === false) {
-				break;
+				continue;
 			}
 
 			const response = await repository.getFileAsArrayBuffer(filename);
@@ -64,7 +64,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const hasFile = await repository.hasFile(filename);
 			if (hasFile.exist === false) {
-				break;
+				continue;
 			}
 
 			const response = await repository.getFileAsText(filename);
@@ -82,7 +82,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const hasFile = await repository.hasFile(filename);
 			if (hasFile.exist === false) {
-				break;
+				continue;
 			}
 
 			const response = await repository.getFileAsBlob(filename);
@@ -100,7 +100,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const hasFile = await repository.hasFile(filename);
 			if (hasFile.exist === false) {
-				break;
+				continue;
 			}
 
 			const response = await repository.getFileAsJson(filename);
