@@ -19,11 +19,11 @@ export class RepositoryEntry {
 	}
 
 	addPath(path: string): void {
-		const splittedPath = path.split(/[\/\\]+/);
+		const splitPath = path.split(/[\/\\]+/);
 		let current: RepositoryEntry = this;
-		const len = splittedPath.length - 1;
+		const len = splitPath.length - 1;
 
-		for (const [i, p] of splittedPath.entries()) {
+		for (const [i, p] of splitPath.entries()) {
 			const currentChild = current.#childs.get(p);
 			if (!currentChild) {
 				current = current.#addFile(p, i != len, i);
@@ -159,10 +159,10 @@ export class RepositoryEntry {
 	}
 
 	getPath(path: string): RepositoryEntry | null {
-		let splittedPath = path.split('/');
+		let splitPath = path.split('/');
 
 		for (const [_, child] of this.#childs) {
-			const found = child.#getPath(splittedPath);
+			const found = child.#getPath(splitPath);
 			if (found) {
 				return found;
 			}

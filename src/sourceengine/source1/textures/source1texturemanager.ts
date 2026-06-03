@@ -15,7 +15,7 @@ let internalTextureId = 0;
 function cleanupPath(path: string): string {
 	path = path.replace(/\.vtf$/, '');
 	path = path.replace(/\.psd/, '');
-	path = path.replace('\\', '/');
+	path = path.replaceAll('\\', '/');
 	return path.toLowerCase();
 }
 
