@@ -1,11 +1,11 @@
-export * from './helpers/export';
 export { Attachment } from './attachment';
 export { Bone } from './bone';
 export { Decal } from './decal';
 export { Group } from './group';
+export * from './helpers/export';
+export { Mesh } from './mesh';
 export { SkeletalMesh } from './skeletalmesh';
 export { Skeleton } from './skeleton';
-export { Mesh } from './mesh';
 export { Target } from './target';
 export { Text2D } from './text2d';
 export { Text3D } from './text3d';

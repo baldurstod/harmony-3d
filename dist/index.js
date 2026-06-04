@@ -1,7 +1,7 @@
 import { vec3, quat, vec4, vec2, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
 import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$2, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue } from 'harmony-utils';
-import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
+import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle, createElementNS, svgNamespace } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { WgslReflect } from 'wgsl_reflect';
@@ -70960,6 +70960,243 @@ var imageeditor = "#include common_uniforms\n\n@group(0) @binding(x) var colorTe
 
 Shaders['imageeditor.wgsl'] = imageeditor;
 
+const DEFAULT_SIZE$1 = vec3.fromValues(1, 1, 1);
+class Decal extends Mesh {
+    #size = vec3.create();
+    constructor(params = {}) {
+        params.geometry = new DecalGeometry();
+        params.material = params.material ?? new MeshBasicMaterial({ polygonOffset: true });
+        super(params);
+        this.setSize(params.size ?? DEFAULT_SIZE$1);
+    }
+    set position(position) {
+        super.position = position;
+        this.refreshGeometry();
+    }
+    get position() {
+        return super.position;
+    }
+    parentChanged() {
+        this.refreshGeometry();
+    }
+    setSize(size) {
+        vec3.copy(this.#size, size);
+        this.refreshGeometry();
+    }
+    get size() {
+        return this.#size;
+    }
+    refreshGeometry() {
+        if (this.parent && this.parent.is('Mesh')) {
+            this.getGeometry().applyTo(this.parent, this.worldMatrix, this.#size);
+        }
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            StaticDecal_1: null,
+            size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) {
+                    this.setSize(stringToVec3(v));
+                } } },
+            refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
+        });
+    }
+    static async constructFromJSON(json, entities, loadedPromise) {
+        return new Decal(json);
+    }
+    static getEntityName() {
+        return 'Decal';
+    }
+}
+registerEntity(Decal);
+class DecalGeometry extends BufferGeometry {
+    applyTo(mesh, projectorMatrix, size) {
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
+        //console.log(uvs);
+        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+        this.count = indices.length;
+    }
+    #generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
+        let decalVertices = [];
+        const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
+        const vertex = vec3.create();
+        const normal = vec3.create();
+        const geometry = mesh.getGeometry();
+        if (!geometry) {
+            return;
+        }
+        const indexAttribute = geometry.attributes.get('index');
+        const indexArray = indexAttribute._array;
+        if (!indexArray) {
+            return;
+        }
+        let posArray;
+        let normalArray;
+        if (!mesh.isSkeletalMesh) {
+            posArray = geometry.attributes.get('aVertexPosition')._array;
+            normalArray = geometry.attributes.get('aVertexNormal')._array;
+        }
+        else {
+            [posArray, normalArray] = mesh.getSkinnedVertex();
+        }
+        if (!posArray || !normalArray) {
+            return;
+        }
+        for (let i = 0, l = indexAttribute.count; i < l; ++i) {
+            const index = indexArray[i];
+            vertex[0] = posArray[index * 3] ?? 0;
+            vertex[1] = posArray[index * 3 + 1] ?? 0;
+            vertex[2] = posArray[index * 3 + 2] ?? 0;
+            normal[0] = normalArray[index * 3] ?? 0;
+            normal[1] = normalArray[index * 3 + 1] ?? 0;
+            normal[2] = normalArray[index * 3 + 2] ?? 0;
+            vec3.transformMat4(vertex, vertex, mesh.worldMatrix);
+            vec3.transformMat4(vertex, vertex, projectorMatrixInverse);
+            decalVertices.push([vec3.clone(vertex), vec3.clone(normal)]);
+        }
+        decalVertices = this.#clipGeometry(decalVertices, size, [1, 0, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [-1, 0, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 1, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, -1, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, 1]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, -1]);
+        for (let i = 0; i < decalVertices.length; i++) {
+            const decalVertex = decalVertices[i];
+            // create texture coordinates (we are still in projector space)
+            uvs.push(0.5 + (decalVertex[0][0] / size[0]), 0.5 + (decalVertex[0][1] / size[1]));
+            // transform the vertex back to world space
+            decalVertex[0];
+            //vec3.transformMat4(v, v, projectorMatrix);
+            vertices.push(...decalVertex[0]);
+            normals.push(...decalVertex[1]);
+            indices.push(i);
+        }
+    }
+    #clipGeometry(inVertices, size, plane) {
+        const outVertices = [];
+        const s = 0.5 * Math.abs(vec3.dot(size, plane));
+        // a single iteration clips one face,
+        // which consists of three consecutive 'DecalVertex' objects
+        for (let i = 0; i < inVertices.length; i += 3) {
+            let total = 0;
+            let nV1;
+            let nV2;
+            let nV3;
+            let nV4;
+            const d1 = vec3.dot(inVertices[i + 0][0], plane) - s;
+            const d2 = vec3.dot(inVertices[i + 1][0], plane) - s;
+            const d3 = vec3.dot(inVertices[i + 2][0], plane) - s;
+            const v1Out = d1 > 0;
+            const v2Out = d2 > 0;
+            const v3Out = d3 > 0;
+            // calculate, how many vertices of the face lie outside of the clipping plane
+            total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+            switch (total) {
+                case 0: {
+                    // the entire face lies inside of the plane, no clipping needed
+                    outVertices.push(inVertices[i]);
+                    outVertices.push(inVertices[i + 1]);
+                    outVertices.push(inVertices[i + 2]);
+                    break;
+                }
+                case 1: {
+                    // one vertex lies outside of the plane, perform clipping
+                    if (v1Out) {
+                        nV1 = inVertices[i + 1];
+                        nV2 = inVertices[i + 2];
+                        nV3 = this.#clip(inVertices[i], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i], nV2, plane, s);
+                    }
+                    if (v2Out) {
+                        nV1 = inVertices[i];
+                        nV2 = inVertices[i + 2];
+                        nV3 = this.#clip(inVertices[i + 1], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i + 1], nV2, plane, s);
+                        outVertices.push(nV3);
+                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                        outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
+                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                        outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
+                        outVertices.push(nV4);
+                        break;
+                    }
+                    if (v3Out) {
+                        nV1 = inVertices[i];
+                        nV2 = inVertices[i + 1];
+                        nV3 = this.#clip(inVertices[i + 2], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i + 2], nV2, plane, s);
+                    }
+                    outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
+                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                    outVertices.push(nV3);
+                    outVertices.push(nV4);
+                    outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
+                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                    break;
+                }
+                case 2: {
+                    // two vertices lies outside of the plane, perform clipping
+                    if (!v1Out) {
+                        nV1 = [vec3.clone(inVertices[i][0]), vec3.clone(inVertices[i][1])]; //inVertices[ i ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i + 1], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i + 2], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    if (!v2Out) {
+                        nV1 = [vec3.clone(inVertices[i + 1][0]), vec3.clone(inVertices[i + 1][1])]; //inVertices[ i + 1 ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i + 2], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    if (!v3Out) {
+                        nV1 = [vec3.clone(inVertices[i + 2][0]), vec3.clone(inVertices[i + 2][1])]; //inVertices[ i + 2 ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i + 1], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    break;
+                }
+            }
+        }
+        return outVertices;
+    }
+    #clip(v0, v1, plane, s) {
+        const v0Pos = v0[0];
+        const v1Pos = v1[0];
+        const v0Norm = v0[1];
+        const v1Norm = v1[1];
+        const d0 = vec3.dot(v0Pos, plane) - s;
+        const d1 = vec3.dot(v1Pos, plane) - s;
+        const s0 = d0 / (d0 - d1);
+        // need to clip more values (texture coordinates)? do it this way:
+        // intersectpoint.value = a.value + s * ( b.value - a.value );
+        return [
+            [
+                v0Pos[0] + s0 * (v1Pos[0] - v0Pos[0]),
+                v0Pos[1] + s0 * (v1Pos[1] - v0Pos[1]),
+                v0Pos[2] + s0 * (v1Pos[2] - v0Pos[2])
+            ],
+            [
+                v0Norm[0] + s0 * (v1Norm[0] - v0Norm[0]),
+                v0Norm[1] + s0 * (v1Norm[1] - v0Norm[1]),
+                v0Norm[2] + s0 * (v1Norm[2] - v0Norm[2])
+            ]
+        ];
+    }
+}
+
 const tempVec3$3 = vec3.create();
 class BoundingBoxHelper extends Box {
     boundingBox = new BoundingBox();
@@ -71518,243 +71755,6 @@ class HitboxHelper extends Entity {
     }
 }
 registerEntity(HitboxHelper);
-
-const DEFAULT_SIZE$1 = vec3.fromValues(1, 1, 1);
-class Decal extends Mesh {
-    #size = vec3.create();
-    constructor(params = {}) {
-        params.geometry = new DecalGeometry();
-        params.material = params.material ?? new MeshBasicMaterial({ polygonOffset: true });
-        super(params);
-        this.setSize(params.size ?? DEFAULT_SIZE$1);
-    }
-    set position(position) {
-        super.position = position;
-        this.refreshGeometry();
-    }
-    get position() {
-        return super.position;
-    }
-    parentChanged() {
-        this.refreshGeometry();
-    }
-    setSize(size) {
-        vec3.copy(this.#size, size);
-        this.refreshGeometry();
-    }
-    get size() {
-        return this.#size;
-    }
-    refreshGeometry() {
-        if (this.parent && this.parent.is('Mesh')) {
-            this.getGeometry().applyTo(this.parent, this.worldMatrix, this.#size);
-        }
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            StaticDecal_1: null,
-            size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) {
-                    this.setSize(stringToVec3(v));
-                } } },
-            refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
-        });
-    }
-    static async constructFromJSON(json, entities, loadedPromise) {
-        return new Decal(json);
-    }
-    static getEntityName() {
-        return 'Decal';
-    }
-}
-registerEntity(Decal);
-class DecalGeometry extends BufferGeometry {
-    applyTo(mesh, projectorMatrix, size) {
-        const indices = [];
-        const vertices = [];
-        const normals = [];
-        const uvs = [];
-        this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
-        //console.log(uvs);
-        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
-        this.count = indices.length;
-    }
-    #generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
-        let decalVertices = [];
-        const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
-        const vertex = vec3.create();
-        const normal = vec3.create();
-        const geometry = mesh.getGeometry();
-        if (!geometry) {
-            return;
-        }
-        const indexAttribute = geometry.attributes.get('index');
-        const indexArray = indexAttribute._array;
-        if (!indexArray) {
-            return;
-        }
-        let posArray;
-        let normalArray;
-        if (!mesh.isSkeletalMesh) {
-            posArray = geometry.attributes.get('aVertexPosition')._array;
-            normalArray = geometry.attributes.get('aVertexNormal')._array;
-        }
-        else {
-            [posArray, normalArray] = mesh.getSkinnedVertex();
-        }
-        if (!posArray || !normalArray) {
-            return;
-        }
-        for (let i = 0, l = indexAttribute.count; i < l; ++i) {
-            const index = indexArray[i];
-            vertex[0] = posArray[index * 3] ?? 0;
-            vertex[1] = posArray[index * 3 + 1] ?? 0;
-            vertex[2] = posArray[index * 3 + 2] ?? 0;
-            normal[0] = normalArray[index * 3] ?? 0;
-            normal[1] = normalArray[index * 3 + 1] ?? 0;
-            normal[2] = normalArray[index * 3 + 2] ?? 0;
-            vec3.transformMat4(vertex, vertex, mesh.worldMatrix);
-            vec3.transformMat4(vertex, vertex, projectorMatrixInverse);
-            decalVertices.push([vec3.clone(vertex), vec3.clone(normal)]);
-        }
-        decalVertices = this.#clipGeometry(decalVertices, size, [1, 0, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [-1, 0, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 1, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, -1, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, 1]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, -1]);
-        for (let i = 0; i < decalVertices.length; i++) {
-            const decalVertex = decalVertices[i];
-            // create texture coordinates (we are still in projector space)
-            uvs.push(0.5 + (decalVertex[0][0] / size[0]), 0.5 + (decalVertex[0][1] / size[1]));
-            // transform the vertex back to world space
-            decalVertex[0];
-            //vec3.transformMat4(v, v, projectorMatrix);
-            vertices.push(...decalVertex[0]);
-            normals.push(...decalVertex[1]);
-            indices.push(i);
-        }
-    }
-    #clipGeometry(inVertices, size, plane) {
-        const outVertices = [];
-        const s = 0.5 * Math.abs(vec3.dot(size, plane));
-        // a single iteration clips one face,
-        // which consists of three consecutive 'DecalVertex' objects
-        for (let i = 0; i < inVertices.length; i += 3) {
-            let total = 0;
-            let nV1;
-            let nV2;
-            let nV3;
-            let nV4;
-            const d1 = vec3.dot(inVertices[i + 0][0], plane) - s;
-            const d2 = vec3.dot(inVertices[i + 1][0], plane) - s;
-            const d3 = vec3.dot(inVertices[i + 2][0], plane) - s;
-            const v1Out = d1 > 0;
-            const v2Out = d2 > 0;
-            const v3Out = d3 > 0;
-            // calculate, how many vertices of the face lie outside of the clipping plane
-            total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
-            switch (total) {
-                case 0: {
-                    // the entire face lies inside of the plane, no clipping needed
-                    outVertices.push(inVertices[i]);
-                    outVertices.push(inVertices[i + 1]);
-                    outVertices.push(inVertices[i + 2]);
-                    break;
-                }
-                case 1: {
-                    // one vertex lies outside of the plane, perform clipping
-                    if (v1Out) {
-                        nV1 = inVertices[i + 1];
-                        nV2 = inVertices[i + 2];
-                        nV3 = this.#clip(inVertices[i], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i], nV2, plane, s);
-                    }
-                    if (v2Out) {
-                        nV1 = inVertices[i];
-                        nV2 = inVertices[i + 2];
-                        nV3 = this.#clip(inVertices[i + 1], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i + 1], nV2, plane, s);
-                        outVertices.push(nV3);
-                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                        outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
-                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                        outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
-                        outVertices.push(nV4);
-                        break;
-                    }
-                    if (v3Out) {
-                        nV1 = inVertices[i];
-                        nV2 = inVertices[i + 1];
-                        nV3 = this.#clip(inVertices[i + 2], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i + 2], nV2, plane, s);
-                    }
-                    outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
-                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                    outVertices.push(nV3);
-                    outVertices.push(nV4);
-                    outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
-                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                    break;
-                }
-                case 2: {
-                    // two vertices lies outside of the plane, perform clipping
-                    if (!v1Out) {
-                        nV1 = [vec3.clone(inVertices[i][0]), vec3.clone(inVertices[i][1])]; //inVertices[ i ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i + 1], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i + 2], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    if (!v2Out) {
-                        nV1 = [vec3.clone(inVertices[i + 1][0]), vec3.clone(inVertices[i + 1][1])]; //inVertices[ i + 1 ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i + 2], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    if (!v3Out) {
-                        nV1 = [vec3.clone(inVertices[i + 2][0]), vec3.clone(inVertices[i + 2][1])]; //inVertices[ i + 2 ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i + 1], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    break;
-                }
-            }
-        }
-        return outVertices;
-    }
-    #clip(v0, v1, plane, s) {
-        const v0Pos = v0[0];
-        const v1Pos = v1[0];
-        const v0Norm = v0[1];
-        const v1Norm = v1[1];
-        const d0 = vec3.dot(v0Pos, plane) - s;
-        const d1 = vec3.dot(v1Pos, plane) - s;
-        const s0 = d0 / (d0 - d1);
-        // need to clip more values (texture coordinates)? do it this way:
-        // intersectpoint.value = a.value + s * ( b.value - a.value );
-        return [
-            [
-                v0Pos[0] + s0 * (v1Pos[0] - v0Pos[0]),
-                v0Pos[1] + s0 * (v1Pos[1] - v0Pos[1]),
-                v0Pos[2] + s0 * (v1Pos[2] - v0Pos[2])
-            ],
-            [
-                v0Norm[0] + s0 * (v1Norm[0] - v0Norm[0]),
-                v0Norm[1] + s0 * (v1Norm[1] - v0Norm[1]),
-                v0Norm[2] + s0 * (v1Norm[2] - v0Norm[2])
-            ]
-        ];
-    }
-}
 
 class Text2D extends Entity {
     isText3D = true;
@@ -74919,7 +74919,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: var(--background-primary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-tertiary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -80992,6 +80992,110 @@ class ObjExporter {
     }
 }
 
+var orbitGizmoCSS = ":host {\n\tposition: absolute;\n\tleft: 0;\n\tbottom: 0;\n\twidth: 200px;\n\theight: 200px;\n\tbackground-color: tan;\n\toverflow: hidden;\n\n}\n\n.wrapper {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tperspective: 200px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tpointer-events: none;\n\n\t--x: 1;\n\t--y: 1;\n\t--z: 1;\n\n\t/* x axis foreground color */\n\t--x-r-f: 1;\n\t--x-g-f: 0.21;\n\t--x-b-f: 0.33;\n\n\t/* x axis background color */\n\t--x-r-b: 0.62;\n\t--x-g-b: 0.23;\n\t--x-b-b: 0.29;\n\n\t/* y axis foreground color */\n\t--y-r-f: 0.54;\n\t--y-g-f: 0.86;\n\t--y-b-f: 0;\n\n\t/* y axis background color */\n\t--y-r-b: 0.39;\n\t--y-g-b: 0.55;\n\t--y-b-b: 0.14;\n\n\t/* z axis foreground color */\n\t--z-r-f: 0.17;\n\t--z-g-f: 0.56;\n\t--z-b-f: 1;\n\n\t/* z axis background color */\n\t--z-r-b: 0.21;\n\t--z-g-b: 0.4;\n\t--z-b-b: 0.62;\n}\n\n.gizmo {\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\n\t--x-color: rgba(calc((var(--x-r-f) * var(--x) + (var(--x-r-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-f) * var(--x) + (var(--x-g-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-f) * var(--x) + (var(--x-b-b) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--x-minus-color: rgba(calc((var(--x-r-b) * var(--x) + (var(--x-r-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-b) * var(--x) + (var(--x-g-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-b) * var(--x) + (var(--x-b-f) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--y-color: rgba(\n\t\t\tcalc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-f) * var(--y) + (var(--y-g-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-f) * var(--y) + (var(--y-b-b) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--y-minus-color: rgba(calc((var(--y-r-b) * var(--y) + (var(--y-r-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-b) * var(--y) + (var(--y-g-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-b) * var(--y) + (var(--y-b-f) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--z-color: rgba(calc((var(--z-r-f) * var(--z) + (var(--z-r-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-f) * var(--z) + (var(--z-g-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-f) * var(--z) + (var(--z-b-b) * (1 - var(--z)))) * 255),\n\t\t\t1);\n\n\t--z-minus-color: rgba(calc((var(--z-r-b) * var(--z) + (var(--z-r-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-b) * var(--z) + (var(--z-g-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-b) * var(--z) + (var(--z-b-f) * (1 - var(--z)))) * 255),\n\t\t\t1);\n}\n\nsvg {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tstroke-width: 2;\n\tstroke: aliceblue;\n\tz-index: -1000000;\n}\n\n.label {\n\tpointer-events: all;\n\tcursor: pointer;\n\tposition: absolute;\n\ttext-wrap: nowrap;\n\n\twidth: 2rem;\n\theight: 2rem;\n\toverflow: hidden;\n\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 2rem;\n\tfont-size: 1.5rem;\n\tborder-style: solid;\n\tborder-width: 0.25rem;\n}\n\n.label.minus {\n\tfont-size: 0;\n}\n\n.label.minus:hover {\n\tfont-size: initial;\n}\n\n.label.x {\n\tborder-color: var(--x-color);\n\tbackground: var(--x-color);\n}\n\n.label.minus.x {\n\tborder-color: var(--x-minus-color);\n\tbackground: transparent;\n}\n\n.label.y {\n\tborder-color: var(--y-color);\n\tbackground: var(--y-color);\n}\n\n.label.minus.y {\n\tborder-color: var(--y-minus-color);\n\tbackground: transparent;\n}\n\n.label.z {\n\tborder-color: var(--z-color);\n\tbackground: var(--z-color);\n}\n\n.label.minus.z {\n\tborder-color: var(--z-minus-color);\n\tbackground: transparent;\n}\n\n.stroke0 {\n\tstroke: var(--x-color);\n}\n\n.stroke2 {\n\tstroke: var(--y-color);\n}\n\n.stroke4 {\n\tstroke: var(--z-color);\n}\n";
+
+const axis = ['X', '-X', 'Y', '-Y', 'Z', '-Z',];
+//const classes = ['right', 'left', 'back', 'front', 'top', 'bottom'];
+const classes = ['x', 'y', 'z'];
+const positions = [
+    [1, 0, 0],
+    [-1, 0, 0],
+    [0, 1, 0],
+    [0, -1, 0],
+    [0, 0, 1],
+    [0, 0, -1],
+];
+class OrbitGizmo {
+    #shadowRoot;
+    #htmlGizmo;
+    #htmlAxis;
+    #htmlAxisLabel = [null, null, null, null, null, null,];
+    camera;
+    constructor() {
+        this.#shadowRoot = createShadowRoot('div', {
+            adoptStyle: orbitGizmoCSS,
+            child: createElement('div', {
+                class: 'wrapper',
+                child: this.#htmlGizmo = createElement('div', {
+                    class: 'gizmo',
+                    childs: [
+                        this.#htmlAxis = createElementNS(svgNamespace, 'svg', {
+                        //hidden: true,
+                        }),
+                        this.#htmlAxisLabel[0] = createElement('div'),
+                    ],
+                }),
+            }),
+        });
+        for (let i = 0; i < 6; ++i) {
+            this.#htmlAxisLabel[i] = createElement('div', {
+                class: `label ${i % 2 === 0 ? 'plus' : 'minus'} ${classes[Math.floor(i / 2)]}`,
+                innerText: axis[i],
+                parent: this.#htmlGizmo,
+            });
+        }
+        let i = 0;
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
+            i += event.detail.delta * 20;
+            this.#update();
+        });
+    }
+    #update() {
+        if (!this.camera) {
+            return;
+        }
+        const scale = 0.3;
+        this.#htmlAxis.replaceChildren();
+        const mat = this.camera.cameraMatrix;
+        const m3 = mat3.fromMat4(mat3.create(), mat);
+        const q = quat.fromMat3(quat.create(), m3);
+        quat.normalize(q, q);
+        vec3.transformQuat(vec3.create(), [0, 0, 0], q);
+        const svgWidth = Number(this.#htmlAxis.clientWidth);
+        const svgHeight = Number(this.#htmlAxis.clientHeight);
+        const line = (pos, i) => {
+            const end = vec3.transformQuat(vec3.create(), pos, q);
+            createElementNS(svgNamespace, 'line', {
+                parent: this.#htmlAxis,
+                class: `stroke${i}`,
+                x1: svgWidth / 2,
+                y1: svgHeight / 2,
+                x2: end[0] * svgWidth * scale + svgWidth / 2,
+                y2: -end[1] * svgWidth * scale + svgWidth / 2,
+            });
+        };
+        let gizmoStyle = '';
+        for (let i = 0; i < 6; ++i) {
+            const label = this.#htmlAxisLabel[i];
+            const pos = vec3.create();
+            vec3.transformQuat(pos, positions[i], q);
+            if (i % 2 == 0) {
+                line(positions[i], i);
+            }
+            const scaledPos = vec3.scale(vec3.create(), pos, scale * 100);
+            vec3.add(scaledPos, scaledPos, [50, 50, 0]);
+            const labelWidth = Number(label.offsetWidth);
+            const labelHeight = Number(label.offsetHeight);
+            label.style.left = `calc(${scaledPos[0]}% - ${labelWidth / 2}px)`;
+            label.style.top = `calc(${100 - scaledPos[1]}% - ${labelHeight / 2}px)`;
+            label.style.zIndex = `${Math.round(pos[2] * 1000)}`;
+            if (i % 2 == 1) {
+                // Update opacity for negative axis
+                if (pos[2] < 0) {
+                    label.style.opacity = `${1 + pos[2]}`;
+                }
+            }
+            else {
+                gizmoStyle += `--${classes[Math.floor(i / 2)]}: ${pos[2] * 0.5 + 0.5};`;
+            }
+        }
+        this.#htmlGizmo.style.cssText = gizmoStyle;
+    }
+    getHtmlElement() {
+        return this.#shadowRoot.host;
+    }
+}
+
 const DEFAULT_SIZE = 256;
 class RenderTargetViewer {
     #scene = new Scene();
@@ -81281,4 +81385,4 @@ var texturedatas = "@group(0) @binding(0) var input: texture_2d<f32>;\n@group(0)
 Shaders['texture_cube_datas.wgsl'] = texture_cube_datas;
 Shaders['texturedatas.wgsl'] = texturedatas;
 
-export { Abs, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, Attachment, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomHeroMaterial, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GaussianNoiseProxy, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, InvulnLevelProxy, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetControl, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, Subtract, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, cleanupFilename, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, promptI18n, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };
+export { Abs, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, Attachment, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomHeroMaterial, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GaussianNoiseProxy, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, InvulnLevelProxy, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrbitGizmo, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetControl, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, Subtract, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, cleanupFilename, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, promptI18n, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };

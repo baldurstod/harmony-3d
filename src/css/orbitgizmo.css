@@ -1,0 +1,172 @@
+:host {
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 200px;
+	height: 200px;
+	background-color: tan;
+	overflow: hidden;
+
+}
+
+.wrapper {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	perspective: 200px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	pointer-events: none;
+
+	--x: 1;
+	--y: 1;
+	--z: 1;
+
+	/* x axis foreground color */
+	--x-r-f: 1;
+	--x-g-f: 0.21;
+	--x-b-f: 0.33;
+
+	/* x axis background color */
+	--x-r-b: 0.62;
+	--x-g-b: 0.23;
+	--x-b-b: 0.29;
+
+	/* y axis foreground color */
+	--y-r-f: 0.54;
+	--y-g-f: 0.86;
+	--y-b-f: 0;
+
+	/* y axis background color */
+	--y-r-b: 0.39;
+	--y-g-b: 0.55;
+	--y-b-b: 0.14;
+
+	/* z axis foreground color */
+	--z-r-f: 0.17;
+	--z-g-f: 0.56;
+	--z-b-f: 1;
+
+	/* z axis background color */
+	--z-r-b: 0.21;
+	--z-g-b: 0.4;
+	--z-b-b: 0.62;
+}
+
+.gizmo {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+
+	--x-color: rgba(calc((var(--x-r-f) * var(--x) + (var(--x-r-b) * (1 - var(--x)))) * 255),
+			calc((var(--x-g-f) * var(--x) + (var(--x-g-b) * (1 - var(--x)))) * 255),
+			calc((var(--x-b-f) * var(--x) + (var(--x-b-b) * (1 - var(--x)))) * 255),
+			1);
+
+	--x-minus-color: rgba(calc((var(--x-r-b) * var(--x) + (var(--x-r-f) * (1 - var(--x)))) * 255),
+			calc((var(--x-g-b) * var(--x) + (var(--x-g-f) * (1 - var(--x)))) * 255),
+			calc((var(--x-b-b) * var(--x) + (var(--x-b-f) * (1 - var(--x)))) * 255),
+			1);
+
+	--y-color: rgba(
+			calc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),
+			calc((var(--y-g-f) * var(--y) + (var(--y-g-b) * (1 - var(--y)))) * 255),
+			calc((var(--y-b-f) * var(--y) + (var(--y-b-b) * (1 - var(--y)))) * 255),
+			1);
+
+	--y-minus-color: rgba(calc((var(--y-r-b) * var(--y) + (var(--y-r-f) * (1 - var(--y)))) * 255),
+			calc((var(--y-g-b) * var(--y) + (var(--y-g-f) * (1 - var(--y)))) * 255),
+			calc((var(--y-b-b) * var(--y) + (var(--y-b-f) * (1 - var(--y)))) * 255),
+			1);
+
+	--z-color: rgba(calc((var(--z-r-f) * var(--z) + (var(--z-r-b) * (1 - var(--z)))) * 255),
+			calc((var(--z-g-f) * var(--z) + (var(--z-g-b) * (1 - var(--z)))) * 255),
+			calc((var(--z-b-f) * var(--z) + (var(--z-b-b) * (1 - var(--z)))) * 255),
+			1);
+
+	--z-minus-color: rgba(calc((var(--z-r-b) * var(--z) + (var(--z-r-f) * (1 - var(--z)))) * 255),
+			calc((var(--z-g-b) * var(--z) + (var(--z-g-f) * (1 - var(--z)))) * 255),
+			calc((var(--z-b-b) * var(--z) + (var(--z-b-f) * (1 - var(--z)))) * 255),
+			1);
+}
+
+svg {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	stroke-width: 2;
+	stroke: aliceblue;
+	z-index: -1000000;
+}
+
+.label {
+	pointer-events: all;
+	cursor: pointer;
+	position: absolute;
+	text-wrap: nowrap;
+
+	width: 2rem;
+	height: 2rem;
+	overflow: hidden;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 2rem;
+	font-size: 1.5rem;
+	border-style: solid;
+	border-width: 0.25rem;
+}
+
+.label.minus {
+	font-size: 0;
+}
+
+.label.minus:hover {
+	font-size: initial;
+}
+
+.label.x {
+	border-color: var(--x-color);
+	background: var(--x-color);
+}
+
+.label.minus.x {
+	border-color: var(--x-minus-color);
+	background: transparent;
+}
+
+.label.y {
+	border-color: var(--y-color);
+	background: var(--y-color);
+}
+
+.label.minus.y {
+	border-color: var(--y-minus-color);
+	background: transparent;
+}
+
+.label.z {
+	border-color: var(--z-color);
+	background: var(--z-color);
+}
+
+.label.minus.z {
+	border-color: var(--z-minus-color);
+	background: transparent;
+}
+
+.stroke0 {
+	stroke: var(--x-color);
+}
+
+.stroke2 {
+	stroke: var(--y-color);
+}
+
+.stroke4 {
+	stroke: var(--z-color);
+}

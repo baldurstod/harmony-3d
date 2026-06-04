@@ -2,6 +2,7 @@ export * from './customfetch';
 export * from './imagedata';
 export * from './lz4';
 export { ObjExporter } from './objexporter';
+export { OrbitGizmo } from './orbitgizmo';
 export * from './properties';
 export { getRandomInt } from './random';
 export { RenderTargetViewer } from './rendertargetviewer';

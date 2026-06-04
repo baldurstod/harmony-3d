@@ -2218,7 +2218,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -4955,6 +4955,13 @@ declare class Channel {
                           set autoRotateSpeed(speed: number);
                           get zoomScale(): number;
                           handleEnabled(): void;
+                      }
+
+                      export declare class OrbitGizmo {
+                          #private;
+                          camera?: Camera;
+                          constructor();
+                          getHtmlElement(): HTMLElement;
                       }
 
                       export declare class OrientTo2dDirection extends Source1ParticleOperator {
