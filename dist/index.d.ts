@@ -4959,7 +4959,7 @@ declare class Channel {
 
                       export declare class OrbitGizmo {
                           #private;
-                          camera?: Camera;
+                          orbitControl?: OrbitControl;
                           constructor();
                           getHtmlElement(): HTMLElement;
                       }

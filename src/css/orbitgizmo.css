@@ -4,7 +4,6 @@
 	bottom: 0;
 	width: 200px;
 	height: 200px;
-	background-color: tan;
 	overflow: hidden;
 
 }
@@ -99,7 +98,6 @@ svg {
 	height: 100%;
 	stroke-width: 2;
 	stroke: aliceblue;
-	z-index: -1000000;
 }
 
 .label {

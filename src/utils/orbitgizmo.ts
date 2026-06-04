@@ -1,6 +1,6 @@
 import { mat3, quat, vec3 } from 'gl-matrix';
 import { createElement, createElementNS, createShadowRoot, svgNamespace } from 'harmony-ui';
-import { Camera } from '../cameras/camera';
+import { OrbitControl } from '../controls/orbitcontrol';
 import orbitGizmoCSS from '../css/orbitgizmo.css';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 
@@ -21,8 +21,8 @@ export class OrbitGizmo {
 	#shadowRoot: ShadowRoot;
 	#htmlGizmo: HTMLElement;
 	#htmlAxis: SVGElement;
-	#htmlAxisLabel: [HTMLElement, HTMLElement, HTMLElement, HTMLElement, HTMLElement, HTMLElement] = [null as unknown as HTMLElement, null as unknown as HTMLElement, null as unknown as HTMLElement, null as unknown as HTMLElement, null as unknown as HTMLElement, null as unknown as HTMLElement,];
-	camera?: Camera;
+	#htmlAxisLabel: HTMLElement[] = [];
+	orbitControl?: OrbitControl;
 
 	constructor() {
 		this.#shadowRoot = createShadowRoot('div', {
@@ -46,6 +46,7 @@ export class OrbitGizmo {
 				class: `label ${i % 2 === 0 ? 'plus' : 'minus'} ${classes[Math.floor(i / 2)]}`,
 				innerText: axis[i],
 				parent: this.#htmlGizmo,
+				$click: () => this.#handleAxisClick(i),
 			});
 		}
 
@@ -54,18 +55,18 @@ export class OrbitGizmo {
 			i += (event as CustomEvent<GraphicTickEvent>).detail.delta * 20;
 			this.#update();
 		});
-
 	}
 
 	#update(): void {
-		if (!this.camera) {
+		const camera = this.orbitControl?.camera;
+		if (!camera) {
 			return;
 		}
 
 		const scale = 0.3;
 		this.#htmlAxis.replaceChildren();
 
-		const mat = this.camera.cameraMatrix;
+		const mat = camera.cameraMatrix;
 		const m3 = mat3.fromMat4(mat3.create(), mat);
 		const q = quat.fromMat3(quat.create(), m3);
 		quat.normalize(q, q);
@@ -116,6 +117,31 @@ export class OrbitGizmo {
 			}
 		}
 		this.#htmlGizmo.style.cssText = gizmoStyle;
+	}
+
+	#handleAxisClick(axis: number): void {
+		const camera = this.orbitControl?.camera;
+		if (!camera) {
+			return;
+		}
+
+		const sign = (axis % 2 === 0) ? 1 : -1;
+
+		const pos = this.orbitControl!.target.getWorldPosition();
+
+		switch (Math.floor(axis / 2)) {
+			case 0:
+				pos[0] += 500 * sign;
+				break;
+			case 1:
+				pos[1] += 500 * sign;
+				break;
+			case 2:
+				pos[2] += 500 * sign;
+				break;
+		}
+
+		camera.setWorldPosition(pos);
 	}
 
 	getHtmlElement(): HTMLElement {

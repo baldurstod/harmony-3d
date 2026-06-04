@@ -80992,7 +80992,7 @@ class ObjExporter {
     }
 }
 
-var orbitGizmoCSS = ":host {\n\tposition: absolute;\n\tleft: 0;\n\tbottom: 0;\n\twidth: 200px;\n\theight: 200px;\n\tbackground-color: tan;\n\toverflow: hidden;\n\n}\n\n.wrapper {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tperspective: 200px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tpointer-events: none;\n\n\t--x: 1;\n\t--y: 1;\n\t--z: 1;\n\n\t/* x axis foreground color */\n\t--x-r-f: 1;\n\t--x-g-f: 0.21;\n\t--x-b-f: 0.33;\n\n\t/* x axis background color */\n\t--x-r-b: 0.62;\n\t--x-g-b: 0.23;\n\t--x-b-b: 0.29;\n\n\t/* y axis foreground color */\n\t--y-r-f: 0.54;\n\t--y-g-f: 0.86;\n\t--y-b-f: 0;\n\n\t/* y axis background color */\n\t--y-r-b: 0.39;\n\t--y-g-b: 0.55;\n\t--y-b-b: 0.14;\n\n\t/* z axis foreground color */\n\t--z-r-f: 0.17;\n\t--z-g-f: 0.56;\n\t--z-b-f: 1;\n\n\t/* z axis background color */\n\t--z-r-b: 0.21;\n\t--z-g-b: 0.4;\n\t--z-b-b: 0.62;\n}\n\n.gizmo {\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\n\t--x-color: rgba(calc((var(--x-r-f) * var(--x) + (var(--x-r-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-f) * var(--x) + (var(--x-g-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-f) * var(--x) + (var(--x-b-b) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--x-minus-color: rgba(calc((var(--x-r-b) * var(--x) + (var(--x-r-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-b) * var(--x) + (var(--x-g-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-b) * var(--x) + (var(--x-b-f) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--y-color: rgba(\n\t\t\tcalc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-f) * var(--y) + (var(--y-g-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-f) * var(--y) + (var(--y-b-b) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--y-minus-color: rgba(calc((var(--y-r-b) * var(--y) + (var(--y-r-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-b) * var(--y) + (var(--y-g-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-b) * var(--y) + (var(--y-b-f) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--z-color: rgba(calc((var(--z-r-f) * var(--z) + (var(--z-r-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-f) * var(--z) + (var(--z-g-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-f) * var(--z) + (var(--z-b-b) * (1 - var(--z)))) * 255),\n\t\t\t1);\n\n\t--z-minus-color: rgba(calc((var(--z-r-b) * var(--z) + (var(--z-r-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-b) * var(--z) + (var(--z-g-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-b) * var(--z) + (var(--z-b-f) * (1 - var(--z)))) * 255),\n\t\t\t1);\n}\n\nsvg {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tstroke-width: 2;\n\tstroke: aliceblue;\n\tz-index: -1000000;\n}\n\n.label {\n\tpointer-events: all;\n\tcursor: pointer;\n\tposition: absolute;\n\ttext-wrap: nowrap;\n\n\twidth: 2rem;\n\theight: 2rem;\n\toverflow: hidden;\n\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 2rem;\n\tfont-size: 1.5rem;\n\tborder-style: solid;\n\tborder-width: 0.25rem;\n}\n\n.label.minus {\n\tfont-size: 0;\n}\n\n.label.minus:hover {\n\tfont-size: initial;\n}\n\n.label.x {\n\tborder-color: var(--x-color);\n\tbackground: var(--x-color);\n}\n\n.label.minus.x {\n\tborder-color: var(--x-minus-color);\n\tbackground: transparent;\n}\n\n.label.y {\n\tborder-color: var(--y-color);\n\tbackground: var(--y-color);\n}\n\n.label.minus.y {\n\tborder-color: var(--y-minus-color);\n\tbackground: transparent;\n}\n\n.label.z {\n\tborder-color: var(--z-color);\n\tbackground: var(--z-color);\n}\n\n.label.minus.z {\n\tborder-color: var(--z-minus-color);\n\tbackground: transparent;\n}\n\n.stroke0 {\n\tstroke: var(--x-color);\n}\n\n.stroke2 {\n\tstroke: var(--y-color);\n}\n\n.stroke4 {\n\tstroke: var(--z-color);\n}\n";
+var orbitGizmoCSS = ":host {\n\tposition: absolute;\n\tleft: 0;\n\tbottom: 0;\n\twidth: 200px;\n\theight: 200px;\n\tbackground-color: tan;\n\toverflow: hidden;\n\n}\n\n.wrapper {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tperspective: 200px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tpointer-events: none;\n\n\t--x: 1;\n\t--y: 1;\n\t--z: 1;\n\n\t/* x axis foreground color */\n\t--x-r-f: 1;\n\t--x-g-f: 0.21;\n\t--x-b-f: 0.33;\n\n\t/* x axis background color */\n\t--x-r-b: 0.62;\n\t--x-g-b: 0.23;\n\t--x-b-b: 0.29;\n\n\t/* y axis foreground color */\n\t--y-r-f: 0.54;\n\t--y-g-f: 0.86;\n\t--y-b-f: 0;\n\n\t/* y axis background color */\n\t--y-r-b: 0.39;\n\t--y-g-b: 0.55;\n\t--y-b-b: 0.14;\n\n\t/* z axis foreground color */\n\t--z-r-f: 0.17;\n\t--z-g-f: 0.56;\n\t--z-b-f: 1;\n\n\t/* z axis background color */\n\t--z-r-b: 0.21;\n\t--z-g-b: 0.4;\n\t--z-b-b: 0.62;\n}\n\n.gizmo {\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\n\t--x-color: rgba(calc((var(--x-r-f) * var(--x) + (var(--x-r-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-f) * var(--x) + (var(--x-g-b) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-f) * var(--x) + (var(--x-b-b) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--x-minus-color: rgba(calc((var(--x-r-b) * var(--x) + (var(--x-r-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-g-b) * var(--x) + (var(--x-g-f) * (1 - var(--x)))) * 255),\n\t\t\tcalc((var(--x-b-b) * var(--x) + (var(--x-b-f) * (1 - var(--x)))) * 255),\n\t\t\t1);\n\n\t--y-color: rgba(\n\t\t\tcalc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-f) * var(--y) + (var(--y-g-b) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-f) * var(--y) + (var(--y-b-b) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--y-minus-color: rgba(calc((var(--y-r-b) * var(--y) + (var(--y-r-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-g-b) * var(--y) + (var(--y-g-f) * (1 - var(--y)))) * 255),\n\t\t\tcalc((var(--y-b-b) * var(--y) + (var(--y-b-f) * (1 - var(--y)))) * 255),\n\t\t\t1);\n\n\t--z-color: rgba(calc((var(--z-r-f) * var(--z) + (var(--z-r-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-f) * var(--z) + (var(--z-g-b) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-f) * var(--z) + (var(--z-b-b) * (1 - var(--z)))) * 255),\n\t\t\t1);\n\n\t--z-minus-color: rgba(calc((var(--z-r-b) * var(--z) + (var(--z-r-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-g-b) * var(--z) + (var(--z-g-f) * (1 - var(--z)))) * 255),\n\t\t\tcalc((var(--z-b-b) * var(--z) + (var(--z-b-f) * (1 - var(--z)))) * 255),\n\t\t\t1);\n}\n\nsvg {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tstroke-width: 2;\n\tstroke: aliceblue;\n}\n\n.label {\n\tpointer-events: all;\n\tcursor: pointer;\n\tposition: absolute;\n\ttext-wrap: nowrap;\n\n\twidth: 2rem;\n\theight: 2rem;\n\toverflow: hidden;\n\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 2rem;\n\tfont-size: 1.5rem;\n\tborder-style: solid;\n\tborder-width: 0.25rem;\n}\n\n.label.minus {\n\tfont-size: 0;\n}\n\n.label.minus:hover {\n\tfont-size: initial;\n}\n\n.label.x {\n\tborder-color: var(--x-color);\n\tbackground: var(--x-color);\n}\n\n.label.minus.x {\n\tborder-color: var(--x-minus-color);\n\tbackground: transparent;\n}\n\n.label.y {\n\tborder-color: var(--y-color);\n\tbackground: var(--y-color);\n}\n\n.label.minus.y {\n\tborder-color: var(--y-minus-color);\n\tbackground: transparent;\n}\n\n.label.z {\n\tborder-color: var(--z-color);\n\tbackground: var(--z-color);\n}\n\n.label.minus.z {\n\tborder-color: var(--z-minus-color);\n\tbackground: transparent;\n}\n\n.stroke0 {\n\tstroke: var(--x-color);\n}\n\n.stroke2 {\n\tstroke: var(--y-color);\n}\n\n.stroke4 {\n\tstroke: var(--z-color);\n}\n";
 
 const axis = ['X', '-X', 'Y', '-Y', 'Z', '-Z',];
 //const classes = ['right', 'left', 'back', 'front', 'top', 'bottom'];
@@ -81009,8 +81009,8 @@ class OrbitGizmo {
     #shadowRoot;
     #htmlGizmo;
     #htmlAxis;
-    #htmlAxisLabel = [null, null, null, null, null, null,];
-    camera;
+    #htmlAxisLabel = [];
+    orbitControl;
     constructor() {
         this.#shadowRoot = createShadowRoot('div', {
             adoptStyle: orbitGizmoCSS,
@@ -81032,6 +81032,7 @@ class OrbitGizmo {
                 class: `label ${i % 2 === 0 ? 'plus' : 'minus'} ${classes[Math.floor(i / 2)]}`,
                 innerText: axis[i],
                 parent: this.#htmlGizmo,
+                $click: () => this.#handleAxisClick(i),
             });
         }
         let i = 0;
@@ -81041,12 +81042,13 @@ class OrbitGizmo {
         });
     }
     #update() {
-        if (!this.camera) {
+        const camera = this.orbitControl?.camera;
+        if (!camera) {
             return;
         }
         const scale = 0.3;
         this.#htmlAxis.replaceChildren();
-        const mat = this.camera.cameraMatrix;
+        const mat = camera.cameraMatrix;
         const m3 = mat3.fromMat4(mat3.create(), mat);
         const q = quat.fromMat3(quat.create(), m3);
         quat.normalize(q, q);
@@ -81090,6 +81092,26 @@ class OrbitGizmo {
             }
         }
         this.#htmlGizmo.style.cssText = gizmoStyle;
+    }
+    #handleAxisClick(axis) {
+        const camera = this.orbitControl?.camera;
+        if (!camera) {
+            return;
+        }
+        const sign = (axis % 2 === 0) ? 1 : -1;
+        const pos = this.orbitControl.target.getWorldPosition();
+        switch (Math.floor(axis / 2)) {
+            case 0:
+                pos[0] += 500 * sign;
+                break;
+            case 1:
+                pos[1] += 500 * sign;
+                break;
+            case 2:
+                pos[2] += 500 * sign;
+                break;
+        }
+        camera.setWorldPosition(pos);
     }
     getHtmlElement() {
         return this.#shadowRoot.host;
