@@ -1,5 +1,5 @@
 :host {
-	background-color: var(--theme-scene-explorer-bg-color);
+	background-color: var(--background-primary);
 	width: 100%;
 	height: 100%;
 	overflow: auto;
@@ -9,6 +9,7 @@
 	flex-direction: column;
 	font-size: 1.5em;
 	user-select: none;
+	--indentation: 0;
 }
 
 .scene-explorer-contextmenu {
@@ -56,19 +57,32 @@
 
 scene-explorer-entity {
 	flex-direction: column;
+	--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);
 }
 
 .scene-explorer-entity-header {
 	cursor: pointer;
 	display: flex;
+	height: 2rem;
+	overflow: hidden;
+	align-items: center;
+}
+
+.scene-explorer-entity-title {
+	padding-left: calc(var(--indentation) * var(--indentation-offset));
 }
 
 scene-explorer-entity>.scene-explorer-entity-header {
-	background-color: teal;
+	background-color: var(--background-primary);
 }
 
 scene-explorer-entity.selected>.scene-explorer-entity-header {
-	background-color: var(--theme-scene-explorer-entity-selected-bg-color);
+	background-color: var(--background-quaternary);
+}
+
+.scene-explorer-entity-header:hover,
+scene-explorer-entity.selected>.scene-explorer-entity-header:hover {
+	background-color: var(--accent-primary);
 }
 
 scene-explorer-entity .animation input {
@@ -77,6 +91,7 @@ scene-explorer-entity .animation input {
 
 .scene-explorer-entity-buttons {
 	display: flex;
+	height: 100%;
 }
 
 .scene-explorer-entity-buttons>div {
@@ -104,9 +119,9 @@ scene-explorer-entity .animation input {
 }
 
 .scene-explorer-entity-childs {
-	background-color: teal;
+	background-color: var(--background-primary);
 	/*padding: 5px;*/
-	padding-left: 20px;
+	/*padding-left: 20px;*/
 }
 
 .file-explorer-file {
@@ -169,6 +184,6 @@ file-selector-tile:hover {
 }
 
 .manipulator-button {
-	background-color: var(--theme-scene-explorer-bg-color);
+	background-color: var(--background-primary);
 	cursor: pointer;
 }

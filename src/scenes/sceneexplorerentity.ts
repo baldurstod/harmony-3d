@@ -34,6 +34,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlLockedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 	#htmlTint: HTMLElement;
+	#indentation = 0;
 
 	static #entitiesHTML = new Map<Entity, SceneExplorerEntity>();
 	static #selectedEntity?: SceneExplorerEntity;
@@ -392,6 +393,9 @@ export class SceneExplorerEntity extends HTMLElement {
 						hide(childHtml);
 					}
 				}
+
+				childHtml.setIndentation(this.#indentation + 1);
+
 				this.#htmlChilds.append(childHtml);
 			}
 		}
@@ -493,6 +497,18 @@ export class SceneExplorerEntity extends HTMLElement {
 
 		(this.#entity as unknown as Animated).playAnimation(name);
 		(this.#entity as unknown as Animated).setAnimation(id, name, 1);//TODO: weight
+	}
+
+	setIndentation(indentation: number): void {
+		this.#indentation = indentation;
+
+		this.style.cssText = `--indentation: ${indentation}`;
+
+		for (const child of this.#htmlChilds.children) {
+			if ((child as SceneExplorerEntity).setIndentation) {
+				(child as SceneExplorerEntity).setIndentation(indentation + 1);
+			}
+		}
 	}
 }
 

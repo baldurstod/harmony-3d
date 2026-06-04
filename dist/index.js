@@ -74919,7 +74919,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: var(--background-primary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-tertiary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: var(--background-primary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -75192,6 +75192,7 @@ class SceneExplorerEntity extends HTMLElement {
     #htmlLockedButton;
     #htmlReset;
     #htmlTint;
+    #indentation = 0;
     static #entitiesHTML = new Map();
     static #selectedEntity;
     static #explorer;
@@ -75519,6 +75520,7 @@ class SceneExplorerEntity extends HTMLElement {
                         hide(childHtml);
                     }
                 }
+                childHtml.setIndentation(this.#indentation + 1);
                 this.#htmlChilds.append(childHtml);
             }
         }
@@ -75604,6 +75606,15 @@ class SceneExplorerEntity extends HTMLElement {
         }
         this.#entity.playAnimation(name);
         this.#entity.setAnimation(id, name, 1); //TODO: weight
+    }
+    setIndentation(indentation) {
+        this.#indentation = indentation;
+        this.style.cssText = `--indentation: ${indentation}`;
+        for (const child of this.#htmlChilds.children) {
+            if (child.setIndentation) {
+                child.setIndentation(indentation + 1);
+            }
+        }
     }
 }
 _a = SceneExplorerEntity;
