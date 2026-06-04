@@ -1,22 +1,24 @@
 :host {
+	--size: var(--orbit-gizmo-size, 15rem);
 	position: absolute;
 	left: 0;
 	bottom: 0;
-	width: 200px;
-	height: 200px;
+	width: var(--size);
+	height: var(--size);
 	overflow: hidden;
-
+	z-index: 10;
 }
 
-.wrapper {
-	position: absolute;
+.gizmo {
 	width: 100%;
 	height: 100%;
-	perspective: 200px;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	pointer-events: none;
+	pointer-events: all;
+	border-radius: var(--size);
+	position: absolute;
+	z-index: -100000;
 
 	--x: 1;
 	--y: 1;
@@ -51,14 +53,6 @@
 	--z-r-b: 0.21;
 	--z-g-b: 0.4;
 	--z-b-b: 0.62;
-}
-
-.gizmo {
-	width: 100%;
-	height: 100%;
-	display: flex;
-	justify-content: center;
-	align-items: center;
 
 	--x-color: rgba(calc((var(--x-r-f) * var(--x) + (var(--x-r-b) * (1 - var(--x)))) * 255),
 			calc((var(--x-g-f) * var(--x) + (var(--x-g-b) * (1 - var(--x)))) * 255),
@@ -70,8 +64,7 @@
 			calc((var(--x-b-b) * var(--x) + (var(--x-b-f) * (1 - var(--x)))) * 255),
 			1);
 
-	--y-color: rgba(
-			calc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),
+	--y-color: rgba(calc((var(--y-r-f) * var(--y) + (var(--y-r-b) * (1 - var(--y)))) * 255),
 			calc((var(--y-g-f) * var(--y) + (var(--y-g-b) * (1 - var(--y)))) * 255),
 			calc((var(--y-b-f) * var(--y) + (var(--y-b-b) * (1 - var(--y)))) * 255),
 			1);
@@ -92,12 +85,16 @@
 			1);
 }
 
+.gizmo:hover {
+	background-color: rgba(130, 130, 130, 0.5);
+}
+
 svg {
 	position: absolute;
 	width: 100%;
 	height: 100%;
-	stroke-width: 2;
-	stroke: aliceblue;
+	stroke-width: calc(var(--size) * 0.01);
+	pointer-events: none;
 }
 
 .label {
@@ -106,17 +103,24 @@ svg {
 	position: absolute;
 	text-wrap: nowrap;
 
-	width: 2rem;
-	height: 2rem;
+	--label-size: calc(var(--size) * 0.1);
+
+	width: var(--label-size);
+	height: var(--label-size);
 	overflow: hidden;
 
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	border-radius: 2rem;
-	font-size: 1.5rem;
+	border-radius: var(--label-size);
+	font-size: calc(var(--size) * 0.06);
 	border-style: solid;
-	border-width: 0.25rem;
+	border-width: calc(var(--size) * 0.01);
+	color: black;
+}
+
+.label:hover {
+	color: white;
 }
 
 .label.minus {

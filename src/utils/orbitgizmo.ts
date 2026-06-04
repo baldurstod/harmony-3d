@@ -27,17 +27,14 @@ export class OrbitGizmo {
 	constructor() {
 		this.#shadowRoot = createShadowRoot('div', {
 			adoptStyle: orbitGizmoCSS,
-			child: createElement('div', {
-				class: 'wrapper',
-				child: this.#htmlGizmo = createElement('div', {
-					class: 'gizmo',
-					childs: [
-						this.#htmlAxis = createElementNS(svgNamespace, 'svg', {
-							//hidden: true,
-						}) as SVGElement,
-						this.#htmlAxisLabel[0] = createElement('div'),
-					],
-				}),
+			child: this.#htmlGizmo = createElement('div', {
+				class: 'gizmo',
+				childs: [
+					this.#htmlAxis = createElementNS(svgNamespace, 'svg', {
+						//hidden: true,
+					}) as SVGElement,
+					this.#htmlAxisLabel[0] = createElement('div'),
+				],
 			}),
 		});
 
@@ -63,7 +60,7 @@ export class OrbitGizmo {
 			return;
 		}
 
-		const scale = 0.3;
+		const scale = 0.4;
 		this.#htmlAxis.replaceChildren();
 
 		const mat = camera.cameraMatrix;
