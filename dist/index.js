@@ -27629,6 +27629,8 @@ class Source1MaterialManager {
         }
     }
     static #getMaterial(repository, path) {
+        // Remove successive //
+        path = path.replace(/(\/)+/g, '/');
         const material = this.#materialList.get(repository, path);
         if (material instanceof Promise) {
             const promise = new Promise(resolve => {
