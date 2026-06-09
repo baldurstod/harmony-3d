@@ -70,6 +70,7 @@ scene-explorer-entity {
 
 .scene-explorer-entity-title {
 	padding-left: calc(var(--indentation) * var(--indentation-offset));
+	text-wrap: nowrap;
 }
 
 scene-explorer-entity>.scene-explorer-entity-header {
@@ -92,11 +93,12 @@ scene-explorer-entity .animation input {
 .scene-explorer-entity-buttons {
 	display: flex;
 	height: 100%;
+	align-items: center;
 }
 
 .scene-explorer-entity-buttons>div {
-	width: 20px;
-	height: 20px;
+	width: 1.5rem;
+	height: 1.5rem;
 	cursor: pointer;
 }
 

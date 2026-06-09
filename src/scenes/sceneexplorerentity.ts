@@ -284,6 +284,9 @@ export class SceneExplorerEntity extends HTMLElement {
 			entityElement = createElement('scene-explorer-entity') as SceneExplorerEntity;
 			entityElement.setEntity(entity);
 			SceneExplorerEntity.#entitiesHTML.set(entity, entityElement);
+		} else {
+			// Ensure a previously filtered element is shown
+			show(entityElement);
 		}
 
 		return entityElement;
@@ -343,6 +346,12 @@ export class SceneExplorerEntity extends HTMLElement {
 	static showAll(): void {
 		for (const [, a] of SceneExplorerEntity.#entitiesHTML) {
 			show(a);
+		}
+	}
+
+	static hideAll(): void {
+		for (const [, a] of SceneExplorerEntity.#entitiesHTML) {
+			hide(a);
 		}
 	}
 
@@ -502,7 +511,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	setIndentation(indentation: number): void {
 		this.#indentation = indentation;
 
-		this.style.cssText = `--indentation: ${indentation}`;
+		this.style.setProperty('--indentation', String(indentation));
 
 		for (const child of this.#htmlChilds.children) {
 			if ((child as SceneExplorerEntity).setIndentation) {

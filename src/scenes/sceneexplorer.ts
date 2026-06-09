@@ -71,6 +71,12 @@ export function getSceneExplorer(): SceneExplorer {
 	return sceneExplorer;
 }
 
+export type SceneExplorerFilter = {
+	name?: string;
+	type?: string;
+	match?: (ent: Entity) => boolean;
+}
+
 export class SceneExplorer {
 	static #instance: SceneExplorer;
 	#scene?: Scene;
@@ -100,8 +106,9 @@ export class SceneExplorer {
 	#htmlWorldScale!: HTMLElement;
 	//#htmlVisible!: HTMLInputElement;
 	#htmlScene!: HTMLElement;
-	#filterName = '';
-	#filterType = '';
+	//#filterName = '';
+	//#filterType = '';
+	readonly #filterStack: SceneExplorerFilter[] = [{}];
 	#isVisible = false;
 	//selectedEntity?: Entity;
 
@@ -384,8 +391,8 @@ export class SceneExplorer {
 		htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
 		*/
 
-		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.#applyFilter(); });
-		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.#applyFilter(); });
+		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterStack[0]!.name = (event.target as HTMLInputElement).value.toLowerCase(); this.#applyFilter(); });
+		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterStack[0]!.type = (event.target as HTMLInputElement).value; this.#applyFilter(); });
 		//htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
 
 		this.#populateTypeFilter();
@@ -399,9 +406,11 @@ export class SceneExplorer {
 	}
 
 	#applyFilter(): void {
+		const filter = this.#filterStack[this.#filterStack.length - 1];
+
 		if (this.#isVisible) {
-			SceneExplorerEntity.showAll();
-			if (this.#filterName == '' && this.#filterType == '') {
+			SceneExplorerEntity.hideAll();
+			if (!filter?.name && !filter?.type && !filter?.match) {
 				this.#refreshScene();
 			} else {
 				const filteredEntities = new Set<Entity>();
@@ -419,7 +428,7 @@ export class SceneExplorer {
 					const allEntities = this.#scene.getChildList();
 					this.#htmlScene.innerText = '';
 					for (const entity of allEntities) {
-						if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
+						if (filter?.match?.(entity) ?? this.#matchFilter(entity, filter?.name, filter?.type)) {
 							addEntity(entity);
 						}
 					}
@@ -430,8 +439,20 @@ export class SceneExplorer {
 		}
 	}
 
-	#matchFilter(entity: Entity, name: string, type: string): boolean {
+	#matchFilter(entity: Entity, name: string | undefined, type: string | undefined): boolean {
 		return (name ? entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
+	}
+
+	#pushFilter(filter: SceneExplorerFilter): void {
+		this.#filterStack.push(filter);
+		this.#applyFilter();
+	}
+
+	#popFilter(filter: SceneExplorerFilter): void {
+		if (this.#filterStack.length > 1) {
+			this.#filterStack.pop();
+			this.#applyFilter();
+		}
 	}
 
 	#initHtmlProperties(): void {
