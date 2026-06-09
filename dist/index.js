@@ -10,7 +10,7 @@ import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reade
 import { decode } from 'fast-png';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash';
-import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, paletteSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, paletteSVG, targetSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 
@@ -27777,6 +27777,7 @@ var _a$6;
 class Source1ModelInstance extends Entity {
     isSource1ModelInstance = true;
     isTintable = true;
+    hasSkeleton = true;
     #poseParameters = new Map();
     #flexParameters = new Map();
     #flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
@@ -52103,6 +52104,7 @@ let animSpeed = 1.0;
 const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelInstance extends Entity {
     isSource2ModelInstance = true;
+    hasSkeleton = true;
     #skeleton = null;
     #skin = 0;
     #materialsUsed = new Set();
@@ -71498,7 +71500,7 @@ class SkeletonHelper extends Entity {
                 this.#skeleton = current;
                 return;
             }
-            else if (current.skeleton) {
+            else if (current.hasSkeleton) {
                 this.#skeleton = current.skeleton;
                 return;
             }
@@ -74921,7 +74923,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: var(--background-primary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: var(--background-primary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -75194,11 +75196,13 @@ class SceneExplorerEntity extends HTMLElement {
     #htmlLockedButton;
     #htmlReset;
     #htmlTint;
+    #htmlTarget;
     #indentation = 0;
     static #entitiesHTML = new Map();
     static #selectedEntity;
     static #explorer;
     static #draggedEntity = null;
+    static picking = false;
     static {
         EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event) => _a.#expandEntityChilds(event.detail.parent));
         EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event) => _a.#expandEntityChilds(event.detail.parent));
@@ -75314,6 +75318,22 @@ class SceneExplorerEntity extends HTMLElement {
                                 },
                             }
                         }),
+                        this.#htmlTarget = createElement('div', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-target',
+                            innerHTML: targetSVG,
+                            $click: async () => {
+                                if (this.#entity.hasSkeleton) {
+                                    const entity = await _a.#explorer?.pickEntity({
+                                        match: (ent) => {
+                                            return ent !== this.#entity && ent.hasSkeleton === true;
+                                        }
+                                    });
+                                    this.#entity.skeleton.addChild(new RetargetControl({ source: entity.skeleton }));
+                                    this.#entity?.setPlaying(false);
+                                }
+                            },
+                        }),
                     ]
                 }),
             ]
@@ -75382,6 +75402,7 @@ class SceneExplorerEntity extends HTMLElement {
         display(this.#htmlLoopedButton, entity?.isLoopable);
         display(this.#htmlLockedButton, entity?.isLockable);
         display(this.#htmlTint, this.#entity?.isTintable);
+        display(this.#htmlTarget, this.#entity?.hasSkeleton);
     }
     static setExplorer(explorer) {
         _a.#explorer = explorer;
@@ -75425,6 +75446,10 @@ class SceneExplorerEntity extends HTMLElement {
             entityElement = createElement('scene-explorer-entity');
             entityElement.setEntity(entity);
             _a.#entitiesHTML.set(entity, entityElement);
+        }
+        else {
+            // Ensure a previously filtered element is shown
+            show(entityElement);
         }
         return entityElement;
     }
@@ -75478,6 +75503,11 @@ class SceneExplorerEntity extends HTMLElement {
             show(a);
         }
     }
+    static hideAll() {
+        for (const [, a] of _a.#entitiesHTML) {
+            hide(a);
+        }
+    }
     #updateVisibility() {
         if (this.#entity?.isVisible()) {
             this.#htmlVisible.innerHTML = visibilityOnSVG;
@@ -75528,6 +75558,10 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     #titleClick() {
+        if (_a.picking) {
+            _a.#explorer?.pick(this.#entity);
+            return;
+        }
         if (ShortcutHandler.getControlState()) {
             if (this.#entity) {
                 _a.#explorer?.addToSelection(this.#entity);
@@ -75611,7 +75645,7 @@ class SceneExplorerEntity extends HTMLElement {
     }
     setIndentation(indentation) {
         this.#indentation = indentation;
-        this.style.cssText = `--indentation: ${indentation}`;
+        this.style.setProperty('--indentation', String(indentation));
         for (const child of this.#htmlChilds.children) {
             if (child.setIndentation) {
                 child.setIndentation(indentation + 1);
@@ -75676,10 +75710,12 @@ class SceneExplorer {
     #htmlWorldScale;
     //#htmlVisible!: HTMLInputElement;
     #htmlScene;
-    #filterName = '';
-    #filterType = '';
+    //#filterName = '';
+    //#filterType = '';
+    #filterStack = [{}];
     #isVisible = false;
     //selectedEntity?: Entity;
+    #pickPromiseResolve;
     constructor() {
         if (SceneExplorer.#instance) {
             return SceneExplorer.#instance;
@@ -75939,8 +75975,8 @@ class SceneExplorer {
         this.#htmlHeader.append(htmlDisplayPropertiesSpan);
         htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
         */
-        this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = event.target.value.toLowerCase(); this.#applyFilter(); });
-        this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = event.target.value; this.#applyFilter(); });
+        this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterStack[0].name = event.target.value.toLowerCase(); this.#applyFilter(); });
+        this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterStack[0].type = event.target.value; this.#applyFilter(); });
         //htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
         this.#populateTypeFilter();
     }
@@ -75951,9 +75987,10 @@ class SceneExplorer {
         }
     }
     #applyFilter() {
+        const filter = this.#filterStack[this.#filterStack.length - 1];
         if (this.#isVisible) {
-            SceneExplorerEntity.showAll();
-            if (this.#filterName == '' && this.#filterType == '') {
+            SceneExplorerEntity.hideAll();
+            if (!filter?.name && !filter?.type && !filter?.match) {
                 this.#refreshScene();
             }
             else {
@@ -75970,7 +76007,7 @@ class SceneExplorer {
                     const allEntities = this.#scene.getChildList();
                     this.#htmlScene.innerText = '';
                     for (const entity of allEntities) {
-                        if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
+                        if (filter?.match?.(entity) ?? this.#matchFilter(entity, filter?.name, filter?.type)) {
                             addEntity(entity);
                         }
                     }
@@ -75981,6 +76018,16 @@ class SceneExplorer {
     }
     #matchFilter(entity, name, type) {
         return (name ? entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
+    }
+    #pushFilter(filter) {
+        this.#filterStack.push(filter);
+        this.#applyFilter();
+    }
+    #popFilter() {
+        if (this.#filterStack.length > 1) {
+            this.#filterStack.pop();
+            this.#applyFilter();
+        }
     }
     #initHtmlProperties() {
         this.#htmlName = createElement('div', { class: 'scene-explorer-entity-title' });
@@ -76104,6 +76151,27 @@ class SceneExplorer {
     }
     setJointsRadius(radius) {
         this.#skeletonHelper.setJointsRadius(radius);
+    }
+    async pickEntity(filter) {
+        if (this.#pickPromiseResolve) {
+            return null;
+        }
+        const promise = new Promise((resolve) => {
+            this.#pickPromiseResolve = resolve;
+        });
+        this.#pushFilter(filter);
+        SceneExplorerEntity.picking = true;
+        return promise;
+    }
+    pick(entity) {
+        try {
+            this.#pickPromiseResolve?.(entity);
+        }
+        finally {
+            SceneExplorerEntity.picking = false;
+            this.#pickPromiseResolve = undefined;
+            this.#popFilter();
+        }
     }
 }
 function initEntitySubmenu() {

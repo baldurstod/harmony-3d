@@ -37,6 +37,7 @@ const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
 	isSource2ModelInstance = true;
+	hasSkeleton = true as const;
 	#skeleton: Skeleton | null = null;
 	#skin = 0;
 	#materialsUsed = new Set<Material>();

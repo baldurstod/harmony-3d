@@ -111,6 +111,7 @@ export class SceneExplorer {
 	readonly #filterStack: SceneExplorerFilter[] = [{}];
 	#isVisible = false;
 	//selectedEntity?: Entity;
+	#pickPromiseResolve?: (value: Entity | null) => void;
 
 	constructor() {
 		if (SceneExplorer.#instance) {
@@ -448,7 +449,7 @@ export class SceneExplorer {
 		this.#applyFilter();
 	}
 
-	#popFilter(filter: SceneExplorerFilter): void {
+	#popFilter(): void {
 		if (this.#filterStack.length > 1) {
 			this.#filterStack.pop();
 			this.#applyFilter();
@@ -593,6 +594,32 @@ export class SceneExplorer {
 
 	setJointsRadius(radius: number): void {
 		this.#skeletonHelper.setJointsRadius(radius);
+	}
+
+	async pickEntity(filter: SceneExplorerFilter): Promise<Entity | null> {
+		if (this.#pickPromiseResolve) {
+			return null;
+		}
+
+		const promise = new Promise<Entity | null>((resolve) => {
+			this.#pickPromiseResolve = resolve;
+		});
+
+		this.#pushFilter(filter);
+
+		SceneExplorerEntity.picking = true;
+
+		return promise;
+	}
+
+	pick(entity: Entity | null): void {
+		try {
+			this.#pickPromiseResolve?.(entity);
+		} finally {
+			SceneExplorerEntity.picking = false;
+			this.#pickPromiseResolve = undefined;
+			this.#popFilter();
+		}
 	}
 }
 

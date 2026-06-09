@@ -3070,6 +3070,7 @@ declare class Channel {
                       }
 
                       export declare interface HasSkeleton {
+                          hasSkeleton: true;
                           skeleton: Skeleton | null;
                       }
 
@@ -3297,7 +3298,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -6291,7 +6292,15 @@ declare class Channel {
                           showContextMenu(x: number, y: number, entity: Entity): void;
                           editMaterial(material: Material): void;
                           setJointsRadius(radius: number): void;
+                          pickEntity(filter: SceneExplorerFilter): Promise<Entity | null>;
+                          pick(entity: Entity | null): void;
                       }
+
+                      declare type SceneExplorerFilter = {
+                          name?: string;
+                          type?: string;
+                          match?: (ent: Entity) => boolean;
+                      };
 
                       export declare class SceneNode extends Entity {
                           entity: Entity | null;
@@ -6859,6 +6868,7 @@ declare class Channel {
                           #private;
                           isSource1ModelInstance: boolean;
                           isTintable: true;
+                          hasSkeleton: true;
                           animable: boolean;
                           hasAnimations: true;
                           sourceModel: SourceModel;
@@ -7759,6 +7769,7 @@ declare class Channel {
                       export declare class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
                           #private;
                           isSource2ModelInstance: boolean;
+                          hasSkeleton: true;
                           animable: boolean;
                           bodyParts: Record<string, Mesh[][]>;
                           poseParameters: Record<string, number>;

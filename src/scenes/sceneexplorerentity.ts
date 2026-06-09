@@ -1,15 +1,17 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
+import { lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, targetSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
 import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverChildRemovedEvent, EntityObserverEvent, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
 import { Animated } from '../interfaces/animated';
+import { HasSkeleton } from '../interfaces/hasskeleton';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
 import { Tintable } from '../interfaces/tintable';
 import { Interaction } from '../utils/interaction';
 import { SceneExplorer } from './sceneexplorer';
+import { RetargetControl } from '../controls/retargetcontrol';
 
 const MAX_ANIMATIONS = 3;
 
@@ -34,12 +36,14 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlLockedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 	#htmlTint: HTMLElement;
+	#htmlTarget: HTMLElement;
 	#indentation = 0;
 
 	static #entitiesHTML = new Map<Entity, SceneExplorerEntity>();
 	static #selectedEntity?: SceneExplorerEntity;
 	static #explorer?: SceneExplorer;
 	static #draggedEntity: Entity | null = null;
+	static picking = false;
 
 	static {
 		EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent<EntityObserverChildAddedEvent>).detail.parent));
@@ -159,6 +163,23 @@ export class SceneExplorerEntity extends HTMLElement {
 								},
 							}
 						}),
+						this.#htmlTarget = createElement('div', {
+							hidden: true,
+							class: 'scene-explorer-entity-button-target',
+							innerHTML: targetSVG,
+							$click: async () => {
+								if ((this.#entity as unknown as HasSkeleton).hasSkeleton) {
+									const entity = await SceneExplorerEntity.#explorer?.pickEntity({
+										match: (ent: Entity): boolean => {
+											return ent !== this.#entity && (ent as unknown as HasSkeleton).hasSkeleton === true;
+										}
+									});
+
+									(this.#entity as unknown as HasSkeleton).skeleton!.addChild(new RetargetControl({ source: (entity as unknown as HasSkeleton).skeleton! }));
+									this.#entity?.setPlaying(false);
+								}
+							},
+						}),
 					]
 				}),
 			]
@@ -231,6 +252,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlLoopedButton, (entity as unknown as Loopable)?.isLoopable);
 		display(this.#htmlLockedButton, (entity as unknown as Lockable)?.isLockable);
 		display(this.#htmlTint, (this.#entity as unknown as Tintable)?.isTintable);
+		display(this.#htmlTarget, (this.#entity as unknown as HasSkeleton)?.hasSkeleton);
 	}
 
 	static setExplorer(explorer: SceneExplorer): void {
@@ -411,6 +433,11 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#titleClick(): void {
+		if (SceneExplorerEntity.picking) {
+			SceneExplorerEntity.#explorer?.pick(this.#entity);
+			return;
+		}
+
 		if (ShortcutHandler.getControlState()) {
 			if (this.#entity) {
 				SceneExplorerEntity.#explorer?.addToSelection(this.#entity);

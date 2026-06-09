@@ -46,6 +46,7 @@ export type Source1ModelAnimation = { name: string, weight: number }/*TODO: impr
 export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel, Tintable {
 	isSource1ModelInstance = true;
 	isTintable = true as const;
+	hasSkeleton = true as const;
 	readonly #poseParameters = new Map<string, number>();
 	readonly #flexParameters = new Map<string, number>();
 	#flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
