@@ -10,6 +10,7 @@
 	font-size: 1.5em;
 	user-select: none;
 	--indentation: 0;
+	--header: var(--background-primary);
 }
 
 .scene-explorer-contextmenu {
@@ -74,11 +75,20 @@ scene-explorer-entity {
 }
 
 scene-explorer-entity>.scene-explorer-entity-header {
-	background-color: var(--background-primary);
+	/*background-color: var(--background-primary);*/
+	background-color: var(--header);
+}
+
+scene-explorer-entity.selected {
+	--header: var(--background-tertiary);
 }
 
 scene-explorer-entity.selected>.scene-explorer-entity-header {
 	background-color: var(--background-quaternary);
+}
+
+scene-explorer-entity.selected>.scene-explorer-entity-childs {
+	background-color: var(--header);
 }
 
 .scene-explorer-entity-header:hover,

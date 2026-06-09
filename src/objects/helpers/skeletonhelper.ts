@@ -70,7 +70,7 @@ export class SkeletonHelper extends Entity {
 			if ((current as Skeleton).isSkeleton) {
 				this.#skeleton = current as Skeleton;
 				return;
-			} else if ((current as unknown as HasSkeleton).skeleton) {
+			} else if ((current as unknown as HasSkeleton).hasSkeleton) {
 				this.#skeleton = (current as unknown as HasSkeleton).skeleton;
 				return;
 			}
