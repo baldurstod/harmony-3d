@@ -10,7 +10,7 @@ import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reade
 import { decode } from 'fast-png';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash';
-import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, paletteSVG, targetSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, resetWrenchSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, runCircleSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, paletteSVG, targetSVG, playSVG, pauseSVG, visibilityOnSVG, visibilityOffSVG, lightbulbSVG, lightOffSVG } from 'harmony-svg';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 
@@ -74923,7 +74923,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n\t--header: var(--background-primary);\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\t/*background-color: var(--background-primary);*/\n\tbackground-color: var(--header);\n}\n\nscene-explorer-entity.selected {\n\t--header: var(--background-tertiary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-childs {\n\tbackground-color: var(--header);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n\t--header: var(--background-primary);\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\t/*background-color: var(--background-primary);*/\n\tbackground-color: var(--header);\n}\n\nscene-explorer-entity.selected {\n\t--header: var(--background-tertiary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-childs {\n\tbackground-color: var(--header);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-buttons>div>svg {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n\n.info{\n\tbackground-color: #002B67;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -75251,7 +75251,7 @@ class SceneExplorerEntity extends HTMLElement {
                                 }),
                                 createElement('div', {
                                     slot: 'on',
-                                    innerHTML: walkSVG,
+                                    innerHTML: runCircleSVG,
                                 }),
                             ],
                             events: {
@@ -75324,13 +75324,15 @@ class SceneExplorerEntity extends HTMLElement {
                             innerHTML: targetSVG,
                             $click: async () => {
                                 if (this.#entity.hasSkeleton) {
-                                    const entity = await _a.#explorer?.pickEntity({
+                                    const sourceEntity = await _a.#explorer?.pickEntity({
                                         match: (ent) => {
-                                            return ent !== this.#entity && ent.hasSkeleton === true;
+                                            return ent !== this.#entity && !ent.isParent(this.#entity) && ent.hasSkeleton === true;
                                         }
                                     });
-                                    this.#entity.skeleton.addChild(new RetargetControl({ source: entity.skeleton }));
-                                    this.#entity?.setPlaying(false);
+                                    if (sourceEntity.hasSkeleton) {
+                                        this.#entity.skeleton.addChild(new RetargetControl({ source: sourceEntity.skeleton }));
+                                        this.#entity?.setPlaying(false);
+                                    }
                                 }
                             },
                         }),
@@ -75509,11 +75511,17 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     #updateVisibility() {
+        let on = visibilityOnSVG;
+        let off = visibilityOffSVG;
+        if (this.#entity.isLight) {
+            on = lightbulbSVG;
+            off = lightOffSVG;
+        }
         if (this.#entity?.isVisible()) {
-            this.#htmlVisible.innerHTML = visibilityOnSVG;
+            this.#htmlVisible.innerHTML = on;
         }
         else {
-            this.#htmlVisible.innerHTML = visibilityOffSVG;
+            this.#htmlVisible.innerHTML = off;
         }
     }
     static #updateEntityPlaying(entity) {
@@ -75693,6 +75701,7 @@ class SceneExplorer {
     #htmlMaterialEditor;
     #htmlExtra;
     #htmlHeader;
+    #htmlMessage;
     htmlFileSelector;
     #htmlNameFilter;
     #htmlContextMenu;
@@ -75748,6 +75757,7 @@ class SceneExplorer {
                 this.selectEntity(entity, true);
             }
         });
+        ShortcutHandler.addEventListener('Escape', () => this.pick(null));
     }
     /**
      * @deprecated Please use `setScene` instead.
@@ -75780,6 +75790,7 @@ class SceneExplorer {
             adoptStyle: sceneExplorerCSS,
             childs: [
                 this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
+                this.#htmlMessage = createElement('div', { class: 'message' }),
                 this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: '1', }, }),
                 this.htmlFileSelector = createElement('div', {
                     class: 'scene-explorer-file-selector',
@@ -75989,7 +76000,6 @@ class SceneExplorer {
     #applyFilter() {
         const filter = this.#filterStack[this.#filterStack.length - 1];
         if (this.#isVisible) {
-            SceneExplorerEntity.hideAll();
             if (!filter?.name && !filter?.type && !filter?.match) {
                 this.#refreshScene();
             }
@@ -76156,6 +76166,7 @@ class SceneExplorer {
         if (this.#pickPromiseResolve) {
             return null;
         }
+        this.setInfo('#pick_info');
         const promise = new Promise((resolve) => {
             this.#pickPromiseResolve = resolve;
         });
@@ -76168,9 +76179,20 @@ class SceneExplorer {
             this.#pickPromiseResolve?.(entity);
         }
         finally {
+            this.setInfo('');
             SceneExplorerEntity.picking = false;
             this.#pickPromiseResolve = undefined;
             this.#popFilter();
+        }
+    }
+    setInfo(i18n) {
+        this.#htmlMessage.replaceChildren();
+        if (i18n !== null) {
+            createElement('div', {
+                class: 'info',
+                parent: this.#htmlMessage,
+                i18n,
+            });
         }
     }
 }

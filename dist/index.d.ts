@@ -2218,7 +2218,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -6294,6 +6294,7 @@ declare class Channel {
                           setJointsRadius(radius: number): void;
                           pickEntity(filter: SceneExplorerFilter): Promise<Entity | null>;
                           pick(entity: Entity | null): void;
+                          setInfo(i18n: string | null): void;
                       }
 
                       declare type SceneExplorerFilter = {

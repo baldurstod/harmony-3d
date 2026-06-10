@@ -89,6 +89,7 @@ export class SceneExplorer {
 	#htmlMaterialEditor!: HTMLElement;
 	#htmlExtra!: HTMLHarmonyAccordionElement;
 	#htmlHeader!: HTMLElement;
+	#htmlMessage!: HTMLElement;
 	htmlFileSelector!: HTMLElement;
 	#htmlNameFilter!: HTMLInputElement;
 	#htmlContextMenu!: HTMLHarmonyMenuElement;
@@ -149,6 +150,8 @@ export class SceneExplorer {
 				this.selectEntity(entity, true);
 			}
 		});
+
+		ShortcutHandler.addEventListener('Escape', () => this.pick(null));
 	}
 
 	/**
@@ -187,6 +190,7 @@ export class SceneExplorer {
 			adoptStyle: sceneExplorerCSS,
 			childs: [
 				this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
+				this.#htmlMessage = createElement('div', { class: 'message' }),
 				this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: '1', }, }),
 				this.htmlFileSelector = createElement('div', {
 					class: 'scene-explorer-file-selector',
@@ -410,7 +414,6 @@ export class SceneExplorer {
 		const filter = this.#filterStack[this.#filterStack.length - 1];
 
 		if (this.#isVisible) {
-			SceneExplorerEntity.hideAll();
 			if (!filter?.name && !filter?.type && !filter?.match) {
 				this.#refreshScene();
 			} else {
@@ -601,6 +604,8 @@ export class SceneExplorer {
 			return null;
 		}
 
+		this.setInfo('#pick_info');
+
 		const promise = new Promise<Entity | null>((resolve) => {
 			this.#pickPromiseResolve = resolve;
 		});
@@ -616,9 +621,21 @@ export class SceneExplorer {
 		try {
 			this.#pickPromiseResolve?.(entity);
 		} finally {
+			this.setInfo('');
 			SceneExplorerEntity.picking = false;
 			this.#pickPromiseResolve = undefined;
 			this.#popFilter();
+		}
+	}
+
+	setInfo(i18n: string | null): void {
+		this.#htmlMessage.replaceChildren();
+		if (i18n !== null) {
+			createElement('div', {
+				class: 'info',
+				parent: this.#htmlMessage,
+				i18n,
+			});
 		}
 	}
 }

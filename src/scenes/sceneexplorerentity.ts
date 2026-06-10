@@ -1,6 +1,7 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, targetSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
+import { lightbulbSVG, lightOffSVG, lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runCircleSVG, runSVG, targetSVG, visibilityOffSVG, visibilityOnSVG } from 'harmony-svg';
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
+import { RetargetControl } from '../controls/retargetcontrol';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
 import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverChildRemovedEvent, EntityObserverEvent, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
@@ -9,9 +10,9 @@ import { HasSkeleton } from '../interfaces/hasskeleton';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
 import { Tintable } from '../interfaces/tintable';
+import { Light } from '../lights/light';
 import { Interaction } from '../utils/interaction';
 import { SceneExplorer } from './sceneexplorer';
-import { RetargetControl } from '../controls/retargetcontrol';
 
 const MAX_ANIMATIONS = 3;
 
@@ -94,7 +95,7 @@ export class SceneExplorerEntity extends HTMLElement {
 								}),
 								createElement('div', {
 									slot: 'on',
-									innerHTML: walkSVG,
+									innerHTML: runCircleSVG,
 								}),
 							],
 							events: {
@@ -169,14 +170,16 @@ export class SceneExplorerEntity extends HTMLElement {
 							innerHTML: targetSVG,
 							$click: async () => {
 								if ((this.#entity as unknown as HasSkeleton).hasSkeleton) {
-									const entity = await SceneExplorerEntity.#explorer?.pickEntity({
+									const sourceEntity = await SceneExplorerEntity.#explorer?.pickEntity({
 										match: (ent: Entity): boolean => {
-											return ent !== this.#entity && (ent as unknown as HasSkeleton).hasSkeleton === true;
+											return ent !== this.#entity && !ent.isParent(this.#entity!) && (ent as unknown as HasSkeleton).hasSkeleton === true;
 										}
 									});
 
-									(this.#entity as unknown as HasSkeleton).skeleton!.addChild(new RetargetControl({ source: (entity as unknown as HasSkeleton).skeleton! }));
-									this.#entity?.setPlaying(false);
+									if ((sourceEntity as unknown as HasSkeleton).hasSkeleton) {
+										(this.#entity as unknown as HasSkeleton).skeleton!.addChild(new RetargetControl({ source: (sourceEntity as unknown as HasSkeleton).skeleton! }));
+										this.#entity?.setPlaying(false);
+									}
 								}
 							},
 						}),
@@ -378,10 +381,16 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#updateVisibility(): void {
+		let on = visibilityOnSVG;
+		let off = visibilityOffSVG;
+		if ((this.#entity as Light).isLight) {
+			on = lightbulbSVG;
+			off = lightOffSVG;
+		}
 		if (this.#entity?.isVisible()) {
-			this.#htmlVisible.innerHTML = visibilityOnSVG;
+			this.#htmlVisible.innerHTML = on;
 		} else {
-			this.#htmlVisible.innerHTML = visibilityOffSVG;
+			this.#htmlVisible.innerHTML = off;
 		}
 	}
 

@@ -112,6 +112,11 @@ scene-explorer-entity .animation input {
 	cursor: pointer;
 }
 
+.scene-explorer-entity-buttons>div>svg {
+	width: 1.5rem;
+	height: 1.5rem;
+}
+
 .scene-explorer-entity-button-visible {
 	padding: 0rem 0.25rem;
 	display: flex;
@@ -198,4 +203,8 @@ file-selector-tile:hover {
 .manipulator-button {
 	background-color: var(--background-primary);
 	cursor: pointer;
+}
+
+.info{
+	background-color: #002B67;
 }
