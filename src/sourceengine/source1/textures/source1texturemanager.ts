@@ -42,6 +42,8 @@ class Source1TextureManagerClass {
 	}
 
 	getTexture(repository: string, path: string, needCubeMap = false, srgb = true): AnimatedTexture | null {
+		// Remove successive //
+		path = path.replace(/(\/)+/g, '/');
 		const animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
 
 		return animatedTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
@@ -72,7 +74,7 @@ class Source1TextureManagerClass {
 			return texture;
 		}
 
-		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
+		const pathWithMaterials = ('materials/' + path + '.vtf').replace(/(\/)+/g, '/');
 		//const fullPath = repository + pathWithMaterials;
 		if (!this.#texturesList.has(repository, path)) {
 			const animatedTexture = allocatedTexture ?? new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
