@@ -1570,6 +1570,8 @@ declare class Channel {
 
                   export declare function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex?: number): uint;
 
+                  export declare function DecompressLZMA(properties: Uint8Array, compressedDatas: Uint8Array, uncompressedSize: number): Uint8Array | null;
+
                   export declare const DEFAULT_GROUP_ID = 0;
 
                   export declare const DEFAULT_MAX_PARTICLES = 1000;
@@ -2218,7 +2220,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3298,7 +3300,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }

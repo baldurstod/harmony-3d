@@ -1,6 +1,7 @@
 export * from './customfetch';
 export * from './imagedata';
 export * from './lz4';
+export * from './lzma/export';
 export { ObjExporter } from './objexporter';
 export { OrbitGizmo } from './orbitgizmo';
 export * from './properties';

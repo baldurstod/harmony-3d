@@ -1,7 +1,7 @@
 import { BinaryReader } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
 import { Repositories } from '../../../repositories/repositories';
-import { DecompressLZMA } from '../utils/utils';
+import { DecompressLZMA } from '../../../utils/export';
 import { Actor } from './actor';
 import { Channel } from './channel';
 import { Choreography } from './choreography';
