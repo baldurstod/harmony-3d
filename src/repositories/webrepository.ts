@@ -13,7 +13,7 @@ export class WebRepository implements Repository {
 	readonly base: string;
 	readonly useCacheApi: boolean;
 	#cache?: Cache;
-	active: boolean = true;
+	active = true;
 	#files?: RepositoryDir;
 	// hasFile will return an error for unsupported extensions
 	readonly supportedExtensions = new Set<string>();
@@ -110,12 +110,13 @@ export class WebRepository implements Repository {
 		}
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		if (!this.#files) {
 			return { error: RepositoryError.Uninitialized };
 		}
 
-		const populateFiles = (level: JSONObject, path: string) => {
+		const populateFiles = (level: JSONObject, path: string): void => {
 			for (const segment in level) {
 				const f = level[segment];
 				if ((f as number) > 0) {
@@ -131,6 +132,7 @@ export class WebRepository implements Repository {
 		return { root: root };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
 		if (!this.supportedExtensions.size) {
 			// If no extensions supported, return an error
@@ -203,7 +205,7 @@ export class WebRepository implements Repository {
 	 * @returns A promise resolving to void
 	 */
 	async delete(url: URL): Promise<void> {
-		this.#cache?.delete(url);
+		await this.#cache?.delete(url);
 	}
 
 	/**

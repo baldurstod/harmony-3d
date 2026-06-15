@@ -168,6 +168,7 @@ export class SceneExplorerEntity extends HTMLElement {
 							hidden: true,
 							class: 'scene-explorer-entity-button-target',
 							innerHTML: targetSVG,
+							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							$click: async () => {
 								if ((this.#entity as unknown as HasSkeleton).hasSkeleton) {
 									const sourceEntity = await SceneExplorerEntity.#explorer?.pickEntity({
@@ -268,7 +269,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 	*/
 
-	select(addToSelection: boolean = false): void {
+	select(addToSelection = false): void {
 		this.classList.add('selected');
 		const selectedEntity = SceneExplorerEntity.#selectedEntity;
 		if (selectedEntity != this && !addToSelection) {

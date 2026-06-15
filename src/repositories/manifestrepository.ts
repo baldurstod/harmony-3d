@@ -7,13 +7,13 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class ManifestRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
 	#base: OverrideRepository;
-	active: boolean = true;
+	active = true;
 
 	constructor(base: Repository) {
 		this.#base = new OverrideRepository(base);
 	}
 
-	get name() {
+	get name(): string {
 		return this.#base.name;
 	}
 

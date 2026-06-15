@@ -8,13 +8,13 @@ export class MemoryCacheRepository implements Repository {
 	#base: Repository;
 	#files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;
-	active: boolean = true;
+	active = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#base.name;
 	}
 

@@ -33,7 +33,7 @@ export class Interaction {
 			}),
 		});
 
-		document.body.addEventListener('click', (event: Event) => { if (this.#enableClosing) { this.hide() } });
+		document.body.addEventListener('click', () => { if (this.#enableClosing) { this.hide() } });
 
 		defineHarmonyColorPicker();
 		this.#htmlColorPicker = createElement('harmony-color-picker', {

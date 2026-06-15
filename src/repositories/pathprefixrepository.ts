@@ -6,16 +6,16 @@ export class PathPrefixRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	prefix: string;
-	active: boolean = true;
+	active = true;
 
-	constructor(name: string, base: Repository, prefix: string = '') {
+	constructor(name: string, base: Repository, prefix = '') {
 		checkRepositoryName(name);
 		this.#name = name;
 		this.#base = base;
 		this.prefix = prefix;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 

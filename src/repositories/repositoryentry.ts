@@ -20,6 +20,7 @@ export class RepositoryEntry {
 
 	addPath(path: string): void {
 		const splitPath = path.split(/[\/\\]+/);
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		let current: RepositoryEntry = this;
 		const len = splitPath.length - 1;
 
@@ -28,16 +29,16 @@ export class RepositoryEntry {
 			if (!currentChild) {
 				current = current.#addFile(p, i != len, i);
 			} else {
-				current = currentChild as RepositoryEntry;
+				current = currentChild;
 			}
 		}
 	}
 
-	removeEntry(name: string) {
+	removeEntry(name: string): void {
 		this.#childs.delete(name);
 	}
 
-	#addFile(name: string, isDirectory: boolean, depth: number) {
+	#addFile(name: string, isDirectory: boolean, depth: number): RepositoryEntry {
 		const e = new RepositoryEntry(this.#repository, name, isDirectory, depth);
 		e.#parent = this;
 		this.#childs.set(name, e);
@@ -85,7 +86,7 @@ export class RepositoryEntry {
 	}
 
 	*getChilds(filter?: RepositoryFilter): Generator<RepositoryEntry, null, undefined> {
-		for (const [_, child] of this.#childs) {
+		for (const [, child] of this.#childs) {
 			if (!filter || child.#matchFilter(filter)) {
 				yield child;
 			}
@@ -96,14 +97,14 @@ export class RepositoryEntry {
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
 		let current: RepositoryEntry | null;
-		const stack: Queue<RepositoryEntry> = new Queue([this]);
+		const stack: Queue<RepositoryEntry> = new Queue<RepositoryEntry>([this]);
 		do {
 			current = stack.dequeue();
 			if (current && !childs.has(current)) {
 				if ((filter === undefined) || current.#matchFilter(filter)) {
 					childs.add(current);
 				}
-				for (const [_, child] of current.#childs) {
+				for (const [, child] of current.#childs) {
 					stack.enqueue(child);
 				}
 			}
@@ -126,7 +127,7 @@ export class RepositoryEntry {
 		}
 
 		const sortedChilds = new Map([...this.#childs].sort());
-		for (const [_, child] of sortedChilds) {
+		for (const [, child] of sortedChilds) {
 			child.#getAllChildsSorted(childs, filter);
 		}
 	}
@@ -159,9 +160,9 @@ export class RepositoryEntry {
 	}
 
 	getPath(path: string): RepositoryEntry | null {
-		let splitPath = path.split('/');
+		const splitPath = path.split('/');
 
-		for (const [_, child] of this.#childs) {
+		for (const [, child] of this.#childs) {
 			const found = child.#getPath(splitPath);
 			if (found) {
 				return found;
@@ -180,7 +181,7 @@ export class RepositoryEntry {
 		}
 
 		const subPath = path.slice(1);
-		for (const [_, child] of this.#childs) {
+		for (const [, child] of this.#childs) {
 			const found = child.#getPath(subPath);
 			if (found) {
 				return found;
@@ -197,7 +198,7 @@ export class RepositoryEntry {
 		const json: any/*TODO:improve type*/ = { name: this.#name };
 		if (this.#isDirectory) {
 			const files: any[] = [];
-			for (const [_, child] of this.#childs) {
+			for (const [, child] of this.#childs) {
 				files.push(child.toJSON());
 			}
 			json.files = files;
@@ -205,7 +206,7 @@ export class RepositoryEntry {
 		return json;
 	}
 
-	merge(other: RepositoryEntry) {
+	merge(other: RepositoryEntry): void {
 		if (this.#isDirectory != other.#isDirectory || this.#name != other.#name) {
 			return;
 		}
@@ -235,6 +236,6 @@ function match(name: string, filter: string | RegExp): boolean {
 		return filter == name;
 	} else {
 		//regex
-		return (filter as RegExp).exec(name) != null;
+		return (filter).exec(name) != null;
 	}
 }

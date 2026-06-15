@@ -4,17 +4,18 @@ export class MemoryRepository implements Repository {
 	#name: string;
 	properties = new Map<string, RepositoryProperty>();
 	#files = new Map<string, File>();
-	active: boolean = true;
+	active = true;
 
 	constructor(name: string) {
 		checkRepositoryName(name);
 		this.#name = name;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
@@ -48,6 +49,7 @@ export class MemoryRepository implements Repository {
 		return { error: RepositoryError.FileNotFound };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
 		if (!this.active) {
 			return { error: RepositoryError.RepoInactive };
@@ -70,14 +72,17 @@ export class MemoryRepository implements Repository {
 		return { error: RepositoryError.FileNotFound };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		return { error: RepositoryError.NotSupported };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
 		return { exist: this.#files.has(path) };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async setFile(path: string, file: File): Promise<RepositoryError | null> {
 		this.#files.set(path, file);
 		return null;

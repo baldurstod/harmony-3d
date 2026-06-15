@@ -4,13 +4,13 @@ export class OverrideRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	#overrides = new Map<string, File>();
-	active: boolean = true;
+	active = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#base.name;
 	}
 
@@ -81,6 +81,7 @@ export class OverrideRepository implements Repository {
 		return this.#base.hasFile(path);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async overrideFile(filename: string, file: File): Promise<RepositoryError | null> {
 		this.#overrides.set(filename, file);
 		return null;

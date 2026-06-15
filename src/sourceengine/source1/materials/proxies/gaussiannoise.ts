@@ -1,4 +1,3 @@
-import { DynamicParams } from '../../../../entities/entity';
 import { clamp } from '../../../../math/functions';
 import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
@@ -25,7 +24,7 @@ export class GaussianNoiseProxy extends Proxy {
 		}
 	}
 
-	override execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void {
+	override execute(variables: Map<string, Source1MaterialVariables>/*, proxyParams: DynamicParams, time: number*/): void {
 		// TODO: create an actual gaussian; see CGaussianRandomStream
 		const gaussian = Math.random() * this.#halfwidth + this.#mean;
 		variables.set(this.#resultVar, clamp(gaussian, this.#minVal, this.#maxVal));

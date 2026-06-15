@@ -2213,7 +2213,7 @@ declare class Channel {
                       export declare class GaussianNoiseProxy extends Proxy_2 {
                           #private;
                           init(): void;
-                          execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+                          execute(variables: Map<string, Source1MaterialVariables>): void;
                       }
 
                       export declare function generateRandomUUID(): string;

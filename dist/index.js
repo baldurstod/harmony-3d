@@ -5108,7 +5108,7 @@ class Interaction {
                 $click: (event) => event.stopPropagation(),
             }),
         });
-        document.body.addEventListener('click', (event) => { if (this.#enableClosing) {
+        document.body.addEventListener('click', () => { if (this.#enableClosing) {
             this.hide();
         } });
         defineHarmonyColorPicker();
@@ -19443,11 +19443,7 @@ class OrbitGizmo {
                 $click: () => this.#handleAxisClick(i),
             });
         }
-        let i = 0;
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
-            i += event.detail.delta * 20;
-            this.#update();
-        });
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#update());
     }
     #update() {
         const camera = this.orbitControl?.camera;
@@ -19460,7 +19456,6 @@ class OrbitGizmo {
         const m3 = mat3.fromMat4(mat3.create(), mat);
         const q = quat.fromMat3(quat.create(), m3);
         quat.normalize(q, q);
-        vec3.transformQuat(vec3.create(), [0, 0, 0], q);
         const svgWidth = Number(this.#htmlAxis.clientWidth);
         const svgHeight = Number(this.#htmlAxis.clientHeight);
         const line = (pos, i) => {
@@ -39284,7 +39279,7 @@ class GaussianNoiseProxy extends Proxy {
             this.#minVal = tmp;
         }
     }
-    execute(variables, proxyParams, time) {
+    execute(variables /*, proxyParams: DynamicParams, time: number*/) {
         // TODO: create an actual gaussian; see CGaussianRandomStream
         const gaussian = Math.random() * this.#halfwidth + this.#mean;
         variables.set(this.#resultVar, clamp$1(gaussian, this.#minVal, this.#maxVal));
@@ -74131,7 +74126,7 @@ class StorageRepository {
         return this.#base.name;
     }
     async #setFile(path, file) {
-        PersistentStorage.writeFile(joinPath(STORAGE_PREFIX, this.name, path), file);
+        await PersistentStorage.writeFile(joinPath(STORAGE_PREFIX, this.name, path), file);
     }
     async #getFile(path) {
         return await PersistentStorage.readFile(joinPath(STORAGE_PREFIX, this.name, path));
@@ -74261,6 +74256,7 @@ class OverrideRepository {
         }
         return this.#base.hasFile(path);
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async overrideFile(filename, file) {
         this.#overrides.set(filename, file);
         return null;
@@ -74425,6 +74421,7 @@ class MemoryRepository {
     get name() {
         return this.#name;
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async getFile(filename) {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
@@ -74455,6 +74452,7 @@ class MemoryRepository {
         }
         return { error: RepositoryError.FileNotFound };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async getFileAsBlob(filename) {
         if (!this.active) {
             return { error: RepositoryError.RepoInactive };
@@ -74475,12 +74473,15 @@ class MemoryRepository {
         }
         return { error: RepositoryError.FileNotFound };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async getFileList() {
         return { error: RepositoryError.NotSupported };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async hasFile(path) {
         return { exist: this.#files.has(path) };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async setFile(path, file) {
         this.#files.set(path, file);
         return null;
@@ -74503,6 +74504,7 @@ class RepositoryEntry {
     }
     addPath(path) {
         const splitPath = path.split(/[\/\\]+/);
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         let current = this;
         const len = splitPath.length - 1;
         for (const [i, p] of splitPath.entries()) {
@@ -74557,7 +74559,7 @@ class RepositoryEntry {
         return this.#childs.get(name);
     }
     *getChilds(filter) {
-        for (const [_, child] of this.#childs) {
+        for (const [, child] of this.#childs) {
             if (!filter || child.#matchFilter(filter)) {
                 yield child;
             }
@@ -74574,7 +74576,7 @@ class RepositoryEntry {
                 if ((filter === undefined) || current.#matchFilter(filter)) {
                     childs.add(current);
                 }
-                for (const [_, child] of current.#childs) {
+                for (const [, child] of current.#childs) {
                     stack.enqueue(child);
                 }
             }
@@ -74591,7 +74593,7 @@ class RepositoryEntry {
             childs.add(this);
         }
         const sortedChilds = new Map([...this.#childs].sort());
-        for (const [_, child] of sortedChilds) {
+        for (const [, child] of sortedChilds) {
             child.#getAllChildsSorted(childs, filter);
         }
     }
@@ -74615,8 +74617,8 @@ class RepositoryEntry {
         return true;
     }
     getPath(path) {
-        let splitPath = path.split('/');
-        for (const [_, child] of this.#childs) {
+        const splitPath = path.split('/');
+        for (const [, child] of this.#childs) {
             const found = child.#getPath(splitPath);
             if (found) {
                 return found;
@@ -74632,7 +74634,7 @@ class RepositoryEntry {
             return this;
         }
         const subPath = path.slice(1);
-        for (const [_, child] of this.#childs) {
+        for (const [, child] of this.#childs) {
             const found = child.#getPath(subPath);
             if (found) {
                 return found;
@@ -74647,7 +74649,7 @@ class RepositoryEntry {
         const json /*TODO:improve type*/ = { name: this.#name };
         if (this.#isDirectory) {
             const files = [];
-            for (const [_, child] of this.#childs) {
+            for (const [, child] of this.#childs) {
                 files.push(child.toJSON());
             }
             json.files = files;
@@ -74683,7 +74685,7 @@ function match(name, filter) {
     }
     else {
         //regex
-        return filter.exec(name) != null;
+        return (filter).exec(name) != null;
     }
 }
 
@@ -74976,6 +74978,7 @@ class VpkRepository {
         }
         return { root: root };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async hasFile(path) {
         return { exist: this.#vpk.hasFile(path) };
     }
@@ -75085,6 +75088,7 @@ class WebRepository {
             return { error: error };
         }
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async getFileList() {
         if (!this.#files) {
             return { error: RepositoryError.Uninitialized };
@@ -75104,6 +75108,7 @@ class WebRepository {
         populateFiles(this.#files, '');
         return { root: root };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async hasFile(path) {
         if (!this.supportedExtensions.size) {
             // If no extensions supported, return an error
@@ -75165,7 +75170,7 @@ class WebRepository {
      * @returns A promise resolving to void
      */
     async delete(url) {
-        this.#cache?.delete(url);
+        await this.#cache?.delete(url);
     }
     /**
      * Purge the cache. Does nothing if caching is disabled
@@ -75242,7 +75247,7 @@ class ZipRepository {
         if (response.error) {
             return { error: response.error };
         }
-        return { blob: await response.file };
+        return { blob: response.file };
     }
     async getFileAsJson(filename) {
         const response = await this.getFile(filename);
@@ -75254,11 +75259,12 @@ class ZipRepository {
     async getFileList() {
         await this.#initPromise;
         const root = new RepositoryEntry(this, '', true, 0);
-        for (const [filename, _] of this.#zipEntries) {
+        for (const [filename] of this.#zipEntries) {
             root.addPath(filename);
         }
         return { root: root };
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async hasFile(path) {
         return { exist: this.#zipEntries.has(path) };
     }
@@ -75673,6 +75679,7 @@ class SceneExplorerEntity extends HTMLElement {
                             hidden: true,
                             class: 'scene-explorer-entity-button-target',
                             innerHTML: targetSVG,
+                            // eslint-disable-next-line @typescript-eslint/no-misused-promises
                             $click: async () => {
                                 if (this.#entity.hasSkeleton) {
                                     const sourceEntity = await _a.#explorer?.pickEntity({

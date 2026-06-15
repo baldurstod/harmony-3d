@@ -10,7 +10,7 @@ export class ZipRepository implements Repository {
 	#zipEntries = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
-	active: boolean = true;
+	active = true;
 
 	constructor(name: string, zip: File) {
 		checkRepositoryName(name);
@@ -21,7 +21,7 @@ export class ZipRepository implements Repository {
 		this.#initEntries();
 	}
 
-	async #initEntries() {
+	async #initEntries(): Promise<void> {
 		const entries = await this.#reader.getEntries();
 		for (const entry of entries) {
 			if (!entry.getData || entry.directory) {
@@ -35,7 +35,7 @@ export class ZipRepository implements Repository {
 		this.#initPromiseResolve?.(true);
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
@@ -72,7 +72,7 @@ export class ZipRepository implements Repository {
 		if (response.error) {
 			return { error: response.error };
 		}
-		return { blob: await response.file };
+		return { blob: response.file };
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
@@ -86,12 +86,13 @@ export class ZipRepository implements Repository {
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
 		const root = new RepositoryEntry(this, '', true, 0);
-		for (const [filename, _] of this.#zipEntries) {
+		for (const [filename] of this.#zipEntries) {
 			root.addPath(filename);
 		}
 		return { root: root };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
 		return { exist: this.#zipEntries.has(path) };
 	}

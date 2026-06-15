@@ -2,7 +2,7 @@ import { mat3, quat, vec3 } from 'gl-matrix';
 import { createElement, createElementNS, createShadowRoot, svgNamespace } from 'harmony-ui';
 import { OrbitControl } from '../controls/orbitcontrol';
 import orbitGizmoCSS from '../css/orbitgizmo.css';
-import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
 
 const axis = ['X', '-X', 'Y', '-Y', 'Z', '-Z',];
 //const classes = ['right', 'left', 'back', 'front', 'top', 'bottom'];
@@ -47,11 +47,7 @@ export class OrbitGizmo {
 			});
 		}
 
-		let i = 0;
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
-			i += (event as CustomEvent<GraphicTickEvent>).detail.delta * 20;
-			this.#update();
-		});
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#update());
 	}
 
 	#update(): void {
@@ -67,13 +63,12 @@ export class OrbitGizmo {
 		const m3 = mat3.fromMat4(mat3.create(), mat);
 		const q = quat.fromMat3(quat.create(), m3);
 		quat.normalize(q, q);
-		const center = vec3.transformQuat(vec3.create(), [0, 0, 0] as vec3, q);
 
 		const svgWidth = Number(this.#htmlAxis.clientWidth);
 		const svgHeight = Number(this.#htmlAxis.clientHeight);
 
 		const line = (pos: vec3, i: number): void => {
-			const end = vec3.transformQuat(vec3.create(), pos as vec3, q);
+			const end = vec3.transformQuat(vec3.create(), pos, q);
 
 			createElementNS(svgNamespace, 'line', {
 				parent: this.#htmlAxis,

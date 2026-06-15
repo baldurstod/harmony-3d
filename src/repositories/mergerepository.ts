@@ -5,7 +5,7 @@ export class MergeRepository implements Repository {
 	#name: string;
 	properties = new Map<string, RepositoryProperty>();
 	#repositories: Repository[] = [];
-	active: boolean = true;
+	active = true;
 
 	constructor(name: string, ...repositories: Repository[]) {
 		checkRepositoryName(name);
@@ -17,7 +17,7 @@ export class MergeRepository implements Repository {
 		}
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
@@ -141,11 +141,11 @@ export class MergeRepository implements Repository {
 		}
 	}
 
-	pushRepository(repo: Repository) {
+	pushRepository(repo: Repository): void {
 		this.#repositories.push(repo);
 	}
 
-	unshiftRepository(repo: Repository) {
+	unshiftRepository(repo: Repository): void {
 		this.#repositories.unshift(repo);
 	}
 

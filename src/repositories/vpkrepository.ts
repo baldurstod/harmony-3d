@@ -8,13 +8,13 @@ export class VpkRepository implements Repository {
 	#vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
-	active: boolean = true;
+	active = true;
 
 	constructor(name: string, files: File[]) {
 		checkRepositoryName(name);
 		this.#name = name;
 
-		(async () => {
+		(async (): Promise<void> => {
 			const error = await this.#vpk.setFiles(files);
 
 			if (error) {
@@ -25,7 +25,7 @@ export class VpkRepository implements Repository {
 		})();
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
@@ -98,6 +98,7 @@ export class VpkRepository implements Repository {
 		return { root: root };
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async hasFile(path: string): Promise<RepositoryHasFileResponse> {
 		return { exist: this.#vpk.hasFile(path) };
 	}

@@ -11,18 +11,18 @@ export class StorageRepository implements Repository {
 	properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	#fileList?: RepositoryFileListResponse;
-	active: boolean = true;
+	active = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#base.name;
 	}
 
 	async #setFile(path: string, file: File): Promise<void> {
-		PersistentStorage.writeFile(joinPath(STORAGE_PREFIX, this.name, path), file);
+		await PersistentStorage.writeFile(joinPath(STORAGE_PREFIX, this.name, path), file);
 	}
 
 	async #getFile(path: string): Promise<File | null> {
