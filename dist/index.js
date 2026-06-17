@@ -1,6 +1,6 @@
 import { vec3, quat, vec4, vec2, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
-import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$2, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, joinPath, Queue } from 'harmony-utils';
+import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, once as once$2, joinPath, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, Queue } from 'harmony-utils';
 import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, createElementNS, svgNamespace, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
@@ -28097,6 +28097,7 @@ class Source1MaterialManager {
     static #getMaterial(repository, path) {
         // Remove successive //
         path = path.replace(/(\/)+/g, '/');
+        path = joinPath(path);
         const material = this.#materialList.get(repository, path);
         if (material instanceof Promise) {
             const promise = new Promise(resolve => {

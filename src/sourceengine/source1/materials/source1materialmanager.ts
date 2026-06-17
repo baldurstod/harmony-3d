@@ -1,5 +1,5 @@
 import { JSONObject } from 'harmony-types';
-import { Map2 } from 'harmony-utils';
+import { joinPath, Map2 } from 'harmony-utils';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { customFetch } from '../../../utils/customfetch';
 import { Source1VmtLoader } from '../export';
@@ -66,6 +66,7 @@ export class Source1MaterialManager {
 	static #getMaterial(repository: string, path: string): Promise<Source1Material | null> {
 		// Remove successive //
 		path = path.replace(/(\/)+/g, '/');
+		path = joinPath(path);
 		const material = this.#materialList.get(repository, path);
 
 		if (material instanceof Promise) {
