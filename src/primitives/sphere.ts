@@ -52,15 +52,15 @@ export class Sphere extends Mesh {
 		this.thetaLength = params.thetaLength ?? PI;
 
 		this.updateGeometry();
-		super.setParameters(arguments[0]);
+		super.setParameters(params);
 	}
 
-	setRadius(radius: number) {
+	setRadius(radius: number): void {
 		this.radius = radius;
 		this.updateGeometry();
 	}
 
-	updateGeometry() {
+	updateGeometry(): void {
 		(this.getGeometry() as SphereBufferGeometry).updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
 	}
 
@@ -73,7 +73,7 @@ export class Sphere extends Mesh {
 		});
 	}
 
-	raycast(raycaster: Raycaster, intersections: Intersection[]) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
 		const ray = raycaster.ray;
 		const worldPosition = this.getWorldPosition(v);
 		const inverseRadius = 1 / this.radius;
@@ -89,7 +89,7 @@ export class Sphere extends Mesh {
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.radius = this.radius;
 		json.segments = this.segments;
@@ -98,7 +98,7 @@ export class Sphere extends Mesh {
 		json.philength = this.phiLength;
 		json.thetastart = this.thetaStart;
 		json.thetalength = this.thetaLength;
-		json.material = this.material.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 

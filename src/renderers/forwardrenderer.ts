@@ -43,7 +43,7 @@ export class ForwardRenderer implements Renderer {
 		this.#glContext = Graphics.glContext;
 	}
 
-	#applyMaterial(program: Program, material: Material) {
+	#applyMaterial(program: Program, material: Material): void {
 		if (material.depthTest) {
 			WebGLRenderingState.enable(GL_DEPTH_TEST);
 			WebGLRenderingState.depthFunc(material.depthFunc);
@@ -98,7 +98,7 @@ export class ForwardRenderer implements Renderer {
 		}
 	}
 
-	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
+	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		const renderList = new RenderList();//TODO: optimize
 		camera.dirty();//Force matrices to recompute
 		this.#prepareRenderList(renderList, scene, camera, delta, context);
@@ -113,7 +113,7 @@ export class ForwardRenderer implements Renderer {
 		++this.#frame;
 	}
 
-	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
+	#prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext): void {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
 		const objectStack = [];
@@ -156,7 +156,7 @@ export class ForwardRenderer implements Renderer {
 		this.#renderRenderList(renderList, camera, renderLights, context, lightPos);
 	}
 
-	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) {
+	#renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3): void {
 		for (const child of renderList.opaqueList) {
 			this.#renderObject(context, renderList, child, camera, renderLights, lightPos);
 		}
@@ -168,7 +168,7 @@ export class ForwardRenderer implements Renderer {
 		}
 	}
 
-	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, renderLights = true, lightPos?: vec3) {
+	#renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, renderLights = true, lightPos?: vec3): void {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -233,7 +233,7 @@ export class ForwardRenderer implements Renderer {
 			program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
 			program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
 			program.setUniformValue('uNormalMatrix', object._normalMatrix);
-			program.setUniformValue('uCameraPosition', camera.position);
+			program.setUniformValue('uCameraPosition', camera.getPosition());
 			const pickingColor = object.pickingColor;
 			if (pickingColor) {
 				program.setUniformValue('uPickingColor', pickingColor);
@@ -289,7 +289,7 @@ export class ForwardRenderer implements Renderer {
 		}
 	}
 
-	#setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4) {
+	#setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4): void {
 		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
 		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		const colorIntensity = vec3.create();//TODO: do not create a vec3
@@ -384,17 +384,17 @@ export class ForwardRenderer implements Renderer {
 		}
 	}
 
-	invalidateShaders() {
+	invalidateShaders(): void {
 		for (const shader of this.#materialsProgram.values()) {
 			shader.invalidate();
 		}
 	}
 
-	clear(color: boolean, depth: boolean, stencil: boolean) {
+	clear(color: boolean, depth: boolean, stencil: boolean): void {
 		WebGLRenderingState.clear(color, depth, stencil);
 	}
 
-	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number) {
+	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number): void {
 		Graphics.setDefine('USE_SHADOW_MAPPING');
 		Graphics.setDefine('NUM_POINT_LIGHTS', `${pointLights}`);
 		Graphics.setDefine('NUM_PBR_LIGHTS', `${pointLights}`);
@@ -404,7 +404,7 @@ export class ForwardRenderer implements Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	#unsetLights() {
+	#unsetLights(): void {
 		Graphics.removeDefine('USE_SHADOW_MAPPING');
 		Graphics.setDefine('NUM_POINT_LIGHTS', '0');
 		Graphics.setDefine('NUM_PBR_LIGHTS', '0');
@@ -414,7 +414,7 @@ export class ForwardRenderer implements Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	#getProgram(mesh: Mesh, material: Material) {
+	#getProgram(mesh: Mesh, material: Material): Program {
 		const graphicsDefines = Graphics.getDefines();
 		let includeCode: string = getIncludeCode(graphicsDefines);
 		const defines = new Map<string, string>(graphicsDefines);// TODO: don't create one each time
@@ -441,7 +441,7 @@ export class ForwardRenderer implements Renderer {
 		return program;
 	}
 
-	#setupVertexAttributes(program: Program, geometry: BufferGeometry, wireframe: number) {
+	#setupVertexAttributes(program: Program, geometry: BufferGeometry, wireframe: number): void {
 		WebGLRenderingState.initUsedAttributes();
 		const geometryAttributes = geometry.attributes;
 		const programAttributes = program.attributes;
@@ -464,33 +464,33 @@ export class ForwardRenderer implements Renderer {
 		WebGLRenderingState.disableUnusedAttributes();
 	}
 
-	#setupVertexUniforms(program: Program, mesh: Mesh) {
+	#setupVertexUniforms(program: Program, mesh: Mesh): void {
 		for (const [name, uniform] of mesh.getUniforms()) {
 			program.setUniformValue(name, uniform.value as any);
 		}
 	}
 
-	setToneMapping(toneMapping: ToneMapping) {
+	setToneMapping(toneMapping: ToneMapping): void {
 		this.#toneMapping = toneMapping;
 		//Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
 		Graphics.setDefine('TONE_MAPPING', `${toneMapping}`);
 	}
 
-	getToneMapping() {
+	getToneMapping(): ToneMapping {
 		return this.#toneMapping;
 	}
 
-	setToneMappingExposure(exposure: number) {
+	setToneMappingExposure(exposure: number): void {
 		this.#toneMappingExposure = exposure;
 		//Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
 		Graphics.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
 	}
 
-	getToneMappingExposure() {
+	getToneMappingExposure(): number {
 		return this.#toneMappingExposure;
 	}
 
-	clearColor(clearColor: vec4) {
+	clearColor(clearColor: vec4): void {
 		WebGLRenderingState.clearColor(clearColor);
 	}
 
@@ -507,7 +507,7 @@ export class ForwardRenderer implements Renderer {
 	}
 }
 
-export function getDefinesAsString(meshOrMaterial: Material | Mesh) {
+export function getDefinesAsString(meshOrMaterial: Material | Mesh): string {
 	const defines = [];
 	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
 		if (value === false) {

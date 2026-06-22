@@ -5,7 +5,7 @@ import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
 import { Mesh } from '../objects/mesh';
 
-function sortLights(first: Light, second: Light) {
+function sortLights(first: Light/*, second: Light*/): number {
 	if (first.castShadow) {
 		return -1;
 	}
@@ -22,7 +22,7 @@ export class RenderList {
 	pointLightShadows = 0;
 	spotLightShadows = 0;
 
-	reset() {
+	reset(): void {
 		this.lights = [];
 		this.pointLights = [];
 		this.spotLights = [];
@@ -33,12 +33,12 @@ export class RenderList {
 		this.spotLightShadows = 0;
 	}
 
-	finish() {
+	finish(): void {
 		this.pointLights.sort(sortLights);
 		this.spotLights.sort(sortLights);
 	}
 
-	addObject(entity: Entity) {
+	addObject(entity: Entity): void {
 		if (entity.isVisible() !== false) {
 			if ((entity as Light).isLight) {
 				this.lights.push(entity as Light)
@@ -56,7 +56,7 @@ export class RenderList {
 					}
 				}
 			} else {
-				const material = (entity as Mesh).material;
+				const material = (entity as Mesh).getMaterial();
 				if (material) {
 					if (material.blend) {//TODOv3 changeblend
 						this.transparentList.push(entity as Mesh);

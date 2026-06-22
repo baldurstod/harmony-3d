@@ -5,7 +5,7 @@ import { Mesh } from '../objects/mesh';
 
 export class Triangles extends Mesh {
 	#triangles?: vec3[][];
-	//constructor(triangles, material = ) {
+
 	constructor(params: any = {}) {
 		super(params);
 
@@ -15,7 +15,7 @@ export class Triangles extends Mesh {
 		this.setGeometry(new TrianglesBufferGeometry(params.triangles));
 	}
 
-	updateGeometry() {
-		(this.geometry as TrianglesBufferGeometry).updateGeometry(this.#triangles);
+	updateGeometry() : void {
+		(this.getGeometry() as TrianglesBufferGeometry).updateGeometry(this.#triangles);
 	}
 }

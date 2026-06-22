@@ -1,4 +1,4 @@
-import { mat4, vec3, vec4 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { Mesh } from '../objects/mesh';
@@ -6,8 +6,8 @@ import { Scene } from '../scenes/scene';
 import { ToneMapping } from '../textures/constants';
 import { RenderList } from './renderlist';
 
-const tempViewProjectionMatrix = mat4.create();
-const lightDirection = vec3.create();
+//const tempViewProjectionMatrix = mat4.create();
+//const lightDirection = vec3.create();
 
 export interface Renderer {
 	render: (scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) => void;

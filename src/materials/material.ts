@@ -74,7 +74,7 @@ export class Material implements HasUsers {
 	// Storage bindings. Only for WebGPU.
 	readonly #storage = new Map<string, StorageBuffer>();
 	readonly gpuConstants?: Record<string, GPUPipelineConstantValue>;
-	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
+	readonly defines: Record<string, string | number | boolean> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
 	depthFunc: any;

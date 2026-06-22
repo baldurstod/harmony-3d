@@ -68,7 +68,7 @@ export class Mesh extends Entity {
 	isRenderable = true;
 	readonly #uniforms = new Map<string, UniformBuffer>();
 	readonly storage: Record<string, StorageBuffer> = {};
-	defines = Object.create(null);
+	readonly defines: Record<string, string | number | boolean> = {};//TODO: transform to map ?
 	isMesh = true;
 	topology: GPUPrimitiveTopology;
 
@@ -230,7 +230,7 @@ export class Mesh extends Entity {
 	}
 
 	setDefine(define: string, value: string | number = '') {
-		this.defines[define] = value;
+		this.defines[define] = String(value);
 	}
 
 	removeDefine(define: string) {
