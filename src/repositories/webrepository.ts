@@ -9,7 +9,7 @@ function encodeHash(uri: string): string {
 
 export class WebRepository implements Repository {
 	readonly name: string;
-	properties = new Map<string, RepositoryProperty>();
+	readonly properties = new Map<string, RepositoryProperty>();
 	readonly base: string;
 	readonly useCacheApi: boolean;
 	#cache?: Cache;

@@ -3,11 +3,11 @@ import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBuffer
 import { RepositoryEntry } from './repositoryentry';
 
 export class VpkRepository implements Repository {
-	#name: string;
-	properties = new Map<string, RepositoryProperty>();
-	#vpk: Vpk = new Vpk();
+	readonly #name: string;
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
-	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+	readonly #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
 	active = true;
 
 	constructor(name: string, files: File[]) {

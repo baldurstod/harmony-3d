@@ -2,10 +2,10 @@ import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, Reposit
 import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
-	#name: string;
-	properties = new Map<string, RepositoryProperty>();
-	#base: Repository;
-	prefix: string;
+	readonly #name: string;
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #base: Repository;
+	readonly prefix: string;
 	active = true;
 
 	constructor(name: string, base: Repository, prefix = '') {

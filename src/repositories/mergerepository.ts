@@ -2,9 +2,9 @@ import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, Reposit
 import { RepositoryEntry } from './repositoryentry';
 
 export class MergeRepository implements Repository {
-	#name: string;
-	properties = new Map<string, RepositoryProperty>();
-	#repositories: Repository[] = [];
+	readonly #name: string;
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #repositories: Repository[] = [];
 	active = true;
 
 	constructor(name: string, ...repositories: Repository[]) {

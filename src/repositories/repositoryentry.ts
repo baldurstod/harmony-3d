@@ -6,7 +6,7 @@ export interface RepositoryFilter { name?: string | RegExp, extension?: string |
 export class RepositoryEntry {
 	#repository: Repository;
 	#name: string;
-	#childs = new Map<string, RepositoryEntry>;
+	readonly #childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
 	#parent: RepositoryEntry | null = null;
 	#depth: number;

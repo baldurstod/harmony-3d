@@ -4,9 +4,9 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
  * Cache the result of the underlying repository
  */
 export class MemoryCacheRepository implements Repository {
-	properties = new Map<string, RepositoryProperty>();
-	#base: Repository;
-	#files = new Map<string, Promise<RepositoryFileResponse>>();
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #base: Repository;
+	readonly #files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;
 	active = true;
 

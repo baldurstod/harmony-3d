@@ -5355,7 +5355,7 @@ class Mesh extends Entity {
     isRenderable = true;
     #uniforms = new Map();
     storage = {};
-    defines = Object.create(null);
+    defines = {}; //TODO: transform to map ?
     isMesh = true;
     topology;
     // Internal use
@@ -5487,7 +5487,7 @@ class Mesh extends Entity {
         }
     }
     setDefine(define, value = '') {
-        this.defines[define] = value;
+        this.defines[define] = String(value);
     }
     removeDefine(define) {
         delete this.defines[define];
@@ -10980,7 +10980,7 @@ class Sphere extends Mesh {
         this.thetaStart = params.thetaStart = 0;
         this.thetaLength = params.thetaLength ?? PI;
         this.updateGeometry();
-        super.setParameters(arguments[0]);
+        super.setParameters(params);
     }
     setRadius(radius) {
         this.radius = radius;
@@ -11030,7 +11030,7 @@ class Sphere extends Mesh {
         json.philength = this.phiLength;
         json.thetastart = this.thetaStart;
         json.thetalength = this.thetaLength;
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -12930,7 +12930,7 @@ class Program {
     }
 }
 
-function sortLights(first, second) {
+function sortLights(first /*, second: Light*/) {
     if (first.castShadow) {
         return -1;
     }
@@ -12980,7 +12980,7 @@ class RenderList {
                 }
             }
             else {
-                const material = entity.material;
+                const material = entity.getMaterial();
                 if (material) {
                     if (material.blend) { //TODOv3 changeblend
                         this.transparentList.push(entity);
@@ -13173,7 +13173,7 @@ class ForwardRenderer {
             program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2)); //TODO: perf: compute that once we set camera farplane
             program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix$1);
             program.setUniformValue('uNormalMatrix', object._normalMatrix);
-            program.setUniformValue('uCameraPosition', camera.position);
+            program.setUniformValue('uCameraPosition', camera.getPosition());
             const pickingColor = object.pickingColor;
             if (pickingColor) {
                 program.setUniformValue('uPickingColor', pickingColor);
@@ -52640,6 +52640,19 @@ class Source2ModelInstance extends Entity {
             mesh.skeleton?.setBonesMatrix();
         }
     }
+    getAnimLength() {
+        let animDesc;
+        if (this.#animName) {
+            animDesc = this.sourceModel.getAnimation(this.#animName);
+        }
+        else {
+            animDesc = this.sourceModel.getAnim(this.activity, this.activityModifiers);
+        }
+        if (animDesc) {
+            return animDesc.lastFrame + 1;
+        }
+        return -1;
+    }
     #playSequences(delta) {
         if (this.#skeleton === null) {
             return;
@@ -72849,7 +72862,6 @@ class TrianglesBufferGeometry extends BufferGeometry {
 
 class Triangles extends Mesh {
     #triangles;
-    //constructor(triangles, material = ) {
     constructor(params = {}) {
         super(params);
         this.#triangles = params.triangles;
@@ -72857,7 +72869,7 @@ class Triangles extends Mesh {
         this.setGeometry(new TrianglesBufferGeometry(params.triangles));
     }
     updateGeometry() {
-        this.geometry.updateGeometry(this.#triangles);
+        this.getGeometry().updateGeometry(this.#triangles);
     }
 }
 

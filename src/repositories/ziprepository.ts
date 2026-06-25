@@ -3,13 +3,13 @@ import { checkRepositoryName, cleanupFilename, Repository, RepositoryArrayBuffer
 import { RepositoryEntry } from './repositoryentry';
 
 export class ZipRepository implements Repository {
-	#name: string;
-	properties = new Map<string, RepositoryProperty>();
+	readonly #name: string;
+	readonly properties = new Map<string, RepositoryProperty>();
 	#zip: File;
-	#reader: ZipReader<BlobReader>;
-	#zipEntries = new Map<string, File>();
+	readonly #reader: ZipReader<BlobReader>;
+	readonly #zipEntries = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
-	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+	readonly #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
 	active = true;
 
 	constructor(name: string, zip: File) {

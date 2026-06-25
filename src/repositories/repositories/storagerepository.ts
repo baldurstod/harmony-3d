@@ -8,7 +8,7 @@ const STORAGE_PREFIX = 'repository_content';
  * Cache the result of the underlying repository in persistent storage
  */
 export class StorageRepository implements Repository {
-	properties = new Map<string, RepositoryProperty>();
+	readonly properties = new Map<string, RepositoryProperty>();
 	#base: Repository;
 	#fileList?: RepositoryFileListResponse;
 	active = true;

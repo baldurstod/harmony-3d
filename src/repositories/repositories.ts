@@ -1,7 +1,7 @@
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class Repositories {
-	static #repositories = new Map<string, Repository>();
+	static readonly #repositories = new Map<string, Repository>();
 
 	static addRepository(repo: Repository): Repository {
 		this.#repositories.set(repo.name, repo);

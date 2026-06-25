@@ -5,8 +5,8 @@ import { OverrideRepository } from './overriderepository';
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
-	properties = new Map<string, RepositoryProperty>();
-	#base: OverrideRepository;
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #base: OverrideRepository;
 	active = true;
 
 	constructor(base: Repository) {

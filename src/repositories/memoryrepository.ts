@@ -1,9 +1,9 @@
 import { checkRepositoryName, Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryHasFileResponse, RepositoryJsonResponse, RepositoryProperty, RepositoryTextResponse } from './repository';
 
 export class MemoryRepository implements Repository {
-	#name: string;
-	properties = new Map<string, RepositoryProperty>();
-	#files = new Map<string, File>();
+	readonly #name: string;
+	readonly properties = new Map<string, RepositoryProperty>();
+	readonly #files = new Map<string, File>();
 	active = true;
 
 	constructor(name: string) {
