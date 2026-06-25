@@ -232,6 +232,20 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
+	getAnimLength(): number {
+		let animDesc: Source2AnimationDesc | null;
+		if (this.#animName) {
+			animDesc = this.sourceModel.getAnimation(this.#animName);
+		} else {
+			animDesc = this.sourceModel.getAnim(this.activity, this.activityModifiers);
+		}
+
+		if (animDesc) {
+			return animDesc.lastFrame + 1;
+		}
+		return -1;
+	}
+
 	#playSequences(delta: number): void {
 		if (this.#skeleton === null) {
 			return;
