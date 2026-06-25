@@ -48243,6 +48243,7 @@ class Source2AnimationDesc {
                     name: decodeKeyBone.getValueAsString('m_name') ?? '',
                     Position: vec3.create(),
                     Angle: quat.create(),
+                    Scale: 0,
                 });
             }
             for (const frameBlock of frameBlockArray) {
@@ -52676,6 +52677,9 @@ class Source2ModelInstance extends Entity {
                     }
                     if (!propBone.lockRotation) {
                         propBone.setOrientation(pos.Angle || identityQuat);
+                    }
+                    if (!propBone.lockScale) {
+                        propBone.setScale(pos.Scale);
                     }
                 }
             }

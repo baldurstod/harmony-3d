@@ -7446,6 +7446,7 @@ declare class Channel {
                               name: string;
                               Position: vec3;
                               Angle: quat;
+                              Scale: number;
                           }[];
                           matchActivity(activityName: string): boolean;
                           modifiersScore(activityName: string, modifiers: Set<string>): number;

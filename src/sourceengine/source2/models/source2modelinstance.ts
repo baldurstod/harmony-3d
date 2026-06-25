@@ -273,6 +273,9 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 					if (!propBone.lockRotation) {
 						propBone.setOrientation(pos.Angle || identityQuat);
 					}
+					if (!propBone.lockScale) {
+						propBone.setScale(pos.Scale);
+					}
 				}
 			}
 		} else {
