@@ -62,7 +62,7 @@ export type DynamicParam = any/*TODO: create an actual type*/;
 export class Entity {
 	static addSubMenu: HarmonyMenuItems;
 	id = generateRandomUUID();
-	#wireframe?: number = 0;
+	#wireframe?: number = undefined;
 	#hideInExplorer = false;
 	#serializable = true;
 	#castShadow?: boolean;

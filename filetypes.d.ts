@@ -22,3 +22,7 @@ declare module '*.wgsl' {
 	const value: string
 	export default value
 }
+declare module '*.rchit' {
+	const value: string
+	export default value
+}
