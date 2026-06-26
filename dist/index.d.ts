@@ -2220,7 +2220,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
+                      export declare function getHelper(type: Entity): SkeletonHelper | PointLightHelper | SpotLightHelper | Grid | CameraFrustum | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -4641,7 +4641,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | string[] | Float32Array<ArrayBufferLike> | number[] | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;

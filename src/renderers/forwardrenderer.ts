@@ -254,7 +254,7 @@ export class ForwardRenderer implements Renderer {
 			}
 
 			const wireframe = object.wireframe;
-			this.#setupVertexAttributes(program, geometry, wireframe);
+			this.#setupVertexAttributes(program, geometry, 0);
 			this.#setupVertexUniforms(program, object);
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.#glContext.getError();//empty the error
@@ -263,8 +263,14 @@ export class ForwardRenderer implements Renderer {
 			if ((geometry as InstancedBufferGeometry).instanceCount === undefined) {
 				if (wireframe == 1) {
 					//TODO: case where original geometry is GL_LINES
+					program.setUniformValue('uWireframeLines', 1);
+					this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
+					this.#setupVertexAttributes(program, geometry, wireframe);
+					program.setUniformValue('uWireframeLines', 2);
+					WebGLRenderingState.polygonOffset(true, -5, -5);
 					this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
 				} else {
+					program.setUniformValue('uWireframeLines', 0);
 					this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
 				}
 			} else {

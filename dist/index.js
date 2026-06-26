@@ -2804,7 +2804,7 @@ var EngineEntityAttributes;
 class Entity {
     static addSubMenu;
     id = generateRandomUUID();
-    #wireframe = 0;
+    #wireframe = undefined;
     #hideInExplorer = false;
     #serializable = true;
     #castShadow;
@@ -13191,14 +13191,20 @@ class ForwardRenderer {
                 program.setUniformValue('uLightFar', camera.farPlane);
             }
             const wireframe = object.wireframe;
-            this.#setupVertexAttributes(program, geometry, wireframe);
+            this.#setupVertexAttributes(program, geometry, 0);
             this.#setupVertexUniforms(program, object);
             if (geometry.instanceCount === undefined) {
                 if (wireframe == 1) {
                     //TODO: case where original geometry is GL_LINES
+                    program.setUniformValue('uWireframeLines', 1);
+                    this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
+                    this.#setupVertexAttributes(program, geometry, wireframe);
+                    program.setUniformValue('uWireframeLines', 2);
+                    WebGLRenderingState.polygonOffset(true, -5, -5);
                     this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
                 }
                 else {
+                    program.setUniformValue('uWireframeLines', 0);
                     this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
                 }
             }
@@ -77114,6 +77120,12 @@ var compute_fragment_render_mode = `
 		#endif
 	#endif
 #endif
+
+if (uWireframeLines == 1) {
+	gl_FragColor = vec4(0.5, 0.5, 0.5, 1.0);
+} else if (uWireframeLines == 2) {
+	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
 `;
 
 var compute_fragment_self_illum_mask_map = `
@@ -77909,6 +77921,7 @@ uniform vec4 uTime;
 #define TIME uTime.x
 #define FRAME uTime.y
 uniform vec4 uResolution;
+uniform int uWireframeLines;
 #ifdef PICKING_MODE
 	uniform vec3 uPickingColor;
 #endif
