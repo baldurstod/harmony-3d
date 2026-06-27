@@ -11,8 +11,6 @@ import { Raycaster } from '../raycasting/raycaster';
 import { vec3ToJSON } from '../utils/json';
 import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
 
-const DEFAULT_VEC3 = vec3.create();
-
 export type LineParameters = MeshParameters & {
 	start?: vec3,
 	end?: vec3,
@@ -41,7 +39,7 @@ export class Line extends Mesh {
 		this.#updateGeometry();
 	}
 
-	getStart(start = vec3.create()) {
+	getStart(start = vec3.create()): vec3 {
 		return vec3.copy(start, this.#start);
 	}
 
@@ -50,15 +48,15 @@ export class Line extends Mesh {
 		this.#updateGeometry();
 	}
 
-	getEnd(end = vec3.create()) {
+	getEnd(end = vec3.create()): vec3 {
 		return vec3.copy(end, this.#end);
 	}
 
-	#updateGeometry() {
-		(this.geometry as LineSegmentsGeometry).setSegments([...this.#start, ...this.#end], [], false);
+	#updateGeometry(): void {
+		(this.getGeometry() as LineSegmentsGeometry).setSegments([...this.#start, ...this.#end], [], false);
 	}
 
-	raycast(raycaster: Raycaster, intersections: Intersection[]) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
 		const interSegment = vec3.create();
 		const interRay = vec3.create();
 		const ray = raycaster.ray;
@@ -68,7 +66,7 @@ export class Line extends Mesh {
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.start = vec3ToJSON(this.start);
 		json.end = vec3ToJSON(this.end);

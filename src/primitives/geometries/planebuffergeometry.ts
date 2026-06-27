@@ -1,9 +1,9 @@
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class PlaneBufferGeometry extends BufferGeometry {
 
-	updateGeometry(width: number, height: number, widthSegments: number, heightSegments: number) {
+	updateGeometry(width: number, height: number, widthSegments: number, heightSegments: number): void {
 
 		///width = width || 1;
 		//height = height || 1;

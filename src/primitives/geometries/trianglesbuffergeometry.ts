@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 const a = vec3.create();
@@ -11,11 +11,11 @@ export class TrianglesBufferGeometry extends BufferGeometry {
 		this.updateGeometry(triangles);
 	}
 
-	updateGeometry(triangles: vec3[][] = []) {
+	updateGeometry(triangles: vec3[][] = []): void {
 		const indices = [];
 		const vertices = [];
 		const normals = [];
-		const uvs = [];
+		//const uvs = [];
 
 		let vertexIndex;
 		const normal = vec3.create();

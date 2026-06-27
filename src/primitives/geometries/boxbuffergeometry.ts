@@ -8,9 +8,9 @@ export class BoxBufferGeometry extends BufferGeometry {
 	#vertices!: number[];
 	#normals!: number[];
 	#uvs!: number[];
-	#numberOfVertices: number = 0;
+	#numberOfVertices = 0;
 
-	updateGeometry(width: number, height: number, depth: number, widthSegments: number, heightSegments: number, depthSegments: number) {
+	updateGeometry(width: number, height: number, depth: number, widthSegments: number, heightSegments: number, depthSegments: number): void {
 		widthSegments = Math.floor(widthSegments);
 		heightSegments = Math.floor(heightSegments);
 		depthSegments = Math.floor(depthSegments);
@@ -40,7 +40,7 @@ export class BoxBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	#buildPlane(u: number, v: number, w: number, udir: number, vdir: number, width: number, height: number, depth: number, gridX: number, gridY: number) {
+	#buildPlane(u: number, v: number, w: number, udir: number, vdir: number, width: number, height: number, depth: number, gridX: number, gridY: number): void {
 		const segmentWidth = width / gridX;
 		const segmentHeight = height / gridY;
 

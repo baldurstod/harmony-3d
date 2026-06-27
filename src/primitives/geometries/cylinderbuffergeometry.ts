@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { TWO_PI } from '../../math/constants';
 
@@ -33,12 +33,12 @@ export class CylinderBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	#generateCylinder(radius: number, height: number, segments: number) {
+	#generateCylinder(radius: number, height: number, segments: number): void {
 		const normal = vec3.create();
 		const vertex = vec3.create();
 
 		const thetaPerSegment = TWO_PI / segments;
-		const vPerSegment = 1 / segments;
+		//const vPerSegment = 1 / segments;
 		const halfHeight = height / 2.0;
 
 		for (let segmentId = 0; segmentId <= segments; ++segmentId) {
@@ -71,7 +71,7 @@ export class CylinderBufferGeometry extends BufferGeometry {
 		}
 	}
 
-	#generateCap(radius: number, z: number, segments: number) {
+	#generateCap(radius: number, z: number, segments: number): void {
 		const middlePointIndex = this.#vertices.length / 3;
 
 		const sign = Math.sign(z);

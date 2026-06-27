@@ -28,6 +28,6 @@ export class FullScreenQuad extends Mesh {
 			material: params?.material ?? new MeshBasicMaterial(),
 		});
 		this.setDefine('SKIP_PROJECTION');
-		super.setParameters(arguments[0]);
+		super.setParameters(params);
 	}
 }

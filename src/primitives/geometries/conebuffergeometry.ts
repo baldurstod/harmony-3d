@@ -1,6 +1,5 @@
 import { vec3 } from 'gl-matrix';
-
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { TWO_PI } from '../../math/constants';
 
@@ -11,7 +10,7 @@ export class ConeBufferGeometry extends BufferGeometry {
 	#normals!: number[];
 	#uvs!: number[];
 
-	updateGeometry(radius = 1, height = 1, segments = 24, hasCap = true) {
+	updateGeometry(radius = 1, height = 1, segments = 24, hasCap = true): void {
 		segments = Math.max(Math.floor(segments), 3);
 		// buffers
 
@@ -34,12 +33,12 @@ export class ConeBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	#generateCone(radius: number, height: number, segments: number) {
+	#generateCone(radius: number, height: number, segments: number): void {
 		const normal = vec3.create();
 		const vertex = vec3.create();
 
 		const thetaPerSegment = TWO_PI / segments;
-		const vPerSegment = 1 / segments;
+		//const vPerSegment = 1 / segments;
 		//let halfHeight = height / 2.0;
 
 		for (let segmentId = 0; segmentId <= segments; ++segmentId) {
@@ -70,7 +69,7 @@ export class ConeBufferGeometry extends BufferGeometry {
 		}
 	}
 
-	#generateCap(radius: number, z: number, segments: number) {
+	#generateCap(radius: number, z: number, segments: number): void {
 		const middlePointIndex = this.#vertices.length / 3;
 
 		// Push middle vertex

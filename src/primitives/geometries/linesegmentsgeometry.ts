@@ -1,4 +1,3 @@
-import { vec3 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { InstancedBufferGeometry, InstancedBufferGeometryParameters } from '../../geometry/instancedbuffergeometry';
 
@@ -8,7 +7,7 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 		this.#setupGeometry();
 	}
 
-	#setupGeometry() {
+	#setupGeometry(): void {
 		const positions = [- 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0];
 		const uvs = [- 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2];
 		const indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
@@ -20,7 +19,7 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 		this.count = indices.length;
 	}
 
-	setSegments(positions: number[], colors?: []/*TODO: use colors*/, lineStrip?: boolean) {
+	setSegments(positions: number[], colors?: []/*TODO: use colors*/, lineStrip?: boolean): void {
 		const start = [];
 		const end = [];
 		let instanceCount = 0;
@@ -49,7 +48,7 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 
 
 
-	updateGeometry() {
+	updateGeometry(): void {
 
 
 		/*************************/

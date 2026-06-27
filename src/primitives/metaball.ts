@@ -3,15 +3,16 @@ import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Entity } from '../entities/entity';
 
 export class Metaball extends Entity {
-	currentWorldPosition = vec3.create();
-	radius: number = 0;
-	radius2: number = 0;
+	readonly currentWorldPosition = vec3.create();
+	radius = 0;
+	radius2 = 0;
+
 	constructor(radius = 1) {
 		super();
 		this.setRadius(radius);
 	}
 
-	setRadius(radius: number) {
+	setRadius(radius: number): void {
 		this.radius = radius;
 		this.radius2 = radius * radius;
 	}

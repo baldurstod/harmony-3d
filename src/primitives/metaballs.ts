@@ -22,19 +22,19 @@ export class Metaballs extends Mesh {
 		this.cubeWidth = params.cubeWidth ?? 1;
 	}
 
-	addBall(ball = new Metaball()) {
+	addBall(ball = new Metaball()): Metaball {
 		this.#balls.push(ball);
 		this.addChild(ball);
 		this.updateGeometry();
 		return ball;
 	}
 
-	setBalls(balls: Metaball[]) {
+	setBalls(balls: Metaball[]): void {
 		this.#balls = balls;
 	}
 
-	updateGeometry() {
-		(this.geometry as MetaballsBufferGeometry).updateGeometry(this.#balls, this.cubeWidth);
+	updateGeometry(): void {
+		(this.getGeometry() as MetaballsBufferGeometry).updateGeometry(this.#balls, this.cubeWidth);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {

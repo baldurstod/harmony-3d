@@ -22,7 +22,7 @@ export class BeamSegment {
 		this.width = width;
 	}
 
-	distanceTo(other: BeamSegment) {
+	distanceTo(other: BeamSegment): number {
 		return vec3.distance(this.pos, other.pos);
 	}
 }

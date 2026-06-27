@@ -58,13 +58,13 @@ export class Cylinder extends Mesh {
 		});
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.radius = this.#radius;
 		json.height = this.#height;
 		json.segments = this.#segments;
 		json.hasCap = this.#hasCap;
-		json.material = this.material.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 

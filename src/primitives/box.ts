@@ -40,8 +40,8 @@ export class Box extends Mesh {
 		super.setParameters(params);
 	}
 
-	#updateGeometry() {
-		(this.geometry as BoxBufferGeometry).updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
+	#updateGeometry(): void {
+		(this.getGeometry() as BoxBufferGeometry).updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
@@ -54,7 +54,7 @@ export class Box extends Mesh {
 		});
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.width = this.#size[0];
 		json.height = this.#size[1];
@@ -62,7 +62,7 @@ export class Box extends Mesh {
 		json.widthSegments = this.#widthSegments;
 		json.heightSegments = this.#heightSegments;
 		json.depthSegments = this.#depthSegments;
-		json.material = this.material.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 
@@ -81,29 +81,29 @@ export class Box extends Mesh {
 		return 'Box';
 	}
 
-	setSize(width: number, height: number, depth: number) {
+	setSize(width: number, height: number, depth: number): void {
 		this.#size[0] = width;
 		this.#size[1] = height;
 		this.#size[2] = depth;
 		this.#updateGeometry();
 	}
 
-	setSizeVec(size: vec3) {
+	setSizeVec(size: vec3): void {
 		vec3.copy(this.#size, size);
 		this.#updateGeometry();
 	}
 
-	setWidth(width: number) {
+	setWidth(width: number): void {
 		this.#size[0] = width;
 		this.#updateGeometry();
 	}
 
-	setHeight(height: number) {
+	setHeight(height: number): void {
 		this.#size[1] = height;
 		this.#updateGeometry();
 	}
 
-	setDepth(depth: number) {
+	setDepth(depth: number): void {
 		this.#size[2] = depth;
 		this.#updateGeometry();
 	}

@@ -3,7 +3,7 @@ import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bu
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class SphereBufferGeometry extends BufferGeometry {
-	updateGeometry(radius: number, segments: number, rings: number, phiStart: number, phiLength: number, thetaStart: number, thetaLength: number) {
+	updateGeometry(radius: number, segments: number, rings: number, phiStart: number, phiLength: number, thetaStart: number, thetaLength: number): void {
 		segments = Math.max(3, Math.floor(segments));
 		rings = Math.max(2, Math.floor(rings));
 

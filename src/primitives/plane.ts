@@ -37,24 +37,24 @@ export class Plane extends Mesh {
 		this.#updateGeometry();
 	}
 
-	setWidth(width: number) {
+	setWidth(width: number): void {
 		this.#width = width;
 		this.#updateGeometry();
 	}
 
-	setHeight(height: number) {
+	setHeight(height: number): void {
 		this.#height = height;
 		this.#updateGeometry();
 	}
 
-	setSize(width: number, height?: number) {
+	setSize(width: number, height?: number): void {
 		this.#width = width;
 		this.#height = height ?? width;
 		this.#updateGeometry();
 	}
 
-	#updateGeometry() {
-		(this.geometry as PlaneBufferGeometry).updateGeometry(this.#width, this.#height, this.#widthSegments, this.#heightSegments);
+	#updateGeometry(): void {
+		(this.getGeometry() as PlaneBufferGeometry).updateGeometry(this.#width, this.#height, this.#widthSegments, this.#heightSegments);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
@@ -66,17 +66,17 @@ export class Plane extends Mesh {
 		});
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.width = this.#width;
 		json.height = this.#height;
 		json.widthSegments = this.#widthSegments;
 		json.heightsegments = this.#heightSegments;
-		json.material = this.material!.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
+	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Plane> {
 		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise) as Material;
 		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number });
 	}

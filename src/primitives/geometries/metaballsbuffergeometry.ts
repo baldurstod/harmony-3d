@@ -15,14 +15,14 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		this.updateGeometry(balls ?? []);
 	}
 
-	updateGeometry(balls: Metaball[], cubeWidth = 1) {
+	updateGeometry(balls: Metaball[], cubeWidth = 1): void {
 		// build geometry
 		const triangles = this.#testMarchingCubes(balls, cubeWidth);
 
 		const indices = [];
 		const vertices = [];
 		const normals = [];
-		const uvs = [];
+		//const uvs = [];
 
 		let vertexIndex;
 		const normal = vec3.create();
@@ -63,10 +63,9 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		return [min, max];
 	}
 
-
-	static #computeValue(balls: Metaball[], position: vec3) {
+	static #computeValue(balls: Metaball[], position: vec3): number {
 		let value = 0;
-		const value2 = 0;
+		//const value2 = 0;
 		for (const ball of balls) {
 			const a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
 			value += ball.radius2 * a;
@@ -83,7 +82,7 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		return value;
 	}
 
-	#testMarchingCubes(balls: Metaball[], cubeWidth: number) {
+	#testMarchingCubes(balls: Metaball[], cubeWidth: number): vec3[][] {
 		const [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
 		for (const ball of balls) {
 			ball.getWorldPosition(ball.currentWorldPosition);
@@ -93,20 +92,19 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		vec3.ceil(max, max);
 
 		const grid = new GRIDCELL();
-		let i, j, k;
-		i = j = k = 0;
+		//let i, j, k;
+		//i = j = k = 0;
 
-		const radius = 3;
-		const join = 4;
-		const join2 = join * join;
-		const doSphere2 = 1;
+		//const radius = 3;
+		//const join = 4;
+		//const join2 = join * join;
+		//const doSphere2 = 1;
 
 		const isolevel = THRESHOLD;//1 / (radius * radius - 0.01);
-		const sphereRadius = 1;
+		//const sphereRadius = 1;
 		const triangles = [];
-		const center = vec3.fromValues(3, 3, 3);
-		const center2 = vec3.fromValues(7, 7, 7);
-
+		//const center = vec3.fromValues(3, 3, 3);
+		//const center2 = vec3.fromValues(7, 7, 7);
 
 		for (let i = min[0] - 1; i <= max[0]; i += cubeWidth) {
 			for (let j = min[1] - 1; j <= max[1]; j += cubeWidth) {
@@ -156,12 +154,12 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		}
 
 		const tris = [];
-		for (let i = 0; i < triangles.length; ++i) {
+		for (const tri of triangles) {
 			const triangle = [];
-			if (triangles[i]!.p[0] && triangles[i]!.p[1] && triangles[i]!.p[2]) {
-				triangle.push(triangles[i]!.p[0]);
-				triangle.push(triangles[i]!.p[1]);
-				triangle.push(triangles[i]!.p[2]);
+			if (tri.p[0] && tri.p[1] && tri.p[2]) {
+				triangle.push(tri.p[0]);
+				triangle.push(tri.p[1]);
+				triangle.push(tri.p[2]);
 				tris.push(triangle);
 			} else {
 				console.error('error');

@@ -31,8 +31,8 @@ export class Cone extends Mesh {
 		this.#updateGeometry();
 	}
 
-	#updateGeometry() {
-		(this.geometry as ConeBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
+	#updateGeometry(): void {
+		(this.getGeometry() as ConeBufferGeometry).updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {

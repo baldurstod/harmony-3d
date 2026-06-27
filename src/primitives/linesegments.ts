@@ -20,7 +20,7 @@ export class LineSegments extends Mesh {
 		this.#lineStrip = params.lineStrip ?? true;
 	}
 
-	setSegments(positions: number[], colors?: []) {
-		(this.geometry as LineSegmentsGeometry).setSegments(positions, colors, this.#lineStrip);
+	setSegments(positions: number[], colors?: []): void {
+		(this.getGeometry() as LineSegmentsGeometry).setSegments(positions, colors, this.#lineStrip);
 	}
 }

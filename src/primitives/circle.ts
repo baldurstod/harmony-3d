@@ -1,10 +1,10 @@
-import { JSONLoader } from '../importers/jsonloader';
-import { LineSegments } from './linesegments';
-import { TWO_PI } from '../math/constants';
-import { registerEntity } from '../entities/entities';
 import { JSONObject } from 'harmony-types';
+import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
+import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
+import { TWO_PI } from '../math/constants';
+import { LineSegments } from './linesegments';
 
 export class Circle extends LineSegments {
 	#radius: number;
@@ -21,7 +21,7 @@ export class Circle extends LineSegments {
 		this.#update();
 	}
 
-	#update() {
+	#update(): void {
 		const startEnd = [];
 		const a = (this.#endAngle - this.#startAngle) / this.#segments;
 		for (let i = 0; i < this.#segments + 1; i++) {
@@ -36,13 +36,13 @@ export class Circle extends LineSegments {
 		this.setSegments(startEnd);
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.radius = this.#radius;
 		json.segments = this.#segments;
 		json.startAngle = this.#startAngle;
 		json.endAngle = this.#endAngle;
-		json.material = this.material.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 
