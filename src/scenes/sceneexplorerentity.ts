@@ -359,6 +359,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		if (entity) {
 			const className = (entity.constructor as typeof Entity).getEntityName();
 			this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
+			this.#htmlTitle.title = this.#htmlTitle.innerText;
 		}
 	}
 

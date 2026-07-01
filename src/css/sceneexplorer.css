@@ -72,6 +72,8 @@ scene-explorer-entity {
 .scene-explorer-entity-title {
 	padding-left: calc(var(--indentation) * var(--indentation-offset));
 	text-wrap: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 scene-explorer-entity>.scene-explorer-entity-header {
@@ -205,6 +207,6 @@ file-selector-tile:hover {
 	cursor: pointer;
 }
 
-.info{
+.info {
 	background-color: #002B67;
 }
