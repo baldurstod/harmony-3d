@@ -3,7 +3,9 @@ import { Entity } from '../entities/entity';
 
 // It is just a basic entity
 export class Target extends Entity {
-	static override async constructFromJSON(json: any) {
+
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: any): Promise<Target> {
 		return new Target({ name: json.name });
 	}
 

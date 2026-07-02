@@ -8,7 +8,7 @@ export class WireframeHelper extends Entity {
 	#meshToWireframe = new Map<Entity, Mesh>();
 	#wireframeToMesh = new Map<Mesh, Entity>();
 
-	parentChanged(parent: Entity) {
+	parentChanged(parent: Entity): void {
 		const meshes = parent.getChildList('Mesh');
 		for (const mesh of meshes) {
 			if ((mesh as Mesh).renderMode !== GL_LINES) {//TODO: improve wireframe detection
@@ -25,9 +25,9 @@ export class WireframeHelper extends Entity {
 		}
 	}
 
-	setVisible(visible: boolean) {
+	setVisible(visible: boolean): void {
 		super.setVisible(visible);
-		for (const [w, m] of this.#wireframeToMesh) {
+		for (const [w] of this.#wireframeToMesh) {
 			w.setVisible(visible);
 		}
 	}
@@ -41,14 +41,14 @@ export class WireframeHelper extends Entity {
 		if (!indexArray) {
 			return;
 		}
-		let wireframeArray;
+
 		const arraySize = indexArray.length * 2;
 		const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1, 'index') : new Uint16BufferAttribute(new Array(arraySize), 1, 'index');
 
 		wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
 		geometry.setIndex(wireframeAttribute);
 		geometry.count = arraySize;
-		wireframeArray = wireframeAttribute._array;
+		const wireframeArray = wireframeAttribute._array;
 		if (!wireframeArray) {
 			return;
 		}

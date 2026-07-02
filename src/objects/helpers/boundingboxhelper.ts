@@ -12,7 +12,7 @@ export class BoundingBoxHelper extends Box {
 		this.wireframe = 0;
 	}
 
-	update() {
+	update(): void {
 		if (this._parent) {
 			this._parent.getBoundingBox(this.boundingBox);
 
@@ -23,15 +23,15 @@ export class BoundingBoxHelper extends Box {
 		}
 	}
 
-	getWorldPosition(vec = vec3.create()) {
+	getWorldPosition(vec = vec3.create()): vec3 {
 		return vec3.copy(vec, this._position);
 	}
 
-	getWorldQuaternion(q = quat.create()) {
+	getWorldQuaternion(q = quat.create()): quat {
 		return quat.identity(q);
 	}
 
-	getBoundingBox(boundingBox = new BoundingBox()) {
+	getBoundingBox(boundingBox = new BoundingBox()): BoundingBox {
 		boundingBox.reset();
 		return boundingBox;
 	}

@@ -3,7 +3,7 @@ import { Entity } from '../entities/entity';
 import { Scene } from '../scenes/scene';
 
 export class World extends Entity {
-	parentChanged(parent: Entity | null) {
+	parentChanged(): void {
 		const iterator = this.getParentIterator();
 
 		for (const p of iterator) {

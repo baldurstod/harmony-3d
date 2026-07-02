@@ -25,7 +25,7 @@ export type BoneParameters = EntityParameters & {
 
 export class Bone extends Entity implements Lockable {
 	isBone = true as const;
-	isLockable: true = true;
+	isLockable = true as const;
 	#boneId: number;
 	#poseToBone = mat4.create();
 	#boneMat = mat4.create();
@@ -53,8 +53,14 @@ export class Bone extends Entity implements Lockable {
 	 * @deprecated Please use `setPosition` instead.
 	 */
 	set position(position) {
-		super.position = position;
-		this.dirty = true;
+		this.setPosition(position);
+	}
+
+	/**
+	 * @deprecated Please use `setPosition` instead.
+	 */
+	get position(): vec3 {
+		return this.getPosition();
 	}
 
 	setPosition(position: ReadonlyVec3): void {
@@ -62,11 +68,7 @@ export class Bone extends Entity implements Lockable {
 		this.dirty = true;
 	}
 
-	get position() {
-		return vec3.clone(this._position);
-	}
-
-	setWorldPosition(position: ReadonlyVec3) {
+	setWorldPosition(position: ReadonlyVec3): void {
 		super.setWorldPosition(position);
 		this.dirty = true;
 	}
@@ -80,11 +82,11 @@ export class Bone extends Entity implements Lockable {
 		vec3.copy(this.#refPosition, refPosition);
 	}
 
-	get refPosition() {
+	get refPosition(): vec3 {
 		return vec3.clone(this.#refPosition);
 	}
 
-	getTotalRefPosition(position = vec3.create()) {
+	getTotalRefPosition(position = vec3.create()): vec3 {
 		const parent = this._parent;
 		if (parent && (parent as Bone).isBone) {
 			(parent as Bone).getTotalRefPosition(position);
@@ -98,7 +100,7 @@ export class Bone extends Entity implements Lockable {
 		return position;
 	}
 
-	getTotalRefQuaternion(quaternion = quat.create()) {
+	getTotalRefQuaternion(quaternion = quat.create()): quat {
 		const parent = this._parent;
 		if (parent && (parent as Bone).isBone) {
 			(parent as Bone).getTotalRefQuaternion(tempQuat1);
@@ -113,16 +115,21 @@ export class Bone extends Entity implements Lockable {
 	 * @deprecated Please use `setOrientation` instead.
 	 */
 	set quaternion(quaternion) {
-		super.quaternion = quaternion;
-		this.dirty = true;
+		this.setOrientation(quaternion)
+	}
+
+	/**
+	 * @deprecated Please use `getQuaternion` instead.
+	 */
+	get quaternion(): quat {
+		return quat.clone(this._quaternion);
 	}
 
 	/**
 	 * @deprecated Please use `setOrientation` instead.
 	 */
 	setQuaternion(quaternion: ReadonlyQuat): void {
-		super.setOrientation(quaternion);
-		this.dirty = true;
+		this.setOrientation(quaternion);
 	}
 
 	setOrientation(quaternion: ReadonlyQuat): void {
@@ -130,15 +137,11 @@ export class Bone extends Entity implements Lockable {
 		this.dirty = true;
 	}
 
-	get quaternion() {
-		return quat.clone(this._quaternion);
-	}
-
 	set refQuaternion(refQuaternion) {
 		quat.copy(this.#refQuaternion, refQuaternion);
 	}
 
-	get refQuaternion() {
+	get refQuaternion(): quat {
 		return quat.clone(this.#refQuaternion);
 	}
 
@@ -147,7 +150,7 @@ export class Bone extends Entity implements Lockable {
 		this.dirty = true;
 	}
 
-	get scale() {
+	get scale(): vec3 {
 		return vec3.clone(this._scale);
 	}
 
@@ -156,7 +159,7 @@ export class Bone extends Entity implements Lockable {
 		this.dirty = true;
 	}
 
-	get parent() {
+	get parent(): Entity | null {
 		return this._parent;
 	}
 
@@ -181,11 +184,11 @@ export class Bone extends Entity implements Lockable {
 		}
 	}
 
-	get parentSkeletonBone() {
+	get parentSkeletonBone(): Bone | null {
 		return this.#parentSkeletonBone;
 	}
 
-	get boneMat() {
+	get boneMat(): mat4 {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
@@ -196,7 +199,7 @@ export class Bone extends Entity implements Lockable {
 		return this.#boneMat;
 	}
 
-	get worldPos() {
+	get worldPos(): vec3 {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
@@ -207,7 +210,7 @@ export class Bone extends Entity implements Lockable {
 		return this.#worldPos;
 	}
 
-	get worldQuat() {
+	get worldQuat(): quat {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
@@ -218,7 +221,7 @@ export class Bone extends Entity implements Lockable {
 		return this.#worldQuat;
 	}
 
-	get worldScale() {
+	get worldScale(): vec3 {
 		if (this.dirty
 			|| (this._parent && (this._parent as Bone).lastComputed > this.lastComputed)
 			|| (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
@@ -229,21 +232,21 @@ export class Bone extends Entity implements Lockable {
 		return this.#worldScale;
 	}
 
-	getWorldPosition(vec = vec3.create()) {
+	getWorldPosition(vec = vec3.create()): vec3 {
 		return vec3.copy(vec, this.worldPos);
 	}
 
-	getWorldQuaternion(q = quat.create()) {
+	getWorldQuaternion(q = quat.create()): quat {
 		return quat.copy(q, this.worldQuat);
 	}
 
-	getWorldScale(vec = vec3.create()) {
+	getWorldScale(vec = vec3.create()): vec3 {
 		return vec3.copy(vec, this.worldScale);
 	}
 
-	getWorldPosOffset(offset: vec3, out = vec3.create()) {
+	getWorldPosOffset(offset: vec3, out = vec3.create()): vec3 {
 		if (DEBUG && offset == undefined) {
-			throw 'This function must be called with an offset use .worldPos instead';
+			throw new Error('This function must be called with an offset use .worldPos instead');
 		}
 		vec3.transformQuat(out, offset, this.worldQuat);
 		vec3.add(out, this.worldPos, out);
@@ -254,16 +257,16 @@ export class Bone extends Entity implements Lockable {
 		mat4.copy(this.#poseToBone, poseToBone);
 	}
 
-	get poseToBone() {
+	get poseToBone(): mat4 {
 		return mat4.clone(this.#poseToBone);
 	}
 
-	#compute() {
+	#compute(): void {
 		const parent = this._parent;
-		const _parentSkeletonBone = this.#parentSkeletonBone;
+		//const _parentSkeletonBone = this.#parentSkeletonBone;
 		if (!this.#parentSkeletonBone) {
 			if (parent) {
-				const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
+				const parentWorldQuaternion = parent.getWorldOrientation(tempWorldQuat);
 
 				vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
 
@@ -275,7 +278,7 @@ export class Bone extends Entity implements Lockable {
 			} else {
 				if (this.#skeleton) {
 					this.#skeleton.getWorldPosition(tempWorldVec3);
-					this.#skeleton.getWorldQuaternion(tempWorldQuat);
+					this.#skeleton.getWorldOrientation(tempWorldQuat);
 
 					vec3.transformQuat(this.#worldPos, this._position, tempWorldQuat);
 					vec3.add(this.#worldPos, this.#worldPos, tempWorldVec3);
@@ -319,11 +322,11 @@ export class Bone extends Entity implements Lockable {
 		this.#boneId = boneId;
 	}
 
-	get boneId() {
+	get boneId(): number {
 		return this.#boneId;
 	}
 
-	isProcedural() {
+	isProcedural(): boolean {
 		return false;
 		//return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
 	}
@@ -338,7 +341,7 @@ export class Bone extends Entity implements Lockable {
 		return this.lockPosition || this.lockRotation || this.lockScale;
 	}
 
-	reset() {
+	reset(): void {
 		vec3.zero(this._position);
 		quat.identity(this._quaternion);
 	}
@@ -364,7 +367,7 @@ export class Bone extends Entity implements Lockable {
 		);
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.posetobone = mat4ToJSON(this.#poseToBone);
 		json.refposition = vec3ToJSON(this.#refPosition);
@@ -373,11 +376,12 @@ export class Bone extends Entity implements Lockable {
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject): Promise<Bone> {
 		return new Bone({ name: json.name as string });
 	}
 
-	fromJSON(json: any) {
+	fromJSON(json: any): void {
 		super.fromJSON(json);
 		mat4.copy(this.#poseToBone, json.posetobone ?? mat4.create());
 		vec3.copy(this.#refPosition, json.refposition ?? vec3.create());

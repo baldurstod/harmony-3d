@@ -176,7 +176,6 @@ export class Entity {
 	 * @deprecated Please use `setPosition` instead.
 	 */
 	set position(position: vec3) {
-		// TODO: deprecate
 		this.setPosition(position);
 	}
 
@@ -184,7 +183,6 @@ export class Entity {
 	 * @deprecated Please use `getPosition` instead.
 	 */
 	get position(): vec3 {
-		// TODO: deprecate
 		return this.getPosition();
 	}
 

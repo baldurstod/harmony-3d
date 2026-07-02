@@ -12,7 +12,7 @@ import { Mesh, MeshParameters } from '../mesh';
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
 const AXIS_COLOR = [1, 1, 0, 1];
-const UP_COLOR = [0, 0, 1, 1];
+//const UP_COLOR = [0, 0, 1, 1];
 
 const tempVec3 = vec3.create();
 
@@ -109,7 +109,7 @@ export class CameraFrustum extends Mesh {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
 	}
 
-	#createVertices() {
+	#createVertices(): void {
 		const indices = Lines;
 		const vertices: number[] = [];
 		const normals: number[] = [];
@@ -155,7 +155,7 @@ export class CameraFrustum extends Mesh {
 
 	}
 
-	parentChanged(parent: Entity) {
+	parentChanged(parent: Entity): void {
 		if (parent?.is('Camera')) {
 			this.#camera = parent as Camera;
 		} else {

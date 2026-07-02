@@ -99,11 +99,11 @@ export class Mesh extends Entity {
 	/**
 	 * @deprecated Please use `getMaterial` instead.
 	 */
-	get material() {
+	get material(): Material {
 		return this.getMaterial();
 	}
 
-	setGeometry(geometry: BufferGeometry) {
+	setGeometry(geometry: BufferGeometry): void {
 		if (this.#geometry == geometry) {
 			return;
 		}
@@ -119,11 +119,11 @@ export class Mesh extends Entity {
 	/**
 	 * @deprecated Please use `getGeometry` instead.
 	 */
-	get geometry() {
+	get geometry(): BufferGeometry {
 		return this.#geometry;
 	}
 
-	getGeometry() {
+	getGeometry(): BufferGeometry {
 		return this.#geometry;
 	}
 
@@ -140,7 +140,7 @@ export class Mesh extends Entity {
 		}
 	}
 
-	getMaterial() {
+	getMaterial(): Material {
 		return this.#material;
 	}
 
@@ -180,7 +180,7 @@ export class Mesh extends Entity {
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
 		const path = name.split('.');
 
-		let len = path.length - 1;
+		const len = path.length - 1;
 		if (len === 0) {
 			return this.setUniformValue(name, value);
 		}
@@ -229,11 +229,11 @@ export class Mesh extends Entity {
 		}
 	}
 
-	setDefine(define: string, value: string | number = '') {
+	setDefine(define: string, value: string | number = ''): void {
 		this.defines[define] = String(value);
 	}
 
-	removeDefine(define: string) {
+	removeDefine(define: string): void {
 		delete this.defines[define];
 	}
 
@@ -283,13 +283,13 @@ export class Mesh extends Entity {
 		return ret as ObjDatas;
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#material?.removeUser(this);
 		this.#geometry?.removeUser(this);
 	}
 
-	toString() {
+	toString(): string {
 		return 'Mesh ' + super.toString();
 	}
 
@@ -315,7 +315,7 @@ export class Mesh extends Entity {
 		//console.error(min, max);
 	}
 
-	getBoundingBox(boundingBox = new BoundingBox()) {
+	getBoundingBox(boundingBox = new BoundingBox()): BoundingBox {
 		boundingBox.reset();
 		const array = this.#geometry.getAttribute('aVertexPosition')?._array;
 		if (array) {
@@ -324,7 +324,7 @@ export class Mesh extends Entity {
 		return boundingBox;
 	}
 
-	#desaturate(attributeValue: boolean) {
+	#desaturate(attributeValue: boolean): void {
 		if (attributeValue) {
 			this.setDefine('DESATURATE');
 		} else {
@@ -368,7 +368,7 @@ export class Mesh extends Entity {
 		materialSubmenu.mesh1 = null;
 
 		materialSubmenu.setMaterial = {
-			i18n: '#set_material', f: async () => {
+			i18n: '#set_material', f: async (): Promise<void> => {
 				const materialName = await Interaction.getString(0, 0, MaterialManager.getMaterialList());
 				if (materialName) {
 					MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
@@ -378,7 +378,7 @@ export class Mesh extends Entity {
 		return contextMenu;
 	}
 
-	raycast(raycaster: Raycaster, intersections: Intersection[]) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
 		const geometry = this.#geometry;
 		const indices = geometry?.getAttribute('index')?._array;
 		if (!indices) {

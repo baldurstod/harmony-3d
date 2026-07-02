@@ -222,7 +222,7 @@ export class Camera extends Entity {
 	}
 
 	/**
-	 * @deprecated use getVerticalFovAsDegree instead
+	 * @deprecated use getVerticalFovAsDegree or getVerticalFov instead
 	 */
 	get verticalFov() {
 		return this.#verticalFov * RAD_TO_DEG;

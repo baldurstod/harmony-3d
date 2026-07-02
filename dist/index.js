@@ -6464,7 +6464,7 @@ class Box extends Mesh {
         super.setParameters(params);
     }
     #updateGeometry() {
-        this.geometry.updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
+        this.getGeometry().updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -6498,7 +6498,7 @@ class Box extends Mesh {
         json.widthSegments = this.#widthSegments;
         json.heightSegments = this.#heightSegments;
         json.depthSegments = this.#depthSegments;
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -7274,7 +7274,7 @@ class FullScreenQuad extends Mesh {
             material: params?.material ?? new MeshBasicMaterial(),
         });
         this.setDefine('SKIP_PROJECTION');
-        super.setParameters(arguments[0]);
+        super.setParameters(params);
     }
 }
 
@@ -10468,7 +10468,7 @@ class LineSegments extends Mesh {
         this.#lineStrip = params.lineStrip ?? true;
     }
     setSegments(positions, colors) {
-        this.geometry.setSegments(positions, colors, this.#lineStrip);
+        this.getGeometry().setSegments(positions, colors, this.#lineStrip);
     }
 }
 
@@ -10505,7 +10505,7 @@ class Circle extends LineSegments {
         json.segments = this.#segments;
         json.startAngle = this.#startAngle;
         json.endAngle = this.#endAngle;
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -10546,6 +10546,7 @@ class ConeBufferGeometry extends BufferGeometry {
         const normal = vec3.create();
         const vertex = vec3.create();
         const thetaPerSegment = TWO_PI / segments;
+        //const vPerSegment = 1 / segments;
         //let halfHeight = height / 2.0;
         for (let segmentId = 0; segmentId <= segments; ++segmentId) {
             const theta = thetaPerSegment * segmentId;
@@ -10603,7 +10604,7 @@ class Cone extends Mesh {
         this.#updateGeometry();
     }
     #updateGeometry() {
-        this.geometry.updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
+        this.getGeometry().updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -10652,6 +10653,7 @@ class CylinderBufferGeometry extends BufferGeometry {
         const normal = vec3.create();
         const vertex = vec3.create();
         const thetaPerSegment = TWO_PI / segments;
+        //const vPerSegment = 1 / segments;
         const halfHeight = height / 2.0;
         for (let segmentId = 0; segmentId <= segments; ++segmentId) {
             const theta = thetaPerSegment * segmentId;
@@ -10754,7 +10756,7 @@ class Cylinder extends Mesh {
         json.height = this.#height;
         json.segments = this.#segments;
         json.hasCap = this.#hasCap;
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -10846,7 +10848,7 @@ class Plane extends Mesh {
         this.#updateGeometry();
     }
     #updateGeometry() {
-        this.geometry.updateGeometry(this.#width, this.#height, this.#widthSegments, this.#heightSegments);
+        this.getGeometry().updateGeometry(this.#width, this.#height, this.#widthSegments, this.#heightSegments);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -10872,7 +10874,7 @@ class Plane extends Mesh {
         json.height = this.#height;
         json.widthSegments = this.#widthSegments;
         json.heightsegments = this.#heightSegments;
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -64729,6 +64731,7 @@ class MetaballsBufferGeometry extends BufferGeometry {
         const indices = [];
         const vertices = [];
         const normals = [];
+        //const uvs = [];
         let vertexIndex;
         const normal = vec3.create();
         for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
@@ -64764,6 +64767,7 @@ class MetaballsBufferGeometry extends BufferGeometry {
     }
     static #computeValue(balls, position) {
         let value = 0;
+        //const value2 = 0;
         for (const ball of balls) {
             const a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
             value += ball.radius2 * a;
@@ -64786,10 +64790,17 @@ class MetaballsBufferGeometry extends BufferGeometry {
         vec3.floor(min, min);
         vec3.ceil(max, max);
         const grid = new GRIDCELL();
+        //let i, j, k;
+        //i = j = k = 0;
+        //const radius = 3;
+        //const join = 4;
+        //const join2 = join * join;
+        //const doSphere2 = 1;
         const isolevel = THRESHOLD; //1 / (radius * radius - 0.01);
+        //const sphereRadius = 1;
         const triangles = [];
-        vec3.fromValues(3, 3, 3);
-        vec3.fromValues(7, 7, 7);
+        //const center = vec3.fromValues(3, 3, 3);
+        //const center2 = vec3.fromValues(7, 7, 7);
         for (let i = min[0] - 1; i <= max[0]; i += cubeWidth) {
             for (let j = min[1] - 1; j <= max[1]; j += cubeWidth) {
                 for (let k = min[2] - 1; k <= max[2]; k += cubeWidth) {
@@ -64832,12 +64843,12 @@ class MetaballsBufferGeometry extends BufferGeometry {
             }
         }
         const tris = [];
-        for (let i = 0; i < triangles.length; ++i) {
+        for (const tri of triangles) {
             const triangle = [];
-            if (triangles[i].p[0] && triangles[i].p[1] && triangles[i].p[2]) {
-                triangle.push(triangles[i].p[0]);
-                triangle.push(triangles[i].p[1]);
-                triangle.push(triangles[i].p[2]);
+            if (tri.p[0] && tri.p[1] && tri.p[2]) {
+                triangle.push(tri.p[0]);
+                triangle.push(tri.p[1]);
+                triangle.push(tri.p[2]);
                 tris.push(triangle);
             }
             else {
@@ -64870,7 +64881,7 @@ class Metaballs extends Mesh {
         this.#balls = balls;
     }
     updateGeometry() {
-        this.geometry.updateGeometry(this.#balls, this.cubeWidth);
+        this.getGeometry().updateGeometry(this.#balls, this.cubeWidth);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -71764,7 +71775,6 @@ class Grid extends Mesh {
     }
 }
 
-vec3.create();
 class Line extends Mesh {
     isLine = true;
     #start = vec3.create();
@@ -71796,7 +71806,7 @@ class Line extends Mesh {
         return vec3.copy(end, this.#end);
     }
     #updateGeometry() {
-        this.geometry.setSegments([...this.#start, ...this.#end], [], false);
+        this.getGeometry().setSegments([...this.#start, ...this.#end], [], false);
     }
     raycast(raycaster, intersections) {
         const interSegment = vec3.create();
@@ -72845,6 +72855,7 @@ class TrianglesBufferGeometry extends BufferGeometry {
         const indices = [];
         const vertices = [];
         const normals = [];
+        //const uvs = [];
         let vertexIndex;
         const normal = vec3.create();
         for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
@@ -75303,7 +75314,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n\t--header: var(--background-primary);\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\t/*background-color: var(--background-primary);*/\n\tbackground-color: var(--header);\n}\n\nscene-explorer-entity.selected {\n\t--header: var(--background-tertiary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-childs {\n\tbackground-color: var(--header);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-buttons>div>svg {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n\n.info{\n\tbackground-color: #002B67;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n\t--header: var(--background-primary);\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n\toverflow: hidden;\n\ttext-overflow: ellipsis;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\t/*background-color: var(--background-primary);*/\n\tbackground-color: var(--header);\n}\n\nscene-explorer-entity.selected {\n\t--header: var(--background-tertiary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-childs {\n\tbackground-color: var(--header);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-buttons>div>svg {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n\n.info {\n\tbackground-color: #002B67;\n}\n";
 
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
@@ -75873,6 +75884,7 @@ class SceneExplorerEntity extends HTMLElement {
         if (entity) {
             const className = entity.constructor.getEntityName();
             this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
+            this.#htmlTitle.title = this.#htmlTitle.innerText;
         }
     }
     static #updateEntityVisibility(entity) {

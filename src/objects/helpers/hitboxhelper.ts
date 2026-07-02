@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import { registerEntity } from '../../entities/entities';
 import { Entity } from '../../entities/entity';
+import { HasHitBoxes } from '../../interfaces/hashitboxes';
 import { MATERIAL_BLENDING_NORMAL } from '../../materials/material';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
 import { Box } from '../../primitives/box';
-import { HasHitBoxes } from '../../interfaces/hashitboxes';
 
 const tempVec3 = vec3.create();
 
@@ -23,7 +23,7 @@ export class HitboxHelper extends Entity {
 		}
 	}
 
-	parentChanged(parent: Entity | null) {
+	parentChanged(parent: Entity | null): void {
 		this.removeBoxes();
 		if (parent && (parent as unknown as HasHitBoxes).getHitboxes) {
 			const hitboxes = (parent as unknown as HasHitBoxes).getHitboxes();
@@ -32,7 +32,7 @@ export class HitboxHelper extends Entity {
 				const box = new Box({ width: tempVec3[0], height: tempVec3[1], depth: tempVec3[2], material: boxMaterial });
 				box.serializable = false;
 				vec3.lerp(tempVec3, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
-				box.position = tempVec3;
+				box.setPosition(tempVec3);
 
 				if (hitbox.parent) {
 					hitbox.parent.addChild(box);
@@ -46,12 +46,13 @@ export class HitboxHelper extends Entity {
 		}
 	}
 
-	removeBoxes() {
+	removeBoxes(): void {
 		this.#hitboxes.forEach(hitbox => hitbox.dispose());
 		this.#hitboxes = [];
 	}
 
-	static override async constructFromJSON() {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(): Promise<HitboxHelper> {
 		return new HitboxHelper();
 	}
 

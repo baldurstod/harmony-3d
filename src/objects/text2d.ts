@@ -61,7 +61,7 @@ export class Text2D extends Entity {
 		this.#html.style.fontFamily = font ?? '';
 	}
 
-	override update(scene: Scene, camera: Camera, delta: number): void {
+	override update(scene: Scene, camera: Camera/*, delta: number*/): void {
 		const pos = vec3.create();
 		const mat = camera.getViewProjectionMatrix();
 		vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
@@ -120,7 +120,7 @@ export class Text2D extends Entity {
 					}
 					const font = (await Interaction.getString(0, 0, fontList2)).split(',');
 					if (font) {
-						this.setFont(font[0]!);
+						this.setFont(font[0]);
 						//this.style = font[1]!;
 						//this.#update();
 					}

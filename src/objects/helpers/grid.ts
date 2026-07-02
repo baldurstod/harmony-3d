@@ -13,7 +13,7 @@ export type GridParameters = MeshParameters & {
 export class Grid extends Mesh {
 	#size: number;
 	#spacing: number;
-	#normal: number;
+	//#normal: number;
 
 	constructor(params: GridParameters = {}) {
 		const spacing = params.spacing ?? 10;
@@ -22,19 +22,19 @@ export class Grid extends Mesh {
 		super(params);
 		this.#size = params.size ?? 100;
 		this.#spacing = spacing;
-		this.#normal = params.normal ?? 2;
+		//this.#normal = params.normal ?? 2;
 		this.#updateGeometry();
 	}
 
-	#updateGeometry() {
-		(this.geometry as PlaneBufferGeometry).updateGeometry(this.#size, this.#size, 1, 1);
+	#updateGeometry(): void {
+		(this.getGeometry() as PlaneBufferGeometry).updateGeometry(this.#size, this.#size, 1, 1);
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Grid_1: null,
 			size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) { this.#size = Number(size); this.#updateGeometry(); } } },
-			spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) { this.#spacing = (this.material as GridMaterial).spacing = Number(spacing); } } }
+			spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) { this.#spacing = Number(spacing); (this.getMaterial() as GridMaterial).setSpacing(this.#spacing); } } }
 		});
 	}
 

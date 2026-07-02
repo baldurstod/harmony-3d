@@ -7,7 +7,7 @@ import { CameraFrustum } from './camerafrustum';
 import { Grid } from './grid';
 import { SkeletonHelper } from './skeletonhelper';
 
-export function getHelper(type: Entity) {
+export function getHelper(type: Entity): PointLightHelper | SpotLightHelper | Grid | SkeletonHelper | CameraFrustum | undefined {
 	switch (type.constructor.name) {
 		case 'PointLight':
 			return new PointLightHelper();

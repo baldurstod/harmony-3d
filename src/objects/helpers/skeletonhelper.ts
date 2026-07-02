@@ -58,7 +58,7 @@ export class SkeletonHelper extends Entity {
 		this.#initListeners();
 	}
 
-	parentChanged(parent: Entity) {
+	parentChanged(parent: Entity): void {
 		if (!parent) {
 			return;
 		}
@@ -79,7 +79,7 @@ export class SkeletonHelper extends Entity {
 		this.#skeleton = null;
 	}
 
-	#clearSkeleton() {
+	#clearSkeleton(): void {
 		this.#lines.forEach(value => value.dispose());
 		this.#bones.forEach(value => value.dispose());
 		this.#joints.forEach(value => value.dispose());
@@ -98,11 +98,11 @@ export class SkeletonHelper extends Entity {
 			return this.#skeleton;
 		}*/
 
-	getWorldPosition(vec = vec3.create()) {
+	getWorldPosition(vec = vec3.create()): vec3 {
 		return vec3.copy(vec, this._position);
 	}
 
-	getWorldQuaternion(q = quat.create()) {
+	getWorldQuaternion(q = quat.create()): quat {
 		return quat.identity(q);
 	}
 
@@ -110,7 +110,7 @@ export class SkeletonHelper extends Entity {
 		return vec3.copy(scale, this._scale);
 	}
 
-	#update() {
+	#update(): void {
 		if (!this.#skeleton) {
 			return;
 		}
@@ -134,7 +134,7 @@ export class SkeletonHelper extends Entity {
 
 			//boneLine.position = bone.worldPos;
 			let start = bone.worldPos;
-			let end = bone.worldPos;
+			const end = bone.worldPos;
 			const boneParent = bone.parent;
 			if ((boneParent as Bone)?.isBone) {
 				start = (boneParent as Bone).getWorldPosition(/*TODO: optimize*/);
@@ -164,11 +164,12 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
-	get wireframe() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get wireframe(): number {
 		return 0;
 	}
 
-	#initListeners() {
+	#initListeners(): void {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
 			if (!this.isVisible()) {
@@ -186,7 +187,7 @@ export class SkeletonHelper extends Entity {
 		});
 	}
 
-	#mouseMoved(event: CustomEvent<GraphicMouseEventData>) {
+	#mouseMoved(event: CustomEvent<GraphicMouseEventData>): void {
 		if (Graphics.dragging) {
 			return;
 		}
@@ -196,7 +197,7 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
-	#mouseUp(event: CustomEvent<GraphicMouseEventData>) {
+	#mouseUp(event: CustomEvent<GraphicMouseEventData>): void {
 		if (Graphics.dragging) {
 			return;
 		}
@@ -211,7 +212,7 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
-	displayBoneJoints(display: boolean) {
+	displayBoneJoints(display: boolean): void {
 		this.#boneStart.setVisible(this.#highlitLine && display && undefined);
 		this.#boneEnd.setVisible(this.#highlitLine && display && undefined);
 		this.#displayJoints = display;
@@ -224,7 +225,7 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
-	setJointsRadius(radius: number) {
+	setJointsRadius(radius: number): void {
 		this.#boneStart.setRadius(radius);
 		this.#boneEnd.setRadius(radius);
 	}
@@ -269,12 +270,12 @@ export class SkeletonHelper extends Entity {
 		return null;
 	}
 
-	#highlit(line: Line) {
+	#highlit(line: Line): void {
 		if (!line?.isLine) {
 			return;
 		}
 		if (this.#highlitLine) {
-			this.#highlitLine.material = this.#lineMaterial;
+			this.#highlitLine.setMaterial(this.#lineMaterial);
 		}
 
 		if (line) {
@@ -290,7 +291,7 @@ export class SkeletonHelper extends Entity {
 		this.#highlitLine = line;
 	}
 
-	override dispose() {
+	override dispose(): void {
 		this.#clearSkeleton();
 		this.#lineMaterial.removeUser(this);
 		this.#highlitLineMaterial.removeUser(this);

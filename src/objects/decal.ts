@@ -1,11 +1,9 @@
-import { mat4, vec3 } from 'gl-matrix';
+import { mat4, ReadonlyVec3, vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
-import { Entity } from '../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
-import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { stringToVec3 } from '../utils/utils';
 import { Mesh, MeshParameters } from './mesh';
@@ -27,29 +25,46 @@ export class Decal extends Mesh {
 		this.setSize(params.size ?? DEFAULT_SIZE);
 	}
 
-	set position(position) {
-		super.position = position;
+	/**
+	 * @deprecated Please use `setPosition` instead.
+	 */
+	set position(position: vec3) {
+		this.setPosition(position);
+	}
+
+	/**
+	 * @deprecated Please use `getPosition` instead.
+	 */
+	get position(): vec3 {
+		return this.getPosition();
+	}
+
+	setPosition(position: ReadonlyVec3): void {
+		super.setPosition(position);
 		this.refreshGeometry();
 	}
 
-	get position() {
-		return super.position;
-	}
-
-	parentChanged() {
+	parentChanged(): void {
 		this.refreshGeometry();
 	}
 
-	setSize(size: vec3) {
+	setSize(size: vec3): void {
 		vec3.copy(this.#size, size);
 		this.refreshGeometry();
 	}
 
-	get size() {
+	/**
+	 * @deprecated Please use `getSize` instead.
+	 */
+	get size(): vec3 {
+		return this.getSize();
+	}
+
+	getSize(): vec3 {
 		return this.#size;
 	}
 
-	refreshGeometry() {
+	refreshGeometry(): void {
 		if (this.parent && this.parent.is('Mesh')) {
 			(this.getGeometry() as DecalGeometry).applyTo(this.parent as Mesh, this.worldMatrix, this.#size);
 		}
@@ -58,12 +73,13 @@ export class Decal extends Mesh {
 	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			StaticDecal_1: null,
-			size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) { this.setSize(stringToVec3(v)); } } },
+			size: { i18n: '#size', f: () => { const v = prompt('Size', this.getSize().join(' ')); if (v !== null) { this.setSize(stringToVec3(v)); } } },
 			refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
 		});
 	}
 
-	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null> {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject/*, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/): Promise<Decal | null> {
 		return new Decal(json);
 	}
 
@@ -74,7 +90,7 @@ export class Decal extends Mesh {
 registerEntity(Decal);
 
 class DecalGeometry extends BufferGeometry {
-	applyTo(mesh: Mesh, projectorMatrix: mat4, size: vec3) {
+	applyTo(mesh: Mesh, projectorMatrix: mat4, size: vec3): void {
 		const indices: number[] = [];
 		const vertices: number[] = [];
 		const normals: number[] = [];
@@ -149,16 +165,16 @@ class DecalGeometry extends BufferGeometry {
 			// create texture coordinates (we are still in projector space)
 
 			uvs.push(
-				0.5 + (decalVertex[0]![0] / size[0]),
-				0.5 + (decalVertex[0]![1] / size[1])
+				0.5 + (decalVertex[0][0] / size[0]),
+				0.5 + (decalVertex[0][1] / size[1])
 			);
 
 			// transform the vertex back to world space
-			const v = decalVertex[0];
+			//const v = decalVertex[0];
 			//vec3.transformMat4(v, v, projectorMatrix);
 
-			vertices.push(...decalVertex[0]!);
-			normals.push(...decalVertex[1]!);
+			vertices.push(...decalVertex[0]);
+			normals.push(...decalVertex[1]);
 
 			indices.push(i);
 		}
@@ -181,9 +197,9 @@ class DecalGeometry extends BufferGeometry {
 			let nV3: [vec3, vec3];
 			let nV4: [vec3, vec3];
 
-			const d1 = vec3.dot(inVertices[i + 0]![0]!, plane) - s;
-			const d2 = vec3.dot(inVertices[i + 1]![0]!, plane) - s;
-			const d3 = vec3.dot(inVertices[i + 2]![0]!, plane) - s;
+			const d1 = vec3.dot(inVertices[i + 0]![0], plane) - s;
+			const d2 = vec3.dot(inVertices[i + 1]![0], plane) - s;
+			const d3 = vec3.dot(inVertices[i + 2]![0], plane) - s;
 
 			const v1Out = d1 > 0;
 			const v2Out = d2 > 0;
@@ -227,11 +243,11 @@ class DecalGeometry extends BufferGeometry {
 						nV4 = this.#clip(inVertices[i + 1]!, nV2, plane, s);
 
 						outVertices.push(nV3);
-						outVertices.push([vec3.clone(nV2[0]!), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
-						outVertices.push([vec3.clone(nV1[0]!), vec3.clone(nV1[1])]);//outVertices.push( nV1.clone() );
+						outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
+						outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]);//outVertices.push( nV1.clone() );
 
-						outVertices.push([vec3.clone(nV2[0]!), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
-						outVertices.push([vec3.clone(nV3[0]!), vec3.clone(nV3[1])]);//outVertices.push( nV3.clone() );
+						outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
+						outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]);//outVertices.push( nV3.clone() );
 						outVertices.push(nV4);
 						break;
 

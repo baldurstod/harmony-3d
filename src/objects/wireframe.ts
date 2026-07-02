@@ -21,18 +21,18 @@ export class Wireframe extends Entity {
 		//this.setParameters(params);
 	}
 
-	setColor(color: vec4) {
+	setColor(color: vec4): void {
 		vec4.copy(this.#color, color);
 		this.#material.setMeshColor(color);
 	}
 
-	parentChanged(parent: Entity | null) {
+	parentChanged(parent: Entity | null): void {
 		if (parent) {
 			this.#updateGeometry(parent);
 		}
 	}
 
-	#updateGeometry(parent: Entity) {
+	#updateGeometry(parent: Entity): void {
 		this.#disposeMeshes();
 		const meshes = parent.getChildList('Mesh');
 
@@ -49,7 +49,7 @@ export class Wireframe extends Entity {
 
 			const m = (mesh as unknown as Mesh).exportObj();
 
-			const vertexIndices = m.f!;
+			const vertexIndices = m.f;
 			const vertexPos = m.v!;
 
 			for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
@@ -70,14 +70,14 @@ export class Wireframe extends Entity {
 		}
 	}
 
-	#disposeMeshes() {
+	#disposeMeshes(): void {
 		for (const mesh of this.#meshes) {
 			mesh.dispose();
 		}
 		this.#meshes.clear();
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#material.removeUser(this);
 		this.#disposeMeshes();

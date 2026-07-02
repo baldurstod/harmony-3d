@@ -1,10 +1,8 @@
 import { JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { registerEntity } from '../entities/entities';
-import { Entity } from '../entities/entity';
 import { ExtrudeGeometry } from '../geometry/extrudegeometry';
 import { FontManager } from '../managers/fontmanager';
-import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { DEG_TO_RAD } from '../math/constants';
 import { Interaction } from '../utils/interaction';
@@ -69,16 +67,16 @@ export class Text3D extends Mesh {
 		this.#updateGeometry();
 	}
 
-	async #updateGeometry() {
+	async #updateGeometry(): Promise<void> {
 		const font = await FontManager.getFont(this.#font);
 		if (font) {
 			const shapes = font.generateShapes(this.#text, this.#size);
 
-			(this.geometry as ExtrudeGeometry).createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
+			(this.getGeometry() as ExtrudeGeometry).createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.text = this.#text;
 		json.size = this.#size;
@@ -88,11 +86,12 @@ export class Text3D extends Mesh {
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null> {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(/*json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/): Promise<Text3D | null> {
 		return new Text3D({});// TODO: add params
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.#text = json.text as string;
 		this.#size = json.size as number;

@@ -53,7 +53,7 @@ export class SkeletalMesh extends Mesh {
 		this.#bonesPerVertex = bonesPerVertex;
 	}
 
-	get bonesPerVertex() {
+	get bonesPerVertex(): number {
 		return this.#bonesPerVertex;
 	}
 
@@ -150,7 +150,7 @@ export class SkeletalMesh extends Mesh {
 		}
 
 		for (const objAttribute in attributes) {
-			const geometryAttribute = attributes[objAttribute as ('f' | 'v' | 'vn' | 'vt')]!;
+			const geometryAttribute = attributes[objAttribute as ('f' | 'v' | 'vn' | 'vt')];
 			if (geometry.getAttribute(geometryAttribute)) {
 				if (geometryAttribute == 'aVertexPosition') {
 					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = skinnedVertexPosition;
@@ -179,25 +179,24 @@ export class SkeletalMesh extends Mesh {
 		directionBias: vec3,
 		boundingBoxScale: number,
 		bones: [Bone, number][],
-		hitBoxRelativeCoordOut: vec3 | undefined,
+		//hitBoxRelativeCoordOut: vec3 | undefined,
 	): int32 {
 		//TODO: optimize this stuff
-		const ret = {};
+		//const ret = {};
 		const skeletonBones = this.skeleton._bones;
 		//let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
 		const geometry = this.getGeometry();
 		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
-		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+		//const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
 		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
 		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
 		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 
-		const tempVertex = vec3.create();
+		//const tempVertex = vec3.create();
 		const accumulateMat = mat4.create();
 
-
-		function RandomInt(max: number) {
+		function RandomInt(max: number): number {
 			return Math.floor(Math.random() * max)
 		}
 
@@ -254,20 +253,20 @@ export class SkeletalMesh extends Mesh {
 		return -1;
 	}
 
-	getBoundingBox(boundingBox = new BoundingBox()) {
-		const ret = {};
+	getBoundingBox(boundingBox = new BoundingBox()): BoundingBox {
+		//const ret = {};
 		const skeletonBones = this.skeleton._bones;
-		const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+		//const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		const geometry = this.getGeometry();
 		const indexAttribute = geometry.getAttribute('index'/*TODO: create a constant*/);
 		const vertexAttribute = geometry.getAttribute('aVertexPosition');
 		const indexCount = indexAttribute!.count;
 		const vertexCount = vertexAttribute!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+		//const skinnedVertexNormal = new Float32Array(vertexCount * 3);
 		const indexValue = indexAttribute!._array;
 		const vertexPosition = vertexAttribute!._array;
-		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+		//const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
 		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
 		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
 		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
@@ -328,11 +327,11 @@ export class SkeletalMesh extends Mesh {
 		return boundingBox;
 	}
 
-	toString() {
+	toString(): string {
 		return 'SkeletalMesh ' + super.toString();
 	}
 
-	prepareRayCasting() {
+	prepareRayCasting(): void {
 		const skeletonBones = this.skeleton._bones;
 		const geometry = this.getGeometry();
 		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
