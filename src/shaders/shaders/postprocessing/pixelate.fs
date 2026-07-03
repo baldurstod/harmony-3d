@@ -219,9 +219,7 @@ void computeTrianglePixel(out vec4 fragColor, in vec2 fragCoord) {
 
 void main(void) {
 
-	#if (PIXEL_STYLE == 0)
-		computeSquarePixel(gl_FragColor, gl_FragCoord.xy);
-	#elif (PIXEL_STYLE == 1)
+	#if (PIXEL_STYLE == 1)
 		computeDiamondPixel(gl_FragColor, gl_FragCoord.xy);
 	#elif (PIXEL_STYLE == 2)
 		computeRoundPixel1(gl_FragColor, gl_FragCoord.xy);
@@ -233,6 +231,8 @@ void main(void) {
 		computeVoronoiPixel(gl_FragColor, gl_FragCoord.xy);
 	#elif (PIXEL_STYLE == 6)
 		computeTrianglePixel(gl_FragColor, gl_FragCoord.xy);
+	#else
+		computeSquarePixel(gl_FragColor, gl_FragCoord.xy);
 	#endif
 }
 `;

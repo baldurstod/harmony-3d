@@ -1379,6 +1379,8 @@ declare class Channel {
                  doInit(): void;
              }
 
+             export declare function createPassParameterUi(pass: string, param: PassParameter): HTMLElement | null;
+
              declare type CreateRenderTargetParams = {
                  texture?: AnyTexture;
                  webgpuTextureFormat?: GPUTextureFormat;
@@ -3317,7 +3319,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4662,7 +4664,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | string[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -5116,9 +5118,46 @@ declare class Channel {
                           enabled: boolean;
                           swapBuffers: boolean;
                           renderToScreen: boolean;
+                          constructor(params?: PassParameters);
                           setSize(width: number, height: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          static getParameters(): PassParameter[];
+                          setParameterValue(name: string, value: PassParameterType): void;
                       }
+
+                      export declare type PassParameter = {
+                          name: string;
+                          type: 'number' | 'boolean' | 'enum' | 'list' | 'range';
+                          /** Current value. If undefined, use default value */
+                          value?: PassParameterType;
+                          defaultValue: PassParameterType;
+                          /** For enum and list types, list of options */
+                          options?: Record<string, number>;
+                          /** For range type, minimum value. Defaults to 0 */
+                          min?: number;
+                          /** For range type, minimum value. Defaults to 100 */
+                          max?: number;
+                          /** For range type, step. Defaults to 1 */
+                          step?: number;
+                      };
+
+                      export declare interface PassParameterEvent {
+                          /** Pass name */
+                          pass: string;
+                          /** Param name */
+                          name: string;
+                          /** Param value */
+                          value: PassParameterType;
+                      }
+
+                      export declare class PassParameterEvents extends StaticEventTarget {
+                          static input(pass: string, name: string, value: PassParameterType): void;
+                      }
+
+                      declare interface PassParameters {
+                      }
+
+                      export declare type PassParameterType = number | boolean;
 
                       export declare class Path extends Curve {
                           #private;
@@ -5178,7 +5217,7 @@ declare class Channel {
 
                       export declare class PixelatePass extends Pass {
                           #private;
-                          constructor(camera: Camera);
+                          constructor(params: PixelatePassParameters);
                           /**
                            * @deprecated Use setHorizontalTiles instead
                            */
@@ -5190,7 +5229,15 @@ declare class Channel {
                           set pixelStyle(pixelStyle: number);
                           setPixelStyle(pixelStyle: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          static getParameters(): PassParameter[];
+                          setParameterValue(name: string, value: PassParameterType): void;
                       }
+
+                      declare type PixelatePassParameters = PassParameters & {
+                          camera: Camera;
+                          style?: number;
+                          tiles?: number;
+                      };
 
                       export declare class Plane extends Mesh {
                           #private;

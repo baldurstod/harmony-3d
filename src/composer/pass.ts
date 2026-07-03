@@ -3,6 +3,9 @@ import { RenderContext } from '../interfaces/rendercontext';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
 import { RenderTarget } from '../textures/rendertarget';
+import { PassParameter, PassParameterType } from './passparameters';
+
+export interface PassParameters { }
 
 export class Pass {
 	camera?: Camera;
@@ -12,6 +15,8 @@ export class Pass {
 	swapBuffers = true;
 	renderToScreen = false;
 
+	constructor(params?: PassParameters) { }
+
 	setSize(width: number, height: number) {
 
 	}
@@ -19,4 +24,12 @@ export class Pass {
 	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		throw 'Can\'t render default pass';
 	}
+
+	static getParameters(): PassParameter[] {
+		return [];
+	}
+
+	setParameterValue(name: string, value: PassParameterType): void {
+	}
+
 }
