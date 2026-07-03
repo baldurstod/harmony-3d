@@ -397,8 +397,11 @@ export declare class Bone extends Entity implements Lockable {
      * @deprecated Please use `setPosition` instead.
      */
     set position(position: vec3);
-    setPosition(position: ReadonlyVec3): void;
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
     get position(): vec3;
+    setPosition(position: ReadonlyVec3): void;
     setWorldPosition(position: ReadonlyVec3): void;
     setWorldOrientation(quaternion: ReadonlyQuat): void;
     set refPosition(refPosition: vec3);
@@ -408,15 +411,18 @@ export declare class Bone extends Entity implements Lockable {
     /**
      * @deprecated Please use `setOrientation` instead.
      */
-    set quaternion(quaternion: vec4);
+    set quaternion(quaternion: quat);
+    /**
+     * @deprecated Please use `getQuaternion` instead.
+     */
+    get quaternion(): quat;
     /**
      * @deprecated Please use `setOrientation` instead.
      */
     setQuaternion(quaternion: ReadonlyQuat): void;
     setOrientation(quaternion: ReadonlyQuat): void;
-    get quaternion(): vec4;
-    set refQuaternion(refQuaternion: vec4);
-    get refQuaternion(): vec4;
+    set refQuaternion(refQuaternion: quat);
+    get refQuaternion(): quat;
     set scale(scale: vec3);
     get scale(): vec3;
     set parent(parent: Entity | null);
@@ -430,7 +436,7 @@ export declare class Bone extends Entity implements Lockable {
     get worldQuat(): quat;
     get worldScale(): vec3;
     getWorldPosition(vec?: vec3): vec3;
-    getWorldQuaternion(q?: quat): vec4;
+    getWorldQuaternion(q?: quat): quat;
     getWorldScale(vec?: vec3): vec3;
     getWorldPosOffset(offset: vec3, out?: vec3): vec3;
     set poseToBone(poseToBone: mat4);
@@ -616,7 +622,7 @@ export declare class Camera extends Entity {
     get orthoZoom(): number;
     set verticalFov(verticalFov: number);
     /**
-     * @deprecated use getVerticalFovAsDegree instead
+     * @deprecated use getVerticalFovAsDegree or getVerticalFov instead
      */
     get verticalFov(): number;
     getVerticalFov(): Radian;
@@ -1553,14 +1559,25 @@ declare class Channel {
                   export declare class Decal extends Mesh {
                       #private;
                       constructor(params?: DecalParameters);
+                      /**
+                       * @deprecated Please use `setPosition` instead.
+                       */
                       set position(position: vec3);
+                      /**
+                       * @deprecated Please use `getPosition` instead.
+                       */
                       get position(): vec3;
+                      setPosition(position: ReadonlyVec3): void;
                       parentChanged(): void;
                       setSize(size: vec3): void;
+                      /**
+                       * @deprecated Please use `getSize` instead.
+                       */
                       get size(): vec3;
+                      getSize(): vec3;
                       refreshGeometry(): void;
                       buildContextMenu(): HarmonyMenuItemsDict;
-                      static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null>;
+                      static constructFromJSON(json: JSONObject): Promise<Decal | null>;
                       static getEntityName(): string;
                   }
 
@@ -2220,7 +2237,7 @@ declare class Channel {
 
                       export declare function getCurrentTexture(): Texture;
 
-                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | SkeletonHelper | undefined;
+                      export declare function getHelper(type: Entity): PointLightHelper | SpotLightHelper | Grid | SkeletonHelper | CameraFrustum | undefined;
 
                       export declare function getIncludeList(): Set<string>;
 
@@ -3730,7 +3747,11 @@ declare class Channel {
                           set mode(mode: ManipulatorMode);
                           setMode(mode: ManipulatorMode): void;
                           set axisOrientation(axisOrientation: number);
+                          /**
+                           * @deprecated Use getWorldOrientation instead.
+                           */
                           getWorldQuaternion(q?: quat): quat;
+                          getWorldOrientation(q?: quat): quat;
                           getWorldScale(vec?: vec3): vec3;
                           set enableX(enableX: boolean);
                           get enableX(): boolean;
@@ -6710,7 +6731,7 @@ declare class Channel {
                           set bonesPerVertex(bonesPerVertex: number);
                           get bonesPerVertex(): number;
                           exportObj(): ObjDatas;
-                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][]): int32;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           toString(): string;
                           prepareRayCasting(): void;
@@ -8991,7 +9012,7 @@ declare class Channel {
                           setText(text?: string): void;
                           setSize(size?: string): void;
                           setFont(font?: string): void;
-                          update(scene: Scene, camera: Camera, delta: number): void;
+                          update(scene: Scene, camera: Camera): void;
                           toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text2D | null>;
                           fromJSON(json: JSONObject): void;
@@ -9020,7 +9041,7 @@ declare class Channel {
                           set font(font: string);
                           set style(style: string);
                           toJSON(): JSONObject;
-                          static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null>;
+                          static constructFromJSON(): Promise<Text3D | null>;
                           fromJSON(json: JSONObject): void;
                           buildContextMenu(): HarmonyMenuItemsDict;
                           static getEntityName(): string;
@@ -9873,7 +9894,7 @@ declare class Channel {
                       }
 
                       export declare class World extends Entity {
-                          parentChanged(parent: Entity | null): void;
+                          parentChanged(): void;
                           static getEntityName(): string;
                           is(s: string): boolean;
                       }

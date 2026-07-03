@@ -12,7 +12,7 @@ import { Pass } from '../pass';
 
 export class GrainPass extends Pass {
 	#intensity!: number;
-	#material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'grain', user: this, depthTest: false });
+	readonly #material: ShaderMaterial = new ShaderMaterial({ shaderSource: 'grain', user: this, depthTest: false });
 	//#density;
 	//#size;
 	constructor(camera: Camera) {//TODO: camera is not really needed

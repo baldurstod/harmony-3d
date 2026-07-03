@@ -1,7 +1,7 @@
 import { vec4 } from 'gl-matrix';
 import { Graphics } from '../graphics/graphics2';
 import { AnyTexture } from '../types';
-import { GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT16, GL_FRAMEBUFFER, GL_LINEAR, GL_TEXTURE_2D } from '../webgl/constants';
+import { GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_FRAMEBUFFER, GL_LINEAR, GL_TEXTURE_2D } from '../webgl/constants';
 import { Framebuffer } from '../webgl/framebuffer';
 import { Renderbuffer } from '../webgl/renderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
@@ -83,7 +83,7 @@ export class RenderTarget {
 
 	#createDepthBuffer(width: number, height: number): void {
 		if (this.#depthBuffer && !this.#depthRenderbuffer) {//TODOv3 DEPTH_STENCIL
-			this.#depthRenderbuffer = new Renderbuffer(GL_DEPTH_COMPONENT16, width, height);
+			this.#depthRenderbuffer = new Renderbuffer(Graphics.isWebGL2 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, width, height);
 			this.#frameBuffer.addRenderbuffer(GL_DEPTH_ATTACHMENT, this.#depthRenderbuffer);
 		}
 	}

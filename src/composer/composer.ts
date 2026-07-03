@@ -10,7 +10,7 @@ export class Composer {
 	#width = 0;
 	#height = 0;
 	enabled = true;
-	#passes: Pass[] = [];
+	readonly #passes: Pass[] = [];
 	#renderTarget1?: RenderTarget;
 	#renderTarget2?: RenderTarget;
 	#readBuffer?: RenderTarget;

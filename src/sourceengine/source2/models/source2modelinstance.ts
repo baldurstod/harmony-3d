@@ -506,7 +506,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 				directionBias,
 				boundingBoxScale,
 				bones,
-				hitBoxRelativeCoordOut,
+				//hitBoxRelativeCoordOut,
 			);
 		}
 		return -1;

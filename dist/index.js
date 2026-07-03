@@ -2910,14 +2910,12 @@ class Entity {
      * @deprecated Please use `setPosition` instead.
      */
     set position(position) {
-        // TODO: deprecate
         this.setPosition(position);
     }
     /**
      * @deprecated Please use `getPosition` instead.
      */
     get position() {
-        // TODO: deprecate
         return this.getPosition();
     }
     getWorldPosition(vec = vec3.create()) {
@@ -5446,7 +5444,7 @@ class Mesh extends Entity {
     }
     setSubUniformValue(name, value) {
         const path = name.split('.');
-        let len = path.length - 1;
+        const len = path.length - 1;
         if (len === 0) {
             return this.setUniformValue(name, value);
         }
@@ -6952,7 +6950,7 @@ class Camera extends Entity {
         }
     }
     /**
-     * @deprecated use getVerticalFovAsDegree instead
+     * @deprecated use getVerticalFovAsDegree or getVerticalFov instead
      */
     get verticalFov() {
         return this.#verticalFov * RAD_TO_DEG;
@@ -8232,7 +8230,7 @@ class RenderTarget {
     }
     #createDepthBuffer(width, height) {
         if (this.#depthBuffer && !this.#depthRenderbuffer) { //TODOv3 DEPTH_STENCIL
-            this.#depthRenderbuffer = new Renderbuffer(GL_DEPTH_COMPONENT16, width, height);
+            this.#depthRenderbuffer = new Renderbuffer(Graphics$1.isWebGL2 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, width, height);
             this.#frameBuffer.addRenderbuffer(GL_DEPTH_ATTACHMENT, this.#depthRenderbuffer);
         }
     }
@@ -9346,6 +9344,7 @@ class FirstPersonControl extends CameraControl {
 
 // It is just a basic entity
 class Target extends Entity {
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
         return new Target({ name: json.name });
     }
@@ -11061,6 +11060,8 @@ const GREY_COLOR = vec4.fromValues(0.2, 0.2, 0.2, 1);
 const SCREEN_COLOR = vec4.fromValues(1.0, 0.0, 1.0, 1);
 const SELECTED_COLOR = vec4.fromValues(1, 1, 0, 1);
 const ORIENTATION_WORLD = 0;
+//const ORIENTATION_OBJECT = 1;
+//const ORIENTATION_PARENT = 2;
 const xUnitVec3 = vec3.fromValues(1, 0, 0);
 const yUnitVec3 = vec3.fromValues(0, 1, 0);
 const zUnitVec3 = vec3.fromValues(0, 0, 1);
@@ -11203,7 +11204,7 @@ class Manipulator extends Entity {
                     break;
             }
         });
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
+        GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, () => {
             Graphics$1.dragging = false;
             this.#setAxisSelected(false);
             this.#axis = ManipulatorAxis.None;
@@ -11228,7 +11229,7 @@ class Manipulator extends Entity {
             if (camera.isPerspective) {
                 this.getWorldPosition(tempVec3$n);
                 camera.getWorldPosition(tempVec3_b);
-                scaleFactor = vec3.distance(tempVec3$n, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
+                scaleFactor = vec3.distance(tempVec3$n, tempVec3_b) * Math.min(1.9 * Math.tan(camera.getVerticalFov()), 7);
                 scaleFactor *= 0.02;
             }
             else if (camera.isOrthographic) {
@@ -11236,7 +11237,7 @@ class Manipulator extends Entity {
                 scaleFactor *= 0.02;
             }
             scaleFactor *= this.size;
-            this.scale = vec3.set(tempVec3$n, scaleFactor, scaleFactor, scaleFactor);
+            this.setScale(vec3.set(tempVec3$n, scaleFactor, scaleFactor, scaleFactor));
             this.#setupAxis();
         }
     }
@@ -11402,12 +11403,12 @@ class Manipulator extends Entity {
     }
     #startRotate(x, y, width, height) {
         if (this._parent) {
-            this._parent.getWorldQuaternion(this.#startQuaternion);
-            this._parent.getQuaternion(this.#startLocalQuaternion);
+            this._parent.getWorldOrientation(this.#startQuaternion);
+            this._parent.getOrientation(this.#startLocalQuaternion);
         }
         else {
-            this.getWorldQuaternion(this.#startQuaternion);
-            this.getQuaternion(this.#startLocalQuaternion);
+            this.getWorldOrientation(this.#startQuaternion);
+            this.getOrientation(this.#startLocalQuaternion);
         }
         this.#startDragVector = this.#computeQuaternion(x, y, width, height);
     }
@@ -11420,7 +11421,7 @@ class Manipulator extends Entity {
             this.getWorldPosition(this.#startPosition);
         }
         this.#computeTranslationPosition(this.#startScalePosition, x, y, width, height);
-        vec3.div(startScalePosition, startScalePosition, this.scale);
+        vec3.div(startScalePosition, startScalePosition, this.getScale());
         vec3.scale(startScalePosition, startScalePosition, 2 / ARROW_LENGTH);
         if (this._parent) {
             vec3.copy(this.#parentStartScale, this._parent._scale);
@@ -11458,7 +11459,7 @@ class Manipulator extends Entity {
                 tempVec3$n[1] = 0;
                 tempVec3$n[2] = 0;
         }
-        vec3.transformQuat(tempVec3$n, tempVec3$n, this.getWorldQuaternion());
+        vec3.transformQuat(tempVec3$n, tempVec3$n, this.getWorldOrientation());
         vec3.add(tempVec3$n, this.#startPosition, tempVec3$n);
         if (this._parent) {
             this._parent.setWorldPosition(tempVec3$n);
@@ -11496,11 +11497,11 @@ class Manipulator extends Entity {
         quat.setAxisAngle(translationManipulatorTempQuat, rotateAxis, angleDelta * invert);
         quat.mul(translationManipulatorTempQuat, translationManipulatorTempQuat, this.#startLocalQuaternion);
         if (this._parent) {
-            this._parent.quaternion = translationManipulatorTempQuat;
+            this._parent.setOrientation(translationManipulatorTempQuat);
             this._parent.lockRotation = true;
         }
         else {
-            this.quaternion = translationManipulatorTempQuat;
+            this.setOrientation(translationManipulatorTempQuat);
         }
     }
     #scaleMoveHandler(x, y, width, height) {
@@ -11509,7 +11510,7 @@ class Manipulator extends Entity {
             return;
         }
         //vec3.sub(v3, v3, this.#startScalePosition);
-        vec3.div(v3, v3, this.scale);
+        vec3.div(v3, v3, this.getScale());
         vec3.div(v3, v3, this.#startScalePosition);
         vec3.scale(v3, v3, 2 / ARROW_LENGTH);
         switch (this.#axis) {
@@ -11533,7 +11534,7 @@ class Manipulator extends Entity {
                 v3[2] = 1;
         }
         if (this._parent) {
-            this._parent.scale = vec3.mul(v3, v3, this.#parentStartScale);
+            this._parent.setScale(vec3.mul(v3, v3, this.#parentStartScale));
             this._parent.lockScale = true;
         }
     }
@@ -11542,9 +11543,9 @@ class Manipulator extends Entity {
         if (camera) {
             const projectionMatrix = camera.projectionMatrix;
             const viewMatrix = camera.cameraMatrix;
-            camera.nearPlane;
-            camera.farPlane;
-            camera.aspectRatio;
+            //const nearPlane = camera.nearPlane;
+            //const farPlane = camera.farPlane;
+            //const aspectRatio = camera.aspectRatio;
             const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             // transform the screen coordinates to normalized coordinates
@@ -11565,25 +11566,26 @@ class Manipulator extends Entity {
                 const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
                 return vec3.scaleAndAdd(out, linePoint, lineDirection, t);
             }
+            //let angle;
             let planeNormal = vec3.create();
             switch (this.#axis % 10) {
                 case 1:
-                    planeNormal = vec3.transformQuat(planeNormal, xUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, xUnitVec3, this.getWorldOrientation());
                     break;
                 case 2:
-                    planeNormal = vec3.transformQuat(planeNormal, yUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, yUnitVec3, this.getWorldOrientation());
                     break;
                 case 3:
-                    planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.getWorldOrientation());
                     break;
                 case 4:
-                    planeNormal = vec3.transformQuat(planeNormal, xyUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, xyUnitVec3, this.getWorldOrientation());
                     break;
                 case 5:
-                    planeNormal = vec3.transformQuat(planeNormal, xzUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, xzUnitVec3, this.getWorldOrientation());
                     break;
                 case 6:
-                    planeNormal = vec3.transformQuat(planeNormal, yzUnitVec3, this.getWorldQuaternion());
+                    planeNormal = vec3.transformQuat(planeNormal, yzUnitVec3, this.getWorldOrientation());
                     break;
                 default:
                     planeNormal = vec3.sub(vec3.create(), this.#far, this.#near);
@@ -11593,18 +11595,18 @@ class Manipulator extends Entity {
             const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
             const A = worldPos; //vec3.clone(this._parent.position) : vec3.clone(this.position);
             const B = vec3.add(vec3.create(), A, planeNormal);
-            const P = camera.position;
+            const P = camera.getPosition();
             const AP = vec3.sub(vec3.create(), P, A); //P-A;
             const AB = vec3.sub(vec3.create(), B, A); //B-A;
             const projPoint = vec3.add(vec3.create(), A, vec3.scale(AB, AB, vec3.dot(AP, AB) / vec3.dot(AB, AB)));
-            planeNormal = vec3.sub(vec3.create(), projPoint, camera.position);
+            planeNormal = vec3.sub(vec3.create(), projPoint, camera.getPosition());
             vec3.normalize(planeNormal, planeNormal);
             if (this.#axis == ManipulatorAxis.XYZ) {
-                vec3.transformQuat(planeNormal, vec3.fromValues(0, 0, 1), camera.quaternion);
+                vec3.transformQuat(planeNormal, vec3.fromValues(0, 0, 1), camera.getOrientation());
             }
             /********************/
             lineIntersection(out, worldPos, planeNormal, this.#near, vec3.sub(vec3.create(), this.#far, this.#near));
-            quat.invert(translationManipulatorTempQuat, this.getWorldQuaternion());
+            quat.invert(translationManipulatorTempQuat, this.getWorldOrientation());
             vec3.transformQuat(out, out, translationManipulatorTempQuat);
             return out;
         }
@@ -11655,18 +11657,24 @@ class Manipulator extends Entity {
     set axisOrientation(axisOrientation) {
         this.#axisOrientation = axisOrientation;
     }
+    /**
+     * @deprecated Use getWorldOrientation instead.
+     */
     getWorldQuaternion(q = quat.create()) {
+        return this.getWorldOrientation(q);
+    }
+    getWorldOrientation(q = quat.create()) {
         if (this.#mode < ManipulatorMode.Scale) {
             switch (this.#axisOrientation) {
                 case ORIENTATION_WORLD:
                     quat.identity(q);
                     break;
                 default:
-                    super.getWorldQuaternion(q);
+                    super.getWorldOrientation(q);
             }
         }
         else {
-            super.getWorldQuaternion(q);
+            super.getWorldOrientation(q);
         }
         /*if (this._parent !== null) {
             this._parent.getWorldQuaternion(q);
@@ -11714,16 +11722,16 @@ class Manipulator extends Entity {
         if (!camera) {
             return;
         }
-        this.getWorldQuaternion(translationManipulatorTempQuat);
+        this.getWorldOrientation(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
         this.getPositionFrom(camera, tempVec3$n);
         vec3.normalize(tempVec3$n, tempVec3$n);
         vec3.transformQuat(tempVec3$n, tempVec3$n, translationManipulatorTempQuat);
-        this.#circle.quaternion = quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$n);
-        this.#viewCircle.quaternion = tempQuat$9;
-        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$n[1], -tempVec3$n[2]));
-        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$n[0], tempVec3$n[2]));
-        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$n[1], tempVec3$n[0]));
+        this.#circle.setOrientation(quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$n));
+        this.#viewCircle.setOrientation(tempQuat$9);
+        this.#xCircle.setOrientation(quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$n[1], -tempVec3$n[2])));
+        this.#yCircle.setOrientation(quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$n[0], tempVec3$n[2])));
+        this.#zCircle.setOrientation(quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$n[1], tempVec3$n[0])));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -26156,15 +26164,17 @@ class Bone extends Entity {
      * @deprecated Please use `setPosition` instead.
      */
     set position(position) {
-        super.position = position;
-        this.dirty = true;
+        this.setPosition(position);
+    }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
+    get position() {
+        return this.getPosition();
     }
     setPosition(position) {
         super.setPosition(position);
         this.dirty = true;
-    }
-    get position() {
-        return vec3.clone(this._position);
     }
     setWorldPosition(position) {
         super.setWorldPosition(position);
@@ -26208,22 +26218,23 @@ class Bone extends Entity {
      * @deprecated Please use `setOrientation` instead.
      */
     set quaternion(quaternion) {
-        super.quaternion = quaternion;
-        this.dirty = true;
+        this.setOrientation(quaternion);
+    }
+    /**
+     * @deprecated Please use `getQuaternion` instead.
+     */
+    get quaternion() {
+        return quat.clone(this._quaternion);
     }
     /**
      * @deprecated Please use `setOrientation` instead.
      */
     setQuaternion(quaternion) {
-        super.setOrientation(quaternion);
-        this.dirty = true;
+        this.setOrientation(quaternion);
     }
     setOrientation(quaternion) {
         super.setOrientation(quaternion);
         this.dirty = true;
-    }
-    get quaternion() {
-        return quat.clone(this._quaternion);
     }
     set refQuaternion(refQuaternion) {
         quat.copy(this.#refQuaternion, refQuaternion);
@@ -26327,10 +26338,10 @@ class Bone extends Entity {
     }
     #compute() {
         const parent = this._parent;
-        this.#parentSkeletonBone;
+        //const _parentSkeletonBone = this.#parentSkeletonBone;
         if (!this.#parentSkeletonBone) {
             if (parent) {
-                const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
+                const parentWorldQuaternion = parent.getWorldOrientation(tempWorldQuat);
                 vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
                 vec3.mul(tempPosition, this._position, tempWorldScale);
                 vec3.transformQuat(this.#worldPos, tempPosition, parentWorldQuaternion);
@@ -26340,7 +26351,7 @@ class Bone extends Entity {
             else {
                 if (this.#skeleton) {
                     this.#skeleton.getWorldPosition(tempWorldVec3);
-                    this.#skeleton.getWorldQuaternion(tempWorldQuat);
+                    this.#skeleton.getWorldOrientation(tempWorldQuat);
                     vec3.transformQuat(this.#worldPos, this._position, tempWorldQuat);
                     vec3.add(this.#worldPos, this.#worldPos, tempWorldVec3);
                     quat.multiply(this.#worldQuat, tempWorldQuat, this._quaternion);
@@ -26421,6 +26432,7 @@ class Bone extends Entity {
         json.boneid = this.boneId;
         return json;
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
         return new Bone({ name: json.name });
     }
@@ -26596,16 +26608,19 @@ class SkeletalMesh extends Mesh {
         }
         return ret;
     }
-    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones) {
+        //TODO: optimize this stuff
+        //const ret = {};
         const skeletonBones = this.skeleton._bones;
         //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
         const geometry = this.getGeometry();
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        //const skinnedVertexPosition = new Float32Array(vertexCount * 3);
         const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
         const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
         const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        vec3.create();
+        //const tempVertex = vec3.create();
         const accumulateMat = mat4.create();
         function RandomInt(max) {
             return Math.floor(Math.random() * max);
@@ -26664,16 +26679,19 @@ class SkeletalMesh extends Mesh {
         return -1;
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
+        //const ret = {};
         const skeletonBones = this.skeleton._bones;
+        //const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
         const geometry = this.getGeometry();
         const indexAttribute = geometry.getAttribute('index' /*TODO: create a constant*/);
         const vertexAttribute = geometry.getAttribute('aVertexPosition');
         const indexCount = indexAttribute.count;
         const vertexCount = vertexAttribute.count;
         const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        //const skinnedVertexNormal = new Float32Array(vertexCount * 3);
         const indexValue = indexAttribute._array;
         const vertexPosition = vertexAttribute._array;
-        geometry.getAttribute('aVertexNormal')._array;
+        //const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
         const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
         const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
@@ -29628,6 +29646,7 @@ registerLoader('Source1VmtLoader', Source1VmtLoader);
 
 // It is just a basic entity
 class Group extends Entity {
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
         return new Group({ name: json.name });
     }
@@ -29638,7 +29657,7 @@ class Group extends Entity {
 registerEntity(Group);
 
 class World extends Entity {
-    parentChanged(parent) {
+    parentChanged() {
         const iterator = this.getParentIterator();
         for (const p of iterator) {
             if (p.is('Scene')) {
@@ -52894,7 +52913,7 @@ class Source2ModelInstance extends Entity {
     getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
         const meshes = this.meshes;
         for (const mesh of meshes) {
-            return mesh.getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut);
+            return mesh.getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones);
         }
         return -1;
     }
@@ -71354,12 +71373,21 @@ class Decal extends Mesh {
         super(params);
         this.setSize(params.size ?? DEFAULT_SIZE);
     }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
     set position(position) {
-        super.position = position;
-        this.refreshGeometry();
+        this.setPosition(position);
     }
+    /**
+     * @deprecated Please use `getPosition` instead.
+     */
     get position() {
-        return super.position;
+        return this.getPosition();
+    }
+    setPosition(position) {
+        super.setPosition(position);
+        this.refreshGeometry();
     }
     parentChanged() {
         this.refreshGeometry();
@@ -71368,7 +71396,13 @@ class Decal extends Mesh {
         vec3.copy(this.#size, size);
         this.refreshGeometry();
     }
+    /**
+     * @deprecated Please use `getSize` instead.
+     */
     get size() {
+        return this.getSize();
+    }
+    getSize() {
         return this.#size;
     }
     refreshGeometry() {
@@ -71379,13 +71413,14 @@ class Decal extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             StaticDecal_1: null,
-            size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) {
+            size: { i18n: '#size', f: () => { const v = prompt('Size', this.getSize().join(' ')); if (v !== null) {
                     this.setSize(stringToVec3(v));
                 } } },
             refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
         });
     }
-    static async constructFromJSON(json, entities, loadedPromise) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON(json /*, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
         return new Decal(json);
     }
     static getEntityName() {
@@ -71456,7 +71491,7 @@ class DecalGeometry extends BufferGeometry {
             // create texture coordinates (we are still in projector space)
             uvs.push(0.5 + (decalVertex[0][0] / size[0]), 0.5 + (decalVertex[0][1] / size[1]));
             // transform the vertex back to world space
-            decalVertex[0];
+            //const v = decalVertex[0];
             //vec3.transformMat4(v, v, projectorMatrix);
             vertices.push(...decalVertex[0]);
             normals.push(...decalVertex[1]);
@@ -71612,6 +71647,7 @@ class BoundingBoxHelper extends Box {
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
 const AXIS_COLOR = [1, 1, 0, 1];
+//const UP_COLOR = [0, 0, 1, 1];
 const tempVec3$2 = vec3.create();
 const Points = [
     //Base Points
@@ -71744,7 +71780,7 @@ class CameraFrustum extends Mesh {
 class Grid extends Mesh {
     #size;
     #spacing;
-    #normal;
+    //#normal: number;
     constructor(params = {}) {
         const spacing = params.spacing ?? 10;
         params.geometry = new PlaneBufferGeometry();
@@ -71752,11 +71788,11 @@ class Grid extends Mesh {
         super(params);
         this.#size = params.size ?? 100;
         this.#spacing = spacing;
-        this.#normal = params.normal ?? 2;
+        //this.#normal = params.normal ?? 2;
         this.#updateGeometry();
     }
     #updateGeometry() {
-        this.geometry.updateGeometry(this.#size, this.#size, 1, 1);
+        this.getGeometry().updateGeometry(this.#size, this.#size, 1, 1);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -71766,7 +71802,8 @@ class Grid extends Mesh {
                     this.#updateGeometry();
                 } } },
             spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) {
-                    this.#spacing = this.material.spacing = Number(spacing);
+                    this.#spacing = Number(spacing);
+                    this.getMaterial().setSpacing(this.#spacing);
                 } } }
         });
     }
@@ -71934,7 +71971,7 @@ class SkeletonHelper extends Entity {
             }
             //boneLine.position = bone.worldPos;
             let start = bone.worldPos;
-            let end = bone.worldPos;
+            const end = bone.worldPos;
             const boneParent = bone.parent;
             if (boneParent?.isBone) {
                 start = boneParent.getWorldPosition( /*TODO: optimize*/);
@@ -71959,6 +71996,7 @@ class SkeletonHelper extends Entity {
             }
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get wireframe() {
         return 0;
     }
@@ -72054,7 +72092,7 @@ class SkeletonHelper extends Entity {
             return;
         }
         if (this.#highlitLine) {
-            this.#highlitLine.material = this.#lineMaterial;
+            this.#highlitLine.setMaterial(this.#lineMaterial);
         }
         if (line) {
             line.setMaterial(this.#highlitLineMaterial);
@@ -72116,7 +72154,7 @@ class HitboxHelper extends Entity {
                 const box = new Box({ width: tempVec3[0], height: tempVec3[1], depth: tempVec3[2], material: boxMaterial });
                 box.serializable = false;
                 vec3.lerp(tempVec3, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
-                box.position = tempVec3;
+                box.setPosition(tempVec3);
                 if (hitbox.parent) {
                     hitbox.parent.addChild(box);
                 }
@@ -72131,6 +72169,7 @@ class HitboxHelper extends Entity {
         this.#hitboxes.forEach(hitbox => hitbox.dispose());
         this.#hitboxes = [];
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON() {
         return new HitboxHelper();
     }
@@ -72174,7 +72213,7 @@ class Text2D extends Entity {
         this.#font = font;
         this.#html.style.fontFamily = font ?? '';
     }
-    update(scene, camera, delta) {
+    update(scene, camera /*, delta: number*/) {
         const pos = vec3.create();
         const mat = camera.getViewProjectionMatrix();
         vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
@@ -72721,7 +72760,7 @@ class Text3D extends Mesh {
         const font = await FontManager.getFont(this.#font);
         if (font) {
             const shapes = font.generateShapes(this.#text, this.#size);
-            this.geometry.createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
+            this.getGeometry().createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
         }
     }
     toJSON() {
@@ -72733,7 +72772,8 @@ class Text3D extends Mesh {
         json.style = this.#style;
         return json;
     }
-    static async constructFromJSON(json, entities, loadedPromise) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON( /*json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
         return new Text3D({}); // TODO: add params
     }
     fromJSON(json) {
@@ -75524,7 +75564,7 @@ class WireframeHelper extends Entity {
     }
     setVisible(visible) {
         super.setVisible(visible);
-        for (const [w, m] of this.#wireframeToMesh) {
+        for (const [w] of this.#wireframeToMesh) {
             w.setVisible(visible);
         }
     }
@@ -75537,13 +75577,12 @@ class WireframeHelper extends Entity {
         if (!indexArray) {
             return;
         }
-        let wireframeArray;
         const arraySize = indexArray.length * 2;
         const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1, 'index') : new Uint16BufferAttribute(new Array(arraySize), 1, 'index');
         wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
         geometry.setIndex(wireframeAttribute);
         geometry.count = arraySize;
-        wireframeArray = wireframeAttribute._array;
+        const wireframeArray = wireframeAttribute._array;
         if (!wireframeArray) {
             return;
         }
