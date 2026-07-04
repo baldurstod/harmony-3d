@@ -8,6 +8,7 @@ import { Scene } from '../../scenes/scene';
 import { RenderTarget } from '../../textures/rendertarget';
 import { getCurrentTexture } from '../../textures/texture';
 import { Pass } from '../pass';
+import { PassParameter, PassParameterType } from '../passparameters';
 
 export class SaturatePass extends Pass {
 	#saturation = 0;
@@ -48,6 +49,27 @@ export class SaturatePass extends Pass {
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,
 			});
+		}
+	}
+
+	static getParameters(): PassParameter[] {
+		return [
+			{
+				name: 'saturation',
+				type: 'range',
+				defaultValue: 0,
+				min: 0,
+				max: 2,
+				step: 0.01,
+			},
+		];
+	}
+
+	setParameterValue(name: string, value: PassParameterType): void {
+		switch (name) {
+			case 'saturation':
+				this.setSaturation(value as number);
+				break;
 		}
 	}
 }

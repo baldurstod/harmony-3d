@@ -2829,6 +2829,8 @@ declare class Channel {
                           set intensity(intensity: number);
                           setIntensity(intensity: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          static getParameters(): PassParameter[];
+                          setParameterValue(name: string, value: PassParameterType): void;
                       }
 
                       export declare interface GraphicKeyboardEventData {
@@ -3319,7 +3321,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4664,7 +4666,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | Float32Array<ArrayBufferLike> | boolean[] | string[] | vec2[] | null;
+                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -6326,6 +6328,8 @@ declare class Channel {
                           set saturation(saturation: number);
                           setSaturation(saturation: number): void;
                           render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          static getParameters(): PassParameter[];
+                          setParameterValue(name: string, value: PassParameterType): void;
                       }
 
                       export declare class Scene extends Entity {

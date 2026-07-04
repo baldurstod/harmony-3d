@@ -9,6 +9,7 @@ import { Scene } from '../../scenes/scene';
 import { RenderTarget } from '../../textures/rendertarget';
 import { getCurrentTexture } from '../../textures/texture';
 import { Pass } from '../pass';
+import { PassParameter, PassParameterType } from '../passparameters';
 
 export class GrainPass extends Pass {
 	#intensity!: number;
@@ -52,6 +53,27 @@ export class GrainPass extends Pass {
 				workgroupCountX: context.width,
 				workgroupCountY: context.height,
 			});
+		}
+	}
+
+	static getParameters(): PassParameter[] {
+		return [
+			{
+				name: 'intensity',
+				type: 'range',
+				defaultValue: 0.2,
+				min: 0,
+				max: 1,
+				step: 0.01,
+			},
+		];
+	}
+
+	setParameterValue(name: string, value: PassParameterType): void {
+		switch (name) {
+			case 'intensity':
+				this.setIntensity(value as number);
+				break;
 		}
 	}
 }

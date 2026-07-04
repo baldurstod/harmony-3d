@@ -7940,6 +7940,25 @@ class GrainPass extends Pass {
             });
         }
     }
+    static getParameters() {
+        return [
+            {
+                name: 'intensity',
+                type: 'range',
+                defaultValue: 0.2,
+                min: 0,
+                max: 1,
+                step: 0.01,
+            },
+        ];
+    }
+    setParameterValue(name, value) {
+        switch (name) {
+            case 'intensity':
+                this.setIntensity(value);
+                break;
+        }
+    }
 }
 
 class OldMoviePass extends Pass {
@@ -8708,6 +8727,25 @@ class SaturatePass extends Pass {
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
             });
+        }
+    }
+    static getParameters() {
+        return [
+            {
+                name: 'saturation',
+                type: 'range',
+                defaultValue: 0,
+                min: 0,
+                max: 2,
+                step: 0.01,
+            },
+        ];
+    }
+    setParameterValue(name, value) {
+        switch (name) {
+            case 'saturation':
+                this.setSaturation(value);
+                break;
         }
     }
 }
