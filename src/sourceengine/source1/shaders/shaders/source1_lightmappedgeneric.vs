@@ -3,6 +3,7 @@ export default `
 #include declare_matrix_uniforms
 #include declare_vertex_uv
 #include declare_shadow_mapping
+#include declare_vertex_skinning
 
 #include varying_standard
 
