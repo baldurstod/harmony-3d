@@ -4,8 +4,8 @@ import { Node } from '../node';
 import { NodeImageEditor, NodeImageEditorEventType } from '../nodeimageeditor';
 import { DELAY_BEFORE_REFRESH, NodeGui } from './nodegui';
 
-const WIDTH = 300;
-const HEIGHT = 300;
+//const WIDTH = 300;
+//const HEIGHT = 300;
 
 export class NodeImageEditorGui {
 	#filter: { node?: string } = {};
@@ -20,7 +20,7 @@ export class NodeImageEditorGui {
 	#context: CanvasRenderingContext2D;
 
 	constructor(nodeImageEditor?: NodeImageEditor) {
-		this.#imageEditorChanged = () => {
+		this.#imageEditorChanged = (): void => {
 			clearTimeout(this.#refreshTimeout);
 			this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);
 		}
@@ -47,7 +47,7 @@ export class NodeImageEditorGui {
 		this.#htmlNodes = createElement('div', {
 			class: 'node-image-editor-nodes',
 			parent: this.#shadowRoot,
-		}) as HTMLElement;
+		});
 
 		this.#canvas = createElement('canvas', {
 			class: 'node-image-editor-canvas',
@@ -68,7 +68,7 @@ export class NodeImageEditorGui {
 		this.setNodeImageEditor(nodeImageEditor);
 	}
 
-	setNodeImageEditor(nodeImageEditor?: NodeImageEditor) {
+	setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void {
 		if (this.#nodeImageEditor == nodeImageEditor) {
 			return;
 		}
@@ -80,11 +80,11 @@ export class NodeImageEditorGui {
 		this.#nodeImageEditor?.addEventListener(NodeImageEditorEventType.Any, this.#imageEditorChanged);
 	}
 
-	get htmlElement() {
-		return this.#shadowRoot.host;
+	get htmlElement(): HTMLElement {
+		return this.#shadowRoot.host as HTMLElement;
 	}
 
-	#setCanvasSize() {
+	#setCanvasSize(): void {
 		this.#canvas.height = 0;
 		this.#canvas.width = 0;
 		this.#canvas.height = this.#htmlNodes.scrollHeight;
@@ -92,9 +92,9 @@ export class NodeImageEditorGui {
 		this.#drawLinks();
 	}
 
-	#initResizeObserver() {
-		const callback: ResizeObserverCallback = (entries, observer) => {
-			entries.forEach(entry => {
+	#initResizeObserver(): void {
+		const callback: ResizeObserverCallback = (entries) => {
+			entries.forEach(() => {
 				this.#setCanvasSize();
 			});
 		};
@@ -102,7 +102,7 @@ export class NodeImageEditorGui {
 		resizeObserver.observe(this.#htmlNodes);
 	}
 
-	#refreshHtml() {
+	#refreshHtml(): void {
 		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
 		if (this.#nodeImageEditor) {
@@ -119,11 +119,11 @@ export class NodeImageEditorGui {
 		this.#refreshFilter();
 	}
 
-	#organizeNodes() {
+	#organizeNodes(): void {
 		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
 		const nodes = new Map<number, NodeGui[]>();
-		const maxHeight = 0;
+		//const maxHeight = 0;
 		if (this.#nodeImageEditor) {
 			for (const node of this.#nodeImageEditor.getNodes()) {
 				const nodeGui = this.#nodesGui.get(node);
@@ -150,13 +150,12 @@ export class NodeImageEditorGui {
 			);
 		}
 
-		for (const [s, n] of nodes) {
+		for (const [, n] of nodes) {
 			const column = createElement('div', { class: 'node-image-editor-nodes-column' });
 			this.#htmlNodes.prepend(column);
-			for (let i = 0; i < n.length; ++i) {
-				const nodeGui = n[i]!;
+			for (const nodeGui of n) {
 				//nodeGui.html.style.top = i * HEIGHT + 'px';
-				const rect = nodeGui.html.getBoundingClientRect();
+				//const rect = nodeGui.html.getBoundingClientRect();
 				//maxHeight = Math.max(maxHeight, rect.bottom);
 				column.append(nodeGui.html);
 			}
@@ -164,7 +163,7 @@ export class NodeImageEditorGui {
 		//this.#htmlNodes.style.height = maxHeight + 'px';;
 	}
 
-	#drawLink(p1: HTMLElement, p2: HTMLElement) {
+	#drawLink(p1: HTMLElement, p2: HTMLElement): void {
 		if (p1 && p2) {
 			const context = this.#context;
 			let p1BoundingRect = p1.getBoundingClientRect();
@@ -188,7 +187,7 @@ export class NodeImageEditorGui {
 			const y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
 			context.beginPath();
 			context.moveTo(x1, y1);
-			const max = Math.max(Math.abs(y2 - y1), Math.abs(x2 - x1))
+			//const max = Math.max(Math.abs(y2 - y1), Math.abs(x2 - x1))
 			//context.bezierCurveTo(Math.max(x2, x1 + max),y1,Math.min(x1, x2 - max),y2,x2,y2);
 
 			let xa, xb;
@@ -207,7 +206,7 @@ export class NodeImageEditorGui {
 		}
 	}
 
-	#drawLinks() {
+	#drawLinks(): void {
 		this.#context.clearRect(0, 0, this.#canvas.clientWidth, this.#canvas.clientHeight)
 
 		if (this.#nodeImageEditor) {
@@ -237,7 +236,7 @@ export class NodeImageEditorGui {
 		}
 	}
 
-	#refreshFilter() {
+	#refreshFilter(): void {
 		if (this.#nodeImageEditor) {
 			for (const node of this.#nodeImageEditor.getNodes()) {
 				const nodeGui = this.#nodesGui.get(node);
@@ -249,12 +248,12 @@ export class NodeImageEditorGui {
 		this.refresh();
 	}
 
-	refresh() {
+	refresh(): void {
 		this.#organizeNodes();
 		this.#drawLinks();
 	}
 
-	#matchFilter(nodeGUI: NodeGui) {
+	#matchFilter(nodeGUI: NodeGui): void {
 		let expanded = true;
 		if (this.#filter.node) {
 			if (!nodeGUI.node.title.includes(this.#filter.node)) {

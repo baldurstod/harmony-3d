@@ -39,7 +39,7 @@ export class Select extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext) {
+	async #operateWebGL(context: NodeContext): Promise<void> {
 		if (false && DEBUG) {
 			console.log('Select operate');
 		}
@@ -104,11 +104,12 @@ export class Select extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'select';
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		const ret = [];
 		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
@@ -131,7 +132,7 @@ export class Select extends Node {
 		return ret.join('\n');
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

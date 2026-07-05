@@ -11,8 +11,8 @@ import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
 import { registerOperation } from '../operations';
 
-const tempVec2 = vec2.create();
-const texTransform = mat3.create();
+//const tempVec2 = vec2.create();
+//const texTransform = mat3.create();
 
 export class ApplySticker extends Node {
 	#renderTarget?: RenderTarget;
@@ -55,11 +55,11 @@ export class ApplySticker extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext) {
+	async #operateWebGL(context: NodeContext): Promise<void> {
 		if (!this.material) {
 			return;
 		}
-		const params = this.params;
+		//const params = this.params;
 		this.material.setTexture('uSticker', this.#inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
 		this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
@@ -116,7 +116,7 @@ export class ApplySticker extends Node {
 			return;
 		}
 
-		const params = this.params;
+		//const params = this.params;
 		this.material.setTexture('stickerTexture', this.#inputTexture);
 		this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
 		this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
@@ -152,11 +152,12 @@ export class ApplySticker extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'apply sticker';
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		const ret = [];
 		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
@@ -174,7 +175,7 @@ export class ApplySticker extends Node {
 		this.#inputTexture = texture;
 	};
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#renderTarget?.dispose();
 		this.material?.removeUser(this);
@@ -185,7 +186,7 @@ registerOperation('apply_sticker', ApplySticker);
 
 
 //void ComputeTextureMatrixFromRectangle( VMatrix* pOutMat, const Vector2D& bl, const Vector2D& tl, const Vector2D& tr )
-function ComputeTextureMatrixFromRectangle(out: mat3, bl: vec2, tl: vec2, tr: vec2) {
+function ComputeTextureMatrixFromRectangle(out: mat3, bl: vec2, tl: vec2, tr: vec2): void {
 	const tempVec2 = vec2.create();
 	const leftEdge = vec2.sub(vec2.create(), bl, tl);
 	const topEdge = vec2.sub(vec2.create(), tr, tl);

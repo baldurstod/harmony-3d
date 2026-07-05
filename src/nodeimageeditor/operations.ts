@@ -3,11 +3,11 @@ import { NodeImageEditor } from './nodeimageeditor';
 
 const operations = new Map<string, typeof Node>();
 
-export function registerOperation(name: string, ope: typeof Node) {
+export function registerOperation(name: string, ope: typeof Node): void {
 	operations.set(name, ope);
 }
 
-export function getOperation(name: string, editor: NodeImageEditor, params?: any) {
+export function getOperation(name: string, editor: NodeImageEditor, params?: any): Node | null {
 	const ope = operations.get(name);
 	if (!ope) {
 		console.warn('Unknown operation : ' + name);

@@ -19,20 +19,22 @@ export class IntArrayNode extends ParametersNode {
 		this.addParam(new NodeParam('value', NodeParamType.Int, this.#array, this.#length));
 	}
 
-	async operate(context: any = {}) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	async operate(): Promise<void> {
 		const output = this.getOutput('output');
 		if (output) {
 			output._value = this.#array;
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'int array';
 	}
 
-	setValue(index: number, value: number) {
+	setValue(index: number, value: number): void {
 		if (index >= this.#length) {
-			throw 'wrong index';
+			throw new Error('wrong index');
 		}
 		this.#array[index] = value;
 		this.invalidate();

@@ -47,15 +47,16 @@ export class TextureLookup extends Node {
 		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
+	// eslint-disable-next-line @typescript-eslint/require-await
 	async operate(context: NodeContext): Promise<void> {
 		if (Graphics.isWebGLAny) {
-			await this.#operateWebGL(context);
+			this.#operateWebGL(context);
 		} else {
-			await this.#operateWebGPU(context);
+			this.#operateWebGPU();
 		}
 	}
 
-	async #operateWebGL(context: NodeContext): Promise<void> {
+	#operateWebGL(context: NodeContext): void {
 		if (!this.material) {
 			return;
 		}
@@ -86,7 +87,7 @@ export class TextureLookup extends Node {
 		}
 	}
 
-	async #operateWebGPU(context: NodeContext): Promise<void> {
+	#operateWebGPU(): void {
 		if (!this.material) {
 			return;
 		}
@@ -124,11 +125,12 @@ export class TextureLookup extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'texture lookup';
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		const ret = [];
 		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
@@ -137,7 +139,7 @@ export class TextureLookup extends Node {
 				ret.push(await input.toString(tabs1));
 			}
 		}
-		ret.push(tabs1 + `black : ${this.getValue('adjust black')}, white : ${this.getValue('adjust white')}, gamma : ${this.getValue('adjust gamma')}`);
+		ret.push(tabs1 + `black : ${this.getValue('adjust black') as number} , white : ${this.getValue('adjust white') as number}, gamma : ${this.getValue('adjust gamma') as number}`);
 		return ret.join('\n');
 	}
 
@@ -147,7 +149,7 @@ export class TextureLookup extends Node {
 		this.#inputTexture = texture;
 	};
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#renderTarget?.dispose();
 		this.#inputTexture?.removeUser(this);

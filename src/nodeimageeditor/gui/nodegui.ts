@@ -355,7 +355,7 @@ export class NodeGui {
 					class: 'reset-button',
 					parent: paramHtml,
 					innerHTML: resetWrenchSVG,
-					$click: async () => {
+					$click: () => {
 						if (param.type === NodeParamType.StickerAdjust) {
 							this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
 							this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
@@ -383,6 +383,7 @@ export class NodeGui {
 				class: 'copy-button',
 				parent: paramHtml,
 				innerHTML: contentCopySVG,
+				// eslint-disable-next-line @typescript-eslint/no-misused-promises
 				$click: async () => {
 					await navigator.clipboard.writeText(valueHtml.value);
 					valueHtml.classList.add('flash');

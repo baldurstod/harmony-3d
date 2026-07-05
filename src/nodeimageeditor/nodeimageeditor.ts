@@ -38,15 +38,10 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 	#nodes = new Set<Node>();
 	#camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false, });
 	#material = new MeshBasicMaterial();
-	#fullScreenQuadMesh = new FullScreenQuad({ material: this.#material });
+	#fullScreenQuadMesh = new FullScreenQuad({ material: this.#material, parent: this.#scene });
 	textureSize = DEFAULT_TEXTURE_SIZE;
 
-	constructor() {
-		super();
-		this.#scene.addChild(this.#fullScreenQuadMesh);
-	}
-
-	render(material: Material, width: number, height: number) {
+	render(material: Material, width: number, height: number): void {
 		this.#fullScreenQuadMesh.setMaterial(material);
 		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
 		// Set the material back to default to free the material
@@ -69,7 +64,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		return node;
 	}*/
 
-	#dispatchEvent(eventName: NodeImageEditorEventType, eventDetail: Node | null) {
+	#dispatchEvent(eventName: NodeImageEditorEventType, eventDetail: Node | null): void {
 		this.dispatchEvent(new CustomEvent<NodeImageEditorEvent>(eventName, { detail: { node: eventDetail } }));
 		this.dispatchEvent(new CustomEvent<NodeImageEditorEvent>(NodeImageEditorEventType.Any, { detail: { eventName: eventName } }));
 	}
@@ -81,7 +76,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		}
 	}*/
 
-	removeNode(node: Node) {
+	removeNode(node: Node): void {
 		if (node.editor == this) {
 			this.#nodes.delete(node);
 			//TODO :remove all inputs / output
@@ -89,7 +84,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		}
 	}
 
-	removeAllNodes() {
+	removeAllNodes(): void {
 		this.#nodes.forEach((node) => node.dispose());
 		this.#nodes.clear();
 		this.#dispatchEvent(NodeImageEditorEventType.AllNodesRemoved, null);
@@ -97,23 +92,23 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 		Source1TextureManager.cleanup();
 	}
 
-	getVariable(name: string) {
+	getVariable(name: string): number | undefined {
 		return this.#variables.get(name);
 	}
 
-	setVariable(name: string, value: number) {
-		return this.#variables.set(name, value);
+	setVariable(name: string, value: number): void {
+		this.#variables.set(name, value);
 	}
 
-	deleteVariable(name: string) {
-		return this.#variables.delete(name);
+	deleteVariable(name: string): void {
+		this.#variables.delete(name);
 	}
 
-	clearVariables() {
-		return this.#variables.clear();
+	clearVariables(): void {
+		this.#variables.clear();
 	}
 
-	getNodes() {
+	getNodes(): Set<Node> {
 		return new Set(this.#nodes);
 	}
 }

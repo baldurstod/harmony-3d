@@ -1,13 +1,14 @@
-import { InputOutput, IO_TYPE_TEXTURE_2D } from './inputoutput';
+import { InputOutput, InputOutputType } from './inputoutput';
 import { Node, NodeContext } from './node';
 
 export class Output extends InputOutput {
 	#successors = new Set<InputOutput>();
 
-	getValue(context: NodeContext) {
+	getValue(context: NodeContext): Promise<unknown> {
+		// eslint-disable-next-line @typescript-eslint/no-misused-promises
 		const valuePromise = new Promise(async resolve => {
 			await this.node.validate(context);
-			if (this.type == IO_TYPE_TEXTURE_2D) {
+			if (this.type == InputOutputType.Texture2D) {
 				resolve(this._value);
 			} else {
 				resolve(this._value);
@@ -17,19 +18,19 @@ export class Output extends InputOutput {
 		return valuePromise;
 	}
 
-	addSuccessor(successor: InputOutput) {
+	addSuccessor(successor: InputOutput): void {
 		this.#successors.add(successor);
 	}
 
-	removeSuccessor(successor: InputOutput) {
+	removeSuccessor(successor: InputOutput): void {
 		this.#successors.delete(successor);
 	}
 
-	hasSuccessor() {
+	hasSuccessor(): boolean {
 		return this.#successors.size > 0;
 	}
 
-	successorsLength() {
+	successorsLength(): number {
 		let max = 0;
 		for (const successor of this.#successors) {
 			const l = successor.node.successorsLength() + 1;
@@ -40,7 +41,7 @@ export class Output extends InputOutput {
 		return max;
 	}
 
-	invalidate() {
+	invalidate(): void {
 		for (const successor of this.#successors) {
 			successor.node.invalidate();
 		}
@@ -54,24 +55,25 @@ export class Output extends InputOutput {
 	}
 	*/
 
-	getType() {
+	getType(): void | null {
 		if (this.node) {
 			return this.node.getType();
 		}
 		return null;
 	}
 
-	isValid(startingPoint: Node) {
+	isValid(startingPoint: Node): boolean {
 		if (this.node) {
 			return this.node.isValid(startingPoint);
 		}
 		return false;
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		return await this.node.toString(tabs);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	dispose(): void {
 	}
 }

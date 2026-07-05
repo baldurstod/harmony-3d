@@ -68634,12 +68634,8 @@ class NodeImageEditor extends MyEventTarget {
     #nodes = new Set();
     #camera = new Camera({ position: vec3.fromValues(0, 0, 100), autoResize: false, });
     #material = new MeshBasicMaterial();
-    #fullScreenQuadMesh = new FullScreenQuad({ material: this.#material });
+    #fullScreenQuadMesh = new FullScreenQuad({ material: this.#material, parent: this.#scene });
     textureSize = DEFAULT_TEXTURE_SIZE;
-    constructor() {
-        super();
-        this.#scene.addChild(this.#fullScreenQuadMesh);
-    }
     render(material, width, height) {
         this.#fullScreenQuadMesh.setMaterial(material);
         Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
@@ -68688,13 +68684,13 @@ class NodeImageEditor extends MyEventTarget {
         return this.#variables.get(name);
     }
     setVariable(name, value) {
-        return this.#variables.set(name, value);
+        this.#variables.set(name, value);
     }
     deleteVariable(name) {
-        return this.#variables.delete(name);
+        this.#variables.delete(name);
     }
     clearVariables() {
-        return this.#variables.clear();
+        this.#variables.clear();
     }
     getNodes() {
         return new Set(this.#nodes);
@@ -69051,9 +69047,10 @@ class Input extends InputOutput {
 class Output extends InputOutput {
     #successors = new Set();
     getValue(context) {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
         const valuePromise = new Promise(async (resolve) => {
             await this.node.validate(context);
-            if (this.type == IO_TYPE_TEXTURE_2D) {
+            if (this.type == InputOutputType.Texture2D) {
                 resolve(this._value);
             }
             else {
@@ -69108,6 +69105,7 @@ class Output extends InputOutput {
     async toString(tabs = '') {
         return await this.node.toString(tabs);
     }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     dispose() {
     }
 }
@@ -69168,9 +69166,13 @@ class Node extends MyEventTarget {
     getOutput(outputId) {
         return this.outputs.get(outputId);
     }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/require-await */
     async operate(context) {
-        throw 'This function must be overriden';
+        throw new Error('This function must be overriden');
     }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/require-await */
     addParam(param) {
         this.params.set(param.name, param);
         this.#dispatchEvent(NodeEventType.ParamAdded, {
@@ -69281,13 +69283,12 @@ class Node extends MyEventTarget {
         return this.inputs.size;
     }
     getType() {
-        throw 'This function must be overriden';
+        throw new Error('This function must be overriden');
     }
     ready() {
-        const node = this;
         const promiseFunction = (resolve) => {
-            const callback = function () {
-                if (node.isValid()) {
+            const callback = () => {
+                if (this.isValid()) {
                     resolve(true);
                 }
                 else {
@@ -69338,7 +69339,7 @@ class Node extends MyEventTarget {
         return max;
     }
     get title() {
-        throw 'This function must be overriden';
+        throw new Error('This function must be overriden');
     }
     #dispatchEvent(eventName, detail) {
         this.dispatchEvent(new CustomEvent(eventName, { detail }));
@@ -69368,6 +69369,7 @@ class Node extends MyEventTarget {
         const imageData = new ImageData(pixelArray, previewSize, previewSize);
         try {
             imageDataToImage(imageData, this.previewPic);
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         }
         catch (e) { }
         this.previewPic.width = previewSize;
@@ -69465,8 +69467,8 @@ class NodeImageEditorMaterial extends Material {
     }
 }
 
-vec2.create();
-mat3.create();
+//const tempVec2 = vec2.create();
+//const texTransform = mat3.create();
 class ApplySticker extends Node {
     #renderTarget;
     #textureSize;
@@ -69504,7 +69506,7 @@ class ApplySticker extends Node {
         if (!this.material) {
             return;
         }
-        this.params;
+        //const params = this.params;
         this.material.setTexture('uSticker', this.#inputTexture);
         this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.getValue(context));
         this.material.setTexture('uInput', await this.getInput('input')?.getValue(context));
@@ -69551,7 +69553,7 @@ class ApplySticker extends Node {
         if (!this.material) {
             return;
         }
-        this.params;
+        //const params = this.params;
         this.material.setTexture('stickerTexture', this.#inputTexture);
         this.material.setTexture('stickerSpecularTexture', await this.getInput('specular')?.getValue(context), 'USE_STICKER_SPECULAR');
         this.material.setTexture('inputTexture', await this.getInput('input')?.getValue(context));
@@ -69581,6 +69583,7 @@ class ApplySticker extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'apply sticker';
     }
@@ -69661,15 +69664,16 @@ class TextureLookup extends Node {
         this.addParam(new NodeParam('scale v', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('path', NodeParamType.String, ''));
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     async operate(context) {
         if (Graphics$1.isWebGLAny) {
-            await this.#operateWebGL(context);
+            this.#operateWebGL(context);
         }
         else {
-            await this.#operateWebGPU(context);
+            this.#operateWebGPU();
         }
     }
-    async #operateWebGL(context) {
+    #operateWebGL(context) {
         if (!this.material) {
             return;
         }
@@ -69693,7 +69697,7 @@ class TextureLookup extends Node {
             output._value = this.#renderTarget.getTexture();
         }
     }
-    async #operateWebGPU(context) {
+    #operateWebGPU() {
         if (!this.material) {
             return;
         }
@@ -69725,6 +69729,7 @@ class TextureLookup extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'texture lookup';
     }
@@ -69737,7 +69742,7 @@ class TextureLookup extends Node {
                 ret.push(await input.toString(tabs1));
             }
         }
-        ret.push(tabs1 + `black : ${this.getValue('adjust black')}, white : ${this.getValue('adjust white')}, gamma : ${this.getValue('adjust gamma')}`);
+        ret.push(tabs1 + `black : ${this.getValue('adjust black')} , white : ${this.getValue('adjust white')}, gamma : ${this.getValue('adjust gamma')}`);
         return ret.join('\n');
     }
     setInputTexture(texture) {
@@ -70056,7 +70061,7 @@ class NodeGui {
                     class: 'reset-button',
                     parent: paramHtml,
                     innerHTML: resetWrenchSVG,
-                    $click: async () => {
+                    $click: () => {
                         if (param.type === NodeParamType.StickerAdjust) {
                             this.#node.resetValue(NodeParamOrigin.Gui, 'bottom left');
                             this.#node.resetValue(NodeParamOrigin.Gui, 'top left');
@@ -70083,6 +70088,7 @@ class NodeGui {
                 class: 'copy-button',
                 parent: paramHtml,
                 innerHTML: contentCopySVG,
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 $click: async () => {
                     await navigator.clipboard.writeText(valueHtml.value);
                     valueHtml.classList.add('flash');
@@ -70383,6 +70389,8 @@ class NodeGui {
     }
 }
 
+//const WIDTH = 300;
+//const HEIGHT = 300;
 class NodeImageEditorGui {
     #filter = {};
     #shadowRoot;
@@ -70457,8 +70465,8 @@ class NodeImageEditorGui {
         this.#drawLinks();
     }
     #initResizeObserver() {
-        const callback = (entries, observer) => {
-            entries.forEach(entry => {
+        const callback = (entries) => {
+            entries.forEach(() => {
                 this.#setCanvasSize();
             });
         };
@@ -70485,6 +70493,7 @@ class NodeImageEditorGui {
         this.#htmlNodes.innerText = '';
         this.#htmlNodes.append(this.#canvas);
         const nodes = new Map();
+        //const maxHeight = 0;
         if (this.#nodeImageEditor) {
             for (const node of this.#nodeImageEditor.getNodes()) {
                 const nodeGui = this.#nodesGui.get(node);
@@ -70505,13 +70514,12 @@ class NodeImageEditorGui {
                 return a[0] < b[0] ? -1 : 1;
             });
         };
-        for (const [s, n] of nodes) {
+        for (const [, n] of nodes) {
             const column = createElement('div', { class: 'node-image-editor-nodes-column' });
             this.#htmlNodes.prepend(column);
-            for (let i = 0; i < n.length; ++i) {
-                const nodeGui = n[i];
+            for (const nodeGui of n) {
                 //nodeGui.html.style.top = i * HEIGHT + 'px';
-                nodeGui.html.getBoundingClientRect();
+                //const rect = nodeGui.html.getBoundingClientRect();
                 //maxHeight = Math.max(maxHeight, rect.bottom);
                 column.append(nodeGui.html);
             }
@@ -70540,6 +70548,7 @@ class NodeImageEditorGui {
             const y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
             context.beginPath();
             context.moveTo(x1, y1);
+            //const max = Math.max(Math.abs(y2 - y1), Math.abs(x2 - x1))
             //context.bezierCurveTo(Math.max(x2, x1 + max),y1,Math.min(x1, x2 - max),y2,x2,y2);
             let xa, xb;
             if (x2 > x1) {
@@ -70639,18 +70648,20 @@ class FloatArrayNode extends ParametersNode {
         }
         this.addParam(new NodeParam('value', NodeParamType.Float, this.#array, this.#length));
     }
-    async operate(context = {}) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async operate() {
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#array;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'float array';
     }
     setValue(index, value) {
         if (index >= this.#length) {
-            throw 'wrong index';
+            throw new Error('wrong index');
         }
         this.#array[index] = value;
         this.invalidate();
@@ -70670,18 +70681,20 @@ class IntArrayNode extends ParametersNode {
         }
         this.addParam(new NodeParam('value', NodeParamType.Int, this.#array, this.#length));
     }
-    async operate(context = {}) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    async operate() {
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#array;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'int array';
     }
     setValue(index, value) {
         if (index >= this.#length) {
-            throw 'wrong index';
+            throw new Error('wrong index');
         }
         this.#array[index] = value;
         this.invalidate();
@@ -70739,6 +70752,7 @@ class DrawCircle extends Node {
             output._value = this.#renderTarget.getTexture();
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'draw circle';
     }
@@ -70844,6 +70858,7 @@ class CombineAdd extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'combine add';
     }
@@ -70936,6 +70951,7 @@ class CombineLerp extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'combine lerp';
     }
@@ -71043,6 +71059,7 @@ class Multiply extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'multiply';
     }
@@ -71132,6 +71149,7 @@ class Select extends Node {
             output._value = this.#outputTexture;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
     get title() {
         return 'select';
     }

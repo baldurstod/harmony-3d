@@ -2174,7 +2174,7 @@ declare class Channel {
                       export declare class FloatArrayNode extends ParametersNode {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: any): Promise<void>;
+                          operate(): Promise<void>;
                           get title(): string;
                           setValue(index: number, value: number): void;
                       }
@@ -3258,7 +3258,7 @@ declare class Channel {
                       export declare class IntArrayNode extends ParametersNode {
                           #private;
                           constructor(editor: NodeImageEditor, params?: any);
-                          operate(context?: any): Promise<void>;
+                          operate(): Promise<void>;
                           get title(): string;
                           setValue(index: number, value: number): void;
                       }
@@ -4666,7 +4666,7 @@ declare class Channel {
                           operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
-                          getValue(paramName: string): string | number | boolean | number[] | string[] | Float32Array<ArrayBufferLike> | boolean[] | vec2[] | null;
+                          getValue(paramName: string): NodeParamValue | null;
                           setParams(params?: any): void;
                           setInitialParamValue(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
                           setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void;
@@ -4713,14 +4713,13 @@ declare class Channel {
                       export declare class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, CustomEvent<NodeImageEditorEvent>> {
                           #private;
                           textureSize: number;
-                          constructor();
                           render(material: Material, width: number, height: number): void;
                           addNode(operationName: string, params?: AddNodeParameters): Node_2 | null;
                           removeNode(node: Node_2): void;
                           removeAllNodes(): void;
                           getVariable(name: string): number | undefined;
-                          setVariable(name: string, value: number): Map<string, number>;
-                          deleteVariable(name: string): boolean;
+                          setVariable(name: string, value: number): void;
+                          deleteVariable(name: string): void;
                           clearVariables(): void;
                           getNodes(): Set<Node_2>;
                       }
@@ -4745,7 +4744,7 @@ declare class Channel {
                            */
                           set nodeImageEditor(nodeImageEditor: NodeImageEditor);
                           setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void;
-                          get htmlElement(): Element;
+                          get htmlElement(): HTMLElement;
                           refresh(): void;
                           setNodeFilter(nodeName: string): void;
                           getNodeFilter(): string;

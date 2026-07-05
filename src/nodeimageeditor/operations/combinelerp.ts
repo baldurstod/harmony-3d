@@ -42,7 +42,7 @@ export class CombineLerp extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext) {
+	async #operateWebGL(context: NodeContext): Promise<void> {
 		if (!this.material) {
 			return;
 		}
@@ -106,11 +106,12 @@ export class CombineLerp extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'combine lerp';
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		this.#renderTarget?.dispose();
 		this.material?.removeUser(this);

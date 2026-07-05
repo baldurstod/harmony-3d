@@ -85,33 +85,38 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.setParams(params);
 	}
 
-	addInput(inputId: string, inputType: number/*TODO: create enum*/, size = 1) {
+	addInput(inputId: string, inputType: number/*TODO: create enum*/, size = 1): Input {
 		const input = new Input(this, inputId, inputType, size);
 		this.inputs.set(inputId, input);
 		this.invalidate();
 		return input;
 	}
 
-	addOutput(outputId: string, outputType: number/*TODO: create enum*/) {
+	addOutput(outputId: string, outputType: number/*TODO: create enum*/): Output {
 		const output = new Output(this, outputId, outputType);
 		this.outputs.set(outputId, output);
 		this.invalidate();
 		return output;
 	}
 
-	getInput(inputId: string) {
+	getInput(inputId: string): Input | undefined {
 		return this.inputs.get(inputId);
 	}
 
-	getOutput(outputId: string) {
+	getOutput(outputId: string): Output | undefined {
 		return this.outputs.get(outputId);
 	}
 
-	async operate(context: NodeContext) {
-		throw 'This function must be overriden';
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/require-await */
+	async operate(context: NodeContext): Promise<void> {
+		throw new Error('This function must be overriden');
 	}
+	/* eslint-enable @typescript-eslint/no-unused-vars */
+	/* eslint-enable @typescript-eslint/require-await */
 
-	addParam(param: NodeParam) {
+
+	addParam(param: NodeParam): void {
 		this.params.set(param.name, param);
 		this.#dispatchEvent(NodeEventType.ParamAdded, {
 			eventName: NodeEventType.ParamAdded,
@@ -119,11 +124,11 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		} as NodeParamAddedEvent);
 	}
 
-	getParam(paramName: string) {
+	getParam(paramName: string): NodeParam | undefined {
 		return this.params.get(paramName);
 	}
 
-	getValue(paramName: string) {
+	getValue(paramName: string): NodeParamValue | null {
 		const p = this.params.get(paramName);
 		if (p) {
 			return p.value;
@@ -131,7 +136,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return null;
 	}
 
-	setParams(params?: any) {
+	setParams(params?: any): void {
 		if (params) {
 			for (const paramName in params) {
 				const param = params[paramName];
@@ -149,7 +154,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.setParam(origin, paramName, newValue, paramIndex);
 	}
 
-	setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number) {
+	setParam(origin: NodeParamOrigin, paramName: string, newValue: NodeParamValue, paramIndex?: number): void {
 		const p = this.params.get(paramName);
 		if (p) {
 			let oldValue: NodeParamValue | undefined = undefined;
@@ -185,7 +190,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
-	setPredecessor(inputId: string, predecessor: Node, predecessorOutputId: string) {
+	setPredecessor(inputId: string, predecessor: Node, predecessorOutputId: string): void {
 		const input = this.inputs.get(inputId);
 		const output = predecessor.outputs.get(predecessorOutputId);
 
@@ -197,11 +202,11 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
-	getParams() {
+	getParams(): Map<string, NodeParam> {
 		return this.params;
 	}
 
-	invalidate(context: NodeContext = {}) {
+	invalidate(context: NodeContext = {}): void {
 		// Invalidate only if valid to avoid recursion
 		if (this.#redrawState != DrawState.Invalid) {
 			this.#redrawState = DrawState.Invalid;
@@ -214,7 +219,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		}
 	}
 
-	async validate(context: NodeContext) {
+	async validate(context: NodeContext): Promise<void> {
 		if (this.#redrawState == DrawState.Invalid) {
 			await this.operate(context);
 			this.#redrawState = DrawState.Valid
@@ -226,24 +231,23 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		await this.validate(context);
 	}
 
-	async redraw(context: NodeContext) {
+	async redraw(context: NodeContext): Promise<void> {
 		await this.operate(context);
 		this.#redrawState = DrawState.Valid;
 	}
 
-	getInputCount() {
+	getInputCount(): number {
 		return this.inputs.size;
 	}
 
-	getType() {
-		throw 'This function must be overriden';
+	getType(): void {
+		throw new Error('This function must be overriden');
 	}
 
-	ready() {
-		const node = this;
-		const promiseFunction = (resolve: (arg0: boolean) => void) => {
-			const callback = function () {
-				if (node.isValid()) {
+	ready(): Promise<boolean> {
+		const promiseFunction = (resolve: (arg0: boolean) => void): void => {
+			const callback = (): void => {
+				if (this.isValid()) {
 					resolve(true);
 				} else {
 					setTimeout(callback, 100);
@@ -254,7 +258,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return new Promise(promiseFunction);
 	}
 
-	isValid(startingPoint?: Node) {
+	isValid(startingPoint?: Node): boolean {
 		if (startingPoint == this) {
 			return true; // handle cyclic operation
 		}
@@ -276,7 +280,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.#redrawState == DrawState.Valid;
 	}
 
-	hasSuccessor() {
+	hasSuccessor(): boolean {
 		for (const output of this.outputs.values()) {
 			if (output.hasSuccessor()) {
 				return true;
@@ -285,7 +289,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return false;
 	}
 
-	successorsLength() {
+	successorsLength(): number {
 		let max = 0;
 		for (const output of this.outputs.values()) {
 			const l = output.successorsLength();
@@ -297,15 +301,15 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	}
 
 	get title(): string {
-		throw 'This function must be overriden';
+		throw new Error('This function must be overriden');
 	}
 
-	#dispatchEvent(eventName: NodeEventType, detail: NodeEvent) {
+	#dispatchEvent(eventName: NodeEventType, detail: NodeEvent): void {
 		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail }));
 		this.dispatchEvent(new CustomEvent<NodeEvent>(NodeEventType.Any, { detail }));
 	}
 
-	updatePreview(context: NodeContext = {}) {
+	updatePreview(context: NodeContext = {}): void {
 		if (!context.updatePreview) {
 			return;
 		}
@@ -332,6 +336,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		const imageData = new ImageData(pixelArray, previewSize, previewSize);
 		try {
 			imageDataToImage(imageData, this.previewPic);
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (e) { }
 		this.previewPic.width = previewSize;
 		this.previewPic.height = previewSize;
@@ -339,7 +344,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		Graphics.popRenderTarget();
 	}
 
-	async savePicture(filename: string = 'texture.png'): Promise<void> {
+	async savePicture(filename = 'texture.png'): Promise<void> {
 		await this.redraw({ previewSize: 2048, updatePreview: true });
 
 		const image = this.previewPic;
@@ -360,7 +365,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
 	}
 
-	async saveVTF(filename: string = 'texture.vtf') {
+	async saveVTF(filename = 'texture.vtf'): Promise<void> {
 		const vtfFile = new VTFFile(2048, 2048);
 		vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
 		await this.redraw({ previewSize: 2048, updatePreview: true });
@@ -373,7 +378,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		const ret = [];
 		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
@@ -397,7 +402,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		this.#hasPreview = hasPreview;
 	}
 
-	get hasPreview() {
+	get hasPreview(): boolean {
 		return this.#hasPreview;
 	}
 }

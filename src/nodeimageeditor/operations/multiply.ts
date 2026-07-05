@@ -37,7 +37,7 @@ export class Multiply extends Node {
 		}
 	}
 
-	async #operateWebGL(context: NodeContext) {
+	async #operateWebGL(context: NodeContext): Promise<void> {
 		if (!this.material) {
 			return;
 		}
@@ -130,11 +130,12 @@ export class Multiply extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'multiply';
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

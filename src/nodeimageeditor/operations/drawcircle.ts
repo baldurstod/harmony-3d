@@ -25,7 +25,7 @@ export class DrawCircle extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate(context: NodeContext) {
+	async operate(context: NodeContext): Promise<void> {
 		if (!this.material) {
 			return;
 		}
@@ -64,11 +64,12 @@ export class DrawCircle extends Node {
 		}
 	}
 
-	get title() {
+	// eslint-disable-next-line @typescript-eslint/class-literal-property-style
+	get title(): string {
 		return 'draw circle';
 	}
 
-	override dispose() {
+	override dispose(): void {
 		super.dispose();
 		if (this.#renderTarget) {
 			this.#renderTarget.dispose();

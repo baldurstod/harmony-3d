@@ -11,7 +11,7 @@ export class Input extends InputOutput {
 		super(node, id, type, size);
 	}
 
-	setValue(value: any) {
+	setValue(value: any): void {
 		//TODO: check the value type
 		this._value = value;
 		this.node.invalidate();
@@ -30,7 +30,7 @@ export class Input extends InputOutput {
 		this.node.invalidate();
 	}*/
 
-	setPredecessor(predecessor: Output) {
+	setPredecessor(predecessor: Output): void {
 		if (predecessor) {
 			predecessor.addSuccessor(this);
 		}
@@ -43,7 +43,7 @@ export class Input extends InputOutput {
 		this.node.invalidate();
 	}
 
-	getPredecessor() {
+	getPredecessor(): Output | undefined {
 		return this.#predecessor;
 	}
 
@@ -61,11 +61,11 @@ export class Input extends InputOutput {
 	}
 	*/
 
-	hasPredecessor() {
+	hasPredecessor(): boolean {
 		return this.#predecessor ? true : false;
 	}
 
-	getType() {
+	getType(): void | null {
 		if (this.#predecessor) {
 			return this.#predecessor.getType();
 		}
