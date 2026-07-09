@@ -299,10 +299,6 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 			for (const j in this.operators) {
 				const operator = this.operators[j]!;
 				operator.operateParticle(particle, this.elapsedTime);
-
-				// break the loop if the particle is dead
-				if (!particle.isAlive) break;
-
 				this.operatorRandomSampleOffset += 17;
 			}
 			//particle.step(this.elapsedTime);

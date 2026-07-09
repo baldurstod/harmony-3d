@@ -10546,6 +10546,1381 @@ class TranslationControl extends Entity {
     }
 }
 
+const tempWorldMat = mat4.create();
+const tempWorldQuat = quat.create();
+const tempWorldVec3 = vec3.create();
+const tempWorldScale = vec3.create();
+const tempPosition = vec3.create();
+const tempQuat1 = quat.create();
+const tempVec1 = vec3.create();
+class Bone extends Entity {
+    isBone = true;
+    isLockable = true;
+    #boneId;
+    #poseToBone = mat4.create();
+    #boneMat = mat4.create();
+    #worldPos = vec3.create();
+    #worldQuat = quat.create();
+    #worldScale = vec3.fromValues(1, 1, 1);
+    #parentSkeletonBone = null;
+    #skeleton = null;
+    #refPosition = vec3.create();
+    #refQuaternion = quat.create();
+    dirty = true;
+    lastComputed = 0;
+    tempPosition = vec3.create();
+    tempQuaternion = quat.create();
+    _initialQuaternion = quat.create();
+    _initialPosition = vec3.create();
+    constructor(params) {
+        super(params);
+        this.#boneId = params.boneId ?? -1;
+        this.#skeleton = params.skeleton ?? null;
+    }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
+    set position(position) {
+        super.position = position;
+        this.dirty = true;
+    }
+    setPosition(position) {
+        super.setPosition(position);
+        this.dirty = true;
+    }
+    get position() {
+        return vec3.clone(this._position);
+    }
+    setWorldPosition(position) {
+        super.setWorldPosition(position);
+        this.dirty = true;
+    }
+    setWorldOrientation(quaternion) {
+        super.setWorldOrientation(quaternion);
+        this.dirty = true;
+    }
+    set refPosition(refPosition) {
+        vec3.copy(this.#refPosition, refPosition);
+    }
+    get refPosition() {
+        return vec3.clone(this.#refPosition);
+    }
+    getTotalRefPosition(position = vec3.create()) {
+        const parent = this._parent;
+        if (parent && parent.isBone) {
+            parent.getTotalRefPosition(position);
+            parent.getTotalRefQuaternion(tempQuat1);
+            vec3.transformQuat(tempVec1, this.#refPosition, tempQuat1);
+            vec3.add(position, position, tempVec1);
+        }
+        else {
+            vec3.copy(position, this.#refPosition);
+        }
+        return position;
+    }
+    getTotalRefQuaternion(quaternion = quat.create()) {
+        const parent = this._parent;
+        if (parent && parent.isBone) {
+            parent.getTotalRefQuaternion(tempQuat1);
+            quat.multiply(quaternion, tempQuat1, this.#refQuaternion);
+        }
+        else {
+            quat.copy(quaternion, this.#refQuaternion);
+        }
+        return quaternion;
+    }
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
+    set quaternion(quaternion) {
+        super.quaternion = quaternion;
+        this.dirty = true;
+    }
+    /**
+     * @deprecated Please use `setOrientation` instead.
+     */
+    setQuaternion(quaternion) {
+        super.setOrientation(quaternion);
+        this.dirty = true;
+    }
+    setOrientation(quaternion) {
+        super.setOrientation(quaternion);
+        this.dirty = true;
+    }
+    get quaternion() {
+        return quat.clone(this._quaternion);
+    }
+    set refQuaternion(refQuaternion) {
+        quat.copy(this.#refQuaternion, refQuaternion);
+    }
+    get refQuaternion() {
+        return quat.clone(this.#refQuaternion);
+    }
+    set scale(scale) {
+        vec3.copy(this._scale, scale);
+        this.dirty = true;
+    }
+    get scale() {
+        return vec3.clone(this._scale);
+    }
+    set parent(parent) {
+        this._parent = parent;
+        this.dirty = true;
+    }
+    get parent() {
+        return this._parent;
+    }
+    setSkeleton(skeleton) {
+        this.#skeleton = skeleton;
+        this.dirty = true;
+    }
+    getSkeleton() {
+        return this.#skeleton;
+    }
+    set parentSkeletonBone(parentSkeletonBone) {
+        if (parentSkeletonBone == this) {
+            // TODO: check ancestry as well ?
+            return;
+        }
+        if (this.#parentSkeletonBone != parentSkeletonBone) {
+            this.#parentSkeletonBone = parentSkeletonBone;
+            this.dirty = true;
+        }
+    }
+    get parentSkeletonBone() {
+        return this.#parentSkeletonBone;
+    }
+    get boneMat() {
+        if (this.dirty
+            || (this._parent && this._parent.lastComputed > this.lastComputed)
+            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
+            || ((this._parent == undefined) && (true )) //TODOv3: remove true
+        ) {
+            this.#compute();
+        }
+        return this.#boneMat;
+    }
+    get worldPos() {
+        if (this.dirty
+            || (this._parent && this._parent.lastComputed > this.lastComputed)
+            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
+            || ((this._parent == undefined) && (true )) //TODOv3: remove true
+        ) {
+            this.#compute();
+        }
+        return this.#worldPos;
+    }
+    get worldQuat() {
+        if (this.dirty
+            || (this._parent && this._parent.lastComputed > this.lastComputed)
+            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
+            || ((this._parent == undefined) && (true )) //TODOv3: remove true
+        ) {
+            this.#compute();
+        }
+        return this.#worldQuat;
+    }
+    get worldScale() {
+        if (this.dirty
+            || (this._parent && this._parent.lastComputed > this.lastComputed)
+            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
+            || ((this._parent == undefined) && (true )) //TODOv3: remove true
+        ) {
+            this.#compute();
+        }
+        return this.#worldScale;
+    }
+    getWorldPosition(vec = vec3.create()) {
+        return vec3.copy(vec, this.worldPos);
+    }
+    getWorldQuaternion(q = quat.create()) {
+        return quat.copy(q, this.worldQuat);
+    }
+    getWorldScale(vec = vec3.create()) {
+        return vec3.copy(vec, this.worldScale);
+    }
+    getWorldPosOffset(offset, out = vec3.create()) {
+        vec3.transformQuat(out, offset, this.worldQuat);
+        vec3.add(out, this.worldPos, out);
+        return out;
+    }
+    set poseToBone(poseToBone) {
+        mat4.copy(this.#poseToBone, poseToBone);
+    }
+    get poseToBone() {
+        return mat4.clone(this.#poseToBone);
+    }
+    #compute() {
+        const parent = this._parent;
+        this.#parentSkeletonBone;
+        if (!this.#parentSkeletonBone) {
+            if (parent) {
+                const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
+                vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
+                vec3.mul(tempPosition, this._position, tempWorldScale);
+                vec3.transformQuat(this.#worldPos, tempPosition, parentWorldQuaternion);
+                vec3.add(this.#worldPos, this.#worldPos, parent.getWorldPosition(tempWorldVec3));
+                quat.multiply(this.#worldQuat, parentWorldQuaternion, this._quaternion);
+            }
+            else {
+                if (this.#skeleton) {
+                    this.#skeleton.getWorldPosition(tempWorldVec3);
+                    this.#skeleton.getWorldQuaternion(tempWorldQuat);
+                    vec3.transformQuat(this.#worldPos, this._position, tempWorldQuat);
+                    vec3.add(this.#worldPos, this.#worldPos, tempWorldVec3);
+                    quat.multiply(this.#worldQuat, tempWorldQuat, this._quaternion);
+                    vec3.mul(this.#worldScale, this.#skeleton.getWorldScale(tempWorldScale), this._scale);
+                }
+                else {
+                    vec3.copy(this.#worldPos, this._position);
+                    quat.copy(this.#worldQuat, this._quaternion);
+                    vec3.copy(this.#worldScale, this._scale);
+                }
+            }
+        }
+        else {
+            quat.copy(this.#worldQuat, this.#parentSkeletonBone.worldQuat);
+            vec3.copy(this.#worldPos, this.#parentSkeletonBone.worldPos);
+            vec3.copy(this.#worldScale, this.#parentSkeletonBone.worldScale);
+            /*vec3.transformQuat(this.#worldPos, this._position, this.#parentSkeletonBone.worldQuat);
+            vec3.add(this.#worldPos, this.#worldPos, this.#parentSkeletonBone.worldPos);
+
+            quat.multiply(this.#worldQuat, this.#parentSkeletonBone.worldQuat, this._quaternion);*/
+        }
+        mat4.fromRotationTranslationScale(tempWorldMat, this.#worldQuat, this.#worldPos, this.#worldScale);
+        mat4.multiply(this.#boneMat, tempWorldMat, this.#poseToBone);
+        if (this.isProcedural()) {
+            if (this._parent) {
+                mat4.copy(this.#boneMat, this._parent.#boneMat);
+            }
+            else {
+                mat4.identity(this.#boneMat);
+            }
+        }
+        this.dirty = false;
+        this.lastComputed = Graphics$1.currentTick;
+    }
+    set boneId(boneId) {
+        this.#boneId = boneId;
+    }
+    get boneId() {
+        return this.#boneId;
+    }
+    isProcedural() {
+        return false;
+        //return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
+    }
+    lockAll(locked) {
+        this.lockPosition = locked;
+        this.lockRotation = locked;
+        this.lockScale = locked;
+    }
+    isAnyLocked() {
+        return this.lockPosition || this.lockRotation || this.lockScale;
+    }
+    reset() {
+        vec3.zero(this._position);
+        quat.identity(this._quaternion);
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Bone_1: null,
+        }, this.isAnyLocked() ? {
+            unlock: { i18n: '#unlock', f: (entity) => entity.lockAll(false) },
+        } : null, {
+            resetQuat: { i18n: '#reset_orientation', f: (entity) => entity.setOrientation(entity._initialQuaternion) },
+            resetPos: { i18n: '#reset_position', f: (entity) => entity.setPosition(entity._initialPosition) },
+            resetBone: {
+                i18n: '#reset_bone', f: (entity) => {
+                    entity.setOrientation(entity._initialQuaternion);
+                    entity.setPosition(entity._initialPosition);
+                }
+            },
+        });
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.posetobone = mat4ToJSON(this.#poseToBone);
+        json.refposition = vec3ToJSON(this.#refPosition);
+        json.refquaternion = quatToJSON(this.#refQuaternion);
+        json.boneid = this.boneId;
+        return json;
+    }
+    static async constructFromJSON(json) {
+        return new Bone({ name: json.name });
+    }
+    fromJSON(json) {
+        super.fromJSON(json);
+        mat4.copy(this.#poseToBone, json.posetobone ?? mat4.create());
+        vec3.copy(this.#refPosition, json.refposition ?? vec3.create());
+        quat.copy(this.#refQuaternion, json.refquaternion ?? quat.create());
+        this.boneId = json.boneid;
+    }
+    static getEntityName() {
+        return 'Bone';
+    }
+    is(s) {
+        if (s == 'Bone') {
+            return true;
+        }
+        else {
+            return super.is(s);
+        }
+    }
+}
+registerEntity(Bone);
+
+class Attachment extends Bone {
+    isAttachment = true;
+    static getEntityName() {
+        return 'Attachment';
+    }
+}
+registerEntity(Attachment);
+
+const DEFAULT_SIZE$1 = vec3.fromValues(1, 1, 1);
+class Decal extends Mesh {
+    #size = vec3.create();
+    constructor(params = {}) {
+        params.geometry = new DecalGeometry();
+        params.material = params.material ?? new MeshBasicMaterial({ polygonOffset: true });
+        super(params);
+        this.setSize(params.size ?? DEFAULT_SIZE$1);
+    }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
+    set position(position) {
+        this.setPosition(position);
+    }
+    /**
+     * @deprecated Please use `getPosition` instead.
+     */
+    get position() {
+        return this.getPosition();
+    }
+    setPosition(position) {
+        super.setPosition(position);
+        this.refreshGeometry();
+    }
+    parentChanged() {
+        this.refreshGeometry();
+    }
+    setSize(size) {
+        vec3.copy(this.#size, size);
+        this.refreshGeometry();
+    }
+    /**
+     * @deprecated Please use `getSize` instead.
+     */
+    get size() {
+        return this.getSize();
+    }
+    getSize() {
+        return this.#size;
+    }
+    refreshGeometry() {
+        if (this.parent && this.parent.is('Mesh')) {
+            this.getGeometry().applyTo(this.parent, this.worldMatrix, this.#size);
+        }
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            StaticDecal_1: null,
+            size: { i18n: '#size', f: () => { const v = prompt('Size', this.getSize().join(' ')); if (v !== null) {
+                    this.setSize(stringToVec3(v));
+                } } },
+            refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
+        });
+    }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON(json /*, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
+        return new Decal(json);
+    }
+    static getEntityName() {
+        return 'Decal';
+    }
+}
+registerEntity(Decal);
+class DecalGeometry extends BufferGeometry {
+    applyTo(mesh, projectorMatrix, size) {
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
+        //console.log(uvs);
+        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+        this.count = indices.length;
+    }
+    #generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
+        let decalVertices = [];
+        const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
+        const vertex = vec3.create();
+        const normal = vec3.create();
+        const geometry = mesh.getGeometry();
+        if (!geometry) {
+            return;
+        }
+        const indexAttribute = geometry.attributes.get('index');
+        const indexArray = indexAttribute._array;
+        if (!indexArray) {
+            return;
+        }
+        let posArray;
+        let normalArray;
+        if (!mesh.isSkeletalMesh) {
+            posArray = geometry.attributes.get('aVertexPosition')._array;
+            normalArray = geometry.attributes.get('aVertexNormal')._array;
+        }
+        else {
+            [posArray, normalArray] = mesh.getSkinnedVertex();
+        }
+        if (!posArray || !normalArray) {
+            return;
+        }
+        for (let i = 0, l = indexAttribute.count; i < l; ++i) {
+            const index = indexArray[i];
+            vertex[0] = posArray[index * 3] ?? 0;
+            vertex[1] = posArray[index * 3 + 1] ?? 0;
+            vertex[2] = posArray[index * 3 + 2] ?? 0;
+            normal[0] = normalArray[index * 3] ?? 0;
+            normal[1] = normalArray[index * 3 + 1] ?? 0;
+            normal[2] = normalArray[index * 3 + 2] ?? 0;
+            vec3.transformMat4(vertex, vertex, mesh.worldMatrix);
+            vec3.transformMat4(vertex, vertex, projectorMatrixInverse);
+            decalVertices.push([vec3.clone(vertex), vec3.clone(normal)]);
+        }
+        decalVertices = this.#clipGeometry(decalVertices, size, [1, 0, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [-1, 0, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 1, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, -1, 0]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, 1]);
+        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, -1]);
+        for (let i = 0; i < decalVertices.length; i++) {
+            const decalVertex = decalVertices[i];
+            // create texture coordinates (we are still in projector space)
+            uvs.push(0.5 + (decalVertex[0][0] / size[0]), 0.5 + (decalVertex[0][1] / size[1]));
+            // transform the vertex back to world space
+            //const v = decalVertex[0];
+            //vec3.transformMat4(v, v, projectorMatrix);
+            vertices.push(...decalVertex[0]);
+            normals.push(...decalVertex[1]);
+            indices.push(i);
+        }
+    }
+    #clipGeometry(inVertices, size, plane) {
+        const outVertices = [];
+        const s = 0.5 * Math.abs(vec3.dot(size, plane));
+        // a single iteration clips one face,
+        // which consists of three consecutive 'DecalVertex' objects
+        for (let i = 0; i < inVertices.length; i += 3) {
+            let total = 0;
+            let nV1;
+            let nV2;
+            let nV3;
+            let nV4;
+            const d1 = vec3.dot(inVertices[i + 0][0], plane) - s;
+            const d2 = vec3.dot(inVertices[i + 1][0], plane) - s;
+            const d3 = vec3.dot(inVertices[i + 2][0], plane) - s;
+            const v1Out = d1 > 0;
+            const v2Out = d2 > 0;
+            const v3Out = d3 > 0;
+            // calculate, how many vertices of the face lie outside of the clipping plane
+            total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
+            switch (total) {
+                case 0: {
+                    // the entire face lies inside of the plane, no clipping needed
+                    outVertices.push(inVertices[i]);
+                    outVertices.push(inVertices[i + 1]);
+                    outVertices.push(inVertices[i + 2]);
+                    break;
+                }
+                case 1: {
+                    // one vertex lies outside of the plane, perform clipping
+                    if (v1Out) {
+                        nV1 = inVertices[i + 1];
+                        nV2 = inVertices[i + 2];
+                        nV3 = this.#clip(inVertices[i], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i], nV2, plane, s);
+                    }
+                    if (v2Out) {
+                        nV1 = inVertices[i];
+                        nV2 = inVertices[i + 2];
+                        nV3 = this.#clip(inVertices[i + 1], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i + 1], nV2, plane, s);
+                        outVertices.push(nV3);
+                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                        outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
+                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                        outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
+                        outVertices.push(nV4);
+                        break;
+                    }
+                    if (v3Out) {
+                        nV1 = inVertices[i];
+                        nV2 = inVertices[i + 1];
+                        nV3 = this.#clip(inVertices[i + 2], nV1, plane, s);
+                        nV4 = this.#clip(inVertices[i + 2], nV2, plane, s);
+                    }
+                    outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
+                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                    outVertices.push(nV3);
+                    outVertices.push(nV4);
+                    outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
+                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
+                    break;
+                }
+                case 2: {
+                    // two vertices lies outside of the plane, perform clipping
+                    if (!v1Out) {
+                        nV1 = [vec3.clone(inVertices[i][0]), vec3.clone(inVertices[i][1])]; //inVertices[ i ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i + 1], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i + 2], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    if (!v2Out) {
+                        nV1 = [vec3.clone(inVertices[i + 1][0]), vec3.clone(inVertices[i + 1][1])]; //inVertices[ i + 1 ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i + 2], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    if (!v3Out) {
+                        nV1 = [vec3.clone(inVertices[i + 2][0]), vec3.clone(inVertices[i + 2][1])]; //inVertices[ i + 2 ].clone();
+                        nV2 = this.#clip(nV1, inVertices[i], plane, s);
+                        nV3 = this.#clip(nV1, inVertices[i + 1], plane, s);
+                        outVertices.push(nV1);
+                        outVertices.push(nV2);
+                        outVertices.push(nV3);
+                    }
+                    break;
+                }
+            }
+        }
+        return outVertices;
+    }
+    #clip(v0, v1, plane, s) {
+        const v0Pos = v0[0];
+        const v1Pos = v1[0];
+        const v0Norm = v0[1];
+        const v1Norm = v1[1];
+        const d0 = vec3.dot(v0Pos, plane) - s;
+        const d1 = vec3.dot(v1Pos, plane) - s;
+        const s0 = d0 / (d0 - d1);
+        // need to clip more values (texture coordinates)? do it this way:
+        // intersectpoint.value = a.value + s * ( b.value - a.value );
+        return [
+            [
+                v0Pos[0] + s0 * (v1Pos[0] - v0Pos[0]),
+                v0Pos[1] + s0 * (v1Pos[1] - v0Pos[1]),
+                v0Pos[2] + s0 * (v1Pos[2] - v0Pos[2])
+            ],
+            [
+                v0Norm[0] + s0 * (v1Norm[0] - v0Norm[0]),
+                v0Norm[1] + s0 * (v1Norm[1] - v0Norm[1]),
+                v0Norm[2] + s0 * (v1Norm[2] - v0Norm[2])
+            ]
+        ];
+    }
+}
+
+// It is just a basic entity
+class Group extends Entity {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON(json) {
+        return new Group({ name: json.name });
+    }
+    static getEntityName() {
+        return 'Group';
+    }
+}
+registerEntity(Group);
+
+const tempVec3$o = vec3.create();
+class BoundingBoxHelper extends Box {
+    boundingBox = new BoundingBox();
+    constructor(params = {}) {
+        super(params);
+        this.wireframe = 0;
+    }
+    update() {
+        if (this._parent) {
+            this._parent.getBoundingBox(this.boundingBox);
+            this.boundingBox.getCenter(this._position);
+            this.boundingBox.getSize(tempVec3$o);
+            this.setSize(tempVec3$o[0], tempVec3$o[1], tempVec3$o[2]);
+        }
+    }
+    getWorldPosition(vec = vec3.create()) {
+        return vec3.copy(vec, this._position);
+    }
+    getWorldQuaternion(q = quat.create()) {
+        return quat.identity(q);
+    }
+    getBoundingBox(boundingBox = new BoundingBox()) {
+        boundingBox.reset();
+        return boundingBox;
+    }
+}
+
+class LineBasicMaterial extends Material {
+    lineWidth;
+    constructor(params = {}) {
+        super(params);
+        this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+        this.lineWidth = 1;
+        //this.setValues(params);
+    }
+    getShaderSource() {
+        return 'meshbasic';
+    }
+}
+Material.materialList['LineBasic'] = LineBasicMaterial;
+
+const BASE_COLOR = [1, 1, 1, 1];
+const FRUSTRUM_COLOR = [1, 0, 0, 1];
+const AXIS_COLOR = [1, 1, 0, 1];
+//const UP_COLOR = [0, 0, 1, 1];
+const tempVec3$n = vec3.create();
+const Points = [
+    //Base Points
+    { p: vec3.fromValues(0, 0, 0), c: BASE_COLOR },
+    { p: vec3.fromValues(0, 0, 0), c: AXIS_COLOR },
+    // Base pyramid
+    { p: vec3.fromValues(-1, -1, -1), c: BASE_COLOR },
+    { p: vec3.fromValues(-1, +1, -1), c: BASE_COLOR },
+    { p: vec3.fromValues(+1, -1, -1), c: BASE_COLOR },
+    { p: vec3.fromValues(+1, +1, -1), c: BASE_COLOR },
+    // near plane
+    { p: vec3.fromValues(-1, -1, -1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(-1, +1, -1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(+1, -1, -1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(+1, +1, -1), c: FRUSTRUM_COLOR },
+    // far plane
+    { p: vec3.fromValues(-1, -1, 1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(-1, +1, 1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(+1, -1, 1), c: FRUSTRUM_COLOR },
+    { p: vec3.fromValues(+1, +1, 1), c: FRUSTRUM_COLOR },
+    //Axis line
+    { p: vec3.fromValues(0, 0, 1), c: AXIS_COLOR },
+    //Near plane axis
+    { p: vec3.fromValues(-1, 0, -1), c: AXIS_COLOR },
+    { p: vec3.fromValues(+1, 0, -1), c: AXIS_COLOR },
+    { p: vec3.fromValues(0, -1, -1), c: AXIS_COLOR },
+    { p: vec3.fromValues(0, +1, -1), c: AXIS_COLOR },
+    //Far plane axis
+    { p: vec3.fromValues(-1, 0, 1), c: AXIS_COLOR },
+    { p: vec3.fromValues(+1, 0, 1), c: AXIS_COLOR },
+    { p: vec3.fromValues(0, -1, 1), c: AXIS_COLOR },
+    { p: vec3.fromValues(0, +1, 1), c: AXIS_COLOR },
+];
+const Lines = [
+    0, 2,
+    0, 3,
+    0, 4,
+    0, 5,
+    // near plane
+    6, 7,
+    6, 8,
+    7, 9,
+    8, 9,
+    6, 10,
+    7, 11,
+    8, 12,
+    9, 13,
+    // far plane
+    10, 11,
+    10, 12,
+    11, 13,
+    12, 13,
+    //center axis
+    1, 14,
+    //near plane axis
+    15, 16,
+    17, 18,
+    //far plane axis
+    19, 20,
+    21, 22,
+    //near / far plane junction
+    /*15, 19,
+    16, 20,
+    17, 21,
+    18, 22,*/
+];
+class CameraFrustum extends Mesh {
+    #camera = null;
+    #vertexPositionAttribute;
+    constructor(params = {}) {
+        params.geometry = new BufferGeometry();
+        params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerVertex });
+        super(params);
+        this.renderMode = GL_LINES;
+        this.#createVertices();
+        this.castShadow = false;
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
+    }
+    #createVertices() {
+        const indices = Lines;
+        const vertices = [];
+        const normals = [];
+        const texCoords = [];
+        const colors = [];
+        for (const point of Points) {
+            vertices.push(...point.p);
+            normals.push(1, 0, 0);
+            texCoords.push(1, 0, 0);
+            colors.push(...point.c);
+        }
+        const geometry = this.getGeometry();
+        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
+        geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
+        geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(texCoords, 2, 'texCoord'));
+        geometry.setAttribute('aVertexColor', new Float32BufferAttribute(colors, 4, 'color'));
+        geometry.count = indices.length;
+    }
+    update() {
+        if (!this.#camera) {
+            return;
+        }
+        let index = 0;
+        const verticesArray = this.#vertexPositionAttribute._array;
+        if (!verticesArray) {
+            return;
+        }
+        for (const point of Points) {
+            if (index > 3) { //Skip the base point
+                vec3.copy(tempVec3$n, point.p);
+                this.#camera.invertProjection(tempVec3$n);
+                verticesArray.set(tempVec3$n, index);
+            }
+            index += 3;
+        }
+        this.#vertexPositionAttribute.dirty = true;
+    }
+    parentChanged(parent) {
+        if (parent?.is('Camera')) {
+            this.#camera = parent;
+        }
+        else {
+            this.#camera = null;
+        }
+        this.update();
+    }
+}
+
+class GridMaterial extends Material {
+    constructor(params = {}) {
+        super(params);
+        this.spacing = params.spacing ?? 1;
+        this.setBlending(MATERIAL_BLENDING_NORMAL);
+        this.renderFace(RenderFace.Both);
+    }
+    /**
+     * @deprecated Use setSpacing instead
+     */
+    set spacing(spacing) {
+        this.setSpacing(spacing);
+    }
+    setSpacing(spacing) {
+        this.setUniformValue('uSpacing', spacing);
+    }
+    getShaderSource() {
+        return 'grid';
+    }
+}
+Material.materialList['Grid'] = GridMaterial;
+
+class PlaneBufferGeometry extends BufferGeometry {
+    updateGeometry(width, height, widthSegments, heightSegments) {
+        ///width = width || 1;
+        //height = height || 1;
+        const width_half = width / 2;
+        const height_half = height / 2;
+        const gridX = Math.floor(widthSegments);
+        const gridY = Math.floor(heightSegments);
+        const gridX1 = gridX + 1;
+        const gridY1 = gridY + 1;
+        const segment_width = width / gridX;
+        const segment_height = height / gridY;
+        let ix, iy;
+        // buffers
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        // generate vertices, normals and uvs
+        for (iy = 0; iy < gridY1; iy++) {
+            const y = iy * segment_height - height_half;
+            for (ix = 0; ix < gridX1; ix++) {
+                const x = ix * segment_width - width_half;
+                vertices.push(x, -y, 0);
+                normals.push(0, 0, 1);
+                uvs.push(ix / gridX);
+                uvs.push(1 - (iy / gridY));
+            }
+        }
+        // indices
+        for (iy = 0; iy < gridY; iy++) {
+            for (ix = 0; ix < gridX; ix++) {
+                const a = ix + gridX1 * iy;
+                const b = ix + gridX1 * (iy + 1);
+                const c = (ix + 1) + gridX1 * (iy + 1);
+                const d = (ix + 1) + gridX1 * iy;
+                // faces
+                indices.push(a, b, d);
+                indices.push(b, c, d);
+            }
+        }
+        // build geometry
+        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+        this.count = indices.length;
+    }
+}
+
+class Grid extends Mesh {
+    #size;
+    #spacing;
+    //#normal: number;
+    constructor(params = {}) {
+        const spacing = params.spacing ?? 10;
+        params.geometry = new PlaneBufferGeometry();
+        params.material = new GridMaterial({ spacing: spacing });
+        super(params);
+        this.#size = params.size ?? 100;
+        this.#spacing = spacing;
+        //this.#normal = params.normal ?? 2;
+        this.#updateGeometry();
+    }
+    #updateGeometry() {
+        this.getGeometry().updateGeometry(this.#size, this.#size, 1, 1);
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Grid_1: null,
+            size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) {
+                    this.#size = Number(size);
+                    this.#updateGeometry();
+                } } },
+            spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) {
+                    this.#spacing = Number(spacing);
+                    this.getMaterial().setSpacing(this.#spacing);
+                } } }
+        });
+    }
+    static getEntityName() {
+        return 'Grid';
+    }
+}
+
+class SphereBufferGeometry extends BufferGeometry {
+    updateGeometry(radius, segments, rings, phiStart, phiLength, thetaStart, thetaLength) {
+        segments = Math.max(3, Math.floor(segments));
+        rings = Math.max(2, Math.floor(rings));
+        //phiStart = phiStart !== undefined ? phiStart : 0;
+        //phiLength = phiLength !== undefined ? phiLength : Math.PI * 2;
+        //thetaStart = thetaStart !== undefined ? thetaStart : 0;
+        //thetaLength = thetaLength !== undefined ? thetaLength : Math.PI;
+        const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+        let ix, iy;
+        let index = 0;
+        const grid = [];
+        const vertex = vec3.create();
+        const normal = vec3.create();
+        // buffers
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        // generate vertices, normals and uvs
+        for (iy = 0; iy <= rings; iy++) {
+            const verticesRow = [];
+            const v = iy / rings;
+            // special case for the poles
+            let uOffset = 0;
+            if (iy == 0 && thetaStart == 0) {
+                uOffset = 0.5 / segments;
+            }
+            else if (iy == rings && thetaEnd == Math.PI) {
+                uOffset = -0.5 / segments;
+            }
+            for (ix = 0; ix <= segments; ix++) {
+                const u = ix / segments;
+                // vertex
+                vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+                vertex[2] = radius * Math.cos(thetaStart + v * thetaLength);
+                vertex[1] = -radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
+                vertices.push(...vertex);
+                // normal
+                vec3.normalize(normal, vertex);
+                normals.push(...normal);
+                // uv
+                uvs.push(u + uOffset, 1 - v);
+                verticesRow.push(index++);
+            }
+            grid.push(verticesRow);
+        }
+        // indices
+        for (iy = 0; iy < rings; iy++) {
+            for (ix = 0; ix < segments; ix++) {
+                const a = grid[iy][ix + 1];
+                const b = grid[iy][ix];
+                const c = grid[iy + 1][ix];
+                const d = grid[iy + 1][ix + 1];
+                if (iy !== 0 || thetaStart > 0)
+                    indices.push(a, b, d);
+                if (iy !== rings - 1 || thetaEnd < Math.PI)
+                    indices.push(b, c, d);
+            }
+        }
+        // build geometry
+        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
+        this.count = indices.length;
+    }
+}
+
+const intersectionPoint1 = vec3.create();
+const intersectionPoint2 = vec3.create();
+const intersectionNormal$1 = vec3.create();
+const tempVec3$m = vec3.create();
+const v$d = vec3.create();
+class Sphere extends Mesh {
+    radius;
+    segments;
+    rings;
+    phiStart;
+    phiLength;
+    thetaStart;
+    thetaLength;
+    isSphere = true;
+    constructor(params = {}) {
+        params.geometry = new SphereBufferGeometry();
+        params.material = params.material ?? new MeshBasicMaterial();
+        super(params);
+        this.radius = params.radius ?? 1;
+        this.segments = params.segments ?? 8;
+        this.rings = params.rings ?? 8;
+        this.phiStart = params.phiStart ?? 0;
+        this.phiLength = params.phiLength ?? TAU;
+        this.thetaStart = params.thetaStart = 0;
+        this.thetaLength = params.thetaLength ?? PI;
+        this.updateGeometry();
+        super.setParameters(params);
+    }
+    setRadius(radius) {
+        this.radius = radius;
+        this.updateGeometry();
+    }
+    updateGeometry() {
+        this.getGeometry().updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Sphere_1: null,
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) {
+                    this.radius = Number(radius);
+                    this.updateGeometry();
+                } } },
+            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.segments)); if (segments) {
+                    this.segments = Number(segments);
+                    this.updateGeometry();
+                } } },
+            rings: { i18n: '#rings', f: () => { const rings = prompt('Rings', String(this.rings)); if (rings) {
+                    this.rings = Number(rings);
+                    this.updateGeometry();
+                } } }
+        });
+    }
+    raycast(raycaster, intersections) {
+        const ray = raycaster.ray;
+        const worldPosition = this.getWorldPosition(v$d);
+        const inverseRadius = 1 / this.radius;
+        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$m), intersectionPoint1, intersectionPoint2)) {
+            //return super.raycast(raycaster, intersections);//TODO: improve
+            //TODO: case when the ray spawn from inside the sphere
+            vec3.sub(intersectionNormal$1, intersectionPoint1, worldPosition);
+            vec3.scale(intersectionNormal$1, intersectionNormal$1, inverseRadius);
+            intersections.push(ray.createIntersection(intersectionPoint1, intersectionNormal$1, null, this, 0));
+            vec3.sub(intersectionNormal$1, intersectionPoint2, worldPosition);
+            vec3.scale(intersectionNormal$1, intersectionNormal$1, inverseRadius);
+            intersections.push(ray.createIntersection(intersectionPoint2, intersectionNormal$1, null, this, 0));
+        }
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.radius = this.radius;
+        json.segments = this.segments;
+        json.rings = this.rings;
+        json.phistart = this.phiStart;
+        json.philength = this.phiLength;
+        json.thetastart = this.thetaStart;
+        json.thetalength = this.thetaLength;
+        json.material = this.getMaterial().toJSON();
+        return json;
+    }
+    static async constructFromJSON(json, entities, loadedPromise) {
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
+    }
+    static getEntityName() {
+        return 'Sphere';
+    }
+}
+registerEntity(Sphere);
+
+const SPHERE_RADIUS = 1;
+const RAYS_RADIUS = 3;
+class PointLightHelper extends Mesh {
+    constructor(params = {}) {
+        params.geometry = new BufferGeometry();
+        params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerMesh, defines: { ALWAYS_ON_TOP: '', } });
+        super(params);
+        this.renderMode = GL_LINES;
+        this.#createVertices();
+        const sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
+        sphere.getMaterial().setDefine('ALWAYS_ON_TOP');
+        this.addChild(sphere);
+    }
+    #createVertices() {
+        const indices = [];
+        const vertices = [];
+        vertices.push(0, 0, 0);
+        const iInc = PI / 4;
+        const jInc = PI / 4;
+        let k = 0;
+        for (let i = 0; i < TWO_PI; i += iInc) {
+            for (let j = 0; j < PI; j += jInc) {
+                vertices.push(RAYS_RADIUS * Math.cos(i) * Math.sin(j), RAYS_RADIUS * Math.cos(j), RAYS_RADIUS * Math.sin(i) * Math.sin(j));
+                indices.push(0, ++k);
+            }
+        }
+        const geometry = this.geometry;
+        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
+        geometry.count = indices.length;
+    }
+}
+
+const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
+let defaultTextureSize = 1024;
+var LightType;
+(function (LightType) {
+    // The values should be consistent with the values in the raytracing shader
+    LightType[LightType["Ambient"] = 1] = "Ambient";
+    LightType[LightType["Point"] = 2] = "Point";
+    LightType[LightType["Spot"] = 3] = "Spot";
+    LightType[LightType["Directional"] = 4] = "Directional";
+})(LightType || (LightType = {}));
+class Light extends Entity {
+    #intensity;
+    #color; // TODO: use Color instead
+    #range = 1000;
+    shadow;
+    #shadowTextureSize = defaultTextureSize;
+    isLight = true;
+    radius; // Radius for ray tracing
+    constructor(parameters = {}) {
+        super(parameters);
+        this.#color = vec3.clone(parameters.color ?? DEFAULT_LIGHT_COLOR);
+        this.#intensity = parameters.intensity ?? 1.0;
+        this.radius = parameters.radius ?? 1.0;
+        this.castShadow = false;
+        this.isRenderable = true;
+    }
+    set color(color) {
+        vec3.copy(this.#color, color);
+    }
+    get color() {
+        return this.#color;
+    }
+    set intensity(intensity) {
+        this.#intensity = intensity;
+    }
+    get intensity() {
+        return this.#intensity;
+    }
+    set range(range) {
+        this.#range = range;
+        if (this.shadow) {
+            this.shadow.range = range;
+        }
+    }
+    get range() {
+        return this.#range;
+    }
+    set shadowTextureSize(shadowTextureSize) {
+        this.#shadowTextureSize = shadowTextureSize;
+        if (this.shadow) {
+            this.shadow.textureSize = shadowTextureSize;
+        }
+    }
+    get shadowTextureSize() {
+        return this.#shadowTextureSize;
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Light_1: null,
+            color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) {
+                    this.color = stringToVec3(color);
+                } } },
+            intensity: { i18n: '#intensity', f: () => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) {
+                    this.intensity = Number(intensity);
+                } } },
+        }, this.shadow ? {
+            texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) {
+                    this.shadowTextureSize = Number.parseFloat(textureSize);
+                } } }
+        } : null);
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.color = vec3ToJSON(this.color);
+        json.intensity = this.intensity;
+        json.shadowtexturesize = this.shadowTextureSize;
+        return json;
+    }
+    static async constructFromJSON(json) {
+        return new Light(json);
+    }
+    fromJSON(json) {
+        super.fromJSON(json);
+        this.color = json.color ?? DEFAULT_LIGHT_COLOR;
+        this.intensity = json.intensity ?? 1;
+        this.shadowTextureSize = json.shadowtexturesize ?? defaultTextureSize;
+    }
+    static set defaultTextureSize(textureSize) {
+        defaultTextureSize = textureSize;
+    }
+    static getEntityName() {
+        return 'Light';
+    }
+    is(s) {
+        return s == 'Light';
+    }
+    getRaytracingLight() {
+        throw new Error('Override this function');
+    }
+}
+registerEntity(Light);
+
+mat4.create();
+class LightShadow {
+    #textureSize = vec2.create();
+    light;
+    camera;
+    shadowMatrix = mat4.create();
+    viewPorts;
+    viewPortsLength;
+    renderTarget;
+    constructor(light, camera) {
+        camera.hideInExplorer = true;
+        camera.serializable = false;
+        light.addChild(camera);
+        this.light = light;
+        this.camera = camera;
+        this.#textureSize = vec2.set(this.#textureSize, light.shadowTextureSize, light.shadowTextureSize);
+        this.shadowMatrix = mat4.create();
+        this.viewPorts = [vec4.fromValues(0, 0, 1, 1)];
+        this.viewPortsLength = 1;
+        this.renderTarget = new RenderTarget({ width: this.#textureSize[0], height: this.#textureSize[0], });
+        this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
+    }
+    set range(range) {
+    }
+    set textureSize(textureSize) {
+        vec2.set(this.#textureSize, textureSize, textureSize);
+        this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
+    }
+    get textureSize() {
+        return this.#textureSize;
+    }
+    computeShadowMatrix(mapIndex) {
+        const shadowCamera = this.camera;
+        const shadowMatrix = this.shadowMatrix;
+        mat4.set(shadowMatrix, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
+        shadowCamera.dirty();
+        mat4.mul(shadowMatrix, shadowMatrix, shadowCamera.projectionMatrix);
+        mat4.mul(shadowMatrix, shadowMatrix, shadowCamera.worldMatrixInverse);
+    }
+}
+
+class SpotLightShadow extends LightShadow {
+    constructor(light) {
+        super(light, new Camera({ autoResize: false, })); //TODO: adjust default variables
+        const textureSize = this.textureSize;
+        this.aspect = textureSize[0] / textureSize[1];
+        this.angle = this.light.angle;
+        this.range = this.light.range;
+    }
+    set angle(angle) {
+        this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
+    }
+    set range(range) {
+        this.camera.farPlane = range;
+    }
+    set aspect(aspect) {
+        this.camera.aspectRatio = aspect;
+    }
+}
+
+const DEFAULT_ANGLE = Math.PI / 4.0;
+const Z_VECTOR = vec3.fromValues(0, 0, 1);
+const tempQuat$9 = quat.create();
+class SpotLight extends Light {
+    isSpotLight = true;
+    #innerAngle;
+    innerAngleCos;
+    #outerAngle;
+    outerAngleCos;
+    constructor(parameters = {}) {
+        super(parameters);
+        this.angle = parameters.outerAngle ?? DEFAULT_ANGLE;
+        this.innerAngle = parameters.innerAngle ?? DEFAULT_ANGLE;
+        this.range = 0;
+    }
+    set castShadow(castShadow) {
+        super.castShadow = castShadow;
+        if (this.castShadow) {
+            this.shadow = new SpotLightShadow(this);
+            this.shadow.range = this.range;
+            this.shadow.angle = this.#outerAngle;
+        }
+    }
+    get castShadow() {
+        return super.castShadow;
+    }
+    set angle(angle) {
+        this.#outerAngle = angle;
+        this.outerAngleCos = Math.cos(angle);
+        if (this.shadow) {
+            this.shadow.angle = angle;
+        }
+    }
+    get angle() {
+        return this.#outerAngle;
+    }
+    set innerAngle(innerAngle) {
+        this.#innerAngle = innerAngle;
+        this.innerAngleCos = Math.cos(innerAngle);
+    }
+    get innerAngle() {
+        return this.#innerAngle;
+    }
+    getDirection(out = vec3.create()) {
+        return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat$9));
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            angle: { i18n: '#angle', f: () => { const angle = prompt('Angle', String(this.angle)); if (angle !== null) {
+                    this.angle = Number(angle);
+                } } },
+            inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) {
+                    this.innerAngle = Number(innerAngle);
+                } } },
+            range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) {
+                    this.range = Number(range);
+                } } },
+        });
+    }
+    static getEntityName() {
+        return 'SpotLight';
+    }
+    getRaytracingLight() {
+        return LightType.Spot;
+    }
+}
+registerEntity(SpotLight);
+
+const DIVISIONS = 32;
+const tempVec4$1 = vec4.create();
+class SpotLightHelper extends Mesh {
+    #color = vec3.create(); // TODO: use Color instead
+    #angle = 0;
+    #range = 0;
+    #spotLight = null;
+    #vertexPositionAttribute;
+    constructor(params = {}) {
+        params.geometry = new BufferGeometry();
+        params.material = new LineBasicMaterial();
+        super(params);
+        this.renderMode = GL_LINES;
+        this.#createVertices();
+        this.material.setMeshColor();
+        this.material.setDefine('ALWAYS_ON_TOP');
+        this.castShadow = false;
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, event => this.update());
+    }
+    #createVertices() {
+        const indices = [];
+        const vertices = [];
+        vertices.push(0, 0, 0);
+        let k = 1;
+        for (let i = 0; i < DIVISIONS; i += 1) {
+            vertices.push(0, 0, 0);
+            indices.push(0, k);
+            if (k < DIVISIONS) {
+                //segement til next point
+                indices.push(k, ++k);
+            }
+        }
+        //close loop
+        indices.push(k, 1);
+        const geometry = this.geometry;
+        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
+        this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
+        geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
+        geometry.count = indices.length;
+    }
+    update() {
+        const spotLight = this.#spotLight;
+        if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
+            vec3.copy(this.#color, spotLight.color);
+            vec4.set(tempVec4$1, this.#color[0], this.#color[1], this.#color[2], 1.);
+            this.material.setMeshColor(tempVec4$1);
+            const range = spotLight.range || 1000.0;
+            const radius = Math.sin(spotLight.angle) * range;
+            this.#range = spotLight.range;
+            this.#angle = spotLight.angle;
+            const verticesArray = this.#vertexPositionAttribute._array;
+            if (!verticesArray) {
+                return;
+            }
+            for (let i = 0; i < DIVISIONS; i += 1) {
+                const angle = i * TWO_PI / DIVISIONS;
+                const index = (i + 1) * 3;
+                verticesArray[index + 0] = Math.cos(angle) * radius;
+                verticesArray[index + 1] = Math.sin(angle) * radius;
+                verticesArray[index + 2] = -range;
+                verticesArray.subarray(index, index + 2);
+            }
+            this.#vertexPositionAttribute.dirty = true;
+        }
+    }
+    parentChanged(parent = null) {
+        if (parent instanceof SpotLight) {
+            this.#spotLight = parent;
+        }
+        else {
+            this.#spotLight = null;
+        }
+        this.update();
+    }
+}
+
 class LineMaterial extends Material {
     #lineWidth = 1;
     constructor(params = {}) {
@@ -10581,6 +11956,150 @@ class LineMaterial extends Material {
 }
 Material.materialList['Line'] = LineMaterial;
 registerEntity(LineMaterial);
+
+class CylinderBufferGeometry extends BufferGeometry {
+    #indices;
+    #vertices;
+    #normals;
+    #uvs;
+    updateGeometry(radius, height, segments, hasCap) {
+        segments = Math.max(Math.floor(segments), 3);
+        // buffers
+        this.#indices = [];
+        this.#vertices = [];
+        this.#normals = [];
+        this.#uvs = [];
+        this.#generateCylinder(radius, height, segments);
+        if (hasCap) {
+            this.#generateCap(radius, -height / 2, segments);
+            this.#generateCap(radius, +height / 2, segments);
+        }
+        // build geometry
+        this.setIndex(new Uint16BufferAttribute(this.#indices, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2, 'texCoord'));
+        this.count = this.#indices.length;
+    }
+    #generateCylinder(radius, height, segments) {
+        const normal = vec3.create();
+        const vertex = vec3.create();
+        const thetaPerSegment = TWO_PI / segments;
+        //const vPerSegment = 1 / segments;
+        const halfHeight = height / 2.0;
+        for (let segmentId = 0; segmentId <= segments; ++segmentId) {
+            const theta = thetaPerSegment * segmentId;
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
+            vertex[0] = radius * cosTheta;
+            vertex[1] = radius * sinTheta;
+            const u = segmentId / segments;
+            normal[0] = cosTheta;
+            normal[1] = sinTheta;
+            //No need to normalize the normal
+            // Bottom vertex
+            vertex[2] = -halfHeight;
+            this.#vertices.push(...vertex);
+            this.#normals.push(...normal);
+            this.#uvs.push(u, 0);
+            // Top vertex
+            vertex[2] = halfHeight;
+            this.#vertices.push(...vertex);
+            this.#normals.push(...normal);
+            this.#uvs.push(u, 1);
+            const indexStart = segmentId * 2;
+            this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
+            this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
+        }
+    }
+    #generateCap(radius, z, segments) {
+        const middlePointIndex = this.#vertices.length / 3;
+        const sign = Math.sign(z);
+        // Push middle vertex
+        this.#vertices.push(0, 0, z);
+        this.#normals.push(0, 0, sign);
+        this.#uvs.push(0.5, 0.5);
+        // Note: we use vertices generated in generateCylinder for the caps.
+        // This uses less memory but limits uv / normals usage
+        let indexStart = z < 0 ? 0 : 1;
+        for (let segmentId = 0; segmentId <= segments; ++segmentId) {
+            if (sign < 0) {
+                this.#indices.push(indexStart, middlePointIndex, indexStart + 2);
+            }
+            else {
+                this.#indices.push(middlePointIndex, indexStart, indexStart + 2);
+            }
+            indexStart += 2;
+        }
+    }
+}
+
+class Cylinder extends Mesh {
+    #radius;
+    #height;
+    #segments;
+    #hasCap;
+    constructor(params = {}) {
+        params.geometry = new CylinderBufferGeometry();
+        params.material = params.material ?? new MeshBasicMaterial();
+        super(params);
+        super.setParameters(params);
+        this.#radius = params.radius ?? 1;
+        this.#height = params.height ?? 10;
+        this.#segments = params.segments ?? 24;
+        this.#hasCap = params.hasCap ?? true;
+        this.#updateGeometry();
+    }
+    setHeight(height) {
+        this.#height = height;
+        this.#updateGeometry();
+    }
+    setRadius(radius) {
+        this.#radius = radius;
+        this.#updateGeometry();
+    }
+    #updateGeometry() {
+        this.getGeometry().updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Cylinder_1: null,
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) {
+                    this.#radius = Number(radius);
+                    this.#updateGeometry();
+                } } },
+            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
+                    this.#height = Number(height);
+                    this.#updateGeometry();
+                } } },
+            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.#segments)); if (segments) {
+                    this.#segments = Number(segments);
+                    this.#updateGeometry();
+                } } },
+            hasCap: { i18n: '#has_caps', f: () => { const hasCap = prompt('Has Caps', String(this.#hasCap)); if (hasCap) {
+                    this.#hasCap = (Number(hasCap) == 1);
+                    this.#updateGeometry();
+                } } },
+        });
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.radius = this.#radius;
+        json.height = this.#height;
+        json.segments = this.#segments;
+        json.hasCap = this.#hasCap;
+        json.material = this.getMaterial().toJSON();
+        return json;
+    }
+    static async constructFromJSON(json, entities, loadedPromise) {
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        return new Cylinder({ radius: json.radius, height: json.height, material: material, segments: json.segments, hasCap: json.hasCap });
+    }
+    static getEntityName() {
+        return 'Cylinder';
+    }
+}
+registerEntity(Cylinder);
 
 class InstancedBufferGeometry extends BufferGeometry {
     instanceCount;
@@ -10654,6 +12173,417 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
         /*************************/
     }
 }
+
+class Line extends Mesh {
+    isLine = true;
+    #start = vec3.create();
+    #end = vec3.create();
+    constructor(params = {}) {
+        params.geometry = new LineSegmentsGeometry();
+        params.material = params.material ?? new LineMaterial({ lineWidth: 10 });
+        super(params);
+        if (params.start) {
+            vec3.copy(this.#start, params.start);
+        }
+        if (params.end) {
+            vec3.copy(this.#end, params.end);
+        }
+        this.#updateGeometry();
+    }
+    set start(start) {
+        vec3.copy(this.#start, start);
+        this.#updateGeometry();
+    }
+    getStart(start = vec3.create()) {
+        return vec3.copy(start, this.#start);
+    }
+    set end(end) {
+        vec3.copy(this.#end, end);
+        this.#updateGeometry();
+    }
+    getEnd(end = vec3.create()) {
+        return vec3.copy(end, this.#end);
+    }
+    #updateGeometry() {
+        this.getGeometry().setSegments([...this.#start, ...this.#end], [], false);
+    }
+    raycast(raycaster, intersections) {
+        const interSegment = vec3.create();
+        const interRay = vec3.create();
+        const ray = raycaster.ray;
+        const sqrDist = ray.distanceSqToSegment(this.#start, this.#end, interRay, interSegment);
+        if (sqrDist < 10) { //TODO: variable
+            intersections.push(ray.createIntersection(interRay, null, null, this, sqrDist));
+        }
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.start = vec3ToJSON(this.start);
+        json.end = vec3ToJSON(this.end);
+        json.material = this.getMaterial().toJSON();
+        return json;
+    }
+    static async constructFromJSON(json, entities, loadedPromise) {
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        return new Line({ start: json.start, end: json.end, material: material });
+    }
+    static getEntityName() {
+        return 'Line';
+    }
+}
+registerEntity(Line);
+
+const a$8 = vec3.create();
+const b$4 = vec3.create();
+const c$2 = vec3.create();
+class Raycaster {
+    near;
+    far;
+    ray = new Ray();
+    constructor(near = 0, far = Infinity) {
+        this.near = near;
+        this.far = far;
+    }
+    castRay(origin, direction, entities, recursive) {
+        this.ray.set(origin, direction);
+        const intersections = [];
+        for (const entity of entities) {
+            this.intersectEntity(entity, intersections, recursive);
+        }
+        return intersections;
+    }
+    castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
+        const projectionMatrixInverse = camera.projectionMatrixInverse;
+        const nearP = vec3.set(a$8, normalizedX, normalizedY, -1);
+        const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
+        vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
+        vec3.transformMat4(farP, farP, projectionMatrixInverse);
+        vec3.transformQuat(nearP, nearP, camera.quaternion);
+        vec3.transformQuat(farP, farP, camera.quaternion);
+        const rayDirection = vec3.sub(c$2, farP, nearP);
+        vec3.normalize(rayDirection, rayDirection);
+        return this.castRay(camera.position, rayDirection, entities, recursive);
+    }
+    intersectEntity(entity, intersections, recursive) {
+        if (!entity.visible) {
+            return;
+        }
+        entity.raycast(this, intersections);
+        if (recursive) {
+            for (const child of entity.children) {
+                this.intersectEntity(child, intersections, recursive);
+            }
+        }
+    }
+}
+
+const SceneExplorerEvents = new EventTarget();
+
+const tempVec3$l = vec3.create();
+const tempVec3_1$3 = vec3.create();
+const tempQuat$8 = quat.create();
+const BONE_RADIUS = 0.5;
+class SkeletonHelper extends Entity {
+    static #helpers = new Set();
+    #skeleton = null;
+    #lines = new Map();
+    #bones = new Map();
+    #joints = new Map();
+    #lineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, });
+    #highlitLineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
+    #boneTipMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
+    #boneMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [27 / 255, 106 / 255, 0, 1], });
+    #jointMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 235 / 255, 0, 1], });
+    #lineGroup = new Group({ name: 'lines', parent: this, visible: false });
+    #bonesGroup = new Group({ name: 'bones', parent: this, });
+    #raycaster;
+    #highlitLine;
+    #boneStart;
+    #boneEnd;
+    enumerable = false;
+    #displayJoints = true;
+    constructor(parameters = {}) {
+        super(parameters);
+        SkeletonHelper.#helpers.add(this);
+        this.hideInExplorer = parameters.hideInExplorer ?? false;
+        this.#skeleton = parameters?.skeleton ?? null;
+        this.#raycaster = new Raycaster();
+        this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
+        this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
+        this.#initListeners();
+    }
+    parentChanged(parent) {
+        if (!parent) {
+            return;
+        }
+        this.#clearSkeleton();
+        let current = parent;
+        while (current) {
+            if (current.isSkeleton) {
+                this.#skeleton = current;
+                return;
+            }
+            else if (current.hasSkeleton) {
+                this.#skeleton = current.skeleton;
+                return;
+            }
+            current = current.parent;
+        }
+        this.#skeleton = null;
+    }
+    #clearSkeleton() {
+        this.#lines.forEach(value => value.dispose());
+        this.#bones.forEach(value => value.dispose());
+        this.#joints.forEach(value => value.dispose());
+        this.#lines.clear();
+        this.#bones.clear();
+        this.#joints.clear();
+        this.#boneStart.setVisible(false);
+        this.#boneEnd.setVisible(false);
+    }
+    /*
+        set skeleton(skeleton) {
+            this.#skeleton = skeleton;
+        }
+
+        get skeleton() {
+            return this.#skeleton;
+        }*/
+    getWorldPosition(vec = vec3.create()) {
+        return vec3.copy(vec, this._position);
+    }
+    getWorldQuaternion(q = quat.create()) {
+        return quat.identity(q);
+    }
+    getWorldScale(scale = vec3.create()) {
+        return vec3.copy(scale, this._scale);
+    }
+    #update() {
+        if (!this.#skeleton) {
+            return;
+        }
+        for (const bone of this.#skeleton.bones) {
+            let boneLine = this.#lines.get(bone);
+            let boneCylinder = this.#bones.get(bone);
+            let boneSphere = this.#joints.get(bone);
+            if (!boneLine) {
+                boneLine = new Line({ material: this.#lineMaterial, parent: this.#lineGroup });
+                boneLine.properties.setObject('bone', bone);
+                this.#lines.set(bone, boneLine);
+                boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS, });
+                this.#bones.set(bone, boneCylinder);
+                boneSphere = new Sphere({ material: this.#jointMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
+                this.#joints.set(bone, boneSphere);
+            }
+            //boneLine.position = bone.worldPos;
+            let start = bone.worldPos;
+            const end = bone.worldPos;
+            const boneParent = bone.parent;
+            if (boneParent?.isBone) {
+                start = boneParent.getWorldPosition( /*TODO: optimize*/);
+                boneLine.properties.setObject('boneParent', boneParent);
+            }
+            boneLine.start = start;
+            boneLine.end = end;
+            boneSphere.setPosition(end);
+            if (start !== end) {
+                vec3.sub(tempVec3$l, end, start);
+                //const mid = vec3.add(tempVec3_1, start, end);
+                vec3.scaleAndAdd(tempVec3_1$3, start, tempVec3$l, 0.5);
+                boneCylinder.setHeight(vec3.len(tempVec3$l));
+                vec3.normalize(tempVec3$l, tempVec3$l);
+                quat.rotationTo(tempQuat$8, vec3.fromValues(0, 0, 1), tempVec3$l);
+                boneCylinder.setOrientation(tempQuat$8);
+                boneCylinder.setPosition(tempVec3_1$3);
+                boneCylinder.setVisible();
+            }
+            else {
+                boneCylinder.setVisible(false);
+            }
+        }
+    }
+    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
+    get wireframe() {
+        return 0;
+    }
+    #initListeners() {
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
+            if (!this.isVisible()) {
+                return;
+            }
+            this.#update();
+        });
+        GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
+            this.#mouseMoved(event);
+        });
+        GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
+            this.#mouseUp(event);
+        });
+    }
+    #mouseMoved(event) {
+        if (Graphics$1.dragging) {
+            return;
+        }
+        const picked = this.#pickBone(event);
+        if (picked) {
+            this.#highlit(picked);
+        }
+    }
+    #mouseUp(event) {
+        if (Graphics$1.dragging) {
+            return;
+        }
+        const closest = this.#pickBone(event);
+        if (closest) {
+            let bone = closest.properties.getObject('bone');
+            if (closest.isLine) {
+                this.#highlit(closest);
+                bone = bone?.parent /*TODO case where parent is not Bone*/ ?? bone;
+            }
+            SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
+        }
+    }
+    displayBoneJoints(display) {
+        this.#boneStart.setVisible(this.#highlitLine && display && undefined);
+        this.#boneEnd.setVisible(this.#highlitLine && display && undefined);
+        this.#displayJoints = display;
+    }
+    static displayBonesAsLines(showLines) {
+        for (const helper of SkeletonHelper.#helpers) {
+            helper.#lineGroup.setVisible(showLines && undefined);
+            helper.#bonesGroup.setVisible((!showLines) && undefined);
+        }
+    }
+    setJointsRadius(radius) {
+        this.#boneStart.setRadius(radius);
+        this.#boneEnd.setRadius(radius);
+    }
+    #pickBone(event) {
+        if (!this.isVisible()) {
+            return null;
+        }
+        const normalizedX = (event.detail.x / event.detail.width) * 2 - 1;
+        const normalizedY = 1 - (event.detail.y / event.detail.height) * 2;
+        const scene = this.root; // TODO: imbricated scenes
+        if (!scene.is('Scene') || !scene.activeCamera) {
+            return null;
+        }
+        const intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
+        if (intersections.length) {
+            let closest = null;
+            let closestDist = Infinity;
+            for (const intersection of intersections) {
+                const entity = intersection.entity;
+                if (entity.isLine) {
+                    if (intersection.distanceFromRay < closestDist) {
+                        closest = entity;
+                        closestDist = intersection.distanceFromRay;
+                    }
+                }
+                else if (entity.isSphere) {
+                    if (intersection.distanceFromRay < closestDist) {
+                        if (entity == this.#boneStart || entity == this.#boneEnd) {
+                            closest = entity;
+                            closestDist = intersection.distanceFromRay;
+                        }
+                    }
+                }
+            }
+            return closest;
+        }
+        return null;
+    }
+    #highlit(line) {
+        if (!line?.isLine) {
+            return;
+        }
+        if (this.#highlitLine) {
+            this.#highlitLine.setMaterial(this.#lineMaterial);
+        }
+        if (line) {
+            line.setMaterial(this.#highlitLineMaterial);
+            this.#boneStart.setPosition(line.getStart(tempVec3$l));
+            this.#boneEnd.setPosition(line.getEnd(tempVec3$l));
+            this.#boneStart.setVisible(this.#displayJoints && undefined);
+            this.#boneEnd.setVisible(this.#displayJoints && undefined);
+            this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
+            this.#boneEnd.properties.set('bone', line.properties.get('bone'));
+        }
+        this.#highlitLine = line;
+    }
+    dispose() {
+        this.#clearSkeleton();
+        this.#lineMaterial.removeUser(this);
+        this.#highlitLineMaterial.removeUser(this);
+    }
+    static getEntityName() {
+        return 'SkeletonHelper';
+    }
+}
+
+function getHelper(type) {
+    switch (type.constructor.name) {
+        case 'PointLight':
+            return new PointLightHelper();
+        case 'SpotLight':
+            return new SpotLightHelper();
+        case 'Scene':
+            return new Grid();
+    }
+    switch (true) {
+        case type.isSkeleton:
+            return new SkeletonHelper();
+    }
+    if (type instanceof Camera) {
+        return new CameraFrustum();
+    }
+}
+
+const tempVec3$k = vec3.create();
+let boxMaterial;
+class HitboxHelper extends Entity {
+    #hitboxes = [];
+    constructor() {
+        super();
+        if (!boxMaterial) {
+            boxMaterial = new MeshBasicMaterial();
+            boxMaterial.setMeshColor([0.5, 0.5, 0.5, 0.1]);
+            boxMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
+        }
+    }
+    parentChanged(parent) {
+        this.removeBoxes();
+        if (parent && parent.getHitboxes) {
+            const hitboxes = parent.getHitboxes();
+            for (const hitbox of hitboxes) {
+                vec3.sub(tempVec3$k, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
+                const box = new Box({ width: tempVec3$k[0], height: tempVec3$k[1], depth: tempVec3$k[2], material: boxMaterial });
+                box.serializable = false;
+                vec3.lerp(tempVec3$k, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
+                box.setPosition(tempVec3$k);
+                if (hitbox.parent) {
+                    hitbox.parent.addChild(box);
+                }
+                else {
+                    this.addChild(box);
+                }
+                this.#hitboxes.push(box);
+            }
+        }
+    }
+    removeBoxes() {
+        this.#hitboxes.forEach(hitbox => hitbox.dispose());
+        this.#hitboxes = [];
+    }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON() {
+        return new HitboxHelper();
+    }
+    static getEntityName() {
+        return 'HitboxHelper';
+    }
+}
+registerEntity(HitboxHelper);
 
 class LineSegments extends Mesh {
     #lineStrip;
@@ -10821,200 +12751,6 @@ class Cone extends Mesh {
 }
 registerEntity(Cone);
 
-class CylinderBufferGeometry extends BufferGeometry {
-    #indices;
-    #vertices;
-    #normals;
-    #uvs;
-    updateGeometry(radius, height, segments, hasCap) {
-        segments = Math.max(Math.floor(segments), 3);
-        // buffers
-        this.#indices = [];
-        this.#vertices = [];
-        this.#normals = [];
-        this.#uvs = [];
-        this.#generateCylinder(radius, height, segments);
-        if (hasCap) {
-            this.#generateCap(radius, -height / 2, segments);
-            this.#generateCap(radius, +height / 2, segments);
-        }
-        // build geometry
-        this.setIndex(new Uint16BufferAttribute(this.#indices, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2, 'texCoord'));
-        this.count = this.#indices.length;
-    }
-    #generateCylinder(radius, height, segments) {
-        const normal = vec3.create();
-        const vertex = vec3.create();
-        const thetaPerSegment = TWO_PI / segments;
-        //const vPerSegment = 1 / segments;
-        const halfHeight = height / 2.0;
-        for (let segmentId = 0; segmentId <= segments; ++segmentId) {
-            const theta = thetaPerSegment * segmentId;
-            const sinTheta = Math.sin(theta);
-            const cosTheta = Math.cos(theta);
-            vertex[0] = radius * cosTheta;
-            vertex[1] = radius * sinTheta;
-            const u = segmentId / segments;
-            normal[0] = cosTheta;
-            normal[1] = sinTheta;
-            //No need to normalize the normal
-            // Bottom vertex
-            vertex[2] = -halfHeight;
-            this.#vertices.push(...vertex);
-            this.#normals.push(...normal);
-            this.#uvs.push(u, 0);
-            // Top vertex
-            vertex[2] = halfHeight;
-            this.#vertices.push(...vertex);
-            this.#normals.push(...normal);
-            this.#uvs.push(u, 1);
-            const indexStart = segmentId * 2;
-            this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
-            this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
-        }
-    }
-    #generateCap(radius, z, segments) {
-        const middlePointIndex = this.#vertices.length / 3;
-        const sign = Math.sign(z);
-        // Push middle vertex
-        this.#vertices.push(0, 0, z);
-        this.#normals.push(0, 0, sign);
-        this.#uvs.push(0.5, 0.5);
-        // Note: we use vertices generated in generateCylinder for the caps.
-        // This uses less memory but limits uv / normals usage
-        let indexStart = z < 0 ? 0 : 1;
-        for (let segmentId = 0; segmentId <= segments; ++segmentId) {
-            if (sign < 0) {
-                this.#indices.push(indexStart, middlePointIndex, indexStart + 2);
-            }
-            else {
-                this.#indices.push(middlePointIndex, indexStart, indexStart + 2);
-            }
-            indexStart += 2;
-        }
-    }
-}
-
-class Cylinder extends Mesh {
-    #radius;
-    #height;
-    #segments;
-    #hasCap;
-    constructor(params = {}) {
-        params.geometry = new CylinderBufferGeometry();
-        params.material = params.material ?? new MeshBasicMaterial();
-        super(params);
-        super.setParameters(params);
-        this.#radius = params.radius ?? 1;
-        this.#height = params.height ?? 10;
-        this.#segments = params.segments ?? 24;
-        this.#hasCap = params.hasCap ?? true;
-        this.#updateGeometry();
-    }
-    setHeight(height) {
-        this.#height = height;
-        this.#updateGeometry();
-    }
-    setRadius(radius) {
-        this.#radius = radius;
-        this.#updateGeometry();
-    }
-    #updateGeometry() {
-        this.getGeometry().updateGeometry(this.#radius, this.#height, this.#segments, this.#hasCap);
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Cylinder_1: null,
-            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) {
-                    this.#radius = Number(radius);
-                    this.#updateGeometry();
-                } } },
-            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
-                    this.#height = Number(height);
-                    this.#updateGeometry();
-                } } },
-            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.#segments)); if (segments) {
-                    this.#segments = Number(segments);
-                    this.#updateGeometry();
-                } } },
-            hasCap: { i18n: '#has_caps', f: () => { const hasCap = prompt('Has Caps', String(this.#hasCap)); if (hasCap) {
-                    this.#hasCap = (Number(hasCap) == 1);
-                    this.#updateGeometry();
-                } } },
-        });
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.radius = this.#radius;
-        json.height = this.#height;
-        json.segments = this.#segments;
-        json.hasCap = this.#hasCap;
-        json.material = this.getMaterial().toJSON();
-        return json;
-    }
-    static async constructFromJSON(json, entities, loadedPromise) {
-        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-        return new Cylinder({ radius: json.radius, height: json.height, material: material, segments: json.segments, hasCap: json.hasCap });
-    }
-    static getEntityName() {
-        return 'Cylinder';
-    }
-}
-registerEntity(Cylinder);
-
-class PlaneBufferGeometry extends BufferGeometry {
-    updateGeometry(width, height, widthSegments, heightSegments) {
-        ///width = width || 1;
-        //height = height || 1;
-        const width_half = width / 2;
-        const height_half = height / 2;
-        const gridX = Math.floor(widthSegments);
-        const gridY = Math.floor(heightSegments);
-        const gridX1 = gridX + 1;
-        const gridY1 = gridY + 1;
-        const segment_width = width / gridX;
-        const segment_height = height / gridY;
-        let ix, iy;
-        // buffers
-        const indices = [];
-        const vertices = [];
-        const normals = [];
-        const uvs = [];
-        // generate vertices, normals and uvs
-        for (iy = 0; iy < gridY1; iy++) {
-            const y = iy * segment_height - height_half;
-            for (ix = 0; ix < gridX1; ix++) {
-                const x = ix * segment_width - width_half;
-                vertices.push(x, -y, 0);
-                normals.push(0, 0, 1);
-                uvs.push(ix / gridX);
-                uvs.push(1 - (iy / gridY));
-            }
-        }
-        // indices
-        for (iy = 0; iy < gridY; iy++) {
-            for (ix = 0; ix < gridX; ix++) {
-                const a = ix + gridX1 * iy;
-                const b = ix + gridX1 * (iy + 1);
-                const c = (ix + 1) + gridX1 * (iy + 1);
-                const d = (ix + 1) + gridX1 * iy;
-                // faces
-                indices.push(a, b, d);
-                indices.push(b, c, d);
-            }
-        }
-        // build geometry
-        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
-        this.count = indices.length;
-    }
-}
-
 class Plane extends Mesh {
     #widthSegments;
     #heightSegments;
@@ -11083,164 +12819,6 @@ class Plane extends Mesh {
 }
 JSONLoader.registerEntity(Plane);
 
-class SphereBufferGeometry extends BufferGeometry {
-    updateGeometry(radius, segments, rings, phiStart, phiLength, thetaStart, thetaLength) {
-        segments = Math.max(3, Math.floor(segments));
-        rings = Math.max(2, Math.floor(rings));
-        //phiStart = phiStart !== undefined ? phiStart : 0;
-        //phiLength = phiLength !== undefined ? phiLength : Math.PI * 2;
-        //thetaStart = thetaStart !== undefined ? thetaStart : 0;
-        //thetaLength = thetaLength !== undefined ? thetaLength : Math.PI;
-        const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
-        let ix, iy;
-        let index = 0;
-        const grid = [];
-        const vertex = vec3.create();
-        const normal = vec3.create();
-        // buffers
-        const indices = [];
-        const vertices = [];
-        const normals = [];
-        const uvs = [];
-        // generate vertices, normals and uvs
-        for (iy = 0; iy <= rings; iy++) {
-            const verticesRow = [];
-            const v = iy / rings;
-            // special case for the poles
-            let uOffset = 0;
-            if (iy == 0 && thetaStart == 0) {
-                uOffset = 0.5 / segments;
-            }
-            else if (iy == rings && thetaEnd == Math.PI) {
-                uOffset = -0.5 / segments;
-            }
-            for (ix = 0; ix <= segments; ix++) {
-                const u = ix / segments;
-                // vertex
-                vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
-                vertex[2] = radius * Math.cos(thetaStart + v * thetaLength);
-                vertex[1] = -radius * Math.sin(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
-                vertices.push(...vertex);
-                // normal
-                vec3.normalize(normal, vertex);
-                normals.push(...normal);
-                // uv
-                uvs.push(u + uOffset, 1 - v);
-                verticesRow.push(index++);
-            }
-            grid.push(verticesRow);
-        }
-        // indices
-        for (iy = 0; iy < rings; iy++) {
-            for (ix = 0; ix < segments; ix++) {
-                const a = grid[iy][ix + 1];
-                const b = grid[iy][ix];
-                const c = grid[iy + 1][ix];
-                const d = grid[iy + 1][ix + 1];
-                if (iy !== 0 || thetaStart > 0)
-                    indices.push(a, b, d);
-                if (iy !== rings - 1 || thetaEnd < Math.PI)
-                    indices.push(b, c, d);
-            }
-        }
-        // build geometry
-        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
-        this.count = indices.length;
-    }
-}
-
-const intersectionPoint1 = vec3.create();
-const intersectionPoint2 = vec3.create();
-const intersectionNormal$1 = vec3.create();
-const tempVec3$o = vec3.create();
-const v$d = vec3.create();
-class Sphere extends Mesh {
-    radius;
-    segments;
-    rings;
-    phiStart;
-    phiLength;
-    thetaStart;
-    thetaLength;
-    isSphere = true;
-    constructor(params = {}) {
-        params.geometry = new SphereBufferGeometry();
-        params.material = params.material ?? new MeshBasicMaterial();
-        super(params);
-        this.radius = params.radius ?? 1;
-        this.segments = params.segments ?? 8;
-        this.rings = params.rings ?? 8;
-        this.phiStart = params.phiStart ?? 0;
-        this.phiLength = params.phiLength ?? TAU;
-        this.thetaStart = params.thetaStart = 0;
-        this.thetaLength = params.thetaLength ?? PI;
-        this.updateGeometry();
-        super.setParameters(params);
-    }
-    setRadius(radius) {
-        this.radius = radius;
-        this.updateGeometry();
-    }
-    updateGeometry() {
-        this.getGeometry().updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Sphere_1: null,
-            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) {
-                    this.radius = Number(radius);
-                    this.updateGeometry();
-                } } },
-            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.segments)); if (segments) {
-                    this.segments = Number(segments);
-                    this.updateGeometry();
-                } } },
-            rings: { i18n: '#rings', f: () => { const rings = prompt('Rings', String(this.rings)); if (rings) {
-                    this.rings = Number(rings);
-                    this.updateGeometry();
-                } } }
-        });
-    }
-    raycast(raycaster, intersections) {
-        const ray = raycaster.ray;
-        const worldPosition = this.getWorldPosition(v$d);
-        const inverseRadius = 1 / this.radius;
-        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$o), intersectionPoint1, intersectionPoint2)) {
-            //return super.raycast(raycaster, intersections);//TODO: improve
-            //TODO: case when the ray spawn from inside the sphere
-            vec3.sub(intersectionNormal$1, intersectionPoint1, worldPosition);
-            vec3.scale(intersectionNormal$1, intersectionNormal$1, inverseRadius);
-            intersections.push(ray.createIntersection(intersectionPoint1, intersectionNormal$1, null, this, 0));
-            vec3.sub(intersectionNormal$1, intersectionPoint2, worldPosition);
-            vec3.scale(intersectionNormal$1, intersectionNormal$1, inverseRadius);
-            intersections.push(ray.createIntersection(intersectionPoint2, intersectionNormal$1, null, this, 0));
-        }
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.radius = this.radius;
-        json.segments = this.segments;
-        json.rings = this.rings;
-        json.phistart = this.phiStart;
-        json.philength = this.phiLength;
-        json.thetastart = this.thetaStart;
-        json.thetalength = this.thetaLength;
-        json.material = this.getMaterial().toJSON();
-        return json;
-    }
-    static async constructFromJSON(json, entities, loadedPromise) {
-        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-        return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
-    }
-    static getEntityName() {
-        return 'Sphere';
-    }
-}
-registerEntity(Sphere);
-
 const ARROW_RADIUS = 0.1;
 const ARROW_LENGTH = 5;
 const PLANE_LENGTH = ARROW_LENGTH / 3;
@@ -11265,10 +12843,10 @@ const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const xyUnitVec3 = vec3.fromValues(1, 1, 0);
 const xzUnitVec3 = vec3.fromValues(1, 0, 1);
 const yzUnitVec3 = vec3.fromValues(0, 1, 1);
-const tempVec3$n = vec3.create();
+const tempVec3$j = vec3.create();
 const tempVec3_b = vec3.create();
 const translationManipulatorTempQuat = quat.create();
-const tempQuat$9 = quat.create();
+const tempQuat$7 = quat.create();
 const MANIPULATOR_SHORTCUT_INCREASE = 'engine.shortcuts.manipulator.size.increase';
 const MANIPULATOR_SHORTCUT_DECREASE = 'engine.shortcuts.manipulator.size.decrease';
 const MANIPULATOR_SHORTCUT_TRANSLATION = 'engine.shortcuts.manipulator.mode.translation';
@@ -11424,9 +13002,9 @@ class Manipulator extends Entity {
         if (camera) {
             this.camera = camera;
             if (camera.isPerspective) {
-                this.getWorldPosition(tempVec3$n);
+                this.getWorldPosition(tempVec3$j);
                 camera.getWorldPosition(tempVec3_b);
-                scaleFactor = vec3.distance(tempVec3$n, tempVec3_b) * Math.min(1.9 * Math.tan(camera.getVerticalFov()), 7);
+                scaleFactor = vec3.distance(tempVec3$j, tempVec3_b) * Math.min(1.9 * Math.tan(camera.getVerticalFov()), 7);
                 scaleFactor *= 0.02;
             }
             else if (camera.isOrthographic) {
@@ -11434,7 +13012,7 @@ class Manipulator extends Entity {
                 scaleFactor *= 0.02;
             }
             scaleFactor *= this.size;
-            this.setScale(vec3.set(tempVec3$n, scaleFactor, scaleFactor, scaleFactor));
+            this.setScale(vec3.set(tempVec3$j, scaleFactor, scaleFactor, scaleFactor));
             this.#setupAxis();
         }
     }
@@ -11625,45 +13203,45 @@ class Manipulator extends Entity {
         }
     }
     #translationMoveHandler(x, y, width, height) {
-        this.#computeTranslationPosition(tempVec3$n, x, y, width, height);
-        vec3.sub(tempVec3$n, tempVec3$n, this.#startDragPosition);
+        this.#computeTranslationPosition(tempVec3$j, x, y, width, height);
+        vec3.sub(tempVec3$j, tempVec3$j, this.#startDragPosition);
         switch (this.#axis) {
             case ManipulatorAxis.None:
                 break;
             case ManipulatorAxis.X:
-                tempVec3$n[1] = 0;
-                tempVec3$n[2] = 0;
+                tempVec3$j[1] = 0;
+                tempVec3$j[2] = 0;
                 break;
             case ManipulatorAxis.Y:
-                tempVec3$n[0] = 0;
-                tempVec3$n[2] = 0;
+                tempVec3$j[0] = 0;
+                tempVec3$j[2] = 0;
                 break;
             case ManipulatorAxis.Z:
-                tempVec3$n[0] = 0;
-                tempVec3$n[1] = 0;
+                tempVec3$j[0] = 0;
+                tempVec3$j[1] = 0;
                 break;
             case ManipulatorAxis.XY:
-                tempVec3$n[2] = 0;
+                tempVec3$j[2] = 0;
                 break;
             case ManipulatorAxis.XZ:
-                tempVec3$n[1] = 0;
+                tempVec3$j[1] = 0;
                 break;
             case ManipulatorAxis.YZ:
-                tempVec3$n[0] = 0;
+                tempVec3$j[0] = 0;
                 break;
             default:
-                tempVec3$n[0] = 0;
-                tempVec3$n[1] = 0;
-                tempVec3$n[2] = 0;
+                tempVec3$j[0] = 0;
+                tempVec3$j[1] = 0;
+                tempVec3$j[2] = 0;
         }
-        vec3.transformQuat(tempVec3$n, tempVec3$n, this.getWorldOrientation());
-        vec3.add(tempVec3$n, this.#startPosition, tempVec3$n);
+        vec3.transformQuat(tempVec3$j, tempVec3$j, this.getWorldOrientation());
+        vec3.add(tempVec3$j, this.#startPosition, tempVec3$j);
         if (this._parent) {
-            this._parent.setWorldPosition(tempVec3$n);
+            this._parent.setWorldPosition(tempVec3$j);
             this._parent.lockPosition = true;
         }
         else {
-            this.setWorldPosition(tempVec3$n);
+            this.setWorldPosition(tempVec3$j);
         }
     }
     #rotationMoveHandler(x, y, width, height) {
@@ -11702,7 +13280,7 @@ class Manipulator extends Entity {
         }
     }
     #scaleMoveHandler(x, y, width, height) {
-        const v3 = this.#computeTranslationPosition(tempVec3$n, x, y, width, height);
+        const v3 = this.#computeTranslationPosition(tempVec3$j, x, y, width, height);
         if (!v3) {
             return;
         }
@@ -11816,10 +13394,10 @@ class Manipulator extends Entity {
         // transform the screen coordinates to normalized coordinates
         const normalizedX = (x / width) * 2.0 - 1.0;
         const normalizedY = 1.0 - (y / height) * 2.0;
-        this.getWorldPosition(tempVec3$n);
-        vec3.transformMat4(tempVec3$n, tempVec3$n, camera.cameraMatrix);
-        vec3.transformMat4(tempVec3$n, tempVec3$n, camera.projectionMatrix);
-        return Math.atan2(normalizedY - tempVec3$n[1], normalizedX - tempVec3$n[0]);
+        this.getWorldPosition(tempVec3$j);
+        vec3.transformMat4(tempVec3$j, tempVec3$j, camera.cameraMatrix);
+        vec3.transformMat4(tempVec3$j, tempVec3$j, camera.projectionMatrix);
+        return Math.atan2(normalizedY - tempVec3$j[1], normalizedX - tempVec3$j[0]);
     }
     setCamera(camera) {
         this.camera = camera;
@@ -11921,14 +13499,14 @@ class Manipulator extends Entity {
         }
         this.getWorldOrientation(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-        this.getPositionFrom(camera, tempVec3$n);
-        vec3.normalize(tempVec3$n, tempVec3$n);
-        vec3.transformQuat(tempVec3$n, tempVec3$n, translationManipulatorTempQuat);
-        this.#circle.setOrientation(quat.rotationTo(tempQuat$9, zUnitVec3, tempVec3$n));
-        this.#viewCircle.setOrientation(tempQuat$9);
-        this.#xCircle.setOrientation(quat.setAxisAngle(tempQuat$9, xUnitVec3, Math.atan2(tempVec3$n[1], -tempVec3$n[2])));
-        this.#yCircle.setOrientation(quat.setAxisAngle(tempQuat$9, yUnitVec3, Math.atan2(tempVec3$n[0], tempVec3$n[2])));
-        this.#zCircle.setOrientation(quat.setAxisAngle(tempQuat$9, zUnitVec3, Math.atan2(tempVec3$n[1], tempVec3$n[0])));
+        this.getPositionFrom(camera, tempVec3$j);
+        vec3.normalize(tempVec3$j, tempVec3$j);
+        vec3.transformQuat(tempVec3$j, tempVec3$j, translationManipulatorTempQuat);
+        this.#circle.setOrientation(quat.rotationTo(tempQuat$7, zUnitVec3, tempVec3$j));
+        this.#viewCircle.setOrientation(tempQuat$7);
+        this.#xCircle.setOrientation(quat.setAxisAngle(tempQuat$7, xUnitVec3, Math.atan2(tempVec3$j[1], -tempVec3$j[2])));
+        this.#yCircle.setOrientation(quat.setAxisAngle(tempQuat$7, yUnitVec3, Math.atan2(tempVec3$j[0], tempVec3$j[2])));
+        this.#zCircle.setOrientation(quat.setAxisAngle(tempQuat$7, zUnitVec3, Math.atan2(tempVec3$j[1], tempVec3$j[0])));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -11946,9 +13524,2600 @@ ShortcutHandler.setShortcuts('3dview,scene-explorer', new Map([
     [MANIPULATOR_SHORTCUT_TOGGLE_Z, 'ALT+Z'],
 ]));
 
+const RECORDER_MIME_TYPE = 'video/webm';
+const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
+// Note : you can provide your own url when calling ShaderEditor.initEditor.
+const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
+const MAX_HARDWARE_BONES = 256 /* don't raise above 1024: max webgpu uniforms size */;
+const TEXTURE_CLEANUP_DELAY = 100000;
+const SMD_HEADER = '// Created by harmony-3d';
+
+const IDENTITY_MAT4$4 = mat4.create();
+const v1$1 = vec3.create();
+const v2 = vec3.create();
+const v3 = vec3.create();
+const n1 = vec3.create();
+const n2 = vec3.create();
+const n3 = vec3.create();
+const uv1 = vec2.create();
+const uv2 = vec2.create();
+const uv3 = vec2.create();
+const intersectionPoint = vec3.create();
+const intersectionNormal = vec3.create();
+const ray$2 = new Ray();
+const uv$1 = vec2.create();
+class SkeletalMesh extends Mesh {
+    isSkeletalMesh = true;
+    #bonesPerVertex = 3;
+    skeleton;
+    #skinnedVertexPosition;
+    #skinnedVertexNormal;
+    constructor(params) {
+        super(params);
+        this.skeleton = params.skeleton;
+        this.setUniformValue('uBoneMatrix', this.skeleton.getTexture());
+        this.setUniformValue('boneMatrix', this.skeleton.imgData);
+        this.setDefine('HARDWARE_SKINNING'); //TODOv3 proper defines
+        this.setDefine('SKELETAL_MESH');
+        this.setDefine('MAX_HARDWARE_BONES', MAX_HARDWARE_BONES);
+    }
+    set bonesPerVertex(bonesPerVertex) {
+        this.#bonesPerVertex = bonesPerVertex;
+    }
+    get bonesPerVertex() {
+        return this.#bonesPerVertex;
+    }
+    exportObj() {
+        const ret = {};
+        const skeletonBones = this.skeleton._bones;
+        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', 'tangent': 'aVertexTangent' };
+        const geometry = this.getGeometry();
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const skinnedVertexTangent = new Float32Array(vertexCount * 4);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexTangent = geometry.getAttribute('aVertexTangent')?._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const tempVertexTangent = vec4.create();
+        const accumulateMat = mat4.create();
+        if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
+            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
+                accumulateMat[0] = 0;
+                accumulateMat[1] = 0;
+                accumulateMat[2] = 0;
+                accumulateMat[4] = 0;
+                accumulateMat[5] = 0;
+                accumulateMat[6] = 0;
+                accumulateMat[8] = 0;
+                accumulateMat[9] = 0;
+                accumulateMat[10] = 0;
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                tempVertex[0] = vertexPosition[vertexArrayIndex + 0];
+                tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
+                tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
+                tempVertexNormal[0] = vertexNormal?.[vertexArrayIndex + 0] ?? 0;
+                tempVertexNormal[1] = vertexNormal?.[vertexArrayIndex + 1] ?? 0;
+                tempVertexNormal[2] = vertexNormal?.[vertexArrayIndex + 2] ?? 0;
+                const vertexArrayIndexTangent = vertexIndex * 4;
+                tempVertexTangent[0] = vertexTangent?.[vertexArrayIndexTangent + 0] ?? 0;
+                tempVertexTangent[1] = vertexTangent?.[vertexArrayIndexTangent + 1] ?? 0;
+                tempVertexTangent[2] = vertexTangent?.[vertexArrayIndexTangent + 2] ?? 0;
+                tempVertexTangent[3] = vertexTangent?.[vertexArrayIndexTangent + 3] ?? 0;
+                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    if (boneWeight && boneMat) {
+                        accumulateMat[0] += boneWeight * boneMat[0];
+                        accumulateMat[1] += boneWeight * boneMat[1];
+                        accumulateMat[2] += boneWeight * boneMat[2];
+                        accumulateMat[4] += boneWeight * boneMat[4];
+                        accumulateMat[5] += boneWeight * boneMat[5];
+                        accumulateMat[6] += boneWeight * boneMat[6];
+                        accumulateMat[8] += boneWeight * boneMat[8];
+                        accumulateMat[9] += boneWeight * boneMat[9];
+                        accumulateMat[10] += boneWeight * boneMat[10];
+                        accumulateMat[12] += boneWeight * boneMat[12];
+                        accumulateMat[13] += boneWeight * boneMat[13];
+                        accumulateMat[14] += boneWeight * boneMat[14];
+                    }
+                }
+                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                vec3.transformMat4(tempVertexNormal, tempVertexNormal, accumulateMat);
+                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
+                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
+                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
+                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
+                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
+                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
+                skinnedVertexTangent[vertexArrayIndexTangent + 0] = tempVertexTangent[0];
+                skinnedVertexTangent[vertexArrayIndexTangent + 1] = tempVertexTangent[1];
+                skinnedVertexTangent[vertexArrayIndexTangent + 2] = tempVertexTangent[2];
+                skinnedVertexTangent[vertexArrayIndexTangent + 3] = tempVertexTangent[3];
+            }
+        }
+        for (const objAttribute in attributes) {
+            const geometryAttribute = attributes[objAttribute];
+            if (geometry.getAttribute(geometryAttribute)) {
+                if (geometryAttribute == 'aVertexPosition') {
+                    ret[objAttribute] = skinnedVertexPosition;
+                }
+                else if (geometryAttribute == 'aVertexNormal') {
+                    ret[objAttribute] = skinnedVertexNormal;
+                }
+                else if (geometryAttribute == 'aVertexTangent') {
+                    ret[objAttribute] = skinnedVertexTangent;
+                }
+                else {
+                    const webglAttrib = geometry.getAttribute(geometryAttribute);
+                    if (webglAttrib && webglAttrib._array) {
+                        ret[objAttribute] = webglAttrib._array;
+                    }
+                }
+            }
+            else {
+                ret[objAttribute] = [];
+            }
+        }
+        return ret;
+    }
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones) {
+        //TODO: optimize this stuff
+        //const ret = {};
+        const skeletonBones = this.skeleton._bones;
+        //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
+        const geometry = this.getGeometry();
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        //const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        //const tempVertex = vec3.create();
+        const accumulateMat = mat4.create();
+        function RandomInt(max) {
+            return Math.floor(Math.random() * max);
+        }
+        const vertexIndex = RandomInt(vertexCount);
+        out[0] = 0;
+        out[1] = 0;
+        out[2] = 0;
+        if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
+            //for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+            {
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
+                accumulateMat[0] = 0;
+                accumulateMat[1] = 0;
+                accumulateMat[2] = 0;
+                accumulateMat[4] = 0;
+                accumulateMat[5] = 0;
+                accumulateMat[6] = 0;
+                accumulateMat[8] = 0;
+                accumulateMat[9] = 0;
+                accumulateMat[10] = 0;
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                out[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
+                out[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
+                out[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
+                vec3.copy(initialVec, out);
+                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2] ?? 0;
+                    if (bones && bone) {
+                        bones.push([bone, boneWeight]);
+                    }
+                    if (boneWeight && boneMat) {
+                        accumulateMat[0] += boneWeight * boneMat[0];
+                        accumulateMat[1] += boneWeight * boneMat[1];
+                        accumulateMat[2] += boneWeight * boneMat[2];
+                        accumulateMat[4] += boneWeight * boneMat[4];
+                        accumulateMat[5] += boneWeight * boneMat[5];
+                        accumulateMat[6] += boneWeight * boneMat[6];
+                        accumulateMat[8] += boneWeight * boneMat[8];
+                        accumulateMat[9] += boneWeight * boneMat[9];
+                        accumulateMat[10] += boneWeight * boneMat[10];
+                        accumulateMat[12] += boneWeight * boneMat[12];
+                        accumulateMat[13] += boneWeight * boneMat[13];
+                        accumulateMat[14] += boneWeight * boneMat[14];
+                    }
+                }
+                vec3.transformMat4(out, out, accumulateMat);
+            }
+        }
+        return -1;
+    }
+    getBoundingBox(boundingBox = new BoundingBox()) {
+        //const ret = {};
+        const skeletonBones = this.skeleton._bones;
+        //const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+        const geometry = this.getGeometry();
+        const indexAttribute = geometry.getAttribute('index' /*TODO: create a constant*/);
+        const vertexAttribute = geometry.getAttribute('aVertexPosition');
+        const indexCount = indexAttribute.count;
+        const vertexCount = vertexAttribute.count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        //const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const indexValue = indexAttribute._array;
+        const vertexPosition = vertexAttribute._array;
+        //const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const accumulateMat = mat4.create();
+        if (vertexPosition && vertexBoneIndice && vertexBoneWeight && indexValue) {
+            for (let index = 0; index < indexCount; ++index) {
+                const vertexIndex = indexValue[index];
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
+                accumulateMat[0] = 0;
+                accumulateMat[1] = 0;
+                accumulateMat[2] = 0;
+                accumulateMat[4] = 0;
+                accumulateMat[5] = 0;
+                accumulateMat[6] = 0;
+                accumulateMat[8] = 0;
+                accumulateMat[9] = 0;
+                accumulateMat[10] = 0;
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                tempVertex[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
+                tempVertex[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
+                tempVertex[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
+                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    if (boneWeight && boneMat) {
+                        accumulateMat[0] += boneWeight * boneMat[0];
+                        accumulateMat[1] += boneWeight * boneMat[1];
+                        accumulateMat[2] += boneWeight * boneMat[2];
+                        accumulateMat[4] += boneWeight * boneMat[4];
+                        accumulateMat[5] += boneWeight * boneMat[5];
+                        accumulateMat[6] += boneWeight * boneMat[6];
+                        accumulateMat[8] += boneWeight * boneMat[8];
+                        accumulateMat[9] += boneWeight * boneMat[9];
+                        accumulateMat[10] += boneWeight * boneMat[10];
+                        accumulateMat[12] += boneWeight * boneMat[12];
+                        accumulateMat[13] += boneWeight * boneMat[13];
+                        accumulateMat[14] += boneWeight * boneMat[14];
+                    }
+                }
+                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
+                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
+                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
+                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
+            }
+        }
+        boundingBox.setPoints(skinnedVertexPosition);
+        return boundingBox;
+    }
+    toString() {
+        return 'SkeletalMesh ' + super.toString();
+    }
+    prepareRayCasting() {
+        const skeletonBones = this.skeleton._bones;
+        const geometry = this.getGeometry();
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const accumulateMat = mat4.create();
+        if (vertexPosition && vertexNormal && vertexBoneIndice && vertexBoneWeight) {
+            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
+                accumulateMat[0] = 0;
+                accumulateMat[1] = 0;
+                accumulateMat[2] = 0;
+                accumulateMat[4] = 0;
+                accumulateMat[5] = 0;
+                accumulateMat[6] = 0;
+                accumulateMat[8] = 0;
+                accumulateMat[9] = 0;
+                accumulateMat[10] = 0;
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                tempVertex[0] = vertexPosition[vertexArrayIndex + 0];
+                tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
+                tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
+                const tempVertexNormalX = vertexNormal[vertexArrayIndex + 0] ?? 0;
+                const tempVertexNormalY = vertexNormal[vertexArrayIndex + 1] ?? 0;
+                const tempVertexNormalZ = vertexNormal[vertexArrayIndex + 2] ?? 0;
+                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    if (boneWeight && boneMat) {
+                        accumulateMat[0] += boneWeight * boneMat[0];
+                        accumulateMat[1] += boneWeight * boneMat[1];
+                        accumulateMat[2] += boneWeight * boneMat[2];
+                        accumulateMat[4] += boneWeight * boneMat[4];
+                        accumulateMat[5] += boneWeight * boneMat[5];
+                        accumulateMat[6] += boneWeight * boneMat[6];
+                        accumulateMat[8] += boneWeight * boneMat[8];
+                        accumulateMat[9] += boneWeight * boneMat[9];
+                        accumulateMat[10] += boneWeight * boneMat[10];
+                        accumulateMat[12] += boneWeight * boneMat[12];
+                        accumulateMat[13] += boneWeight * boneMat[13];
+                        accumulateMat[14] += boneWeight * boneMat[14];
+                    }
+                }
+                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
+                tempVertexNormal[0] = accumulateMat[0] * tempVertexNormalX + accumulateMat[4] * tempVertexNormalY + accumulateMat[8] * tempVertexNormalZ;
+                tempVertexNormal[1] = accumulateMat[1] * tempVertexNormalX + accumulateMat[5] * tempVertexNormalY + accumulateMat[9] * tempVertexNormalZ;
+                tempVertexNormal[2] = accumulateMat[2] * tempVertexNormalX + accumulateMat[6] * tempVertexNormalY + accumulateMat[10] * tempVertexNormalZ;
+                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
+                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
+                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
+                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
+                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
+                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
+            }
+        }
+        this.#skinnedVertexPosition = skinnedVertexPosition;
+        this.#skinnedVertexNormal = skinnedVertexNormal;
+    }
+    raycast(raycaster, intersections) {
+        //TODO: case when normals are not provided
+        const skeletonBones = this.skeleton._bones;
+        const geometry = this.getGeometry();
+        const indices = geometry.getAttribute('index')._array;
+        //let normals = geometry.getAttribute('aVertexNormal')._array;
+        if (!indices) {
+            return;
+        }
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const textureCoords = geometry.getAttribute('aTextureCoord')._array;
+        const worldMatrix = this.worldMatrix;
+        ray$2.copyTransform(raycaster.ray, worldMatrix);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const accumulateMat = mat4.create();
+        if (vertexPosition && vertexNormal && vertexBoneIndice && vertexBoneWeight) {
+            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
+                accumulateMat[0] = 0;
+                accumulateMat[1] = 0;
+                accumulateMat[2] = 0;
+                accumulateMat[4] = 0;
+                accumulateMat[5] = 0;
+                accumulateMat[6] = 0;
+                accumulateMat[8] = 0;
+                accumulateMat[9] = 0;
+                accumulateMat[10] = 0;
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                tempVertex[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
+                tempVertex[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
+                tempVertex[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
+                tempVertexNormal[0] = vertexNormal[vertexArrayIndex + 0] ?? 0;
+                tempVertexNormal[1] = vertexNormal[vertexArrayIndex + 1] ?? 0;
+                tempVertexNormal[2] = vertexNormal[vertexArrayIndex + 2] ?? 0;
+                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    if (boneWeight && boneMat) {
+                        accumulateMat[0] += boneWeight * boneMat[0];
+                        accumulateMat[1] += boneWeight * boneMat[1];
+                        accumulateMat[2] += boneWeight * boneMat[2];
+                        accumulateMat[4] += boneWeight * boneMat[4];
+                        accumulateMat[5] += boneWeight * boneMat[5];
+                        accumulateMat[6] += boneWeight * boneMat[6];
+                        accumulateMat[8] += boneWeight * boneMat[8];
+                        accumulateMat[9] += boneWeight * boneMat[9];
+                        accumulateMat[10] += boneWeight * boneMat[10];
+                        accumulateMat[12] += boneWeight * boneMat[12];
+                        accumulateMat[13] += boneWeight * boneMat[13];
+                        accumulateMat[14] += boneWeight * boneMat[14];
+                    }
+                }
+                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
+                accumulateMat[12] = 0;
+                accumulateMat[13] = 0;
+                accumulateMat[14] = 0;
+                vec3.transformMat4(tempVertexNormal, tempVertexNormal, accumulateMat);
+                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
+                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
+                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
+                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
+                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
+                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
+            }
+        }
+        for (let i = 0, l = indices.length; i < l; i += 3) {
+            let i1 = 3 * indices[i];
+            let i2 = 3 * indices[i + 1];
+            let i3 = 3 * indices[i + 2];
+            vec3.set(v1$1, skinnedVertexPosition[i1] ?? 0, skinnedVertexPosition[i1 + 1] ?? 0, skinnedVertexPosition[i1 + 2] ?? 0);
+            vec3.set(v2, skinnedVertexPosition[i2] ?? 0, skinnedVertexPosition[i2 + 1] ?? 0, skinnedVertexPosition[i2 + 2] ?? 0);
+            vec3.set(v3, skinnedVertexPosition[i3] ?? 0, skinnedVertexPosition[i3 + 1] ?? 0, skinnedVertexPosition[i3 + 2] ?? 0);
+            if (ray$2.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
+                vec3.set(n1, skinnedVertexNormal[i1] ?? 0, skinnedVertexNormal[i1 + 1] ?? 0, skinnedVertexNormal[i1 + 2] ?? 0);
+                vec3.set(n2, skinnedVertexNormal[i2] ?? 0, skinnedVertexNormal[i2 + 1] ?? 0, skinnedVertexNormal[i2 + 2] ?? 0);
+                vec3.set(n3, skinnedVertexNormal[i3] ?? 0, skinnedVertexNormal[i3 + 1] ?? 0, skinnedVertexNormal[i3 + 2] ?? 0);
+                i1 = 2 * indices[i];
+                i2 = 2 * indices[i + 1];
+                i3 = 2 * indices[i + 2];
+                vec2.set(uv1, textureCoords?.[i1] ?? 0, textureCoords?.[i1 + 1] ?? 0);
+                vec2.set(uv2, textureCoords?.[i2] ?? 0, textureCoords?.[i2 + 1] ?? 0);
+                vec2.set(uv3, textureCoords?.[i3] ?? 0, textureCoords?.[i3 + 1] ?? 0);
+                getUV(uv$1, intersectionPoint, v1$1, v2, v3, uv1, uv2, uv3);
+                getNormal(intersectionNormal, intersectionPoint, v1$1, v2, v3, n1, n2, n3);
+                const x = intersectionNormal[0];
+                const y = intersectionNormal[1];
+                const z = intersectionNormal[2];
+                //Tranform the normal with the world matrix
+                intersectionNormal[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
+                intersectionNormal[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
+                intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
+                vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
+                intersections.push(ray$2.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
+            }
+        }
+    }
+    getSkinnedVertex() {
+        this.prepareRayCasting();
+        return [this.#skinnedVertexPosition, this.#skinnedVertexNormal];
+    }
+    static getEntityName() {
+        return 'Skeletal mesh';
+    }
+}
+
+class Skeleton extends Entity {
+    isSkeleton = true;
+    #bonesByName = new Map();
+    #rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
+    _bones = []; //TODOv3: rename set private
+    #attachments = [];
+    #attachmentsByName = new Map();
+    imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4 /* 4 by 4 matrix*/);
+    #texture;
+    lastComputed = 0;
+    rig;
+    constructor(params) {
+        super(params);
+        //this.bones = Object.create(null);//TODOv3: rename
+        this.#createBoneMatrixArray();
+        if (Graphics$1.isWebGLAny) {
+            this.#createBoneMatrixTexture();
+        }
+        this.dirty();
+    }
+    dirty() {
+        for (const bone of this._bones) {
+            bone.dirty = true;
+        }
+    }
+    getTexture() {
+        return this.#texture;
+    }
+    #createBoneMatrixArray() {
+        //this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
+        mat4.identity(this.imgData);
+        for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
+            this.imgData.copyWithin(i * 16, 0, 16);
+        }
+    }
+    #createBoneMatrixTexture() {
+        this.#texture = TextureManager.createTexture({
+            // Notice: this texture is not used in WebGPU
+            webgpuDescriptor: phonyWebGPUTextureDescriptor,
+        });
+        const gl = Graphics$1.glContext; //TODO
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
+        gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        gl.bindTexture(GL_TEXTURE_2D, null);
+    }
+    #updateBoneMatrixTexture() {
+        const gl = Graphics$1.glContext; //TODO
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
+        if (Graphics$1.isWebGL2) {
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
+        }
+        else {
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
+        }
+        gl.bindTexture(GL_TEXTURE_2D, null);
+    }
+    setBonesMatrix() {
+        let index = 0;
+        const bones = this._bones;
+        const imgData = this.imgData;
+        let pose;
+        if (bones.length == 0) {
+            pose = this.#rootBone.boneMat;
+            for (let k = 0; k < 16; ++k) {
+                imgData[index++] = pose[k];
+            }
+        }
+        for (const bone of bones) {
+            pose = bone.boneMat;
+            for (let k = 0; k < 16; ++k) {
+                imgData[index++] = pose[k];
+            }
+        }
+        if (Graphics$1.isWebGLAny) {
+            this.#updateBoneMatrixTexture();
+        }
+    }
+    get position() {
+        if (this._parent) {
+            return vec3.clone(this._parent._position);
+        }
+        else {
+            return vec3.clone(this._position);
+        }
+    }
+    // TODO: deprecate
+    set quaternion(quaternion) {
+        super.setOrientation(quaternion);
+    }
+    /// TODO: deprecate
+    get quaternion() {
+        if (this._parent) {
+            return quat.clone(this._parent._quaternion);
+        }
+        else {
+            return quat.clone(this._quaternion);
+        }
+    }
+    addBone(boneId, boneName) {
+        const boneNameLowerCase = boneName.toLowerCase();
+        const bone = this.#bonesByName.get(boneNameLowerCase);
+        if (!bone) {
+            const bone = new Bone({ name: boneName, boneId, skeleton: this });
+            //this.addChild(bone);
+            this._bones[boneId] = bone;
+            this.#bonesByName.set(boneNameLowerCase, bone);
+            return bone;
+        }
+        else {
+            this._bones[boneId] = bone;
+            return bone;
+        }
+    }
+    addAttachment(attachmentId, attachmentName) {
+        const attachmentNameLowerCase = attachmentName.toLowerCase();
+        const attachment = this.#attachmentsByName.get(attachmentNameLowerCase);
+        if (!attachment) {
+            const attachment = new Attachment({ name: attachmentName, boneId: attachmentId, skeleton: this });
+            this.#attachments[attachmentId] = attachment;
+            this.#attachmentsByName.set(attachmentNameLowerCase, attachment);
+            return attachment;
+        }
+        else {
+            this.#attachments[attachmentId] = attachment;
+            return attachment;
+        }
+    }
+    async setParentSkeleton(skeleton) {
+        await this.loadedPromise;
+        if (skeleton) {
+            await skeleton.loadedPromise;
+        }
+        const bones = this.#bonesByName;
+        for (const [boneName, bone] of bones) {
+            bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
+        }
+    }
+    getBoneByName(boneName) {
+        return this.#bonesByName.get(boneName.toLowerCase());
+    }
+    getBoneById(boneId) {
+        return this._bones[boneId];
+    }
+    toString() {
+        return 'Skeleton ' + super.toString();
+    }
+    getBoundingBox(boundingBox = new BoundingBox()) {
+        boundingBox.reset();
+        return boundingBox;
+    }
+    get bones() {
+        return this._bones;
+    }
+    getAttachments() {
+        return [...this.#attachments];
+    }
+    reset() {
+        for (const bone of this._bones) {
+            bone.reset();
+        }
+    }
+    toJSON() {
+        const json = super.toJSON();
+        const jBones = [];
+        for (const bone of this._bones) {
+            jBones.push(bone.id);
+        }
+        json.bones = jBones;
+        return json;
+    }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON(json, entities, loadedPromise) {
+        const entity = new Skeleton({ name: json.name });
+        let loadedPromiseResolve;
+        entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
+        loadedPromise.then(() => {
+            const jBones = json.bones;
+            if (jBones) {
+                for (let i = 0; i < jBones.length; ++i) {
+                    const boneEntity = entities.get(jBones[i] ?? '');
+                    if (boneEntity) {
+                        entity._bones[i] = boneEntity;
+                        entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);
+                    }
+                }
+            }
+            loadedPromiseResolve(true);
+        });
+        return entity;
+    }
+    dispose() {
+        super.dispose();
+        this.#texture.dispose();
+    }
+    static getEntityName() {
+        return 'Skeleton';
+    }
+}
+registerEntity(Skeleton);
+
+const DEFAULT_POINT = vec3.create();
+class Curve {
+    controlPoints = [];
+    arcLength = 0;
+    getPosition(t, out = vec3.create()) {
+        return out;
+    }
+    getArcLength(divisions = 100) {
+        vec3.create();
+        let last = vec3.create();
+        let current = vec3.create();
+        let temp;
+        this.getPosition(0, last);
+        let length = 0;
+        for (let i = 1; i <= divisions; i++) {
+            this.getPosition(i / divisions, current);
+            length += vec3.distance(last, current);
+            temp = last;
+            last = current;
+            current = temp;
+        }
+        return length;
+    }
+    getPoints(divisions = 5) {
+        const points = [];
+        for (let i = 0; i <= divisions; i++) {
+            points.push(this.getPosition(i / divisions));
+        }
+        return points;
+    }
+    getAppropriateDivision(division) {
+        return division;
+    }
+}
+
+class CubicBezierCurve extends Curve {
+    p0 = vec3.create();
+    p1 = vec3.create();
+    p2 = vec3.create();
+    p3 = vec3.create();
+    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT, p2 = DEFAULT_POINT, p3 = DEFAULT_POINT) {
+        super();
+        vec3.copy(this.p0, p0);
+        vec3.copy(this.p1, p1);
+        vec3.copy(this.p2, p2);
+        vec3.copy(this.p3, p3);
+        this.arcLength = this.getArcLength();
+    }
+    getPosition(t, out = vec3.create()) {
+        //P = (1 - t)³ * P0 + 3 * (1 - t)² * t * P1 + 3 * (1 - t) * t² * P2 + t³ * P3
+        const oneMinusT = 1 - t;
+        const oneMinusTSqr = oneMinusT * oneMinusT;
+        const tSqr = t * t;
+        vec3.scale(out, this.p0, oneMinusTSqr * oneMinusT);
+        vec3.scaleAndAdd(out, out, this.p1, 3 * oneMinusTSqr * t);
+        vec3.scaleAndAdd(out, out, this.p2, 3 * oneMinusT * tSqr);
+        vec3.scaleAndAdd(out, out, this.p3, tSqr * t);
+        return out;
+    }
+}
+
+class LinearBezierCurve extends Curve {
+    p0 = vec3.create();
+    p1 = vec3.create();
+    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT) {
+        super();
+        vec3.copy(this.p0, p0);
+        vec3.copy(this.p1, p1);
+        this.arcLength = this.getArcLength();
+    }
+    getPosition(t, out = vec3.create()) {
+        if (t === 0) {
+            vec3.copy(out, this.p0);
+        }
+        else if (t === 1) {
+            vec3.copy(out, this.p1);
+        }
+        else {
+            vec3.sub(out, this.p1, this.p0);
+            vec3.scaleAndAdd(out, this.p0, out, t);
+        }
+        return out;
+    }
+    getArcLength() {
+        return vec3.distance(this.p0, this.p1);
+    }
+    getAppropriateDivision() {
+        return 1;
+    }
+}
+
+class QuadraticBezierCurve extends Curve {
+    #p0 = vec3.create();
+    #p1 = vec3.create();
+    #p2 = vec3.create();
+    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT, p2 = DEFAULT_POINT) {
+        super();
+        vec3.copy(this.#p0, p0);
+        vec3.copy(this.#p1, p1);
+        vec3.copy(this.#p2, p2);
+        this.arcLength = this.getArcLength();
+    }
+    getPosition(t, out = vec3.create()) {
+        //P = (1 - t)² * P0 + 2 * (1 - t) * t * P1 + t² * P2
+        const oneMinusT = 1 - t;
+        vec3.scale(out, this.#p0, oneMinusT * oneMinusT);
+        vec3.scaleAndAdd(out, out, this.#p1, 2 * oneMinusT * t);
+        vec3.scaleAndAdd(out, out, this.#p2, t * t);
+        return out;
+    }
+}
+
+const p0$1 = vec3.create();
+const p1$1 = vec3.create();
+const p2$1 = vec3.create();
+const p3$1 = vec3.create();
+class Path extends Curve {
+    looping;
+    #curves = [];
+    #cursor = vec3.create();
+    constructor(looping = false) {
+        super();
+        this.looping = looping;
+    }
+    set curves(curves) {
+        this.#curves.splice(0, Infinity, ...curves);
+        this.arcLength = this.getArcLength();
+    }
+    get curves() {
+        return this.#curves;
+    }
+    addCurve(curve) {
+        this.#curves.push(curve);
+        this.arcLength = this.getArcLength();
+    }
+    getArcLength(divisions) {
+        let length = 0;
+        for (const curve of this.#curves) {
+            length += curve.getArcLength(divisions);
+        }
+        return length;
+    }
+    getPosition(t, out = vec3.create()) {
+        const l = this.arcLength * t;
+        let accumulate = 0;
+        let accumulateTmp = 0;
+        for (const curve of this.#curves) {
+            accumulateTmp += curve.arcLength;
+            if (accumulateTmp > l) {
+                const t2 = (l - accumulate) / curve.arcLength;
+                return curve.getPosition(t2, out);
+            }
+            accumulate = accumulateTmp;
+        }
+        return out;
+    }
+    moveTo(p0) {
+        vec3.copy(this.#cursor, p0);
+    }
+    lineTo(p1) {
+        this.addCurve(new LinearBezierCurve(this.#cursor, p1));
+        vec3.copy(this.#cursor, p1);
+    }
+    quadraticCurveTo(p1, p2) {
+        this.addCurve(new QuadraticBezierCurve(this.#cursor, p1, p2));
+        vec3.copy(this.#cursor, p2);
+    }
+    bezierCurveTo(p1, p2, p3) {
+        const curve = new CubicBezierCurve(this.#cursor, p1, p2, p3);
+        this.curves.push(curve);
+        vec3.copy(this.#cursor, p3);
+        return this;
+    }
+    cubicCurveTo(p1, p2, p3) {
+        this.addCurve(new CubicBezierCurve(this.#cursor, p1, p2, p3));
+        vec3.copy(this.#cursor, p3);
+    }
+    getPoints(divisions = 12) {
+        const points = [];
+        let last;
+        for (let i = 0, curves = this.curves; i < curves.length; i++) {
+            const curve = curves[i];
+            const resolution = curve.getAppropriateDivision(divisions);
+            const pts = curve.getPoints(resolution);
+            for (const point of pts) {
+                if (last && vec3.equals(last, point)) {
+                    continue;
+                }
+                points.push(point);
+                last = point;
+            }
+        }
+        if (this.looping && points.length > 1 && !vec3.equals(points[0], points[points.length - 1])) {
+            points.push(points[0]);
+        }
+        return points;
+    }
+    fromSvgPath(path) {
+        const pathArray = path.split(' ');
+        //let cmd;
+        for (let i = 0, l = pathArray.length; i < l;) {
+            switch (pathArray[i++]) {
+                case 'm':
+                    vec3.set(p0$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    this.moveTo(p0$1);
+                    break;
+                case 'l':
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    this.lineTo(p1$1);
+                    break;
+                case 'q':
+                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    this.quadraticCurveTo(p1$1, p2$1);
+                    break;
+                case 'c':
+                    vec3.set(p3$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    this.cubicCurveTo(p1$1, p2$1, p3$1);
+                    break;
+            }
+        }
+    }
+}
+
+class Shape extends Path {
+    uuid = generateRandomUUID();
+    type = 'Shape';
+    holes = [];
+    getPointsHoles(divisions) {
+        const holesPts = [];
+        for (let i = 0, l = this.holes.length; i < l; i++) {
+            holesPts[i] = this.holes[i].getPoints(divisions);
+        }
+        return holesPts;
+    }
+    // get points of shape and holes (keypoints based on segments parameter)
+    extractPoints(divisions) {
+        return {
+            shape: this.getPoints(divisions),
+            holes: this.getPointsHoles(divisions)
+        };
+    }
+}
+
+/**
+ * Port from https://github.com/mapbox/earcut (v2.2.2)
+ */
+const Earcut = {
+    triangulate: function (data, holeIndices, dim = 2) {
+        const hasHoles = holeIndices.length > 0;
+        const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
+        let outerNode = linkedList(data, 0, outerLen, dim, true);
+        const triangles = [];
+        if (!outerNode || outerNode.next === outerNode.prev)
+            return triangles;
+        let minX = 0, minY = 0, maxX, maxY, x, y, invSize = 0;
+        if (hasHoles)
+            outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
+        // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
+        if (data.length > 80 * dim) {
+            minX = maxX = data[0];
+            minY = maxY = data[1];
+            for (let i = dim; i < outerLen; i += dim) {
+                x = data[i];
+                y = data[i + 1];
+                if (x < minX)
+                    minX = x;
+                if (y < minY)
+                    minY = y;
+                if (x > maxX)
+                    maxX = x;
+                if (y > maxY)
+                    maxY = y;
+            }
+            // minX, minY and invSize are later used to transform coords into integers for z-order calculation
+            invSize = Math.max(maxX - minX, maxY - minY);
+            invSize = invSize !== 0 ? 1 / invSize : 0;
+        }
+        earcutLinked(outerNode, triangles, dim, minX, minY, invSize);
+        return triangles;
+    }
+};
+// create a circular doubly linked list from polygon points in the specified winding order
+function linkedList(data, start, end, dim, clockwise) {
+    let i, last;
+    if (clockwise === (signedArea(data, start, end, dim) > 0)) {
+        for (i = start; i < end; i += dim) {
+            last = insertNode(i, data[i], data[i + 1], last);
+        }
+    }
+    else {
+        for (i = end - dim; i >= start; i -= dim) {
+            last = insertNode(i, data[i], data[i + 1], last);
+        }
+    }
+    if (last && equals(last, last.next)) {
+        removeNode(last);
+        last = last.next;
+    }
+    return last;
+}
+// eliminate colinear or duplicate points
+function filterPoints(start, end) {
+    if (!start) {
+        return start;
+    }
+    if (!end) {
+        end = start;
+    }
+    let p = start, again;
+    do {
+        again = false;
+        if (!p.steiner && (equals(p, p.next) || area$1(p.prev, p, p.next) === 0)) {
+            removeNode(p);
+            p = end = p.prev;
+            if (p === p.next)
+                break;
+            again = true;
+        }
+        else {
+            p = p.next;
+        }
+    } while (again || p !== end);
+    return end ?? null;
+}
+// main ear slicing loop which triangulates a polygon (given as a linked list)
+function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
+    if (!ear) {
+        return;
+    }
+    // interlink polygon nodes in z-order
+    if (!pass && invSize)
+        indexCurve(ear, minX, minY, invSize);
+    let stop = ear, prev, next;
+    // iterate through ears, slicing them one by one
+    while (ear.prev !== ear.next) {
+        prev = ear.prev;
+        next = ear.next;
+        if (invSize ? isEarHashed(ear, minX, minY, invSize) : isEar(ear)) {
+            // cut off the triangle
+            triangles.push(prev.i / dim);
+            triangles.push(ear.i / dim);
+            triangles.push(next.i / dim);
+            removeNode(ear);
+            // skipping the next vertex leads to less sliver triangles
+            ear = next.next;
+            stop = next.next;
+            continue;
+        }
+        ear = next;
+        // if we looped through the whole remaining polygon and can't find any more ears
+        if (ear === stop) {
+            // try filtering points and slicing again
+            if (!pass) {
+                earcutLinked(filterPoints(ear), triangles, dim, minX, minY, invSize, 1);
+                // if this didn't work, try curing all small self-intersections locally
+            }
+            else if (pass === 1) {
+                ear = cureLocalIntersections(filterPoints(ear), triangles, dim);
+                earcutLinked(ear, triangles, dim, minX, minY, invSize, 2);
+                // as a last resort, try splitting the remaining polygon into two
+            }
+            else if (pass === 2) {
+                splitEarcut(ear, triangles, dim, minX, minY, invSize);
+            }
+            break;
+        }
+    }
+}
+// check whether a polygon node forms a valid ear with adjacent nodes
+function isEar(ear) {
+    const a = ear.prev, b = ear, c = ear.next;
+    if (area$1(a, b, c) >= 0)
+        return false; // reflex, can't be an ear
+    // now make sure we don't have other points inside the potential ear
+    let p = ear.next.next;
+    while (p !== ear.prev) {
+        if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area$1(p.prev, p, p.next) >= 0)
+            return false;
+        p = p.next;
+    }
+    return true;
+}
+function isEarHashed(ear, minX, minY, invSize) {
+    const a = ear.prev, b = ear, c = ear.next;
+    if (area$1(a, b, c) >= 0)
+        return false; // reflex, can't be an ear
+    // triangle bbox; min & max are calculated like this for speed
+    const minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x), minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y), maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x), maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
+    // z-order range for the current triangle bbox;
+    const minZ = zOrder(minTX, minTY, minX, minY, invSize), maxZ = zOrder(maxTX, maxTY, minX, minY, invSize);
+    let p = ear.prevZ, n = ear.nextZ;
+    // look for points inside the triangle in both directions
+    while (p && p.z >= minZ && n && n.z <= maxZ) {
+        if (p !== ear.prev && p !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area$1(p.prev, p, p.next) >= 0)
+            return false;
+        p = p.prevZ;
+        if (n !== ear.prev && n !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
+            area$1(n.prev, n, n.next) >= 0)
+            return false;
+        n = n.nextZ;
+    }
+    // look for remaining points in decreasing z-order
+    while (p && p.z >= minZ) {
+        if (p !== ear.prev && p !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
+            area$1(p.prev, p, p.next) >= 0)
+            return false;
+        p = p.prevZ;
+    }
+    // look for remaining points in increasing z-order
+    while (n && n.z <= maxZ) {
+        if (n !== ear.prev && n !== ear.next &&
+            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
+            area$1(n.prev, n, n.next) >= 0)
+            return false;
+        n = n.nextZ;
+    }
+    return true;
+}
+// go through all polygon nodes and cure small local self-intersections
+function cureLocalIntersections(start, triangles, dim) {
+    let p = start;
+    do {
+        const a = p.prev, b = p.next.next;
+        if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
+            triangles.push(a.i / dim);
+            triangles.push(p.i / dim);
+            triangles.push(b.i / dim);
+            // remove two nodes involved
+            removeNode(p);
+            removeNode(p.next);
+            p = start = b;
+        }
+        p = p.next;
+    } while (p !== start);
+    return filterPoints(p);
+}
+// try splitting polygon into two and triangulate them independently
+function splitEarcut(start, triangles, dim, minX, minY, invSize) {
+    // look for a valid diagonal that divides the polygon into two
+    let a = start;
+    do {
+        let b = a.next.next;
+        while (b !== a.prev) {
+            if (a.i !== b.i && isValidDiagonal(a, b)) {
+                // split the polygon in two by the diagonal
+                let c = splitPolygon(a, b);
+                // filter colinear points around the cuts
+                a = filterPoints(a, a.next);
+                c = filterPoints(c, c.next);
+                // run earcut on each half
+                earcutLinked(a, triangles, dim, minX, minY, invSize);
+                earcutLinked(c, triangles, dim, minX, minY, invSize);
+                return;
+            }
+            b = b.next;
+        }
+        a = a.next;
+    } while (a !== start);
+}
+// link every hole into the outer loop, producing a single-ring polygon without holes
+function eliminateHoles(data, holeIndices, outerNode, dim) {
+    const queue = [];
+    let i, len, start, end, list;
+    for (i = 0, len = holeIndices.length; i < len; i++) {
+        start = holeIndices[i] * dim;
+        end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
+        list = linkedList(data, start, end, dim, false);
+        if (list === list.next)
+            list.steiner = true;
+        queue.push(getLeftmost(list));
+    }
+    queue.sort(compareX);
+    // process holes from left to right
+    for (i = 0; i < queue.length; i++) {
+        eliminateHole(queue[i], outerNode);
+        outerNode = filterPoints(outerNode, outerNode.next);
+    }
+    return outerNode;
+}
+function compareX(a, b) {
+    return a.x - b.x;
+}
+// find a bridge between vertices that connects hole with an outer ring and and link it
+function eliminateHole(hole, outerNode) {
+    const node = findHoleBridge(hole, outerNode);
+    if (node) {
+        const b = splitPolygon(node, hole);
+        // filter collinear points around the cuts
+        filterPoints(node, node.next);
+        filterPoints(b, b.next);
+    }
+}
+// David Eberly's algorithm for finding a bridge between hole and outer polygon
+function findHoleBridge(hole, outerNode) {
+    let p = outerNode;
+    const hx = hole.x;
+    const hy = hole.y;
+    let qx = -Infinity, m;
+    // find a segment intersected by a ray from the hole's leftmost point to the left;
+    // segment's endpoint with lesser x will be potential connection point
+    do {
+        if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
+            const x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
+            if (x <= hx && x > qx) {
+                qx = x;
+                if (x === hx) {
+                    if (hy === p.y)
+                        return p;
+                    if (hy === p.next.y)
+                        return p.next;
+                }
+                m = p.x < p.next.x ? p : p.next;
+            }
+        }
+        p = p.next;
+    } while (p !== outerNode);
+    if (!m)
+        return null;
+    if (hx === qx)
+        return m; // hole touches outer segment; pick leftmost endpoint
+    // look for points inside the triangle of hole point, segment intersection and endpoint;
+    // if there are no points found, we have a valid connection;
+    // otherwise choose the point of the minimum angle with the ray as connection point
+    const stop = m, mx = m.x, my = m.y;
+    let tanMin = Infinity, tan;
+    p = m;
+    do {
+        if (hx >= p.x && p.x >= mx && hx !== p.x &&
+            pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
+            tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
+            if (locallyInside(p, hole) && (tan < tanMin || (tan === tanMin && (p.x > m.x || (p.x === m.x && sectorContainsSector(m, p)))))) {
+                m = p;
+                tanMin = tan;
+            }
+        }
+        p = p.next;
+    } while (p !== stop);
+    return m;
+}
+// whether sector in vertex m contains sector in vertex p in the same coordinates
+function sectorContainsSector(m, p) {
+    return area$1(m.prev, m, p.prev) < 0 && area$1(p.next, m, m.next) < 0;
+}
+// interlink polygon nodes in z-order
+function indexCurve(start, minX, minY, invSize) {
+    let p = start;
+    do {
+        if (p.z === null) {
+            p.z = zOrder(p.x, p.y, minX, minY, invSize);
+        }
+        p.prevZ = p.prev;
+        p.nextZ = p.next;
+        p = p.next;
+    } while (p !== start);
+    if (p.prevZ) {
+        p.prevZ.nextZ = null;
+        p.prevZ = null;
+    }
+    sortLinked(p);
+}
+// Simon Tatham's linked list merge sort algorithm
+// http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
+function sortLinked(unSortedList) {
+    let i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
+    do {
+        p = unSortedList;
+        tail = null;
+        numMerges = 0;
+        while (p) {
+            numMerges++;
+            q = p;
+            pSize = 0;
+            for (i = 0; i < inSize; i++) {
+                pSize++;
+                q = q.nextZ;
+                if (!q)
+                    break;
+            }
+            qSize = inSize;
+            while (pSize > 0 || (qSize > 0 && q)) {
+                if (pSize !== 0 && (qSize === 0 || !q || p.z <= q.z)) {
+                    e = p;
+                    p = p.nextZ;
+                    pSize--;
+                }
+                else {
+                    e = q;
+                    q = q.nextZ;
+                    qSize--;
+                }
+                if (tail)
+                    tail.nextZ = e;
+                e.prevZ = tail;
+                tail = e;
+            }
+            p = q;
+        }
+        tail.nextZ = null;
+        inSize *= 2;
+    } while (numMerges > 1);
+    return unSortedList;
+}
+// z-order of a point given coords and inverse of the longer side of data bbox
+function zOrder(x, y, minX, minY, invSize) {
+    // coords are transformed into non-negative 15-bit integer range
+    x = 32767 * (x - minX) * invSize;
+    y = 32767 * (y - minY) * invSize;
+    x = (x | (x << 8)) & 0x00FF00FF;
+    x = (x | (x << 4)) & 0x0F0F0F0F;
+    x = (x | (x << 2)) & 0x33333333;
+    x = (x | (x << 1)) & 0x55555555;
+    y = (y | (y << 8)) & 0x00FF00FF;
+    y = (y | (y << 4)) & 0x0F0F0F0F;
+    y = (y | (y << 2)) & 0x33333333;
+    y = (y | (y << 1)) & 0x55555555;
+    return x | (y << 1);
+}
+// find the leftmost node of a polygon ring
+function getLeftmost(start) {
+    let p = start, leftmost = start;
+    do {
+        if (p.x < leftmost.x || (p.x === leftmost.x && p.y < leftmost.y))
+            leftmost = p;
+        p = p.next;
+    } while (p !== start);
+    return leftmost;
+}
+// check if a point lies within a convex triangle
+function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
+    return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
+        (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
+        (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
+}
+// check if a diagonal between two polygon nodes is valid (lies in polygon interior)
+function isValidDiagonal(a, b) {
+    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // dones't intersect other edges
+        (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
+            (area$1(a.prev, a, b.prev) !== 0 || area$1(a, b.prev, b)) !== 0 || // does not create opposite-facing sectors
+            equals(a, b) && area$1(a.prev, a, a.next) > 0 && area$1(b.prev, b, b.next) > 0); // special zero-length case
+}
+// signed area of a triangle
+function area$1(p, q, r) {
+    return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+}
+// check if two points are equal
+function equals(p1, p2) {
+    return p1.x === p2.x && p1.y === p2.y;
+}
+// check if two segments intersect
+function intersects(p1, q1, p2, q2) {
+    const o1 = sign$1(area$1(p1, q1, p2));
+    const o2 = sign$1(area$1(p1, q1, q2));
+    const o3 = sign$1(area$1(p2, q2, p1));
+    const o4 = sign$1(area$1(p2, q2, q1));
+    if (o1 !== o2 && o3 !== o4)
+        return true; // general case
+    if (o1 === 0 && onSegment(p1, p2, q1))
+        return true; // p1, q1 and p2 are collinear and p2 lies on p1q1
+    if (o2 === 0 && onSegment(p1, q2, q1))
+        return true; // p1, q1 and q2 are collinear and q2 lies on p1q1
+    if (o3 === 0 && onSegment(p2, p1, q2))
+        return true; // p2, q2 and p1 are collinear and p1 lies on p2q2
+    if (o4 === 0 && onSegment(p2, q1, q2))
+        return true; // p2, q2 and q1 are collinear and q1 lies on p2q2
+    return false;
+}
+// for collinear points p, q, r, check if point q lies on segment pr
+function onSegment(p, q, r) {
+    return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
+}
+function sign$1(num) {
+    return num > 0 ? 1 : num < 0 ? -1 : 0;
+}
+// check if a polygon diagonal intersects any polygon segments
+function intersectsPolygon(a, b) {
+    let p = a;
+    do {
+        if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&
+            intersects(p, p.next, a, b))
+            return true;
+        p = p.next;
+    } while (p !== a);
+    return false;
+}
+// check if a polygon diagonal is locally inside the polygon
+function locallyInside(a, b) {
+    return area$1(a.prev, a, a.next) < 0 ?
+        area$1(a, b, a.next) >= 0 && area$1(a, a.prev, b) >= 0 :
+        area$1(a, b, a.prev) < 0 || area$1(a, a.next, b) < 0;
+}
+// check if the middle point of a polygon diagonal is inside the polygon
+function middleInside(a, b) {
+    let p = a, inside = false;
+    const px = (a.x + b.x) / 2, py = (a.y + b.y) / 2;
+    do {
+        if (((p.y > py) !== (p.next.y > py)) && p.next.y !== p.y &&
+            (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
+            inside = !inside;
+        p = p.next;
+    } while (p !== a);
+    return inside;
+}
+// link two polygon vertices with a bridge; if the vertices belong to the same ring, it splits polygon into two;
+// if one belongs to the outer ring and another to a hole, it merges it into a single ring
+function splitPolygon(a, b) {
+    const a2 = new Node$1(a.i, a.x, a.y), b2 = new Node$1(b.i, b.x, b.y), an = a.next, bp = b.prev;
+    a.next = b;
+    b.prev = a;
+    a2.next = an;
+    an.prev = a2;
+    b2.next = a2;
+    a2.prev = b2;
+    bp.next = b2;
+    b2.prev = bp;
+    return b2;
+}
+// create a node and optionally link it with previous one (in a circular doubly linked list)
+function insertNode(i, x, y, last) {
+    const p = new Node$1(i, x, y);
+    if (!last) {
+        p.prev = p;
+        p.next = p;
+    }
+    else {
+        p.next = last.next;
+        p.prev = last;
+        last.next.prev = p;
+        last.next = p;
+    }
+    return p;
+}
+function removeNode(p) {
+    p.next.prev = p.prev;
+    p.prev.next = p.next;
+    if (p.prevZ)
+        p.prevZ.nextZ = p.nextZ;
+    if (p.nextZ)
+        p.nextZ.prevZ = p.prevZ;
+}
+let Node$1 = class Node {
+    // vertex index in coordinates array
+    i;
+    // vertex coordinates
+    x;
+    y;
+    // previous and next vertex nodes in a polygon ring
+    prev;
+    next;
+    // previous and next nodes in z-order
+    prevZ = null;
+    nextZ = null;
+    // z-order curve value
+    z = null;
+    // indicates whether this is a steiner point
+    steiner = false;
+    constructor(i, x, y) {
+        // vertex index in coordinates array
+        this.i = i;
+        // vertex coordinates
+        this.x = x;
+        this.y = y;
+    }
+};
+function signedArea(data, start, end, dim) {
+    let sum = 0;
+    for (let i = start, j = end - dim; i < end; i += dim) {
+        sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
+        j = i;
+    }
+    return sum;
+}
+
+class ShapeUtils {
+    // calculate area of the contour polygon
+    static area(contour) {
+        const n = contour.length;
+        let a = 0.0;
+        for (let p = n - 1, q = 0; q < n; p = q++) {
+            a += contour[p][0] * contour[q][1] - contour[q][0] * contour[p][1];
+        }
+        return a * 0.5;
+    }
+    static isClockWise(pts) {
+        return ShapeUtils.area(pts) < 0;
+    }
+    static triangulateShape(contour, holes) {
+        const vertices = []; // flat array of vertices like [ x0,y0, x1,y1, x2,y2, ... ]
+        const holeIndices = []; // array of hole indices
+        const faces = []; // final array of vertex indices like [ [ a,b,d ], [ b,c,d ] ]
+        removeDupEndPts(contour);
+        addContour(vertices, contour);
+        //
+        let holeIndex = contour.length;
+        holes.forEach(removeDupEndPts);
+        for (let i = 0; i < holes.length; i++) {
+            holeIndices.push(holeIndex);
+            holeIndex += holes[i].length;
+            addContour(vertices, holes[i]);
+        }
+        //
+        const triangles = Earcut.triangulate(vertices, holeIndices);
+        //
+        for (let i = 0; i < triangles.length; i += 3) {
+            faces.push(triangles.slice(i, i + 3));
+        }
+        return faces;
+    }
+}
+function removeDupEndPts(points) {
+    const l = points.length;
+    if (l > 2 && vec2.equals(points[l - 1], points[0])) {
+        points.pop();
+    }
+}
+function addContour(vertices, contour) {
+    for (let i = 0; i < contour.length; i++) {
+        vertices.push(contour[i][0]);
+        vertices.push(contour[i][1]);
+    }
+}
+
+class ShapePath {
+    type = 'ShapePath';
+    subPaths = [];
+    currentPath = null;
+    moveTo(x, y) {
+        this.currentPath = new Path();
+        this.subPaths.push(this.currentPath);
+        this.currentPath.moveTo([x, y, 0]);
+        return this;
+    }
+    lineTo(x, y) {
+        this.currentPath.lineTo([x, y, 0]);
+        return this;
+    }
+    quadraticCurveTo(aCPx, aCPy, aX, aY) {
+        this.currentPath.quadraticCurveTo([aCPx, aCPy, 0], [aX, aY, 0]);
+        return this;
+    }
+    bezierCurveTo(aCP1x, aCP1y, aCP2x, aCP2y, aX, aY) {
+        this.currentPath.bezierCurveTo([aCP1x, aCP1y, 0], [aCP2x, aCP2y, 0], [aX, aY, 0]);
+        return this;
+    }
+    /*
+    splineThru(pts) {
+        this.currentPath.splineThru(pts);
+        return this;
+    }
+    */
+    toShapes(isCCW, noHoles = false) {
+        function toShapesNoHoles(inSubpaths) {
+            const shapes = [];
+            for (let i = 0, l = inSubpaths.length; i < l; i++) {
+                const tmpPath = inSubpaths[i];
+                const tmpShape = new Shape();
+                tmpShape.curves = tmpPath.curves;
+                shapes.push(tmpShape);
+            }
+            return shapes;
+        }
+        function isPointInsidePolygon(inPt, inPolygon) {
+            const polyLen = inPolygon.length;
+            // inPt on polygon contour => immediate success    or
+            // toggling of inside/outside at every single! intersection point of an edge
+            //  with the horizontal line through inPt, left of inPt
+            //  not counting lowerY endpoints of edges and whole edges on that line
+            let inside = false;
+            for (let p = polyLen - 1, q = 0; q < polyLen; p = q++) {
+                let edgeLowPt = inPolygon[p];
+                let edgeHighPt = inPolygon[q];
+                let edgeDx = edgeHighPt[0] - edgeLowPt[0];
+                let edgeDy = edgeHighPt[1] - edgeLowPt[1];
+                if (Math.abs(edgeDy) > Number.EPSILON) {
+                    // not parallel
+                    if (edgeDy < 0) {
+                        edgeLowPt = inPolygon[q];
+                        edgeDx = -edgeDx;
+                        edgeHighPt = inPolygon[p];
+                        edgeDy = -edgeDy;
+                    }
+                    if ((inPt[1] < edgeLowPt[1]) || (inPt[1] > edgeHighPt[1]))
+                        continue;
+                    if (inPt[1] === edgeLowPt[1]) {
+                        if (inPt[0] === edgeLowPt[0])
+                            return true; // inPt is on contour ?
+                        // continue;				// no intersection or edgeLowPt => doesn't count !!!
+                    }
+                    else {
+                        const perpEdge = edgeDy * (inPt[0] - edgeLowPt[0]) - edgeDx * (inPt[1] - edgeLowPt[1]);
+                        if (perpEdge === 0)
+                            return true; // inPt is on contour ?
+                        if (perpEdge < 0)
+                            continue;
+                        inside = !inside; // true intersection left of inPt
+                    }
+                }
+                else {
+                    // parallel or collinear
+                    if (inPt[1] !== edgeLowPt[1])
+                        continue; // parallel
+                    // edge lies on the same horizontal line as inPt
+                    if (((edgeHighPt[0] <= inPt[0]) && (inPt[0] <= edgeLowPt[0])) ||
+                        ((edgeLowPt[0] <= inPt[0]) && (inPt[0] <= edgeHighPt[0])))
+                        return true; // inPt: Point on contour !
+                    // continue;
+                }
+            }
+            return inside;
+        }
+        const isClockWise = ShapeUtils.isClockWise;
+        const subPaths = this.subPaths;
+        if (subPaths.length === 0)
+            return [];
+        if (noHoles === true)
+            return toShapesNoHoles(subPaths);
+        let solid, tmpPath, tmpShape;
+        const shapes = [];
+        if (subPaths.length === 1) {
+            tmpPath = subPaths[0];
+            tmpShape = new Shape();
+            tmpShape.curves = tmpPath.curves;
+            shapes.push(tmpShape);
+            return shapes;
+        }
+        let holesFirst = !isClockWise(subPaths[0].getPoints());
+        holesFirst = isCCW ? !holesFirst : holesFirst;
+        // console.log("Holes first", holesFirst);
+        const betterShapeHoles = [];
+        const newShapes = [];
+        let newShapeHoles = [];
+        let mainIdx = 0;
+        let tmpPoints;
+        newShapes[mainIdx] = undefined;
+        newShapeHoles[mainIdx] = [];
+        for (let i = 0, l = subPaths.length; i < l; i++) {
+            tmpPath = subPaths[i];
+            tmpPoints = tmpPath.getPoints();
+            solid = isClockWise(tmpPoints);
+            solid = isCCW ? !solid : solid;
+            if (solid) {
+                if ((!holesFirst) && (newShapes[mainIdx]))
+                    mainIdx++;
+                newShapes[mainIdx] = { s: new Shape(), p: tmpPoints };
+                newShapes[mainIdx].s.curves = tmpPath.curves;
+                if (holesFirst)
+                    mainIdx++;
+                newShapeHoles[mainIdx] = [];
+                //console.log('cw', i);
+            }
+            else {
+                newShapeHoles[mainIdx].push({ h: tmpPath, p: tmpPoints[0] });
+                //console.log('ccw', i);
+            }
+        }
+        // only Holes? -> probably all Shapes with wrong orientation
+        if (!newShapes[0])
+            return toShapesNoHoles(subPaths);
+        if (newShapes.length > 1) {
+            let ambiguous = false;
+            const toChange = [];
+            for (let sIdx = 0, sLen = newShapes.length; sIdx < sLen; sIdx++) {
+                betterShapeHoles[sIdx] = [];
+            }
+            for (let sIdx = 0, sLen = newShapes.length; sIdx < sLen; sIdx++) {
+                const sho = newShapeHoles[sIdx];
+                for (let hIdx = 0; hIdx < sho.length; hIdx++) {
+                    const ho = sho[hIdx];
+                    let hole_unassigned = true;
+                    for (let s2Idx = 0; s2Idx < newShapes.length; s2Idx++) {
+                        if (isPointInsidePolygon(ho.p, newShapes[s2Idx].p)) {
+                            if (sIdx !== s2Idx)
+                                toChange.push({ froms: sIdx, tos: s2Idx, hole: hIdx });
+                            if (hole_unassigned) {
+                                hole_unassigned = false;
+                                betterShapeHoles[s2Idx].push(ho);
+                            }
+                            else {
+                                ambiguous = true;
+                            }
+                        }
+                    }
+                    if (hole_unassigned) {
+                        betterShapeHoles[sIdx].push(ho);
+                    }
+                }
+            }
+            // console.log("ambiguous: ", ambiguous);
+            if (toChange.length > 0) {
+                // console.log("to change: ", toChange);
+                if (!ambiguous)
+                    newShapeHoles = betterShapeHoles;
+            }
+        }
+        let tmpHoles;
+        for (let i = 0, il = newShapes.length; i < il; i++) {
+            tmpShape = newShapes[i].s;
+            shapes.push(tmpShape);
+            tmpHoles = newShapeHoles[i];
+            for (let j = 0, jl = tmpHoles.length; j < jl; j++) {
+                tmpShape.holes.push(tmpHoles[j].h);
+            }
+        }
+        //console.log("shape", shapes);
+        return shapes;
+    }
+}
+
+class Font {
+    #json;
+    constructor(json) {
+        this.#json = json;
+    }
+    generateShapes(text, size = 100) {
+        const shapes = [];
+        const paths = this.createPaths(text, size);
+        for (const path of paths) {
+            shapes.push(...path.toShapes());
+        }
+        return shapes;
+    }
+    createPaths(text = '', size = 1) {
+        const data = this.#json;
+        const chars = Array.from(text);
+        const scale = size / data.resolution;
+        const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
+        const paths = [];
+        let offsetX = 0, offsetY = 0;
+        for (const char of chars) {
+            if (char === '\n') {
+                offsetX = 0;
+                offsetY -= line_height;
+            }
+            else {
+                const ret = this.createPath(char, scale, offsetX, offsetY);
+                offsetX += ret.offsetX;
+                paths.push(ret.path);
+            }
+        }
+        return paths;
+    }
+    createPath(char, scale, offsetX, offsetY) {
+        const data = this.#json;
+        const glyph = data.glyphs[char] ?? data.glyphs['?'];
+        const path = new ShapePath();
+        let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
+        if (glyph.o) {
+            const outline = glyph.o.split(' ');
+            for (let i = 0, l = outline.length; i < l;) {
+                const action = outline[i++];
+                switch (action) {
+                    case 'm': // moveTo
+                        x = outline[i++] * scale + offsetX;
+                        y = outline[i++] * scale + offsetY;
+                        path.moveTo(x, y);
+                        break;
+                    case 'l': // lineTo
+                        x = outline[i++] * scale + offsetX;
+                        y = outline[i++] * scale + offsetY;
+                        path.lineTo(x, y);
+                        break;
+                    case 'q': // quadraticCurveTo
+                        cpx = outline[i++] * scale + offsetX;
+                        cpy = outline[i++] * scale + offsetY;
+                        cpx1 = outline[i++] * scale + offsetX;
+                        cpy1 = outline[i++] * scale + offsetY;
+                        path.quadraticCurveTo(cpx1, cpy1, cpx, cpy);
+                        break;
+                    case 'b': // bezierCurveTo
+                        cpx = outline[i++] * scale + offsetX;
+                        cpy = outline[i++] * scale + offsetY;
+                        cpx1 = outline[i++] * scale + offsetX;
+                        cpy1 = outline[i++] * scale + offsetY;
+                        cpx2 = outline[i++] * scale + offsetX;
+                        cpy2 = outline[i++] * scale + offsetY;
+                        path.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, cpx, cpy);
+                        break;
+                }
+            }
+        }
+        return { offsetX: glyph.ha * scale, path: path };
+    }
+}
+
+let fetchFunction = null;
+function setFetchFunction(func) {
+    fetchFunction = func;
+}
+async function customFetch(resource, options) {
+    try {
+        if (fetchFunction) {
+            return await fetchFunction(resource, options);
+        }
+        else {
+            return await fetch(resource, options);
+        }
+    }
+    catch (e) {
+        console.error('Error during custom fetch: ', e);
+        return new Response(null, { status: 400 });
+    }
+}
+
+class FontManager {
+    static #fontList = new Map();
+    static #fontsPath;
+    static #manifestPromise;
+    static setFontsPath(url) {
+        this.#fontsPath = url;
+    }
+    static async #getManifest() {
+        if (this.#manifestPromise) {
+            return this.#manifestPromise;
+        }
+        this.#manifestPromise = new Promise(async (resolve) => {
+            if (!this.#fontsPath) {
+                throw 'No manifest set, did you forgot to call FontManager.setFontsPath() ?';
+            }
+            const response = await customFetch(this.#fontsPath + 'manifest.json');
+            resolve(await response.json());
+        });
+        return this.#manifestPromise;
+    }
+    static async #loadFont(name, style) {
+        const manifest = await this.#getManifest();
+        const fonts = manifest?.fonts;
+        if (fonts) {
+            const font = fonts[name];
+            if (font && font.styles) {
+                const s = font.styles[style];
+                if (s) {
+                    const response = await customFetch(this.#fontsPath + s);
+                    const fontFile = await response.json();
+                    const font = new Font(fontFile);
+                    this.#fontList.get(name).set(style, font);
+                    return font;
+                }
+            }
+        }
+    }
+    static async getFont(name, style = 'normal') {
+        name = name.toLowerCase();
+        style = style.toLowerCase();
+        const fontFamilly = this.#fontList.get(name);
+        if (fontFamilly) {
+            const font = fontFamilly.get(style);
+            if (font) {
+                return font;
+            }
+        }
+        else {
+            this.#fontList.set(name, new Map());
+        }
+        return await this.#loadFont(name, style);
+    }
+    static async getFontList() {
+        const list = new Map();
+        const manifest = await this.#getManifest();
+        const fonts = manifest?.fonts;
+        if (fonts) {
+            for (const fontName in fonts) {
+                const font = fonts[fontName];
+                const styles = new Set;
+                for (const styleName in font.styles) {
+                    styles.add(styleName);
+                }
+                list.set(fontName, styles);
+            }
+        }
+        return list;
+    }
+}
+
+class Text2D extends Entity {
+    isText3D = true;
+    #text;
+    #size;
+    #font;
+    //style: string;
+    #html = createElement('div', { style: 'position:absolute;pointer-events:none;' });
+    constructor(params = {}) {
+        super(params);
+        this.setText(params.text);
+        this.setSize(params.size);
+        this.setFont(params.font);
+        this.setParentElement(params.parentElement);
+        display(this.#html, this.isVisible());
+    }
+    setParentElement(parentElement) {
+        parentElement?.append(this.#html);
+    }
+    setVisible(visible) {
+        super.setVisible(visible);
+        display(this.#html, this.isVisible());
+    }
+    setText(text) {
+        this.#text = text;
+        this.#html.innerText = text ?? '';
+    }
+    setSize(size) {
+        this.#size = size;
+        this.#html.style.fontSize = size ?? '';
+    }
+    setFont(font) {
+        this.#font = font;
+        this.#html.style.fontFamily = font ?? '';
+    }
+    update(scene, camera /*, delta: number*/) {
+        const pos = vec3.create();
+        const mat = camera.getViewProjectionMatrix();
+        vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
+        if (pos[2] > 1) {
+            // Text is behind the camera
+            // TODO: we may also use camera near and far plane
+            display(this.#html, false);
+            return;
+        }
+        else {
+            display(this.#html, this.isVisible());
+        }
+        //console.log(pos);
+        vec3.scale(pos, pos, 50);
+        vec3.add(pos, pos, [50, 50, 0]);
+        this.#html.style.left = `${pos[0]}%`;
+        this.#html.style.top = `${100 - pos[1]}%`;
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.text = this.#text;
+        json.size = this.#size;
+        json.font = this.#font;
+        //json.style = this.#style;
+        return json;
+    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    /* eslint-disable @typescript-eslint/require-await */
+    static async constructFromJSON(json, entities, loadedPromise) {
+        return new Text2D(); // TODO: add params
+    }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    /* eslint-enable @typescript-eslint/require-await */
+    fromJSON(json) {
+        super.fromJSON(json);
+        this.setText(json.text);
+        this.setSize(json.size);
+        this.setFont(json.font);
+        //this.style = json.style as string ?? Text2D.defaultStyle;
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Text3D_1: null,
+            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.setText(text ?? undefined); } },
+            font: {
+                i18n: '#font', f: async () => {
+                    const fontList = await FontManager.getFontList();
+                    const fontList2 = new Set();
+                    for (const [fontName, font] of fontList) {
+                        for (const style of font) {
+                            fontList2.add(`${fontName}, ${style}`);
+                        }
+                    }
+                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
+                    if (font) {
+                        this.setFont(font[0]);
+                        //this.style = font[1]!;
+                        //this.#update();
+                    }
+                }
+            },
+            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(size ?? undefined); } },
+        });
+    }
+    static getEntityName() {
+        return 'Text2D';
+    }
+}
+registerEntity(Text2D);
+
+class ExtrudeGeometry extends BufferGeometry {
+    parameters;
+    createGeometry(shapes, options) {
+        this.parameters = {
+            shapes: shapes,
+            options: options
+        };
+        shapes = Array.isArray(shapes) ? shapes : [shapes];
+        const scope = this;
+        const indicesArray = [];
+        const verticesArray = [];
+        const normalArray = [];
+        const uvArray = [];
+        for (let i = 0, l = shapes.length; i < l; i++) {
+            addShape(shapes[i]);
+        }
+        // build geometry
+        this.setIndex(new Uint32BufferAttribute(indicesArray, 1, 'index'));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(verticesArray, 3, 'position'));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normalArray, 3, 'normal'));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvArray, 2, 'texCoord'));
+        this.count = indicesArray.length;
+        this.computeVertexNormals();
+        // functions
+        function addShape(shape) {
+            const placeholder = [];
+            verticesArray.length / 3;
+            // options
+            const curveSegments = options.curveSegments ?? 12;
+            const steps = options.steps ?? 1;
+            const depth = options.depth ?? 100;
+            let bevelEnabled = options.bevelEnabled ?? true;
+            let bevelThickness = options.bevelThickness ?? 6;
+            let bevelSize = options.bevelSize ?? bevelThickness - 2;
+            let bevelOffset = options.bevelOffset ?? 0;
+            let bevelSegments = options.bevelSegments ?? 3;
+            options.extrudePath;
+            const uvgen = options.uvGenerator ?? WorldUVGenerator;
+            // TODO
+            /*
+            if (extrudePath) {
+
+                extrudePts = extrudePath.getSpacedPoints(steps);
+
+                extrudeByPath = true;
+                bevelEnabled = false; // bevels not supported for path extrusion
+
+                // SETUP TNB variables
+
+                // TODO1 - have a .isClosed in spline?
+
+                splineTube = extrudePath.computeFrenetFrames(steps, false);
+
+                // console.log(splineTube, 'splineTube', splineTube.normals.length, 'steps', steps, 'extrudePts', extrudePts.length);
+
+                binormal = vec3.create();
+                normal = vec3.create();
+                position2 = vec3.create();
+
+            }
+            */
+            // Safeguards if bevels are not enabled
+            if (!bevelEnabled) {
+                bevelSegments = 0;
+                bevelThickness = 0;
+                bevelSize = 0;
+                bevelOffset = 0;
+            }
+            // Variables initialization
+            const shapePoints = shape.extractPoints(curveSegments);
+            let vertices = shapePoints.shape;
+            const holes = shapePoints.holes;
+            const reverse = !ShapeUtils.isClockWise(vertices);
+            if (reverse) {
+                vertices = vertices.reverse();
+                // Maybe we should also check if holes are in the opposite direction, just to be safe ...
+                for (let h = 0, hl = holes.length; h < hl; h++) {
+                    const ahole = holes[h];
+                    if (ShapeUtils.isClockWise(ahole)) {
+                        holes[h] = ahole.reverse();
+                    }
+                }
+            }
+            const faces = ShapeUtils.triangulateShape(vertices, holes);
+            /* Vertices */
+            const contour = vertices; // vertices has all points but contour has only points of circumference
+            for (let h = 0, hl = holes.length; h < hl; h++) {
+                const ahole = holes[h];
+                vertices = vertices.concat(ahole);
+            }
+            function scalePt2(pt, vec, size) {
+                return vec2.scaleAndAdd(vec2.create(), pt, vec, size);
+            }
+            const vlen = vertices.length, flen = faces.length;
+            // Find directions for point movement
+            function getBevelVec(inPt, inPrev, inNext) {
+                // computes for inPt the corresponding point inPt' on a new contour
+                //   shifted by 1 unit (length of normalized vector) to the left
+                // if we walk along contour clockwise, this new contour is outside the old one
+                //
+                // inPt' is the intersection of the two lines parallel to the two
+                //  adjacent edges of inPt at a distance of 1 unit on the left side.
+                let v_trans_x, v_trans_y, shrink_by; // resulting translation vector for inPt
+                // good reading for geometry algorithms (here: line-line intersection)
+                // http://geomalgorithms.com/a05-_intersect-1.html
+                const v_prev_x = inPt[0] - inPrev[0], v_prev_y = inPt[1] - inPrev[1];
+                const v_next_x = inNext[0] - inPt[0], v_next_y = inNext[1] - inPt[1];
+                const v_prev_lensq = (v_prev_x * v_prev_x + v_prev_y * v_prev_y);
+                // check for collinear edges
+                const collinear0 = (v_prev_x * v_next_y - v_prev_y * v_next_x);
+                if (Math.abs(collinear0) > Number.EPSILON) {
+                    // not collinear
+                    // length of vectors for normalizing
+                    const v_prev_len = Math.sqrt(v_prev_lensq);
+                    const v_next_len = Math.sqrt(v_next_x * v_next_x + v_next_y * v_next_y);
+                    // shift adjacent points by unit vectors to the left
+                    const ptPrevShift_x = (inPrev[0] - v_prev_y / v_prev_len);
+                    const ptPrevShift_y = (inPrev[1] + v_prev_x / v_prev_len);
+                    const ptNextShift_x = (inNext[0] - v_next_y / v_next_len);
+                    const ptNextShift_y = (inNext[1] + v_next_x / v_next_len);
+                    // scaling factor for v_prev to intersection point
+                    const sf = ((ptNextShift_x - ptPrevShift_x) * v_next_y -
+                        (ptNextShift_y - ptPrevShift_y) * v_next_x) /
+                        (v_prev_x * v_next_y - v_prev_y * v_next_x);
+                    // vector from inPt to intersection point
+                    v_trans_x = (ptPrevShift_x + v_prev_x * sf - inPt[0]);
+                    v_trans_y = (ptPrevShift_y + v_prev_y * sf - inPt[1]);
+                    // Don't normalize!, otherwise sharp corners become ugly
+                    //  but prevent crazy spikes
+                    const v_trans_lensq = (v_trans_x * v_trans_x + v_trans_y * v_trans_y);
+                    if (v_trans_lensq <= 2) {
+                        return vec2.fromValues(v_trans_x, v_trans_y);
+                    }
+                    else {
+                        shrink_by = Math.sqrt(v_trans_lensq / 2);
+                    }
+                }
+                else {
+                    // handle special case of collinear edges
+                    let direction_eq = false; // assumes: opposite
+                    if (v_prev_x > Number.EPSILON) {
+                        if (v_next_x > Number.EPSILON) {
+                            direction_eq = true;
+                        }
+                    }
+                    else {
+                        if (v_prev_x < -Number.EPSILON) {
+                            if (v_next_x < -Number.EPSILON) {
+                                direction_eq = true;
+                            }
+                        }
+                        else {
+                            if (Math.sign(v_prev_y) === Math.sign(v_next_y)) {
+                                direction_eq = true;
+                            }
+                        }
+                    }
+                    if (direction_eq) {
+                        // console.log("Warning: lines are a straight sequence");
+                        v_trans_x = -v_prev_y;
+                        v_trans_y = v_prev_x;
+                        shrink_by = Math.sqrt(v_prev_lensq);
+                    }
+                    else {
+                        // console.log("Warning: lines are a straight spike");
+                        v_trans_x = v_prev_x;
+                        v_trans_y = v_prev_y;
+                        shrink_by = Math.sqrt(v_prev_lensq / 2);
+                    }
+                }
+                return vec2.fromValues(v_trans_x / shrink_by, v_trans_y / shrink_by);
+            }
+            const contourMovements = [];
+            for (let i = 0, il = contour.length, j = il - 1, k = i + 1; i < il; i++, j++, k++) {
+                if (j === il)
+                    j = 0;
+                if (k === il)
+                    k = 0;
+                //  (j)---(i)---(k)
+                // console.log('i,j,k', i, j , k)
+                contourMovements[i] = getBevelVec(contour[i], contour[j], contour[k]);
+            }
+            const holesMovements = [];
+            let oneHoleMovements, verticesMovements = contourMovements.concat();
+            for (let h = 0, hl = holes.length; h < hl; h++) {
+                const ahole = holes[h];
+                oneHoleMovements = [];
+                for (let i = 0, il = ahole.length, j = il - 1, k = i + 1; i < il; i++, j++, k++) {
+                    if (j === il)
+                        j = 0;
+                    if (k === il)
+                        k = 0;
+                    //  (j)---(i)---(k)
+                    oneHoleMovements[i] = getBevelVec(ahole[i], ahole[j], ahole[k]);
+                }
+                holesMovements.push(oneHoleMovements);
+                verticesMovements = verticesMovements.concat(oneHoleMovements);
+            }
+            // Loop bevelSegments, 1 for the front, 1 for the back
+            for (let b = 0; b < bevelSegments; b++) {
+                //for ( b = bevelSegments; b > 0; b -- ) {
+                const t = b / bevelSegments;
+                const z = bevelThickness * Math.cos(t * Math.PI / 2);
+                const bs = bevelSize * Math.sin(t * Math.PI / 2) + bevelOffset;
+                // contract shape
+                for (let i = 0, il = contour.length; i < il; i++) {
+                    const vert = scalePt2(contour[i], contourMovements[i], bs);
+                    v(vert[0], vert[1], -z);
+                }
+                // expand holes
+                for (let h = 0, hl = holes.length; h < hl; h++) {
+                    const ahole = holes[h];
+                    oneHoleMovements = holesMovements[h];
+                    for (let i = 0, il = ahole.length; i < il; i++) {
+                        const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+                        v(vert[0], vert[1], -z);
+                    }
+                }
+            }
+            const bs = bevelSize + bevelOffset;
+            // Back facing vertices
+            for (let i = 0; i < vlen; i++) {
+                const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+                {
+                    v(vert[0], vert[1], 0);
+                }
+            }
+            // Add stepped vertices...
+            // Including front facing vertices
+            for (let s = 1; s <= steps; s++) {
+                for (let i = 0; i < vlen; i++) {
+                    const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+                    {
+                        v(vert[0], vert[1], depth / steps * s);
+                    }
+                }
+            }
+            // Add bevel segments planes
+            //for ( b = 1; b <= bevelSegments; b ++ ) {
+            for (let b = bevelSegments - 1; b >= 0; b--) {
+                const t = b / bevelSegments;
+                const z = bevelThickness * Math.cos(t * Math.PI / 2);
+                const bs = bevelSize * Math.sin(t * Math.PI / 2) + bevelOffset;
+                // contract shape
+                for (let i = 0, il = contour.length; i < il; i++) {
+                    const vert = scalePt2(contour[i], contourMovements[i], bs);
+                    v(vert[0], vert[1], depth + z);
+                }
+                // expand holes
+                for (let h = 0, hl = holes.length; h < hl; h++) {
+                    const ahole = holes[h];
+                    oneHoleMovements = holesMovements[h];
+                    for (let i = 0, il = ahole.length; i < il; i++) {
+                        const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+                        {
+                            v(vert[0], vert[1], depth + z);
+                        }
+                    }
+                }
+            }
+            /* Faces */
+            // Top and bottom faces
+            buildLidFaces();
+            // Sides faces
+            buildSideFaces();
+            /////  Internal functions
+            function buildLidFaces() {
+                verticesArray.length / 3;
+                if (bevelEnabled) {
+                    let layer = 0; // steps + 1
+                    let offset = vlen * layer;
+                    // Bottom faces
+                    for (let i = 0; i < flen; i++) {
+                        const face = faces[i];
+                        f3(face[2] + offset, face[1] + offset, face[0] + offset);
+                    }
+                    layer = steps + bevelSegments * 2;
+                    offset = vlen * layer;
+                    // Top faces
+                    for (let i = 0; i < flen; i++) {
+                        const face = faces[i];
+                        f3(face[0] + offset, face[1] + offset, face[2] + offset);
+                    }
+                }
+                else {
+                    // Bottom faces
+                    for (let i = 0; i < flen; i++) {
+                        const face = faces[i];
+                        f3(face[2], face[1], face[0]);
+                    }
+                    // Top faces
+                    for (let i = 0; i < flen; i++) {
+                        const face = faces[i];
+                        f3(face[0] + vlen * steps, face[1] + vlen * steps, face[2] + vlen * steps);
+                    }
+                }
+                //scope.addGroup( start, verticesArray.length / 3 - start, 0 );
+            }
+            // Create faces for the z-sides of the shape
+            function buildSideFaces() {
+                verticesArray.length / 3;
+                let layeroffset = 0;
+                sidewalls(contour, layeroffset);
+                layeroffset += contour.length;
+                for (let h = 0, hl = holes.length; h < hl; h++) {
+                    const ahole = holes[h];
+                    sidewalls(ahole, layeroffset);
+                    //, true
+                    layeroffset += ahole.length;
+                }
+                //scope.addGroup( start, verticesArray.length / 3 - start, 1 );
+            }
+            function sidewalls(contour, layeroffset) {
+                let i = contour.length;
+                while (--i >= 0) {
+                    const j = i;
+                    let k = i - 1;
+                    if (k < 0)
+                        k = contour.length - 1;
+                    //console.log('b', i,j, i-1, k,vertices.length);
+                    for (let s = 0, sl = (steps + bevelSegments * 2); s < sl; s++) {
+                        const slen1 = vlen * s;
+                        const slen2 = vlen * (s + 1);
+                        const a = layeroffset + j + slen1, b = layeroffset + k + slen1, c = layeroffset + k + slen2, d = layeroffset + j + slen2;
+                        f4(a, b, c, d);
+                    }
+                }
+            }
+            function v(x, y, z) {
+                placeholder.push(x);
+                placeholder.push(y);
+                placeholder.push(z);
+            }
+            function f3(a, b, c) {
+                addIndex();
+                addIndex();
+                addIndex();
+                addVertex(a);
+                addVertex(b);
+                addVertex(c);
+                const nextIndex = verticesArray.length / 3;
+                const uvs = uvgen.generateTopUV(scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+                addUV(uvs[0]);
+                addUV(uvs[1]);
+                addUV(uvs[2]);
+            }
+            function f4(a, b, c, d) {
+                addIndex();
+                addIndex();
+                addIndex();
+                addIndex();
+                addIndex();
+                addIndex();
+                addVertex(a);
+                addVertex(b);
+                addVertex(d);
+                addVertex(b);
+                addVertex(c);
+                addVertex(d);
+                const nextIndex = verticesArray.length / 3;
+                const uvs = uvgen.generateSideWallUV(scope, verticesArray, nextIndex - 6, nextIndex - 3, nextIndex - 2, nextIndex - 1);
+                addUV(uvs[0]);
+                addUV(uvs[1]);
+                addUV(uvs[3]);
+                addUV(uvs[1]);
+                addUV(uvs[2]);
+                addUV(uvs[3]);
+            }
+            function addIndex(index) {
+                indicesArray.push(indicesArray.length);
+            }
+            function addVertex(index) {
+                verticesArray.push(placeholder[index * 3 + 0]);
+                verticesArray.push(placeholder[index * 3 + 1]);
+                verticesArray.push(placeholder[index * 3 + 2]);
+                normalArray.push(1, 0, 0); // TODO: add a proper normal
+            }
+            function addUV(vector2) {
+                uvArray.push(vector2[0]);
+                uvArray.push(vector2[1]);
+            }
+        }
+    }
+}
+const WorldUVGenerator = {
+    generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
+        const a_x = vertices[indexA * 3];
+        const a_y = vertices[indexA * 3 + 1];
+        const b_x = vertices[indexB * 3];
+        const b_y = vertices[indexB * 3 + 1];
+        const c_x = vertices[indexC * 3];
+        const c_y = vertices[indexC * 3 + 1];
+        return [
+            vec2.fromValues(a_x, a_y),
+            vec2.fromValues(b_x, b_y),
+            vec2.fromValues(c_x, c_y)
+        ];
+    },
+    generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
+        const a_x = vertices[indexA * 3];
+        const a_y = vertices[indexA * 3 + 1];
+        const a_z = vertices[indexA * 3 + 2];
+        const b_x = vertices[indexB * 3];
+        const b_y = vertices[indexB * 3 + 1];
+        const b_z = vertices[indexB * 3 + 2];
+        const c_x = vertices[indexC * 3];
+        const c_y = vertices[indexC * 3 + 1];
+        const c_z = vertices[indexC * 3 + 2];
+        const d_x = vertices[indexD * 3];
+        const d_y = vertices[indexD * 3 + 1];
+        const d_z = vertices[indexD * 3 + 2];
+        if (Math.abs(a_y - b_y) < Math.abs(a_x - b_x)) {
+            return [
+                vec2.fromValues(a_x, 1 - a_z),
+                vec2.fromValues(b_x, 1 - b_z),
+                vec2.fromValues(c_x, 1 - c_z),
+                vec2.fromValues(d_x, 1 - d_z)
+            ];
+        }
+        else {
+            return [
+                vec2.fromValues(a_y, 1 - a_z),
+                vec2.fromValues(b_y, 1 - b_z),
+                vec2.fromValues(c_y, 1 - c_z),
+                vec2.fromValues(d_y, 1 - d_z)
+            ];
+        }
+    }
+};
+
+class Text3D extends Mesh {
+    isText3D = true;
+    static defaultFont = 'arial';
+    static defaultStyle = 'normal';
+    #text;
+    #size;
+    #depth;
+    #font;
+    #style;
+    constructor(params = {}) {
+        params.geometry = new ExtrudeGeometry();
+        params.material = params.material ?? new MeshBasicMaterial();
+        super(params);
+        this.#text = params.text ?? '';
+        this.#size = params.size ?? 100;
+        this.#depth = params.depth ?? 10;
+        this.#font = params.font ?? Text3D.defaultFont;
+        this.#style = params.style ?? Text3D.defaultStyle;
+        this.#updateGeometry();
+        this.rotateX(90 * DEG_TO_RAD);
+        this.setParameters(params);
+    }
+    set text(text) {
+        this.#text = text;
+        this.#updateGeometry();
+    }
+    set size(size) {
+        this.#size = size;
+        this.#updateGeometry();
+    }
+    set depth(depth) {
+        this.#depth = depth;
+        this.#updateGeometry();
+    }
+    set font(font) {
+        this.#font = font;
+        this.#updateGeometry();
+    }
+    set style(style) {
+        this.#style = style;
+        this.#updateGeometry();
+    }
+    async #updateGeometry() {
+        const font = await FontManager.getFont(this.#font);
+        if (font) {
+            const shapes = font.generateShapes(this.#text, this.#size);
+            this.getGeometry().createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
+        }
+    }
+    toJSON() {
+        const json = super.toJSON();
+        json.text = this.#text;
+        json.size = this.#size;
+        json.depth = this.#depth;
+        json.font = this.#font;
+        json.style = this.#style;
+        return json;
+    }
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON( /*json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
+        return new Text3D({}); // TODO: add params
+    }
+    fromJSON(json) {
+        super.fromJSON(json);
+        this.#text = json.text;
+        this.#size = json.size;
+        this.#depth = json.depth;
+        this.#font = json.font ?? Text3D.defaultFont;
+        this.#style = json.style ?? Text3D.defaultStyle;
+    }
+    buildContextMenu() {
+        return Object.assign(super.buildContextMenu(), {
+            Text3D_1: null,
+            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text ?? ''; } },
+            font: {
+                i18n: '#font', f: async () => {
+                    const fontList = await FontManager.getFontList();
+                    const fontList2 = new Set();
+                    for (const [fontName, font] of fontList) {
+                        for (const style of font) {
+                            fontList2.add(`${fontName}, ${style}`);
+                        }
+                    }
+                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
+                    if (font) {
+                        this.#font = font[0];
+                        this.#style = font[1];
+                        this.#updateGeometry();
+                    }
+                }
+            },
+            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.size = Number(size); } },
+            font_depth: { i18n: '#font_depth', f: () => { const depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
+        });
+    }
+    static getEntityName() {
+        return 'Text3D';
+    }
+}
+registerEntity(Text3D);
+
+class Wireframe extends Entity {
+    #material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this, colorMode: MaterialColorMode.PerMesh });
+    #color = vec4.fromValues(0, 0, 0, 1);
+    enumerable = false;
+    #meshes = new Set();
+    constructor(params = {}) {
+        super(params);
+        //const material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
+        //this.#material = material;
+        this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
+        //this.setParameters(params);
+    }
+    setColor(color) {
+        vec4.copy(this.#color, color);
+        this.#material.setMeshColor(color);
+    }
+    parentChanged(parent) {
+        if (parent) {
+            this.#updateGeometry(parent);
+        }
+    }
+    #updateGeometry(parent) {
+        this.#disposeMeshes();
+        const meshes = parent.getChildList('Mesh');
+        for (const mesh of meshes) {
+            if (mesh == this || !mesh.isVisible()) {
+                continue;
+            }
+            const segments = [];
+            const line = new LineSegmentsGeometry({ user: this });
+            const me = new Mesh({ geometry: line, material: this.#material });
+            this.#meshes.add(me);
+            this.addChild(me);
+            const m = mesh.exportObj();
+            const vertexIndices = m.f;
+            const vertexPos = m.v;
+            for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
+                const vertexIndex1 = vertexIndices[i + 0] * 3;
+                const vertexIndex2 = vertexIndices[i + 1] * 3;
+                const vertexIndex3 = vertexIndices[i + 2] * 3;
+                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
+            }
+            line.setSegments(segments);
+        }
+    }
+    #disposeMeshes() {
+        for (const mesh of this.#meshes) {
+            mesh.dispose();
+        }
+        this.#meshes.clear();
+    }
+    dispose() {
+        super.dispose();
+        this.#material.removeUser(this);
+        this.#disposeMeshes();
+    }
+    is(s) {
+        return s == 'Wireframe';
+    }
+    static getEntityName() {
+        return 'Wireframe';
+    }
+}
+
+class World extends Entity {
+    parentChanged() {
+        const iterator = this.getParentIterator();
+        for (const p of iterator) {
+            if (p.is('Scene')) {
+                p.setWorld(this);
+                iterator.return(null);
+            }
+        }
+    }
+    static getEntityName() {
+        return 'World';
+    }
+    is(s) {
+        if (s == 'World') {
+            return true;
+        }
+        else {
+            return super.is(s);
+        }
+    }
+}
+registerEntity(World);
+
 class KeepOnlyLastChild extends Entity {
     addChild(child) {
-        if (!(child instanceof Manipulator)) {
+        if (!(child instanceof Manipulator) && !(child instanceof SkeletonHelper)) {
             this.removeChildren();
         }
         return super.addChild(child);
@@ -12455,14 +16624,6 @@ async function renderMaterial(material, materialsParams, renderMode) {
     return imgContent?.arrayBuffer() ?? null;
 }
 
-const RECORDER_MIME_TYPE = 'video/webm';
-const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
-// Note : you can provide your own url when calling ShaderEditor.initEditor.
-const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
-const MAX_HARDWARE_BONES = 256 /* don't raise above 1024: max webgpu uniforms size */;
-const TEXTURE_CLEANUP_DELAY = 100000;
-const SMD_HEADER = '// Created by harmony-3d';
-
 let renderParticles = true;
 function setRenderParticles(render) {
     renderParticles = render;
@@ -12687,7 +16848,7 @@ class WebGLRenderingState {
 }
 
 const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
-const a$8 = vec4.create();
+const a$7 = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -12697,7 +16858,7 @@ class ShadowMap {
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$8);
+        WebGLRenderingState.getClearColor(a$7);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -12750,7 +16911,7 @@ class ShadowMap {
         else {
             WebGLRenderingState.disable(GL_DEPTH_TEST);
         }
-        WebGLRenderingState.clearColor(a$8);
+        WebGLRenderingState.clearColor(a$7);
         //Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         Graphics$1.removeDefine('WRITE_DEPTH_TO_COLOR');
     }
@@ -15693,25 +19854,6 @@ class ContextObserverClass {
 }
 const ContextObserver = new ContextObserverClass();
 
-let fetchFunction = null;
-function setFetchFunction(func) {
-    fetchFunction = func;
-}
-async function customFetch(resource, options) {
-    try {
-        if (fetchFunction) {
-            return await fetchFunction(resource, options);
-        }
-        else {
-            return await fetch(resource, options);
-        }
-    }
-    catch (e) {
-        console.error('Error during custom fetch: ', e);
-        return new Response(null, { status: 400 });
-    }
-}
-
 class RgbeImporter {
     #context;
     constructor(context) {
@@ -15877,359 +20019,6 @@ class OBJImporter {
     }
 }
 
-class LineBasicMaterial extends Material {
-    lineWidth;
-    constructor(params = {}) {
-        super(params);
-        this.color = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-        this.lineWidth = 1;
-        //this.setValues(params);
-    }
-    getShaderSource() {
-        return 'meshbasic';
-    }
-}
-Material.materialList['LineBasic'] = LineBasicMaterial;
-
-const SPHERE_RADIUS = 1;
-const RAYS_RADIUS = 3;
-class PointLightHelper extends Mesh {
-    constructor(params = {}) {
-        params.geometry = new BufferGeometry();
-        params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerMesh, defines: { ALWAYS_ON_TOP: '', } });
-        super(params);
-        this.renderMode = GL_LINES;
-        this.#createVertices();
-        const sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
-        sphere.getMaterial().setDefine('ALWAYS_ON_TOP');
-        this.addChild(sphere);
-    }
-    #createVertices() {
-        const indices = [];
-        const vertices = [];
-        vertices.push(0, 0, 0);
-        const iInc = PI / 4;
-        const jInc = PI / 4;
-        let k = 0;
-        for (let i = 0; i < TWO_PI; i += iInc) {
-            for (let j = 0; j < PI; j += jInc) {
-                vertices.push(RAYS_RADIUS * Math.cos(i) * Math.sin(j), RAYS_RADIUS * Math.cos(j), RAYS_RADIUS * Math.sin(i) * Math.sin(j));
-                indices.push(0, ++k);
-            }
-        }
-        const geometry = this.geometry;
-        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
-        geometry.count = indices.length;
-    }
-}
-
-const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
-let defaultTextureSize = 1024;
-var LightType;
-(function (LightType) {
-    // The values should be consistent with the values in the raytracing shader
-    LightType[LightType["Ambient"] = 1] = "Ambient";
-    LightType[LightType["Point"] = 2] = "Point";
-    LightType[LightType["Spot"] = 3] = "Spot";
-    LightType[LightType["Directional"] = 4] = "Directional";
-})(LightType || (LightType = {}));
-class Light extends Entity {
-    #intensity;
-    #color; // TODO: use Color instead
-    #range = 1000;
-    shadow;
-    #shadowTextureSize = defaultTextureSize;
-    isLight = true;
-    radius; // Radius for ray tracing
-    constructor(parameters = {}) {
-        super(parameters);
-        this.#color = vec3.clone(parameters.color ?? DEFAULT_LIGHT_COLOR);
-        this.#intensity = parameters.intensity ?? 1.0;
-        this.radius = parameters.radius ?? 1.0;
-        this.castShadow = false;
-        this.isRenderable = true;
-    }
-    set color(color) {
-        vec3.copy(this.#color, color);
-    }
-    get color() {
-        return this.#color;
-    }
-    set intensity(intensity) {
-        this.#intensity = intensity;
-    }
-    get intensity() {
-        return this.#intensity;
-    }
-    set range(range) {
-        this.#range = range;
-        if (this.shadow) {
-            this.shadow.range = range;
-        }
-    }
-    get range() {
-        return this.#range;
-    }
-    set shadowTextureSize(shadowTextureSize) {
-        this.#shadowTextureSize = shadowTextureSize;
-        if (this.shadow) {
-            this.shadow.textureSize = shadowTextureSize;
-        }
-    }
-    get shadowTextureSize() {
-        return this.#shadowTextureSize;
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Light_1: null,
-            color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) {
-                    this.color = stringToVec3(color);
-                } } },
-            intensity: { i18n: '#intensity', f: () => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) {
-                    this.intensity = Number(intensity);
-                } } },
-        }, this.shadow ? {
-            texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) {
-                    this.shadowTextureSize = Number.parseFloat(textureSize);
-                } } }
-        } : null);
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.color = vec3ToJSON(this.color);
-        json.intensity = this.intensity;
-        json.shadowtexturesize = this.shadowTextureSize;
-        return json;
-    }
-    static async constructFromJSON(json) {
-        return new Light(json);
-    }
-    fromJSON(json) {
-        super.fromJSON(json);
-        this.color = json.color ?? DEFAULT_LIGHT_COLOR;
-        this.intensity = json.intensity ?? 1;
-        this.shadowTextureSize = json.shadowtexturesize ?? defaultTextureSize;
-    }
-    static set defaultTextureSize(textureSize) {
-        defaultTextureSize = textureSize;
-    }
-    static getEntityName() {
-        return 'Light';
-    }
-    is(s) {
-        return s == 'Light';
-    }
-    getRaytracingLight() {
-        throw new Error('Override this function');
-    }
-}
-registerEntity(Light);
-
-mat4.create();
-class LightShadow {
-    #textureSize = vec2.create();
-    light;
-    camera;
-    shadowMatrix = mat4.create();
-    viewPorts;
-    viewPortsLength;
-    renderTarget;
-    constructor(light, camera) {
-        camera.hideInExplorer = true;
-        camera.serializable = false;
-        light.addChild(camera);
-        this.light = light;
-        this.camera = camera;
-        this.#textureSize = vec2.set(this.#textureSize, light.shadowTextureSize, light.shadowTextureSize);
-        this.shadowMatrix = mat4.create();
-        this.viewPorts = [vec4.fromValues(0, 0, 1, 1)];
-        this.viewPortsLength = 1;
-        this.renderTarget = new RenderTarget({ width: this.#textureSize[0], height: this.#textureSize[0], });
-        this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
-    }
-    set range(range) {
-    }
-    set textureSize(textureSize) {
-        vec2.set(this.#textureSize, textureSize, textureSize);
-        this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
-    }
-    get textureSize() {
-        return this.#textureSize;
-    }
-    computeShadowMatrix(mapIndex) {
-        const shadowCamera = this.camera;
-        const shadowMatrix = this.shadowMatrix;
-        mat4.set(shadowMatrix, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
-        shadowCamera.dirty();
-        mat4.mul(shadowMatrix, shadowMatrix, shadowCamera.projectionMatrix);
-        mat4.mul(shadowMatrix, shadowMatrix, shadowCamera.worldMatrixInverse);
-    }
-}
-
-class SpotLightShadow extends LightShadow {
-    constructor(light) {
-        super(light, new Camera({ autoResize: false, })); //TODO: adjust default variables
-        const textureSize = this.textureSize;
-        this.aspect = textureSize[0] / textureSize[1];
-        this.angle = this.light.angle;
-        this.range = this.light.range;
-    }
-    set angle(angle) {
-        this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
-    }
-    set range(range) {
-        this.camera.farPlane = range;
-    }
-    set aspect(aspect) {
-        this.camera.aspectRatio = aspect;
-    }
-}
-
-const DEFAULT_ANGLE = Math.PI / 4.0;
-const Z_VECTOR = vec3.fromValues(0, 0, 1);
-const tempQuat$8 = quat.create();
-class SpotLight extends Light {
-    isSpotLight = true;
-    #innerAngle;
-    innerAngleCos;
-    #outerAngle;
-    outerAngleCos;
-    constructor(parameters = {}) {
-        super(parameters);
-        this.angle = parameters.outerAngle ?? DEFAULT_ANGLE;
-        this.innerAngle = parameters.innerAngle ?? DEFAULT_ANGLE;
-        this.range = 0;
-    }
-    set castShadow(castShadow) {
-        super.castShadow = castShadow;
-        if (this.castShadow) {
-            this.shadow = new SpotLightShadow(this);
-            this.shadow.range = this.range;
-            this.shadow.angle = this.#outerAngle;
-        }
-    }
-    get castShadow() {
-        return super.castShadow;
-    }
-    set angle(angle) {
-        this.#outerAngle = angle;
-        this.outerAngleCos = Math.cos(angle);
-        if (this.shadow) {
-            this.shadow.angle = angle;
-        }
-    }
-    get angle() {
-        return this.#outerAngle;
-    }
-    set innerAngle(innerAngle) {
-        this.#innerAngle = innerAngle;
-        this.innerAngleCos = Math.cos(innerAngle);
-    }
-    get innerAngle() {
-        return this.#innerAngle;
-    }
-    getDirection(out = vec3.create()) {
-        return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat$8));
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            angle: { i18n: '#angle', f: () => { const angle = prompt('Angle', String(this.angle)); if (angle !== null) {
-                    this.angle = Number(angle);
-                } } },
-            inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) {
-                    this.innerAngle = Number(innerAngle);
-                } } },
-            range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) {
-                    this.range = Number(range);
-                } } },
-        });
-    }
-    static getEntityName() {
-        return 'SpotLight';
-    }
-    getRaytracingLight() {
-        return LightType.Spot;
-    }
-}
-registerEntity(SpotLight);
-
-const DIVISIONS = 32;
-const tempVec4$1 = vec4.create();
-class SpotLightHelper extends Mesh {
-    #color = vec3.create(); // TODO: use Color instead
-    #angle = 0;
-    #range = 0;
-    #spotLight = null;
-    #vertexPositionAttribute;
-    constructor(params = {}) {
-        params.geometry = new BufferGeometry();
-        params.material = new LineBasicMaterial();
-        super(params);
-        this.renderMode = GL_LINES;
-        this.#createVertices();
-        this.material.setMeshColor();
-        this.material.setDefine('ALWAYS_ON_TOP');
-        this.castShadow = false;
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, event => this.update());
-    }
-    #createVertices() {
-        const indices = [];
-        const vertices = [];
-        vertices.push(0, 0, 0);
-        let k = 1;
-        for (let i = 0; i < DIVISIONS; i += 1) {
-            vertices.push(0, 0, 0);
-            indices.push(0, k);
-            if (k < DIVISIONS) {
-                //segement til next point
-                indices.push(k, ++k);
-            }
-        }
-        //close loop
-        indices.push(k, 1);
-        const geometry = this.geometry;
-        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
-        geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
-        geometry.count = indices.length;
-    }
-    update() {
-        const spotLight = this.#spotLight;
-        if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
-            vec3.copy(this.#color, spotLight.color);
-            vec4.set(tempVec4$1, this.#color[0], this.#color[1], this.#color[2], 1.);
-            this.material.setMeshColor(tempVec4$1);
-            const range = spotLight.range || 1000.0;
-            const radius = Math.sin(spotLight.angle) * range;
-            this.#range = spotLight.range;
-            this.#angle = spotLight.angle;
-            const verticesArray = this.#vertexPositionAttribute._array;
-            if (!verticesArray) {
-                return;
-            }
-            for (let i = 0; i < DIVISIONS; i += 1) {
-                const angle = i * TWO_PI / DIVISIONS;
-                const index = (i + 1) * 3;
-                verticesArray[index + 0] = Math.cos(angle) * radius;
-                verticesArray[index + 1] = Math.sin(angle) * radius;
-                verticesArray[index + 2] = -range;
-                verticesArray.subarray(index, index + 2);
-            }
-            this.#vertexPositionAttribute.dirty = true;
-        }
-    }
-    parentChanged(parent = null) {
-        if (parent instanceof SpotLight) {
-            this.#spotLight = parent;
-        }
-        else {
-            this.#spotLight = null;
-        }
-        this.update();
-    }
-}
-
 class AmbientLight extends Light {
     isAmbientLight = true;
     static async constructFromJSON(json) {
@@ -16364,1167 +20153,6 @@ function getLoader(name) {
     return loaders.get(name);
 }
 
-const DEFAULT_POINT = vec3.create();
-class Curve {
-    controlPoints = [];
-    arcLength = 0;
-    getPosition(t, out = vec3.create()) {
-        return out;
-    }
-    getArcLength(divisions = 100) {
-        vec3.create();
-        let last = vec3.create();
-        let current = vec3.create();
-        let temp;
-        this.getPosition(0, last);
-        let length = 0;
-        for (let i = 1; i <= divisions; i++) {
-            this.getPosition(i / divisions, current);
-            length += vec3.distance(last, current);
-            temp = last;
-            last = current;
-            current = temp;
-        }
-        return length;
-    }
-    getPoints(divisions = 5) {
-        const points = [];
-        for (let i = 0; i <= divisions; i++) {
-            points.push(this.getPosition(i / divisions));
-        }
-        return points;
-    }
-    getAppropriateDivision(division) {
-        return division;
-    }
-}
-
-class CubicBezierCurve extends Curve {
-    p0 = vec3.create();
-    p1 = vec3.create();
-    p2 = vec3.create();
-    p3 = vec3.create();
-    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT, p2 = DEFAULT_POINT, p3 = DEFAULT_POINT) {
-        super();
-        vec3.copy(this.p0, p0);
-        vec3.copy(this.p1, p1);
-        vec3.copy(this.p2, p2);
-        vec3.copy(this.p3, p3);
-        this.arcLength = this.getArcLength();
-    }
-    getPosition(t, out = vec3.create()) {
-        //P = (1 - t)³ * P0 + 3 * (1 - t)² * t * P1 + 3 * (1 - t) * t² * P2 + t³ * P3
-        const oneMinusT = 1 - t;
-        const oneMinusTSqr = oneMinusT * oneMinusT;
-        const tSqr = t * t;
-        vec3.scale(out, this.p0, oneMinusTSqr * oneMinusT);
-        vec3.scaleAndAdd(out, out, this.p1, 3 * oneMinusTSqr * t);
-        vec3.scaleAndAdd(out, out, this.p2, 3 * oneMinusT * tSqr);
-        vec3.scaleAndAdd(out, out, this.p3, tSqr * t);
-        return out;
-    }
-}
-
-class LinearBezierCurve extends Curve {
-    p0 = vec3.create();
-    p1 = vec3.create();
-    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT) {
-        super();
-        vec3.copy(this.p0, p0);
-        vec3.copy(this.p1, p1);
-        this.arcLength = this.getArcLength();
-    }
-    getPosition(t, out = vec3.create()) {
-        if (t === 0) {
-            vec3.copy(out, this.p0);
-        }
-        else if (t === 1) {
-            vec3.copy(out, this.p1);
-        }
-        else {
-            vec3.sub(out, this.p1, this.p0);
-            vec3.scaleAndAdd(out, this.p0, out, t);
-        }
-        return out;
-    }
-    getArcLength() {
-        return vec3.distance(this.p0, this.p1);
-    }
-    getAppropriateDivision() {
-        return 1;
-    }
-}
-
-class QuadraticBezierCurve extends Curve {
-    #p0 = vec3.create();
-    #p1 = vec3.create();
-    #p2 = vec3.create();
-    constructor(p0 = DEFAULT_POINT, p1 = DEFAULT_POINT, p2 = DEFAULT_POINT) {
-        super();
-        vec3.copy(this.#p0, p0);
-        vec3.copy(this.#p1, p1);
-        vec3.copy(this.#p2, p2);
-        this.arcLength = this.getArcLength();
-    }
-    getPosition(t, out = vec3.create()) {
-        //P = (1 - t)² * P0 + 2 * (1 - t) * t * P1 + t² * P2
-        const oneMinusT = 1 - t;
-        vec3.scale(out, this.#p0, oneMinusT * oneMinusT);
-        vec3.scaleAndAdd(out, out, this.#p1, 2 * oneMinusT * t);
-        vec3.scaleAndAdd(out, out, this.#p2, t * t);
-        return out;
-    }
-}
-
-const p0$1 = vec3.create();
-const p1$1 = vec3.create();
-const p2$1 = vec3.create();
-const p3$1 = vec3.create();
-class Path extends Curve {
-    looping;
-    #curves = [];
-    #cursor = vec3.create();
-    constructor(looping = false) {
-        super();
-        this.looping = looping;
-    }
-    set curves(curves) {
-        this.#curves.splice(0, Infinity, ...curves);
-        this.arcLength = this.getArcLength();
-    }
-    get curves() {
-        return this.#curves;
-    }
-    addCurve(curve) {
-        this.#curves.push(curve);
-        this.arcLength = this.getArcLength();
-    }
-    getArcLength(divisions) {
-        let length = 0;
-        for (const curve of this.#curves) {
-            length += curve.getArcLength(divisions);
-        }
-        return length;
-    }
-    getPosition(t, out = vec3.create()) {
-        const l = this.arcLength * t;
-        let accumulate = 0;
-        let accumulateTmp = 0;
-        for (const curve of this.#curves) {
-            accumulateTmp += curve.arcLength;
-            if (accumulateTmp > l) {
-                const t2 = (l - accumulate) / curve.arcLength;
-                return curve.getPosition(t2, out);
-            }
-            accumulate = accumulateTmp;
-        }
-        return out;
-    }
-    moveTo(p0) {
-        vec3.copy(this.#cursor, p0);
-    }
-    lineTo(p1) {
-        this.addCurve(new LinearBezierCurve(this.#cursor, p1));
-        vec3.copy(this.#cursor, p1);
-    }
-    quadraticCurveTo(p1, p2) {
-        this.addCurve(new QuadraticBezierCurve(this.#cursor, p1, p2));
-        vec3.copy(this.#cursor, p2);
-    }
-    bezierCurveTo(p1, p2, p3) {
-        const curve = new CubicBezierCurve(this.#cursor, p1, p2, p3);
-        this.curves.push(curve);
-        vec3.copy(this.#cursor, p3);
-        return this;
-    }
-    cubicCurveTo(p1, p2, p3) {
-        this.addCurve(new CubicBezierCurve(this.#cursor, p1, p2, p3));
-        vec3.copy(this.#cursor, p3);
-    }
-    getPoints(divisions = 12) {
-        const points = [];
-        let last;
-        for (let i = 0, curves = this.curves; i < curves.length; i++) {
-            const curve = curves[i];
-            const resolution = curve.getAppropriateDivision(divisions);
-            const pts = curve.getPoints(resolution);
-            for (const point of pts) {
-                if (last && vec3.equals(last, point)) {
-                    continue;
-                }
-                points.push(point);
-                last = point;
-            }
-        }
-        if (this.looping && points.length > 1 && !vec3.equals(points[0], points[points.length - 1])) {
-            points.push(points[0]);
-        }
-        return points;
-    }
-    fromSvgPath(path) {
-        const pathArray = path.split(' ');
-        //let cmd;
-        for (let i = 0, l = pathArray.length; i < l;) {
-            switch (pathArray[i++]) {
-                case 'm':
-                    vec3.set(p0$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    this.moveTo(p0$1);
-                    break;
-                case 'l':
-                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    this.lineTo(p1$1);
-                    break;
-                case 'q':
-                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    this.quadraticCurveTo(p1$1, p2$1);
-                    break;
-                case 'c':
-                    vec3.set(p3$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
-                    this.cubicCurveTo(p1$1, p2$1, p3$1);
-                    break;
-            }
-        }
-    }
-}
-
-class Shape extends Path {
-    uuid = generateRandomUUID();
-    type = 'Shape';
-    holes = [];
-    getPointsHoles(divisions) {
-        const holesPts = [];
-        for (let i = 0, l = this.holes.length; i < l; i++) {
-            holesPts[i] = this.holes[i].getPoints(divisions);
-        }
-        return holesPts;
-    }
-    // get points of shape and holes (keypoints based on segments parameter)
-    extractPoints(divisions) {
-        return {
-            shape: this.getPoints(divisions),
-            holes: this.getPointsHoles(divisions)
-        };
-    }
-}
-
-/**
- * Port from https://github.com/mapbox/earcut (v2.2.2)
- */
-const Earcut = {
-    triangulate: function (data, holeIndices, dim = 2) {
-        const hasHoles = holeIndices.length > 0;
-        const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
-        let outerNode = linkedList(data, 0, outerLen, dim, true);
-        const triangles = [];
-        if (!outerNode || outerNode.next === outerNode.prev)
-            return triangles;
-        let minX = 0, minY = 0, maxX, maxY, x, y, invSize = 0;
-        if (hasHoles)
-            outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
-        // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
-        if (data.length > 80 * dim) {
-            minX = maxX = data[0];
-            minY = maxY = data[1];
-            for (let i = dim; i < outerLen; i += dim) {
-                x = data[i];
-                y = data[i + 1];
-                if (x < minX)
-                    minX = x;
-                if (y < minY)
-                    minY = y;
-                if (x > maxX)
-                    maxX = x;
-                if (y > maxY)
-                    maxY = y;
-            }
-            // minX, minY and invSize are later used to transform coords into integers for z-order calculation
-            invSize = Math.max(maxX - minX, maxY - minY);
-            invSize = invSize !== 0 ? 1 / invSize : 0;
-        }
-        earcutLinked(outerNode, triangles, dim, minX, minY, invSize);
-        return triangles;
-    }
-};
-// create a circular doubly linked list from polygon points in the specified winding order
-function linkedList(data, start, end, dim, clockwise) {
-    let i, last;
-    if (clockwise === (signedArea(data, start, end, dim) > 0)) {
-        for (i = start; i < end; i += dim) {
-            last = insertNode(i, data[i], data[i + 1], last);
-        }
-    }
-    else {
-        for (i = end - dim; i >= start; i -= dim) {
-            last = insertNode(i, data[i], data[i + 1], last);
-        }
-    }
-    if (last && equals(last, last.next)) {
-        removeNode(last);
-        last = last.next;
-    }
-    return last;
-}
-// eliminate colinear or duplicate points
-function filterPoints(start, end) {
-    if (!start) {
-        return start;
-    }
-    if (!end) {
-        end = start;
-    }
-    let p = start, again;
-    do {
-        again = false;
-        if (!p.steiner && (equals(p, p.next) || area$1(p.prev, p, p.next) === 0)) {
-            removeNode(p);
-            p = end = p.prev;
-            if (p === p.next)
-                break;
-            again = true;
-        }
-        else {
-            p = p.next;
-        }
-    } while (again || p !== end);
-    return end ?? null;
-}
-// main ear slicing loop which triangulates a polygon (given as a linked list)
-function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
-    if (!ear) {
-        return;
-    }
-    // interlink polygon nodes in z-order
-    if (!pass && invSize)
-        indexCurve(ear, minX, minY, invSize);
-    let stop = ear, prev, next;
-    // iterate through ears, slicing them one by one
-    while (ear.prev !== ear.next) {
-        prev = ear.prev;
-        next = ear.next;
-        if (invSize ? isEarHashed(ear, minX, minY, invSize) : isEar(ear)) {
-            // cut off the triangle
-            triangles.push(prev.i / dim);
-            triangles.push(ear.i / dim);
-            triangles.push(next.i / dim);
-            removeNode(ear);
-            // skipping the next vertex leads to less sliver triangles
-            ear = next.next;
-            stop = next.next;
-            continue;
-        }
-        ear = next;
-        // if we looped through the whole remaining polygon and can't find any more ears
-        if (ear === stop) {
-            // try filtering points and slicing again
-            if (!pass) {
-                earcutLinked(filterPoints(ear), triangles, dim, minX, minY, invSize, 1);
-                // if this didn't work, try curing all small self-intersections locally
-            }
-            else if (pass === 1) {
-                ear = cureLocalIntersections(filterPoints(ear), triangles, dim);
-                earcutLinked(ear, triangles, dim, minX, minY, invSize, 2);
-                // as a last resort, try splitting the remaining polygon into two
-            }
-            else if (pass === 2) {
-                splitEarcut(ear, triangles, dim, minX, minY, invSize);
-            }
-            break;
-        }
-    }
-}
-// check whether a polygon node forms a valid ear with adjacent nodes
-function isEar(ear) {
-    const a = ear.prev, b = ear, c = ear.next;
-    if (area$1(a, b, c) >= 0)
-        return false; // reflex, can't be an ear
-    // now make sure we don't have other points inside the potential ear
-    let p = ear.next.next;
-    while (p !== ear.prev) {
-        if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area$1(p.prev, p, p.next) >= 0)
-            return false;
-        p = p.next;
-    }
-    return true;
-}
-function isEarHashed(ear, minX, minY, invSize) {
-    const a = ear.prev, b = ear, c = ear.next;
-    if (area$1(a, b, c) >= 0)
-        return false; // reflex, can't be an ear
-    // triangle bbox; min & max are calculated like this for speed
-    const minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x), minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y), maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x), maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
-    // z-order range for the current triangle bbox;
-    const minZ = zOrder(minTX, minTY, minX, minY, invSize), maxZ = zOrder(maxTX, maxTY, minX, minY, invSize);
-    let p = ear.prevZ, n = ear.nextZ;
-    // look for points inside the triangle in both directions
-    while (p && p.z >= minZ && n && n.z <= maxZ) {
-        if (p !== ear.prev && p !== ear.next &&
-            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area$1(p.prev, p, p.next) >= 0)
-            return false;
-        p = p.prevZ;
-        if (n !== ear.prev && n !== ear.next &&
-            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-            area$1(n.prev, n, n.next) >= 0)
-            return false;
-        n = n.nextZ;
-    }
-    // look for remaining points in decreasing z-order
-    while (p && p.z >= minZ) {
-        if (p !== ear.prev && p !== ear.next &&
-            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area$1(p.prev, p, p.next) >= 0)
-            return false;
-        p = p.prevZ;
-    }
-    // look for remaining points in increasing z-order
-    while (n && n.z <= maxZ) {
-        if (n !== ear.prev && n !== ear.next &&
-            pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-            area$1(n.prev, n, n.next) >= 0)
-            return false;
-        n = n.nextZ;
-    }
-    return true;
-}
-// go through all polygon nodes and cure small local self-intersections
-function cureLocalIntersections(start, triangles, dim) {
-    let p = start;
-    do {
-        const a = p.prev, b = p.next.next;
-        if (!equals(a, b) && intersects(a, p, p.next, b) && locallyInside(a, b) && locallyInside(b, a)) {
-            triangles.push(a.i / dim);
-            triangles.push(p.i / dim);
-            triangles.push(b.i / dim);
-            // remove two nodes involved
-            removeNode(p);
-            removeNode(p.next);
-            p = start = b;
-        }
-        p = p.next;
-    } while (p !== start);
-    return filterPoints(p);
-}
-// try splitting polygon into two and triangulate them independently
-function splitEarcut(start, triangles, dim, minX, minY, invSize) {
-    // look for a valid diagonal that divides the polygon into two
-    let a = start;
-    do {
-        let b = a.next.next;
-        while (b !== a.prev) {
-            if (a.i !== b.i && isValidDiagonal(a, b)) {
-                // split the polygon in two by the diagonal
-                let c = splitPolygon(a, b);
-                // filter colinear points around the cuts
-                a = filterPoints(a, a.next);
-                c = filterPoints(c, c.next);
-                // run earcut on each half
-                earcutLinked(a, triangles, dim, minX, minY, invSize);
-                earcutLinked(c, triangles, dim, minX, minY, invSize);
-                return;
-            }
-            b = b.next;
-        }
-        a = a.next;
-    } while (a !== start);
-}
-// link every hole into the outer loop, producing a single-ring polygon without holes
-function eliminateHoles(data, holeIndices, outerNode, dim) {
-    const queue = [];
-    let i, len, start, end, list;
-    for (i = 0, len = holeIndices.length; i < len; i++) {
-        start = holeIndices[i] * dim;
-        end = i < len - 1 ? holeIndices[i + 1] * dim : data.length;
-        list = linkedList(data, start, end, dim, false);
-        if (list === list.next)
-            list.steiner = true;
-        queue.push(getLeftmost(list));
-    }
-    queue.sort(compareX);
-    // process holes from left to right
-    for (i = 0; i < queue.length; i++) {
-        eliminateHole(queue[i], outerNode);
-        outerNode = filterPoints(outerNode, outerNode.next);
-    }
-    return outerNode;
-}
-function compareX(a, b) {
-    return a.x - b.x;
-}
-// find a bridge between vertices that connects hole with an outer ring and and link it
-function eliminateHole(hole, outerNode) {
-    const node = findHoleBridge(hole, outerNode);
-    if (node) {
-        const b = splitPolygon(node, hole);
-        // filter collinear points around the cuts
-        filterPoints(node, node.next);
-        filterPoints(b, b.next);
-    }
-}
-// David Eberly's algorithm for finding a bridge between hole and outer polygon
-function findHoleBridge(hole, outerNode) {
-    let p = outerNode;
-    const hx = hole.x;
-    const hy = hole.y;
-    let qx = -Infinity, m;
-    // find a segment intersected by a ray from the hole's leftmost point to the left;
-    // segment's endpoint with lesser x will be potential connection point
-    do {
-        if (hy <= p.y && hy >= p.next.y && p.next.y !== p.y) {
-            const x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
-            if (x <= hx && x > qx) {
-                qx = x;
-                if (x === hx) {
-                    if (hy === p.y)
-                        return p;
-                    if (hy === p.next.y)
-                        return p.next;
-                }
-                m = p.x < p.next.x ? p : p.next;
-            }
-        }
-        p = p.next;
-    } while (p !== outerNode);
-    if (!m)
-        return null;
-    if (hx === qx)
-        return m; // hole touches outer segment; pick leftmost endpoint
-    // look for points inside the triangle of hole point, segment intersection and endpoint;
-    // if there are no points found, we have a valid connection;
-    // otherwise choose the point of the minimum angle with the ray as connection point
-    const stop = m, mx = m.x, my = m.y;
-    let tanMin = Infinity, tan;
-    p = m;
-    do {
-        if (hx >= p.x && p.x >= mx && hx !== p.x &&
-            pointInTriangle(hy < my ? hx : qx, hy, mx, my, hy < my ? qx : hx, hy, p.x, p.y)) {
-            tan = Math.abs(hy - p.y) / (hx - p.x); // tangential
-            if (locallyInside(p, hole) && (tan < tanMin || (tan === tanMin && (p.x > m.x || (p.x === m.x && sectorContainsSector(m, p)))))) {
-                m = p;
-                tanMin = tan;
-            }
-        }
-        p = p.next;
-    } while (p !== stop);
-    return m;
-}
-// whether sector in vertex m contains sector in vertex p in the same coordinates
-function sectorContainsSector(m, p) {
-    return area$1(m.prev, m, p.prev) < 0 && area$1(p.next, m, m.next) < 0;
-}
-// interlink polygon nodes in z-order
-function indexCurve(start, minX, minY, invSize) {
-    let p = start;
-    do {
-        if (p.z === null) {
-            p.z = zOrder(p.x, p.y, minX, minY, invSize);
-        }
-        p.prevZ = p.prev;
-        p.nextZ = p.next;
-        p = p.next;
-    } while (p !== start);
-    if (p.prevZ) {
-        p.prevZ.nextZ = null;
-        p.prevZ = null;
-    }
-    sortLinked(p);
-}
-// Simon Tatham's linked list merge sort algorithm
-// http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
-function sortLinked(unSortedList) {
-    let i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
-    do {
-        p = unSortedList;
-        tail = null;
-        numMerges = 0;
-        while (p) {
-            numMerges++;
-            q = p;
-            pSize = 0;
-            for (i = 0; i < inSize; i++) {
-                pSize++;
-                q = q.nextZ;
-                if (!q)
-                    break;
-            }
-            qSize = inSize;
-            while (pSize > 0 || (qSize > 0 && q)) {
-                if (pSize !== 0 && (qSize === 0 || !q || p.z <= q.z)) {
-                    e = p;
-                    p = p.nextZ;
-                    pSize--;
-                }
-                else {
-                    e = q;
-                    q = q.nextZ;
-                    qSize--;
-                }
-                if (tail)
-                    tail.nextZ = e;
-                e.prevZ = tail;
-                tail = e;
-            }
-            p = q;
-        }
-        tail.nextZ = null;
-        inSize *= 2;
-    } while (numMerges > 1);
-    return unSortedList;
-}
-// z-order of a point given coords and inverse of the longer side of data bbox
-function zOrder(x, y, minX, minY, invSize) {
-    // coords are transformed into non-negative 15-bit integer range
-    x = 32767 * (x - minX) * invSize;
-    y = 32767 * (y - minY) * invSize;
-    x = (x | (x << 8)) & 0x00FF00FF;
-    x = (x | (x << 4)) & 0x0F0F0F0F;
-    x = (x | (x << 2)) & 0x33333333;
-    x = (x | (x << 1)) & 0x55555555;
-    y = (y | (y << 8)) & 0x00FF00FF;
-    y = (y | (y << 4)) & 0x0F0F0F0F;
-    y = (y | (y << 2)) & 0x33333333;
-    y = (y | (y << 1)) & 0x55555555;
-    return x | (y << 1);
-}
-// find the leftmost node of a polygon ring
-function getLeftmost(start) {
-    let p = start, leftmost = start;
-    do {
-        if (p.x < leftmost.x || (p.x === leftmost.x && p.y < leftmost.y))
-            leftmost = p;
-        p = p.next;
-    } while (p !== start);
-    return leftmost;
-}
-// check if a point lies within a convex triangle
-function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
-    return (cx - px) * (ay - py) - (ax - px) * (cy - py) >= 0 &&
-        (ax - px) * (by - py) - (bx - px) * (ay - py) >= 0 &&
-        (bx - px) * (cy - py) - (cx - px) * (by - py) >= 0;
-}
-// check if a diagonal between two polygon nodes is valid (lies in polygon interior)
-function isValidDiagonal(a, b) {
-    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // dones't intersect other edges
-        (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
-            (area$1(a.prev, a, b.prev) !== 0 || area$1(a, b.prev, b)) !== 0 || // does not create opposite-facing sectors
-            equals(a, b) && area$1(a.prev, a, a.next) > 0 && area$1(b.prev, b, b.next) > 0); // special zero-length case
-}
-// signed area of a triangle
-function area$1(p, q, r) {
-    return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-}
-// check if two points are equal
-function equals(p1, p2) {
-    return p1.x === p2.x && p1.y === p2.y;
-}
-// check if two segments intersect
-function intersects(p1, q1, p2, q2) {
-    const o1 = sign$1(area$1(p1, q1, p2));
-    const o2 = sign$1(area$1(p1, q1, q2));
-    const o3 = sign$1(area$1(p2, q2, p1));
-    const o4 = sign$1(area$1(p2, q2, q1));
-    if (o1 !== o2 && o3 !== o4)
-        return true; // general case
-    if (o1 === 0 && onSegment(p1, p2, q1))
-        return true; // p1, q1 and p2 are collinear and p2 lies on p1q1
-    if (o2 === 0 && onSegment(p1, q2, q1))
-        return true; // p1, q1 and q2 are collinear and q2 lies on p1q1
-    if (o3 === 0 && onSegment(p2, p1, q2))
-        return true; // p2, q2 and p1 are collinear and p1 lies on p2q2
-    if (o4 === 0 && onSegment(p2, q1, q2))
-        return true; // p2, q2 and q1 are collinear and q1 lies on p2q2
-    return false;
-}
-// for collinear points p, q, r, check if point q lies on segment pr
-function onSegment(p, q, r) {
-    return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
-}
-function sign$1(num) {
-    return num > 0 ? 1 : num < 0 ? -1 : 0;
-}
-// check if a polygon diagonal intersects any polygon segments
-function intersectsPolygon(a, b) {
-    let p = a;
-    do {
-        if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&
-            intersects(p, p.next, a, b))
-            return true;
-        p = p.next;
-    } while (p !== a);
-    return false;
-}
-// check if a polygon diagonal is locally inside the polygon
-function locallyInside(a, b) {
-    return area$1(a.prev, a, a.next) < 0 ?
-        area$1(a, b, a.next) >= 0 && area$1(a, a.prev, b) >= 0 :
-        area$1(a, b, a.prev) < 0 || area$1(a, a.next, b) < 0;
-}
-// check if the middle point of a polygon diagonal is inside the polygon
-function middleInside(a, b) {
-    let p = a, inside = false;
-    const px = (a.x + b.x) / 2, py = (a.y + b.y) / 2;
-    do {
-        if (((p.y > py) !== (p.next.y > py)) && p.next.y !== p.y &&
-            (px < (p.next.x - p.x) * (py - p.y) / (p.next.y - p.y) + p.x))
-            inside = !inside;
-        p = p.next;
-    } while (p !== a);
-    return inside;
-}
-// link two polygon vertices with a bridge; if the vertices belong to the same ring, it splits polygon into two;
-// if one belongs to the outer ring and another to a hole, it merges it into a single ring
-function splitPolygon(a, b) {
-    const a2 = new Node$1(a.i, a.x, a.y), b2 = new Node$1(b.i, b.x, b.y), an = a.next, bp = b.prev;
-    a.next = b;
-    b.prev = a;
-    a2.next = an;
-    an.prev = a2;
-    b2.next = a2;
-    a2.prev = b2;
-    bp.next = b2;
-    b2.prev = bp;
-    return b2;
-}
-// create a node and optionally link it with previous one (in a circular doubly linked list)
-function insertNode(i, x, y, last) {
-    const p = new Node$1(i, x, y);
-    if (!last) {
-        p.prev = p;
-        p.next = p;
-    }
-    else {
-        p.next = last.next;
-        p.prev = last;
-        last.next.prev = p;
-        last.next = p;
-    }
-    return p;
-}
-function removeNode(p) {
-    p.next.prev = p.prev;
-    p.prev.next = p.next;
-    if (p.prevZ)
-        p.prevZ.nextZ = p.nextZ;
-    if (p.nextZ)
-        p.nextZ.prevZ = p.prevZ;
-}
-let Node$1 = class Node {
-    // vertex index in coordinates array
-    i;
-    // vertex coordinates
-    x;
-    y;
-    // previous and next vertex nodes in a polygon ring
-    prev;
-    next;
-    // previous and next nodes in z-order
-    prevZ = null;
-    nextZ = null;
-    // z-order curve value
-    z = null;
-    // indicates whether this is a steiner point
-    steiner = false;
-    constructor(i, x, y) {
-        // vertex index in coordinates array
-        this.i = i;
-        // vertex coordinates
-        this.x = x;
-        this.y = y;
-    }
-};
-function signedArea(data, start, end, dim) {
-    let sum = 0;
-    for (let i = start, j = end - dim; i < end; i += dim) {
-        sum += (data[j] - data[i]) * (data[i + 1] + data[j + 1]);
-        j = i;
-    }
-    return sum;
-}
-
-class ShapeUtils {
-    // calculate area of the contour polygon
-    static area(contour) {
-        const n = contour.length;
-        let a = 0.0;
-        for (let p = n - 1, q = 0; q < n; p = q++) {
-            a += contour[p][0] * contour[q][1] - contour[q][0] * contour[p][1];
-        }
-        return a * 0.5;
-    }
-    static isClockWise(pts) {
-        return ShapeUtils.area(pts) < 0;
-    }
-    static triangulateShape(contour, holes) {
-        const vertices = []; // flat array of vertices like [ x0,y0, x1,y1, x2,y2, ... ]
-        const holeIndices = []; // array of hole indices
-        const faces = []; // final array of vertex indices like [ [ a,b,d ], [ b,c,d ] ]
-        removeDupEndPts(contour);
-        addContour(vertices, contour);
-        //
-        let holeIndex = contour.length;
-        holes.forEach(removeDupEndPts);
-        for (let i = 0; i < holes.length; i++) {
-            holeIndices.push(holeIndex);
-            holeIndex += holes[i].length;
-            addContour(vertices, holes[i]);
-        }
-        //
-        const triangles = Earcut.triangulate(vertices, holeIndices);
-        //
-        for (let i = 0; i < triangles.length; i += 3) {
-            faces.push(triangles.slice(i, i + 3));
-        }
-        return faces;
-    }
-}
-function removeDupEndPts(points) {
-    const l = points.length;
-    if (l > 2 && vec2.equals(points[l - 1], points[0])) {
-        points.pop();
-    }
-}
-function addContour(vertices, contour) {
-    for (let i = 0; i < contour.length; i++) {
-        vertices.push(contour[i][0]);
-        vertices.push(contour[i][1]);
-    }
-}
-
-class ShapePath {
-    type = 'ShapePath';
-    subPaths = [];
-    currentPath = null;
-    moveTo(x, y) {
-        this.currentPath = new Path();
-        this.subPaths.push(this.currentPath);
-        this.currentPath.moveTo([x, y, 0]);
-        return this;
-    }
-    lineTo(x, y) {
-        this.currentPath.lineTo([x, y, 0]);
-        return this;
-    }
-    quadraticCurveTo(aCPx, aCPy, aX, aY) {
-        this.currentPath.quadraticCurveTo([aCPx, aCPy, 0], [aX, aY, 0]);
-        return this;
-    }
-    bezierCurveTo(aCP1x, aCP1y, aCP2x, aCP2y, aX, aY) {
-        this.currentPath.bezierCurveTo([aCP1x, aCP1y, 0], [aCP2x, aCP2y, 0], [aX, aY, 0]);
-        return this;
-    }
-    /*
-    splineThru(pts) {
-        this.currentPath.splineThru(pts);
-        return this;
-    }
-    */
-    toShapes(isCCW, noHoles = false) {
-        function toShapesNoHoles(inSubpaths) {
-            const shapes = [];
-            for (let i = 0, l = inSubpaths.length; i < l; i++) {
-                const tmpPath = inSubpaths[i];
-                const tmpShape = new Shape();
-                tmpShape.curves = tmpPath.curves;
-                shapes.push(tmpShape);
-            }
-            return shapes;
-        }
-        function isPointInsidePolygon(inPt, inPolygon) {
-            const polyLen = inPolygon.length;
-            // inPt on polygon contour => immediate success    or
-            // toggling of inside/outside at every single! intersection point of an edge
-            //  with the horizontal line through inPt, left of inPt
-            //  not counting lowerY endpoints of edges and whole edges on that line
-            let inside = false;
-            for (let p = polyLen - 1, q = 0; q < polyLen; p = q++) {
-                let edgeLowPt = inPolygon[p];
-                let edgeHighPt = inPolygon[q];
-                let edgeDx = edgeHighPt[0] - edgeLowPt[0];
-                let edgeDy = edgeHighPt[1] - edgeLowPt[1];
-                if (Math.abs(edgeDy) > Number.EPSILON) {
-                    // not parallel
-                    if (edgeDy < 0) {
-                        edgeLowPt = inPolygon[q];
-                        edgeDx = -edgeDx;
-                        edgeHighPt = inPolygon[p];
-                        edgeDy = -edgeDy;
-                    }
-                    if ((inPt[1] < edgeLowPt[1]) || (inPt[1] > edgeHighPt[1]))
-                        continue;
-                    if (inPt[1] === edgeLowPt[1]) {
-                        if (inPt[0] === edgeLowPt[0])
-                            return true; // inPt is on contour ?
-                        // continue;				// no intersection or edgeLowPt => doesn't count !!!
-                    }
-                    else {
-                        const perpEdge = edgeDy * (inPt[0] - edgeLowPt[0]) - edgeDx * (inPt[1] - edgeLowPt[1]);
-                        if (perpEdge === 0)
-                            return true; // inPt is on contour ?
-                        if (perpEdge < 0)
-                            continue;
-                        inside = !inside; // true intersection left of inPt
-                    }
-                }
-                else {
-                    // parallel or collinear
-                    if (inPt[1] !== edgeLowPt[1])
-                        continue; // parallel
-                    // edge lies on the same horizontal line as inPt
-                    if (((edgeHighPt[0] <= inPt[0]) && (inPt[0] <= edgeLowPt[0])) ||
-                        ((edgeLowPt[0] <= inPt[0]) && (inPt[0] <= edgeHighPt[0])))
-                        return true; // inPt: Point on contour !
-                    // continue;
-                }
-            }
-            return inside;
-        }
-        const isClockWise = ShapeUtils.isClockWise;
-        const subPaths = this.subPaths;
-        if (subPaths.length === 0)
-            return [];
-        if (noHoles === true)
-            return toShapesNoHoles(subPaths);
-        let solid, tmpPath, tmpShape;
-        const shapes = [];
-        if (subPaths.length === 1) {
-            tmpPath = subPaths[0];
-            tmpShape = new Shape();
-            tmpShape.curves = tmpPath.curves;
-            shapes.push(tmpShape);
-            return shapes;
-        }
-        let holesFirst = !isClockWise(subPaths[0].getPoints());
-        holesFirst = isCCW ? !holesFirst : holesFirst;
-        // console.log("Holes first", holesFirst);
-        const betterShapeHoles = [];
-        const newShapes = [];
-        let newShapeHoles = [];
-        let mainIdx = 0;
-        let tmpPoints;
-        newShapes[mainIdx] = undefined;
-        newShapeHoles[mainIdx] = [];
-        for (let i = 0, l = subPaths.length; i < l; i++) {
-            tmpPath = subPaths[i];
-            tmpPoints = tmpPath.getPoints();
-            solid = isClockWise(tmpPoints);
-            solid = isCCW ? !solid : solid;
-            if (solid) {
-                if ((!holesFirst) && (newShapes[mainIdx]))
-                    mainIdx++;
-                newShapes[mainIdx] = { s: new Shape(), p: tmpPoints };
-                newShapes[mainIdx].s.curves = tmpPath.curves;
-                if (holesFirst)
-                    mainIdx++;
-                newShapeHoles[mainIdx] = [];
-                //console.log('cw', i);
-            }
-            else {
-                newShapeHoles[mainIdx].push({ h: tmpPath, p: tmpPoints[0] });
-                //console.log('ccw', i);
-            }
-        }
-        // only Holes? -> probably all Shapes with wrong orientation
-        if (!newShapes[0])
-            return toShapesNoHoles(subPaths);
-        if (newShapes.length > 1) {
-            let ambiguous = false;
-            const toChange = [];
-            for (let sIdx = 0, sLen = newShapes.length; sIdx < sLen; sIdx++) {
-                betterShapeHoles[sIdx] = [];
-            }
-            for (let sIdx = 0, sLen = newShapes.length; sIdx < sLen; sIdx++) {
-                const sho = newShapeHoles[sIdx];
-                for (let hIdx = 0; hIdx < sho.length; hIdx++) {
-                    const ho = sho[hIdx];
-                    let hole_unassigned = true;
-                    for (let s2Idx = 0; s2Idx < newShapes.length; s2Idx++) {
-                        if (isPointInsidePolygon(ho.p, newShapes[s2Idx].p)) {
-                            if (sIdx !== s2Idx)
-                                toChange.push({ froms: sIdx, tos: s2Idx, hole: hIdx });
-                            if (hole_unassigned) {
-                                hole_unassigned = false;
-                                betterShapeHoles[s2Idx].push(ho);
-                            }
-                            else {
-                                ambiguous = true;
-                            }
-                        }
-                    }
-                    if (hole_unassigned) {
-                        betterShapeHoles[sIdx].push(ho);
-                    }
-                }
-            }
-            // console.log("ambiguous: ", ambiguous);
-            if (toChange.length > 0) {
-                // console.log("to change: ", toChange);
-                if (!ambiguous)
-                    newShapeHoles = betterShapeHoles;
-            }
-        }
-        let tmpHoles;
-        for (let i = 0, il = newShapes.length; i < il; i++) {
-            tmpShape = newShapes[i].s;
-            shapes.push(tmpShape);
-            tmpHoles = newShapeHoles[i];
-            for (let j = 0, jl = tmpHoles.length; j < jl; j++) {
-                tmpShape.holes.push(tmpHoles[j].h);
-            }
-        }
-        //console.log("shape", shapes);
-        return shapes;
-    }
-}
-
-class Font {
-    #json;
-    constructor(json) {
-        this.#json = json;
-    }
-    generateShapes(text, size = 100) {
-        const shapes = [];
-        const paths = this.createPaths(text, size);
-        for (const path of paths) {
-            shapes.push(...path.toShapes());
-        }
-        return shapes;
-    }
-    createPaths(text = '', size = 1) {
-        const data = this.#json;
-        const chars = Array.from(text);
-        const scale = size / data.resolution;
-        const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
-        const paths = [];
-        let offsetX = 0, offsetY = 0;
-        for (const char of chars) {
-            if (char === '\n') {
-                offsetX = 0;
-                offsetY -= line_height;
-            }
-            else {
-                const ret = this.createPath(char, scale, offsetX, offsetY);
-                offsetX += ret.offsetX;
-                paths.push(ret.path);
-            }
-        }
-        return paths;
-    }
-    createPath(char, scale, offsetX, offsetY) {
-        const data = this.#json;
-        const glyph = data.glyphs[char] ?? data.glyphs['?'];
-        const path = new ShapePath();
-        let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
-        if (glyph.o) {
-            const outline = glyph.o.split(' ');
-            for (let i = 0, l = outline.length; i < l;) {
-                const action = outline[i++];
-                switch (action) {
-                    case 'm': // moveTo
-                        x = outline[i++] * scale + offsetX;
-                        y = outline[i++] * scale + offsetY;
-                        path.moveTo(x, y);
-                        break;
-                    case 'l': // lineTo
-                        x = outline[i++] * scale + offsetX;
-                        y = outline[i++] * scale + offsetY;
-                        path.lineTo(x, y);
-                        break;
-                    case 'q': // quadraticCurveTo
-                        cpx = outline[i++] * scale + offsetX;
-                        cpy = outline[i++] * scale + offsetY;
-                        cpx1 = outline[i++] * scale + offsetX;
-                        cpy1 = outline[i++] * scale + offsetY;
-                        path.quadraticCurveTo(cpx1, cpy1, cpx, cpy);
-                        break;
-                    case 'b': // bezierCurveTo
-                        cpx = outline[i++] * scale + offsetX;
-                        cpy = outline[i++] * scale + offsetY;
-                        cpx1 = outline[i++] * scale + offsetX;
-                        cpy1 = outline[i++] * scale + offsetY;
-                        cpx2 = outline[i++] * scale + offsetX;
-                        cpy2 = outline[i++] * scale + offsetY;
-                        path.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, cpx, cpy);
-                        break;
-                }
-            }
-        }
-        return { offsetX: glyph.ha * scale, path: path };
-    }
-}
-
-class FontManager {
-    static #fontList = new Map();
-    static #fontsPath;
-    static #manifestPromise;
-    static setFontsPath(url) {
-        this.#fontsPath = url;
-    }
-    static async #getManifest() {
-        if (this.#manifestPromise) {
-            return this.#manifestPromise;
-        }
-        this.#manifestPromise = new Promise(async (resolve) => {
-            if (!this.#fontsPath) {
-                throw 'No manifest set, did you forgot to call FontManager.setFontsPath() ?';
-            }
-            const response = await customFetch(this.#fontsPath + 'manifest.json');
-            resolve(await response.json());
-        });
-        return this.#manifestPromise;
-    }
-    static async #loadFont(name, style) {
-        const manifest = await this.#getManifest();
-        const fonts = manifest?.fonts;
-        if (fonts) {
-            const font = fonts[name];
-            if (font && font.styles) {
-                const s = font.styles[style];
-                if (s) {
-                    const response = await customFetch(this.#fontsPath + s);
-                    const fontFile = await response.json();
-                    const font = new Font(fontFile);
-                    this.#fontList.get(name).set(style, font);
-                    return font;
-                }
-            }
-        }
-    }
-    static async getFont(name, style = 'normal') {
-        name = name.toLowerCase();
-        style = style.toLowerCase();
-        const fontFamilly = this.#fontList.get(name);
-        if (fontFamilly) {
-            const font = fontFamilly.get(style);
-            if (font) {
-                return font;
-            }
-        }
-        else {
-            this.#fontList.set(name, new Map());
-        }
-        return await this.#loadFont(name, style);
-    }
-    static async getFontList() {
-        const list = new Map();
-        const manifest = await this.#getManifest();
-        const fonts = manifest?.fonts;
-        if (fonts) {
-            for (const fontName in fonts) {
-                const font = fonts[fontName];
-                const styles = new Set;
-                for (const styleName in font.styles) {
-                    styles.add(styleName);
-                }
-                list.set(fontName, styles);
-            }
-        }
-        return list;
-    }
-}
-
 class EmissiveMaterial extends Material {
     map = null;
     lightMap = null;
@@ -17575,28 +20203,6 @@ class EmissiveMaterial extends Material {
 }
 Material.materialList['MeshBasic'] = EmissiveMaterial;
 registerEntity(EmissiveMaterial);
-
-class GridMaterial extends Material {
-    constructor(params = {}) {
-        super(params);
-        this.spacing = params.spacing ?? 1;
-        this.setBlending(MATERIAL_BLENDING_NORMAL);
-        this.renderFace(RenderFace.Both);
-    }
-    /**
-     * @deprecated Use setSpacing instead
-     */
-    set spacing(spacing) {
-        this.setSpacing(spacing);
-    }
-    setSpacing(spacing) {
-        this.setUniformValue('uSpacing', spacing);
-    }
-    getShaderSource() {
-        return 'grid';
-    }
-}
-Material.materialList['Grid'] = GridMaterial;
 
 class MeshFlatMaterial extends Material {
     constructor(params = {}) {
@@ -18530,8 +21136,8 @@ class Kv3File {
 }
 //export type Kv3ValueType = null | number | Kv3Element;
 
-const tempVec3$m = vec3.create();
-const tempQuat$7 = quat.create();
+const tempVec3$i = vec3.create();
+const tempQuat$6 = quat.create();
 const mat$2 = mat4.create();
 class ControlPoint extends Entity {
     isControlPoint = true;
@@ -18556,9 +21162,9 @@ class ControlPoint extends Entity {
     snapshot;
     model;
     getWorldTransformation(mat = mat4.create()) {
-        this.getWorldOrientation(tempQuat$7);
-        this.getWorldPosition(tempVec3$m);
-        return mat4.fromRotationTranslation(mat, tempQuat$7, tempVec3$m);
+        this.getWorldOrientation(tempQuat$6);
+        this.getWorldPosition(tempVec3$i);
+        return mat4.fromRotationTranslation(mat, tempQuat$6, tempVec3$i);
     }
     /**
      * @deprecated Use getWorldOrientation instead.
@@ -18619,17 +21225,17 @@ class ControlPoint extends Entity {
     }
     getForwardVector(out = vec3.create()) {
         vec3.set(out, 0, 1, 0); // +Y
-        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$7));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$6));
         return out;
     }
     getUpVector(out = vec3.create()) {
         vec3.set(out, 0, 0, 1); // +Z
-        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$7));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$6));
         return out;
     }
     getRightVector(out = vec3.create()) {
         vec3.set(out, 1, 0, 0); // +X
-        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$7));
+        vec3.transformQuat(out, out, this.getWorldOrientation(tempQuat$6));
         return out;
     }
     static constructFromJSON() {
@@ -19738,14 +22344,14 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 
-const DEFAULT_SIZE$1 = 256;
+const DEFAULT_SIZE = 256;
 class RenderTargetViewer {
     #scene = new Scene();
     #camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1], autoResize: false });
     #plane = new Plane();
     #renderTarget;
     #position = vec2.create();
-    #size = vec2.fromValues(DEFAULT_SIZE$1, DEFAULT_SIZE$1);
+    #size = vec2.fromValues(DEFAULT_SIZE, DEFAULT_SIZE);
     isRenderTargetViewer = true;
     #material = null;
     constructor(renderTarget) {
@@ -26326,1012 +28932,6 @@ class Hitbox {
     }
 }
 
-const tempWorldMat = mat4.create();
-const tempWorldQuat = quat.create();
-const tempWorldVec3 = vec3.create();
-const tempWorldScale = vec3.create();
-const tempPosition = vec3.create();
-const tempQuat1 = quat.create();
-const tempVec1 = vec3.create();
-class Bone extends Entity {
-    isBone = true;
-    isLockable = true;
-    #boneId;
-    #poseToBone = mat4.create();
-    #boneMat = mat4.create();
-    #worldPos = vec3.create();
-    #worldQuat = quat.create();
-    #worldScale = vec3.fromValues(1, 1, 1);
-    #parentSkeletonBone = null;
-    #skeleton = null;
-    #refPosition = vec3.create();
-    #refQuaternion = quat.create();
-    dirty = true;
-    lastComputed = 0;
-    tempPosition = vec3.create();
-    tempQuaternion = quat.create();
-    _initialQuaternion = quat.create();
-    _initialPosition = vec3.create();
-    constructor(params) {
-        super(params);
-        this.#boneId = params.boneId ?? -1;
-        this.#skeleton = params.skeleton ?? null;
-    }
-    /**
-     * @deprecated Please use `setPosition` instead.
-     */
-    set position(position) {
-        super.position = position;
-        this.dirty = true;
-    }
-    setPosition(position) {
-        super.setPosition(position);
-        this.dirty = true;
-    }
-    get position() {
-        return vec3.clone(this._position);
-    }
-    setWorldPosition(position) {
-        super.setWorldPosition(position);
-        this.dirty = true;
-    }
-    setWorldOrientation(quaternion) {
-        super.setWorldOrientation(quaternion);
-        this.dirty = true;
-    }
-    set refPosition(refPosition) {
-        vec3.copy(this.#refPosition, refPosition);
-    }
-    get refPosition() {
-        return vec3.clone(this.#refPosition);
-    }
-    getTotalRefPosition(position = vec3.create()) {
-        const parent = this._parent;
-        if (parent && parent.isBone) {
-            parent.getTotalRefPosition(position);
-            parent.getTotalRefQuaternion(tempQuat1);
-            vec3.transformQuat(tempVec1, this.#refPosition, tempQuat1);
-            vec3.add(position, position, tempVec1);
-        }
-        else {
-            vec3.copy(position, this.#refPosition);
-        }
-        return position;
-    }
-    getTotalRefQuaternion(quaternion = quat.create()) {
-        const parent = this._parent;
-        if (parent && parent.isBone) {
-            parent.getTotalRefQuaternion(tempQuat1);
-            quat.multiply(quaternion, tempQuat1, this.#refQuaternion);
-        }
-        else {
-            quat.copy(quaternion, this.#refQuaternion);
-        }
-        return quaternion;
-    }
-    /**
-     * @deprecated Please use `setOrientation` instead.
-     */
-    set quaternion(quaternion) {
-        super.quaternion = quaternion;
-        this.dirty = true;
-    }
-    /**
-     * @deprecated Please use `setOrientation` instead.
-     */
-    setQuaternion(quaternion) {
-        super.setOrientation(quaternion);
-        this.dirty = true;
-    }
-    setOrientation(quaternion) {
-        super.setOrientation(quaternion);
-        this.dirty = true;
-    }
-    get quaternion() {
-        return quat.clone(this._quaternion);
-    }
-    set refQuaternion(refQuaternion) {
-        quat.copy(this.#refQuaternion, refQuaternion);
-    }
-    get refQuaternion() {
-        return quat.clone(this.#refQuaternion);
-    }
-    set scale(scale) {
-        vec3.copy(this._scale, scale);
-        this.dirty = true;
-    }
-    get scale() {
-        return vec3.clone(this._scale);
-    }
-    set parent(parent) {
-        this._parent = parent;
-        this.dirty = true;
-    }
-    get parent() {
-        return this._parent;
-    }
-    setSkeleton(skeleton) {
-        this.#skeleton = skeleton;
-        this.dirty = true;
-    }
-    getSkeleton() {
-        return this.#skeleton;
-    }
-    set parentSkeletonBone(parentSkeletonBone) {
-        if (parentSkeletonBone == this) {
-            // TODO: check ancestry as well ?
-            return;
-        }
-        if (this.#parentSkeletonBone != parentSkeletonBone) {
-            this.#parentSkeletonBone = parentSkeletonBone;
-            this.dirty = true;
-        }
-    }
-    get parentSkeletonBone() {
-        return this.#parentSkeletonBone;
-    }
-    get boneMat() {
-        if (this.dirty
-            || (this._parent && this._parent.lastComputed > this.lastComputed)
-            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-            || ((this._parent == undefined) && (true )) //TODOv3: remove true
-        ) {
-            this.#compute();
-        }
-        return this.#boneMat;
-    }
-    get worldPos() {
-        if (this.dirty
-            || (this._parent && this._parent.lastComputed > this.lastComputed)
-            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-            || ((this._parent == undefined) && (true )) //TODOv3: remove true
-        ) {
-            this.#compute();
-        }
-        return this.#worldPos;
-    }
-    get worldQuat() {
-        if (this.dirty
-            || (this._parent && this._parent.lastComputed > this.lastComputed)
-            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-            || ((this._parent == undefined) && (true )) //TODOv3: remove true
-        ) {
-            this.#compute();
-        }
-        return this.#worldQuat;
-    }
-    get worldScale() {
-        if (this.dirty
-            || (this._parent && this._parent.lastComputed > this.lastComputed)
-            || (this.#parentSkeletonBone && this.#parentSkeletonBone.lastComputed > this.lastComputed)
-            || ((this._parent == undefined) && (true )) //TODOv3: remove true
-        ) {
-            this.#compute();
-        }
-        return this.#worldScale;
-    }
-    getWorldPosition(vec = vec3.create()) {
-        return vec3.copy(vec, this.worldPos);
-    }
-    getWorldQuaternion(q = quat.create()) {
-        return quat.copy(q, this.worldQuat);
-    }
-    getWorldScale(vec = vec3.create()) {
-        return vec3.copy(vec, this.worldScale);
-    }
-    getWorldPosOffset(offset, out = vec3.create()) {
-        vec3.transformQuat(out, offset, this.worldQuat);
-        vec3.add(out, this.worldPos, out);
-        return out;
-    }
-    set poseToBone(poseToBone) {
-        mat4.copy(this.#poseToBone, poseToBone);
-    }
-    get poseToBone() {
-        return mat4.clone(this.#poseToBone);
-    }
-    #compute() {
-        const parent = this._parent;
-        this.#parentSkeletonBone;
-        if (!this.#parentSkeletonBone) {
-            if (parent) {
-                const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
-                vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
-                vec3.mul(tempPosition, this._position, tempWorldScale);
-                vec3.transformQuat(this.#worldPos, tempPosition, parentWorldQuaternion);
-                vec3.add(this.#worldPos, this.#worldPos, parent.getWorldPosition(tempWorldVec3));
-                quat.multiply(this.#worldQuat, parentWorldQuaternion, this._quaternion);
-            }
-            else {
-                if (this.#skeleton) {
-                    this.#skeleton.getWorldPosition(tempWorldVec3);
-                    this.#skeleton.getWorldQuaternion(tempWorldQuat);
-                    vec3.transformQuat(this.#worldPos, this._position, tempWorldQuat);
-                    vec3.add(this.#worldPos, this.#worldPos, tempWorldVec3);
-                    quat.multiply(this.#worldQuat, tempWorldQuat, this._quaternion);
-                    vec3.mul(this.#worldScale, this.#skeleton.getWorldScale(tempWorldScale), this._scale);
-                }
-                else {
-                    vec3.copy(this.#worldPos, this._position);
-                    quat.copy(this.#worldQuat, this._quaternion);
-                    vec3.copy(this.#worldScale, this._scale);
-                }
-            }
-        }
-        else {
-            quat.copy(this.#worldQuat, this.#parentSkeletonBone.worldQuat);
-            vec3.copy(this.#worldPos, this.#parentSkeletonBone.worldPos);
-            vec3.copy(this.#worldScale, this.#parentSkeletonBone.worldScale);
-            /*vec3.transformQuat(this.#worldPos, this._position, this.#parentSkeletonBone.worldQuat);
-            vec3.add(this.#worldPos, this.#worldPos, this.#parentSkeletonBone.worldPos);
-
-            quat.multiply(this.#worldQuat, this.#parentSkeletonBone.worldQuat, this._quaternion);*/
-        }
-        mat4.fromRotationTranslationScale(tempWorldMat, this.#worldQuat, this.#worldPos, this.#worldScale);
-        mat4.multiply(this.#boneMat, tempWorldMat, this.#poseToBone);
-        if (this.isProcedural()) {
-            if (this._parent) {
-                mat4.copy(this.#boneMat, this._parent.#boneMat);
-            }
-            else {
-                mat4.identity(this.#boneMat);
-            }
-        }
-        this.dirty = false;
-        this.lastComputed = Graphics$1.currentTick;
-    }
-    set boneId(boneId) {
-        this.#boneId = boneId;
-    }
-    get boneId() {
-        return this.#boneId;
-    }
-    isProcedural() {
-        return false;
-        //return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
-    }
-    lockAll(locked) {
-        this.lockPosition = locked;
-        this.lockRotation = locked;
-        this.lockScale = locked;
-    }
-    isAnyLocked() {
-        return this.lockPosition || this.lockRotation || this.lockScale;
-    }
-    reset() {
-        vec3.zero(this._position);
-        quat.identity(this._quaternion);
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Bone_1: null,
-        }, this.isAnyLocked() ? {
-            unlock: { i18n: '#unlock', f: (entity) => entity.lockAll(false) },
-        } : null, {
-            resetQuat: { i18n: '#reset_orientation', f: (entity) => entity.setOrientation(entity._initialQuaternion) },
-            resetPos: { i18n: '#reset_position', f: (entity) => entity.setPosition(entity._initialPosition) },
-            resetBone: {
-                i18n: '#reset_bone', f: (entity) => {
-                    entity.setOrientation(entity._initialQuaternion);
-                    entity.setPosition(entity._initialPosition);
-                }
-            },
-        });
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.posetobone = mat4ToJSON(this.#poseToBone);
-        json.refposition = vec3ToJSON(this.#refPosition);
-        json.refquaternion = quatToJSON(this.#refQuaternion);
-        json.boneid = this.boneId;
-        return json;
-    }
-    static async constructFromJSON(json) {
-        return new Bone({ name: json.name });
-    }
-    fromJSON(json) {
-        super.fromJSON(json);
-        mat4.copy(this.#poseToBone, json.posetobone ?? mat4.create());
-        vec3.copy(this.#refPosition, json.refposition ?? vec3.create());
-        quat.copy(this.#refQuaternion, json.refquaternion ?? quat.create());
-        this.boneId = json.boneid;
-    }
-    static getEntityName() {
-        return 'Bone';
-    }
-    is(s) {
-        if (s == 'Bone') {
-            return true;
-        }
-        else {
-            return super.is(s);
-        }
-    }
-}
-registerEntity(Bone);
-
-class Attachment extends Bone {
-    isAttachment = true;
-    static getEntityName() {
-        return 'Attachment';
-    }
-}
-registerEntity(Attachment);
-
-const IDENTITY_MAT4$4 = mat4.create();
-const v1$1 = vec3.create();
-const v2 = vec3.create();
-const v3 = vec3.create();
-const n1 = vec3.create();
-const n2 = vec3.create();
-const n3 = vec3.create();
-const uv1 = vec2.create();
-const uv2 = vec2.create();
-const uv3 = vec2.create();
-const intersectionPoint = vec3.create();
-const intersectionNormal = vec3.create();
-const ray$2 = new Ray();
-const uv$1 = vec2.create();
-class SkeletalMesh extends Mesh {
-    isSkeletalMesh = true;
-    #bonesPerVertex = 3;
-    skeleton;
-    #skinnedVertexPosition;
-    #skinnedVertexNormal;
-    constructor(params) {
-        super(params);
-        this.skeleton = params.skeleton;
-        this.setUniformValue('uBoneMatrix', this.skeleton.getTexture());
-        this.setUniformValue('boneMatrix', this.skeleton.imgData);
-        this.setDefine('HARDWARE_SKINNING'); //TODOv3 proper defines
-        this.setDefine('SKELETAL_MESH');
-        this.setDefine('MAX_HARDWARE_BONES', MAX_HARDWARE_BONES);
-    }
-    set bonesPerVertex(bonesPerVertex) {
-        this.#bonesPerVertex = bonesPerVertex;
-    }
-    get bonesPerVertex() {
-        return this.#bonesPerVertex;
-    }
-    exportObj() {
-        const ret = {};
-        const skeletonBones = this.skeleton._bones;
-        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord', 'tangent': 'aVertexTangent' };
-        const geometry = this.getGeometry();
-        const vertexCount = geometry.getAttribute('aVertexPosition').count;
-        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        const skinnedVertexTangent = new Float32Array(vertexCount * 4);
-        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        const vertexTangent = geometry.getAttribute('aVertexTangent')?._array;
-        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        const tempVertex = vec3.create();
-        const tempVertexNormal = vec3.create();
-        const tempVertexTangent = vec4.create();
-        const accumulateMat = mat4.create();
-        if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
-            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                const vertexArrayIndex = vertexIndex * 3;
-                const boneArrayIndex = vertexIndex * boneCount;
-                accumulateMat[0] = 0;
-                accumulateMat[1] = 0;
-                accumulateMat[2] = 0;
-                accumulateMat[4] = 0;
-                accumulateMat[5] = 0;
-                accumulateMat[6] = 0;
-                accumulateMat[8] = 0;
-                accumulateMat[9] = 0;
-                accumulateMat[10] = 0;
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                tempVertex[0] = vertexPosition[vertexArrayIndex + 0];
-                tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
-                tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
-                tempVertexNormal[0] = vertexNormal?.[vertexArrayIndex + 0] ?? 0;
-                tempVertexNormal[1] = vertexNormal?.[vertexArrayIndex + 1] ?? 0;
-                tempVertexNormal[2] = vertexNormal?.[vertexArrayIndex + 2] ?? 0;
-                const vertexArrayIndexTangent = vertexIndex * 4;
-                tempVertexTangent[0] = vertexTangent?.[vertexArrayIndexTangent + 0] ?? 0;
-                tempVertexTangent[1] = vertexTangent?.[vertexArrayIndexTangent + 1] ?? 0;
-                tempVertexTangent[2] = vertexTangent?.[vertexArrayIndexTangent + 2] ?? 0;
-                tempVertexTangent[3] = vertexTangent?.[vertexArrayIndexTangent + 3] ?? 0;
-                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
-                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
-                    if (boneWeight && boneMat) {
-                        accumulateMat[0] += boneWeight * boneMat[0];
-                        accumulateMat[1] += boneWeight * boneMat[1];
-                        accumulateMat[2] += boneWeight * boneMat[2];
-                        accumulateMat[4] += boneWeight * boneMat[4];
-                        accumulateMat[5] += boneWeight * boneMat[5];
-                        accumulateMat[6] += boneWeight * boneMat[6];
-                        accumulateMat[8] += boneWeight * boneMat[8];
-                        accumulateMat[9] += boneWeight * boneMat[9];
-                        accumulateMat[10] += boneWeight * boneMat[10];
-                        accumulateMat[12] += boneWeight * boneMat[12];
-                        accumulateMat[13] += boneWeight * boneMat[13];
-                        accumulateMat[14] += boneWeight * boneMat[14];
-                    }
-                }
-                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                vec3.transformMat4(tempVertexNormal, tempVertexNormal, accumulateMat);
-                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
-                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
-                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
-                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
-                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
-                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
-                skinnedVertexTangent[vertexArrayIndexTangent + 0] = tempVertexTangent[0];
-                skinnedVertexTangent[vertexArrayIndexTangent + 1] = tempVertexTangent[1];
-                skinnedVertexTangent[vertexArrayIndexTangent + 2] = tempVertexTangent[2];
-                skinnedVertexTangent[vertexArrayIndexTangent + 3] = tempVertexTangent[3];
-            }
-        }
-        for (const objAttribute in attributes) {
-            const geometryAttribute = attributes[objAttribute];
-            if (geometry.getAttribute(geometryAttribute)) {
-                if (geometryAttribute == 'aVertexPosition') {
-                    ret[objAttribute] = skinnedVertexPosition;
-                }
-                else if (geometryAttribute == 'aVertexNormal') {
-                    ret[objAttribute] = skinnedVertexNormal;
-                }
-                else if (geometryAttribute == 'aVertexTangent') {
-                    ret[objAttribute] = skinnedVertexTangent;
-                }
-                else {
-                    const webglAttrib = geometry.getAttribute(geometryAttribute);
-                    if (webglAttrib && webglAttrib._array) {
-                        ret[objAttribute] = webglAttrib._array;
-                    }
-                }
-            }
-            else {
-                ret[objAttribute] = [];
-            }
-        }
-        return ret;
-    }
-    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones) {
-        //TODO: optimize this stuff
-        //const ret = {};
-        const skeletonBones = this.skeleton._bones;
-        //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
-        const geometry = this.getGeometry();
-        const vertexCount = geometry.getAttribute('aVertexPosition').count;
-        //const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        //const tempVertex = vec3.create();
-        const accumulateMat = mat4.create();
-        function RandomInt(max) {
-            return Math.floor(Math.random() * max);
-        }
-        const vertexIndex = RandomInt(vertexCount);
-        out[0] = 0;
-        out[1] = 0;
-        out[2] = 0;
-        if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
-            //for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-            {
-                const vertexArrayIndex = vertexIndex * 3;
-                const boneArrayIndex = vertexIndex * boneCount;
-                accumulateMat[0] = 0;
-                accumulateMat[1] = 0;
-                accumulateMat[2] = 0;
-                accumulateMat[4] = 0;
-                accumulateMat[5] = 0;
-                accumulateMat[6] = 0;
-                accumulateMat[8] = 0;
-                accumulateMat[9] = 0;
-                accumulateMat[10] = 0;
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                out[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
-                out[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
-                out[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
-                vec3.copy(initialVec, out);
-                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
-                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    const boneWeight = vertexBoneWeight[boneArrayIndex2] ?? 0;
-                    if (bones && bone) {
-                        bones.push([bone, boneWeight]);
-                    }
-                    if (boneWeight && boneMat) {
-                        accumulateMat[0] += boneWeight * boneMat[0];
-                        accumulateMat[1] += boneWeight * boneMat[1];
-                        accumulateMat[2] += boneWeight * boneMat[2];
-                        accumulateMat[4] += boneWeight * boneMat[4];
-                        accumulateMat[5] += boneWeight * boneMat[5];
-                        accumulateMat[6] += boneWeight * boneMat[6];
-                        accumulateMat[8] += boneWeight * boneMat[8];
-                        accumulateMat[9] += boneWeight * boneMat[9];
-                        accumulateMat[10] += boneWeight * boneMat[10];
-                        accumulateMat[12] += boneWeight * boneMat[12];
-                        accumulateMat[13] += boneWeight * boneMat[13];
-                        accumulateMat[14] += boneWeight * boneMat[14];
-                    }
-                }
-                vec3.transformMat4(out, out, accumulateMat);
-            }
-        }
-        return -1;
-    }
-    getBoundingBox(boundingBox = new BoundingBox()) {
-        //const ret = {};
-        const skeletonBones = this.skeleton._bones;
-        //const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-        const geometry = this.getGeometry();
-        const indexAttribute = geometry.getAttribute('index' /*TODO: create a constant*/);
-        const vertexAttribute = geometry.getAttribute('aVertexPosition');
-        const indexCount = indexAttribute.count;
-        const vertexCount = vertexAttribute.count;
-        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        //const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        const indexValue = indexAttribute._array;
-        const vertexPosition = vertexAttribute._array;
-        //const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
-        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        const tempVertex = vec3.create();
-        const accumulateMat = mat4.create();
-        if (vertexPosition && vertexBoneIndice && vertexBoneWeight && indexValue) {
-            for (let index = 0; index < indexCount; ++index) {
-                const vertexIndex = indexValue[index];
-                const vertexArrayIndex = vertexIndex * 3;
-                const boneArrayIndex = vertexIndex * boneCount;
-                accumulateMat[0] = 0;
-                accumulateMat[1] = 0;
-                accumulateMat[2] = 0;
-                accumulateMat[4] = 0;
-                accumulateMat[5] = 0;
-                accumulateMat[6] = 0;
-                accumulateMat[8] = 0;
-                accumulateMat[9] = 0;
-                accumulateMat[10] = 0;
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                tempVertex[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
-                tempVertex[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
-                tempVertex[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
-                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
-                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
-                    if (boneWeight && boneMat) {
-                        accumulateMat[0] += boneWeight * boneMat[0];
-                        accumulateMat[1] += boneWeight * boneMat[1];
-                        accumulateMat[2] += boneWeight * boneMat[2];
-                        accumulateMat[4] += boneWeight * boneMat[4];
-                        accumulateMat[5] += boneWeight * boneMat[5];
-                        accumulateMat[6] += boneWeight * boneMat[6];
-                        accumulateMat[8] += boneWeight * boneMat[8];
-                        accumulateMat[9] += boneWeight * boneMat[9];
-                        accumulateMat[10] += boneWeight * boneMat[10];
-                        accumulateMat[12] += boneWeight * boneMat[12];
-                        accumulateMat[13] += boneWeight * boneMat[13];
-                        accumulateMat[14] += boneWeight * boneMat[14];
-                    }
-                }
-                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
-                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
-                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
-                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
-            }
-        }
-        boundingBox.setPoints(skinnedVertexPosition);
-        return boundingBox;
-    }
-    toString() {
-        return 'SkeletalMesh ' + super.toString();
-    }
-    prepareRayCasting() {
-        const skeletonBones = this.skeleton._bones;
-        const geometry = this.getGeometry();
-        const vertexCount = geometry.getAttribute('aVertexPosition').count;
-        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        const tempVertex = vec3.create();
-        const tempVertexNormal = vec3.create();
-        const accumulateMat = mat4.create();
-        if (vertexPosition && vertexNormal && vertexBoneIndice && vertexBoneWeight) {
-            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                const vertexArrayIndex = vertexIndex * 3;
-                const boneArrayIndex = vertexIndex * boneCount;
-                accumulateMat[0] = 0;
-                accumulateMat[1] = 0;
-                accumulateMat[2] = 0;
-                accumulateMat[4] = 0;
-                accumulateMat[5] = 0;
-                accumulateMat[6] = 0;
-                accumulateMat[8] = 0;
-                accumulateMat[9] = 0;
-                accumulateMat[10] = 0;
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                tempVertex[0] = vertexPosition[vertexArrayIndex + 0];
-                tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
-                tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
-                const tempVertexNormalX = vertexNormal[vertexArrayIndex + 0] ?? 0;
-                const tempVertexNormalY = vertexNormal[vertexArrayIndex + 1] ?? 0;
-                const tempVertexNormalZ = vertexNormal[vertexArrayIndex + 2] ?? 0;
-                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
-                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
-                    if (boneWeight && boneMat) {
-                        accumulateMat[0] += boneWeight * boneMat[0];
-                        accumulateMat[1] += boneWeight * boneMat[1];
-                        accumulateMat[2] += boneWeight * boneMat[2];
-                        accumulateMat[4] += boneWeight * boneMat[4];
-                        accumulateMat[5] += boneWeight * boneMat[5];
-                        accumulateMat[6] += boneWeight * boneMat[6];
-                        accumulateMat[8] += boneWeight * boneMat[8];
-                        accumulateMat[9] += boneWeight * boneMat[9];
-                        accumulateMat[10] += boneWeight * boneMat[10];
-                        accumulateMat[12] += boneWeight * boneMat[12];
-                        accumulateMat[13] += boneWeight * boneMat[13];
-                        accumulateMat[14] += boneWeight * boneMat[14];
-                    }
-                }
-                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
-                tempVertexNormal[0] = accumulateMat[0] * tempVertexNormalX + accumulateMat[4] * tempVertexNormalY + accumulateMat[8] * tempVertexNormalZ;
-                tempVertexNormal[1] = accumulateMat[1] * tempVertexNormalX + accumulateMat[5] * tempVertexNormalY + accumulateMat[9] * tempVertexNormalZ;
-                tempVertexNormal[2] = accumulateMat[2] * tempVertexNormalX + accumulateMat[6] * tempVertexNormalY + accumulateMat[10] * tempVertexNormalZ;
-                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
-                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
-                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
-                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
-                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
-                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
-            }
-        }
-        this.#skinnedVertexPosition = skinnedVertexPosition;
-        this.#skinnedVertexNormal = skinnedVertexNormal;
-    }
-    raycast(raycaster, intersections) {
-        //TODO: case when normals are not provided
-        const skeletonBones = this.skeleton._bones;
-        const geometry = this.getGeometry();
-        const indices = geometry.getAttribute('index')._array;
-        //let normals = geometry.getAttribute('aVertexNormal')._array;
-        if (!indices) {
-            return;
-        }
-        const vertexCount = geometry.getAttribute('aVertexPosition').count;
-        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        const textureCoords = geometry.getAttribute('aTextureCoord')._array;
-        const worldMatrix = this.worldMatrix;
-        ray$2.copyTransform(raycaster.ray, worldMatrix);
-        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        const tempVertex = vec3.create();
-        const tempVertexNormal = vec3.create();
-        const accumulateMat = mat4.create();
-        if (vertexPosition && vertexNormal && vertexBoneIndice && vertexBoneWeight) {
-            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                const vertexArrayIndex = vertexIndex * 3;
-                const boneArrayIndex = vertexIndex * boneCount;
-                accumulateMat[0] = 0;
-                accumulateMat[1] = 0;
-                accumulateMat[2] = 0;
-                accumulateMat[4] = 0;
-                accumulateMat[5] = 0;
-                accumulateMat[6] = 0;
-                accumulateMat[8] = 0;
-                accumulateMat[9] = 0;
-                accumulateMat[10] = 0;
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                tempVertex[0] = vertexPosition[vertexArrayIndex + 0] ?? 0;
-                tempVertex[1] = vertexPosition[vertexArrayIndex + 1] ?? 0;
-                tempVertex[2] = vertexPosition[vertexArrayIndex + 2] ?? 0;
-                tempVertexNormal[0] = vertexNormal[vertexArrayIndex + 0] ?? 0;
-                tempVertexNormal[1] = vertexNormal[vertexArrayIndex + 1] ?? 0;
-                tempVertexNormal[2] = vertexNormal[vertexArrayIndex + 2] ?? 0;
-                for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2] ?? -1];
-                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
-                    if (boneWeight && boneMat) {
-                        accumulateMat[0] += boneWeight * boneMat[0];
-                        accumulateMat[1] += boneWeight * boneMat[1];
-                        accumulateMat[2] += boneWeight * boneMat[2];
-                        accumulateMat[4] += boneWeight * boneMat[4];
-                        accumulateMat[5] += boneWeight * boneMat[5];
-                        accumulateMat[6] += boneWeight * boneMat[6];
-                        accumulateMat[8] += boneWeight * boneMat[8];
-                        accumulateMat[9] += boneWeight * boneMat[9];
-                        accumulateMat[10] += boneWeight * boneMat[10];
-                        accumulateMat[12] += boneWeight * boneMat[12];
-                        accumulateMat[13] += boneWeight * boneMat[13];
-                        accumulateMat[14] += boneWeight * boneMat[14];
-                    }
-                }
-                vec3.transformMat4(tempVertex, tempVertex, accumulateMat);
-                accumulateMat[12] = 0;
-                accumulateMat[13] = 0;
-                accumulateMat[14] = 0;
-                vec3.transformMat4(tempVertexNormal, tempVertexNormal, accumulateMat);
-                skinnedVertexPosition[vertexArrayIndex + 0] = tempVertex[0];
-                skinnedVertexPosition[vertexArrayIndex + 1] = tempVertex[1];
-                skinnedVertexPosition[vertexArrayIndex + 2] = tempVertex[2];
-                skinnedVertexNormal[vertexArrayIndex + 0] = tempVertexNormal[0];
-                skinnedVertexNormal[vertexArrayIndex + 1] = tempVertexNormal[1];
-                skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
-            }
-        }
-        for (let i = 0, l = indices.length; i < l; i += 3) {
-            let i1 = 3 * indices[i];
-            let i2 = 3 * indices[i + 1];
-            let i3 = 3 * indices[i + 2];
-            vec3.set(v1$1, skinnedVertexPosition[i1] ?? 0, skinnedVertexPosition[i1 + 1] ?? 0, skinnedVertexPosition[i1 + 2] ?? 0);
-            vec3.set(v2, skinnedVertexPosition[i2] ?? 0, skinnedVertexPosition[i2 + 1] ?? 0, skinnedVertexPosition[i2 + 2] ?? 0);
-            vec3.set(v3, skinnedVertexPosition[i3] ?? 0, skinnedVertexPosition[i3 + 1] ?? 0, skinnedVertexPosition[i3 + 2] ?? 0);
-            if (ray$2.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
-                vec3.set(n1, skinnedVertexNormal[i1] ?? 0, skinnedVertexNormal[i1 + 1] ?? 0, skinnedVertexNormal[i1 + 2] ?? 0);
-                vec3.set(n2, skinnedVertexNormal[i2] ?? 0, skinnedVertexNormal[i2 + 1] ?? 0, skinnedVertexNormal[i2 + 2] ?? 0);
-                vec3.set(n3, skinnedVertexNormal[i3] ?? 0, skinnedVertexNormal[i3 + 1] ?? 0, skinnedVertexNormal[i3 + 2] ?? 0);
-                i1 = 2 * indices[i];
-                i2 = 2 * indices[i + 1];
-                i3 = 2 * indices[i + 2];
-                vec2.set(uv1, textureCoords?.[i1] ?? 0, textureCoords?.[i1 + 1] ?? 0);
-                vec2.set(uv2, textureCoords?.[i2] ?? 0, textureCoords?.[i2 + 1] ?? 0);
-                vec2.set(uv3, textureCoords?.[i3] ?? 0, textureCoords?.[i3 + 1] ?? 0);
-                getUV(uv$1, intersectionPoint, v1$1, v2, v3, uv1, uv2, uv3);
-                getNormal(intersectionNormal, intersectionPoint, v1$1, v2, v3, n1, n2, n3);
-                const x = intersectionNormal[0];
-                const y = intersectionNormal[1];
-                const z = intersectionNormal[2];
-                //Tranform the normal with the world matrix
-                intersectionNormal[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
-                intersectionNormal[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
-                intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
-                vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
-                intersections.push(ray$2.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
-            }
-        }
-    }
-    getSkinnedVertex() {
-        this.prepareRayCasting();
-        return [this.#skinnedVertexPosition, this.#skinnedVertexNormal];
-    }
-    static getEntityName() {
-        return 'Skeletal mesh';
-    }
-}
-
-class Skeleton extends Entity {
-    isSkeleton = true;
-    #bonesByName = new Map();
-    #rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
-    _bones = []; //TODOv3: rename set private
-    #attachments = [];
-    #attachmentsByName = new Map();
-    imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4 /* 4 by 4 matrix*/);
-    #texture;
-    lastComputed = 0;
-    rig;
-    constructor(params) {
-        super(params);
-        //this.bones = Object.create(null);//TODOv3: rename
-        this.#createBoneMatrixArray();
-        if (Graphics$1.isWebGLAny) {
-            this.#createBoneMatrixTexture();
-        }
-        this.dirty();
-    }
-    dirty() {
-        for (const bone of this._bones) {
-            bone.dirty = true;
-        }
-    }
-    getTexture() {
-        return this.#texture;
-    }
-    #createBoneMatrixArray() {
-        //this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4/* 4 by 4 matrix*/);
-        mat4.identity(this.imgData);
-        for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
-            this.imgData.copyWithin(i * 16, 0, 16);
-        }
-    }
-    #createBoneMatrixTexture() {
-        this.#texture = TextureManager.createTexture({
-            // Notice: this texture is not used in WebGPU
-            webgpuDescriptor: phonyWebGPUTextureDescriptor,
-        });
-        const gl = Graphics$1.glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
-        gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        gl.bindTexture(GL_TEXTURE_2D, null);
-    }
-    #updateBoneMatrixTexture() {
-        const gl = Graphics$1.glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
-        }
-        else {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
-        }
-        gl.bindTexture(GL_TEXTURE_2D, null);
-    }
-    setBonesMatrix() {
-        let index = 0;
-        const bones = this._bones;
-        const imgData = this.imgData;
-        let pose;
-        if (bones.length == 0) {
-            pose = this.#rootBone.boneMat;
-            for (let k = 0; k < 16; ++k) {
-                imgData[index++] = pose[k];
-            }
-        }
-        for (const bone of bones) {
-            pose = bone.boneMat;
-            for (let k = 0; k < 16; ++k) {
-                imgData[index++] = pose[k];
-            }
-        }
-        if (Graphics$1.isWebGLAny) {
-            this.#updateBoneMatrixTexture();
-        }
-    }
-    get position() {
-        if (this._parent) {
-            return vec3.clone(this._parent._position);
-        }
-        else {
-            return vec3.clone(this._position);
-        }
-    }
-    // TODO: deprecate
-    set quaternion(quaternion) {
-        super.setOrientation(quaternion);
-    }
-    /// TODO: deprecate
-    get quaternion() {
-        if (this._parent) {
-            return quat.clone(this._parent._quaternion);
-        }
-        else {
-            return quat.clone(this._quaternion);
-        }
-    }
-    addBone(boneId, boneName) {
-        const boneNameLowerCase = boneName.toLowerCase();
-        const bone = this.#bonesByName.get(boneNameLowerCase);
-        if (!bone) {
-            const bone = new Bone({ name: boneName, boneId, skeleton: this });
-            //this.addChild(bone);
-            this._bones[boneId] = bone;
-            this.#bonesByName.set(boneNameLowerCase, bone);
-            return bone;
-        }
-        else {
-            this._bones[boneId] = bone;
-            return bone;
-        }
-    }
-    addAttachment(attachmentId, attachmentName) {
-        const attachmentNameLowerCase = attachmentName.toLowerCase();
-        const attachment = this.#attachmentsByName.get(attachmentNameLowerCase);
-        if (!attachment) {
-            const attachment = new Attachment({ name: attachmentName, boneId: attachmentId, skeleton: this });
-            this.#attachments[attachmentId] = attachment;
-            this.#attachmentsByName.set(attachmentNameLowerCase, attachment);
-            return attachment;
-        }
-        else {
-            this.#attachments[attachmentId] = attachment;
-            return attachment;
-        }
-    }
-    async setParentSkeleton(skeleton) {
-        await this.loadedPromise;
-        if (skeleton) {
-            await skeleton.loadedPromise;
-        }
-        const bones = this.#bonesByName;
-        for (const [boneName, bone] of bones) {
-            bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
-        }
-    }
-    getBoneByName(boneName) {
-        return this.#bonesByName.get(boneName.toLowerCase());
-    }
-    getBoneById(boneId) {
-        return this._bones[boneId];
-    }
-    toString() {
-        return 'Skeleton ' + super.toString();
-    }
-    getBoundingBox(boundingBox = new BoundingBox()) {
-        boundingBox.reset();
-        return boundingBox;
-    }
-    get bones() {
-        return this._bones;
-    }
-    getAttachments() {
-        return [...this.#attachments];
-    }
-    reset() {
-        for (const bone of this._bones) {
-            bone.reset();
-        }
-    }
-    toJSON() {
-        const json = super.toJSON();
-        const jBones = [];
-        for (const bone of this._bones) {
-            jBones.push(bone.id);
-        }
-        json.bones = jBones;
-        return json;
-    }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON(json, entities, loadedPromise) {
-        const entity = new Skeleton({ name: json.name });
-        let loadedPromiseResolve;
-        entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
-        loadedPromise.then(() => {
-            const jBones = json.bones;
-            if (jBones) {
-                for (let i = 0; i < jBones.length; ++i) {
-                    const boneEntity = entities.get(jBones[i] ?? '');
-                    if (boneEntity) {
-                        entity._bones[i] = boneEntity;
-                        entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);
-                    }
-                }
-            }
-            loadedPromiseResolve(true);
-        });
-        return entity;
-    }
-    dispose() {
-        super.dispose();
-        this.#texture.dispose();
-    }
-    static getEntityName() {
-        return 'Skeleton';
-    }
-}
-registerEntity(Skeleton);
-
 class SourceAnimation {
     position = vec3.create();
     boneRot = vec3.create(); //TODO: remove me ?
@@ -29836,42 +31436,6 @@ class Source1VmtLoaderClass {
 }
 const Source1VmtLoader = new Source1VmtLoaderClass();
 registerLoader('Source1VmtLoader', Source1VmtLoader);
-
-// It is just a basic entity
-class Group extends Entity {
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON(json) {
-        return new Group({ name: json.name });
-    }
-    static getEntityName() {
-        return 'Group';
-    }
-}
-registerEntity(Group);
-
-class World extends Entity {
-    parentChanged() {
-        const iterator = this.getParentIterator();
-        for (const p of iterator) {
-            if (p.is('Scene')) {
-                p.setWorld(this);
-                iterator.return(null);
-            }
-        }
-    }
-    static getEntityName() {
-        return 'World';
-    }
-    is(s) {
-        if (s == 'World') {
-            return true;
-        }
-        else {
-            return super.is(s);
-        }
-    }
-}
-registerEntity(World);
 
 /**
  * Map entities
@@ -34185,8 +35749,7 @@ class Source1ParticleSystem extends Entity {
                 const operator = this.operators[j];
                 operator.operateParticle(particle, this.elapsedTime);
                 // break the loop if the particle is dead
-                if (!particle.isAlive)
-                    break;
+                //if (!particle.isAlive) break;
                 this.operatorRandomSampleOffset += 17;
             }
             //particle.step(this.elapsedTime);
@@ -35707,7 +37270,7 @@ MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
 const tempQuaternion$1 = quat.create();
-const tempVec3$l = vec3.create();
+const tempVec3$h = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
     spotLight = new SpotLight({ radius: 20 });
@@ -35745,9 +37308,9 @@ class PropLightSpot extends MapEntity {
                 this.setAngles();
                 break;
             case 'angles':
-                ParseAngles2(tempVec3$l, value);
-                this._angles[1] = tempVec3$l[1];
-                this._angles[2] = tempVec3$l[1];
+                ParseAngles2(tempVec3$h, value);
+                this._angles[1] = tempVec3$h[1];
+                this._angles[2] = tempVec3$h[1];
                 this.setAngles();
                 break;
             case '_quadratic_attn':
@@ -40699,50 +42262,6 @@ class WorldVertexTransitionMaterial extends Source1Material {
 }
 Source1VmtLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
 
-const a$7 = vec3.create();
-const b$4 = vec3.create();
-const c$2 = vec3.create();
-class Raycaster {
-    near;
-    far;
-    ray = new Ray();
-    constructor(near = 0, far = Infinity) {
-        this.near = near;
-        this.far = far;
-    }
-    castRay(origin, direction, entities, recursive) {
-        this.ray.set(origin, direction);
-        const intersections = [];
-        for (const entity of entities) {
-            this.intersectEntity(entity, intersections, recursive);
-        }
-        return intersections;
-    }
-    castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
-        const projectionMatrixInverse = camera.projectionMatrixInverse;
-        const nearP = vec3.set(a$7, normalizedX, normalizedY, -1);
-        const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
-        vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
-        vec3.transformMat4(farP, farP, projectionMatrixInverse);
-        vec3.transformQuat(nearP, nearP, camera.quaternion);
-        vec3.transformQuat(farP, farP, camera.quaternion);
-        const rayDirection = vec3.sub(c$2, farP, nearP);
-        vec3.normalize(rayDirection, rayDirection);
-        return this.castRay(camera.position, rayDirection, entities, recursive);
-    }
-    intersectEntity(entity, intersections, recursive) {
-        if (!entity.visible) {
-            return;
-        }
-        entity.raycast(this, intersections);
-        if (recursive) {
-            for (const child of entity.children) {
-                this.intersectEntity(child, intersections, recursive);
-            }
-        }
-    }
-}
-
 class Source1ParticleOperator {
     #parameters = {};
     particleSystem;
@@ -41012,7 +42531,7 @@ class Source1ParticleOperator {
 //const COLLISION_MODE_PER_FRAME_PLANESET = 1;
 //const COLLISION_MODE_INITIAL_TRACE_DOWN = 2;
 //const COLLISION_MODE_USE_NEAREST_TRACE = 3;
-const tempVec3_1$3 = vec3.create();
+const tempVec3_1$2 = vec3.create();
 const tempVec3_2$8 = vec3.create();
 class CollisionViaTraces extends Source1ParticleOperator {
     static functionName = 'Collision via traces';
@@ -41062,7 +42581,7 @@ class CollisionViaTraces extends Source1ParticleOperator {
     #worldCollision(particle, world) {
         //const cp = this.particleSystem.getControlPoint(0);
         //particle.prevPosition[2] = 50;
-        const rayDirection = vec3.sub(tempVec3_1$3, particle.position, particle.prevPosition);
+        const rayDirection = vec3.sub(tempVec3_1$2, particle.position, particle.prevPosition);
         //const distance = vec3.len(rayDirection);
         vec3.normalize(rayDirection, rayDirection);
         // We probably already are on the surface, move back the ray origin to prevent falling thru
@@ -41503,7 +43022,7 @@ class EmitNoise extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(EmitNoise);
 
-const tempVec3$k = vec3.create();
+const tempVec3$g = vec3.create();
 let AttractToControlPoint$1 = class AttractToControlPoint extends Source1ParticleOperator {
     static functionName = 'Pull towards control point';
     constructor(system) {
@@ -41527,7 +43046,7 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends Source1Particl
             return;
         }
         const ofs = vec3.clone(particle.position);
-        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$k)); //TODO: add particle base cp
+        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$g)); //TODO: add particle base cp
         let len = vec3.length(ofs);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -41561,7 +43080,7 @@ let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(RandomForce$1);
 
-const tempVec3$j = vec3.create();
+const tempVec3$f = vec3.create();
 const tempVec3_2$6 = vec3.create();
 //const tempAxis = vec3.create();
 //const tempQuat = quat.create();
@@ -41579,7 +43098,7 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
         //TODO use param localSpace
         //const localSpace = this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
-        const offsetToAxis = vec3.sub(tempVec3$j, particle.position, cp.getWorldPosition(tempVec3$j));
+        const offsetToAxis = vec3.sub(tempVec3$f, particle.position, cp.getWorldPosition(tempVec3$f));
         /*
                 if (!localSpace) {
                     cp.getWorldQuaternion(tempQuat);
@@ -41714,7 +43233,7 @@ class PositionAlongPathRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionAlongPathRandom);
 
-const tempVec3_1$2 = vec3.create();
+const tempVec3_1$1 = vec3.create();
 const tempVec3_2$5 = vec3.create();
 class PositionAlongPathSequential extends Source1ParticleOperator {
     static functionName = 'Position Along Path Sequential';
@@ -41739,10 +43258,10 @@ class PositionAlongPathSequential extends Source1ParticleOperator {
         if (!startCP || !endCP) {
             return;
         }
-        startCP.deltaPosFrom(endCP, tempVec3_1$2);
+        startCP.deltaPosFrom(endCP, tempVec3_1$1);
         const s = this.#sequence / nbPart;
-        vec3.scale(tempVec3_1$2, tempVec3_1$2, s);
-        vec3.add(particle.position, startCP.getWorldPosition(tempVec3_2$5), tempVec3_1$2);
+        vec3.scale(tempVec3_1$1, tempVec3_1$1, s);
+        vec3.add(particle.position, startCP.getWorldPosition(tempVec3_2$5), tempVec3_1$1);
         vec3.copy(particle.prevPosition, particle.position);
         ++this.#sequence;
         if (this.#sequence > nbPart) {
@@ -41812,7 +43331,7 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
 };
 Source1ParticleOperators.registerOperator(PositionFromParentParticles$1);
 
-const tempVec3$i = vec3.create();
+const tempVec3$e = vec3.create();
 class PositionModifyOffsetRandom extends Source1ParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor(system) {
@@ -41834,7 +43353,7 @@ class PositionModifyOffsetRandom extends Source1ParticleOperator {
         const offsetMax = this.getParameter('offset max');
         vec2.random(vec2.create(), 1.0);
         const controlPointNumber = this.getParameter('control_point_number');
-        const offset = vec3RandomBox(tempVec3$i, offsetMin, offsetMax);
+        const offset = vec3RandomBox(tempVec3$e, offsetMin, offsetMax);
         if (localSpace == 1) {
             const cp = particle.system.getControlPoint(controlPointNumber);
             if (cp) {
@@ -41919,7 +43438,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(PositionOnModelRandom);
 
-const tempVec3$h = vec3.create();
+const tempVec3$d = vec3.create();
 class PositionWithinBoxRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor(system) {
@@ -41939,15 +43458,15 @@ class PositionWithinBoxRandom extends Source1ParticleOperator {
         vec3.copy(particle.prevPosition, particle.position);
         const controlPoint = particle.system.getControlPoint(controlPointNumber);
         if (controlPoint) {
-            controlPoint.getWorldPosition(tempVec3$h);
-            vec3.add(particle.position, particle.position, tempVec3$h);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$h);
+            controlPoint.getWorldPosition(tempVec3$d);
+            vec3.add(particle.position, particle.position, tempVec3$d);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$d);
         }
     }
 }
 Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-const tempVec3$g = vec3.create();
+const tempVec3$c = vec3.create();
 class PositionWithinSphereRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor(system) {
@@ -42020,8 +43539,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 randpos += vecControlPoint;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    cp.getWorldPosition(tempVec3$g);
-                    vec3.add(randpos, randpos, tempVec3$g);
+                    cp.getWorldPosition(tempVec3$c);
+                    vec3.add(randpos, randpos, tempVec3$c);
                 }
             }
             else {
@@ -42033,8 +43552,8 @@ class PositionWithinSphereRandom extends Source1ParticleOperator {
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
                     vec3.transformQuat(randpos, randpos, cp.getWorldOrientation());
-                    cp.getWorldPosition(tempVec3$g);
-                    vec3.add(randpos, randpos, tempVec3$g);
+                    cp.getWorldPosition(tempVec3$c);
+                    vec3.add(randpos, randpos, tempVec3$c);
                 }
             }
         }
@@ -42153,7 +43672,7 @@ class RemapControlPointToScalar extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RemapControlPointToScalar);
 
-const tempVec3_1$1 = vec3.create();
+const tempVec3_1 = vec3.create();
 const tempVec3_2$4 = vec3.create();
 const tempVec3_3$1 = vec3.create();
 const tempVec3_4 = vec3.create();
@@ -42187,7 +43706,7 @@ class RemapControlPointToVector extends Source1ParticleOperator {
         const init = this.getParameter('output is scalar of initial random range');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const iDelta = vec3.sub(tempVec3_1$1, inputMaximum, inputMinimum);
+            const iDelta = vec3.sub(tempVec3_1, inputMaximum, inputMinimum);
             const oDelta = vec3.sub(tempVec3_2$4, outputMaximum, outputMinimum);
             const vDelta = vec3.sub(tempVec3_3$1, cp._position, inputMinimum);
             const v1Delta = vec3.div(tempVec3_4, vDelta, iDelta);
@@ -42285,8 +43804,8 @@ Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
                     'operator start fadein' 'float' '0'
 */
 
-const tempQuat$6 = quat.create();
-const tempVec3$f = vec3.create();
+const tempQuat$5 = quat.create();
+const tempVec3$b = vec3.create();
 const tempVec3_2$3 = vec3.create();
 class RemapScalarToVector extends Source1ParticleOperator {
     static functionName = 'Remap Scalar to Vector';
@@ -42320,25 +43839,25 @@ class RemapScalarToVector extends Source1ParticleOperator {
             return;
         }
         const input = particle.getField(m_nFieldInput);
-        tempVec3$f[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
-        tempVec3$f[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
-        tempVec3$f[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
+        tempVec3$b[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
+        tempVec3$b[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
+        tempVec3$b[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
         if (!cp) {
             return;
         }
         if (m_nFieldOutput == 0) { // Position
             if (!m_bLocalCoords) {
-                vec3.add(tempVec3$f, cp.getWorldPosition(tempVec3_2$3), tempVec3$f);
+                vec3.add(tempVec3$b, cp.getWorldPosition(tempVec3_2$3), tempVec3$b);
             }
             else {
                 if (cp) {
-                    cp.getWorldOrientation(tempQuat$6);
-                    vec3.transformQuat(tempVec3$f, tempVec3$f, tempQuat$6);
-                    vec3.add(tempVec3$f, cp.getWorldPosition(tempVec3_2$3), tempVec3$f);
+                    cp.getWorldOrientation(tempQuat$5);
+                    vec3.transformQuat(tempVec3$b, tempVec3$b, tempQuat$5);
+                    vec3.add(tempVec3$b, cp.getWorldPosition(tempVec3_2$3), tempVec3$b);
                 }
-                particle.setField(0, tempVec3$f); //position
-                particle.setField(2, tempVec3$f); //previous position
+                particle.setField(0, tempVec3$b); //position
+                particle.setField(2, tempVec3$b); //previous position
             }
         }
         else {
@@ -42347,10 +43866,10 @@ class RemapScalarToVector extends Source1ParticleOperator {
                 //SetVectorFromAttribute ( vecScaleInitial, pOutput );
                 const vecScaleInitial = particle.getField(m_nFieldOutput, true);
                 //vecOutput *= vecScaleInitial;
-                vec3.mul(tempVec3$f, tempVec3$f, vecScaleInitial);
+                vec3.mul(tempVec3$b, tempVec3$b, vecScaleInitial);
             }
             //SetVectorAttribute( pOutput, vecOutput );
-            particle.setField(m_nFieldOutput, tempVec3$f);
+            particle.setField(m_nFieldOutput, tempVec3$b);
         }
     }
     initMultipleOverride() {
@@ -42887,7 +44406,7 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 //const g_SIMD_lsbmask = 0xfffffffe;
 
 const identityVec3$1 = vec3.create();
-const tempVec3$e = vec3.create();
+const tempVec3$a = vec3.create();
 let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
     static functionName = 'Velocity Random';
     constructor(system) {
@@ -42919,8 +44438,8 @@ let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
             vec3RandomBox(randomVector, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //randomVector.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$e, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$e);
+            vec3.random(tempVec3$a, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$a);
         }
         const cp = particle.system.getControlPoint(m_nControlPointNumber);
         if (cp) {
@@ -43128,7 +44647,7 @@ let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
 };
 Source1ParticleOperators.registerOperator(LifespanDecay$1);
 
-const tempVec3$d = vec3.create();
+const tempVec3$9 = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
 let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
@@ -43158,7 +44677,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                     tempMat4[12] = 0;
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
-                    vec3.copy(tempVec3$d, initialVec);
+                    vec3.copy(tempVec3$9, initialVec);
                     for (const [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
@@ -43182,12 +44701,12 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
                             tempMat4[14] += boneWeight * boneMat[14];
                         }
                     }
-                    vec3.transformMat4(tempVec3$d, tempVec3$d, tempMat4);
+                    vec3.transformMat4(tempVec3$9, tempVec3$9, tempMat4);
                     if (particle.initialVecOffset) {
-                        vec3.add(tempVec3$d, tempVec3$d, particle.initialVecOffset);
+                        vec3.add(tempVec3$9, tempVec3$9, particle.initialVecOffset);
                     }
                     vec3.copy(particle.prevPosition, particle.position);
-                    vec3.copy(particle.position, tempVec3$d);
+                    vec3.copy(particle.position, tempVec3$9);
                 }
             }
         }
@@ -43196,7 +44715,7 @@ let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
 Source1ParticleOperators.registerOperator(LockToBone$1);
 
 //const gravity_const = 0.5;
-const tempVec3$c = vec3.create();
+const tempVec3$8 = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
 class MovementBasic extends Source1ParticleOperator {
@@ -43219,7 +44738,7 @@ class MovementBasic extends Source1ParticleOperator {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
         particle.previousElapsedTime = elapsedTime;*/
-        const accumulatedForces = vec3.copy(tempVec3$c, gravity);
+        const accumulatedForces = vec3.copy(tempVec3$8, gravity);
         //vec3.scale(accumulatedForces, accumulatedForces, 0.5);
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
@@ -43405,7 +44924,7 @@ lock rotation
 This will update a particle relative to a Control Point's rotation as well as position.
 */
 
-const tempVec3$b = vec3.create();
+const tempVec3$7 = vec3.create();
 class MovementMaxVelocity extends Source1ParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor(system) {
@@ -43414,7 +44933,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const maxVelocity = this.getParameter('Maximum Velocity');
-        const velocity = vec3.sub(tempVec3$b, particle.position, particle.prevPosition);
+        const velocity = vec3.sub(tempVec3$7, particle.position, particle.prevPosition);
         let speed = vec3.length(velocity);
         vec3.normalize(velocity, velocity);
         const maxVelocityNormalized = maxVelocity * elapsedTime;
@@ -43424,7 +44943,7 @@ class MovementMaxVelocity extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(MovementMaxVelocity);
 
-const tempVec3$a = vec3.create();
+const tempVec3$6 = vec3.create();
 let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -43453,9 +44972,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             if (useLocalSpace == 1) {
                 quat.copy(q, cp.getWorldOrientation());
             }
-            cp.getWorldPosition(tempVec3$a);
-            vec3.sub(particle.position, particle.position, tempVec3$a);
-            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$a);
+            cp.getWorldPosition(tempVec3$6);
+            vec3.sub(particle.position, particle.position, tempVec3$6);
+            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$6);
             const axis2 = vec3.clone(axis); //TODO: memory
             //axis2[1] = -axis2[1];
             //const tempQuat = quat.fromEuler(quat.create(), vec3.scale(vec3.create(), vec3.normalize(vec3.create(), axis), Math.HALF_PI));
@@ -43464,9 +44983,9 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
             vec3.transformQuat(axis2, axis2, q);
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
             vec3.transformMat4(particle.position, particle.position, modelView);
-            vec3.add(particle.position, particle.position, tempVec3$a);
+            vec3.add(particle.position, particle.position, tempVec3$6);
             vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$a);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$6);
         }
         else {
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
@@ -43827,7 +45346,7 @@ class RemapCPSpeedToCP extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);
 
-const tempVec3$9 = vec3.create();
+const tempVec3$5 = vec3.create();
 class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor(system) {
@@ -43853,7 +45372,7 @@ class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
         const active = this.getParameter('only active within specified distance');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const delta = vec3.subtract(tempVec3$9, cp.getWorldPosition(tempVec3$9), particle.position);
+            const delta = vec3.subtract(tempVec3$5, cp.getWorldPosition(tempVec3$5), particle.position);
             const deltaL = vec3.length(delta);
             if (active && ((deltaL < dMin) || (deltaL > dMax))) {
                 return;
@@ -43894,7 +45413,7 @@ Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
                     'only active within specified distance' 'bool' '0'
                     */
 
-const tempVec3$8 = vec3.create();
+const tempVec3$4 = vec3.create();
 class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor(system) {
@@ -43922,14 +45441,14 @@ class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
         if (cp == undefined) {
             return;
         }
-        vec3.subtract(tempVec3$8, particle.cpPosition, particle.position);
-        const deltaL = vec3.length(tempVec3$8);
+        vec3.subtract(tempVec3$4, particle.cpPosition, particle.position);
+        const deltaL = vec3.length(tempVec3$4);
         if (activeDistance && (deltaL < distanceMin || deltaL > distanceMax)) {
             // Outside distance window
             return;
         }
-        vec3.lerp(tempVec3$8, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
-        particle.setField(field, tempVec3$8);
+        vec3.lerp(tempVec3$4, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
+        particle.setField(field, tempVec3$4);
     }
 }
 Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
@@ -44131,7 +45650,7 @@ class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator
 }
 Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
-const tempVec3$7 = vec3.create();
+const tempVec3$3 = vec3.create();
 let SetControlPointPositions$1 = class SetControlPointPositions extends Source1ParticleOperator {
     static functionName = 'set control point positions';
     constructor(system) {
@@ -44169,7 +45688,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$7, cpLocation, vecControlPoint);
+                const a = vec3.add(tempVec3$3, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -44224,7 +45743,7 @@ class SetControlPointToPlayer extends Source1ParticleOperator {
 }
 Source1ParticleOperators.registerOperator(SetControlPointToPlayer);
 
-const tempQuat$5 = quat.create();
+const tempQuat$4 = quat.create();
 const IDENTITY_QUAT = quat.create();
 const vecDelta = vec3.create();
 class RenderAnimatedSprites extends Source1ParticleOperator {
@@ -44267,7 +45786,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         const orientationControlPointNumber = this.getParameter('orientation control point');
         const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
         if (orientationControlPoint) {
-            this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldOrientation(tempQuat$5));
+            this.mesh.setUniformValue('uOrientationControlPoint', orientationControlPoint.getWorldOrientation(tempQuat$4));
         }
         else {
             this.mesh.setUniformValue('uOrientationControlPoint', IDENTITY_QUAT);
@@ -52628,7 +54147,7 @@ class AnimManager {
 }
 
 const tempPos$1 = vec3.create();
-const tempQuat$4 = quat.create();
+const tempQuat$3 = quat.create();
 class Source2ModelAttachment {
     name;
     ignoreRotation = false;
@@ -52656,10 +54175,10 @@ class Source2ModelAttachmentInstance extends Entity {
         const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
         if (bone) {
             bone.getWorldPosition(vec);
-            bone.getWorldOrientation(tempQuat$4);
+            bone.getWorldOrientation(tempQuat$3);
             const offset0 = this.attachment.influenceOffsets[0];
             if (offset0) {
-                vec3.transformQuat(tempPos$1, offset0, tempQuat$4);
+                vec3.transformQuat(tempPos$1, offset0, tempQuat$3);
                 vec3.add(vec, vec, tempPos$1);
             }
         }
@@ -60162,8 +61681,8 @@ class Source2ParticleRandomParams {
     }
 }
 
-const tempQuat$3 = quat.create();
-const tempVec3$6 = vec3.create();
+const tempQuat$2 = quat.create();
+const tempVec3$2 = vec3.create();
 const tempVec3_2$1 = vec3.create();
 const DEFAULT_LOCAl_SPACE = false;
 const DEFAULT_USE_NEW_CODE = false;
@@ -60196,7 +61715,7 @@ class CreateWithinBox extends Operator {
         //TODO: useNewCode ??
         this.getParamVectorValue(this.#vecMin, 'm_vecMin', particle);
         this.getParamVectorValue(this.#vecMax, 'm_vecMax', particle);
-        vec3RandomBox(tempVec3$6, this.#vecMin, this.#vecMax);
+        vec3RandomBox(tempVec3$2, this.#vecMin, this.#vecMax);
         /*
         if (this.#scaleCP !== -1) {
             const scaleCp = this.system.getControlPointForScale(this.#scaleCP);
@@ -60210,15 +61729,15 @@ class CreateWithinBox extends Operator {
         if (controlPoint) {
             controlPoint.getWorldPosition(tempVec3_2$1);
             if (this.#localSpace) {
-                vec3.transformQuat(tempVec3$6, tempVec3$6, controlPoint.getWorldOrientation(tempQuat$3));
-                vec3.add(tempVec3$6, tempVec3$6, tempVec3_2$1);
+                vec3.transformQuat(tempVec3$2, tempVec3$2, controlPoint.getWorldOrientation(tempQuat$2));
+                vec3.add(tempVec3$2, tempVec3$2, tempVec3_2$1);
             }
             else {
-                vec3.add(tempVec3$6, tempVec3$6, tempVec3_2$1);
+                vec3.add(tempVec3$2, tempVec3$2, tempVec3_2$1);
             }
         }
-        vec3.copy(particle.position, tempVec3$6);
-        vec3.copy(particle.prevPosition, tempVec3$6);
+        vec3.copy(particle.position, tempVec3$2);
+        vec3.copy(particle.prevPosition, tempVec3$2);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_CreateWithinBox', CreateWithinBox);
@@ -61757,7 +63276,7 @@ RegisterSource2ParticleOperator('C_INIT_SetRigidAttachment', SetRigidAttachment)
 
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
-const tempVec3$5 = vec3.create();
+const tempVec3$1 = vec3.create();
 const velocityRandomTempVec4_0 = vec4.create();
 const velocityRandomTempVec4_1 = vec4.create();
 const DEFAULT_IGNORE_DT$1 = false; // TODO: check default value
@@ -61792,8 +63311,8 @@ class VelocityRandom extends Operator {
             vec3RandomBox(randomVector, localCoordinateSystemSpeedMin, localCoordinateSystemSpeedMax);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$5, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$5);
+            vec3.random(tempVec3$1, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$1);
         }
         const cp = particle.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -63782,7 +65301,7 @@ class RemapControlPointDirectionToVector extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_RemapControlPointDirectionToVector', RemapControlPointDirectionToVector);
 
-const tempQuat$2 = quat.create();
+const tempQuat$1 = quat.create();
 //const tempQuat2 = quat.create();
 class RemapCPOrientationToRotations extends Operator {
     #vecRotation = vec3.create();
@@ -63799,11 +65318,11 @@ class RemapCPOrientationToRotations extends Operator {
     doOperate(particle) {
         const cp = this.system.getControlPoint(this.#controlPointNumber);
         if (cp) {
-            cp.getWorldOrientation(tempQuat$2);
-            quat.rotateY(tempQuat$2, tempQuat$2, this.#vecRotation[0] * DEG_TO_RAD);
-            quat.rotateZ(tempQuat$2, tempQuat$2, this.#vecRotation[1] * DEG_TO_RAD);
-            quat.rotateX(tempQuat$2, tempQuat$2, this.#vecRotation[2] * DEG_TO_RAD);
-            quat.copy(particle.quaternion, tempQuat$2);
+            cp.getWorldOrientation(tempQuat$1);
+            quat.rotateY(tempQuat$1, tempQuat$1, this.#vecRotation[0] * DEG_TO_RAD);
+            quat.rotateZ(tempQuat$1, tempQuat$1, this.#vecRotation[1] * DEG_TO_RAD);
+            quat.rotateX(tempQuat$1, tempQuat$1, this.#vecRotation[2] * DEG_TO_RAD);
+            quat.copy(particle.quaternion, tempQuat$1);
         }
     }
 }
@@ -64576,8 +66095,8 @@ class SetSingleControlPointPosition extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetSingleControlPointPosition', SetSingleControlPointPosition);
 
-const tempQuat$1 = quat.create();
-const tempVec3$4 = vec3.create();
+const tempQuat = quat.create();
+const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
 const DEFAULT_OFFSET_LOCAL = false; // TODO: check default value
 class SetToCP extends Operator {
@@ -64600,14 +66119,14 @@ class SetToCP extends Operator {
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
             if (this.#offsetLocal) {
-                vec3.transformQuat(tempVec3$4, this.#offset, cp.getWorldOrientation(tempQuat$1));
-                vec3.add(tempVec3$4, tempVec3$4, tempVec3_2);
+                vec3.transformQuat(tempVec3, this.#offset, cp.getWorldOrientation(tempQuat));
+                vec3.add(tempVec3, tempVec3, tempVec3_2);
             }
             else {
-                vec3.add(tempVec3$4, this.#offset, tempVec3_2);
+                vec3.add(tempVec3, this.#offset, tempVec3_2);
             }
-            vec3.copy(particle.position, tempVec3$4);
-            vec3.copy(particle.prevPosition, tempVec3$4);
+            vec3.copy(particle.position, tempVec3);
+            vec3.copy(particle.prevPosition, tempVec3);
         }
     }
 }
@@ -71574,1526 +73093,6 @@ Shaders['texturelookup.wgsl'] = texturelookup;
 var imageeditor = "#include common_uniforms\n\n@group(0) @binding(x) var colorTexture: texture_storage_2d<rgba8unorm, read>;\n@group(0) @binding(x) var outTexture: texture_storage_2d<OUTPUT_FORMAT, write>;\n\n@compute @workgroup_size(1) fn compute_main(\n\t@builtin(global_invocation_id) id : vec3u\n\t)\n{\n\ttextureStore(outTexture, id.xy,  textureLoad(colorTexture, id.xy));\n}\n";
 
 Shaders['imageeditor.wgsl'] = imageeditor;
-
-const DEFAULT_SIZE = vec3.fromValues(1, 1, 1);
-class Decal extends Mesh {
-    #size = vec3.create();
-    constructor(params = {}) {
-        params.geometry = new DecalGeometry();
-        params.material = params.material ?? new MeshBasicMaterial({ polygonOffset: true });
-        super(params);
-        this.setSize(params.size ?? DEFAULT_SIZE);
-    }
-    /**
-     * @deprecated Please use `setPosition` instead.
-     */
-    set position(position) {
-        this.setPosition(position);
-    }
-    /**
-     * @deprecated Please use `getPosition` instead.
-     */
-    get position() {
-        return this.getPosition();
-    }
-    setPosition(position) {
-        super.setPosition(position);
-        this.refreshGeometry();
-    }
-    parentChanged() {
-        this.refreshGeometry();
-    }
-    setSize(size) {
-        vec3.copy(this.#size, size);
-        this.refreshGeometry();
-    }
-    /**
-     * @deprecated Please use `getSize` instead.
-     */
-    get size() {
-        return this.getSize();
-    }
-    getSize() {
-        return this.#size;
-    }
-    refreshGeometry() {
-        if (this.parent && this.parent.is('Mesh')) {
-            this.getGeometry().applyTo(this.parent, this.worldMatrix, this.#size);
-        }
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            StaticDecal_1: null,
-            size: { i18n: '#size', f: () => { const v = prompt('Size', this.getSize().join(' ')); if (v !== null) {
-                    this.setSize(stringToVec3(v));
-                } } },
-            refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
-        });
-    }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON(json /*, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
-        return new Decal(json);
-    }
-    static getEntityName() {
-        return 'Decal';
-    }
-}
-registerEntity(Decal);
-class DecalGeometry extends BufferGeometry {
-    applyTo(mesh, projectorMatrix, size) {
-        const indices = [];
-        const vertices = [];
-        const normals = [];
-        const uvs = [];
-        this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
-        //console.log(uvs);
-        this.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2, 'texCoord'));
-        this.count = indices.length;
-    }
-    #generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
-        let decalVertices = [];
-        const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
-        const vertex = vec3.create();
-        const normal = vec3.create();
-        const geometry = mesh.getGeometry();
-        if (!geometry) {
-            return;
-        }
-        const indexAttribute = geometry.attributes.get('index');
-        const indexArray = indexAttribute._array;
-        if (!indexArray) {
-            return;
-        }
-        let posArray;
-        let normalArray;
-        if (!mesh.isSkeletalMesh) {
-            posArray = geometry.attributes.get('aVertexPosition')._array;
-            normalArray = geometry.attributes.get('aVertexNormal')._array;
-        }
-        else {
-            [posArray, normalArray] = mesh.getSkinnedVertex();
-        }
-        if (!posArray || !normalArray) {
-            return;
-        }
-        for (let i = 0, l = indexAttribute.count; i < l; ++i) {
-            const index = indexArray[i];
-            vertex[0] = posArray[index * 3] ?? 0;
-            vertex[1] = posArray[index * 3 + 1] ?? 0;
-            vertex[2] = posArray[index * 3 + 2] ?? 0;
-            normal[0] = normalArray[index * 3] ?? 0;
-            normal[1] = normalArray[index * 3 + 1] ?? 0;
-            normal[2] = normalArray[index * 3 + 2] ?? 0;
-            vec3.transformMat4(vertex, vertex, mesh.worldMatrix);
-            vec3.transformMat4(vertex, vertex, projectorMatrixInverse);
-            decalVertices.push([vec3.clone(vertex), vec3.clone(normal)]);
-        }
-        decalVertices = this.#clipGeometry(decalVertices, size, [1, 0, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [-1, 0, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 1, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, -1, 0]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, 1]);
-        decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, -1]);
-        for (let i = 0; i < decalVertices.length; i++) {
-            const decalVertex = decalVertices[i];
-            // create texture coordinates (we are still in projector space)
-            uvs.push(0.5 + (decalVertex[0][0] / size[0]), 0.5 + (decalVertex[0][1] / size[1]));
-            // transform the vertex back to world space
-            //const v = decalVertex[0];
-            //vec3.transformMat4(v, v, projectorMatrix);
-            vertices.push(...decalVertex[0]);
-            normals.push(...decalVertex[1]);
-            indices.push(i);
-        }
-    }
-    #clipGeometry(inVertices, size, plane) {
-        const outVertices = [];
-        const s = 0.5 * Math.abs(vec3.dot(size, plane));
-        // a single iteration clips one face,
-        // which consists of three consecutive 'DecalVertex' objects
-        for (let i = 0; i < inVertices.length; i += 3) {
-            let total = 0;
-            let nV1;
-            let nV2;
-            let nV3;
-            let nV4;
-            const d1 = vec3.dot(inVertices[i + 0][0], plane) - s;
-            const d2 = vec3.dot(inVertices[i + 1][0], plane) - s;
-            const d3 = vec3.dot(inVertices[i + 2][0], plane) - s;
-            const v1Out = d1 > 0;
-            const v2Out = d2 > 0;
-            const v3Out = d3 > 0;
-            // calculate, how many vertices of the face lie outside of the clipping plane
-            total = (v1Out ? 1 : 0) + (v2Out ? 1 : 0) + (v3Out ? 1 : 0);
-            switch (total) {
-                case 0: {
-                    // the entire face lies inside of the plane, no clipping needed
-                    outVertices.push(inVertices[i]);
-                    outVertices.push(inVertices[i + 1]);
-                    outVertices.push(inVertices[i + 2]);
-                    break;
-                }
-                case 1: {
-                    // one vertex lies outside of the plane, perform clipping
-                    if (v1Out) {
-                        nV1 = inVertices[i + 1];
-                        nV2 = inVertices[i + 2];
-                        nV3 = this.#clip(inVertices[i], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i], nV2, plane, s);
-                    }
-                    if (v2Out) {
-                        nV1 = inVertices[i];
-                        nV2 = inVertices[i + 2];
-                        nV3 = this.#clip(inVertices[i + 1], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i + 1], nV2, plane, s);
-                        outVertices.push(nV3);
-                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                        outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
-                        outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                        outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
-                        outVertices.push(nV4);
-                        break;
-                    }
-                    if (v3Out) {
-                        nV1 = inVertices[i];
-                        nV2 = inVertices[i + 1];
-                        nV3 = this.#clip(inVertices[i + 2], nV1, plane, s);
-                        nV4 = this.#clip(inVertices[i + 2], nV2, plane, s);
-                    }
-                    outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]); //outVertices.push( nV1.clone() );
-                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                    outVertices.push(nV3);
-                    outVertices.push(nV4);
-                    outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]); //outVertices.push( nV3.clone() );
-                    outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]); //outVertices.push( nV2.clone() );
-                    break;
-                }
-                case 2: {
-                    // two vertices lies outside of the plane, perform clipping
-                    if (!v1Out) {
-                        nV1 = [vec3.clone(inVertices[i][0]), vec3.clone(inVertices[i][1])]; //inVertices[ i ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i + 1], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i + 2], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    if (!v2Out) {
-                        nV1 = [vec3.clone(inVertices[i + 1][0]), vec3.clone(inVertices[i + 1][1])]; //inVertices[ i + 1 ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i + 2], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    if (!v3Out) {
-                        nV1 = [vec3.clone(inVertices[i + 2][0]), vec3.clone(inVertices[i + 2][1])]; //inVertices[ i + 2 ].clone();
-                        nV2 = this.#clip(nV1, inVertices[i], plane, s);
-                        nV3 = this.#clip(nV1, inVertices[i + 1], plane, s);
-                        outVertices.push(nV1);
-                        outVertices.push(nV2);
-                        outVertices.push(nV3);
-                    }
-                    break;
-                }
-            }
-        }
-        return outVertices;
-    }
-    #clip(v0, v1, plane, s) {
-        const v0Pos = v0[0];
-        const v1Pos = v1[0];
-        const v0Norm = v0[1];
-        const v1Norm = v1[1];
-        const d0 = vec3.dot(v0Pos, plane) - s;
-        const d1 = vec3.dot(v1Pos, plane) - s;
-        const s0 = d0 / (d0 - d1);
-        // need to clip more values (texture coordinates)? do it this way:
-        // intersectpoint.value = a.value + s * ( b.value - a.value );
-        return [
-            [
-                v0Pos[0] + s0 * (v1Pos[0] - v0Pos[0]),
-                v0Pos[1] + s0 * (v1Pos[1] - v0Pos[1]),
-                v0Pos[2] + s0 * (v1Pos[2] - v0Pos[2])
-            ],
-            [
-                v0Norm[0] + s0 * (v1Norm[0] - v0Norm[0]),
-                v0Norm[1] + s0 * (v1Norm[1] - v0Norm[1]),
-                v0Norm[2] + s0 * (v1Norm[2] - v0Norm[2])
-            ]
-        ];
-    }
-}
-
-const tempVec3$3 = vec3.create();
-class BoundingBoxHelper extends Box {
-    boundingBox = new BoundingBox();
-    constructor(params = {}) {
-        super(params);
-        this.wireframe = 0;
-    }
-    update() {
-        if (this._parent) {
-            this._parent.getBoundingBox(this.boundingBox);
-            this.boundingBox.getCenter(this._position);
-            this.boundingBox.getSize(tempVec3$3);
-            this.setSize(tempVec3$3[0], tempVec3$3[1], tempVec3$3[2]);
-        }
-    }
-    getWorldPosition(vec = vec3.create()) {
-        return vec3.copy(vec, this._position);
-    }
-    getWorldQuaternion(q = quat.create()) {
-        return quat.identity(q);
-    }
-    getBoundingBox(boundingBox = new BoundingBox()) {
-        boundingBox.reset();
-        return boundingBox;
-    }
-}
-
-const BASE_COLOR = [1, 1, 1, 1];
-const FRUSTRUM_COLOR = [1, 0, 0, 1];
-const AXIS_COLOR = [1, 1, 0, 1];
-//const UP_COLOR = [0, 0, 1, 1];
-const tempVec3$2 = vec3.create();
-const Points = [
-    //Base Points
-    { p: vec3.fromValues(0, 0, 0), c: BASE_COLOR },
-    { p: vec3.fromValues(0, 0, 0), c: AXIS_COLOR },
-    // Base pyramid
-    { p: vec3.fromValues(-1, -1, -1), c: BASE_COLOR },
-    { p: vec3.fromValues(-1, +1, -1), c: BASE_COLOR },
-    { p: vec3.fromValues(+1, -1, -1), c: BASE_COLOR },
-    { p: vec3.fromValues(+1, +1, -1), c: BASE_COLOR },
-    // near plane
-    { p: vec3.fromValues(-1, -1, -1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(-1, +1, -1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(+1, -1, -1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(+1, +1, -1), c: FRUSTRUM_COLOR },
-    // far plane
-    { p: vec3.fromValues(-1, -1, 1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(-1, +1, 1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(+1, -1, 1), c: FRUSTRUM_COLOR },
-    { p: vec3.fromValues(+1, +1, 1), c: FRUSTRUM_COLOR },
-    //Axis line
-    { p: vec3.fromValues(0, 0, 1), c: AXIS_COLOR },
-    //Near plane axis
-    { p: vec3.fromValues(-1, 0, -1), c: AXIS_COLOR },
-    { p: vec3.fromValues(+1, 0, -1), c: AXIS_COLOR },
-    { p: vec3.fromValues(0, -1, -1), c: AXIS_COLOR },
-    { p: vec3.fromValues(0, +1, -1), c: AXIS_COLOR },
-    //Far plane axis
-    { p: vec3.fromValues(-1, 0, 1), c: AXIS_COLOR },
-    { p: vec3.fromValues(+1, 0, 1), c: AXIS_COLOR },
-    { p: vec3.fromValues(0, -1, 1), c: AXIS_COLOR },
-    { p: vec3.fromValues(0, +1, 1), c: AXIS_COLOR },
-];
-const Lines = [
-    0, 2,
-    0, 3,
-    0, 4,
-    0, 5,
-    // near plane
-    6, 7,
-    6, 8,
-    7, 9,
-    8, 9,
-    6, 10,
-    7, 11,
-    8, 12,
-    9, 13,
-    // far plane
-    10, 11,
-    10, 12,
-    11, 13,
-    12, 13,
-    //center axis
-    1, 14,
-    //near plane axis
-    15, 16,
-    17, 18,
-    //far plane axis
-    19, 20,
-    21, 22,
-    //near / far plane junction
-    /*15, 19,
-    16, 20,
-    17, 21,
-    18, 22,*/
-];
-class CameraFrustum extends Mesh {
-    #camera = null;
-    #vertexPositionAttribute;
-    constructor(params = {}) {
-        params.geometry = new BufferGeometry();
-        params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerVertex });
-        super(params);
-        this.renderMode = GL_LINES;
-        this.#createVertices();
-        this.castShadow = false;
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
-    }
-    #createVertices() {
-        const indices = Lines;
-        const vertices = [];
-        const normals = [];
-        const texCoords = [];
-        const colors = [];
-        for (const point of Points) {
-            vertices.push(...point.p);
-            normals.push(1, 0, 0);
-            texCoords.push(1, 0, 0);
-            colors.push(...point.c);
-        }
-        const geometry = this.getGeometry();
-        geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
-        this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
-        geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
-        geometry.setAttribute('aVertexNormal', new Float32BufferAttribute(normals, 3, 'normal'));
-        geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(texCoords, 2, 'texCoord'));
-        geometry.setAttribute('aVertexColor', new Float32BufferAttribute(colors, 4, 'color'));
-        geometry.count = indices.length;
-    }
-    update() {
-        if (!this.#camera) {
-            return;
-        }
-        let index = 0;
-        const verticesArray = this.#vertexPositionAttribute._array;
-        if (!verticesArray) {
-            return;
-        }
-        for (const point of Points) {
-            if (index > 3) { //Skip the base point
-                vec3.copy(tempVec3$2, point.p);
-                this.#camera.invertProjection(tempVec3$2);
-                verticesArray.set(tempVec3$2, index);
-            }
-            index += 3;
-        }
-        this.#vertexPositionAttribute.dirty = true;
-    }
-    parentChanged(parent) {
-        if (parent?.is('Camera')) {
-            this.#camera = parent;
-        }
-        else {
-            this.#camera = null;
-        }
-        this.update();
-    }
-}
-
-class Grid extends Mesh {
-    #size;
-    #spacing;
-    //#normal: number;
-    constructor(params = {}) {
-        const spacing = params.spacing ?? 10;
-        params.geometry = new PlaneBufferGeometry();
-        params.material = new GridMaterial({ spacing: spacing });
-        super(params);
-        this.#size = params.size ?? 100;
-        this.#spacing = spacing;
-        //this.#normal = params.normal ?? 2;
-        this.#updateGeometry();
-    }
-    #updateGeometry() {
-        this.getGeometry().updateGeometry(this.#size, this.#size, 1, 1);
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Grid_1: null,
-            size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) {
-                    this.#size = Number(size);
-                    this.#updateGeometry();
-                } } },
-            spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) {
-                    this.#spacing = Number(spacing);
-                    this.getMaterial().setSpacing(this.#spacing);
-                } } }
-        });
-    }
-    static getEntityName() {
-        return 'Grid';
-    }
-}
-
-class Line extends Mesh {
-    isLine = true;
-    #start = vec3.create();
-    #end = vec3.create();
-    constructor(params = {}) {
-        params.geometry = new LineSegmentsGeometry();
-        params.material = params.material ?? new LineMaterial({ lineWidth: 10 });
-        super(params);
-        if (params.start) {
-            vec3.copy(this.#start, params.start);
-        }
-        if (params.end) {
-            vec3.copy(this.#end, params.end);
-        }
-        this.#updateGeometry();
-    }
-    set start(start) {
-        vec3.copy(this.#start, start);
-        this.#updateGeometry();
-    }
-    getStart(start = vec3.create()) {
-        return vec3.copy(start, this.#start);
-    }
-    set end(end) {
-        vec3.copy(this.#end, end);
-        this.#updateGeometry();
-    }
-    getEnd(end = vec3.create()) {
-        return vec3.copy(end, this.#end);
-    }
-    #updateGeometry() {
-        this.getGeometry().setSegments([...this.#start, ...this.#end], [], false);
-    }
-    raycast(raycaster, intersections) {
-        const interSegment = vec3.create();
-        const interRay = vec3.create();
-        const ray = raycaster.ray;
-        const sqrDist = ray.distanceSqToSegment(this.#start, this.#end, interRay, interSegment);
-        if (sqrDist < 10) { //TODO: variable
-            intersections.push(ray.createIntersection(interRay, null, null, this, sqrDist));
-        }
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.start = vec3ToJSON(this.start);
-        json.end = vec3ToJSON(this.end);
-        json.material = this.getMaterial().toJSON();
-        return json;
-    }
-    static async constructFromJSON(json, entities, loadedPromise) {
-        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-        return new Line({ start: json.start, end: json.end, material: material });
-    }
-    static getEntityName() {
-        return 'Line';
-    }
-}
-registerEntity(Line);
-
-const SceneExplorerEvents = new EventTarget();
-
-const tempVec3$1 = vec3.create();
-const tempVec3_1 = vec3.create();
-const tempQuat = quat.create();
-const BONE_RADIUS = 0.5;
-class SkeletonHelper extends Entity {
-    static #helpers = new Set();
-    #skeleton = null;
-    #lines = new Map();
-    #bones = new Map();
-    #joints = new Map();
-    #lineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, });
-    #highlitLineMaterial = new LineMaterial({ user: this, lineWidth: 3, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
-    #boneTipMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 0, 1, 1], });
-    #boneMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [27 / 255, 106 / 255, 0, 1], });
-    #jointMaterial = new MeshBasicMaterial({ user: this, defines: { ALWAYS_ON_TOP: '' }, meshColor: [1, 235 / 255, 0, 1], });
-    #lineGroup = new Group({ name: 'lines', parent: this, visible: false });
-    #bonesGroup = new Group({ name: 'bones', parent: this, });
-    #raycaster;
-    #highlitLine;
-    #boneStart;
-    #boneEnd;
-    enumerable = false;
-    #displayJoints = true;
-    constructor(parameters = {}) {
-        super(parameters);
-        SkeletonHelper.#helpers.add(this);
-        this.hideInExplorer = parameters.hideInExplorer ?? false;
-        this.#skeleton = parameters?.skeleton ?? null;
-        this.#raycaster = new Raycaster();
-        this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
-        this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial, parent: this });
-        this.#initListeners();
-    }
-    parentChanged(parent) {
-        if (!parent) {
-            return;
-        }
-        this.#clearSkeleton();
-        let current = parent;
-        while (current) {
-            if (current.isSkeleton) {
-                this.#skeleton = current;
-                return;
-            }
-            else if (current.hasSkeleton) {
-                this.#skeleton = current.skeleton;
-                return;
-            }
-            current = current.parent;
-        }
-        this.#skeleton = null;
-    }
-    #clearSkeleton() {
-        this.#lines.forEach(value => value.dispose());
-        this.#bones.forEach(value => value.dispose());
-        this.#joints.forEach(value => value.dispose());
-        this.#lines.clear();
-        this.#bones.clear();
-        this.#joints.clear();
-        this.#boneStart.setVisible(false);
-        this.#boneEnd.setVisible(false);
-    }
-    /*
-        set skeleton(skeleton) {
-            this.#skeleton = skeleton;
-        }
-
-        get skeleton() {
-            return this.#skeleton;
-        }*/
-    getWorldPosition(vec = vec3.create()) {
-        return vec3.copy(vec, this._position);
-    }
-    getWorldQuaternion(q = quat.create()) {
-        return quat.identity(q);
-    }
-    getWorldScale(scale = vec3.create()) {
-        return vec3.copy(scale, this._scale);
-    }
-    #update() {
-        if (!this.#skeleton) {
-            return;
-        }
-        for (const bone of this.#skeleton.bones) {
-            let boneLine = this.#lines.get(bone);
-            let boneCylinder = this.#bones.get(bone);
-            let boneSphere = this.#joints.get(bone);
-            if (!boneLine) {
-                boneLine = new Line({ material: this.#lineMaterial, parent: this.#lineGroup });
-                boneLine.properties.setObject('bone', bone);
-                this.#lines.set(bone, boneLine);
-                boneCylinder = new Cylinder({ material: this.#boneMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS, });
-                this.#bones.set(bone, boneCylinder);
-                boneSphere = new Sphere({ material: this.#jointMaterial, parent: this.#bonesGroup, radius: BONE_RADIUS * 2, rings: 16, segments: 16 });
-                this.#joints.set(bone, boneSphere);
-            }
-            //boneLine.position = bone.worldPos;
-            let start = bone.worldPos;
-            const end = bone.worldPos;
-            const boneParent = bone.parent;
-            if (boneParent?.isBone) {
-                start = boneParent.getWorldPosition( /*TODO: optimize*/);
-                boneLine.properties.setObject('boneParent', boneParent);
-            }
-            boneLine.start = start;
-            boneLine.end = end;
-            boneSphere.setPosition(end);
-            if (start !== end) {
-                vec3.sub(tempVec3$1, end, start);
-                //const mid = vec3.add(tempVec3_1, start, end);
-                vec3.scaleAndAdd(tempVec3_1, start, tempVec3$1, 0.5);
-                boneCylinder.setHeight(vec3.len(tempVec3$1));
-                vec3.normalize(tempVec3$1, tempVec3$1);
-                quat.rotationTo(tempQuat, vec3.fromValues(0, 0, 1), tempVec3$1);
-                boneCylinder.setOrientation(tempQuat);
-                boneCylinder.setPosition(tempVec3_1);
-                boneCylinder.setVisible();
-            }
-            else {
-                boneCylinder.setVisible(false);
-            }
-        }
-    }
-    // eslint-disable-next-line @typescript-eslint/class-literal-property-style
-    get wireframe() {
-        return 0;
-    }
-    #initListeners() {
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
-            if (!this.isVisible()) {
-                return;
-            }
-            this.#update();
-        });
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
-            this.#mouseMoved(event);
-        });
-        GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
-            this.#mouseUp(event);
-        });
-    }
-    #mouseMoved(event) {
-        if (Graphics$1.dragging) {
-            return;
-        }
-        const picked = this.#pickBone(event);
-        if (picked) {
-            this.#highlit(picked);
-        }
-    }
-    #mouseUp(event) {
-        if (Graphics$1.dragging) {
-            return;
-        }
-        const closest = this.#pickBone(event);
-        if (closest) {
-            let bone = closest.properties.getObject('bone');
-            if (closest.isLine) {
-                this.#highlit(closest);
-                bone = bone?.parent /*TODO case where parent is not Bone*/ ?? bone;
-            }
-            SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
-        }
-    }
-    displayBoneJoints(display) {
-        this.#boneStart.setVisible(this.#highlitLine && display && undefined);
-        this.#boneEnd.setVisible(this.#highlitLine && display && undefined);
-        this.#displayJoints = display;
-    }
-    static displayBonesAsLines(showLines) {
-        for (const helper of SkeletonHelper.#helpers) {
-            helper.#lineGroup.setVisible(showLines && undefined);
-            helper.#bonesGroup.setVisible((!showLines) && undefined);
-        }
-    }
-    setJointsRadius(radius) {
-        this.#boneStart.setRadius(radius);
-        this.#boneEnd.setRadius(radius);
-    }
-    #pickBone(event) {
-        if (!this.isVisible()) {
-            return null;
-        }
-        const normalizedX = (event.detail.x / event.detail.width) * 2 - 1;
-        const normalizedY = 1 - (event.detail.y / event.detail.height) * 2;
-        const scene = this.root; // TODO: imbricated scenes
-        if (!scene.is('Scene') || !scene.activeCamera) {
-            return null;
-        }
-        const intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
-        if (intersections.length) {
-            let closest = null;
-            let closestDist = Infinity;
-            for (const intersection of intersections) {
-                const entity = intersection.entity;
-                if (entity.isLine) {
-                    if (intersection.distanceFromRay < closestDist) {
-                        closest = entity;
-                        closestDist = intersection.distanceFromRay;
-                    }
-                }
-                else if (entity.isSphere) {
-                    if (intersection.distanceFromRay < closestDist) {
-                        if (entity == this.#boneStart || entity == this.#boneEnd) {
-                            closest = entity;
-                            closestDist = intersection.distanceFromRay;
-                        }
-                    }
-                }
-            }
-            return closest;
-        }
-        return null;
-    }
-    #highlit(line) {
-        if (!line?.isLine) {
-            return;
-        }
-        if (this.#highlitLine) {
-            this.#highlitLine.setMaterial(this.#lineMaterial);
-        }
-        if (line) {
-            line.setMaterial(this.#highlitLineMaterial);
-            this.#boneStart.setPosition(line.getStart(tempVec3$1));
-            this.#boneEnd.setPosition(line.getEnd(tempVec3$1));
-            this.#boneStart.setVisible(this.#displayJoints && undefined);
-            this.#boneEnd.setVisible(this.#displayJoints && undefined);
-            this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
-            this.#boneEnd.properties.set('bone', line.properties.get('bone'));
-        }
-        this.#highlitLine = line;
-    }
-    dispose() {
-        this.#clearSkeleton();
-        this.#lineMaterial.removeUser(this);
-        this.#highlitLineMaterial.removeUser(this);
-    }
-    static getEntityName() {
-        return 'SkeletonHelper';
-    }
-}
-
-function getHelper(type) {
-    switch (type.constructor.name) {
-        case 'PointLight':
-            return new PointLightHelper();
-        case 'SpotLight':
-            return new SpotLightHelper();
-        case 'Scene':
-            return new Grid();
-    }
-    switch (true) {
-        case type.isSkeleton:
-            return new SkeletonHelper();
-    }
-    if (type instanceof Camera) {
-        return new CameraFrustum();
-    }
-}
-
-const tempVec3 = vec3.create();
-let boxMaterial;
-class HitboxHelper extends Entity {
-    #hitboxes = [];
-    constructor() {
-        super();
-        if (!boxMaterial) {
-            boxMaterial = new MeshBasicMaterial();
-            boxMaterial.setMeshColor([0.5, 0.5, 0.5, 0.1]);
-            boxMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-        }
-    }
-    parentChanged(parent) {
-        this.removeBoxes();
-        if (parent && parent.getHitboxes) {
-            const hitboxes = parent.getHitboxes();
-            for (const hitbox of hitboxes) {
-                vec3.sub(tempVec3, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
-                const box = new Box({ width: tempVec3[0], height: tempVec3[1], depth: tempVec3[2], material: boxMaterial });
-                box.serializable = false;
-                vec3.lerp(tempVec3, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
-                box.setPosition(tempVec3);
-                if (hitbox.parent) {
-                    hitbox.parent.addChild(box);
-                }
-                else {
-                    this.addChild(box);
-                }
-                this.#hitboxes.push(box);
-            }
-        }
-    }
-    removeBoxes() {
-        this.#hitboxes.forEach(hitbox => hitbox.dispose());
-        this.#hitboxes = [];
-    }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON() {
-        return new HitboxHelper();
-    }
-    static getEntityName() {
-        return 'HitboxHelper';
-    }
-}
-registerEntity(HitboxHelper);
-
-class Text2D extends Entity {
-    isText3D = true;
-    #text;
-    #size;
-    #font;
-    //style: string;
-    #html = createElement('div', { style: 'position:absolute;pointer-events:none;' });
-    constructor(params = {}) {
-        super(params);
-        this.setText(params.text);
-        this.setSize(params.size);
-        this.setFont(params.font);
-        this.setParentElement(params.parentElement);
-        display(this.#html, this.isVisible());
-    }
-    setParentElement(parentElement) {
-        parentElement?.append(this.#html);
-    }
-    setVisible(visible) {
-        super.setVisible(visible);
-        display(this.#html, this.isVisible());
-    }
-    setText(text) {
-        this.#text = text;
-        this.#html.innerText = text ?? '';
-    }
-    setSize(size) {
-        this.#size = size;
-        this.#html.style.fontSize = size ?? '';
-    }
-    setFont(font) {
-        this.#font = font;
-        this.#html.style.fontFamily = font ?? '';
-    }
-    update(scene, camera /*, delta: number*/) {
-        const pos = vec3.create();
-        const mat = camera.getViewProjectionMatrix();
-        vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
-        if (pos[2] > 1) {
-            // Text is behind the camera
-            // TODO: we may also use camera near and far plane
-            display(this.#html, false);
-            return;
-        }
-        else {
-            display(this.#html, this.isVisible());
-        }
-        //console.log(pos);
-        vec3.scale(pos, pos, 50);
-        vec3.add(pos, pos, [50, 50, 0]);
-        this.#html.style.left = `${pos[0]}%`;
-        this.#html.style.top = `${100 - pos[1]}%`;
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.text = this.#text;
-        json.size = this.#size;
-        json.font = this.#font;
-        //json.style = this.#style;
-        return json;
-    }
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    /* eslint-disable @typescript-eslint/require-await */
-    static async constructFromJSON(json, entities, loadedPromise) {
-        return new Text2D(); // TODO: add params
-    }
-    /* eslint-enable @typescript-eslint/no-unused-vars */
-    /* eslint-enable @typescript-eslint/require-await */
-    fromJSON(json) {
-        super.fromJSON(json);
-        this.setText(json.text);
-        this.setSize(json.size);
-        this.setFont(json.font);
-        //this.style = json.style as string ?? Text2D.defaultStyle;
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Text3D_1: null,
-            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.setText(text ?? undefined); } },
-            font: {
-                i18n: '#font', f: async () => {
-                    const fontList = await FontManager.getFontList();
-                    const fontList2 = new Set();
-                    for (const [fontName, font] of fontList) {
-                        for (const style of font) {
-                            fontList2.add(`${fontName}, ${style}`);
-                        }
-                    }
-                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
-                    if (font) {
-                        this.setFont(font[0]);
-                        //this.style = font[1]!;
-                        //this.#update();
-                    }
-                }
-            },
-            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(size ?? undefined); } },
-        });
-    }
-    static getEntityName() {
-        return 'Text2D';
-    }
-}
-registerEntity(Text2D);
-
-class ExtrudeGeometry extends BufferGeometry {
-    parameters;
-    createGeometry(shapes, options) {
-        this.parameters = {
-            shapes: shapes,
-            options: options
-        };
-        shapes = Array.isArray(shapes) ? shapes : [shapes];
-        const scope = this;
-        const indicesArray = [];
-        const verticesArray = [];
-        const normalArray = [];
-        const uvArray = [];
-        for (let i = 0, l = shapes.length; i < l; i++) {
-            addShape(shapes[i]);
-        }
-        // build geometry
-        this.setIndex(new Uint32BufferAttribute(indicesArray, 1, 'index'));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(verticesArray, 3, 'position'));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(normalArray, 3, 'normal'));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvArray, 2, 'texCoord'));
-        this.count = indicesArray.length;
-        this.computeVertexNormals();
-        // functions
-        function addShape(shape) {
-            const placeholder = [];
-            verticesArray.length / 3;
-            // options
-            const curveSegments = options.curveSegments ?? 12;
-            const steps = options.steps ?? 1;
-            const depth = options.depth ?? 100;
-            let bevelEnabled = options.bevelEnabled ?? true;
-            let bevelThickness = options.bevelThickness ?? 6;
-            let bevelSize = options.bevelSize ?? bevelThickness - 2;
-            let bevelOffset = options.bevelOffset ?? 0;
-            let bevelSegments = options.bevelSegments ?? 3;
-            options.extrudePath;
-            const uvgen = options.uvGenerator ?? WorldUVGenerator;
-            // TODO
-            /*
-            if (extrudePath) {
-
-                extrudePts = extrudePath.getSpacedPoints(steps);
-
-                extrudeByPath = true;
-                bevelEnabled = false; // bevels not supported for path extrusion
-
-                // SETUP TNB variables
-
-                // TODO1 - have a .isClosed in spline?
-
-                splineTube = extrudePath.computeFrenetFrames(steps, false);
-
-                // console.log(splineTube, 'splineTube', splineTube.normals.length, 'steps', steps, 'extrudePts', extrudePts.length);
-
-                binormal = vec3.create();
-                normal = vec3.create();
-                position2 = vec3.create();
-
-            }
-            */
-            // Safeguards if bevels are not enabled
-            if (!bevelEnabled) {
-                bevelSegments = 0;
-                bevelThickness = 0;
-                bevelSize = 0;
-                bevelOffset = 0;
-            }
-            // Variables initialization
-            const shapePoints = shape.extractPoints(curveSegments);
-            let vertices = shapePoints.shape;
-            const holes = shapePoints.holes;
-            const reverse = !ShapeUtils.isClockWise(vertices);
-            if (reverse) {
-                vertices = vertices.reverse();
-                // Maybe we should also check if holes are in the opposite direction, just to be safe ...
-                for (let h = 0, hl = holes.length; h < hl; h++) {
-                    const ahole = holes[h];
-                    if (ShapeUtils.isClockWise(ahole)) {
-                        holes[h] = ahole.reverse();
-                    }
-                }
-            }
-            const faces = ShapeUtils.triangulateShape(vertices, holes);
-            /* Vertices */
-            const contour = vertices; // vertices has all points but contour has only points of circumference
-            for (let h = 0, hl = holes.length; h < hl; h++) {
-                const ahole = holes[h];
-                vertices = vertices.concat(ahole);
-            }
-            function scalePt2(pt, vec, size) {
-                return vec2.scaleAndAdd(vec2.create(), pt, vec, size);
-            }
-            const vlen = vertices.length, flen = faces.length;
-            // Find directions for point movement
-            function getBevelVec(inPt, inPrev, inNext) {
-                // computes for inPt the corresponding point inPt' on a new contour
-                //   shifted by 1 unit (length of normalized vector) to the left
-                // if we walk along contour clockwise, this new contour is outside the old one
-                //
-                // inPt' is the intersection of the two lines parallel to the two
-                //  adjacent edges of inPt at a distance of 1 unit on the left side.
-                let v_trans_x, v_trans_y, shrink_by; // resulting translation vector for inPt
-                // good reading for geometry algorithms (here: line-line intersection)
-                // http://geomalgorithms.com/a05-_intersect-1.html
-                const v_prev_x = inPt[0] - inPrev[0], v_prev_y = inPt[1] - inPrev[1];
-                const v_next_x = inNext[0] - inPt[0], v_next_y = inNext[1] - inPt[1];
-                const v_prev_lensq = (v_prev_x * v_prev_x + v_prev_y * v_prev_y);
-                // check for collinear edges
-                const collinear0 = (v_prev_x * v_next_y - v_prev_y * v_next_x);
-                if (Math.abs(collinear0) > Number.EPSILON) {
-                    // not collinear
-                    // length of vectors for normalizing
-                    const v_prev_len = Math.sqrt(v_prev_lensq);
-                    const v_next_len = Math.sqrt(v_next_x * v_next_x + v_next_y * v_next_y);
-                    // shift adjacent points by unit vectors to the left
-                    const ptPrevShift_x = (inPrev[0] - v_prev_y / v_prev_len);
-                    const ptPrevShift_y = (inPrev[1] + v_prev_x / v_prev_len);
-                    const ptNextShift_x = (inNext[0] - v_next_y / v_next_len);
-                    const ptNextShift_y = (inNext[1] + v_next_x / v_next_len);
-                    // scaling factor for v_prev to intersection point
-                    const sf = ((ptNextShift_x - ptPrevShift_x) * v_next_y -
-                        (ptNextShift_y - ptPrevShift_y) * v_next_x) /
-                        (v_prev_x * v_next_y - v_prev_y * v_next_x);
-                    // vector from inPt to intersection point
-                    v_trans_x = (ptPrevShift_x + v_prev_x * sf - inPt[0]);
-                    v_trans_y = (ptPrevShift_y + v_prev_y * sf - inPt[1]);
-                    // Don't normalize!, otherwise sharp corners become ugly
-                    //  but prevent crazy spikes
-                    const v_trans_lensq = (v_trans_x * v_trans_x + v_trans_y * v_trans_y);
-                    if (v_trans_lensq <= 2) {
-                        return vec2.fromValues(v_trans_x, v_trans_y);
-                    }
-                    else {
-                        shrink_by = Math.sqrt(v_trans_lensq / 2);
-                    }
-                }
-                else {
-                    // handle special case of collinear edges
-                    let direction_eq = false; // assumes: opposite
-                    if (v_prev_x > Number.EPSILON) {
-                        if (v_next_x > Number.EPSILON) {
-                            direction_eq = true;
-                        }
-                    }
-                    else {
-                        if (v_prev_x < -Number.EPSILON) {
-                            if (v_next_x < -Number.EPSILON) {
-                                direction_eq = true;
-                            }
-                        }
-                        else {
-                            if (Math.sign(v_prev_y) === Math.sign(v_next_y)) {
-                                direction_eq = true;
-                            }
-                        }
-                    }
-                    if (direction_eq) {
-                        // console.log("Warning: lines are a straight sequence");
-                        v_trans_x = -v_prev_y;
-                        v_trans_y = v_prev_x;
-                        shrink_by = Math.sqrt(v_prev_lensq);
-                    }
-                    else {
-                        // console.log("Warning: lines are a straight spike");
-                        v_trans_x = v_prev_x;
-                        v_trans_y = v_prev_y;
-                        shrink_by = Math.sqrt(v_prev_lensq / 2);
-                    }
-                }
-                return vec2.fromValues(v_trans_x / shrink_by, v_trans_y / shrink_by);
-            }
-            const contourMovements = [];
-            for (let i = 0, il = contour.length, j = il - 1, k = i + 1; i < il; i++, j++, k++) {
-                if (j === il)
-                    j = 0;
-                if (k === il)
-                    k = 0;
-                //  (j)---(i)---(k)
-                // console.log('i,j,k', i, j , k)
-                contourMovements[i] = getBevelVec(contour[i], contour[j], contour[k]);
-            }
-            const holesMovements = [];
-            let oneHoleMovements, verticesMovements = contourMovements.concat();
-            for (let h = 0, hl = holes.length; h < hl; h++) {
-                const ahole = holes[h];
-                oneHoleMovements = [];
-                for (let i = 0, il = ahole.length, j = il - 1, k = i + 1; i < il; i++, j++, k++) {
-                    if (j === il)
-                        j = 0;
-                    if (k === il)
-                        k = 0;
-                    //  (j)---(i)---(k)
-                    oneHoleMovements[i] = getBevelVec(ahole[i], ahole[j], ahole[k]);
-                }
-                holesMovements.push(oneHoleMovements);
-                verticesMovements = verticesMovements.concat(oneHoleMovements);
-            }
-            // Loop bevelSegments, 1 for the front, 1 for the back
-            for (let b = 0; b < bevelSegments; b++) {
-                //for ( b = bevelSegments; b > 0; b -- ) {
-                const t = b / bevelSegments;
-                const z = bevelThickness * Math.cos(t * Math.PI / 2);
-                const bs = bevelSize * Math.sin(t * Math.PI / 2) + bevelOffset;
-                // contract shape
-                for (let i = 0, il = contour.length; i < il; i++) {
-                    const vert = scalePt2(contour[i], contourMovements[i], bs);
-                    v(vert[0], vert[1], -z);
-                }
-                // expand holes
-                for (let h = 0, hl = holes.length; h < hl; h++) {
-                    const ahole = holes[h];
-                    oneHoleMovements = holesMovements[h];
-                    for (let i = 0, il = ahole.length; i < il; i++) {
-                        const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
-                        v(vert[0], vert[1], -z);
-                    }
-                }
-            }
-            const bs = bevelSize + bevelOffset;
-            // Back facing vertices
-            for (let i = 0; i < vlen; i++) {
-                const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
-                {
-                    v(vert[0], vert[1], 0);
-                }
-            }
-            // Add stepped vertices...
-            // Including front facing vertices
-            for (let s = 1; s <= steps; s++) {
-                for (let i = 0; i < vlen; i++) {
-                    const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
-                    {
-                        v(vert[0], vert[1], depth / steps * s);
-                    }
-                }
-            }
-            // Add bevel segments planes
-            //for ( b = 1; b <= bevelSegments; b ++ ) {
-            for (let b = bevelSegments - 1; b >= 0; b--) {
-                const t = b / bevelSegments;
-                const z = bevelThickness * Math.cos(t * Math.PI / 2);
-                const bs = bevelSize * Math.sin(t * Math.PI / 2) + bevelOffset;
-                // contract shape
-                for (let i = 0, il = contour.length; i < il; i++) {
-                    const vert = scalePt2(contour[i], contourMovements[i], bs);
-                    v(vert[0], vert[1], depth + z);
-                }
-                // expand holes
-                for (let h = 0, hl = holes.length; h < hl; h++) {
-                    const ahole = holes[h];
-                    oneHoleMovements = holesMovements[h];
-                    for (let i = 0, il = ahole.length; i < il; i++) {
-                        const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
-                        {
-                            v(vert[0], vert[1], depth + z);
-                        }
-                    }
-                }
-            }
-            /* Faces */
-            // Top and bottom faces
-            buildLidFaces();
-            // Sides faces
-            buildSideFaces();
-            /////  Internal functions
-            function buildLidFaces() {
-                verticesArray.length / 3;
-                if (bevelEnabled) {
-                    let layer = 0; // steps + 1
-                    let offset = vlen * layer;
-                    // Bottom faces
-                    for (let i = 0; i < flen; i++) {
-                        const face = faces[i];
-                        f3(face[2] + offset, face[1] + offset, face[0] + offset);
-                    }
-                    layer = steps + bevelSegments * 2;
-                    offset = vlen * layer;
-                    // Top faces
-                    for (let i = 0; i < flen; i++) {
-                        const face = faces[i];
-                        f3(face[0] + offset, face[1] + offset, face[2] + offset);
-                    }
-                }
-                else {
-                    // Bottom faces
-                    for (let i = 0; i < flen; i++) {
-                        const face = faces[i];
-                        f3(face[2], face[1], face[0]);
-                    }
-                    // Top faces
-                    for (let i = 0; i < flen; i++) {
-                        const face = faces[i];
-                        f3(face[0] + vlen * steps, face[1] + vlen * steps, face[2] + vlen * steps);
-                    }
-                }
-                //scope.addGroup( start, verticesArray.length / 3 - start, 0 );
-            }
-            // Create faces for the z-sides of the shape
-            function buildSideFaces() {
-                verticesArray.length / 3;
-                let layeroffset = 0;
-                sidewalls(contour, layeroffset);
-                layeroffset += contour.length;
-                for (let h = 0, hl = holes.length; h < hl; h++) {
-                    const ahole = holes[h];
-                    sidewalls(ahole, layeroffset);
-                    //, true
-                    layeroffset += ahole.length;
-                }
-                //scope.addGroup( start, verticesArray.length / 3 - start, 1 );
-            }
-            function sidewalls(contour, layeroffset) {
-                let i = contour.length;
-                while (--i >= 0) {
-                    const j = i;
-                    let k = i - 1;
-                    if (k < 0)
-                        k = contour.length - 1;
-                    //console.log('b', i,j, i-1, k,vertices.length);
-                    for (let s = 0, sl = (steps + bevelSegments * 2); s < sl; s++) {
-                        const slen1 = vlen * s;
-                        const slen2 = vlen * (s + 1);
-                        const a = layeroffset + j + slen1, b = layeroffset + k + slen1, c = layeroffset + k + slen2, d = layeroffset + j + slen2;
-                        f4(a, b, c, d);
-                    }
-                }
-            }
-            function v(x, y, z) {
-                placeholder.push(x);
-                placeholder.push(y);
-                placeholder.push(z);
-            }
-            function f3(a, b, c) {
-                addIndex();
-                addIndex();
-                addIndex();
-                addVertex(a);
-                addVertex(b);
-                addVertex(c);
-                const nextIndex = verticesArray.length / 3;
-                const uvs = uvgen.generateTopUV(scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1);
-                addUV(uvs[0]);
-                addUV(uvs[1]);
-                addUV(uvs[2]);
-            }
-            function f4(a, b, c, d) {
-                addIndex();
-                addIndex();
-                addIndex();
-                addIndex();
-                addIndex();
-                addIndex();
-                addVertex(a);
-                addVertex(b);
-                addVertex(d);
-                addVertex(b);
-                addVertex(c);
-                addVertex(d);
-                const nextIndex = verticesArray.length / 3;
-                const uvs = uvgen.generateSideWallUV(scope, verticesArray, nextIndex - 6, nextIndex - 3, nextIndex - 2, nextIndex - 1);
-                addUV(uvs[0]);
-                addUV(uvs[1]);
-                addUV(uvs[3]);
-                addUV(uvs[1]);
-                addUV(uvs[2]);
-                addUV(uvs[3]);
-            }
-            function addIndex(index) {
-                indicesArray.push(indicesArray.length);
-            }
-            function addVertex(index) {
-                verticesArray.push(placeholder[index * 3 + 0]);
-                verticesArray.push(placeholder[index * 3 + 1]);
-                verticesArray.push(placeholder[index * 3 + 2]);
-                normalArray.push(1, 0, 0); // TODO: add a proper normal
-            }
-            function addUV(vector2) {
-                uvArray.push(vector2[0]);
-                uvArray.push(vector2[1]);
-            }
-        }
-    }
-}
-const WorldUVGenerator = {
-    generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
-        const a_x = vertices[indexA * 3];
-        const a_y = vertices[indexA * 3 + 1];
-        const b_x = vertices[indexB * 3];
-        const b_y = vertices[indexB * 3 + 1];
-        const c_x = vertices[indexC * 3];
-        const c_y = vertices[indexC * 3 + 1];
-        return [
-            vec2.fromValues(a_x, a_y),
-            vec2.fromValues(b_x, b_y),
-            vec2.fromValues(c_x, c_y)
-        ];
-    },
-    generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
-        const a_x = vertices[indexA * 3];
-        const a_y = vertices[indexA * 3 + 1];
-        const a_z = vertices[indexA * 3 + 2];
-        const b_x = vertices[indexB * 3];
-        const b_y = vertices[indexB * 3 + 1];
-        const b_z = vertices[indexB * 3 + 2];
-        const c_x = vertices[indexC * 3];
-        const c_y = vertices[indexC * 3 + 1];
-        const c_z = vertices[indexC * 3 + 2];
-        const d_x = vertices[indexD * 3];
-        const d_y = vertices[indexD * 3 + 1];
-        const d_z = vertices[indexD * 3 + 2];
-        if (Math.abs(a_y - b_y) < Math.abs(a_x - b_x)) {
-            return [
-                vec2.fromValues(a_x, 1 - a_z),
-                vec2.fromValues(b_x, 1 - b_z),
-                vec2.fromValues(c_x, 1 - c_z),
-                vec2.fromValues(d_x, 1 - d_z)
-            ];
-        }
-        else {
-            return [
-                vec2.fromValues(a_y, 1 - a_z),
-                vec2.fromValues(b_y, 1 - b_z),
-                vec2.fromValues(c_y, 1 - c_z),
-                vec2.fromValues(d_y, 1 - d_z)
-            ];
-        }
-    }
-};
-
-class Text3D extends Mesh {
-    isText3D = true;
-    static defaultFont = 'arial';
-    static defaultStyle = 'normal';
-    #text;
-    #size;
-    #depth;
-    #font;
-    #style;
-    constructor(params = {}) {
-        params.geometry = new ExtrudeGeometry();
-        params.material = params.material ?? new MeshBasicMaterial();
-        super(params);
-        this.#text = params.text ?? '';
-        this.#size = params.size ?? 100;
-        this.#depth = params.depth ?? 10;
-        this.#font = params.font ?? Text3D.defaultFont;
-        this.#style = params.style ?? Text3D.defaultStyle;
-        this.#updateGeometry();
-        this.rotateX(90 * DEG_TO_RAD);
-        this.setParameters(params);
-    }
-    set text(text) {
-        this.#text = text;
-        this.#updateGeometry();
-    }
-    set size(size) {
-        this.#size = size;
-        this.#updateGeometry();
-    }
-    set depth(depth) {
-        this.#depth = depth;
-        this.#updateGeometry();
-    }
-    set font(font) {
-        this.#font = font;
-        this.#updateGeometry();
-    }
-    set style(style) {
-        this.#style = style;
-        this.#updateGeometry();
-    }
-    async #updateGeometry() {
-        const font = await FontManager.getFont(this.#font);
-        if (font) {
-            const shapes = font.generateShapes(this.#text, this.#size);
-            this.getGeometry().createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
-        }
-    }
-    toJSON() {
-        const json = super.toJSON();
-        json.text = this.#text;
-        json.size = this.#size;
-        json.depth = this.#depth;
-        json.font = this.#font;
-        json.style = this.#style;
-        return json;
-    }
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON( /*json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>*/) {
-        return new Text3D({}); // TODO: add params
-    }
-    fromJSON(json) {
-        super.fromJSON(json);
-        this.#text = json.text;
-        this.#size = json.size;
-        this.#depth = json.depth;
-        this.#font = json.font ?? Text3D.defaultFont;
-        this.#style = json.style ?? Text3D.defaultStyle;
-    }
-    buildContextMenu() {
-        return Object.assign(super.buildContextMenu(), {
-            Text3D_1: null,
-            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text ?? ''; } },
-            font: {
-                i18n: '#font', f: async () => {
-                    const fontList = await FontManager.getFontList();
-                    const fontList2 = new Set();
-                    for (const [fontName, font] of fontList) {
-                        for (const style of font) {
-                            fontList2.add(`${fontName}, ${style}`);
-                        }
-                    }
-                    const font = (await Interaction.getString(0, 0, fontList2)).split(',');
-                    if (font) {
-                        this.#font = font[0];
-                        this.#style = font[1];
-                        this.#updateGeometry();
-                    }
-                }
-            },
-            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.size = Number(size); } },
-            font_depth: { i18n: '#font_depth', f: () => { const depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
-        });
-    }
-    static getEntityName() {
-        return 'Text3D';
-    }
-}
-registerEntity(Text3D);
-
-class Wireframe extends Entity {
-    #material = new LineMaterial({ polygonOffset: true, lineWidth: 3, user: this, colorMode: MaterialColorMode.PerMesh });
-    #color = vec4.fromValues(0, 0, 0, 1);
-    enumerable = false;
-    #meshes = new Set();
-    constructor(params = {}) {
-        super(params);
-        //const material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
-        //this.#material = material;
-        this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
-        //this.setParameters(params);
-    }
-    setColor(color) {
-        vec4.copy(this.#color, color);
-        this.#material.setMeshColor(color);
-    }
-    parentChanged(parent) {
-        if (parent) {
-            this.#updateGeometry(parent);
-        }
-    }
-    #updateGeometry(parent) {
-        this.#disposeMeshes();
-        const meshes = parent.getChildList('Mesh');
-        for (const mesh of meshes) {
-            if (mesh == this || !mesh.isVisible()) {
-                continue;
-            }
-            const segments = [];
-            const line = new LineSegmentsGeometry({ user: this });
-            const me = new Mesh({ geometry: line, material: this.#material });
-            this.#meshes.add(me);
-            this.addChild(me);
-            const m = mesh.exportObj();
-            const vertexIndices = m.f;
-            const vertexPos = m.v;
-            for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
-                const vertexIndex1 = vertexIndices[i + 0] * 3;
-                const vertexIndex2 = vertexIndices[i + 1] * 3;
-                const vertexIndex3 = vertexIndices[i + 2] * 3;
-                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
-                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
-                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
-                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
-                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
-                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
-            }
-            line.setSegments(segments);
-        }
-    }
-    #disposeMeshes() {
-        for (const mesh of this.#meshes) {
-            mesh.dispose();
-        }
-        this.#meshes.clear();
-    }
-    dispose() {
-        super.dispose();
-        this.#material.removeUser(this);
-        this.#disposeMeshes();
-    }
-    is(s) {
-        return s == 'Wireframe';
-    }
-    static getEntityName() {
-        return 'Wireframe';
-    }
-}
 
 const a$1 = vec3.create();
 const b$1 = vec3.create();
