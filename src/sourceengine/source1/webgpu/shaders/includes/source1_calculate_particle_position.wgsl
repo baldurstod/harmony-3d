@@ -15,7 +15,7 @@ var a: vec3f;
 #define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5
 
 	let p: Particle = getParticle(u32(particleId));
-	output.vTextureCoord = vec4f(texCoord, output.vTextureCoord.zw);
+	#include calculate_vertex_uv
 	output.vColor = p.color;
 
 	//vec4 test = vec4(position + vecDelta, 1.0);// * p.radius * rotationMatrix(vec3(0.0, 1.0, 0.0), -p.roll * 1.0);

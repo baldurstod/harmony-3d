@@ -397,11 +397,8 @@ export declare class Bone extends Entity implements Lockable {
      * @deprecated Please use `setPosition` instead.
      */
     set position(position: vec3);
-    /**
-     * @deprecated Please use `setPosition` instead.
-     */
-    get position(): vec3;
     setPosition(position: ReadonlyVec3): void;
+    get position(): vec3;
     setWorldPosition(position: ReadonlyVec3): void;
     setWorldOrientation(quaternion: ReadonlyQuat): void;
     set refPosition(refPosition: vec3);
@@ -411,18 +408,15 @@ export declare class Bone extends Entity implements Lockable {
     /**
      * @deprecated Please use `setOrientation` instead.
      */
-    set quaternion(quaternion: quat);
-    /**
-     * @deprecated Please use `getQuaternion` instead.
-     */
-    get quaternion(): quat;
+    set quaternion(quaternion: vec4);
     /**
      * @deprecated Please use `setOrientation` instead.
      */
     setQuaternion(quaternion: ReadonlyQuat): void;
     setOrientation(quaternion: ReadonlyQuat): void;
-    set refQuaternion(refQuaternion: quat);
-    get refQuaternion(): quat;
+    get quaternion(): vec4;
+    set refQuaternion(refQuaternion: vec4);
+    get refQuaternion(): vec4;
     set scale(scale: vec3);
     get scale(): vec3;
     set parent(parent: Entity | null);
@@ -436,7 +430,7 @@ export declare class Bone extends Entity implements Lockable {
     get worldQuat(): quat;
     get worldScale(): vec3;
     getWorldPosition(vec?: vec3): vec3;
-    getWorldQuaternion(q?: quat): quat;
+    getWorldQuaternion(q?: quat): vec4;
     getWorldScale(vec?: vec3): vec3;
     getWorldPosOffset(offset: vec3, out?: vec3): vec3;
     set poseToBone(poseToBone: mat4);

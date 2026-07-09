@@ -16,7 +16,7 @@ vec3 a;
 #define PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION 5
 
 	particle p = getParticle(int(aParticleId));
-	vTextureCoord.xy = aTextureCoord;
+	#include compute_vertex_uv
 	vColor = p.color;
 
 	vec3 aVertexPosition3 = aVertexPosition;
