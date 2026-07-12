@@ -1,6 +1,6 @@
 import { vec3, quat, vec4, vec2, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
-import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, BugReporter, once as once$2, joinPath, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, Queue } from 'harmony-utils';
+import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, BugReporter, Color as Color$1, once as once$2, joinPath, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, Queue } from 'harmony-utils';
 import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, createElementNS, svgNamespace, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
@@ -11508,6 +11508,21 @@ class Sphere extends Mesh {
     thetaLength;
     isSphere = true;
     constructor(params = {}) {
+        const color = params.color;
+        let meshColor;
+        if (!params.material && color) {
+            if (typeof color === 'string') {
+                meshColor = new Color$1({ hex: color }).getRgba();
+            }
+            else {
+                if (color.length === 3) {
+                    meshColor = vec4.fromValues(...color, 1);
+                }
+                else {
+                    meshColor = vec4.fromValues(...color);
+                }
+            }
+        }
         params.geometry = new SphereBufferGeometry();
         params.material = params.material ?? new MeshBasicMaterial();
         super(params);
@@ -11518,6 +11533,9 @@ class Sphere extends Mesh {
         this.phiLength = params.phiLength ?? TAU;
         this.thetaStart = params.thetaStart = 0;
         this.thetaLength = params.thetaLength ?? PI;
+        if (meshColor) {
+            params.material.setMeshColor(meshColor);
+        }
         this.updateGeometry();
         super.setParameters(params);
     }
@@ -35748,8 +35766,6 @@ class Source1ParticleSystem extends Entity {
             for (const j in this.operators) {
                 const operator = this.operators[j];
                 operator.operateParticle(particle, this.elapsedTime);
-                // break the loop if the particle is dead
-                //if (!particle.isAlive) break;
                 this.operatorRandomSampleOffset += 17;
             }
             //particle.step(this.elapsedTime);

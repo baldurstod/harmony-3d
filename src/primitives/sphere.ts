@@ -1,6 +1,7 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
+import { Color } from 'harmony-utils';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
@@ -27,6 +28,8 @@ export type SphereParameters = MeshParameters & {
 	thetaStart?: number,
 	thetaLength?: number,
 	material?: Material,
+	/** Sphere color. Can have an hex format #ac56eb or normalized number array [r, g, b, a?]. Ignored if material is provided */
+	color?: string | vec3 | vec4,
 };
 
 export class Sphere extends Mesh {
@@ -40,6 +43,20 @@ export class Sphere extends Mesh {
 	isSphere = true;
 
 	constructor(params: SphereParameters = {}) {
+		const color = params.color;
+		let meshColor: vec4;
+		if (!params.material && color) {
+			if (typeof color === 'string') {
+				meshColor = new Color({ hex: color }).getRgba();
+			} else {
+				if (color.length === 3) {
+					meshColor = vec4.fromValues(...(color as [number, number, number]), 1);
+				} else {
+					meshColor = vec4.fromValues(...(color as [number, number, number, number]));
+				}
+			}
+		}
+
 		params.geometry = new SphereBufferGeometry();
 		params.material = params.material ?? new MeshBasicMaterial();
 		super(params);
@@ -50,6 +67,10 @@ export class Sphere extends Mesh {
 		this.phiLength = params.phiLength ?? TAU;
 		this.thetaStart = params.thetaStart = 0;
 		this.thetaLength = params.thetaLength ?? PI;
+
+		if (meshColor!) {
+			params.material.setMeshColor(meshColor);
+		}
 
 		this.updateGeometry();
 		super.setParameters(params);

@@ -8843,6 +8843,8 @@ declare class Channel {
                           thetaStart?: number;
                           thetaLength?: number;
                           material?: Material;
+                          /** Sphere color. Can have an hex format #ac56eb or normalized number array [r, g, b, a?]. Ignored if material is provided */
+                          color?: string | vec3 | vec4;
                       };
 
                       export declare class Spin extends Operator {
