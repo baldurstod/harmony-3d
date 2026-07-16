@@ -13,6 +13,9 @@ uniform sampler2D uColorTexture;
 uniform sampler2D uNormalTexture;
 uniform sampler2D uMetalnessTexture;
 uniform sampler2D uRoughnessTexture;
+#ifdef USE_MRAO_TEXTURE
+	uniform sampler2D uMraoTexture;
+#endif
 
 #include declare_fragment_ibl
 #include compute_pbr
@@ -50,6 +53,11 @@ float roughness = 0.;
 	roughness = uRoughness;
 #endif
 
+#ifdef USE_MRAO_TEXTURE
+	vec4 mraoTexel = texture2D(uMraoTexture, vTextureCoord.xy);
+	metalness = mraoTexel.r;
+	roughness = mraoTexel.g;
+#endif
 
 	#ifdef USE_NORMAL_TEXTURE
 		vec4 normalTexel = texture2D(uNormalTexture, vTextureCoord.xy);

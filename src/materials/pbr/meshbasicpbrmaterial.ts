@@ -2,11 +2,21 @@ import { vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../../entities/entities';
 import { Texture } from '../../textures/texture';
-import { DEFAULT_COLOR, Material } from '../material';
+import { DEFAULT_COLOR, Material, MaterialParams } from '../material';
 import { MateriaParameterType } from '../materialparameter';
 
+export type MeshBasicPbrMaterialParams = MaterialParams & {
+	color?: vec4;
+	metalness?: number;
+	roughness?: number;
+	colorTexture?: Texture;
+	normalTexture?: Texture;
+	metalnessTexture?: Texture;
+	roughnessTexture?: Texture;
+}
+
 export class MeshBasicPbrMaterial extends Material {
-	constructor(params: any/*TODO: create parameters type*/ = {}) {
+	constructor(params: MeshBasicPbrMaterialParams = {}) {
 		super(params);
 		this.addParameter('color', MateriaParameterType.Color4, null, newValue => this.setColor4Uniform('uColor', newValue ?? DEFAULT_COLOR));
 		this.addParameter('metalness', MateriaParameterType.NormalizedFloat, 0, newValue => { this.setUniformValue('uMetalness', newValue) });
@@ -18,7 +28,7 @@ export class MeshBasicPbrMaterial extends Material {
 		this.setParameters(params);
 	}
 
-	setParameters(params: any /*TODO: create parameters type*/ = {}) {
+	setParameters(params: MeshBasicPbrMaterialParams = {}) {
 		this.setColor(params.color);
 		this.setMetalness(params.metalness);
 		this.setRoughness(params.roughness);
@@ -28,31 +38,31 @@ export class MeshBasicPbrMaterial extends Material {
 		this.setRoughnessTexture(params.roughnessTexture);
 	}
 
-	setColor(color: vec4/*TODO: change to Color*/) {
+	setColor(color: vec4/*TODO: change to Color*/ | undefined) {
 		this.setParameterValue('color', color);
 	}
 
-	setMetalness(metalness: number) {
+	setMetalness(metalness: number | undefined) {
 		this.setParameterValue('metalness', metalness);
 	}
 
-	setRoughness(roughness: number) {
+	setRoughness(roughness: number | undefined) {
 		this.setParameterValue('roughness', roughness);
 	}
 
-	setColorTexture(colorTexture: Texture) {
+	setColorTexture(colorTexture: Texture | undefined) {
 		this.setParameterValue('color_texture', colorTexture);
 	}
 
-	setNormalTexture(normalTexture: Texture) {
+	setNormalTexture(normalTexture: Texture | undefined) {
 		this.setParameterValue('normal_texture', normalTexture);
 	}
 
-	setMetalnessTexture(metalnessTexture: Texture) {
+	setMetalnessTexture(metalnessTexture: Texture | undefined) {
 		this.setParameterValue('metalness_texture', metalnessTexture);
 	}
 
-	setRoughnessTexture(roughnessTexture: Texture) {
+	setRoughnessTexture(roughnessTexture: Texture | undefined) {
 		this.setParameterValue('roughness_texture', roughnessTexture);
 	}
 

@@ -3,6 +3,7 @@ export { CustomHeroMaterial } from './customhero';
 export { CustomWeaponMaterial } from './customweaponmaterial';
 export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
+export { Source1PbrMaterial } from './pbr';
 export * from './proxies/export';
 export { RefractMaterial } from './refract';
 export { Source1Material } from './source1material';

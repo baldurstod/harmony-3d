@@ -24,7 +24,7 @@ export enum MateriaParameterType {
 	Texture3D,
 }
 
-export type MateriaParameterValue = null | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
+export type MateriaParameterValue = null | undefined | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
 
 export type ParameterChanged = (newValue: any, oldValue?: any) => void;
 

@@ -3315,7 +3315,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4012,7 +4012,7 @@ declare class Channel {
                           Texture3D = 18
                       }
 
-                      declare type MateriaParameterValue = null | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
+                      declare type MateriaParameterValue = null | undefined | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
 
                       export declare const MAX_FLOATS = 4096;
 
@@ -4469,21 +4469,31 @@ declare class Channel {
                       }
 
                       export declare class MeshBasicPbrMaterial extends Material {
-                          constructor(params?: any);
-                          setParameters(params?: any): void;
-                          setColor(color: vec4): void;
-                          setMetalness(metalness: number): void;
-                          setRoughness(roughness: number): void;
-                          setColorTexture(colorTexture: Texture): void;
-                          setNormalTexture(normalTexture: Texture): void;
-                          setMetalnessTexture(metalnessTexture: Texture): void;
-                          setRoughnessTexture(roughnessTexture: Texture): void;
+                          constructor(params?: MeshBasicPbrMaterialParams);
+                          setParameters(params?: MeshBasicPbrMaterialParams): void;
+                          setColor(color: vec4 | undefined): void;
+                          setMetalness(metalness: number | undefined): void;
+                          setRoughness(roughness: number | undefined): void;
+                          setColorTexture(colorTexture: Texture | undefined): void;
+                          setNormalTexture(normalTexture: Texture | undefined): void;
+                          setMetalnessTexture(metalnessTexture: Texture | undefined): void;
+                          setRoughnessTexture(roughnessTexture: Texture | undefined): void;
                           getShaderSource(): string;
                           toJSON(): any;
                           static constructFromJSON(json: JSONObject): Promise<MeshBasicPbrMaterial>;
                           fromJSON(json: JSONObject): void;
                           static getEntityName(): string;
                       }
+
+                      declare type MeshBasicPbrMaterialParams = MaterialParams & {
+                          color?: vec4;
+                          metalness?: number;
+                          roughness?: number;
+                          colorTexture?: Texture;
+                          normalTexture?: Texture;
+                          metalnessTexture?: Texture;
+                          roughnessTexture?: Texture;
+                      };
 
                       export declare class MeshFlatMaterial extends Material {
                           constructor(params?: any);
@@ -7341,6 +7351,14 @@ declare class Channel {
                           name: string;
                           id?: string;
                       };
+
+                      export declare class Source1PbrMaterial extends Source1Material {
+                          #private;
+                          init(): void;
+                          afterProcessProxies(proxyParams: DynamicParams): void;
+                          clone(): Source1PbrMaterial;
+                          getShaderSource(): string;
+                      }
 
                       export declare class Source1PcfLoader extends SourceBinaryLoader {
                           #private;
