@@ -1,4 +1,5 @@
 import { JSONObject } from 'harmony-types';
+import { Shape } from './shape';
 import { ShapePath } from './shapepath';
 
 export class Font {
@@ -8,7 +9,7 @@ export class Font {
 		this.#json = json;
 	}
 
-	generateShapes(text: string, size = 100) {
+	generateShapes(text: string, size = 100): Shape[] {
 		const shapes = [];
 		const paths = this.createPaths(text, size);
 
@@ -18,7 +19,7 @@ export class Font {
 		return shapes;
 	}
 
-	createPaths(text = '', size = 1) {
+	createPaths(text = '', size = 1): ShapePath[] {
 		const data = this.#json;
 		const chars = Array.from(text);
 		const scale = size / data.resolution;
@@ -41,7 +42,7 @@ export class Font {
 		return paths;
 	}
 
-	createPath(char: string, scale: number, offsetX: number, offsetY: number) {
+	createPath(char: string, scale: number, offsetX: number, offsetY: number): { offsetX: number, path: ShapePath } {
 		const data = this.#json;
 
 		const glyph = data.glyphs[char] ?? data.glyphs['?'];
@@ -51,36 +52,36 @@ export class Font {
 		let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
 
 		if (glyph.o) {
-			const outline = glyph.o.split(' ');
+			const outline = (glyph.o as string).split(' ');
 
 			for (let i = 0, l = outline.length; i < l;) {
 				const action = outline[i++];
 
 				switch (action) {
 					case 'm': // moveTo
-						x = outline[i++] * scale + offsetX;
-						y = outline[i++] * scale + offsetY;
+						x = Number(outline[i++]) * scale + offsetX;
+						y = Number(outline[i++]) * scale + offsetY;
 						path.moveTo(x, y);
 						break;
 					case 'l': // lineTo
-						x = outline[i++] * scale + offsetX;
-						y = outline[i++] * scale + offsetY;
+						x = Number(outline[i++]) * scale + offsetX;
+						y = Number(outline[i++]) * scale + offsetY;
 						path.lineTo(x, y);
 						break;
 					case 'q': // quadraticCurveTo
-						cpx = outline[i++] * scale + offsetX;
-						cpy = outline[i++] * scale + offsetY;
-						cpx1 = outline[i++] * scale + offsetX;
-						cpy1 = outline[i++] * scale + offsetY;
+						cpx = Number(outline[i++]) * scale + offsetX;
+						cpy = Number(outline[i++]) * scale + offsetY;
+						cpx1 = Number(outline[i++]) * scale + offsetX;
+						cpy1 = Number(outline[i++]) * scale + offsetY;
 						path.quadraticCurveTo(cpx1, cpy1, cpx, cpy);
 						break;
 					case 'b': // bezierCurveTo
-						cpx = outline[i++] * scale + offsetX;
-						cpy = outline[i++] * scale + offsetY;
-						cpx1 = outline[i++] * scale + offsetX;
-						cpy1 = outline[i++] * scale + offsetY;
-						cpx2 = outline[i++] * scale + offsetX;
-						cpy2 = outline[i++] * scale + offsetY;
+						cpx = Number(outline[i++]) * scale + offsetX;
+						cpy = Number(outline[i++]) * scale + offsetY;
+						cpx1 = Number(outline[i++]) * scale + offsetX;
+						cpy1 = Number(outline[i++]) * scale + offsetY;
+						cpx2 = Number(outline[i++]) * scale + offsetX;
+						cpy2 = Number(outline[i++]) * scale + offsetY;
 						path.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, cpx, cpy);
 						break;
 				}

@@ -38,9 +38,9 @@ class ShapePath {
 	}
 	*/
 
-	toShapes(isCCW?: boolean, noHoles = false) {
+	toShapes(isCCW?: boolean, noHoles = false): Shape[] {
 
-		function toShapesNoHoles(inSubpaths: Path[]) {
+		function toShapesNoHoles(inSubpaths: Path[]): Shape[] {
 
 			const shapes = [];
 
@@ -59,7 +59,7 @@ class ShapePath {
 
 		}
 
-		function isPointInsidePolygon(inPt: vec3, inPolygon: vec3[]) {
+		function isPointInsidePolygon(inPt: vec3, inPolygon: vec3[]): boolean {
 
 			const polyLen = inPolygon.length;
 
@@ -119,7 +119,7 @@ class ShapePath {
 
 		}
 
-		const isClockWise = ShapeUtils.isClockWise;
+		//const isClockWise = ShapeUtils.isClockWise;
 
 		const subPaths = this.subPaths;
 		if (subPaths.length === 0) return [];
@@ -139,7 +139,7 @@ class ShapePath {
 			return shapes;
 		}
 
-		let holesFirst = !isClockWise(subPaths[0]!.getPoints());
+		let holesFirst = !ShapeUtils.isClockWise(subPaths[0]!.getPoints());
 		holesFirst = isCCW ? !holesFirst : holesFirst;
 
 		// console.log("Holes first", holesFirst);
@@ -156,7 +156,7 @@ class ShapePath {
 		for (let i = 0, l = subPaths.length; i < l; i++) {
 			tmpPath = subPaths[i]!;
 			tmpPoints = tmpPath.getPoints();
-			solid = isClockWise(tmpPoints);
+			solid = ShapeUtils.isClockWise(tmpPoints);
 			solid = isCCW ? !solid : solid;
 
 			if (solid) {

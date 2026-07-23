@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import { Path } from '../math/curves/path';
 import { generateRandomUUID } from '../math/functions';
 
@@ -6,7 +7,7 @@ export class Shape extends Path {
 	type = 'Shape';
 	holes: Path[] = [];
 
-	getPointsHoles(divisions: number) {
+	getPointsHoles(divisions: number): vec3[][] {
 		const holesPts = [];
 		for (let i = 0, l = this.holes.length; i < l; i++) {
 			holesPts[i] = this.holes[i]!.getPoints(divisions);
@@ -15,7 +16,10 @@ export class Shape extends Path {
 	}
 
 	// get points of shape and holes (keypoints based on segments parameter)
-	extractPoints(divisions: number) {
+	extractPoints(divisions: number): {
+		shape: vec3[],
+		holes: vec3[][],
+	} {
 		return {
 			shape: this.getPoints(divisions),
 			holes: this.getPointsHoles(divisions)

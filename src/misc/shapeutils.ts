@@ -21,7 +21,7 @@ export class ShapeUtils {
 
 	}
 
-	static triangulateShape(contour: vec3[], holes: vec3[][]) {
+	static triangulateShape(contour: vec3[], holes: vec3[][]): [number, number, number][] {
 
 		const vertices: number[] = []; // flat array of vertices like [ x0,y0, x1,y1, x2,y2, ... ]
 		const holeIndices: number[] = []; // array of hole indices
@@ -36,10 +36,10 @@ export class ShapeUtils {
 
 		holes.forEach(removeDupEndPts);
 
-		for (let i = 0; i < holes.length; i++) {
+		for (const hole of holes) {
 			holeIndices.push(holeIndex);
-			holeIndex += holes[i]!.length;
-			addContour(vertices, holes[i]!);
+			holeIndex += hole.length;
+			addContour(vertices, hole);
 		}
 
 		//
@@ -56,7 +56,7 @@ export class ShapeUtils {
 	}
 }
 
-function removeDupEndPts(points: vec3[]) {
+function removeDupEndPts(points: vec3[]): void {
 
 	const l = points.length;
 
@@ -68,9 +68,9 @@ function removeDupEndPts(points: vec3[]) {
 
 }
 
-function addContour(vertices: number[], contour: vec3[]) {
-	for (let i = 0; i < contour.length; i++) {
-		vertices.push(contour[i]![0]);
-		vertices.push(contour[i]![1]);
+function addContour(vertices: number[], contour: vec3[]): void {
+	for (const c of contour) {
+		vertices.push(c[0]);
+		vertices.push(c[1]);
 	}
 }

@@ -12,7 +12,7 @@ const Earcut = {
 
 		if (!outerNode || outerNode.next === outerNode.prev) return triangles;
 
-		let minX: number = 0, minY: number = 0, maxX: number, maxY: number, x: number, y: number, invSize: number = 0;
+		let minX = 0, minY = 0, maxX: number, maxY: number, x: number, y: number, invSize = 0;
 
 		if (hasHoles) outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
 
@@ -100,7 +100,7 @@ function filterPoints(start: Node, end?: Node): Node {
 }
 
 // main ear slicing loop which triangulates a polygon (given as a linked list)
-function earcutLinked(ear: Node, triangles: number[], dim: number, minX: number, minY: number, invSize: number, pass?: number) {
+function earcutLinked(ear: Node, triangles: number[], dim: number, minX: number, minY: number, invSize: number, pass?: number): void {
 	if (!ear) {
 		return;
 	}
@@ -191,7 +191,7 @@ function isEar(ear: Node): boolean {
 
 }
 
-function isEarHashed(ear: Node, minX: number, minY: number, invSize: number) {
+function isEarHashed(ear: Node, minX: number, minY: number, invSize: number): boolean {
 
 	const a = ear.prev,
 		b = ear,
@@ -348,7 +348,7 @@ function eliminateHoles(data: number[], holeIndices: number[], outerNode: Node, 
 
 }
 
-function compareX(a: Node, b: Node) {
+function compareX(a: Node, b: Node): number {
 	return a.x - b.x;
 }
 
@@ -445,7 +445,7 @@ function sectorContainsSector(m: Node, p: Node): boolean {
 }
 
 // interlink polygon nodes in z-order
-function indexCurve(start: Node, minX: number, minY: number, invSize: number) {
+function indexCurve(start: Node, minX: number, minY: number, invSize: number): void {
 
 	let p = start;
 	do {
@@ -470,15 +470,15 @@ function indexCurve(start: Node, minX: number, minY: number, invSize: number) {
 
 // Simon Tatham's linked list merge sort algorithm
 // http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
-function sortLinked(unSortedList: Node) {
+function sortLinked(unSortedList: Node): Node {
 
-	let i, p: Node | null, q: Node | null, e: Node | null, tail, numMerges, pSize, qSize,
+	let i, p: Node | null, q: Node | null, e: Node | null, tail: Node | null, numMerges, pSize, qSize,
 		inSize = 1;
 
 	do {
 
 		p = unSortedList;
-		let list = null;
+		//let list = null;
 		tail = null;
 		numMerges = 0;
 
@@ -514,7 +514,7 @@ function sortLinked(unSortedList: Node) {
 				}
 
 				if (tail) tail.nextZ = e;
-				else list = e;
+				//else list = e;
 
 				e!.prevZ = tail;
 				tail = e;
@@ -535,7 +535,7 @@ function sortLinked(unSortedList: Node) {
 }
 
 // z-order of a point given coords and inverse of the longer side of data bbox
-function zOrder(x: number, y: number, minX: number, minY: number, invSize: number) {
+function zOrder(x: number, y: number, minX: number, minY: number, invSize: number): number {
 
 	// coords are transformed into non-negative 15-bit integer range
 	x = 32767 * (x - minX) * invSize;
@@ -596,7 +596,7 @@ function area(p: Node, q: Node, r: Node): number {
 }
 
 // check if two points are equal
-function equals(p1: Node, p2: Node) {
+function equals(p1: Node, p2: Node): boolean {
 
 	return p1.x === p2.x && p1.y === p2.y;
 
@@ -620,7 +620,7 @@ function intersects(p1: Node, q1: Node, p2: Node, q2: Node): boolean {
 }
 
 // for collinear points p, q, r, check if point q lies on segment pr
-function onSegment(p: Node, q: Node, r: Node) {
+function onSegment(p: Node, q: Node, r: Node): boolean {
 	return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
 
 }
@@ -630,7 +630,7 @@ function sign(num: number): 0 | 1 | -1 {
 }
 
 // check if a polygon diagonal intersects any polygon segments
-function intersectsPolygon(a: Node, b: Node) {
+function intersectsPolygon(a: Node, b: Node): boolean {
 	let p = a;
 	do {
 		if (p.i !== a.i && p.next.i !== a.i && p.i !== b.i && p.next.i !== b.i &&

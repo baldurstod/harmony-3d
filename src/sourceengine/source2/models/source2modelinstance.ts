@@ -494,6 +494,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		directionBias: vec3,
 		boundingBoxScale: number,
 		bones: [Bone, number][],
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		hitBoxRelativeCoordOut: vec3 | undefined,
 	): int32 {
 		const meshes = this.meshes;

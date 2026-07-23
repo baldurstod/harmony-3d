@@ -53,6 +53,7 @@ export class Source1PbrMaterial extends Source1Material {
 		*/
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	override afterProcessProxies(proxyParams: DynamicParams): void {
 		const variables = this.variables;
 
