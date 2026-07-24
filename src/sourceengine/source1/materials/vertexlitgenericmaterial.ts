@@ -130,6 +130,7 @@ export class VertexLitGenericMaterial extends Source1Material {
 			reflectionRatio: 0.1,
 			reflectionGloss: 1,
 			refractionIndex: 0.1,
+			transparent: this.blend ? 1 : 0,
 			albedo: vec3.fromValues(
 				0.901960015296936,
 				0.49411699175834656,
