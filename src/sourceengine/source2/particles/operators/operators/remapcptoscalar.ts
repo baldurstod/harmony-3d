@@ -1,5 +1,5 @@
 import { RemapValClamped, lerp } from '../../../../../math/functions';
-import { Source2ParticleSetMethod, stringToSetMethod } from '../../enums';
+import { Source2ParticleSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -27,7 +27,6 @@ export class RemapCPtoScalar extends Operator {
 	#startTime = DEFAULT_START_TIME;
 	#endTime = DEFAULT_END_TIME;
 	#interpRate = DEFAULT_INTERP_RATE;
-	#setMethod = DEFAULT_SET_METHOD;
 	//scaleInitialRange;
 
 	override _paramChanged(paramName: string, param: OperatorParam): void {
@@ -60,9 +59,6 @@ export class RemapCPtoScalar extends Operator {
 			case 'm_flInterpRate':
 				this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE;
 				break;
-			case 'm_nSetMethod':
-				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
-				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
@@ -75,7 +71,7 @@ export class RemapCPtoScalar extends Operator {
 
 		value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
 
-		const scaleInitial = /*this.scaleInitialRange || */this.#setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
+		const scaleInitial = /*this.scaleInitialRange || */this.setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
 
 		if (scaleInitial) {
 			value = lerp(1, value, strength);

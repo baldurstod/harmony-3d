@@ -44,9 +44,6 @@ export class DistanceBetweenCPs extends Operator {
 			case 'm_bLOS':
 				this.#los = param.getValueAsBool() ?? DEFAULT_LOS;
 				break;
-			case 'm_nSetMethod':
-				this.setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
-				break;
 			default:
 				super._paramChanged(paramName, param);
 		}

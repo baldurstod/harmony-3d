@@ -54,9 +54,6 @@ export class RemapCPtoScalar extends Operator {
 			case 'm_flEndTime':
 				this.endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME;
 				break;
-			case 'm_nSetMethod':
-				this.setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
-				break;
 			case 'm_flRemapBias':
 				this.remapBias = param.getValueAsNumber() ?? DEFAULT_REMAP_BIAS;
 				break;

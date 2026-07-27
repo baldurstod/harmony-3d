@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { RemapValClampedBias } from '../../../../../math/functions';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
-import { Source2ParticleSetMethod, stringToSetMethod } from '../../enums';
+import { Source2ParticleSetMethod } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -30,7 +30,6 @@ export class RemapCPtoVector extends Operator {
 	#outputMax = vec3.create();// TODO: check default value
 	#startTime = DEFAULT_START_TIME;
 	#endTime = DEFAULT_END_TIME;
-	#setMethod = DEFAULT_SET_METHOD;
 	#offset = DEFAULT_OFFSET;
 	#accelerate = DEFAULT_ACCELERATE;
 	#localSpaceCP = DEFAULT_LOCAL_SPACE_CP;
@@ -61,9 +60,6 @@ export class RemapCPtoVector extends Operator {
 				break;
 			case 'm_flEndTime':
 				this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME;
-				break;
-			case 'm_nSetMethod':
-				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
 				break;
 			case 'm_bOffset':
 				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
@@ -99,7 +95,7 @@ export class RemapCPtoVector extends Operator {
 		v[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
 		v[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
 
-		const scaleInitial = this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
+		const scaleInitial = this.#scaleInitialRange || this.setMethod == Source2ParticleSetMethod.ScaleInitial;//TODO: optimize
 
 		if (scaleInitial) {
 			vec3.lerp(v, v1, v, strength);

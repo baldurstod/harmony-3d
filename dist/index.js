@@ -14798,6 +14798,7 @@ function sortLinked(unSortedList) {
     let i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
     do {
         p = unSortedList;
+        //let list = null;
         tail = null;
         numMerges = 0;
         while (p) {
@@ -14824,6 +14825,7 @@ function sortLinked(unSortedList) {
                 }
                 if (tail)
                     tail.nextZ = e;
+                //else list = e;
                 e.prevZ = tail;
                 tail = e;
             }
@@ -15026,10 +15028,10 @@ class ShapeUtils {
         //
         let holeIndex = contour.length;
         holes.forEach(removeDupEndPts);
-        for (let i = 0; i < holes.length; i++) {
+        for (const hole of holes) {
             holeIndices.push(holeIndex);
-            holeIndex += holes[i].length;
-            addContour(vertices, holes[i]);
+            holeIndex += hole.length;
+            addContour(vertices, hole);
         }
         //
         const triangles = Earcut.triangulate(vertices, holeIndices);
@@ -15047,9 +15049,9 @@ function removeDupEndPts(points) {
     }
 }
 function addContour(vertices, contour) {
-    for (let i = 0; i < contour.length; i++) {
-        vertices.push(contour[i][0]);
-        vertices.push(contour[i][1]);
+    for (const c of contour) {
+        vertices.push(c[0]);
+        vertices.push(c[1]);
     }
 }
 
@@ -15141,7 +15143,7 @@ class ShapePath {
             }
             return inside;
         }
-        const isClockWise = ShapeUtils.isClockWise;
+        //const isClockWise = ShapeUtils.isClockWise;
         const subPaths = this.subPaths;
         if (subPaths.length === 0)
             return [];
@@ -15156,7 +15158,7 @@ class ShapePath {
             shapes.push(tmpShape);
             return shapes;
         }
-        let holesFirst = !isClockWise(subPaths[0].getPoints());
+        let holesFirst = !ShapeUtils.isClockWise(subPaths[0].getPoints());
         holesFirst = isCCW ? !holesFirst : holesFirst;
         // console.log("Holes first", holesFirst);
         const betterShapeHoles = [];
@@ -15169,7 +15171,7 @@ class ShapePath {
         for (let i = 0, l = subPaths.length; i < l; i++) {
             tmpPath = subPaths[i];
             tmpPoints = tmpPath.getPoints();
-            solid = isClockWise(tmpPoints);
+            solid = ShapeUtils.isClockWise(tmpPoints);
             solid = isCCW ? !solid : solid;
             if (solid) {
                 if ((!holesFirst) && (newShapes[mainIdx]))
@@ -15283,29 +15285,29 @@ class Font {
                 const action = outline[i++];
                 switch (action) {
                     case 'm': // moveTo
-                        x = outline[i++] * scale + offsetX;
-                        y = outline[i++] * scale + offsetY;
+                        x = Number(outline[i++]) * scale + offsetX;
+                        y = Number(outline[i++]) * scale + offsetY;
                         path.moveTo(x, y);
                         break;
                     case 'l': // lineTo
-                        x = outline[i++] * scale + offsetX;
-                        y = outline[i++] * scale + offsetY;
+                        x = Number(outline[i++]) * scale + offsetX;
+                        y = Number(outline[i++]) * scale + offsetY;
                         path.lineTo(x, y);
                         break;
                     case 'q': // quadraticCurveTo
-                        cpx = outline[i++] * scale + offsetX;
-                        cpy = outline[i++] * scale + offsetY;
-                        cpx1 = outline[i++] * scale + offsetX;
-                        cpy1 = outline[i++] * scale + offsetY;
+                        cpx = Number(outline[i++]) * scale + offsetX;
+                        cpy = Number(outline[i++]) * scale + offsetY;
+                        cpx1 = Number(outline[i++]) * scale + offsetX;
+                        cpy1 = Number(outline[i++]) * scale + offsetY;
                         path.quadraticCurveTo(cpx1, cpy1, cpx, cpy);
                         break;
                     case 'b': // bezierCurveTo
-                        cpx = outline[i++] * scale + offsetX;
-                        cpy = outline[i++] * scale + offsetY;
-                        cpx1 = outline[i++] * scale + offsetX;
-                        cpy1 = outline[i++] * scale + offsetY;
-                        cpx2 = outline[i++] * scale + offsetX;
-                        cpy2 = outline[i++] * scale + offsetY;
+                        cpx = Number(outline[i++]) * scale + offsetX;
+                        cpy = Number(outline[i++]) * scale + offsetY;
+                        cpx1 = Number(outline[i++]) * scale + offsetX;
+                        cpy1 = Number(outline[i++]) * scale + offsetY;
+                        cpx2 = Number(outline[i++]) * scale + offsetX;
+                        cpy2 = Number(outline[i++]) * scale + offsetY;
                         path.bezierCurveTo(cpx1, cpy1, cpx2, cpy2, cpx, cpy);
                         break;
                 }
@@ -40793,6 +40795,7 @@ class Source1PbrMaterial extends Source1Material {
         this.setPatternTexCoordTransform(vec2.fromValues(1, 1), vec2.create(), 0);
         */
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     afterProcessProxies(proxyParams) {
         const variables = this.variables;
         const baseTexture = variables.get('$basetexture');
@@ -54703,7 +54706,9 @@ class Source2ModelInstance extends Entity {
     getParentModel() {
         return this;
     }
-    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, hitBoxRelativeCoordOut) {
+    getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    hitBoxRelativeCoordOut) {
         const meshes = this.meshes;
         for (const mesh of meshes) {
             return mesh.getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones);
@@ -56204,7 +56209,7 @@ const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0; // TODO: check default value
 const DEFAULT_FIELD_INPUT$1 = -1; // TODO: check default value
 const DEFAULT_SCALE_CP = -1; // TODO: check default value
 const DEFAULT_CONTROL_POINT_NUMBER = 0; // TODO: check default value
-const DEFAULT_SET_METHOD$6 = Source2ParticleSetMethod.SetValue; // TODO: check default value
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue; // TODO: check default value
 const DEFAULT_ASSOCIATED_EMITTER_INDEX = -1; // disabled
 class Operator {
     static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -56225,7 +56230,7 @@ class Operator {
     endCapState;
     currentTime = 0;
     operateAllParticlesRemoveme = false;
-    setMethod = DEFAULT_SET_METHOD$6;
+    setMethod = DEFAULT_SET_METHOD;
     //protected opStrength = DEFAULT_OP_STRENGTH;
     associatedEmitterIndex = DEFAULT_ASSOCIATED_EMITTER_INDEX;
     constructor(system) {
@@ -56583,7 +56588,7 @@ class Operator {
                 // used in operateParticle
                 break;
             case 'm_nSetMethod':
-                this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$6;
+                this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
                 break;
             case 'm_nAssociatedEmitterIndex':
                 this.associatedEmitterIndex = param.getValueAsNumber() ?? DEFAULT_ASSOCIATED_EMITTER_INDEX;
@@ -56604,7 +56609,7 @@ class Operator {
         }
         let strength = 1; // TODO: use m_flOpStrength?
         // TODO: use checkIfOperatorShouldRun
-        if (this.scaleCp) {
+        if (this.scaleCp >= 0) {
             strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
         }
         this.doInit(particles, elapsedTime, strength);
@@ -62110,9 +62115,8 @@ class InheritFromParentParticles extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_InheritFromParentParticles', InheritFromParentParticles);
 
-const DEFAULT_SET_METHOD$5 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
+Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 class InitFloat extends Operator {
-    #setMethod = DEFAULT_SET_METHOD$5;
     constructor(system) {
         super(system);
         this.fieldOutput = PARTICLE_FIELD_RADIUS;
@@ -62128,9 +62132,6 @@ class InitFloat extends Operator {
                 this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 break;
             */
-            case 'm_nSetMethod': //TODO: mutualize
-                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$5;
-                break;
             default:
                 super._paramChanged(paramName, param);
         }
@@ -62138,7 +62139,7 @@ class InitFloat extends Operator {
     doInit(particle) {
         const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
-        particle.setField(this.fieldOutput, value, this.#setMethod == Source2ParticleSetMethod.ScaleInitial, true);
+        particle.setField(this.fieldOutput, value, this.setMethod == Source2ParticleSetMethod.ScaleInitial, true);
         //setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
     }
 }
@@ -62731,10 +62732,9 @@ RegisterSource2ParticleOperator('C_INIT_InitSkinnedPositionFromCPSnapshot', Init
 const DEFAULT_INPUT_VALUE = vec3.create();
 const initVecTempVec4 = vec4.create();
 const DEFAULT_FIELD_OUTPUT$6 = PARTICLE_FIELD_COLOR; // TODO: check default value
-const DEFAULT_SET_METHOD$4 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
+Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 const DEFAULT_SCALE_INITIAL_RANGE$2 = false; // TODO: check default value
 class InitVec extends Operator {
-    #setMethod = DEFAULT_SET_METHOD$4;
     #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE$2;
     #fieldOutput = DEFAULT_FIELD_OUTPUT$6;
     _paramChanged(paramName, param) {
@@ -62745,9 +62745,6 @@ class InitVec extends Operator {
             case 'm_nOutputField': // TODO: mutualize
                 this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT$6;
                 break;
-            case 'm_nSetMethod': // TODO: mutualize
-                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$4;
-                break;
             case 'm_bScaleInitialRange':
                 this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE$2;
                 break;
@@ -62757,7 +62754,7 @@ class InitVec extends Operator {
     }
     doInit(particle) {
         const inputValue = this.getParamVectorValue(initVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_INPUT_VALUE;
-        particle.setField(this.#fieldOutput, inputValue, this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
+        particle.setField(this.#fieldOutput, inputValue, this.#scaleInitialRange || this.setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_InitVec', InitVec);
@@ -63090,7 +63087,7 @@ const v1 = vec3.fromValues(1, 1, 1);
 const DEFAULT_CP_INPUT$2 = 0; // TODO: check default value
 const DEFAULT_START_TIME$1 = -1; // TODO: check default value
 const DEFAULT_END_TIME$1 = -1; // TODO: check default value
-const DEFAULT_SET_METHOD$3 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
+Source2ParticleSetMethod.ScaleInitial; // TODO: check default value
 const DEFAULT_OFFSET$2 = false; // TODO: check default value
 const DEFAULT_ACCELERATE = false; // TODO: check default value
 const DEFAULT_LOCAL_SPACE_CP = -1; // TODO: check default value
@@ -63105,7 +63102,6 @@ class RemapCPtoVector extends Operator {
     #outputMax = vec3.create(); // TODO: check default value
     #startTime = DEFAULT_START_TIME$1;
     #endTime = DEFAULT_END_TIME$1;
-    #setMethod = DEFAULT_SET_METHOD$3;
     #offset = DEFAULT_OFFSET$2;
     #accelerate = DEFAULT_ACCELERATE;
     #localSpaceCP = DEFAULT_LOCAL_SPACE_CP;
@@ -63135,9 +63131,6 @@ class RemapCPtoVector extends Operator {
                 break;
             case 'm_flEndTime':
                 this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME$1;
-                break;
-            case 'm_nSetMethod':
-                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$3;
                 break;
             case 'm_bOffset':
                 this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET$2;
@@ -63169,7 +63162,7 @@ class RemapCPtoVector extends Operator {
         v$9[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.#remapBias);
         v$9[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
         v$9[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
-        const scaleInitial = this.#scaleInitialRange || this.#setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
+        const scaleInitial = this.#scaleInitialRange || this.setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
         if (scaleInitial) {
             vec3.lerp(v$9, v1, v$9, strength);
         }
@@ -63486,9 +63479,6 @@ class ClampScalar extends Operator {
             case 'm_flInputMax':
                 this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
                 break;
-            case 'm_nSetMethod':
-                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
-                break;
                 */
             default:
                 super._paramChanged(paramName, param);
@@ -63662,7 +63652,6 @@ class DistanceToCP extends Operator {
     #collisionGroupName = DEFAULT_COLLISION_GROUP_NAME$1;
     #maxTraceLength = DEFAULT_MAX_TRACE_LENGTH$1;
     #losScale = DEFAULT_LOS_SCALE;
-    #setMethod;
     #activeRange = DEFAULT_ACTIVE_RANGE;
     #additive = DEFAULT_ADDITIVE$2;
     #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE;
@@ -63714,9 +63703,6 @@ class DistanceToCP extends Operator {
                 break;
             case 'm_flLOSScale':
                 this.#losScale = param.getValueAsNumber() ?? DEFAULT_LOS_SCALE;
-                break;
-            case 'm_nSetMethod':
-                this.#setMethod = param.getValueAsString();
                 break;
             case 'm_bActiveRange':
                 this.#activeRange = param.getValueAsBool() ?? DEFAULT_ACTIVE_RANGE;
@@ -65418,7 +65404,7 @@ const DEFAULT_OUTPUT_MAX$1 = 1; // TODO: check default value
 const DEFAULT_START_TIME = -1; // TODO: check default value
 const DEFAULT_END_TIME = -1; // TODO: check default value
 const DEFAULT_INTERP_RATE$1 = 0; // TODO: check default value
-const DEFAULT_SET_METHOD$2 = Source2ParticleSetMethod.ScaleInitial; // TODO: check default value//TODO: enum
+Source2ParticleSetMethod.ScaleInitial; // TODO: check default value//TODO: enum
 class RemapCPtoScalar extends Operator {
     //#fieldOutput = PARTICLE_FIELD_RADIUS;
     #cpInput = DEFAULT_CP_INPUT$1;
@@ -65430,7 +65416,6 @@ class RemapCPtoScalar extends Operator {
     #startTime = DEFAULT_START_TIME;
     #endTime = DEFAULT_END_TIME;
     #interpRate = DEFAULT_INTERP_RATE$1;
-    #setMethod = DEFAULT_SET_METHOD$2;
     //scaleInitialRange;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -65462,9 +65447,6 @@ class RemapCPtoScalar extends Operator {
             case 'm_flInterpRate':
                 this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE$1;
                 break;
-            case 'm_nSetMethod':
-                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD$2;
-                break;
             default:
                 super._paramChanged(paramName, param);
         }
@@ -65474,7 +65456,7 @@ class RemapCPtoScalar extends Operator {
         const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
         let value = cpInputPos[this.#field] ?? 0;
         value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
-        const scaleInitial = /*this.scaleInitialRange || */ this.#setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
+        const scaleInitial = /*this.scaleInitialRange || */ this.setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
         if (scaleInitial) {
             value = lerp(1, value, strength);
         }
@@ -65489,12 +65471,10 @@ RegisterSource2ParticleOperator('C_OP_RemapCPtoScalar', RemapCPtoScalar);
 const DEFAULT_IGNORE_DELTA = false; // TODO: check default value
 const DEFAULT_INPUT_MIN$1 = 0; // TODO: check default value
 const DEFAULT_INPUT_MAX$1 = 1; // TODO: check default value
-const DEFAULT_SET_METHOD$1 = 'PARTICLE_SET_SCALE_CURRENT_VALUE'; // TODO: check default value
 class RemapSpeed extends Operator {
     #ignoreDelta = DEFAULT_IGNORE_DELTA;
     #inputMin = DEFAULT_INPUT_MIN$1;
     #inputMax = DEFAULT_INPUT_MAX$1;
-    #setMethod = DEFAULT_SET_METHOD$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_bIgnoreDelta':
@@ -65505,9 +65485,6 @@ class RemapSpeed extends Operator {
                 break;
             case 'm_flInputMax':
                 this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX$1;
-                break;
-            case 'm_nSetMethod':
-                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -66216,17 +66193,13 @@ RegisterSource2ParticleOperator('C_OP_SetToCP', SetToCP);
 const DEFAULT_VECTOR_VALUE = vec4.create();
 const setVecTempVec4 = vec4.create();
 const DEFAULT_OUTPUT_FIELD = Source2ParticleVectorField.Color;
-const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;
+Source2ParticleSetMethod.SetValue;
 class SetVec extends Operator {
     #outputField = DEFAULT_OUTPUT_FIELD;
-    #setMethod = DEFAULT_SET_METHOD;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nOutputField':
                 this.#outputField = param.getValueAsNumber() ?? DEFAULT_OUTPUT_FIELD;
-                break;
-            case 'm_nSetMethod':
-                this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
                 break;
             case 'm_InputValue':
             case 'm_Lerp':
@@ -66240,7 +66213,7 @@ class SetVec extends Operator {
         //TODO: use lerp
         const inputValue = this.getParamVectorValue(setVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_VECTOR_VALUE;
         //const lerp = this.getParamScalarValue('m_Lerp', particle) ?? 1;
-        particle.setField(this.#outputField, inputValue, this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
+        particle.setField(this.#outputField, inputValue, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);

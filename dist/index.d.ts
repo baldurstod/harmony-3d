@@ -20,7 +20,6 @@ import { Radian } from 'harmony-types';
 import { ReadonlyQuat } from 'gl-matrix';
 import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
-import { Shape } from './shape';
 import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { TypedArrayNumber } from 'harmony-types';
@@ -3171,7 +3170,6 @@ declare class Channel {
                       }
 
                       export declare class InitFloat extends Operator {
-                          #private;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           doInit(particle: Source2Particle): void;
@@ -3315,7 +3313,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -6747,7 +6745,7 @@ declare class Channel {
                           render(renderer: Renderer, renderList: RenderList, camera: Camera, context: InternalRenderContext): void;
                       }
 
-                      declare class Shape_2 extends Path {
+                      declare class Shape extends Path {
                           uuid: string;
                           type: string;
                           holes: Path[];
@@ -6766,7 +6764,7 @@ declare class Channel {
                           lineTo(x: number, y: number): ShapePath;
                           quadraticCurveTo(aCPx: number, aCPy: number, aX: number, aY: number): ShapePath;
                           bezierCurveTo(aCP1x: number, aCP1y: number, aCP2x: number, aCP2y: number, aX: number, aY: number): ShapePath;
-                          toShapes(isCCW?: boolean, noHoles?: boolean): Shape_2[];
+                          toShapes(isCCW?: boolean, noHoles?: boolean): Shape[];
                       }
 
                       export declare function SimpleSpline(value: number): number;

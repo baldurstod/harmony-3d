@@ -46,9 +46,6 @@ export class PercentageBetweenCPs extends Operator {
 			case 'm_nEndCP':
 				this.endCP = (param);
 				break;
-			case 'm_nSetMethod':
-				this.setMethod = param;
-				break;
 			case 'm_bActiveRange':
 				this.activeRange = param;
 				break;

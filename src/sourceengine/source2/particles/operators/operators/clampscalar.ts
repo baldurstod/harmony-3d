@@ -40,9 +40,6 @@ export class ClampScalar extends Operator {
 			case 'm_flInputMax':
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
 				break;
-			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
-				break;
 				*/
 			default:
 				super._paramChanged(paramName, param);

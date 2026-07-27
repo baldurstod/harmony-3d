@@ -11,7 +11,6 @@ export class RemapSpeed extends Operator {
 	#ignoreDelta = DEFAULT_IGNORE_DELTA;
 	#inputMin = DEFAULT_INPUT_MIN;
 	#inputMax = DEFAULT_INPUT_MAX;
-	#setMethod = DEFAULT_SET_METHOD;
 
 	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -23,9 +22,6 @@ export class RemapSpeed extends Operator {
 				break;
 			case 'm_flInputMax':
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
-				break;
-			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
 				break;
 			default:
 				super._paramChanged(paramName, param);

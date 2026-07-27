@@ -194,7 +194,7 @@ export function stringToRotationSetType(rotationSetType: string | null): Source2
 	}
 }
 
-export enum Source2ParticleSnapshotReadType  {
+export enum Source2ParticleSnapshotReadType {
 	Increment = 'SNAPSHOT_INDEX_INCREMENT',
 	Direct = 'SNAPSHOT_INDEX_DIRECT',
 	Default = Source2ParticleSnapshotReadType.Increment,
@@ -211,7 +211,7 @@ export function stringToSnapshotReadType(snapshotReadType: string | null): Sourc
 	}
 }
 
-export enum Source2ParticleModelType  {
+export enum Source2ParticleModelType {
 	ControlPoint = 'PM_TYPE_CONTROL_POINT',
 	Model = 'PM_TYPE_NAMED_VALUE_MODEL',
 	Entity = 'PM_TYPE_NAMED_VALUE_EHANDLE',
@@ -231,7 +231,7 @@ export function stringToModelType(modelType: string | null): Source2ParticleMode
 	}
 }
 
-export enum Source2ParticleTransformType  {
+export enum Source2ParticleTransformType {
 	Invalid = 'PT_TYPE_INVALID',
 	NamedValue = 'PT_TYPE_NAMED_VALUE',
 	ControlPoint = 'PT_TYPE_CONTROL_POINT',

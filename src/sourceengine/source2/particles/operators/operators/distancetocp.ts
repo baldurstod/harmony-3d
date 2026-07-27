@@ -34,7 +34,6 @@ export class DistanceToCP extends Operator {
 	#collisionGroupName = DEFAULT_COLLISION_GROUP_NAME;
 	#maxTraceLength = DEFAULT_MAX_TRACE_LENGTH;
 	#losScale = DEFAULT_LOS_SCALE;
-	#setMethod: string | null | undefined;
 	#activeRange = DEFAULT_ACTIVE_RANGE;
 	#additive = DEFAULT_ADDITIVE;
 	#scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE;
@@ -88,9 +87,6 @@ export class DistanceToCP extends Operator {
 				break;
 			case 'm_flLOSScale':
 				this.#losScale = param.getValueAsNumber() ?? DEFAULT_LOS_SCALE;
-				break;
-			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString();
 				break;
 			case 'm_bActiveRange':
 				this.#activeRange = param.getValueAsBool() ?? DEFAULT_ACTIVE_RANGE;

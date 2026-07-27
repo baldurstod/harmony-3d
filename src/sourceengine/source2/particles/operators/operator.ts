@@ -502,7 +502,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 		let strength = 1;// TODO: use m_flOpStrength?
 		// TODO: use checkIfOperatorShouldRun
-		if (this.scaleCp) {
+		if (this.scaleCp >= 0) {
 			strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
 		}
 		this.doInit(particles, elapsedTime, strength);

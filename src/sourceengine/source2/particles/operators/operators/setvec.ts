@@ -1,5 +1,5 @@
 import { vec4 } from 'gl-matrix';
-import { Source2ParticleSetMethod, Source2ParticleVectorField, stringToSetMethod } from '../../enums';
+import { Source2ParticleSetMethod, Source2ParticleVectorField } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -13,15 +13,11 @@ const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;
 
 export class SetVec extends Operator {
 	#outputField = DEFAULT_OUTPUT_FIELD;
-	#setMethod = DEFAULT_SET_METHOD;
 
 	override _paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nOutputField':
 				this.#outputField = param.getValueAsNumber() ?? DEFAULT_OUTPUT_FIELD;
-				break;
-			case 'm_nSetMethod':
-				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
 				break;
 			case 'm_InputValue':
 			case 'm_Lerp':
@@ -37,7 +33,7 @@ export class SetVec extends Operator {
 		const inputValue = this.getParamVectorValue(setVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_VECTOR_VALUE;
 		//const lerp = this.getParamScalarValue('m_Lerp', particle) ?? 1;
 
-		particle.setField(this.#outputField, inputValue, this.#setMethod == Source2ParticleSetMethod.ScaleInitial);
+		particle.setField(this.#outputField, inputValue, this.setMethod == Source2ParticleSetMethod.ScaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);
