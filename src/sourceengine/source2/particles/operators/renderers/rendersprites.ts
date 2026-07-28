@@ -41,7 +41,7 @@ const DEFAULT_REFRACT_BLUR_RADIUS = 1;// TODO: check default value
 const DEFAULT_GAMMA_CORRECT_VERTEX_COLORS = true;// TODO: check default value
 
 export class RenderSprites extends RenderBase {
-	geometry: BufferGeometry = new BufferGeometry();
+	#geometry: BufferGeometry = new BufferGeometry();
 	#minSize = 0.0;
 	#maxSize = DEFAULT_MAX_SIZE;
 	#saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
@@ -72,7 +72,7 @@ export class RenderSprites extends RenderBase {
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.mesh = new Mesh({ geometry: this.geometry, material: this.material });
+		this.mesh = new Mesh({ geometry: this.#geometry, material: this.material });
 		this.setMaxParticles(1000);//TODO: default value
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
@@ -168,15 +168,15 @@ export class RenderSprites extends RenderBase {
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.#animationRate;//this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
-		this.geometry.count = particleList.length * 6;
+		this.#geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
 		this.#setupParticlesTexture(particleList);
 		this.mesh!.setUniformValue('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh!.setVisible(Source2ParticleManager.visible);
 		this.mesh!.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 
-		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
-		const uvs2 = this.geometry.attributes.get('aTextureCoord2')!._array;
+		const uvs = this.#geometry.attributes.get('aTextureCoord')!._array;
+		const uvs2 = this.#geometry.attributes.get('aTextureCoord2')!._array;
 		let index = 0;
 		let index2 = 0;
 		for (const particle of particleList) {
@@ -229,8 +229,8 @@ export class RenderSprites extends RenderBase {
 				index2 += 8;
 			}
 		}
-		this.geometry.attributes.get('aTextureCoord')!.dirty = true;
-		this.geometry.attributes.get('aTextureCoord2')!.dirty = true;
+		this.#geometry.attributes.get('aTextureCoord')!.dirty = true;
+		this.#geometry.attributes.get('aTextureCoord2')!.dirty = true;
 	}
 
 	setMaxParticles(maxParticles: number): void {
@@ -248,7 +248,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	#initBuffers(): void {
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		const vertices = [];
 		const uvs = [];
 		const uvs2 = [];
