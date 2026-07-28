@@ -9674,9 +9674,8 @@ declare class Channel {
 
                       export declare class VectorNoise extends Operator {
                           #private;
-                          constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
-                          doOperate(particle: Source2Particle): void;
+                          doOperate(particle: Source2Particle, elapsedTime: number): void;
                       }
 
                       export declare class VelocityNoise extends Source1ParticleOperator {

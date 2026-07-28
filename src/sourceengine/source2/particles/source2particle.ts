@@ -192,7 +192,11 @@ export class Source2Particle {
 				//console.log(value);
 				break;
 			case 2: // Previous position
-				vec3.copy(this.prevPosition, value);
+				if (additive) {
+					vec3.add(this.prevPosition, this.prevPosition, value);
+				} else {
+					vec3.copy(this.prevPosition, value);
+				}
 				break;
 			//case 2: vector position ?
 			case 3:

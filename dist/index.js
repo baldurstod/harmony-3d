@@ -57145,7 +57145,12 @@ class Source2Particle {
                 //console.log(value);
                 break;
             case 2: // Previous position
-                vec3.copy(this.prevPosition, value);
+                if (additive) {
+                    vec3.add(this.prevPosition, this.prevPosition, value);
+                }
+                else {
+                    vec3.copy(this.prevPosition, value);
+                }
                 break;
             //case 2: vector position ?
             case 3:
@@ -62422,6 +62427,7 @@ class InitialVelocityNoise extends Operator {
         }
     }
     doInit() {
+        error$1();
         //TODO: use m_vecOffsetLoc, m_vecOutputMin,m_vecOutputMax,  m_flOffset, m_flNoiseScale, m_flNoiseScaleLoc
         //TODO: fix this operator
         /*
@@ -62575,6 +62581,7 @@ class InitialVelocityNoise extends Operator {
     }
 }
 RegisterSource2ParticleOperator('C_INIT_InitialVelocityNoise', InitialVelocityNoise);
+const error$1 = once$2(() => console.error('TODO C_INIT_InitialVelocityNoise'));
 
 const mat$1 = mat4.create();
 const nmat$2 = mat3.create();
@@ -66603,20 +66610,10 @@ class VectorNoise extends Operator {
     #additive = DEFAULT_ADDITIVE;
     #offset = DEFAULT_OFFSET; //offset instead of accelerate position
     #noiseAnimationTimeScale = DEFAULT_NOISE_ANIMATION_TIME_SCALE;
-    #valueScale = vec3.create(); //computed
-    #valueBase = vec3.create(); //computed
-    constructor(system) {
-        super(system);
-        this.#update();
-    }
+    #outputDelta = vec3.fromValues(1, 1, 1);
+    ; //computed
     #update() {
-        vec3.sub(this.#valueScale, this.#outputMax, this.#outputMin);
-        vec3.scale(this.#valueScale, this.#valueScale, 0.5);
-        vec3.add(this.#valueBase, this.#outputMin, this.#valueScale);
-        /*if (this.fieldOutput == PARTICLE_FIELD_COLOR) {
-            vec3.scale(this.valueScale, this.valueScale, 1 / 255);
-            vec3.scale(this.valueBase, this.valueBase, 1 / 255);
-        }*/
+        vec3.sub(this.#outputDelta, this.#outputMax, this.#outputMin);
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -66649,14 +66646,21 @@ class VectorNoise extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle) {
+    doOperate(particle, elapsedTime) {
         //TODO: fix this operator ('particles/units/heroes/hero_dark_willow/dark_willow_head_ambient_smoke.vpcf_c')
         vec3.scale(Coord, particle.position, this.#noiseScale * particle.currentTime * 0.001);
-        output[0] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale[0] + this.#valueBase[0]);
+        // TODO: use an actual noise
+        function NoiseSIMD(a, b, c) {
+            return Math.random();
+        }
+        output[0] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#outputDelta[0] + this.#outputMin[0]);
         vec3.add(Coord, Coord, ofs_y);
-        output[1] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale[1] + this.#valueBase[1]);
+        output[1] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#outputDelta[1] + this.#outputMin[1]);
         vec3.add(Coord, Coord, ofs_z);
-        output[2] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale[2] + this.#valueBase[2]);
+        output[2] = (NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#outputDelta[2] + this.#outputMin[2]);
+        if (this.#additive) {
+            vec3.scale(output, output, elapsedTime);
+        }
         particle.setField(this.#fieldOutput, output, undefined, undefined, this.#additive);
     }
 }

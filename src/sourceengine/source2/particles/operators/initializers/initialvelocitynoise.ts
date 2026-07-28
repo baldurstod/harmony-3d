@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { once } from 'harmony-utils';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -55,6 +56,7 @@ export class InitialVelocityNoise extends Operator {
 	}
 
 	override doInit(): void {
+		error();
 		//TODO: use m_vecOffsetLoc, m_vecOutputMin,m_vecOutputMax,  m_flOffset, m_flNoiseScale, m_flNoiseScaleLoc
 		//TODO: fix this operator
 		/*
@@ -209,3 +211,5 @@ export class InitialVelocityNoise extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_InitialVelocityNoise', InitialVelocityNoise);
+
+const error = once(() => console.error('TODO C_INIT_InitialVelocityNoise'));
