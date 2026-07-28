@@ -526,9 +526,9 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 				}
 				return hitBoxId;
 			}
-			return - 1;
 		}
 
+		// Case if no hitbox set is provided, or the hitbox set is not found
 		const meshes = this.meshes;
 		for (const mesh of meshes) {
 			return (mesh as SkeletalMesh).getRandomPointOnModel(
