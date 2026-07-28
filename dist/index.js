@@ -67359,7 +67359,7 @@ const DEFAULT_REFRACT = false; // TODO: check default value
 const DEFAULT_REFRACT_BLUR_RADIUS = 1; // TODO: check default value
 const DEFAULT_GAMMA_CORRECT_VERTEX_COLORS = true; // TODO: check default value
 class RenderSprites extends RenderBase {
-    geometry = new BufferGeometry();
+    #geometry = new BufferGeometry();
     #minSize = 0.0;
     #maxSize = DEFAULT_MAX_SIZE;
     #saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND$1;
@@ -67389,7 +67389,7 @@ class RenderSprites extends RenderBase {
     #gammaCorrectVertexColors = DEFAULT_GAMMA_CORRECT_VERTEX_COLORS;
     constructor(system) {
         super(system);
-        this.mesh = new Mesh({ geometry: this.geometry, material: this.material });
+        this.mesh = new Mesh({ geometry: this.#geometry, material: this.material });
         this.setMaxParticles(1000); //TODO: default value
         this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
         Source2MaterialManager.addMaterial(this.material);
@@ -67481,14 +67481,14 @@ class RenderSprites extends RenderBase {
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
         const rate = this.#animationRate; //this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
-        this.geometry.count = particleList.length * 6;
+        this.#geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
         this.#setupParticlesTexture(particleList);
         this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
         this.mesh.setUniformValue('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
-        const uvs = this.geometry.attributes.get('aTextureCoord')._array;
-        const uvs2 = this.geometry.attributes.get('aTextureCoord2')._array;
+        const uvs = this.#geometry.attributes.get('aTextureCoord')._array;
+        const uvs2 = this.#geometry.attributes.get('aTextureCoord2')._array;
         let index = 0;
         let index2 = 0;
         for (const particle of particleList) {
@@ -67534,8 +67534,8 @@ class RenderSprites extends RenderBase {
                 index2 += 8;
             }
         }
-        this.geometry.attributes.get('aTextureCoord').dirty = true;
-        this.geometry.attributes.get('aTextureCoord2').dirty = true;
+        this.#geometry.attributes.get('aTextureCoord').dirty = true;
+        this.#geometry.attributes.get('aTextureCoord2').dirty = true;
     }
     setMaxParticles(maxParticles) {
         maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM$1);
@@ -67550,7 +67550,7 @@ class RenderSprites extends RenderBase {
         this.setMaxParticles(maxParticles);
     }
     #initBuffers() {
-        const geometry = this.geometry;
+        const geometry = this.#geometry;
         const vertices = [];
         const uvs = [];
         const uvs2 = [];
@@ -67758,10 +67758,10 @@ class RenderTrails extends RenderBase {
         this.mesh.setVisible(Source2ParticleManager.visible);
         vec2.set(tempVec2$1, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
         this.material.setUniformValue('uFinalTextureScale', tempVec2$1);
-        //const uvs = geometry.attributes.get('aTextureCoord')!._array;
-        //const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
-        //let index = 0;
-        //let index2 = 0;
+        const uvs = geometry.attributes.get('aTextureCoord')._array;
+        const uvs2 = geometry.attributes.get('aTextureCoord2')._array;
+        let index = 0;
+        let index2 = 0;
         for (const particle of particleList) {
             const sequence = particle.sequence;
             if (m_bFitCycleToLifetime) {
@@ -67774,7 +67774,37 @@ class RenderTrails extends RenderBase {
                 }
             }
             particle.frame += elapsedTime;
-            this.spriteSheet;
+            const spriteSheet = this.spriteSheet;
+            if (spriteSheet) {
+                let coords = spriteSheet.getFrame(1, particle.frame * 10.0); //?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+                //coords = coords.m_TextureCoordData[0];
+                if (coords && uvs) {
+                    uvs[index++] = coords.uMin;
+                    uvs[index++] = coords.vMin;
+                    uvs[index++] = coords.uMax;
+                    uvs[index++] = coords.vMin;
+                    uvs[index++] = coords.uMin;
+                    uvs[index++] = coords.vMax;
+                    uvs[index++] = coords.uMax;
+                    uvs[index++] = coords.vMax;
+                }
+                //coords = coords.m_TextureCoordData[0];
+                coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0); //?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+                if (coords && uvs2) {
+                    uvs2[index2++] = coords.uMin;
+                    uvs2[index2++] = coords.vMin;
+                    uvs2[index2++] = coords.uMax;
+                    uvs2[index2++] = coords.vMin;
+                    uvs2[index2++] = coords.uMin;
+                    uvs2[index2++] = coords.vMax;
+                    uvs2[index2++] = coords.uMax;
+                    uvs2[index2++] = coords.vMax;
+                }
+            }
+            else {
+                index += 8;
+                index2 += 8;
+            }
             geometry.attributes.get('aTextureCoord').dirty = true;
             geometry.attributes.get('aTextureCoord2').dirty = true;
         }

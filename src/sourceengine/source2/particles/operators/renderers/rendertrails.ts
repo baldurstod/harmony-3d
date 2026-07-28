@@ -146,10 +146,10 @@ export class RenderTrails extends RenderBase {
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
 		this.material.setUniformValue('uFinalTextureScale', tempVec2);
 
-		//const uvs = geometry.attributes.get('aTextureCoord')!._array;
-		//const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
-		//let index = 0;
-		//let index2 = 0;
+		const uvs = geometry.attributes.get('aTextureCoord')!._array;
+		const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
+		let index = 0;
+		let index2 = 0;
 		for (const particle of particleList) {
 			const sequence = particle.sequence;
 			let flAgeScale;
@@ -170,45 +170,35 @@ export class RenderTrails extends RenderBase {
 			particle.frame += elapsedTime;
 
 			const spriteSheet = this.spriteSheet;
-			if (false && spriteSheet) {
-				/*
-				let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+			if (spriteSheet) {
+				let coords = spriteSheet.getFrame(1, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
-				if (coords) {
-					let uMin = coords[0];
-					let vMin = coords[1];
-					let uMax = coords[2];
-					let vMax = coords[3];
-					uvs[index++] = uMin;
-					uvs[index++] = vMin;
-					uvs[index++] = uMax;
-					uvs[index++] = vMin;
-					uvs[index++] = uMin;
-					uvs[index++] = vMax;
-					uvs[index++] = uMax;
-					uvs[index++] = vMax;
+				if (coords && uvs) {
+					uvs[index++] = coords.uMin;
+					uvs[index++] = coords.vMin;
+					uvs[index++] = coords.uMax;
+					uvs[index++] = coords.vMin;
+					uvs[index++] = coords.uMin;
+					uvs[index++] = coords.vMax;
+					uvs[index++] = coords.uMax;
+					uvs[index++] = coords.vMax;
 				}
 
-				coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
-				if (coords) {
-					let uMin = coords[0];
-					let vMin = coords[1];
-					let uMax = coords[2];
-					let vMax = coords[3];
-					uvs2[index2++] = uMin;
-					uvs2[index2++] = vMin;
-					uvs2[index2++] = uMax;
-					uvs2[index2++] = vMin;
-					uvs2[index2++] = uMin;
-					uvs2[index2++] = vMax;
-					uvs2[index2++] = uMax;
-					uvs2[index2++] = vMax;
+				coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+				if (coords && uvs2) {
+					uvs2[index2++] = coords.uMin;
+					uvs2[index2++] = coords.vMin;
+					uvs2[index2++] = coords.uMax;
+					uvs2[index2++] = coords.vMin;
+					uvs2[index2++] = coords.uMin;
+					uvs2[index2++] = coords.vMax;
+					uvs2[index2++] = coords.uMax;
+					uvs2[index2++] = coords.vMax;
 				}
-				*/
 			} else {
-				//index += 8;
-				//index2 += 8;
+				index += 8;
+				index2 += 8;
 			}
 			geometry.attributes.get('aTextureCoord')!.dirty = true;
 			geometry.attributes.get('aTextureCoord2')!.dirty = true;

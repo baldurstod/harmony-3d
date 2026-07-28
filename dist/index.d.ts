@@ -3313,7 +3313,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -5971,7 +5971,6 @@ declare class Channel {
 
                       export declare class RenderSprites extends RenderBase {
                           #private;
-                          geometry: BufferGeometry;
                           imgData: Float32Array;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
