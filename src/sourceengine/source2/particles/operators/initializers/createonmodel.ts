@@ -96,6 +96,7 @@ export class CreateOnModel extends Operator {
 					1,// TODO: fix hit box scale//this.#hitBoxScale,
 					bones,
 					undefined,
+					this.#hitboxSetName,
 				);
 
 				if (controlPoint) {

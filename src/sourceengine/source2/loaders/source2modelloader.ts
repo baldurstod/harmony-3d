@@ -12,7 +12,7 @@ import { Property, PropertyType } from '../../../utils/properties';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { MeshManager } from '../models/meshmanager';
-import { Source2Model } from '../models/source2model';
+import { Source2Hitbox, Source2Model } from '../models/source2model';
 import { DXGI_FORMAT_R16G16_FLOAT, DXGI_FORMAT_R16G16_SINT, DXGI_FORMAT_R16G16_SNORM, DXGI_FORMAT_R16G16B16A16_SINT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R8G8B8A8_UINT, DXGI_FORMAT_R8G8B8A8_UNORM } from './dxgiformat';
 import { BYTES_PER_VERTEX_BONE_INDICE, BYTES_PER_VERTEX_BONE_WEIGHT, BYTES_PER_VERTEX_COORD, BYTES_PER_VERTEX_NORMAL, BYTES_PER_VERTEX_POSITION, BYTES_PER_VERTEX_TANGENT, defaultValuesBoneIndice, defaultValuesBoneWeight, defaultValuesCoord, defaultValuesNormal, defaultValuesPosition, defaultValuesTangent, sNormUint16, VERTEX_BONE_INDICE_LEN, VERTEX_BONE_WEIGHT_LEN, VERTEX_COORD_LEN, VERTEX_NORMAL_LEN, VERTEX_POSITION_LEN, VERTEX_TANGENT_LEN } from './source2blockloader';
 import { Source2File } from './source2file';
@@ -48,6 +48,7 @@ export class Source2ModelLoader {
 					await this.#loadIncludeModels(newSourceModel);
 					await this.testProcess2(source2File, newSourceModel, repository);
 					newSourceModel.loadAnimGroups();
+					this.#loadHitboxSets(newSourceModel);
 					resolve(newSourceModel);
 				}
 			)
@@ -547,6 +548,49 @@ export class Source2ModelLoader {
 			if (refModel) {
 				model.addIncludeModel(refModel);
 			}
+		}
+	}
+
+	#loadHitboxSets(model: Source2Model): void {
+		if (!model.vmdl) {
+			return;
+		}
+		const hitboxSets = model.vmdl.getBlockStructAsArray('MDAT', 'm_hitboxsets');
+		if (!hitboxSets) {
+			return;
+		}
+
+		for (const hitboxSet of hitboxSets as Kv3Element[]) {
+
+			const name = hitboxSet.getValueAsString('key');
+			const h = hitboxSet.getValueAsElement('value');
+
+			if (name === null || h === null) {
+				continue;
+			}
+
+			const h2 = h.getValueAsElementArray('m_HitBoxes');
+			if (h2 === null) {
+				continue;
+			}
+
+			const hitboxes: Source2Hitbox[] = [];
+			for (const hitbox of h2) {
+				hitboxes.push({
+					name: hitbox.getValueAsString('m_name') ?? '',
+					surfaceProperty: hitbox.getValueAsString('m_sSurfaceProperty') ?? '',
+					boneName: hitbox.getValueAsString('m_sBoneName') ?? '',
+					minBounds: hitbox.getValueAsNumberArray('m_vMinBounds') as vec3 ?? vec3.create(),
+					maxBounds: hitbox.getValueAsNumberArray('m_vMaxBounds') as vec3 ?? vec3.create(),
+					shapeRadius: hitbox.getValueAsNumber('m_flShapeRadius') ?? 0,
+					groupId: hitbox.getValueAsNumber('m_nGroupId') ?? 0,
+					shapeType: hitbox.getValueAsNumber('m_nShapeType') ?? 0,
+					translationOnly: hitbox.getValueAsBool('m_bTranslationOnly') ?? false,
+					renderColor: hitbox.getValueAsNumberArray('m_cRenderColor') as vec4 ?? vec4.create(),
+					hitBoxIndex: hitbox.getValueAsNumber('m_nHitBoxIndex') ?? 0,
+				});
+			}
+			model.hitboxSets.set(name, hitboxes);
 		}
 	}
 }

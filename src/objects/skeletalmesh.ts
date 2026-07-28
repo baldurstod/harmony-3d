@@ -1,4 +1,4 @@
-import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
+import { mat4, ReadonlyVec3, vec2, vec3, vec4 } from 'gl-matrix';
 import { int32 } from 'harmony-types';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { BoundingBox } from '../math/boundingbox';
@@ -176,7 +176,7 @@ export class SkeletalMesh extends Mesh {
 		initialVec: vec3,
 		controlPoint: ControlPoint,
 		numTriesToGetAPointInsideTheModel: int32,
-		directionBias: vec3,
+		directionBias: ReadonlyVec3,
 		boundingBoxScale: number,
 		bones: [Bone, number][],
 		//hitBoxRelativeCoordOut: vec3 | undefined,

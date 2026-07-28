@@ -59,6 +59,7 @@ export class PositionOnModelRandom extends Source1ParticleOperator {
 				hitboxScale,
 				particle.bones,
 				undefined,
+				undefined,
 			);
 
 			//vec3.copy(particle.position, position);

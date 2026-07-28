@@ -43504,7 +43504,7 @@ class PositionOnModelRandom extends Source1ParticleOperator {
             particle.bones = [];
             particle.initialVec = vec3.create();
             const position = vec3.create();
-            controllingModel.getRandomPointOnModel(position, particle.initialVec, controlPoint, forceInModel, directionBias, hitboxScale, particle.bones, undefined);
+            controllingModel.getRandomPointOnModel(position, particle.initialVec, controlPoint, forceInModel, directionBias, hitboxScale, particle.bones, undefined, undefined);
             //vec3.copy(particle.position, position);
             //vec3.copy(particle.prevPosition, position);
             if (controlPoint) {
@@ -54316,6 +54316,7 @@ class Source2ModelInstance extends Entity {
     sourceModel;
     hasAnimations = true;
     #bodyGroups = new Map();
+    hasHitBoxes = true;
     static {
         defaultMaterial$1.addUser(Source2ModelInstance);
     }
@@ -54708,7 +54709,30 @@ class Source2ModelInstance extends Entity {
     }
     getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones, 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    hitBoxRelativeCoordOut) {
+    hitBoxRelativeCoordOut, hitboxSetName) {
+        if (hitboxSetName) {
+            if (!this.#skeleton) {
+                return -1;
+            }
+            const hitboxSet = this.sourceModel.hitboxSets.get(hitboxSetName);
+            if (hitboxSet) {
+                const hitBoxId = getRandomInt /*TODO: use random int of the particle collection*/(hitboxSet.length);
+                const hitbox = hitboxSet[hitBoxId];
+                if (!hitbox) {
+                    return -1;
+                }
+                const boneName = hitbox.boneName;
+                const bone = this.#skeleton.getBoneByName(boneName);
+                if (bone) {
+                    bones.push([bone, 1]);
+                    vec3RandomBox(out, hitbox.minBounds, hitbox.maxBounds);
+                    vec3.copy(initialVec, out);
+                    vec3.transformMat4(out, out, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
+                }
+                return hitBoxId;
+            }
+            return -1;
+        }
         const meshes = this.meshes;
         for (const mesh of meshes) {
             return mesh.getRandomPointOnModel(out, initialVec, controlPoint, numTriesToGetAPointInsideTheModel, directionBias, boundingBoxScale, bones);
@@ -54717,6 +54741,25 @@ class Source2ModelInstance extends Entity {
     }
     getAttachment(name) {
         return this.attachments.get(name.toLowerCase()) ?? null;
+    }
+    getHitboxes() {
+        /*
+        const mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
+        const hitboxes: Hitbox[] = [];
+        if (mdlHitboxSets) {
+            for (const mdlHitboxSet of mdlHitboxSets) {
+                const mdlHitboxes = mdlHitboxSet.hitboxes;
+                for (const mdlHitbox of mdlHitboxes) {
+                    const bone = this.getBoneById(mdlHitbox.boneId);
+                    if (bone) {
+                        hitboxes.push(new Hitbox(mdlHitbox.name, mdlHitbox.bbmin, mdlHitbox.bbmax, bone));
+                    }
+                }
+            }
+        }
+        return hitboxes;
+        */
+        return [];
     }
     static set animSpeed(speed) {
         const s = Number(speed);
@@ -54756,6 +54799,7 @@ class Source2Model {
     #seqGroup;
     bodyGroups = new Set();
     bodyGroupsChoices = new Set();
+    hitboxSets = new Map();
     constructor(repository, vmdl) {
         this.repository = repository;
         this.vmdl = vmdl;
@@ -55093,6 +55137,7 @@ class Source2ModelLoader {
                 await this.#loadIncludeModels(newSourceModel);
                 await this.testProcess2(source2File, newSourceModel, repository);
                 newSourceModel.loadAnimGroups();
+                this.#loadHitboxSets(newSourceModel);
                 resolve(newSourceModel);
             });
             return;
@@ -55544,6 +55589,43 @@ class Source2ModelLoader {
             if (refModel) {
                 model.addIncludeModel(refModel);
             }
+        }
+    }
+    #loadHitboxSets(model) {
+        if (!model.vmdl) {
+            return;
+        }
+        const hitboxSets = model.vmdl.getBlockStructAsArray('MDAT', 'm_hitboxsets');
+        if (!hitboxSets) {
+            return;
+        }
+        for (const hitboxSet of hitboxSets) {
+            const name = hitboxSet.getValueAsString('key');
+            const h = hitboxSet.getValueAsElement('value');
+            if (name === null || h === null) {
+                continue;
+            }
+            const h2 = h.getValueAsElementArray('m_HitBoxes');
+            if (h2 === null) {
+                continue;
+            }
+            const hitboxes = [];
+            for (const hitbox of h2) {
+                hitboxes.push({
+                    name: hitbox.getValueAsString('m_name') ?? '',
+                    surfaceProperty: hitbox.getValueAsString('m_sSurfaceProperty') ?? '',
+                    boneName: hitbox.getValueAsString('m_sBoneName') ?? '',
+                    minBounds: hitbox.getValueAsNumberArray('m_vMinBounds') ?? vec3.create(),
+                    maxBounds: hitbox.getValueAsNumberArray('m_vMaxBounds') ?? vec3.create(),
+                    shapeRadius: hitbox.getValueAsNumber('m_flShapeRadius') ?? 0,
+                    groupId: hitbox.getValueAsNumber('m_nGroupId') ?? 0,
+                    shapeType: hitbox.getValueAsNumber('m_nShapeType') ?? 0,
+                    translationOnly: hitbox.getValueAsBool('m_bTranslationOnly') ?? false,
+                    renderColor: hitbox.getValueAsNumberArray('m_cRenderColor') ?? vec4.create(),
+                    hitBoxIndex: hitbox.getValueAsNumber('m_nHitBoxIndex') ?? 0,
+                });
+            }
+            model.hitboxSets.set(name, hitboxes);
         }
     }
 }
@@ -61557,7 +61639,7 @@ class CreateOnModel extends Operator {
                 particle.initialVec = vec3.create();
                 const position = vec3.create();
                 controllingModel.getRandomPointOnModel(position, particle.initialVec, controlPoint, this.#forceInModel, this.#directionBias, 1, // TODO: fix hit box scale//this.#hitBoxScale,
-                bones, undefined);
+                bones, undefined, this.#hitboxSetName);
                 if (controlPoint) {
                     vec3.copy(particle.position, position);
                     vec3.copy(particle.prevPosition, position);

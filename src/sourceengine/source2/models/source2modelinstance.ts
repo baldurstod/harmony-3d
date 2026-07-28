@@ -1,14 +1,17 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, ReadonlyVec3, vec3 } from 'gl-matrix';
 import { int32 } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
 import { Camera } from '../../../cameras/camera';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { HasHitBoxes } from '../../../interfaces/hashitboxes';
 import { HasMaterials } from '../../../interfaces/hasmaterials';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { vec3RandomBox } from '../../../math/functions';
+import { Hitbox } from '../../../misc/hitbox';
 import { Bone } from '../../../objects/bone';
 import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
@@ -16,6 +19,7 @@ import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
+import { getRandomInt } from '../../../utils/random';
 import { ControlPoint } from '../../export';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
@@ -35,7 +39,7 @@ let animSpeed = 1.0;
 
 const defaultMaterial = new MeshBasicMaterial();
 
-export class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
+export class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel, HasHitBoxes {
 	isSource2ModelInstance = true;
 	hasSkeleton = true as const;
 	#skeleton: Skeleton | null = null;
@@ -53,9 +57,10 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	sequences = {};
 	mainAnimFrame = 0;
 	animationSpeed = 1.0;
-	sourceModel: Source2Model;
+	readonly sourceModel: Source2Model;
 	hasAnimations = true as const;
 	#bodyGroups = new Map<string, number | undefined>();
+	hasHitBoxes = true as const;
 
 	static {
 		defaultMaterial.addUser(Source2ModelInstance);
@@ -491,12 +496,39 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		initialVec: vec3,
 		controlPoint: ControlPoint,
 		numTriesToGetAPointInsideTheModel: int32,
-		directionBias: vec3,
+		directionBias: ReadonlyVec3,
 		boundingBoxScale: number,
 		bones: [Bone, number][],
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		hitBoxRelativeCoordOut: vec3 | undefined,
+		hitboxSetName: string | undefined,
 	): int32 {
+
+		if (hitboxSetName) {
+			if (!this.#skeleton) {
+				return -1;
+			}
+			const hitboxSet = this.sourceModel.hitboxSets.get(hitboxSetName);
+			if (hitboxSet) {
+				const hitBoxId = getRandomInt/*TODO: use random int of the particle collection*/(hitboxSet.length);
+				const hitbox = hitboxSet[hitBoxId];
+				if (!hitbox) {
+					return -1;
+				}
+
+				const boneName = hitbox.boneName;
+				const bone = this.#skeleton.getBoneByName(boneName);
+				if (bone) {
+					bones.push([bone, 1]);
+					vec3RandomBox(out, hitbox.minBounds, hitbox.maxBounds);
+					vec3.copy(initialVec, out);
+					vec3.transformMat4(out, out, mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale));
+				}
+				return hitBoxId;
+			}
+			return - 1;
+		}
+
 		const meshes = this.meshes;
 		for (const mesh of meshes) {
 			return (mesh as SkeletalMesh).getRandomPointOnModel(
@@ -516,6 +548,27 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	getAttachment(name: string): Source2ModelAttachmentInstance | null {
 		return this.attachments.get(name.toLowerCase()) ?? null;
 	}
+
+	getHitboxes(): Hitbox[] {
+		/*
+		const mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
+		const hitboxes: Hitbox[] = [];
+		if (mdlHitboxSets) {
+			for (const mdlHitboxSet of mdlHitboxSets) {
+				const mdlHitboxes = mdlHitboxSet.hitboxes;
+				for (const mdlHitbox of mdlHitboxes) {
+					const bone = this.getBoneById(mdlHitbox.boneId);
+					if (bone) {
+						hitboxes.push(new Hitbox(mdlHitbox.name, mdlHitbox.bbmin, mdlHitbox.bbmax, bone));
+					}
+				}
+			}
+		}
+		return hitboxes;
+		*/
+		return [];
+	}
+
 
 	static set animSpeed(speed: number) {
 		const s = Number(speed);

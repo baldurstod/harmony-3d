@@ -3313,7 +3313,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -5540,8 +5540,9 @@ declare class Channel {
                            * @param boundingBoxScale Scale of the bounding box. Must be in the 0..1 range
                            * @param bones The receiving array to store the bone(s) this particle will be linked to
                            * @param hitBoxRelativeCoordOut TODO: doc
+                           * @param hitboxSet TODO: doc
                            */
-                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined, hitboxSet: string | undefined): int32;
                       }
 
                       export declare class RandomSecondSequence extends Operator {
@@ -6783,7 +6784,7 @@ declare class Channel {
                           set bonesPerVertex(bonesPerVertex: number);
                           get bonesPerVertex(): number;
                           exportObj(): ObjDatas;
-                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][]): int32;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: ReadonlyVec3, boundingBoxScale: number, bones: [Bone, number][]): int32;
                           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
                           toString(): string;
                           prepareRayCasting(): void;
@@ -7744,6 +7745,20 @@ declare class Channel {
                           get shaderSource(): string;
                       }
 
+                      declare interface Source2Hitbox {
+                          name: string;
+                          surfaceProperty: string;
+                          boneName: string;
+                          minBounds: vec3;
+                          maxBounds: vec3;
+                          shapeRadius: number;
+                          groupId: number;
+                          shapeType: number;
+                          translationOnly: boolean;
+                          renderColor: vec4;
+                          hitBoxIndex: number;
+                      }
+
                       export declare class Source2IceSurfaceDotaMaterial extends Source2Material {
                           get shaderSource(): string;
                       }
@@ -7815,6 +7830,7 @@ declare class Channel {
                           attachments: Map<string, Source2ModelAttachment>;
                           bodyGroups: Set<string>;
                           bodyGroupsChoices: Set<BodyGroupChoice>;
+                          readonly hitboxSets: Map<string, Source2Hitbox[]>;
                           constructor(repository: string, vmdl: Source2File);
                           addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void;
                           createInstance(isDynamic: boolean): Source2ModelInstance;
@@ -7851,7 +7867,7 @@ declare class Channel {
                           getWorldOrientation(q?: quat): quat;
                       }
 
-                      export declare class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
+                      export declare class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel, HasHitBoxes {
                           #private;
                           isSource2ModelInstance: boolean;
                           hasSkeleton: true;
@@ -7865,8 +7881,9 @@ declare class Channel {
                           sequences: {};
                           mainAnimFrame: number;
                           animationSpeed: number;
-                          sourceModel: Source2Model;
+                          readonly sourceModel: Source2Model;
                           hasAnimations: true;
+                          hasHitBoxes: true;
                           constructor(sourceModel: Source2Model, isDynamic: boolean);
                           setBodyGroup(name: string, choice: number): void;
                           resetBodyGroups(): void;
@@ -7890,8 +7907,9 @@ declare class Channel {
                           getAnimations(): Promise<Set<string>>;
                           buildContextMenu(): HarmonyMenuItemsDict;
                           getParentModel(): Source2ModelInstance;
-                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: vec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined): int32;
+                          getRandomPointOnModel(out: vec3, initialVec: vec3, controlPoint: ControlPoint, numTriesToGetAPointInsideTheModel: int32, directionBias: ReadonlyVec3, boundingBoxScale: number, bones: [Bone, number][], hitBoxRelativeCoordOut: vec3 | undefined, hitboxSetName: string | undefined): int32;
                           getAttachment(name: string): Source2ModelAttachmentInstance | null;
+                          getHitboxes(): Hitbox[];
                           static set animSpeed(speed: number);
                           dispose(): void;
                           static getEntityName(): string;

@@ -1,4 +1,4 @@
-import { quat, vec3 } from 'gl-matrix';
+import { quat, vec3, vec4 } from 'gl-matrix';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2Animations } from '../animations/source2animations';
@@ -17,6 +17,20 @@ export interface BodyGroupChoice {
 	choice: string,
 	bodyGroup: string,
 	bodyGroupId: number,
+}
+
+export interface Source2Hitbox {
+	name: string,
+	surfaceProperty: string,
+	boneName: string,
+	minBounds: vec3,
+	maxBounds: vec3,
+	shapeRadius: number,
+	groupId: number,
+	shapeType: number,
+	translationOnly: boolean,
+	renderColor: vec4,
+	hitBoxIndex: number,
 }
 
 export type BodyPart = BodyPartMesh[];
@@ -41,6 +55,7 @@ export class Source2Model {
 	#seqGroup?: Source2SeqGroup;
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
+	readonly hitboxSets = new  Map<string, Source2Hitbox[]>();
 
 	constructor(repository: string, vmdl: Source2File) {
 		this.repository = repository;

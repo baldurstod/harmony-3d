@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
+import { int32 } from 'harmony-types';
 import { Bone } from '../objects/bone';
 import { ControlPoint } from '../sourceengine/export';
-import { int32 } from 'harmony-types';
 
 export interface RandomPointOnModel {
 	/**
@@ -15,6 +15,7 @@ export interface RandomPointOnModel {
 	 * @param boundingBoxScale Scale of the bounding box. Must be in the 0..1 range
 	 * @param bones The receiving array to store the bone(s) this particle will be linked to
 	 * @param hitBoxRelativeCoordOut TODO: doc
+	 * @param hitboxSet TODO: doc
 	 */
 	getRandomPointOnModel(
 		out: vec3,
@@ -25,5 +26,6 @@ export interface RandomPointOnModel {
 		boundingBoxScale: number,
 		bones: [Bone, number][],
 		hitBoxRelativeCoordOut: vec3 | undefined,
+		hitboxSet: string | undefined,
 	): int32;
 }
