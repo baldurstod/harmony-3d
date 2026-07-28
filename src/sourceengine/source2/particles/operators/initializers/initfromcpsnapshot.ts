@@ -2,10 +2,10 @@ import { vec3 } from 'gl-matrix';
 import { TESTING } from '../../../../../buildoptions';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { ATTRIBUTE_NAME_PER_FIELD } from '../../particleconstants';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 /*
 export const PARTICLE_FIELD_LIFETIME = 1;
@@ -117,7 +117,9 @@ export class InitFromCPSnapshot extends Operator {
 						if (true || this.#localSpaceAngles) {
 							vec3.transformMat4(v, attributeToRead[id], localSpaceCP.currentWorldTransformation);
 						} else {
-							vec3.add(v, attributeToRead[id], localSpaceCP.currentWorldPosition);
+							if (localSpaceCP) {
+								//vec3.add(v, attributeToRead[id], localSpaceCP.currentWorldPosition);
+							}
 						}
 						particle.setInitialField(this.#attributeToWrite, v);
 					}

@@ -66,7 +66,11 @@ export class RemapCPtoScalar extends Operator {
 
 	override doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use m_flInterpRate
-		const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+		const cpInput = this.system.getControlPoint(this.#cpInput);
+		if (!cpInput) {
+			return;
+		}
+		const cpInputPos = cpInput.currentWorldPosition;
 		let value = cpInputPos[this.#field] ?? 0;
 
 		value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);

@@ -56,6 +56,7 @@ export class SetControlPointOrientation extends Operator {
 	override doOperate(): void {
 		return;
 		//TODO: randomize parameter + interpolation
+		/*
 		const cp = this.system.getControlPoint(this.#cp);
 		if (cp) {
 			const rotation = this.#rotation;
@@ -73,6 +74,7 @@ export class SetControlPointOrientation extends Operator {
 			cp.setOrientation(q);
 			//cp._compute();
 		}
+		*/
 	}
 
 	override isPreEmission(): boolean {

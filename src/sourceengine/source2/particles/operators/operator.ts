@@ -502,8 +502,9 @@ export class Operator {//TODOv3: rename this class ?
 		}
 		let strength = 1;// TODO: use m_flOpStrength?
 		// TODO: use checkIfOperatorShouldRun
-		if (this.scaleCp >= 0) {
-			strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
+		const scaleCp = this.system.getControlPoint(this.scaleCp);
+		if (scaleCp) {
+			strength = scaleCp.currentWorldPosition[0];
 		}
 		this.doInit(particles, elapsedTime, strength);
 	}
@@ -515,8 +516,9 @@ export class Operator {//TODOv3: rename this class ?
 		if (this.endCapState != 1) {
 			let strength = this.getParamScalarValue('m_flOpStrength') ?? DEFAULT_OP_STRENGTH;
 			// TODO: use checkIfOperatorShouldRun
-			if (this.scaleCp) {
-				strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
+			const scaleCp = this.system.getControlPoint(this.scaleCp);
+			if (scaleCp) {
+				strength = scaleCp.currentWorldPosition[0];
 			}
 			this.doOperate(particle, elapsedTime, strength);
 		}

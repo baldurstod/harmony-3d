@@ -89,7 +89,11 @@ export class RemapCPtoVector extends Operator {
 		const outputMin = this.#outputMin;
 		const outputMax = this.#outputMax;
 
-		const input = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+		const cpInput = this.system.getControlPoint(this.#cpInput);
+		if (!cpInput) {
+			return;
+		}
+		const input = cpInput.currentWorldPosition;
 
 		v[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.#remapBias);
 		v[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);

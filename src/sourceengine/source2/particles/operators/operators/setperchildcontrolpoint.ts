@@ -63,7 +63,9 @@ export class SetPerChildControlPoint extends Operator {
 			const sourceParticle = this.system.livingParticles[particleId];
 			if (child && sourceParticle) {
 				const childCp = child.getOwnControlPoint(this.#firstControlPoint);
-				childCp.setPosition(sourceParticle.position);
+				if (childCp) {
+					childCp.setPosition(sourceParticle.position);
+				}
 			}
 			++childId;
 			particleId += particleIncrement;

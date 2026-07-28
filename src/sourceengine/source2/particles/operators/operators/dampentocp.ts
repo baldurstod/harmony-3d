@@ -29,6 +29,9 @@ export class DampenToCP extends Operator {
 	override doOperate(particle: Source2Particle): void {
 		// TODO: use m_flScale
 		const cp = this.system.getControlPoint(this.controlPointNumber);
+		if (!cp) {
+			return;
+		}
 
 		const distance = vec3.distance(particle.position, cp.currentWorldPosition);
 		if (distance > this.#range) {

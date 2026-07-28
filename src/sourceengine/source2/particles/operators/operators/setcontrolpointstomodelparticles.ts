@@ -61,6 +61,9 @@ export class SetControlPointsToModelParticles extends Operator {
 			if (particle) {
 				for (const child of children) {
 					const childCp = child.getOwnControlPoint(firstControlPoint + i);
+					if (!childCp) {
+						continue;
+					}
 					childCp.setPosition(particle.position);
 
 					if (this.#followAttachment) {

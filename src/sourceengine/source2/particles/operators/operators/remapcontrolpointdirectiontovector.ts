@@ -26,6 +26,9 @@ export class RemapControlPointDirectionToVector extends Operator {
 
 	override doOperate(particle: Source2Particle): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
+		if (!cp) {
+			return;
+		}
 		vec3.transformQuat(v, DEFAULT_VECTOR, cp.currentWorldQuaternion);
 		vec3.scale(v, v, this.#scale);
 		particle.setField(this.#fieldOutput, v);

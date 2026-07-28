@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
 
 const v = vec3.create();
 
@@ -40,7 +40,9 @@ export class NormalOffset extends Operator {
 
 		if (this.#localCoords) {
 			const cp = this.system.getControlPoint(this.controlPointNumber);
-			vec3.transformQuat(v, v, cp.currentWorldQuaternion);
+			if (cp) {
+				vec3.transformQuat(v, v, cp.currentWorldQuaternion);
+			}
 		}
 
 		vec3.add(particle.normal, particle.normal, v);
@@ -50,7 +52,7 @@ export class NormalOffset extends Operator {
 		}
 	}
 
-	override initMultipleOverride():boolean {
+	override initMultipleOverride(): boolean {
 		return true;
 	}
 }

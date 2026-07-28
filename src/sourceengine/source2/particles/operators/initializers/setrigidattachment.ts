@@ -29,7 +29,13 @@ export class SetRigidAttachment extends Operator {
 		if (!this.#localSpace) {
 			throw new Error('code me');
 		}
-		vec3.sub(v, particle.getVectorField(v, this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
+
+		const cp = this.system.getControlPoint(this.controlPointNumber);
+		if (!cp) {
+			return;
+		}
+
+		vec3.sub(v, particle.getVectorField(v, this.#fieldInput), cp.currentWorldPosition);
 		particle.setField(this.#fieldOutput, v);
 	}
 }

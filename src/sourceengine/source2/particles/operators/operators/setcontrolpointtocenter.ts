@@ -25,9 +25,13 @@ export class SetControlPointToCenter extends Operator {
 	}
 
 	override doOperate(): void {
+		const cp1 = this.system.getOwnControlPoint(this.#cp1);
+		if (!cp1) {
+			return;
+		}
 		this.system.getBoundsCenter(center);
 		vec3.add(center, center, this.#cp1Pos);
-		this.system.getOwnControlPoint(this.#cp1).setPosition(center);
+		cp1.setPosition(center);
 	}
 
 	override isPreEmission(): boolean {

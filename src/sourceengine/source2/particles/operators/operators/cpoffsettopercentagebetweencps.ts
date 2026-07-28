@@ -74,8 +74,14 @@ export class CPOffsetToPercentageBetweenCPs extends Operator {
 	}
 
 	override doOperate(particle: Source2Particle): void {
-		const startCpPos = this.system.getControlPoint(this.#startCP).currentWorldPosition;
-		const endCPPos = this.system.getControlPoint(this.#endCP).currentWorldPosition;
+		const startCP = this.system.getControlPoint(this.#startCP);
+		const endCP = this.system.getControlPoint(this.#endCP);
+
+		if (!startCP || !endCP) {
+			return;
+		}
+		const startCpPos = startCP.currentWorldPosition;
+		const endCPPos = endCP.currentWorldPosition;
 
 		let percentage;
 		const dist = vec3.distance(startCpPos, endCPPos);

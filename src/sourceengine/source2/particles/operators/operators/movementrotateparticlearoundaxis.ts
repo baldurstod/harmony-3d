@@ -38,6 +38,9 @@ export class MovementRotateParticleAroundAxis extends Operator {
 		const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);
+		if (!cp) {
+			return;
+		}
 
 		if (this.#localSpace) {
 			quat.copy(q, cp.currentWorldQuaternion);

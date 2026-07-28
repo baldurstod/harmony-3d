@@ -48,7 +48,9 @@ export class SetParentControlPointsToChildCP extends Operator {
 			const cp = this.system.getControlPoint(cpId);
 			if (child && cp) {
 				const childCp = child.getOwnControlPoint(this.#childControlPoint);
-				childCp.setPosition(cp.currentWorldPosition);
+				if (childCp) {
+					childCp.setPosition(cp.currentWorldPosition);
+				}
 			}
 			++childId;
 			++cpId;

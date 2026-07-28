@@ -78,12 +78,18 @@ export class SetControlPointPositions extends Operator {
 		let cpLocation;
 
 		const headLocation = this.system.getControlPoint(this.#headLocation);
+		if (!headLocation) {
+			return;
+		}
 
 		for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
 			cpNumber = this.#cp[cpIndex]!;
 			cpLocation = this.#cpPos[cpIndex]!;
 
 			const cp = this.system.getControlPoint(cpNumber);
+			if (!cp) {
+				continue;
+			}
 			if (!useWorldLocation) {
 				vec3.transformQuat(v, cpLocation, headLocation.currentWorldQuaternion);
 				vec3.add(v, v, headLocation.currentWorldPosition);

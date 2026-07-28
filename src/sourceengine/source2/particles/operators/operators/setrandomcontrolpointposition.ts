@@ -61,6 +61,9 @@ export class SetRandomControlPointPosition extends Operator {//TODO: disable ? n
 
 			const headLocation = this.system.getControlPoint(this.#headLocation);
 			const cp1 = this.system.getControlPoint(this.#cp1);
+			if (!cp1 || !headLocation) {
+				return;
+			}
 			vec3.transformQuat(v, v, headLocation.currentWorldQuaternion);
 			vec3.add(v, v, headLocation.currentWorldPosition);
 			cp1.setPosition(v);

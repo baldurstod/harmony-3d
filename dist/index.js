@@ -56691,8 +56691,9 @@ class Operator {
         }
         let strength = 1; // TODO: use m_flOpStrength?
         // TODO: use checkIfOperatorShouldRun
-        if (this.scaleCp >= 0) {
-            strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
+        const scaleCp = this.system.getControlPoint(this.scaleCp);
+        if (scaleCp) {
+            strength = scaleCp.currentWorldPosition[0];
         }
         this.doInit(particles, elapsedTime, strength);
     }
@@ -56703,8 +56704,9 @@ class Operator {
         if (this.endCapState != 1) {
             let strength = this.getParamScalarValue('m_flOpStrength') ?? DEFAULT_OP_STRENGTH;
             // TODO: use checkIfOperatorShouldRun
-            if (this.scaleCp) {
-                strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
+            const scaleCp = this.system.getControlPoint(this.scaleCp);
+            if (scaleCp) {
+                strength = scaleCp.currentWorldPosition[0];
             }
             this.doOperate(particle, elapsedTime, strength);
         }
@@ -57846,10 +57848,20 @@ class Source2ParticleSystem extends Entity {
     getWorldQuaternion(q = quat.create()) {
         return quat.identity(q);
     }
+    /**
+     * Return the this system control point or the parent control point if this system don't have the requested control point.
+     * If neither have the requested control point, a new control point is created
+     * If controlPointId is negative, return null
+     * @param controlPointId The control point number
+     * @returns The requested control point
+     */
     getControlPoint(controlPointId) {
+        if (controlPointId < 0) {
+            return null;
+        }
         const parentSystem = this.parentSystem;
         if (parentSystem) {
-            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: remove recursion
+            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: check recursion
         }
         let controlPoint = this.#controlPoints[controlPointId];
         if (controlPoint === undefined) {
@@ -57857,10 +57869,17 @@ class Source2ParticleSystem extends Entity {
         }
         return controlPoint;
     }
+    /**
+     * @see getControlPoint
+     * If a control point is created in the process, give it a position 1, 1, 1
+     */
     getControlPointForScale(controlPointId) {
+        if (controlPointId < 0) {
+            return null;
+        }
         const parentSystem = this.parentSystem;
         if (parentSystem) {
-            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: check recursion
         }
         let controlPoint = this.#controlPoints[controlPointId];
         if (controlPoint === undefined) {
@@ -57869,7 +57888,16 @@ class Source2ParticleSystem extends Entity {
         }
         return controlPoint;
     }
+    /**
+     * Return the this system control point. If this system don't have the requested control point, a new one is created.
+     * If controlPointId is negative, return null
+     * @param controlPointId The control point number
+     * @returns The requested control point
+     */
     getOwnControlPoint(controlPointId) {
+        if (controlPointId < 0) {
+            return null;
+        }
         //return this.getControlPoint(controlPointId);
         return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
@@ -57961,7 +57989,7 @@ class Source2ParticleSystem extends Entity {
                                 if (attachmentInstance) {
                                     const cp = this.getOwnControlPoint(driver.controlPoint ?? i);
                                     attachmentInstance.addChild(cp);
-                                    cp.step();
+                                    cp?.step();
                                 }
                             }
                             ++i;
@@ -61104,9 +61132,10 @@ class ConstrainDistance extends Operator {
         //const cpNumber = this.getParameter('control point number');
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const v = vec3.clone(particle.position);
-        if (cp) {
-            vec3.sub(v, v, cp.getWorldPosition(vec$8));
+        if (!cp) {
+            return;
         }
+        vec3.sub(v, v, cp.getWorldPosition(vec$8));
         const distance = vec3.length(v);
         if (distance > 0) {
             vec3.scale(v, v, 1 / distance);
@@ -62892,7 +62921,9 @@ class NormalOffset extends Operator {
         vec3RandomBox(v$b, this.#offsetMin, this.#offsetMax);
         if (this.#localCoords) {
             const cp = this.system.getControlPoint(this.controlPointNumber);
-            vec3.transformQuat(v$b, v$b, cp.currentWorldQuaternion);
+            if (cp) {
+                vec3.transformQuat(v$b, v$b, cp.currentWorldQuaternion);
+            }
         }
         vec3.add(particle.normal, particle.normal, v$b);
         if (this.#normalize) {
@@ -63240,7 +63271,11 @@ class RemapCPtoVector extends Operator {
         const inputMax = this.#inputMax;
         const outputMin = this.#outputMin;
         const outputMax = this.#outputMax;
-        const input = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+        const cpInput = this.system.getControlPoint(this.#cpInput);
+        if (!cpInput) {
+            return;
+        }
+        const input = cpInput.currentWorldPosition;
         v$9[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.#remapBias);
         v$9[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
         v$9[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
@@ -63424,7 +63459,11 @@ class SetRigidAttachment extends Operator {
         if (!this.#localSpace) {
             throw new Error('code me');
         }
-        vec3.sub(v$8, particle.getVectorField(v$8, this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
+        if (!cp) {
+            return;
+        }
+        vec3.sub(v$8, particle.getVectorField(v$8, this.#fieldInput), cp.currentWorldPosition);
         particle.setField(this.#fieldOutput, v$8);
     }
 }
@@ -63649,6 +63688,9 @@ class DampenToCP extends Operator {
     doOperate(particle) {
         // TODO: use m_flScale
         const cp = this.system.getControlPoint(this.controlPointNumber);
+        if (!cp) {
+            return;
+        }
         const distance = vec3.distance(particle.position, cp.currentWorldPosition);
         if (distance > this.#range) {
             return;
@@ -64523,6 +64565,9 @@ class MovementRotateParticleAroundAxis extends Operator {
         const axis = vec3.normalize(movementRotateParticleAroundAxisTempVec4, this.getParamVectorValue(movementRotateParticleAroundAxisTempVec4, 'm_vecRotAxis', particle) ?? DEFAULT_AXIS);
         const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
         const cp = this.system.getControlPoint(this.controlPointNumber);
+        if (!cp) {
+            return;
+        }
         if (this.#localSpace) {
             quat.copy(q$1, cp.currentWorldQuaternion);
         }
@@ -65443,6 +65488,9 @@ class RemapControlPointDirectionToVector extends Operator {
     }
     doOperate(particle) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
+        if (!cp) {
+            return;
+        }
         vec3.transformQuat(v$4, DEFAULT_VECTOR, cp.currentWorldQuaternion);
         vec3.scale(v$4, v$4, this.#scale);
         particle.setField(this.#fieldOutput, v$4);
@@ -65535,7 +65583,11 @@ class RemapCPtoScalar extends Operator {
     }
     doOperate(particle, elapsedTime, strength) {
         //TODO: use m_flInterpRate
-        const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+        const cpInput = this.system.getControlPoint(this.#cpInput);
+        if (!cpInput) {
+            return;
+        }
+        const cpInputPos = cpInput.currentWorldPosition;
         let value = cpInputPos[this.#field] ?? 0;
         value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
         const scaleInitial = /*this.scaleInitialRange || */ this.setMethod == Source2ParticleSetMethod.ScaleInitial; //TODO: optimize
@@ -65654,6 +65706,9 @@ class SetControlPointFromObjectScale extends Operator {
     doOperate() {
         //const cpInput = this.system.getControlPoint(this.#cpInput);
         const cpOutput = this.system.getControlPoint(this.#cpOutput);
+        if (!cpOutput) {
+            return;
+        }
         //TODO: use the actual scale
         cpOutput.setPosition(vec3.fromValues(1, 1, 1));
     }
@@ -65710,6 +65765,26 @@ class SetControlPointOrientation extends Operator {
     }
     doOperate() {
         return;
+        //TODO: randomize parameter + interpolation
+        /*
+        const cp = this.system.getControlPoint(this.#cp);
+        if (cp) {
+            const rotation = this.#rotation;
+
+            quat.fromEuler(q, rotation[2], rotation[0], rotation[1]);//order is pitch yaw roll
+            quat.fromEuler(q, rotation[1], rotation[0], rotation[2]);//order is pitch yaw roll
+            if (!this.#useWorldLocation) {
+                const headControlPoint = this.system.getControlPoint(this.#headLocation);
+                if (headControlPoint) {
+                    quat.mul(q, q, headControlPoint.currentWorldQuaternion);
+                }
+            }
+            //TODO: dafuck ?
+            quat.invert(q, q);
+            cp.setOrientation(q);
+            //cp._compute();
+        }
+        */
     }
     isPreEmission() {
         return true;
@@ -65783,10 +65858,16 @@ class SetControlPointPositions extends Operator {
         let cpNumber;
         let cpLocation;
         const headLocation = this.system.getControlPoint(this.#headLocation);
+        if (!headLocation) {
+            return;
+        }
         for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
             cpNumber = this.#cp[cpIndex];
             cpLocation = this.#cpPos[cpIndex];
             const cp = this.system.getControlPoint(cpNumber);
+            if (!cp) {
+                continue;
+            }
             if (!useWorldLocation) {
                 vec3.transformQuat(v$3, cpLocation, headLocation.currentWorldQuaternion);
                 vec3.add(v$3, v$3, headLocation.currentWorldPosition);
@@ -65856,6 +65937,9 @@ class SetControlPointsToModelParticles extends Operator {
             if (particle) {
                 for (const child of children) {
                     const childCp = child.getOwnControlPoint(firstControlPoint + i);
+                    if (!childCp) {
+                        continue;
+                    }
                     childCp.setPosition(particle.position);
                     if (this.#followAttachment) {
                         const model = this.system.getParentModel();
@@ -65896,9 +65980,13 @@ class SetControlPointToCenter extends Operator {
         }
     }
     doOperate() {
+        const cp1 = this.system.getOwnControlPoint(this.#cp1);
+        if (!cp1) {
+            return;
+        }
         this.system.getBoundsCenter(center$1);
         vec3.add(center$1, center$1, this.#cp1Pos);
-        this.system.getOwnControlPoint(this.#cp1).setPosition(center$1);
+        cp1.setPosition(center$1);
     }
     isPreEmission() {
         return true;
@@ -66035,7 +66123,9 @@ class SetParentControlPointsToChildCP extends Operator {
             const cp = this.system.getControlPoint(cpId);
             if (child && cp) {
                 const childCp = child.getOwnControlPoint(this.#childControlPoint);
-                childCp.setPosition(cp.currentWorldPosition);
+                if (childCp) {
+                    childCp.setPosition(cp.currentWorldPosition);
+                }
             }
             ++childId;
             ++cpId;
@@ -66102,7 +66192,9 @@ class SetPerChildControlPoint extends Operator {
             const sourceParticle = this.system.livingParticles[particleId];
             if (child && sourceParticle) {
                 const childCp = child.getOwnControlPoint(this.#firstControlPoint);
-                childCp.setPosition(sourceParticle.position);
+                if (childCp) {
+                    childCp.setPosition(sourceParticle.position);
+                }
             }
             ++childId;
             particleId += particleIncrement;
@@ -66161,6 +66253,9 @@ class SetRandomControlPointPosition extends Operator {
             vec3RandomBox(v$2, this.cpMinPos, this.cpMaxPos);
             const headLocation = this.system.getControlPoint(this.#headLocation);
             const cp1 = this.system.getControlPoint(this.#cp1);
+            if (!cp1 || !headLocation) {
+                return;
+            }
             vec3.transformQuat(v$2, v$2, headLocation.currentWorldQuaternion);
             vec3.add(v$2, v$2, headLocation.currentWorldPosition);
             cp1.setPosition(v$2);
@@ -66217,11 +66312,17 @@ class SetSingleControlPointPosition extends Operator {
         //TODO
         if (!this.#setOnce || !this.#set) {
             const cp = this.system.getOwnControlPoint(this.#cp1);
+            if (!cp) {
+                return;
+            }
             if (this.#useWorldLocation) {
                 cp.setPosition(cp1Pos);
             }
             else {
                 const headCp = this.system.getControlPoint(this.#headLocation);
+                if (!headCp) {
+                    return;
+                }
                 vec3.transformQuat(v$1, cp1Pos, headCp.currentWorldQuaternion);
                 vec3.add(v$1, v$1, headCp.currentWorldPosition);
                 cp.setPosition(v$1);

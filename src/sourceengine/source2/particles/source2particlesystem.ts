@@ -405,10 +405,20 @@ export class Source2ParticleSystem extends Entity {
 		return quat.identity(q);
 	}
 
-	getControlPoint(controlPointId: number): ControlPoint {
+	/**
+	 * Return the this system control point or the parent control point if this system don't have the requested control point.
+	 * If neither have the requested control point, a new control point is created
+	 * If controlPointId is negative, return null
+	 * @param controlPointId The control point number
+	 * @returns The requested control point
+	 */
+	getControlPoint(controlPointId: number): ControlPoint | null {
+		if (controlPointId < 0) {
+			return null;
+		}
 		const parentSystem = this.parentSystem;
 		if (parentSystem) {
-			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: remove recursion
+			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: check recursion
 		}
 
 		let controlPoint = this.#controlPoints[controlPointId];
@@ -418,10 +428,17 @@ export class Source2ParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getControlPointForScale(controlPointId: number): ControlPoint {
+	/**
+	 * @see getControlPoint
+	 * If a control point is created in the process, give it a position 1, 1, 1
+	 */
+	getControlPointForScale(controlPointId: number): ControlPoint | null {
+		if (controlPointId < 0) {
+			return null;
+		}
 		const parentSystem = this.parentSystem;
 		if (parentSystem) {
-			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: check recursion
 		}
 
 		let controlPoint = this.#controlPoints[controlPointId];
@@ -432,7 +449,16 @@ export class Source2ParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getOwnControlPoint(controlPointId: number): ControlPoint {
+	/**
+	 * Return the this system control point. If this system don't have the requested control point, a new one is created.
+	 * If controlPointId is negative, return null
+	 * @param controlPointId The control point number
+	 * @returns The requested control point
+	 */
+	getOwnControlPoint(controlPointId: number): ControlPoint | null {
+		if (controlPointId < 0) {
+			return null;
+		}
 		//return this.getControlPoint(controlPointId);
 		return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
@@ -520,7 +546,7 @@ export class Source2ParticleSystem extends Entity {
 
 		this.#parentModel = model ?? null;
 
-		this.getControlPoint(0).model = model as Source2ModelInstance;
+		this.getControlPoint(0)!.model = model as Source2ModelInstance;
 		if (this.baseProperties.controlPointConfigurations) {
 			for (const controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
 				/*if (controlPointConfiguration.m_name == 'point_follow')*/ {
@@ -538,7 +564,7 @@ export class Source2ParticleSystem extends Entity {
 								if (attachmentInstance) {
 									const cp = this.getOwnControlPoint(driver.controlPoint ?? i);
 									attachmentInstance.addChild(cp);
-									cp.step();
+									cp?.step();
 								} else {
 									if (TESTING) {
 										console.warn(`Cannot find attachment ${attachmentName}`);

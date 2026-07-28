@@ -51,10 +51,16 @@ export class SetSingleControlPointPosition extends Operator {
 		//TODO
 		if (!this.#setOnce || !this.#set) {
 			const cp = this.system.getOwnControlPoint(this.#cp1);
+			if (!cp) {
+				return;
+			}
 			if (this.#useWorldLocation) {
 				cp.setPosition(cp1Pos as vec3);
 			} else {
 				const headCp = this.system.getControlPoint(this.#headLocation);
+				if (!headCp) {
+					return;
+				}
 				vec3.transformQuat(v, cp1Pos as vec3, headCp.currentWorldQuaternion);
 				vec3.add(v, v, headCp.currentWorldPosition);
 				cp.setPosition(v);

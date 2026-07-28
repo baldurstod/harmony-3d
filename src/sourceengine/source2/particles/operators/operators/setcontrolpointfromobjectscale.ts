@@ -26,6 +26,9 @@ export class SetControlPointFromObjectScale extends Operator {
 	override doOperate(): void {
 		//const cpInput = this.system.getControlPoint(this.#cpInput);
 		const cpOutput = this.system.getControlPoint(this.#cpOutput);
+		if (!cpOutput) {
+			return;
+		}
 
 		//TODO: use the actual scale
 		cpOutput.setPosition(vec3.fromValues(1, 1, 1));

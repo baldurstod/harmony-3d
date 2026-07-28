@@ -8162,9 +8162,26 @@ declare class Channel {
                           createParticle(emitterIndex: number, creationTime: number, elapsedTime: number): Source2Particle | undefined;
                           getWorldPosition(vec?: vec3): vec3;
                           getWorldQuaternion(q?: quat): quat;
-                          getControlPoint(controlPointId: number): ControlPoint;
-                          getControlPointForScale(controlPointId: number): ControlPoint;
-                          getOwnControlPoint(controlPointId: number): ControlPoint;
+                          /**
+                           * Return the this system control point or the parent control point if this system don't have the requested control point.
+                           * If neither have the requested control point, a new control point is created
+                           * If controlPointId is negative, return null
+                           * @param controlPointId The control point number
+                           * @returns The requested control point
+                           */
+                          getControlPoint(controlPointId: number): ControlPoint | null;
+                          /**
+                           * @see getControlPoint
+                           * If a control point is created in the process, give it a position 1, 1, 1
+                           */
+                          getControlPointForScale(controlPointId: number): ControlPoint | null;
+                          /**
+                           * Return the this system control point. If this system don't have the requested control point, a new one is created.
+                           * If controlPointId is negative, return null
+                           * @param controlPointId The control point number
+                           * @returns The requested control point
+                           */
+                          getOwnControlPoint(controlPointId: number): ControlPoint | null;
                           getControlPointPosition(cpId: number): vec3;
                           setControlPointPosition(cpId: number, position: vec3): void;
                           setMaxParticles(max: number): void;

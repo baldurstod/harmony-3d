@@ -38,9 +38,10 @@ export class ConstrainDistance extends Operator {
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		const v = vec3.clone(particle.position);
-		if (cp) {
-			vec3.sub(v, v, cp.getWorldPosition(vec));
+		if (!cp) {
+			return;
 		}
+		vec3.sub(v, v, cp.getWorldPosition(vec));
 
 		const distance = vec3.length(v);
 		if (distance > 0) {
