@@ -42,6 +42,7 @@ import { Interaction } from '../utils/interaction';
 import { Scene } from './scene';
 import { SceneExplorerEntity } from './sceneexplorerentity';
 import { SceneExplorerEvents } from './sceneexplorerevents';
+import { NoParentRotation } from '../entities/export';
 
 function FormatArray(array: number[] | vec3 | quat): string {
 	const arr: string[] = [];
@@ -659,6 +660,12 @@ function initEntitySubmenu(): void {
 		{
 			i18n: '#entities', submenu:
 				[
+					{
+						i18n: '#special', submenu:
+							[
+								{ i18n: '#no_parent_rotation', f: (entity: Entity): void => { entity.addChild(new NoParentRotation()) } },
+							]
+					},
 					{ i18n: '#group', f: (entity: Entity): void => { entity.addChild(new Group()) } },
 					{ i18n: '#target', f: (entity: Entity): void => { entity.addChild(new Target()) } },
 					{ i18n: '#keeponlylastchild', f: (entity: Entity): void => { entity.addChild(new KeepOnlyLastChild()) } },

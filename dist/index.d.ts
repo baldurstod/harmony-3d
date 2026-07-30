@@ -2074,9 +2074,6 @@ declare class Channel {
 
                       export declare class FadeOutSimple extends Operator {
                           #private;
-                          fadeOutTime: number;
-                          startFadeOutTime: number;
-                          invFadeOutTime: number;
                           constructor(system: Source2ParticleSystem);
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           doOperate(particle: Source2Particle): void;
@@ -4813,6 +4810,11 @@ declare class Channel {
                           #private;
                           _paramChanged(paramName: string, param: OperatorParam): void;
                           doEmit(elapsedTime: number): void;
+                      }
+
+                      export declare class NoParentRotation extends Entity {
+                          getWorldOrientation(q?: quat): quat;
+                          static getEntityName(): string;
                       }
 
                       export declare class NormalAlignToCP extends Operator {
