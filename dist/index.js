@@ -1790,6 +1790,9 @@ class Material {
             this._dirtyProgram = true; //TODOv3: invalidate program here ?
         }
     }
+    hasDefine(define) {
+        return this.defines[define] !== undefined;
+    }
     setValues(values) {
         if (values === undefined)
             return;
@@ -16161,6 +16164,10 @@ class SceneNode extends Entity {
 }
 registerEntity(SceneNode);
 
+/**
+ * This entity does not inherit parent rotation
+ * It's world orientation is always it's local orientation
+ */
 class NoParentRotation extends Entity {
     getWorldOrientation(q = quat.create()) {
         return quat.copy(q, this._quaternion);
@@ -57941,6 +57948,7 @@ class Source2ParticleSystem extends Entity {
     }
     setMaxParticles(max) {
         this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
+        //this.maxParticles = 1;
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
@@ -64148,21 +64156,21 @@ RegisterSource2ParticleOperator('C_OP_FadeOut', FadeOut);
 
 const DEFAULT_FADE_OUT_TIME = 0.25;
 class FadeOutSimple extends Operator {
-    fadeOutTime = DEFAULT_FADE_OUT_TIME;
-    startFadeOutTime;
-    invFadeOutTime;
+    #fadeOutTime = DEFAULT_FADE_OUT_TIME;
+    #startFadeOutTime;
+    #invFadeOutTime;
     constructor(system) {
         super(system);
         this.#update();
     }
     #update() {
-        this.startFadeOutTime = 1.0 - this.fadeOutTime;
-        this.invFadeOutTime = 1.0 / this.fadeOutTime;
+        this.#startFadeOutTime = 1.0 - this.#fadeOutTime;
+        this.#invFadeOutTime = 1.0 / this.#fadeOutTime;
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flFadeOutTime':
-                this.fadeOutTime = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME;
+                this.#fadeOutTime = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME;
                 this.#update();
                 break;
             default:
@@ -64170,7 +64178,13 @@ class FadeOutSimple extends Operator {
         }
     }
     doOperate(particle) {
-        particle.alpha = SimpleSplineRemapValWithDeltasClamped(particle.proportionOfLife, this.startFadeOutTime, this.fadeOutTime, this.invFadeOutTime, particle.startAlpha, -particle.startAlpha);
+        if (particle.proportionOfLife < this.#startFadeOutTime) {
+            return;
+        }
+        //particle.alpha = SimpleSplineRemapValWithDeltasClamped(particle.proportionOfLife, this.#startFadeOutTime, this.#fadeOutTime, this.#invFadeOutTime, particle.startAlpha, -particle.startAlpha);
+        particle.alpha = SimpleSpline(particle.startAlpha - (particle.proportionOfLife - this.#startFadeOutTime) * particle.startAlpha);
+        console.info(particle.alpha);
+        //fl4NewAlpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, startFadeOutTime, fl4FadeOutDuration, fl4OOFadeOutDuration, particle.startAlpha, fl4Goal - particle.startAlpha);
         //TODO: use fieldOutput
     }
 }
@@ -75877,6 +75891,8 @@ class MaterialEditor {
     #htmlShader;
     #htmlBlending;
     #htmlHasBlending;
+    #htmlAlwaysOnTop;
+    #htmlAlwaysBehind;
     #htmlBlendFactors = new Array(4);
     #htmlBlendSelects = new Array(6);
     #htmlParams;
@@ -75902,6 +75918,32 @@ class MaterialEditor {
                                             type: 'checkbox',
                                             events: {
                                                 change: (event) => this.#setBlending(event.target.checked),
+                                            }
+                                        }),
+                                    ]
+                                }),
+                                createElement('label', {
+                                    childs: [
+                                        createElement('span', {
+                                            i18n: '#always_on_top',
+                                        }),
+                                        this.#htmlAlwaysOnTop = createElement('input', {
+                                            type: 'checkbox',
+                                            events: {
+                                                change: (event) => this.#setAlwaysOnTop(event.target.checked),
+                                            }
+                                        }),
+                                    ]
+                                }),
+                                createElement('label', {
+                                    childs: [
+                                        createElement('span', {
+                                            i18n: '#always_behind',
+                                        }),
+                                        this.#htmlAlwaysBehind = createElement('input', {
+                                            type: 'checkbox',
+                                            events: {
+                                                change: (event) => this.#setAlwaysBehind(event.target.checked),
                                             }
                                         }),
                                     ]
@@ -75989,6 +76031,8 @@ class MaterialEditor {
         else {
             hide(this.#htmlBlendFactors);
         }
+        this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
+        this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
         //this.#htmlElement.innerHTML += this.material.name;
         this.#htmlParams.append(getUniformsHtml(material.getUniforms()));
     }
@@ -76000,6 +76044,28 @@ class MaterialEditor {
             return;
         }
         this.#material.blend = blending;
+        this.#refreshHtml();
+    }
+    #setAlwaysOnTop(alwaysOnTop) {
+        if (!this.#material) {
+            return;
+        }
+        this.#material.removeDefine('ALWAYS_ON_TOP');
+        this.#material.removeDefine('ALWAYS_BEHIND');
+        if (alwaysOnTop) {
+            this.#material.setDefine('ALWAYS_ON_TOP');
+        }
+        this.#refreshHtml();
+    }
+    #setAlwaysBehind(alwaysBehind) {
+        if (!this.#material) {
+            return;
+        }
+        this.#material.removeDefine('ALWAYS_ON_TOP');
+        this.#material.removeDefine('ALWAYS_BEHIND');
+        if (alwaysBehind) {
+            this.#material.setDefine('ALWAYS_BEHIND');
+        }
         this.#refreshHtml();
     }
     #changeBlendingFactor(i, blending) {

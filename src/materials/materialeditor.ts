@@ -42,6 +42,8 @@ export class MaterialEditor {//TODO: turn into static class
 	#htmlShader!: HTMLElement;
 	#htmlBlending!: HTMLElement;
 	#htmlHasBlending!: HTMLInputElement;
+	#htmlAlwaysOnTop!: HTMLInputElement;
+	#htmlAlwaysBehind!: HTMLInputElement;
 	#htmlBlendFactors = new Array<HTMLElement>(4);
 	#htmlBlendSelects = new Array<HTMLSelectElement>(6);
 	#htmlParams!: HTMLElement;
@@ -72,6 +74,32 @@ export class MaterialEditor {//TODO: turn into static class
 											type: 'checkbox',
 											events: {
 												change: (event: Event) => this.#setBlending((event.target as HTMLInputElement).checked),
+											}
+										}) as HTMLInputElement,
+									]
+								}),
+								createElement('label', {
+									childs: [
+										createElement('span', {
+											i18n: '#always_on_top',
+										}),
+										this.#htmlAlwaysOnTop = createElement('input', {
+											type: 'checkbox',
+											events: {
+												change: (event: Event) => this.#setAlwaysOnTop((event.target as HTMLInputElement).checked),
+											}
+										}) as HTMLInputElement,
+									]
+								}),
+								createElement('label', {
+									childs: [
+										createElement('span', {
+											i18n: '#always_behind',
+										}),
+										this.#htmlAlwaysBehind = createElement('input', {
+											type: 'checkbox',
+											events: {
+												change: (event: Event) => this.#setAlwaysBehind((event.target as HTMLInputElement).checked),
 											}
 										}) as HTMLInputElement,
 									]
@@ -170,6 +198,9 @@ export class MaterialEditor {//TODO: turn into static class
 			hide(this.#htmlBlendFactors);
 		}
 
+		this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
+		this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
+
 		//this.#htmlElement.innerHTML += this.material.name;
 		this.#htmlParams.append(getUniformsHtml(material.getUniforms()));
 
@@ -185,6 +216,34 @@ export class MaterialEditor {//TODO: turn into static class
 		}
 
 		this.#material.blend = blending;
+		this.#refreshHtml();
+	}
+
+	#setAlwaysOnTop(alwaysOnTop: boolean) {
+		if (!this.#material) {
+			return;
+		}
+
+		this.#material.removeDefine('ALWAYS_ON_TOP');
+		this.#material.removeDefine('ALWAYS_BEHIND');
+
+		if (alwaysOnTop) {
+			this.#material.setDefine('ALWAYS_ON_TOP');
+		}
+		this.#refreshHtml();
+	}
+
+	#setAlwaysBehind(alwaysBehind: boolean) {
+		if (!this.#material) {
+			return;
+		}
+
+		this.#material.removeDefine('ALWAYS_ON_TOP');
+		this.#material.removeDefine('ALWAYS_BEHIND');
+
+		if (alwaysBehind) {
+			this.#material.setDefine('ALWAYS_BEHIND');
+		}
 		this.#refreshHtml();
 	}
 

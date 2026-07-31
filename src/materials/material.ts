@@ -187,6 +187,10 @@ export class Material implements HasUsers {
 		}
 	}
 
+	hasDefine(define: string): boolean {
+		return this.defines[define] !== undefined;
+	}
+
 	setValues(values: any) {// TODO: remove, seems to be useless
 		if (values === undefined) return;
 

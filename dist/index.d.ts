@@ -3865,6 +3865,7 @@ declare class Channel {
                           get renderLights(): boolean;
                           setDefine(define: string, value?: string): void;
                           removeDefine(define: string): void;
+                          hasDefine(define: string): boolean;
                           setValues(values: any): void;
                           clone(): unknown;
                           setTransparency(srcRGB: BlendingFactor, dstRGB: BlendingFactor, srcAlpha?: BlendingFactor, dstAlpha?: BlendingFactor): void;
@@ -4812,6 +4813,10 @@ declare class Channel {
                           doEmit(elapsedTime: number): void;
                       }
 
+                      /**
+                       * This entity does not inherit parent rotation
+                       * It's world orientation is always it's local orientation
+                       */
                       export declare class NoParentRotation extends Entity {
                           getWorldOrientation(q?: quat): quat;
                           static getEntityName(): string;
