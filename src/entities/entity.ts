@@ -1267,7 +1267,7 @@ function buildContextMenu(entities: Set<Entity>): HarmonyMenuItemsDict {
 		material: { i18n: '#material', submenu: {} },
 	};
 
-	if (one && (ent as any).material) {
+	if (one) {
 		Object.assign(menu.material.submenu, {
 			entitynull_5: null,
 			edit_material: { i18n: '#edit_material', f: (): void => Entity.editMaterial(ent!) }

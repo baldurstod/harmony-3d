@@ -8,14 +8,17 @@ import { TranslationControl } from '../controls/translationcontrol';
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Entity } from '../entities/entity';
 import { EntityObserver, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
+import { NoParentRotation } from '../entities/export';
 import { KeepOnlyLastChild } from '../entities/keeponlylastchild';
 import { Graphics } from '../graphics/graphics2';
 import { GraphicPickEvent, GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { HasMaterial } from '../interfaces/hasmaterial';
 import { AmbientLight } from '../lights/ambientlight';
 import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
 import { Material } from '../materials/material';
 import { getMaterialEditor } from '../materials/materialeditor';
+import { VirtualMaterial } from '../materials/virtualmaterial';
 import { Decal } from '../objects/decal';
 import { Group } from '../objects/group';
 import { getHelper } from '../objects/helpers/helperfactory';
@@ -42,7 +45,6 @@ import { Interaction } from '../utils/interaction';
 import { Scene } from './scene';
 import { SceneExplorerEntity } from './sceneexplorerentity';
 import { SceneExplorerEvents } from './sceneexplorerevents';
-import { NoParentRotation } from '../entities/export';
 
 function FormatArray(array: number[] | vec3 | quat): string {
 	const arr: string[] = [];
@@ -114,6 +116,7 @@ export class SceneExplorer {
 	#isVisible = false;
 	//selectedEntity?: Entity;
 	#pickPromiseResolve?: (value: Entity | null) => void;
+	readonly virtualMaterial = new VirtualMaterial();
 
 	constructor() {
 		if (SceneExplorer.#instance) {
@@ -770,11 +773,15 @@ function initEntitySubmenu(): void {
 	];
 }
 
-Entity.editMaterial = function (entity): void {
-	const material = (entity as any).material;
+Entity.editMaterial = function (entity: Entity): void {
+	let material: Material ;
+	if ((entity as unknown as HasMaterial).hasMaterial) {
+		material =  (entity as unknown as HasMaterial).getMaterial();
+	}
 
-	if (!material) {
-		return;
+	if (!material!) {
+		material = getSceneExplorer().virtualMaterial;
+		(material as VirtualMaterial).setEntity(entity);
 	}
 
 	const sceneExplorer = getSceneExplorer();

@@ -1,4 +1,5 @@
 export { Animated } from './animated';
+export { HasMaterial } from './hasmaterial';
 export { HasMaterials } from './hasmaterials';
 export { HasSkeleton } from './hasskeleton';
 export { Lockable } from './lockable';

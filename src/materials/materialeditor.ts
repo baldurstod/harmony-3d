@@ -5,6 +5,7 @@ import { BlendingEquation, BlendingFactor } from '../enums/blending';
 import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { UniformBuffer } from '../webgl/uniform';
 import { Material } from './material';
+import { VirtualMaterial } from './virtualmaterial';
 
 function getUniformsHtml(uniforms: Map<string, UniformBuffer>): HTMLElement {
 	const htmlUniforms = createElement('div');
@@ -198,8 +199,10 @@ export class MaterialEditor {//TODO: turn into static class
 			hide(this.#htmlBlendFactors);
 		}
 
-		this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
-		this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
+		if (!(material instanceof VirtualMaterial)) {
+			this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
+			this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
+		}
 
 		//this.#htmlElement.innerHTML += this.material.name;
 		this.#htmlParams.append(getUniformsHtml(material.getUniforms()));

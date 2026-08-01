@@ -8,6 +8,7 @@ import { Entity, EntityParameters } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Graphics } from '../graphics/graphics2';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
+import { HasMaterial } from '../interfaces/hasmaterial';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { MaterialManager } from '../materials/materialmanager';
@@ -60,7 +61,8 @@ export type ObjDatas = {
 	bitangent?: Float32Array
 };
 
-export class Mesh extends Entity {
+export class Mesh extends Entity implements HasMaterial {
+	hasMaterial = true as const;
 	#geometry!: BufferGeometry;
 	#material!: Material;
 	#dirtyProgram = true;//TODOv3 use another method
