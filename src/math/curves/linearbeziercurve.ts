@@ -12,7 +12,7 @@ export class LinearBezierCurve extends Curve {
 		this.arcLength = this.getArcLength();
 	}
 
-	getPosition(t: number, out = vec3.create()) {
+	getPosition(t: number, out = vec3.create()): vec3 {
 		if (t === 0) {
 			vec3.copy(out, this.p0);
 		} else if (t === 1) {
@@ -24,11 +24,11 @@ export class LinearBezierCurve extends Curve {
 		return out;
 	}
 
-	getArcLength() {
+	getArcLength(): number {
 		return vec3.distance(this.p0, this.p1);
 	}
 
-	getAppropriateDivision() {
+	getAppropriateDivision(): number {
 		return 1;
 	}
 }

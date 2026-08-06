@@ -6,12 +6,12 @@ export class Curve {
 	controlPoints = [];
 	arcLength = 0;
 
-	getPosition(t: number, out = vec3.create()) {
+	getPosition(t: number, out = vec3.create()): vec3 {
 		return out;
 	}
 
-	getArcLength(divisions = 100) {
-		const pos = vec3.create();
+	getArcLength(divisions = 100): number {
+		//const pos = vec3.create();
 
 		let last = vec3.create();
 		let current = vec3.create();

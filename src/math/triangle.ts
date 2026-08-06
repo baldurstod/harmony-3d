@@ -5,7 +5,7 @@ const v1 = vec3.create();
 const v2 = vec3.create();
 const v3 = vec3.create();
 
-export function getBarycentricCoordinates(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3) {
+export function getBarycentricCoordinates(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3): vec3 {
 	vec3.sub(v0, c, a);
 	vec3.sub(v1, b, a);
 	vec3.sub(v2, position, a);
@@ -24,7 +24,7 @@ export function getBarycentricCoordinates(out: vec3, position: vec3, a: vec3, b:
 	return vec3.set(out, 1 - u - v, v, u);
 }
 
-export function getUV(out: vec2, position: vec3, a: vec3, b: vec3, c: vec3, uv1: vec2, uv2: vec2, uv3: vec2) {
+export function getUV(out: vec2, position: vec3, a: vec3, b: vec3, c: vec3, uv1: vec2, uv2: vec2, uv3: vec2): vec2 {
 	getBarycentricCoordinates(v3, position, a, b, c);
 
 	out[0] = uv1[0] * v3[0] + uv2[0] * v3[1] + uv3[0] * v3[2];
@@ -32,7 +32,7 @@ export function getUV(out: vec2, position: vec3, a: vec3, b: vec3, c: vec3, uv1:
 	return out;
 }
 
-export function getNormal(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3, normal1: vec3, normal2: vec3, normal3: vec3) {
+export function getNormal(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3, normal1: vec3, normal2: vec3, normal3: vec3): vec3 {
 	getBarycentricCoordinates(v3, position, a, b, c);
 
 	out[0] = normal1[0] * v3[0] + normal2[0] * v3[1] + normal3[0] * v3[2];

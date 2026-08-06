@@ -48,9 +48,7 @@ export function quatToEulerDeg(out: vec3, q: quat): vec3 {
 
 
 export function QuaternionIdentityBlend(p: quat, t: number, qt: quat): void {
-	let sclp: number;
-
-	sclp = 1.0 - t;
+	const sclp = 1.0 - t;
 
 	qt[0] = p[0] * sclp;
 	qt[1] = p[1] * sclp;

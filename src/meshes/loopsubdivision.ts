@@ -132,7 +132,8 @@ export class LoopSubdivision {// TODO: turn into a static class
 				},
 				proc_exit: (p1: number): void => { console.log('Exit code:', p1) },
 				args_sizes_get: (): number => { return 0; },
-				args_get: (p1: number): void => { },
+				// eslint-disable-next-line @typescript-eslint/no-empty-function
+				args_get: (): void => { },
 			},
 		}
 

@@ -9,12 +9,12 @@ export class BoundingBox {
 	max = vec3.create();
 	empty = true;
 
-	setPoints(points: number[] | Float32Array) {
+	setPoints(points: number[] | Float32Array): void {
 		this.reset();
 		this.addPoints(points);
 	}
 
-	addPoints(pointArray: number[] | Float32Array) {
+	addPoints(pointArray: number[] | Float32Array): void {
 		vec3.set(tempMin, +Infinity, +Infinity, +Infinity);
 		vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
 
@@ -37,7 +37,7 @@ export class BoundingBox {
 		}
 	}
 
-	addBoundingBox(boundingBox: BoundingBox) {
+	addBoundingBox(boundingBox: BoundingBox): void {
 		if (boundingBox.empty) {
 			return;
 		}
@@ -52,25 +52,25 @@ export class BoundingBox {
 		this.empty = false;
 	}
 
-	reset() {
+	reset(): void {
 		vec3.zero(this.min);
 		vec3.zero(this.max);
 		this.empty = true;
 	}
 
-	get center() {
+	get center(): vec3 {
 		return this.getCenter();
 	}
 
-	getCenter(center = vec3.create()) {
+	getCenter(center = vec3.create()): vec3 {
 		return vec3.lerp(center, this.min, this.max, 0.5);
 	}
 
-	get size() {
+	get size(): vec3 {
 		return this.getSize();
 	}
 
-	getSize(size = vec3.create()) {
+	getSize(size = vec3.create()): vec3 {
 		return vec3.sub(size, this.max, this.min);
 	}
 }
