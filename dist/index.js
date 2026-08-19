@@ -4295,9 +4295,9 @@ class BufferGeometry {
     }
 }
 
-let Graphics$1;
+let Graphics;
 function setGraphics(graphics) {
-    Graphics$1 = graphics;
+    Graphics = graphics;
 }
 
 class WebGPUInternal {
@@ -5887,7 +5887,7 @@ function populateBindGroups(shaderModule, groups, material, object, camera, unif
                             bufferSource = new Float32Array([context?.width ?? 0, context?.height ?? 0, camera?.aspectRatio ?? 1, 0]); // TODO: create float32 once and update it only on resolution change
                             break;
                         case 'time':
-                            bufferSource = new Float32Array([Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]); // TODO: create float32 once and update it once evry frame
+                            bufferSource = new Float32Array([Graphics.getTime(), Graphics.currentTick, 0, 0]); // TODO: create float32 once and update it once evry frame
                             break;
                         /*
                         case 'pickingColor':
@@ -7248,17 +7248,17 @@ class ClearPass extends Pass {
         const clearDepth = this.#clearDepth != null;
         const clearStencil = this.#clearStencil != null;
         if (clearColor) {
-            Graphics$1.clearColor(this.#clearColor);
+            Graphics.clearColor(this.#clearColor);
         }
         if (clearDepth) {
-            Graphics$1.clearDepth(this.#clearDepth);
+            Graphics.clearDepth(this.#clearDepth);
         }
         if (clearStencil) {
-            Graphics$1.clearStencil(this.#clearStencil);
+            Graphics.clearStencil(this.#clearStencil);
         }
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics$1.clear(clearColor, clearDepth, clearStencil);
-        Graphics$1.popRenderTarget();
+        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics.clear(clearColor, clearDepth, clearStencil);
+        Graphics.popRenderTarget();
     }
 }
 
@@ -7298,9 +7298,9 @@ class CopyPass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics$1.render(this.scene, this.camera, 0, context);
-        Graphics$1.popRenderTarget();
+        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics.render(this.scene, this.camera, 0, context);
+        Graphics.popRenderTarget();
     }
 }
 
@@ -7320,7 +7320,7 @@ async function getTextureData(texture) {
     }
 }
 async function getTexture2dData(texture) {
-    if (Graphics$1.isWebGLAny) {
+    if (Graphics.isWebGLAny) {
         throw new Error('This method is only available in WebGPU mode');
     }
     const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4;
@@ -7348,7 +7348,7 @@ async function getTexture2dData(texture) {
         size: bufferSize,
         usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
     });
-    Graphics$1.compute(mesh, {
+    Graphics.compute(mesh, {
         workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
         workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
     }, (commandEncoder) => {
@@ -7365,7 +7365,7 @@ async function getTexture2dData(texture) {
     return data;
 }
 async function getTextureCubeData(texture) {
-    if (Graphics$1.isWebGLAny) {
+    if (Graphics.isWebGLAny) {
         throw new Error('This method is only available in WebGPU mode');
     }
     const bufferSize = texture.width * texture.height * texture.elementsPerTexel * 4;
@@ -7396,7 +7396,7 @@ async function getTextureCubeData(texture) {
     });
     for (let i = 0; i < 6; ++i) {
         material.gpuConstants.layer = i;
-        Graphics$1.compute(mesh, {
+        Graphics.compute(mesh, {
             workgroupCountX: Math.ceil(texture.width / (material.workgroupSize?.[0] ?? 1)),
             workgroupCountY: Math.ceil(texture.height / (material.workgroupSize?.[1] ?? 1)),
         }, (commandEncoder) => {
@@ -7486,7 +7486,7 @@ function setTextureFactoryContext(c) {
 }
 function createTexture(descriptor) {
     let texture;
-    if (Graphics$1.isWebGPU) {
+    if (Graphics.isWebGPU) {
         texture = WebGPUInternal.device.createTexture(descriptor);
     }
     else {
@@ -7500,7 +7500,7 @@ function deleteTexture(texture) {
     if (!texture) {
         return;
     }
-    if (Graphics$1.isWebGLAny) {
+    if (Graphics.isWebGLAny) {
         // WebGL
         context$1.deleteTexture(texture);
         textures$1.delete(texture);
@@ -7512,7 +7512,7 @@ function deleteTexture(texture) {
     }
 }
 function fillFlatTexture(texture, color, needCubeMap) {
-    if (Graphics$1.isWebGPU) {
+    if (Graphics.isWebGPU) {
         return fillFlatTextureWebGPU(texture, color, needCubeMap);
     }
     else {
@@ -7590,7 +7590,7 @@ function fillCheckerTexture(texture, color, width, height, needCubeMap) {
         }
     }
     */
-    if (Graphics$1.isWebGPU) {
+    if (Graphics.isWebGPU) {
         return fillCheckerTextureWebGPU(/*byteArray, */ texture, color, width, height, needCubeMap);
     }
     else {
@@ -7673,7 +7673,7 @@ function fillNoiseTexture(texture, width = 64, height = 64, needCubeMap = false)
     }
 }
 async function fillTextureWithImage(texture, image) {
-    if (Graphics$1.isWebGPU) {
+    if (Graphics.isWebGPU) {
         await fillTextureWithImageWebGPU(texture, image);
     }
     else {
@@ -7758,7 +7758,7 @@ class Texture {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);*/
     }
     setParameters(glContext, target) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             glContext.bindTexture(target, this.texture);
             glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY);
             glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
@@ -7784,7 +7784,7 @@ class Texture {
      * @param level Texture lod
      */
     texImage2D(glContext, target, width, height, format, type, pixels = null, level = 0) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             glContext.bindTexture(target, this.texture);
             glContext.texImage2D(target, level, this.internalFormat, width, height, 0, format, type, pixels);
             glContext.bindTexture(target, null);
@@ -7796,7 +7796,7 @@ class Texture {
         }
     }
     generateMipmap(glContext, target) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             glContext.bindTexture(target, this.texture);
             glContext.generateMipmap(target);
             glContext.bindTexture(target, null);
@@ -7885,15 +7885,15 @@ class CrosshatchPass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -7929,15 +7929,15 @@ class GrainPass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -7975,15 +7975,15 @@ class OldMoviePass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8003,7 +8003,7 @@ class Framebuffer {
     #dirty = true;
     constructor(target) {
         this.#target = target;
-        this.#frameBuffer = Graphics$1.createFramebuffer();
+        this.#frameBuffer = Graphics.createFramebuffer();
     }
     /*
     createRenderTarget(colorFormat, colorType, depth, stencil) {
@@ -8038,14 +8038,14 @@ class Framebuffer {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
                     //Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
                     //Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-                    Graphics$1.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+                    Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
                     //Graphics.bindRenderbuffer(GL_RENDERBUFFER, null);
                     break;
                 case ATTACHMENT_TYPE_TEXTURE2D:
                     //console.error(Graphics.getError());
                     const webGLTexture = attachmentParams.texture.texture;
-                    Graphics$1.glContext.bindTexture(attachmentParams.target, null);
-                    Graphics$1.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+                    Graphics.glContext.bindTexture(attachmentParams.target, null);
+                    Graphics.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
                     break;
             }
         }
@@ -8054,11 +8054,11 @@ class Framebuffer {
         //TODO: checkFramebufferStatus
     }
     bind() {
-        if (Graphics$1.isWebGPU) {
+        if (Graphics.isWebGPU) {
             // TODO: do WebGPU version
             return;
         }
-        Graphics$1.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
+        Graphics.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
         /*console.error(Graphics.getError());
         this.#setupAttachments();//TODOv3
         console.error(Graphics.getError());
@@ -8069,7 +8069,7 @@ class Framebuffer {
     }
     dispose() {
         if (this.#frameBuffer) {
-            Graphics$1.deleteFramebuffer(this.#frameBuffer);
+            Graphics.deleteFramebuffer(this.#frameBuffer);
         }
         for (const [, attachment] of this.#attachments) {
             switch (attachment.type) {
@@ -8085,9 +8085,9 @@ class Framebuffer {
 }
 
 function renderbufferStorage(renderbuffer, internalFormat, width, height, samples) {
-    const glContext = Graphics$1.glContext;
+    const glContext = Graphics.glContext;
     glContext.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-    if (Graphics$1.isWebGL2 && samples > 0) {
+    if (Graphics.isWebGL2 && samples > 0) {
         glContext.renderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalFormat, width, height);
     }
     else {
@@ -8100,7 +8100,7 @@ class Renderbuffer {
     #internalFormat;
     #samples;
     constructor(internalFormat, width, height, samples) {
-        this.#renderbuffer = Graphics$1.createRenderbuffer();
+        this.#renderbuffer = Graphics.createRenderbuffer();
         this.#internalFormat = internalFormat;
         this.#samples = samples;
         if (this.#renderbuffer) {
@@ -8117,7 +8117,7 @@ class Renderbuffer {
     }
     dispose() {
         if (this.#renderbuffer) {
-            Graphics$1.deleteRenderbuffer(this.#renderbuffer);
+            Graphics.deleteRenderbuffer(this.#renderbuffer);
         }
     }
 }
@@ -8156,7 +8156,7 @@ class TextureManager {
             format: 'rgba8unorm',
             usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         }*/);
-        if (Graphics$1.isWebGPU) {
+        if (Graphics.isWebGPU) {
             texture.sampler = WebGPUInternal.device.createSampler(textureParams.webgpuSamplerDescriptor);
             texture.width = textureParams.webgpuDescriptor.size.width;
             texture.height = textureParams.webgpuDescriptor.size.height;
@@ -8243,7 +8243,7 @@ class RenderTarget {
         this.#texture.minFilter = GL_LINEAR;
         this.#texture.wrapS = GL_CLAMP_TO_EDGE;
         this.#texture.wrapT = GL_CLAMP_TO_EDGE;
-        this.#texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D); //TODOv3: remove
+        this.#texture.setParameters(Graphics.glContext, GL_TEXTURE_2D); //TODOv3: remove
         this.setViewport(0, 0, width, height);
         this.#depthBuffer = params.depthBuffer ?? true;
         this.#stencilBuffer = params.stencilBuffer ?? false;
@@ -8259,7 +8259,7 @@ class RenderTarget {
     }
     #createDepthBuffer(width, height) {
         if (this.#depthBuffer && !this.#depthRenderbuffer) { //TODOv3 DEPTH_STENCIL
-            this.#depthRenderbuffer = new Renderbuffer(Graphics$1.isWebGL2 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, width, height);
+            this.#depthRenderbuffer = new Renderbuffer(Graphics.isWebGL2 ? GL_DEPTH_COMPONENT24 : GL_DEPTH_COMPONENT16, width, height);
             this.#frameBuffer.addRenderbuffer(GL_DEPTH_ATTACHMENT, this.#depthRenderbuffer);
         }
     }
@@ -8287,14 +8287,14 @@ class RenderTarget {
     }
     bind() {
         this.#frameBuffer.bind();
-        Graphics$1.setViewport(this.#viewport);
+        Graphics.setViewport(this.#viewport);
     }
     unbind() {
-        Graphics$1.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+        Graphics.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
     }
     resize(width, height) {
-        if (Graphics$1.isWebGLAny) {
-            this.#texture.texImage2D(Graphics$1.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+        if (Graphics.isWebGLAny) {
+            this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
         }
         else {
             if (this.#width != width || this.#height != height) {
@@ -8418,49 +8418,49 @@ class OutlinePass extends Pass {
         });
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        Graphics$1.getSize(tempVec2$4);
+        Graphics.getSize(tempVec2$4);
         tempVec2$4[0];
         tempVec2$4[1];
-        Graphics$1.clearColor(CLEAR_COLOR$1);
-        Graphics$1.pushRenderTarget(this.#renderTargetDepthBuffer);
-        Graphics$1.clear(true, true, false);
+        Graphics.clearColor(CLEAR_COLOR$1);
+        Graphics.pushRenderTarget(this.#renderTargetDepthBuffer);
+        Graphics.clear(true, true, false);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
         this.changeVisibilityOfSelectedObjects(false);
-        Graphics$1.setColorMask([0, 0, 0, 0]);
-        Graphics$1.render(this.outlineScene, this.camera, 0, context);
-        Graphics$1.setColorMask([1, 1, 1, 1]);
+        Graphics.setColorMask([0, 0, 0, 0]);
+        Graphics.render(this.outlineScene, this.camera, 0, context);
+        Graphics.setColorMask([1, 1, 1, 1]);
         this.changeVisibilityOfSelectedObjects(true);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         this.changeVisibilityOfNonSelectedObjects(false);
-        Graphics$1.setDefine('SILHOUETTE_MODE');
-        Graphics$1.setDefine('SILHOUETTE_COLOR', 'vec4(1.0)');
-        Graphics$1.render(this.outlineScene, this.camera, 0, context);
-        Graphics$1.removeDefine('SILHOUETTE_MODE');
+        Graphics.setDefine('SILHOUETTE_MODE');
+        Graphics.setDefine('SILHOUETTE_COLOR', 'vec4(1.0)');
+        Graphics.render(this.outlineScene, this.camera, 0, context);
+        Graphics.removeDefine('SILHOUETTE_MODE');
         this.changeVisibilityOfNonSelectedObjects(true);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         /**************/
         this.#edgedetectionMaterial.setUniformValue('colorMap', this.#renderTargetDepthBuffer.getTexture()); //TODO: optiùmize this
         this.#edgedetectionMaterial.setUniformValue('uTexSize', [this.width, this.height]);
         this.#edgedetectionMaterial.setUniformValue('uVisibleEdgeColor', [1, 1, 1]);
         this.#edgedetectionMaterial.setUniformValue('uHiddenEdgeColor', [0, 1, 0]);
         this.quad.setMaterial(this.#edgedetectionMaterial);
-        Graphics$1.pushRenderTarget(this.#renderTargetEdgeBuffer1);
-        Graphics$1.clear(true, true, false);
-        Graphics$1.render(this.scene, this.camera, 0, context);
-        Graphics$1.popRenderTarget();
+        Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
+        Graphics.clear(true, true, false);
+        Graphics.render(this.scene, this.camera, 0, context);
+        Graphics.popRenderTarget();
         /**************/
         this.#copyMaterial.setUniformValue('colorMap', readBuffer.getTexture());
         this.quad.setMaterial(this.#copyMaterial);
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics$1.clear(true, true, false);
-        Graphics$1.render(this.scene, this.camera, 0, context);
-        Graphics$1.popRenderTarget();
+        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics.clear(true, true, false);
+        Graphics.render(this.scene, this.camera, 0, context);
+        Graphics.popRenderTarget();
         /***************/
         this.#copyMaterial.setUniformValue('colorMap', this.#renderTargetEdgeBuffer1.getTexture());
         this.quad.setMaterial(this.#copyMaterial);
-        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics$1.render(this.scene, this.camera, 0, context);
-        Graphics$1.popRenderTarget();
+        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics.render(this.scene, this.camera, 0, context);
+        Graphics.popRenderTarget();
     }
 }
 
@@ -8474,15 +8474,15 @@ class PalettePass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8526,15 +8526,15 @@ class PixelatePass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8663,14 +8663,14 @@ class RayTracingPass extends Pass {
         this.camera = camera;
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             errorOnce('RayTracingPass is unavailable for webgl');
         }
         else {
             if (this.material) {
                 this.material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
                 this.material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-                Graphics$1.compute(this.quad, {
+                Graphics.compute(this.quad, {
                     ...context,
                     workgroupCountX: Math.ceil(context.width / (this.material.workgroupSize?.[0] ?? 1)),
                     workgroupCountY: Math.ceil(context.height / (this.material.workgroupSize?.[1] ?? 1)),
@@ -8689,10 +8689,10 @@ class RenderPass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         const renderTarget = renderToScreen ? null : writeBuffer;
-        Graphics$1.pushRenderTarget(renderTarget);
+        Graphics.pushRenderTarget(renderTarget);
         context.renderTarget = renderTarget;
-        Graphics$1.render(this.scene, this.camera, delta, context);
-        Graphics$1.popRenderTarget();
+        Graphics.render(this.scene, this.camera, delta, context);
+        Graphics.popRenderTarget();
     }
 }
 
@@ -8718,15 +8718,15 @@ class SaturatePass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8764,15 +8764,15 @@ class SketchPass extends Pass {
     }
     render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.setUniformValue('colorMap', readBuffer.getTexture());
-        if (Graphics$1.isWebGLAny) {
-            Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
-            Graphics$1.render(this.scene, this.camera, 0, context);
-            Graphics$1.popRenderTarget();
+        if (Graphics.isWebGLAny) {
+            Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+            Graphics.render(this.scene, this.camera, 0, context);
+            Graphics.popRenderTarget();
         }
         else {
             this.#material.setUniformValue('outTexture', renderToScreen ? getCurrentTexture() : writeBuffer.getTexture());
             this.#material.setDefine('OUTPUT_FORMAT', renderToScreen ? WebGPUInternal.format : 'rgba8unorm');
-            Graphics$1.compute(this.quad, {
+            Graphics.compute(this.quad, {
                 ...context,
                 workgroupCountX: context.width,
                 workgroupCountY: context.height,
@@ -8797,9 +8797,9 @@ class Composer {
             return;
         }
         (async () => {
-            await Graphics$1.ready;
+            await Graphics.ready;
             if (!renderTarget) {
-                const rendererSize = Graphics$1.getSize();
+                const rendererSize = Graphics.getSize();
                 renderTarget = new RenderTarget({
                     width: rendererSize[0],
                     height: rendererSize[1],
@@ -8855,11 +8855,11 @@ class Composer {
     savePicture(filename, width, height) {
         this.setSize(width, height);
         this.render(0, { DisableToolRendering: true, });
-        Graphics$1._savePicture(filename);
+        Graphics._savePicture(filename);
     }
     addPass(pass) {
         this.#passes.push(pass);
-        Graphics$1.getSize(tempVec2$3);
+        Graphics.getSize(tempVec2$3);
         pass.setSize(tempVec2$3[0], tempVec2$3[1]);
     }
     #setRenderTarget(renderTarget) {
@@ -9008,7 +9008,7 @@ class CameraControl {
         this.handleEnabled();
     }
     get enabled() {
-        return this.#enabled && !Graphics$1.dragging;
+        return this.#enabled && !Graphics.dragging;
     }
     set camera(camera) {
         this.#camera = camera;
@@ -10802,7 +10802,7 @@ class Bone extends Entity {
             }
         }
         this.dirty = false;
-        this.lastComputed = Graphics$1.currentTick;
+        this.lastComputed = Graphics.currentTick;
     }
     set boneId(boneId) {
         this.#boneId = boneId;
@@ -12443,7 +12443,7 @@ class SkeletonHelper extends Entity {
         });
     }
     #mouseMoved(event) {
-        if (Graphics$1.dragging) {
+        if (Graphics.dragging) {
             return;
         }
         const picked = this.#pickBone(event);
@@ -12452,7 +12452,7 @@ class SkeletonHelper extends Entity {
         }
     }
     #mouseUp(event) {
-        if (Graphics$1.dragging) {
+        if (Graphics.dragging) {
             return;
         }
         const closest = this.#pickBone(event);
@@ -12980,7 +12980,7 @@ class Manipulator extends Entity {
                         this.#startScale(detail.x, detail.y, detail.width, detail.height);
                         break;
                 }
-                Graphics$1.dragging = true;
+                Graphics.dragging = true;
                 this.#setAxisSelected(true);
             }
         });
@@ -13002,7 +13002,7 @@ class Manipulator extends Entity {
             }
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, () => {
-            Graphics$1.dragging = false;
+            Graphics.dragging = false;
             this.#setAxisSelected(false);
             this.#axis = ManipulatorAxis.None;
         });
@@ -13436,7 +13436,7 @@ class Manipulator extends Entity {
         this.#rotationManipulator.setVisible(false);
         this.#scaleManipulator.setVisible(false);
         this.#setAxisSelected(false);
-        Graphics$1.dragging = false;
+        Graphics.dragging = false;
         this.#mode = mode;
         switch (mode) {
             case ManipulatorMode.Translation:
@@ -14042,7 +14042,7 @@ class Skeleton extends Entity {
         super(params);
         //this.bones = Object.create(null);//TODOv3: rename
         this.#createBoneMatrixArray();
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#createBoneMatrixTexture();
         }
         this.dirty();
@@ -14067,16 +14067,16 @@ class Skeleton extends Entity {
             // Notice: this texture is not used in WebGPU
             webgpuDescriptor: phonyWebGPUTextureDescriptor,
         });
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateBoneMatrixTexture() {
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4 /* matrix cols */, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -14101,7 +14101,7 @@ class Skeleton extends Entity {
                 imgData[index++] = pose[k];
             }
         }
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#updateBoneMatrixTexture();
         }
     }
@@ -16238,11 +16238,11 @@ async function exportToBinaryFBX(entity) {
 }
 async function entityToFBXScene(fbxManager, entity) {
     const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-    const playing = Graphics$1.isRunning();
-    Graphics$1.pause();
+    const playing = Graphics.isRunning();
+    Graphics.pause();
     await createFBXSceneEntity(fbxScene, entity);
     if (playing) {
-        Graphics$1.play();
+        Graphics.play();
     }
     return fbxScene;
 }
@@ -16637,27 +16637,27 @@ async function renderMaterial(material, materialsParams, renderMode) {
         fullScreenQuadMesh = new FullScreenQuad();
         scene$1.addChild(fullScreenQuadMesh);
     }
-    const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
-    const previousClearColor = Graphics$1.getClearColor();
-    Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
-    Graphics$1.setDefine('EXPORT_TEXTURES');
-    Graphics$1.setDefine('SKIP_PROJECTION');
-    Graphics$1.setDefine('SKIP_LIGHTING');
+    const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
+    const previousClearColor = Graphics.getClearColor();
+    Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
+    Graphics.setDefine('EXPORT_TEXTURES');
+    Graphics.setDefine('SKIP_PROJECTION');
+    Graphics.setDefine('SKIP_LIGHTING');
     switch (renderMode) {
         case RenderMode$1.Normal:
-            Graphics$1.setDefine('RENDER_MODE', '12');
+            Graphics.setDefine('RENDER_MODE', '12');
             break;
     }
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    Graphics$1.render(scene$1, camera$2, 0, { DisableToolRendering: true });
-    const imgContent = await Graphics$1.toBlob();
-    Graphics$1.removeDefine('EXPORT_TEXTURES');
-    Graphics$1.removeDefine('SKIP_PROJECTION');
-    Graphics$1.removeDefine('SKIP_LIGHTING');
-    Graphics$1.removeDefine('RENDER_MODE');
-    Graphics$1.setSize(previousWidth, previousHeight);
-    Graphics$1.clearColor(previousClearColor);
+    Graphics.render(scene$1, camera$2, 0, { DisableToolRendering: true });
+    const imgContent = await Graphics.toBlob();
+    Graphics.removeDefine('EXPORT_TEXTURES');
+    Graphics.removeDefine('SKIP_PROJECTION');
+    Graphics.removeDefine('SKIP_LIGHTING');
+    Graphics.removeDefine('RENDER_MODE');
+    Graphics.setSize(previousWidth, previousHeight);
+    Graphics.clearColor(previousClearColor);
     return imgContent?.arrayBuffer() ?? null;
 }
 
@@ -16702,7 +16702,7 @@ class WebGLRenderingState {
     static #usedVertexAttribArray;
     static #vertexAttribDivisor;
     static setGraphics() {
-        this.#glContext = Graphics$1.glContext;
+        this.#glContext = Graphics.glContext;
         const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
         this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
         this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
@@ -16804,11 +16804,11 @@ class WebGLRenderingState {
         this.#usedVertexAttribArray[index] = 1;
         if (this.#vertexAttribDivisor[index] !== divisor) {
             this.#vertexAttribDivisor[index] = divisor;
-            if (Graphics$1.isWebGL2) {
+            if (Graphics.isWebGL2) {
                 this.#glContext.vertexAttribDivisor(index, divisor);
             }
             else {
-                Graphics$1.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
+                Graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
             }
         }
     }
@@ -16900,7 +16900,7 @@ class ShadowMap {
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
         WebGLRenderingState.clearColor(CLEAR_COLOR);
-        Graphics$1.setDefine('WRITE_DEPTH_TO_COLOR');
+        Graphics.setDefine('WRITE_DEPTH_TO_COLOR');
         let renderTarget;
         let shadowViewport;
         for (const light of lights) {
@@ -16910,23 +16910,23 @@ class ShadowMap {
                     light.getWorldPosition(lightPos);
                     renderTarget = shadow.renderTarget;
                     vec2.copy(mapSize, shadow.textureSize);
-                    Graphics$1.pushRenderTarget(renderTarget);
+                    Graphics.pushRenderTarget(renderTarget);
                     WebGLRenderingState.clear(true, true, true);
                     if (light.isPointLight) {
                         //Graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
-                        Graphics$1.setDefine('IS_POINT_LIGHT');
+                        Graphics.setDefine('IS_POINT_LIGHT');
                     }
                     else {
-                        Graphics$1.removeDefine('IS_POINT_LIGHT');
+                        Graphics.removeDefine('IS_POINT_LIGHT');
                     }
                     for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
                         shadowViewport = shadow.viewPorts[viewPortIndex];
                         vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
                         shadow.computeShadowMatrix(viewPortIndex);
-                        Graphics$1.setViewport(viewPort);
+                        Graphics.setViewport(viewPort);
                         renderer.renderShadowMap(renderList, shadow.camera, false, context, lightPos);
                     }
-                    Graphics$1.popRenderTarget();
+                    Graphics.popRenderTarget();
                 }
             }
         }
@@ -16950,7 +16950,7 @@ class ShadowMap {
         }
         WebGLRenderingState.clearColor(a$7);
         //Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
-        Graphics$1.removeDefine('WRITE_DEPTH_TO_COLOR');
+        Graphics.removeDefine('WRITE_DEPTH_TO_COLOR');
     }
 }
 
@@ -17411,7 +17411,7 @@ class ForwardRenderer {
     #toneMappingExposure = 1.;
     #defines = new Map();
     constructor() {
-        this.#glContext = Graphics$1.glContext;
+        this.#glContext = Graphics.glContext;
     }
     #applyMaterial(program, material) {
         if (material.depthTest) {
@@ -17539,7 +17539,7 @@ class ForwardRenderer {
             }
         }
         renderLights &&= material.renderLights;
-        material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
+        material.updateMaterial(Graphics.getTime(), object); //TODO: frame delta
         const cameraMatrix = camera.cameraMatrix;
         const projectionMatrix = camera.projectionMatrix;
         mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
@@ -17550,19 +17550,19 @@ class ForwardRenderer {
         if (renderLights) {
             this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
             if (!object.receiveShadow) {
-                Graphics$1.removeDefine('USE_SHADOW_MAPPING');
+                Graphics.removeDefine('USE_SHADOW_MAPPING');
             }
         }
         else {
             this.#unsetLights();
         }
-        Graphics$1.removeDefine('IS_PERSPECTIVE_CAMERA');
-        Graphics$1.removeDefine('IS_ORTHOGRAPHIC_CAMERA');
+        Graphics.removeDefine('IS_PERSPECTIVE_CAMERA');
+        Graphics.removeDefine('IS_ORTHOGRAPHIC_CAMERA');
         if (camera.projection == CameraProjection.Perspective) {
-            Graphics$1.setDefine('IS_PERSPECTIVE_CAMERA');
+            Graphics.setDefine('IS_PERSPECTIVE_CAMERA');
         }
         else {
-            Graphics$1.setDefine('IS_ORTHOGRAPHIC_CAMERA');
+            Graphics.setDefine('IS_ORTHOGRAPHIC_CAMERA');
         }
         const program = this.#getProgram(object, material);
         if (program.isValid()) {
@@ -17586,7 +17586,7 @@ class ForwardRenderer {
             //TODO: set this on resolution change
             program.setUniformValue('uResolution', [context.width, context.height, camera.aspectRatio, 0]);
             //TODO: set this at start of the frame
-            program.setUniformValue('uTime', [Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]);
+            program.setUniformValue('uTime', [Graphics.getTime(), Graphics.currentTick, 0, 0]);
             if (renderLights) {
                 this.#setupLights(renderList, camera, program, cameraMatrix);
             }
@@ -17614,11 +17614,11 @@ class ForwardRenderer {
                 }
             }
             else {
-                if (Graphics$1.isWebGL2) {
+                if (Graphics.isWebGL2) {
                     this.#glContext.drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
                 }
                 else {
-                    Graphics$1.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+                    Graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
                 }
             }
         }
@@ -17722,25 +17722,25 @@ class ForwardRenderer {
         WebGLRenderingState.clear(color, depth, stencil);
     }
     #setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
-        Graphics$1.setDefine('USE_SHADOW_MAPPING');
-        Graphics$1.setDefine('NUM_POINT_LIGHTS', `${pointLights}`);
-        Graphics$1.setDefine('NUM_PBR_LIGHTS', `${pointLights}`);
-        Graphics$1.setDefine('NUM_SPOT_LIGHTS', `${spotLights}`);
-        Graphics$1.setDefine('NUM_POINT_LIGHT_SHADOWS', `${pointLightShadows}`);
-        Graphics$1.setDefine('NUM_SPOT_LIGHT_SHADOWS', `${spotLightShadows}`);
+        Graphics.setDefine('USE_SHADOW_MAPPING');
+        Graphics.setDefine('NUM_POINT_LIGHTS', `${pointLights}`);
+        Graphics.setDefine('NUM_PBR_LIGHTS', `${pointLights}`);
+        Graphics.setDefine('NUM_SPOT_LIGHTS', `${spotLights}`);
+        Graphics.setDefine('NUM_POINT_LIGHT_SHADOWS', `${pointLightShadows}`);
+        Graphics.setDefine('NUM_SPOT_LIGHT_SHADOWS', `${spotLightShadows}`);
         //TODO: other lights of disable lighting all together
     }
     #unsetLights() {
-        Graphics$1.removeDefine('USE_SHADOW_MAPPING');
-        Graphics$1.setDefine('NUM_POINT_LIGHTS', '0');
-        Graphics$1.setDefine('NUM_PBR_LIGHTS', '0');
-        Graphics$1.setDefine('NUM_SPOT_LIGHTS', '0');
-        Graphics$1.setDefine('NUM_POINT_LIGHT_SHADOWS', '0');
-        Graphics$1.setDefine('NUM_SPOT_LIGHT_SHADOWS', '0');
+        Graphics.removeDefine('USE_SHADOW_MAPPING');
+        Graphics.setDefine('NUM_POINT_LIGHTS', '0');
+        Graphics.setDefine('NUM_PBR_LIGHTS', '0');
+        Graphics.setDefine('NUM_SPOT_LIGHTS', '0');
+        Graphics.setDefine('NUM_POINT_LIGHT_SHADOWS', '0');
+        Graphics.setDefine('NUM_SPOT_LIGHT_SHADOWS', '0');
         //TODO: other lights of disable lighting all together
     }
     #getProgram(mesh, material) {
-        const graphicsDefines = Graphics$1.getDefines();
+        const graphicsDefines = Graphics.getDefines();
         let includeCode = getIncludeCode(graphicsDefines);
         const defines = new Map(graphicsDefines); // TODO: don't create one each time
         //includeCode += this.#globalIncludeCode;
@@ -17793,7 +17793,7 @@ class ForwardRenderer {
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
         //Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
-        Graphics$1.setDefine('TONE_MAPPING', `${toneMapping}`);
+        Graphics.setDefine('TONE_MAPPING', `${toneMapping}`);
     }
     getToneMapping() {
         return this.#toneMapping;
@@ -17801,7 +17801,7 @@ class ForwardRenderer {
     setToneMappingExposure(exposure) {
         this.#toneMappingExposure = exposure;
         //Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
-        Graphics$1.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
+        Graphics.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
     }
     getToneMappingExposure() {
         return this.#toneMappingExposure;
@@ -17897,14 +17897,14 @@ class WebGPURenderer {
     }
     setToneMapping(toneMapping) {
         this.#toneMapping = toneMapping;
-        Graphics$1.setDefine('TONE_MAPPING', `${toneMapping}`);
+        Graphics.setDefine('TONE_MAPPING', `${toneMapping}`);
     }
     getToneMapping() {
         return this.#toneMapping;
     }
     setToneMappingExposure(exposure) {
         this.#toneMappingExposure = exposure;
-        Graphics$1.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
+        Graphics.setDefine('TONE_MAPPING_EXPOSURE', `${exposure.toFixed(2)}`);
     }
     getToneMappingExposure() {
         return this.#toneMappingExposure;
@@ -18006,7 +18006,7 @@ class WebGPURenderer {
         const geometryAttributes = geometry.attributes;
         const indexAttribute = geometryAttributes.get('index');
         const pick = context.renderContext.pick;
-        material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
+        material.updateMaterial(Graphics.getTime(), object); //TODO: frame delta
         const defines = new Map(this.#defines); // TODO: don't create one each time
         defines.set('MAX_PARTICLES_IN_A_SYSTEM', `${MAX_PARTICLES_IN_A_SYSTEM$1}`);
         if (pick) {
@@ -18720,7 +18720,7 @@ class CanvasAttributes {
     static defaultLayout = 'default';
 }
 const defaultViewport = new Viewport();
-class Graphics {
+class GraphicsClass {
     static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
     static #viewport = vec4.create();
     static #scissor = vec4.create();
@@ -19755,7 +19755,7 @@ class Graphics {
         return this.#forwardRenderer;
     }
 }
-setGraphics(Graphics);
+setGraphics(GraphicsClass);
 
 let webGLTextures;
 function trackWebGLTextures() {
@@ -19912,7 +19912,7 @@ class RgbeImporter {
             internalFormat: TextureFormat.Rgb_32F,
             flipY: true,
         };
-        if (Graphics$1.OES_texture_float_linear) {
+        if (Graphics.OES_texture_float_linear) {
             params.magFilter = GL_LINEAR;
             params.minFilter = GL_LINEAR;
         }
@@ -21234,8 +21234,8 @@ class ControlPoint extends Entity {
         return this.#parentControlPoint;
     }
     step() {
-        if (this.lastComputed < Graphics$1.currentTick) {
-            this.lastComputed = Graphics$1.currentTick;
+        if (this.lastComputed < Graphics.currentTick) {
+            this.lastComputed = Graphics.currentTick;
             vec3.copy(this.prevWorldPosition, this.currentWorldPosition);
             quat.copy(this.prevWorldQuaternion, this.currentWorldQuaternion);
             mat4.copy(this.prevWorldTransformation, this.currentWorldTransformation);
@@ -22117,12 +22117,12 @@ class ObjExporter {
         this.scene.addChild(this.#fullScreenQuadMesh);
     }
     async #renderMeshes(files, meshes) {
-        const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
-        Graphics$1.setDefine('EXPORT_TEXTURES');
-        Graphics$1.setDefine('SKIP_PROJECTION');
-        Graphics$1.setDefine('SKIP_LIGHTING');
-        const previousClearColor = Graphics$1.getClearColor();
-        Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
+        const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
+        Graphics.setDefine('EXPORT_TEXTURES');
+        Graphics.setDefine('SKIP_PROJECTION');
+        Graphics.setDefine('SKIP_LIGHTING');
+        const previousClearColor = Graphics.getClearColor();
+        Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
         let meshId = 0;
         const promises = [];
         for (const mesh of meshes) {
@@ -22134,21 +22134,21 @@ class ObjExporter {
             }
             this.#fullScreenQuadMesh.setMaterial(mesh.getMaterial());
             this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-            Graphics$1.render(this.scene, this.camera, 0, { DisableToolRendering: true });
+            Graphics.render(this.scene, this.camera, 0, { DisableToolRendering: true });
             //let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
             /*				let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
                         files.add(file);*/
-            const promise = Graphics$1.savePictureAsFile(`mat_${meshId}.png`);
+            const promise = Graphics.savePictureAsFile(`mat_${meshId}.png`);
             promise.then((file) => files.add(file));
             promises.push(promise);
             await promise;
             ++meshId;
         }
-        Graphics$1.removeDefine('EXPORT_TEXTURES');
-        Graphics$1.removeDefine('SKIP_PROJECTION');
-        Graphics$1.removeDefine('SKIP_LIGHTING');
-        Graphics$1.setSize(previousWidth, previousHeight);
-        Graphics$1.clearColor(previousClearColor);
+        Graphics.removeDefine('EXPORT_TEXTURES');
+        Graphics.removeDefine('SKIP_PROJECTION');
+        Graphics.removeDefine('SKIP_LIGHTING');
+        Graphics.setSize(previousWidth, previousHeight);
+        Graphics.clearColor(previousClearColor);
         await Promise.all(promises);
     }
     #addLine(line) {
@@ -38052,7 +38052,7 @@ class Source1Vtf {
         texture.isSrgb = srgb;
         const data = mipmap.frames[frame]?.[face];
         if (data) {
-            if (Graphics$1.isWebGPU) {
+            if (Graphics.isWebGPU) {
                 this.#fillTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, data);
             }
             else {
@@ -38140,7 +38140,7 @@ class Source1Vtf {
         const data4 = mipmap.frames[frame]?.[4];
         const data5 = mipmap.frames[frame]?.[5];
         if (data0 && data1 && data2 && data3 && data4 && data5) {
-            if (Graphics$1.isWebGPU) {
+            if (Graphics.isWebGPU) {
                 this.#fillCubeMapTextureWebGPU(texture, mipmap.width, mipmap.height, srgb, clampS, clampT, mipmap.frames[frame]);
             }
             else {
@@ -38480,8 +38480,8 @@ async function decompressDxt(format, width, height, datas) {
     return uncompressedData;
 }
 function fillTextureDxt(glContext, texture, target, width, height, dxtLevel, datas, clampS, clampT, srgb) {
-    const s3tc = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc');
-    const s3tcSRGB = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc_srgb');
+    const s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
+    const s3tcSRGB = Graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
     glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     //glContext.bindTexture(target, texture);
     if (s3tc) {
@@ -39038,7 +39038,7 @@ class Source1TextureManagerClass {
     #defaultTextureCube = new AnimatedTexture();
     fallbackRepository = '';
     constructor() {
-        Graphics$1.ready.then(() => {
+        Graphics.ready.then(() => {
             this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture({ color: new Color(0.5, 0.75, 1), user: Source1TextureManagerClass, }));
             this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture({
                 color: new Color(0.5, 0.75, 1),
@@ -39168,7 +39168,7 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     const alphaBits = vtf.getAlphaBits();
     //animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
-    const glContext = Graphics$1.glContext;
+    const glContext = Graphics.glContext;
     const currentMipMap = vtf.mipmapCount - 1; //TODOv3: choose mipmap
     const size = vtf.getMipMapSize(currentMipMap);
     if (!size) {
@@ -45945,7 +45945,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
+        this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -45983,7 +45983,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#createParticlesTexture();
         }
         this.maxParticles = this.particleSystem.maxParticles;
@@ -46025,7 +46025,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
             }
         });
         this.#texture.addUser(this);
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -46033,9 +46033,9 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.mesh.setUniformValue('uParticles', this.#texture);
     }
     #updateParticlesTexture() {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -46079,7 +46079,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
             // free for now
             index += 8;
         }
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#updateParticlesTexture();
         }
     }
@@ -46258,7 +46258,7 @@ class RenderRope extends Source1ParticleOperator {
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('IS_ROPE');
         this.mesh.setDefine('USE_VERTEX_COLOR');
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#createParticlesTexture();
         }
         this.mesh.setUniformValue('uParticles', this.#texture);
@@ -46299,7 +46299,7 @@ class RenderRope extends Source1ParticleOperator {
             }
         });
         this.#texture.addUser(this);
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -46401,7 +46401,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         }
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
-        const maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
+        const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(particleSystem.maxParticles) : particleSystem.maxParticles;
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniformValue('uMaxParticles', maxParticles); //TODOv3:optimize
         let index = 0;
@@ -46427,9 +46427,9 @@ class RenderSpriteTrail extends Source1ParticleOperator {
     initRenderer() {
         const geometry = new BufferGeometry();
         this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
-        const maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
+        const maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(this.particleSystem.maxParticles) : this.particleSystem.maxParticles;
         this.createParticlesArray(maxParticles);
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#createParticlesTexture();
         }
         const vertices = [];
@@ -46477,16 +46477,16 @@ class RenderSpriteTrail extends Source1ParticleOperator {
             }
         });
         this.#texture.addUser(this);
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture(maxParticles, pixels) {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
         }
         else {
@@ -46544,7 +46544,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
             a[index++] = flLength;
             index += 16;
         }
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#updateParticlesTexture(maxParticles, a);
         }
     }
@@ -58268,16 +58268,16 @@ class Source2TextureManager {
     static EXT_texture_compression_bptc;
     static EXT_texture_compression_rgtc;
     static {
-        Graphics$1.ready.then(() => {
+        Graphics.ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture({
                 color: new Color(0.5, 0.75, 1),
                 user: Source2TextureManager,
             });
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
-            this.WEBGL_compressed_texture_s3tc = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc');
-            this.EXT_texture_compression_bptc = Graphics$1.getExtension('EXT_texture_compression_bptc');
-            this.EXT_texture_compression_rgtc = Graphics$1.getExtension('EXT_texture_compression_rgtc');
+            this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
+            this.EXT_texture_compression_bptc = Graphics.getExtension('EXT_texture_compression_bptc');
+            this.EXT_texture_compression_rgtc = Graphics.getExtension('EXT_texture_compression_rgtc');
         });
         setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
     }
@@ -58376,7 +58376,7 @@ class Source2TextureManager {
         }
     }
     static #initCubeTexture(texture, imageFormat, width, height, imageData) {
-        if (Graphics$1.isWebGPU) {
+        if (Graphics.isWebGPU) {
             this.#initCubeTextureWebGPU(texture, imageFormat, width, height, imageData);
         }
         else {
@@ -58384,7 +58384,7 @@ class Source2TextureManager {
         }
     }
     static #initCubeTextureWebGL(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics$1.glContext;
+        const glContext = Graphics.glContext;
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
@@ -58421,7 +58421,7 @@ class Source2TextureManager {
         WebGPUInternal.device.queue.submit([]);
     }
     static #initFlatTexture(texture, imageFormat, width, height, imageData) {
-        if (Graphics$1.isWebGPU) {
+        if (Graphics.isWebGPU) {
             this.#initFlatTextureWebGPU(texture, imageFormat, width, height, imageData);
         }
         else {
@@ -58429,7 +58429,7 @@ class Source2TextureManager {
         }
     }
     static #initFlatTextureWebGL(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics$1.glContext;
+        const glContext = Graphics.glContext;
         glContext.bindTexture(GL_TEXTURE_2D, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
@@ -58451,7 +58451,7 @@ class Source2TextureManager {
         glContext.bindTexture(GL_TEXTURE_2D, null);
     }
     static #fillTextureWebGL(imageFormat, width, height, datas, target) {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
         switch (imageFormat) {
             case ImageFormat.RGBA:
@@ -58465,7 +58465,7 @@ class Source2TextureManager {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     static #fillTextureDxtWebGL(texture, imageFormat, width, height, datas, target) {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         const s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         if (s3tc) {
@@ -58502,7 +58502,7 @@ class Source2TextureManager {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     static #fillTextureBptcWebGL(texture, width, height, datas) {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         const bptc = this.EXT_texture_compression_bptc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -58521,16 +58521,16 @@ class Source2TextureManager {
             });
         }
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        Graphics$1.getGLError('texParameteri');
+        Graphics.getGLError('texParameteri');
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        Graphics$1.getGLError('texParameteri');
+        Graphics.getGLError('texParameteri');
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         //gl.bindTexture(GL_TEXTURE_2D, null);
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     static #fillTextureRgtcWebGL(texture, width, height, datas) {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         const rgtc = this.EXT_texture_compression_rgtc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -67422,19 +67422,19 @@ class RenderRopes extends RenderBase {
                 usage: GPUTextureUsage.TEXTURE_BINDING,
             }
         });
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         if (!this.#imgData || !this.#texture) {
             return;
         }
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -67680,7 +67680,7 @@ class RenderSprites extends RenderBase {
     }
     setMaxParticles(maxParticles) {
         maxParticles = Math.max(maxParticles, MAX_PARTICLES_IN_A_SYSTEM$1);
-        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
+        this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -67726,16 +67726,16 @@ class RenderSprites extends RenderBase {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #initParticlesTexture() {
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -67951,7 +67951,7 @@ class RenderTrails extends RenderBase {
         }
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics$1.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
+        this.#maxParticles = Graphics.isWebGL ? ceilPowerOfTwo(maxParticles) : maxParticles;
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -68001,16 +68001,16 @@ class RenderTrails extends RenderBase {
                 usage: GPUTextureUsage.TEXTURE_BINDING,
             }
         });
-        const gl = Graphics$1.glContext; //TODO
+        const gl = Graphics.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics$1.glContext;
+        const gl = Graphics.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics$1.isWebGL2) {
+        if (Graphics.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -70460,7 +70460,7 @@ class NodeImageEditor extends MyEventTarget {
     textureSize = DEFAULT_TEXTURE_SIZE;
     render(material, width, height) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
+        Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
         // Set the material back to default to free the material
         this.#fullScreenQuadMesh.setMaterial(this.#material);
     }
@@ -71177,12 +71177,12 @@ class Node extends MyEventTarget {
             renderTarget2.resize(previewSize, previewSize);
         }
         this.#previewRenderTarget = renderTarget2;
-        Graphics$1.pushRenderTarget(renderTarget2);
+        Graphics.pushRenderTarget(renderTarget2);
         if (this.material) {
             this.editor.render(this.material, previewSize, previewSize);
         }
         const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
-        Graphics$1.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         this.#pixelArray = new Uint8ClampedArray(pixelArray);
         //set alpha to 1
         for (let i = 3; i < pixelArray.length; i += 4) {
@@ -71196,7 +71196,7 @@ class Node extends MyEventTarget {
         catch (e) { }
         this.previewPic.width = previewSize;
         this.previewPic.height = previewSize;
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
     }
     async savePicture(filename = 'texture.png') {
         await this.redraw({ previewSize: 2048, updatePreview: true });
@@ -71317,7 +71317,7 @@ class ApplySticker extends Node {
         this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
     }
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             await this.#operateWebGL(context);
         }
         else {
@@ -71358,12 +71358,12 @@ class ApplySticker extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
         /*let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();*/
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -71488,7 +71488,7 @@ class TextureLookup extends Node {
     }
     // eslint-disable-next-line @typescript-eslint/require-await
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             this.#operateWebGL(context);
         }
         else {
@@ -71510,9 +71510,9 @@ class TextureLookup extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -71611,7 +71611,7 @@ async function dropFiles(evt, node) {
                 texture.wrapS = GL_CLAMP_TO_EDGE;
                 texture.wrapT = GL_CLAMP_TO_EDGE;
             }
-            texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D);
+            texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
             await TextureManager.fillTextureWithImage(texture, image);
             node.setInputTexture(texture);
             node.invalidate();
@@ -71647,7 +71647,7 @@ async function dropFilesSpecular(evt, node) {
                 texture.wrapS = GL_CLAMP_TO_EDGE;
                 texture.wrapT = GL_CLAMP_TO_EDGE;
             }
-            texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D);
+            texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
             await TextureManager.fillTextureWithImage(texture, image);
             const specular = node.getInput('specular');
             if (specular) {
@@ -72566,9 +72566,9 @@ class DrawCircle extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
@@ -72606,7 +72606,7 @@ class CombineAdd extends Node {
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             await this.#operateWebGL(context);
         }
         else {
@@ -72636,9 +72636,9 @@ class CombineAdd extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -72716,7 +72716,7 @@ class CombineLerp extends Node {
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
     }
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             await this.#operateWebGL(context);
         }
         else {
@@ -72733,9 +72733,9 @@ class CombineLerp extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -72764,7 +72764,7 @@ class CombineLerp extends Node {
             });
         }
         this.material.setUniformValue('outTexture', this.#outputTexture);
-        Graphics$1.compute(this.#mesh, {
+        Graphics.compute(this.#mesh, {
             workgroupCountX: this.#textureSize,
             workgroupCountY: this.#textureSize,
         });
@@ -72802,7 +72802,7 @@ class Multiply extends Node {
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             await this.#operateWebGL(context);
         }
         else {
@@ -72829,11 +72829,11 @@ class Multiply extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
         //let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         //Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -72915,7 +72915,7 @@ class Select extends Node {
         this.#textureSize = params.textureSize ?? this.editor.textureSize;
     }
     async operate(context) {
-        if (Graphics$1.isWebGLAny) {
+        if (Graphics.isWebGLAny) {
             await this.#operateWebGL(context);
         }
         else {
@@ -72931,9 +72931,9 @@ class Select extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics$1.pushRenderTarget(this.#renderTarget);
+        Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -72962,7 +72962,7 @@ class Select extends Node {
         }
         this.material.setUniformValue('outTexture', this.#outputTexture);
         //this.editor.render(this.material, this.#textureSize, this.#textureSize);
-        Graphics$1.compute(this.#mesh, {
+        Graphics.compute(this.#mesh, {
             workgroupCountX: this.#textureSize,
             workgroupCountY: this.#textureSize,
         });
@@ -74536,7 +74536,7 @@ class Raytracer {
         }
         //this.#material.#uniforms['outTexture'] = this.#outputTexture;
         this.#material.setUniformValue('outTexture', this.#outputTexture);
-        const rtCanvas = Graphics$1.getCanvas('rt_canvas');
+        const rtCanvas = Graphics.getCanvas('rt_canvas');
         rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
         return true;
     }
@@ -74584,7 +74584,7 @@ class Raytracer {
         //(this.#material.#uniforms['commonUniforms'] as Record<string, UniformValue>).frameCounter = this.#frameId++;
         this.#material.setSubUniformValue('commonUniforms.frameCounter', this.#frameId++);
         if (!this.#prepassDone) {
-            Graphics$1.compute(this.#prepassMesh, {
+            Graphics.compute(this.#prepassMesh, {
                 width: this.#facesCount,
                 height: 1,
                 // TODO: fix that: we can hit the limit of 65536 workgroup * 256 workgroup size
@@ -74602,7 +74602,7 @@ class Raytracer {
         if (rayCountBuffer) {
             WebGPUInternal.device.queue.writeBuffer(rayCountBuffer, 0, this.#zeroUint32);
         }
-        Graphics$1.compute(this.#mesh, {
+        Graphics.compute(this.#mesh, {
             width: this.#width,
             height: this.#height,
             workgroupCountX: Math.ceil(this.#width / COMPUTE_WORKGROUP_SIZE_X),
@@ -76785,7 +76785,7 @@ class SceneExplorer {
         EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
         GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event) => {
-            if (Graphics$1.dragging || this.#skeletonHelper.isVisible()) {
+            if (Graphics.dragging || this.#skeletonHelper.isVisible()) {
                 return;
             }
             const entity = event.detail.entity;
@@ -79329,11 +79329,11 @@ class ShaderEditor extends HTMLElement {
                 const n = Number(event.target.value);
                 if (Number.isNaN(n)) {
                     //Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
-                    Graphics$1.removeDefine('RENDER_MODE');
+                    Graphics.removeDefine('RENDER_MODE');
                 }
                 else {
                     //Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
-                    Graphics$1.setDefine('RENDER_MODE', `${n}`);
+                    Graphics.setDefine('RENDER_MODE', `${n}`);
                 }
             }
         });
@@ -79461,7 +79461,7 @@ class ShaderEditor extends HTMLElement {
             }
             this.#shaderEditor.setSession(editSession);
             let type = ShaderType.Vertex;
-            if (Graphics$1.isWebGPU) {
+            if (Graphics.isWebGPU) {
                 type = ShaderType.Wgsl;
             }
             const source = ShaderManager.getShaderSource(type, this.#editorShaderName, true);
@@ -79529,7 +79529,7 @@ class ShaderEditor extends HTMLElement {
         else {
             setCustomIncludeSource(this.#editorIncludeName, customSource, this.#shaderType);
             ShaderManager.resetShadersSource();
-            Graphics$1.invalidateShaders();
+            Graphics.invalidateShaders();
         }
         if (customSource == '') {
             if (this.#editMode == EDIT_MODE_SHADER) {
@@ -79541,7 +79541,7 @@ class ShaderEditor extends HTMLElement {
         }
         else {
             if (this.#editMode == EDIT_MODE_SHADER) {
-                Graphics$1.invalidateShaders();
+                Graphics.invalidateShaders();
                 setTimeout(() => this.#setAnnotations(this.#editorShaderName), this.#annotationsDelay);
             }
             else {
@@ -81318,11 +81318,11 @@ class RemGenerator {
         const upSign = [1, -1, 1, 1, 1, 1];
         const forwardSign = [1, 1, 1, -1, -1, -1];
         const renderer = this.#renderer;
-        const originalAutoClear = Graphics$1.autoClear;
+        const originalAutoClear = Graphics.autoClear;
         const toneMapping = renderer.getToneMapping();
-        Graphics$1.getClearColor(clearColor$1);
+        Graphics.getClearColor(clearColor$1);
         renderer.setToneMapping(ToneMapping.None);
-        Graphics$1.autoClear = false;
+        Graphics.autoClear = false;
         const backgroundMaterial = new MeshBasicMaterial({
             name: 'PMREM.Background',
             //side: BackSide,
@@ -81367,14 +81367,14 @@ class RemGenerator {
             }
             const size = this.#cubeSize;
             cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
-            Graphics$1.pushRenderTarget(cubeUVRenderTarget);
+            Graphics.pushRenderTarget(cubeUVRenderTarget);
             renderer.render(scene, cubeCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
-            Graphics$1.popRenderTarget();
+            Graphics.popRenderTarget();
         }
         backgroundBox.dispose();
         //renderer.toneMapping = toneMapping;
         renderer.setToneMapping(toneMapping);
-        Graphics$1.autoClear = originalAutoClear;
+        Graphics.autoClear = originalAutoClear;
         scene.background = background;
     }
     #textureToCubeUV(texture, cubeUVRenderTarget) {
@@ -81402,20 +81402,20 @@ class RemGenerator {
         material.setUniformValue('envMap', texture);
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
-        Graphics$1.pushRenderTarget(cubeUVRenderTarget);
+        Graphics.pushRenderTarget(cubeUVRenderTarget);
         renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
     }
     #applyPMREM(cubeUVRenderTarget) {
         //const renderer = this.#renderer;
-        const autoClear = Graphics$1.autoClear;
-        Graphics$1.autoClear = false;
+        const autoClear = Graphics.autoClear;
+        Graphics.autoClear = false;
         for (let i = 1; i < this.#lodPlanes.length; i++) {
             const sigma = Math.sqrt(this.#sigmas[i] * this.#sigmas[i] - this.#sigmas[i - 1] * this.#sigmas[i - 1]);
             const poleAxis = axisDirections[(i - 1) % axisDirections.length];
             this.#blur(cubeUVRenderTarget, i - 1, i, sigma, poleAxis);
         }
-        Graphics$1.autoClear = autoClear;
+        Graphics.autoClear = autoClear;
     }
     /**
      * This is a two-pass Gaussian blur for a cubemap. Normally this is done
@@ -81488,9 +81488,9 @@ class RemGenerator {
         const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);
         const y = 4 * (this.#cubeSize - outputSize);
         targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
-        Graphics$1.pushRenderTarget(targetOut);
+        Graphics.pushRenderTarget(targetOut);
         renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: targetOut.getWidth(), height: targetOut.getHeight() });
-        Graphics$1.popRenderTarget();
+        Graphics.popRenderTarget();
     }
     #getBlurShader(lodMax, width, height) {
         const weights = new Float32Array(MAX_SAMPLES);
@@ -81945,7 +81945,7 @@ class CanvasUi {
     setCanvas(canvas) {
         let c;
         if (typeof canvas === 'string') {
-            c = Graphics$1.getCanvas(canvas);
+            c = Graphics.getCanvas(canvas);
             if (!c) {
                 this.#canvas = undefined;
                 return;
@@ -82219,4 +82219,4 @@ var texturedatas = "@group(0) @binding(0) var input: texture_2d<f32>;\n@group(0)
 Shaders['texture_cube_datas.wgsl'] = texture_cube_datas;
 Shaders['texturedatas.wgsl'] = texturedatas;
 
-export { Abs, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, Attachment, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomHeroMaterial, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, DecompressLZMA, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GaussianNoiseProxy, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, InvulnLevelProxy, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, NoParentRotation, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrbitGizmo, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, PassParameterEvents, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetControl, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PbrMaterial, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, Subtract, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, cleanupFilename, createPassParameterUi, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, promptI18n, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };
+export { Abs, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTexture, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, Attachment, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingFactorWebGPU, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CanvasAttributes, CanvasLayout, CanvasUi, CanvasUiType, CanvasView, CharacterMaterial, ChoreographiesManager, Choreography, ChoreographyEventType, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContextType, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomHeroMaterial, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, DecompressLZMA, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmissiveMaterial, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GaussianNoiseProxy, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, InvulnLevelProxy, ItemTintColor, JSONLoader, KeepOnlyLastChild, Kv3Array, Kv3Element, Kv3File, Kv3Flag, Kv3Type, Kv3Value, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MaterialColorMode, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply, NoParentRotation, Node, NodeEventType, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, NodeParamOrigin, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrbitGizmo, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, PassParameterEvents, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, RayTracingPass, Raycaster, Raytracer, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, Retarget, RetargetControl, RetargetMode, RgbeImporter, Rig, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, SceneNode, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointToPlayer, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, ShaderType, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1DampenToCP, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply$1 as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PbrMaterial, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2File, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpriteSheet, SpriteSheetCoord, SpriteSheetFrame, SpriteSheetSequence, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, StorageRepository, Subtract, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text2D, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, VTEX_TO_INTERNAL_IMAGE_FORMAT, VcdParser, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, Viewport, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebGPUInternal, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, addWgslInclude, ceilPowerOfTwo, checkRepositoryName, clamp$1 as clamp, cleanupFilename, createPassParameterUi, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillFlatTextureWebGL, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getCurrentTexture, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, getTextureData, getWebGPUBytesPerRow, getWebGPUData, getWebGPUFormat, imageDataToImage, initRandomFloats, initWebGPUConst, isNumeric, lerp, loadAnimGroup, logGPUBuffers, ortho, pcfToSTring, polygonise, pow2, promptI18n, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, renderParticles, sanitizeRepositoryName, setClipSpaceWebGPU, setCustomIncludeSource, setFetchFunction, setRenderParticles, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, trackGPUBuffers, trackWebGLTextures, vec3ClampScalar, vec3RandomBox };

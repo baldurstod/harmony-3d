@@ -259,7 +259,7 @@ type RenderTargetEntry = {
 
 const defaultViewport = new Viewport();
 
-class Graphics {
+class GraphicsClass {
 	static #pixelRatio = /*window.devicePixelRatio ?? */1.0;
 	static #viewport = vec4.create();
 	static #scissor = vec4.create();
@@ -336,7 +336,7 @@ class Graphics {
 		this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
 	}
 
-	static async initCanvas(contextAttributes: GraphicsInitOptions = {}): Promise<typeof Graphics> {
+	static async initCanvas(contextAttributes: GraphicsInitOptions = {}): Promise<typeof GraphicsClass> {
 		if (contextAttributes.useOffscreenCanvas) {
 			this.#offscreenCanvas = new OffscreenCanvas(0, 0);
 		} else {
@@ -1494,6 +1494,6 @@ class Graphics {
 	}
 }
 
-setGraphics(Graphics);
+setGraphics(GraphicsClass);
 
-export type GraphicsType = typeof Graphics;
+export type GraphicsType = typeof GraphicsClass;

@@ -2847,7 +2847,7 @@ declare class Channel {
 
                       export declare let Graphics: GraphicsType;
 
-                      declare class Graphics_2 {
+                      declare class GraphicsClass {
                           #private;
                           static isWebGL: boolean;
                           static isWebGL2: boolean;
@@ -2864,7 +2864,7 @@ declare class Channel {
                           static ANGLE_instanced_arrays: ANGLE_instanced_arrays;
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
-                          static initCanvas(contextAttributes?: GraphicsInitOptions): Promise<typeof Graphics_2>;
+                          static initCanvas(contextAttributes?: GraphicsInitOptions): Promise<typeof GraphicsClass>;
                           static addCanvas(options: AddCanvasOptions): CanvasAttributes | null;
                           static removeCanvas(name: string): void;
                           static enableCanvas(name: string, enable: boolean): void;
@@ -3008,7 +3008,7 @@ declare class Channel {
                           webGPU?: WebGPUAttributes;
                       }
 
-                      declare type GraphicsType = typeof Graphics_2;
+                      declare type GraphicsType = typeof GraphicsClass;
 
                       export declare interface GraphicTickEvent {
                           delta: number;
@@ -3317,7 +3317,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -6221,7 +6221,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 
