@@ -18846,17 +18846,15 @@ class Graphics {
                 useLayout = CanvasAttributes.defaultLayout;
                 attributes.useLayout = useLayout;
                 const scene = options.scene;
-                if (scene) {
-                    const layout = new CanvasLayout(useLayout); //{ name: useLayout, views: [] };
-                    if (scene instanceof Scene) {
-                        //layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
-                        layout.addView(new CanvasView({ name: 'all', scene: scene, viewport: new Viewport() }));
-                    }
-                    else {
-                        layout.addView(scene); //views.push(scene);
-                    }
-                    layouts.set(layout.name, layout);
+                const layout = new CanvasLayout(useLayout); //{ name: useLayout, views: [] };
+                if (scene === undefined || scene instanceof Scene) {
+                    //layout.views.push({ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } });
+                    layout.addView(new CanvasView({ name: 'all', scene: scene, viewport: new Viewport() }));
                 }
+                else {
+                    layout.addView(scene); //views.push(scene);
+                }
+                layouts.set(layout.name, layout);
             }
             /*
             {
@@ -57963,7 +57961,6 @@ class Source2ParticleSystem extends Entity {
     }
     setMaxParticles(max) {
         this.maxParticles = Math.max(Math.min(max, MAX_PARTICLES_IN_A_SYSTEM), 1);
-        //this.maxParticles = 1;
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
