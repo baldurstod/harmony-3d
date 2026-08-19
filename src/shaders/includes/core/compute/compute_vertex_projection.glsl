@@ -6,8 +6,11 @@ export default `
 	vec3 vertexNormalCameraSpace = uNormalMatrix * vertexNormalWorldSpace;//TODOv3: use projectionview matrix instead ?
 	vec3 vertexTangentCameraSpace = uNormalMatrix * vertexTangentWorldSpace;//TODOv3: use projectionview matrix instead ?
 	vec3 vertexBitangentCameraSpace = uNormalMatrix * vertexBitangentWorldSpace;//TODOv3: use projectionview matrix instead ?
+#ifdef FACE_CAMERA
+	gl_Position = uProjectionMatrix  * (uViewMatrix * vec4(uPosition, 1.0) + vec4(aVertexPosition, 1.0));
+#else
 	gl_Position = uProjectionMatrix * vertexPositionCameraSpace;
-
+#endif
 	vVertexPositionCameraSpace = vertexPositionCameraSpace;
 	vVertexNormalCameraSpace = vertexNormalCameraSpace;
 	vVertexTangentCameraSpace = vertexTangentCameraSpace;

@@ -1,83 +1,112 @@
 import { vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
-import { createElement, display, HarmonyMenuItemsDict } from 'harmony-ui';
+import { createElement, HarmonyMenuItemsDict } from 'harmony-ui';
 import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
 import { FontManager } from '../managers/fontmanager';
+import { BlendingMode, RenderFace } from '../materials/constants';
 import { Material } from '../materials/material';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
+import { Plane } from '../primitives/plane';
 import { Scene } from '../scenes/scene';
+import { Texture } from '../textures/texture';
+import { TextureManager } from '../textures/texturemanager';
 import { Interaction } from '../utils/interaction';
 
 export type Text2DParameters = EntityParameters & {
 	text?: string,
-	size?: string,
+	size?: number,
 	font?: string,
 	style?: string,
 	clickable?: boolean,
-	parentElement?: HTMLElement,
 };
 
 export class Text2D extends Entity {
-	isText3D = true;
+	isText2D = true;
 	#text?: string;
-	#size?: string;
+	#size?: number;
 	#font?: string;
 	//style: string;
-	#html = createElement('div', { style: 'position:absolute;pointer-events:none;' });
+	#material = new MeshBasicMaterial({ renderFace: RenderFace.Both, blendingMode: BlendingMode.Normal, defines: { ALWAYS_ON_TOP: '', FACE_CAMERA: '', } });
+	#plane = new Plane({ material: this.#material, parent: this, hideInExplorer: true, width: 0, height: 0, });
+	#texture?: Texture;
+	#pos = vec3.create();
 
 	constructor(params: Text2DParameters = {}) {
 		super(params);
 		this.setText(params.text);
 		this.setSize(params.size);
 		this.setFont(params.font);
-		this.setParentElement(params.parentElement);
-
-		display(this.#html, this.isVisible());
-	}
-
-	setParentElement(parentElement?: HTMLElement): void {
-		parentElement?.append(this.#html);
-	}
-
-	override setVisible(visible?: boolean): void {
-		super.setVisible(visible);
-
-		display(this.#html, this.isVisible());
 	}
 
 	setText(text?: string): void {
 		this.#text = text;
-		this.#html.innerText = text ?? '';
+		this.#updateText();
 	}
 
-	setSize(size?: string): void {
+	setSize(size?: number): void {
 		this.#size = size;
-		this.#html.style.fontSize = size ?? '';
+		this.#updateText();
 	}
 
 	setFont(font?: string): void {
 		this.#font = font;
-		this.#html.style.fontFamily = font ?? '';
+		this.#updateText();
+	}
+
+	async #updateText(): Promise<void> {
+		const canvas = createElement('canvas') as HTMLCanvasElement;
+		const context = canvas.getContext('2d');
+		if (!context) {
+			return;
+		}
+
+		const text = this.#text ?? '';
+
+		let metrics = null;
+		const textHeight = 100;
+		context.font = 'normal ' + textHeight + 'px Arial';
+		metrics = context.measureText(text);
+		const textWidth = metrics.width;
+		canvas.width = textWidth;
+		canvas.height = textHeight;
+		context.font = 'normal ' + textHeight + 'px Arial';
+		context.textAlign = 'center';
+		context.textBaseline = 'middle';
+		context.fillStyle = '#ffffff';
+		context.fillText(text, textWidth / 2, textHeight / 2);
+
+		if (this.#texture) {
+			// Notice: we delete the texture since webgpu can't resize textures
+			TextureManager.deleteTexture(this.#texture);
+		}
+
+		this.#material.setColorMap(null);
+		this.#plane.setSize(textWidth * 0.01, textHeight * 0.01);
+
+		this.#texture = await TextureManager.createTextureFromCanvas({
+			webgpuDescriptor: {
+				size: {
+					width: textWidth,
+					height: textHeight,
+				},
+				format: 'rgba8unorm',
+				usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+			},
+			canvas,
+			flipY: true,
+		});
+
+		this.#material.setColorMap(this.#texture);
+
+		this.#material.setDefine('textWidth', String(textWidth));
+		this.#material.setDefine('textHeight', String(textHeight));
 	}
 
 	override update(scene: Scene, camera: Camera/*, delta: number*/): void {
-		const pos = vec3.create();
-		const mat = camera.getViewProjectionMatrix();
-		vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
-		if (pos[2] > 1) {
-			// Text is behind the camera
-			// TODO: we may also use camera near and far plane
-			display(this.#html, false);
-			return;
-		} else {
-			display(this.#html, this.isVisible());
-		}
-		//console.log(pos);
-		vec3.scale(pos, pos, 50);
-		vec3.add(pos, pos, [50, 50, 0]);
-		this.#html.style.left = `${pos[0]}%`;
-		this.#html.style.top = `${100 - pos[1]}%`;
+		this.getWorldPosition(this.#pos);
+		this.#material.setUniformValue('uPosition', this.#pos);
 	}
 
 	toJSON(): JSONObject {
@@ -100,7 +129,7 @@ export class Text2D extends Entity {
 	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.setText(json.text as string);
-		this.setSize(json.size as string);
+		this.setSize(json.size as number);
 		this.setFont(json.font as string);
 		//this.style = json.style as string ?? Text2D.defaultStyle;
 	}
@@ -126,7 +155,7 @@ export class Text2D extends Entity {
 					}
 				}
 			},
-			font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(size ?? undefined); } },
+			font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(Number(size) ?? undefined); } },
 		});
 	}
 

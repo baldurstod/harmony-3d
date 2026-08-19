@@ -8202,6 +8202,12 @@ class TextureManager {
         await fillTextureWithImage(texture, textureParams.image);
         return texture;
     }
+    static async createTextureFromCanvas(textureParams) {
+        textureParams.webgpuDescriptor.size = { width: textureParams.canvas.width, height: textureParams.canvas.height };
+        const texture = this.createTexture(textureParams);
+        await fillTextureWithImage(texture, textureParams.canvas);
+        return texture;
+    }
     static async fillTextureWithImage(texture, image) {
         return await fillTextureWithImage(texture, image);
     }
@@ -15434,57 +15440,77 @@ class FontManager {
 }
 
 class Text2D extends Entity {
-    isText3D = true;
+    isText2D = true;
     #text;
     #size;
     #font;
     //style: string;
-    #html = createElement('div', { style: 'position:absolute;pointer-events:none;' });
+    #material = new MeshBasicMaterial({ renderFace: RenderFace.Both, blendingMode: BlendingMode.Normal, defines: { ALWAYS_ON_TOP: '', FACE_CAMERA: '', } });
+    #plane = new Plane({ material: this.#material, parent: this, hideInExplorer: true, width: 0, height: 0, });
+    #texture;
+    #pos = vec3.create();
     constructor(params = {}) {
         super(params);
         this.setText(params.text);
         this.setSize(params.size);
         this.setFont(params.font);
-        this.setParentElement(params.parentElement);
-        display(this.#html, this.isVisible());
-    }
-    setParentElement(parentElement) {
-        parentElement?.append(this.#html);
-    }
-    setVisible(visible) {
-        super.setVisible(visible);
-        display(this.#html, this.isVisible());
     }
     setText(text) {
         this.#text = text;
-        this.#html.innerText = text ?? '';
+        this.#updateText();
     }
     setSize(size) {
         this.#size = size;
-        this.#html.style.fontSize = size ?? '';
+        this.#updateText();
     }
     setFont(font) {
         this.#font = font;
-        this.#html.style.fontFamily = font ?? '';
+        this.#updateText();
     }
-    update(scene, camera /*, delta: number*/) {
-        const pos = vec3.create();
-        const mat = camera.getViewProjectionMatrix();
-        vec3.transformMat4(pos, this.getWorldPosition(pos), mat);
-        if (pos[2] > 1) {
-            // Text is behind the camera
-            // TODO: we may also use camera near and far plane
-            display(this.#html, false);
+    async #updateText() {
+        const canvas = createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) {
             return;
         }
-        else {
-            display(this.#html, this.isVisible());
+        const text = this.#text ?? '';
+        let metrics = null;
+        const textHeight = 100;
+        context.font = 'normal ' + textHeight + 'px Arial';
+        metrics = context.measureText(text);
+        const textWidth = metrics.width;
+        canvas.width = textWidth;
+        canvas.height = textHeight;
+        context.font = 'normal ' + textHeight + 'px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = '#ffffff';
+        context.fillText(text, textWidth / 2, textHeight / 2);
+        if (this.#texture) {
+            // Notice: we delete the texture since webgpu can't resize textures
+            TextureManager.deleteTexture(this.#texture);
         }
-        //console.log(pos);
-        vec3.scale(pos, pos, 50);
-        vec3.add(pos, pos, [50, 50, 0]);
-        this.#html.style.left = `${pos[0]}%`;
-        this.#html.style.top = `${100 - pos[1]}%`;
+        this.#material.setColorMap(null);
+        this.#plane.setSize(textWidth * 0.01, textHeight * 0.01);
+        this.#texture = await TextureManager.createTextureFromCanvas({
+            webgpuDescriptor: {
+                size: {
+                    width: textWidth,
+                    height: textHeight,
+                },
+                format: 'rgba8unorm',
+                usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+            },
+            canvas,
+            flipY: true,
+        });
+        this.#material.setColorMap(this.#texture);
+        this.#material.setDefine('textWidth', String(textWidth));
+        this.#material.setDefine('textHeight', String(textHeight));
+    }
+    update(scene, camera /*, delta: number*/) {
+        this.getWorldPosition(this.#pos);
+        this.#material.setUniformValue('uPosition', this.#pos);
     }
     toJSON() {
         const json = super.toJSON();
@@ -15529,7 +15555,7 @@ class Text2D extends Entity {
                     }
                 }
             },
-            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(size ?? undefined); } },
+            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.setSize(Number(size) ?? undefined); } },
         });
     }
     static getEntityName() {
@@ -77882,8 +77908,11 @@ var compute_vertex_projection = `
 	vec3 vertexNormalCameraSpace = uNormalMatrix * vertexNormalWorldSpace;//TODOv3: use projectionview matrix instead ?
 	vec3 vertexTangentCameraSpace = uNormalMatrix * vertexTangentWorldSpace;//TODOv3: use projectionview matrix instead ?
 	vec3 vertexBitangentCameraSpace = uNormalMatrix * vertexBitangentWorldSpace;//TODOv3: use projectionview matrix instead ?
+#ifdef FACE_CAMERA
+	gl_Position = uProjectionMatrix  * (uViewMatrix * vec4(uPosition, 1.0) + vec4(aVertexPosition, 1.0));
+#else
 	gl_Position = uProjectionMatrix * vertexPositionCameraSpace;
-
+#endif
 	vVertexPositionCameraSpace = vertexPositionCameraSpace;
 	vVertexNormalCameraSpace = vertexNormalCameraSpace;
 	vVertexTangentCameraSpace = vertexTangentCameraSpace;
@@ -78517,6 +78546,10 @@ var declare_shadow_mapping$1 = `
 `;
 
 var declare_vertex_skinning$1 = `
+#ifdef FACE_CAMERA
+	uniform vec3 uPosition;
+#endif
+
 #ifdef HARDWARE_SKINNING
 	#ifdef SKELETAL_MESH
 		uniform sampler2D uBoneMatrix;

@@ -1335,6 +1335,11 @@ declare class Channel {
                  doForce(): void;
              }
 
+             declare type CreateCanvasTextureParams = Omit<TextureParams, 'format'> & {
+                 webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+                 canvas: HTMLCanvasElement;
+             };
+
              declare type CreateCheckerTextureParams = {
                  width?: number;
                  height?: number;
@@ -2100,7 +2105,7 @@ declare class Channel {
 
                       export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): void;
 
-                      export declare function fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void>;
+                      export declare function fillTextureWithImage(texture: Texture, image: HTMLImageElement | HTMLCanvasElement): Promise<void>;
 
                       export declare class FirstPersonControl extends CameraControl {
                           #private;
@@ -3321,7 +3326,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -9122,12 +9127,10 @@ declare class Channel {
 
                       export declare class Text2D extends Entity {
                           #private;
-                          isText3D: boolean;
+                          isText2D: boolean;
                           constructor(params?: Text2DParameters);
-                          setParentElement(parentElement?: HTMLElement): void;
-                          setVisible(visible?: boolean): void;
                           setText(text?: string): void;
-                          setSize(size?: string): void;
+                          setSize(size?: number): void;
                           setFont(font?: string): void;
                           update(scene: Scene, camera: Camera): void;
                           toJSON(): JSONObject;
@@ -9139,11 +9142,10 @@ declare class Channel {
 
                       declare type Text2DParameters = EntityParameters & {
                           text?: string;
-                          size?: string;
+                          size?: number;
                           font?: string;
                           style?: string;
                           clickable?: boolean;
-                          parentElement?: HTMLElement;
                       };
 
                       export declare class Text3D extends Mesh {
@@ -9365,6 +9367,7 @@ declare class Channel {
                           static createCheckerTexture(textureParams?: CreateCheckerTextureParams): Texture;
                           static createNoiseTexture(textureParams: CreateNoiseTextureParams): Texture;
                           static createTextureFromImage(textureParams: CreateImageTextureParams): Promise<Texture>;
+                          static createTextureFromCanvas(textureParams: CreateCanvasTextureParams): Promise<Texture>;
                           static fillTextureWithImage(texture: Texture, image: HTMLImageElement): Promise<void>;
                       }
 

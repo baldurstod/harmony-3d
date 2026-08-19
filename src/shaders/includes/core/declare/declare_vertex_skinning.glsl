@@ -1,4 +1,8 @@
 export default `
+#ifdef FACE_CAMERA
+	uniform vec3 uPosition;
+#endif
+
 #ifdef HARDWARE_SKINNING
 	#ifdef SKELETAL_MESH
 		uniform sampler2D uBoneMatrix;

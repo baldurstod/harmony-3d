@@ -42,6 +42,11 @@ export type CreateImageTextureParams = Omit<TextureParams, 'format'> & {
 	image: HTMLImageElement;
 };
 
+export type CreateCanvasTextureParams = Omit<TextureParams, 'format'> & {
+	webgpuDescriptor: HarmonyGPUTextureDescriptorOptionalSize;
+	canvas: HTMLCanvasElement;
+};
+
 export class TextureManager {
 	static #texturesList = new Map<string, Texture>();
 
@@ -106,6 +111,13 @@ export class TextureManager {
 		textureParams.webgpuDescriptor.size = { width: textureParams.image.naturalWidth, height: textureParams.image.naturalHeight }//[image.naturalWidth, image.naturalHeight, 1];
 		const texture = this.createTexture(textureParams as CreateTextureParams);
 		await fillTextureWithImage(texture, textureParams.image);
+		return texture;
+	}
+
+	static async createTextureFromCanvas(textureParams: CreateCanvasTextureParams): Promise<Texture> {
+		textureParams.webgpuDescriptor.size = { width: textureParams.canvas.width, height: textureParams.canvas.height };
+		const texture = this.createTexture(textureParams as CreateTextureParams);
+		await fillTextureWithImage(texture, textureParams.canvas);
 		return texture;
 	}
 
