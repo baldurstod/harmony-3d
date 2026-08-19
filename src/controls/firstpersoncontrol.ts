@@ -1,21 +1,22 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
-import { CameraControl } from './cameracontrol'
-import { Spherical } from './spherical'
-import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
-import { clamp } from '../math/functions';
 import { Camera } from '../cameras/camera';
 import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
+import { clamp } from '../math/functions';
+import { CameraControl } from './cameracontrol';
+import { Spherical } from './spherical';
 
 const xUnitVec3 = vec3.fromValues(1, 0, 0);
 const yUnitVec3 = vec3.fromValues(0, 1, 0);
 const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
 const tempVec3 = vec3.create();
-const spherical = new Spherical();
+//const spherical = new Spherical();
 
 export class FirstPersonControl extends CameraControl {
 	#enableDamping = false;
 	#dampingFactor = 0.05;
+	#spherical = new Spherical();
 	#sphericalDelta = new Spherical();
 	#rotateDelta = vec2.create();
 	movementSpeed = 1.0;
@@ -305,23 +306,24 @@ export class FirstPersonControl extends CameraControl {
 
 
 		if (this.#enableDamping) {
-			spherical.theta += this.#sphericalDelta.theta * this.#dampingFactor;
-			spherical.phi += this.#sphericalDelta.phi * this.#dampingFactor;
+			this.#spherical.theta += this.#sphericalDelta.theta * this.#dampingFactor;
+			this.#spherical.phi += this.#sphericalDelta.phi * this.#dampingFactor;
 		} else {
-			spherical.theta += this.#sphericalDelta.theta;
-			spherical.phi += this.#sphericalDelta.phi;
+			this.#spherical.theta += this.#sphericalDelta.theta;
+			this.#spherical.phi += this.#sphericalDelta.phi;
 		}
 
 		//this.#lat = Math.max(- 85, Math.min(85, this.#lat));
 		//this.#lat = 90;//removeme
 
 		let phi = DEG_TO_RAD * (90 - this.#lat);
-		const theta = DEG_TO_RAD * (this.#lon);
+		//const theta = DEG_TO_RAD * (this.#lon);
 
-
+		/*
 		if (this.#click) {
 			//console.error(this.#lon, this.#lat, this.#mouseX, this.#mouseY , phi , theta);
 		}
+		*/
 
 		function mapLinear(x: number, a1: number, a2: number, b1: number, b2: number) {
 			return b1 + (x - a1) * (b2 - b1) / (a2 - a1);
@@ -332,7 +334,7 @@ export class FirstPersonControl extends CameraControl {
 
 		const position = this.camera?.position ?? vec3.create()/*TODO: optimize*/;
 
-		spherical.toCartesian(tempVec3);
+		this.#spherical.toCartesian(tempVec3);
 
 		// rotate offset back to 'camera-up-vector-is-up' space
 		//offset.applyQuaternion(quatInverse);
@@ -439,10 +441,10 @@ export class FirstPersonControl extends CameraControl {
 
 		vec3.copy(tempVec3, xUnitVec3/*minusZUnitVec3*/);
 		vec3.transformQuat(tempVec3, tempVec3, this.camera?._quaternion ?? quat.create()/*TODO: optimize*/);
-		spherical.setFromVector3(tempVec3);
+		this.#spherical.setFromVector3(tempVec3);
 
-		this.#lat = -(90 - RAD_TO_DEG * (spherical.phi));
-		this.#lon = -RAD_TO_DEG * (spherical.theta);
+		this.#lat = -(90 - RAD_TO_DEG * (this.#spherical.phi));
+		this.#lon = -RAD_TO_DEG * (this.#spherical.theta);
 		this.#startLat = this.#lat;
 		this.#startLon = this.#lon;
 		this.update();
@@ -476,7 +478,7 @@ export class FirstPersonControl extends CameraControl {
 			this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
 
 			vec3.transformQuat(tempVec3, minusZUnitVec3, this.camera.quaternion);
-			spherical.setFromVector3(tempVec3);
+			this.#spherical.setFromVector3(tempVec3);
 		}
 	}
 
