@@ -723,6 +723,7 @@ export declare class CanvasAttributes {
     constructor(name: string, canvas: HTMLCanvasElement, context: ImageBitmapRenderingContext, autoResize: boolean);
     addLayout(layout: CanvasLayout): void;
     getLayout(name: string): CanvasLayout | null;
+    static readonly defaultLayout = "default";
 }
 
 /**
@@ -3076,6 +3077,12 @@ declare class Channel {
                           getHitboxes(): Hitbox[];
                       }
 
+                      export declare interface HasMaterial {
+                          hasMaterial: true;
+                          setMaterial(material: Material): void;
+                          getMaterial(): Material;
+                      }
+
                       export declare interface HasMaterials {
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;
@@ -4383,8 +4390,9 @@ declare class Channel {
                           getSubRepositories(): Set<Repository>;
                       }
 
-                      export declare class Mesh extends Entity {
+                      export declare class Mesh extends Entity implements HasMaterial {
                           #private;
+                          hasMaterial: true;
                           renderMode: number;
                           isRenderable: boolean;
                           readonly storage: Record<string, StorageBuffer>;
@@ -6360,6 +6368,7 @@ declare class Channel {
                       export declare class SceneExplorer {
                           #private;
                           htmlFileSelector: HTMLElement;
+                          readonly virtualMaterial: VirtualMaterial;
                           constructor();
                           /**
                            * @deprecated Please use `setScene` instead.
@@ -7328,7 +7337,8 @@ declare class Channel {
                           setChildControlPointPosition(first: number, last: number, position: vec3): void;
                           setChildControlPointOrientation(first: number, last: number, orientation: quat): void;
                           getParticle(index?: number): Source1Particle | null;
-                          getControlPointPosition(cpId: number): vec3;
+                          getControlPointPosition(cpId: number, vec?: vec3): vec3;
+                          getControlPointOrientation(cpId: number, orientation?: quat): quat;
                           setControlPointPosition(cpId: number, position: vec3): void;
                           setControlPointParent(): void;
                           getWorldQuaternion(q?: quat): quat;
@@ -9730,6 +9740,23 @@ declare class Channel {
                               maxDepth?: number;
                           });
                       }
+
+                      /**
+                       * A virtual material is a material meant to be used with entitites that doesn't have material
+                       * but can have childs with materials.
+                       */
+                      declare class VirtualMaterial extends Material {
+                          entity: Entity | null;
+                          constructor(params?: VirtualMaterialParams);
+                          setEntity(entity: Entity | null): void;
+                          setDefine(define: string, value?: string): void;
+                          removeDefine(define: string): void;
+                          getShaderSource(): string;
+                      }
+
+                      declare type VirtualMaterialParams = MaterialParams & {
+                          entity?: Entity;
+                      };
 
                       declare type VmtParameter = [
                       typeof SHADER_PARAM_TYPE_TEXTURE | typeof SHADER_PARAM_TYPE_INTEGER | typeof SHADER_PARAM_TYPE_COLOR | typeof SHADER_PARAM_TYPE_VEC2 | typeof SHADER_PARAM_TYPE_VEC3 | typeof SHADER_PARAM_TYPE_VEC4 | typeof SHADER_PARAM_TYPE_ENVMAP | typeof SHADER_PARAM_TYPE_FLOAT | typeof SHADER_PARAM_TYPE_BOOL | typeof SHADER_PARAM_TYPE_FOURCC | typeof SHADER_PARAM_TYPE_MATRIX | typeof SHADER_PARAM_TYPE_MATERIAL | typeof SHADER_PARAM_TYPE_STRING | typeof SHADER_PARAM_TYPE_MATRIX4X2,

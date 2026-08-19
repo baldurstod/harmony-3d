@@ -248,6 +248,8 @@ export class CanvasAttributes {
 	getLayout(name: string): CanvasLayout | null {
 		return this.layouts.get(name) ?? null;
 	}
+
+	static readonly defaultLayout = 'default';
 }
 
 type RenderTargetEntry = {
@@ -396,12 +398,12 @@ class Graphics {
 					layouts.set(layout.name, layout);
 				}
 			} else if (options.views) {
-				useLayout = 'default';
+				useLayout = CanvasAttributes.defaultLayout;
 				attributes.useLayout = useLayout;
 				const layout: CanvasLayout = new CanvasLayout(useLayout, options.views);//{ name: useLayout, views: options.views };
 				layouts.set(layout.name, layout);
 			} else {
-				useLayout = 'default';
+				useLayout = CanvasAttributes.defaultLayout;
 				attributes.useLayout = useLayout;
 				const scene = options.scene;
 				if (scene) {

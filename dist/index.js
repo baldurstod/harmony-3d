@@ -3912,7 +3912,7 @@ function buildContextMenu(entities) {
         receive_shadows: { i18n: '#receive_shadows', selected: ent?.receiveShadow, f: () => entities.forEach((entity) => entity.toggleReceiveShadow()) },
         material: { i18n: '#material', submenu: {} },
     };
-    if (one && ent.material) {
+    if (one) {
         Object.assign(menu.material.submenu, {
             entitynull_5: null,
             edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(ent) }
@@ -5349,6 +5349,7 @@ const uv$2 = vec2.create();
 const meshDefaultBufferGeometry = new BufferGeometry();
 const meshDefaultMaterial = new MeshBasicMaterial();
 class Mesh extends Entity {
+    hasMaterial = true;
     #geometry;
     #material;
     #dirtyProgram = true; //TODOv3 use another method
@@ -14235,7 +14236,7 @@ class Curve {
         return out;
     }
     getArcLength(divisions = 100) {
-        vec3.create();
+        //const pos = vec3.create();
         let last = vec3.create();
         let current = vec3.create();
         let temp;
@@ -16214,8 +16215,7 @@ function quatToEulerDeg(out, q) {
     return out;
 }
 function QuaternionIdentityBlend(p, t, qt) {
-    let sclp;
-    sclp = 1.0 - t;
+    const sclp = 1.0 - t;
     qt[0] = p[0] * sclp;
     qt[1] = p[1] * sclp;
     qt[2] = p[2] * sclp;
@@ -18717,6 +18717,7 @@ class CanvasAttributes {
     getLayout(name) {
         return this.layouts.get(name) ?? null;
     }
+    static defaultLayout = 'default';
 }
 const defaultViewport = new Viewport();
 class Graphics {
@@ -18836,13 +18837,13 @@ class Graphics {
                 }
             }
             else if (options.views) {
-                useLayout = 'default';
+                useLayout = CanvasAttributes.defaultLayout;
                 attributes.useLayout = useLayout;
                 const layout = new CanvasLayout(useLayout, options.views); //{ name: useLayout, views: options.views };
                 layouts.set(layout.name, layout);
             }
             else {
-                useLayout = 'default';
+                useLayout = CanvasAttributes.defaultLayout;
                 attributes.useLayout = useLayout;
                 const scene = options.scene;
                 if (scene) {
@@ -20362,7 +20363,7 @@ Material.materialList['ShaderToy'] = ShaderToyMaterial;
 function smartRound(input, precision = 0.001) {
     let mul = 1;
     for (let i = 0; i < 10; ++i) {
-        let r = Math.round(mul * input) / mul;
+        const r = Math.round(mul * input) / mul;
         if (Math.abs(r - input) < precision) {
             return r;
         }
@@ -20521,7 +20522,8 @@ class LoopSubdivision {
                 },
                 proc_exit: (p1) => { console.log('Exit code:', p1); },
                 args_sizes_get: () => { return 0; },
-                args_get: (p1) => { },
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                args_get: () => { },
             },
         };
         //this.#webAssembly = await WebAssembly.instantiateStreaming(fetch('loop_subdivision.wasm'), imports);
@@ -36242,17 +36244,26 @@ class Source1ParticleSystem extends Entity {
         }*/
         return this.#livingParticles[index] ?? null;
     }
-    getControlPointPosition(cpId) {
+    getControlPointPosition(cpId, vec = vec3.create()) {
         const cp = this.getControlPoint(cpId);
         if (cp) {
-            return cp.getWorldPosition();
+            vec3.zero(cp._position);
+            return cp.getWorldPosition(vec);
         }
-        return vec3.create();
+        return vec3.zero(vec);
+    }
+    getControlPointOrientation(cpId, orientation = quat.create()) {
+        const cp = this.getControlPoint(cpId);
+        if (cp) {
+            vec3.zero(cp._position);
+            return cp.getWorldOrientation(orientation);
+        }
+        return quat.identity(orientation);
     }
     setControlPointPosition(cpId, position) {
         const cp = this.getOwnControlPoint(cpId);
         if (cp) {
-            cp.setPosition(position);
+            cp.setWorldPosition(position);
         }
     }
     setControlPointParent( /*controlPointId: number, parentControlPointId: number*/) {
@@ -45782,14 +45793,18 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
         for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
             const name = list[cpIndex];
             const cpNumber = this.getParameter(name + ' Control Point Number');
+            /*
             if (cpNumber == headLocation) {
                 continue;
             }
+            */
             // TODO: use param Control Point Parent
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$3, cpLocation, vecControlPoint);
+                const cpOrientation = this.particleSystem.getControlPointOrientation(headLocation);
+                vec3.transformQuat(tempVec3$3, cpLocation, cpOrientation);
+                const a = vec3.add(tempVec3$3, tempVec3$3, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -64183,7 +64198,7 @@ class FadeOutSimple extends Operator {
         }
         //particle.alpha = SimpleSplineRemapValWithDeltasClamped(particle.proportionOfLife, this.#startFadeOutTime, this.#fadeOutTime, this.#invFadeOutTime, particle.startAlpha, -particle.startAlpha);
         particle.alpha = SimpleSpline(particle.startAlpha - (particle.proportionOfLife - this.#startFadeOutTime) * particle.startAlpha);
-        console.info(particle.alpha);
+        //console.info(particle.alpha);
         //fl4NewAlpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, startFadeOutTime, fl4FadeOutDuration, fl4OOFadeOutDuration, particle.startAlpha, fl4Goal - particle.startAlpha);
         //TODO: use fieldOutput
     }
@@ -75861,6 +75876,38 @@ class CubeEnvironment extends Environment {
 
 var sceneExplorerCSS = ":host {\n\tbackground-color: var(--background-primary);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n\t--indentation: 0;\n\t--header: var(--background-primary);\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n\t--indentation-offset: var(--scene-explorer-indentation-offset, 1rem);\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n\theight: 2rem;\n\toverflow: hidden;\n\talign-items: center;\n}\n\n.scene-explorer-entity-title {\n\tpadding-left: calc(var(--indentation) * var(--indentation-offset));\n\ttext-wrap: nowrap;\n\toverflow: hidden;\n\ttext-overflow: ellipsis;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\t/*background-color: var(--background-primary);*/\n\tbackground-color: var(--header);\n}\n\nscene-explorer-entity.selected {\n\t--header: var(--background-tertiary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--background-quaternary);\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-childs {\n\tbackground-color: var(--header);\n}\n\n.scene-explorer-entity-header:hover,\nscene-explorer-entity.selected>.scene-explorer-entity-header:hover {\n\tbackground-color: var(--accent-primary);\n}\n\nscene-explorer-entity .animation input {\n\twidth: 100%;\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n\theight: 100%;\n\talign-items: center;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-buttons>div>svg {\n\twidth: 1.5rem;\n\theight: 1.5rem;\n}\n\n.scene-explorer-entity-button-visible {\n\tpadding: 0rem 0.25rem;\n\tdisplay: flex;\n\talign-items: center;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: var(--background-primary);\n\t/*padding: 5px;*/\n\t/*padding-left: 20px;*/\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--background-primary);\n\tcursor: pointer;\n}\n\n.info {\n\tbackground-color: #002B67;\n}\n";
 
+/**
+ * A virtual material is a material meant to be used with entitites that doesn't have material
+ * but can have childs with materials.
+ */
+class VirtualMaterial extends Material {
+    entity = null;
+    constructor(params = {}) {
+        super(params);
+        this.setEntity(params.entity ?? null);
+    }
+    setEntity(entity) {
+        this.entity = entity;
+    }
+    setDefine(define, value = '') {
+        this.entity?.forEach((ent) => {
+            if (ent.hasMaterial) {
+                ent.getMaterial().setDefine(define, value);
+            }
+        });
+    }
+    removeDefine(define) {
+        this.entity?.forEach((ent) => {
+            if (ent.hasMaterial) {
+                ent.getMaterial().removeDefine(define);
+            }
+        });
+    }
+    getShaderSource() {
+        return 'virtual';
+    }
+}
+
 function getUniformsHtml(uniforms) {
     const htmlUniforms = createElement('div');
     for (const [uniformName, uniform] of uniforms) {
@@ -76031,8 +76078,10 @@ class MaterialEditor {
         else {
             hide(this.#htmlBlendFactors);
         }
-        this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
-        this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
+        if (!(material instanceof VirtualMaterial)) {
+            this.#htmlAlwaysOnTop.checked = material.hasDefine('ALWAYS_ON_TOP');
+            this.#htmlAlwaysBehind.checked = material.hasDefine('ALWAYS_BEHIND');
+        }
         //this.#htmlElement.innerHTML += this.material.name;
         this.#htmlParams.append(getUniformsHtml(material.getUniforms()));
     }
@@ -76714,6 +76763,7 @@ class SceneExplorer {
     #isVisible = false;
     //selectedEntity?: Entity;
     #pickPromiseResolve;
+    virtualMaterial = new VirtualMaterial();
     constructor() {
         if (SceneExplorer.#instance) {
             return SceneExplorer.#instance;
@@ -77309,9 +77359,13 @@ function initEntitySubmenu() {
     ];
 }
 Entity.editMaterial = function (entity) {
-    const material = entity.material;
+    let material;
+    if (entity.hasMaterial) {
+        material = entity.getMaterial();
+    }
     if (!material) {
-        return;
+        material = getSceneExplorer().virtualMaterial;
+        material.setEntity(entity);
     }
     const sceneExplorer = getSceneExplorer();
     sceneExplorer.editMaterial(material);
