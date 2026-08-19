@@ -202,7 +202,7 @@ export class Source2TextureManager {
 				{ texture: texture.texture as GPUTexture },
 				getWebGPUData(imageFormat, imageData[i]!) as BufferSource,
 				{ bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) },
-				{ width: width, height: height },
+				{ width, height },
 			);
 		}
 
@@ -383,7 +383,7 @@ export class Source2TextureManager {
 			{ texture: texture.texture as GPUTexture },
 			getWebGPUData(imageFormat, imageData[0]) as BufferSource,
 			{ bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) },
-			{ width: width, height: height },
+			{ width, height },
 		);
 		WebGPUInternal.device.queue.submit([]);
 	}

@@ -9000,6 +9000,7 @@ function createPassParameterUi(pass, param) {
 class CameraControl {
     #camera;
     #enabled = true;
+    canvas;
     constructor(camera) {
         this.#camera = camera;
     }
@@ -9022,6 +9023,69 @@ class CameraControl {
     handleEnabled() {
     }
     update(delta) {
+    }
+}
+
+var GraphicsEvent;
+(function (GraphicsEvent) {
+    GraphicsEvent["MouseMove"] = "mousemove";
+    GraphicsEvent["MouseDown"] = "mousedown";
+    GraphicsEvent["MouseUp"] = "mouseup";
+    GraphicsEvent["MouseClick"] = "mouseclick";
+    GraphicsEvent["MouseDblClick"] = "mousedblclick";
+    GraphicsEvent["Wheel"] = "wheel";
+    GraphicsEvent["Resize"] = "resize";
+    GraphicsEvent["Pick"] = "pick";
+    GraphicsEvent["Tick"] = "tick";
+    GraphicsEvent["KeyDown"] = "keydown";
+    GraphicsEvent["KeyUp"] = "keyup";
+    GraphicsEvent["TouchStart"] = "touchstart";
+    GraphicsEvent["TouchMove"] = "touchmove";
+    GraphicsEvent["TouchCancel"] = "touchcancel";
+})(GraphicsEvent || (GraphicsEvent = {}));
+class GraphicsEvents extends StaticEventTarget {
+    static isGraphicsEvents = true;
+    static tick(delta, time, speed, context) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta, time, speed, context } }));
+    }
+    static pick(x, y, width, height, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Pick, { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } }));
+    }
+    static resize(width, height) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width, height } }));
+    }
+    static mouseMove(x, y, width, height, mouseEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x, y, width, height, mouseEvent, canvas } }));
+    }
+    static mouseDown(x, y, width, height, mouseEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x, y, width, height, mouseEvent, canvas } }));
+    }
+    static mouseUp(x, y, width, height, mouseEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x, y, width, height, mouseEvent, canvas } }));
+    }
+    static mouseClick(x, y, width, height, mouseEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
+    }
+    static mouseDblClick(x, y, width, height, mouseEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDblClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
+    }
+    static wheel(x, y, wheelEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x, y, wheelEvent: wheelEvent, canvas } }));
+    }
+    static keyDown(keyboardEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent, canvas } }));
+    }
+    static keyUp(keyboardEvent, canvas) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent, canvas } }));
+    }
+    static touchStart(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { touchEvent: touchEvent } }));
+    }
+    static touchMove(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { touchEvent: touchEvent } }));
+    }
+    static touchCancel(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { touchEvent: touchEvent } }));
     }
 }
 
@@ -9071,78 +9135,17 @@ class Spherical {
     }
 }
 
-var GraphicsEvent;
-(function (GraphicsEvent) {
-    GraphicsEvent["MouseMove"] = "mousemove";
-    GraphicsEvent["MouseDown"] = "mousedown";
-    GraphicsEvent["MouseUp"] = "mouseup";
-    GraphicsEvent["MouseClick"] = "mouseclick";
-    GraphicsEvent["MouseDblClick"] = "mousedblclick";
-    GraphicsEvent["Wheel"] = "wheel";
-    GraphicsEvent["Resize"] = "resize";
-    GraphicsEvent["Pick"] = "pick";
-    GraphicsEvent["Tick"] = "tick";
-    GraphicsEvent["KeyDown"] = "keydown";
-    GraphicsEvent["KeyUp"] = "keyup";
-    GraphicsEvent["TouchStart"] = "touchstart";
-    GraphicsEvent["TouchMove"] = "touchmove";
-    GraphicsEvent["TouchCancel"] = "touchcancel";
-})(GraphicsEvent || (GraphicsEvent = {}));
-class GraphicsEvents extends StaticEventTarget {
-    static isGraphicsEvents = true;
-    static tick(delta, time, speed, context) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta, time, speed, context } }));
-    }
-    static pick(x, y, width, height, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Pick, { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } }));
-    }
-    static resize(width, height) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
-    }
-    static mouseMove(x, y, width, height, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
-    }
-    static mouseDown(x, y, width, height, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
-    }
-    static mouseUp(x, y, width, height, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
-    }
-    static mouseClick(x, y, width, height, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
-    }
-    static mouseDblClick(x, y, width, height, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
-    }
-    static wheel(x, y, wheelEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, wheelEvent: wheelEvent } }));
-    }
-    static keyDown(keyboardEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
-    }
-    static keyUp(keyboardEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
-    }
-    static touchStart(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { touchEvent: touchEvent } }));
-    }
-    static touchMove(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { touchEvent: touchEvent } }));
-    }
-    static touchCancel(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { touchEvent: touchEvent } }));
-    }
-}
-
 const xUnitVec3$1 = vec3.fromValues(1, 0, 0);
 vec3.fromValues(0, 1, 0);
 const zUnitVec3$2 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
 const tempVec3$q = vec3.create();
-const spherical$1 = new Spherical();
+//const spherical = new Spherical();
+let focusedCanvas;
 class FirstPersonControl extends CameraControl {
     #enableDamping = false;
     #dampingFactor = 0.05;
+    #spherical = new Spherical();
     #sphericalDelta = new Spherical();
     #rotateDelta = vec2.create();
     movementSpeed = 1.0;
@@ -9206,6 +9209,10 @@ class FirstPersonControl extends CameraControl {
             */
     }
     #onMouseDown(event) {
+        focusedCanvas = event.detail.canvas;
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         if (!this.enabled) {
             return;
         }
@@ -9234,6 +9241,9 @@ class FirstPersonControl extends CameraControl {
         this.#mouseDragOn = true;
     }
     #onMouseUp(event) {
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         // In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
         setTimeout(() => document.exitPointerLock(), 100);
         const mouseEvent = event.detail.mouseEvent;
@@ -9257,6 +9267,9 @@ class FirstPersonControl extends CameraControl {
         this.#mouseDragOn = false;
     }
     #onMouseMove(event) {
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         const mouseEvent = event.detail.mouseEvent;
         if (this.#mouseDragOn) {
             {
@@ -9278,6 +9291,9 @@ class FirstPersonControl extends CameraControl {
         }
     }
     #onKeyDown(event) {
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         //event.preventDefault();
         switch (event.detail.keyboardEvent.code) {
             case 'ArrowUp':
@@ -9335,6 +9351,9 @@ class FirstPersonControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
+        if (this.canvas && this.canvas !== focusedCanvas) {
+            return;
+        }
         if (this.heightSpeed) {
             const y = clamp$1(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax); //TODO
             const heightDelta = y - this.heightMin;
@@ -9381,18 +9400,22 @@ class FirstPersonControl extends CameraControl {
         }
         if (this.#click) ;
         if (this.#enableDamping) {
-            spherical$1.theta += this.#sphericalDelta.theta * this.#dampingFactor;
-            spherical$1.phi += this.#sphericalDelta.phi * this.#dampingFactor;
+            this.#spherical.theta += this.#sphericalDelta.theta * this.#dampingFactor;
+            this.#spherical.phi += this.#sphericalDelta.phi * this.#dampingFactor;
         }
         else {
-            spherical$1.theta += this.#sphericalDelta.theta;
-            spherical$1.phi += this.#sphericalDelta.phi;
+            this.#spherical.theta += this.#sphericalDelta.theta;
+            this.#spherical.phi += this.#sphericalDelta.phi;
         }
         //this.#lat = Math.max(- 85, Math.min(85, this.#lat));
         //this.#lat = 90;//removeme
         let phi = DEG_TO_RAD * (90 - this.#lat);
-        DEG_TO_RAD * (this.#lon);
-        if (this.#click) ;
+        //const theta = DEG_TO_RAD * (this.#lon);
+        /*
+        if (this.#click) {
+            //console.error(this.#lon, this.#lat, this.#mouseX, this.#mouseY , phi , theta);
+        }
+        */
         function mapLinear(x, a1, a2, b1, b2) {
             return b1 + (x - a1) * (b2 - b1) / (a2 - a1);
         }
@@ -9400,7 +9423,7 @@ class FirstPersonControl extends CameraControl {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
         const position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
-        spherical$1.toCartesian(tempVec3$q);
+        this.#spherical.toCartesian(tempVec3$q);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
         //vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
@@ -9496,9 +9519,9 @@ class FirstPersonControl extends CameraControl {
         */
         vec3.copy(tempVec3$q, xUnitVec3$1 /*minusZUnitVec3*/);
         vec3.transformQuat(tempVec3$q, tempVec3$q, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
-        spherical$1.setFromVector3(tempVec3$q);
-        this.#lat = -(90 - RAD_TO_DEG * (spherical$1.phi));
-        this.#lon = -RAD_TO_DEG * (spherical$1.theta);
+        this.#spherical.setFromVector3(tempVec3$q);
+        this.#lat = -(90 - RAD_TO_DEG * (this.#spherical.phi));
+        this.#lon = -RAD_TO_DEG * (this.#spherical.theta);
         this.#startLat = this.#lat;
         this.#startLon = this.#lon;
         this.update();
@@ -9527,7 +9550,7 @@ class FirstPersonControl extends CameraControl {
             quat.rotationTo(this.#q, this.camera.upVector, zUnitVec3$2);
             this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
             vec3.transformQuat(tempVec3$q, minusZUnitVec3, this.camera.quaternion);
-            spherical$1.setFromVector3(tempVec3$q);
+            this.#spherical.setFromVector3(tempVec3$q);
         }
     }
     handleEnabled() {
@@ -18768,8 +18791,8 @@ class GraphicsClass {
     static #mouseUpFunc = (event) => this.#mouseUp(event);
     static #mouseClickFunc = (event) => this.#mouseClick(event);
     static #mouseDblClickFunc = (event) => this.#mouseDblClick(event);
-    static #keyDownFunc = (event) => GraphicsEvents.keyDown(event);
-    static #keyUpFunc = (event) => GraphicsEvents.keyUp(event);
+    static #keyDownFunc = (event) => GraphicsEvents.keyDown(event, event.target);
+    static #keyUpFunc = (event) => GraphicsEvents.keyUp(event, event.target);
     static #wheelFunc = (event) => this.#wheel(event);
     static #touchStartFunc = (event) => GraphicsEvents.touchStart(this.#pickedEntity, event);
     static #touchMoveFunc = (event) => GraphicsEvents.touchMove(this.#pickedEntity, event);
@@ -18952,36 +18975,36 @@ class GraphicsClass {
             // Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
             GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
         });
-        GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event);
+        GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #mouseMove(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event);
+        GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #mouseUp(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event);
+        GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #mouseClick(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
+        GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #mouseDblClick(event) {
         const htmlCanvas = event.target;
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
+        GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #wheel(event) {
         const x = event.offsetX;
         const y = event.offsetY;
-        GraphicsEvents.wheel(x, y, event);
+        GraphicsEvents.wheel(x, y, event, event.target);
         this.#pickedEntity = null;
         event.preventDefault();
     }
@@ -19030,8 +19053,8 @@ class GraphicsClass {
         }
         const internalRenderContext = {
             renderContext: context,
-            width: width,
-            height: height,
+            width,
+            height,
         };
         this.#forwardRenderer.render(scene, camera, delta, internalRenderContext);
         /*
@@ -19659,7 +19682,7 @@ class GraphicsClass {
         }
         try {
             this.#allowTransfertBitmap = false;
-            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height, forceRendering: true });
+            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width, height, forceRendering: true });
             this._savePicture(filename, type, quality);
             this.#allowTransfertBitmap = true;
         }
@@ -38100,7 +38123,7 @@ class Source1Vtf {
         glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureWebGPU(texture, width, height, srgb, clampS, clampT, data) {
-        WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, this.#getWebGPUData(data), { bytesPerRow: this.#getWebGPUBytesPerRow(width) }, { width: width, height: height });
+        WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, this.#getWebGPUData(data), { bytesPerRow: this.#getWebGPUBytesPerRow(width) }, { width, height });
         WebGPUInternal.device.queue.submit([]);
     }
     #fillCubeMapTexture(glContext, texture, mipmapLvl, srgb) {
@@ -38208,7 +38231,7 @@ class Source1Vtf {
     #fillCubeMapTextureWebGPU(texture, width, height, srgb, clampS, clampT, data) {
         //		#fillTextureWebGPU(glContext: WebGLAnyRenderingContext, texture: Texture, width: number, height: number, srgb: boolean, clampS: boolean, clampT: boolean, data: Uint8Array | Float32Array): void {
         for (let i = 0; i < 6; ++i) {
-            WebGPUInternal.device.queue.writeTexture({ texture: texture.texture, origin: [0, 0, i] }, this.#getWebGPUData(data[i]), { bytesPerRow: this.#getWebGPUBytesPerRow(width) }, { width: width, height: height });
+            WebGPUInternal.device.queue.writeTexture({ texture: texture.texture, origin: [0, 0, i] }, this.#getWebGPUData(data[i]), { bytesPerRow: this.#getWebGPUBytesPerRow(width) }, { width, height });
         }
         WebGPUInternal.device.queue.submit([]);
     }
@@ -58416,7 +58439,7 @@ class Source2TextureManager {
     }
     static #initCubeTextureWebGPU(texture, imageFormat, width, height, imageData) {
         for (let i = 0; i < 6; ++i) {
-            WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[i]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width: width, height: height });
+            WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[i]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width, height });
         }
         WebGPUInternal.device.queue.submit([]);
     }
@@ -58555,7 +58578,7 @@ class Source2TextureManager {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     static #initFlatTextureWebGPU(texture, imageFormat, width, height, imageData) {
-        WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[0]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width: width, height: height });
+        WebGPUInternal.device.queue.writeTexture({ texture: texture.texture }, getWebGPUData(imageFormat, imageData[0]), { bytesPerRow: getWebGPUBytesPerRow(imageFormat, width) }, { width, height });
         WebGPUInternal.device.queue.submit([]);
     }
     static #cleanup() {
@@ -70460,7 +70483,7 @@ class NodeImageEditor extends MyEventTarget {
     textureSize = DEFAULT_TEXTURE_SIZE;
     render(material, width, height) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
+        Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width, height });
         // Set the material back to default to free the material
         this.#fullScreenQuadMesh.setMaterial(this.#material);
     }
@@ -72106,8 +72129,8 @@ class NodeGui {
             rotation: angle,
             left: center[0],
             top: center[1],
-            width: width,
-            height: height
+            width,
+            height,
         });
     }
     #setParamValue(param, stringValue, index, updateManipulator = true) {
@@ -81291,8 +81314,8 @@ class RemGenerator {
             colorSpace: LinearSRGBColorSpace,
             depthBuffer: false
             */
-            width: width,
-            height: height,
+            width,
+            height,
         };
         const cubeUVRenderTarget = createRenderTarget(params);
         if (!this.#pingPongRenderTarget || this.#pingPongRenderTarget.getWidth() !== width || this.#pingPongRenderTarget.getHeight() !== height) {

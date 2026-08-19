@@ -253,8 +253,8 @@ export class RemGenerator {
 			colorSpace: LinearSRGBColorSpace,
 			depthBuffer: false
 			*/
-			width: width,
-			height: height,
+			width,
+			height,
 		};
 
 		const cubeUVRenderTarget = createRenderTarget(params);

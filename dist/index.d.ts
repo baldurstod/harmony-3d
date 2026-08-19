@@ -658,6 +658,7 @@ export declare class Camera extends Entity {
 
 export declare class CameraControl {
     #private;
+    canvas?: HTMLCanvasElement;
     constructor(camera?: Camera);
     set enabled(enabled: boolean);
     get enabled(): boolean;
@@ -2826,6 +2827,7 @@ declare class Channel {
 
                       export declare interface GraphicKeyboardEventData {
                           keyboardEvent: KeyboardEvent;
+                          canvas: HTMLCanvasElement;
                       }
 
                       export declare interface GraphicMouseEventData {
@@ -2834,6 +2836,7 @@ declare class Channel {
                           width: number;
                           height: number;
                           mouseEvent: MouseEvent;
+                          canvas: HTMLCanvasElement;
                       }
 
                       export declare interface GraphicPickEvent {
@@ -2976,14 +2979,14 @@ declare class Channel {
                           static tick(delta: number, time: Millisecond, speed: number, context: RenderContext): void;
                           static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static resize(width: number, height: number): void;
-                          static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
-                          static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
-                          static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
-                          static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
-                          static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent): void;
-                          static wheel(x: number, y: number, wheelEvent: WheelEvent): void;
-                          static keyDown(keyboardEvent: KeyboardEvent): void;
-                          static keyUp(keyboardEvent: KeyboardEvent): void;
+                          static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
+                          static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
+                          static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
+                          static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
+                          static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
+                          static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement): void;
+                          static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void;
+                          static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void;
                           static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
                           static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
                           static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
@@ -3025,6 +3028,7 @@ declare class Channel {
                           x: number;
                           y: number;
                           wheelEvent: WheelEvent;
+                          canvas: HTMLCanvasElement;
                       }
 
                       export declare class Grid extends Mesh {
@@ -3317,7 +3321,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }

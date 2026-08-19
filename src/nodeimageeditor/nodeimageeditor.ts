@@ -43,7 +43,7 @@ export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, Cus
 
 	render(material: Material, width: number, height: number): void {
 		this.#fullScreenQuadMesh.setMaterial(material);
-		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width: width, height: height });
+		Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true, width, height });
 		// Set the material back to default to free the material
 		this.#fullScreenQuadMesh.setMaterial(this.#material);
 	}

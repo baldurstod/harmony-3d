@@ -299,7 +299,7 @@ export class Source1Vtf {
 			{ texture: texture.texture as GPUTexture },
 			this.#getWebGPUData(data) as BufferSource,
 			{ bytesPerRow: this.#getWebGPUBytesPerRow(width) },
-			{ width: width, height: height },
+			{ width, height },
 		);
 		WebGPUInternal.device.queue.submit([]);
 	}
@@ -425,7 +425,7 @@ export class Source1Vtf {
 				{ texture: texture.texture as GPUTexture, origin: [0, 0, i] },
 				this.#getWebGPUData(data[i]!) as BufferSource,
 				{ bytesPerRow: this.#getWebGPUBytesPerRow(width) },
-				{ width: width, height: height },
+				{ width, height },
 			);
 		}
 		WebGPUInternal.device.queue.submit([]);

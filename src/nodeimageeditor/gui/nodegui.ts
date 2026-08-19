@@ -594,8 +594,8 @@ export class NodeGui {
 			rotation: angle,
 			left: center[0],
 			top: center[1],
-			width: width,
-			height: height
+			width,
+			height,
 		});
 	}
 
