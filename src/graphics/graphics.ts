@@ -307,8 +307,8 @@ class GraphicsClass {
 	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
 	static #mouseClickFunc = (event: MouseEvent) => this.#mouseClick(event);
 	static #mouseDblClickFunc = (event: MouseEvent) => this.#mouseDblClick(event);
-	static #keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event);
-	static #keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event);
+	static #keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event, event.target as HTMLCanvasElement);
+	static #keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event, event.target as HTMLCanvasElement);
 	static #wheelFunc = (event: WheelEvent) => this.#wheel(event);
 	static #touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
 	static #touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
@@ -520,41 +520,41 @@ class GraphicsClass {
 			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
 			GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 		});
-		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event);
+		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static #mouseMove(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event);
+		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static #mouseUp(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event);
+		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static #mouseClick(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
+		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static #mouseDblClick(event: MouseEvent) {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event);
+		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static #wheel(event: WheelEvent) {
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.wheel(x, y, event);
+		GraphicsEvents.wheel(x, y, event, event.target as HTMLCanvasElement);
 		this.#pickedEntity = null;
 		event.preventDefault();
 	}
@@ -612,8 +612,8 @@ class GraphicsClass {
 
 		const internalRenderContext: InternalRenderContext = {
 			renderContext: context,
-			width: width,
-			height: height,
+			width,
+			height,
 		}
 
 		this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
@@ -1387,7 +1387,7 @@ class GraphicsClass {
 
 		try {
 			this.#allowTransfertBitmap = false;
-			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: width, height: height, forceRendering: true });
+			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width, height, forceRendering: true });
 			this._savePicture(filename, type, quality);
 			this.#allowTransfertBitmap = true;
 		} catch (e) {

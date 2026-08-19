@@ -12,6 +12,7 @@ const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
 const tempVec3 = vec3.create();
 //const spherical = new Spherical();
+let focusedCanvas: HTMLCanvasElement;
 
 export class FirstPersonControl extends CameraControl {
 	#enableDamping = false;
@@ -93,6 +94,11 @@ export class FirstPersonControl extends CameraControl {
 	}
 
 	#onMouseDown(event: CustomEvent<GraphicMouseEventData>) {
+		focusedCanvas = event.detail.canvas;
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		if (!this.enabled) {
 			return;
 		}
@@ -124,6 +130,10 @@ export class FirstPersonControl extends CameraControl {
 	}
 
 	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		// In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
 		setTimeout(() => document.exitPointerLock(), 100);
 		const mouseEvent = event.detail.mouseEvent;
@@ -145,6 +155,10 @@ export class FirstPersonControl extends CameraControl {
 	}
 
 	#onMouseMove(event: CustomEvent<GraphicMouseEventData>) {
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		const mouseEvent = event.detail.mouseEvent;
 		if (this.#mouseDragOn) {
 			if (false/*this.htmlElement === document*/) {
@@ -178,6 +192,9 @@ export class FirstPersonControl extends CameraControl {
 		}
 	}
 	#onKeyDown(event: CustomEvent<GraphicKeyboardEventData>) {
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
 		//event.preventDefault();
 
 		switch (event.detail.keyboardEvent.code) {
@@ -237,6 +254,10 @@ export class FirstPersonControl extends CameraControl {
 
 	update(delta = 0) {
 		if (this.enabled === false) {
+			return;
+		}
+
+		if (this.canvas && this.canvas !== focusedCanvas) {
 			return;
 		}
 

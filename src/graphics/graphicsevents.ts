@@ -42,12 +42,14 @@ export interface GraphicMouseEventData {
 	width: number,
 	height: number,
 	mouseEvent: MouseEvent,
+	canvas: HTMLCanvasElement,
 }
 
 export interface GraphicWheelEventData {
 	x: number,
 	y: number,
 	wheelEvent: WheelEvent,
+	canvas: HTMLCanvasElement,
 }
 
 export interface GraphicTouchEventData {
@@ -56,6 +58,7 @@ export interface GraphicTouchEventData {
 
 export interface GraphicKeyboardEventData {
 	keyboardEvent: KeyboardEvent,
+	canvas: HTMLCanvasElement,
 }
 
 export class GraphicsEvents extends StaticEventTarget {
@@ -70,39 +73,39 @@ export class GraphicsEvents extends StaticEventTarget {
 	}
 
 	static resize(width: number, height: number) {
-		this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+		this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width, height } }));
 	}
 
-	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
+	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x, y, width, height, mouseEvent, canvas } }));
 	}
 
-	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
+	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x, y, width, height, mouseEvent, canvas } }));
 	}
 
-	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
+	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x, y, width, height, mouseEvent, canvas } }));
 	}
 
-	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
+	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
 	}
 
-	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x: x, y: y, width: width, height: height, mouseEvent: mouseEvent } }));
+	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
 	}
 
-	static wheel(x: number, y: number, wheelEvent: WheelEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x: x, y: y, wheelEvent: wheelEvent } }));
+	static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x, y, wheelEvent: wheelEvent, canvas } }));
 	}
 
-	static keyDown(keyboardEvent: KeyboardEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+	static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent, canvas } }));
 	}
 
-	static keyUp(keyboardEvent: KeyboardEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+	static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent, canvas } }));
 	}
 
 	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {

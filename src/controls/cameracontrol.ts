@@ -4,6 +4,7 @@ import { Graphics } from '../graphics/graphics2';
 export class CameraControl {
 	#camera?: Camera;
 	#enabled = true;
+	canvas?: HTMLCanvasElement;
 
 	constructor(camera?: Camera) {
 		this.#camera = camera;
