@@ -95,6 +95,7 @@ const Lines = [
 ]
 
 export class CameraFrustum extends Mesh {
+	isCameraFrustum = true as const;
 	#camera: Camera | null = null;
 	#vertexPositionAttribute!: Float32BufferAttribute;
 

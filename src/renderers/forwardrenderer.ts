@@ -11,6 +11,7 @@ import { renderParticles } from '../graphics/render';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
 import { Material } from '../materials/material';
+import { CameraFrustum } from '../objects/export';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
 import { Source1ParticleSystem } from '../sourceengine/export';
@@ -127,6 +128,11 @@ export class ForwardRenderer implements Renderer {
 			}
 
 			if ((currentObject as Source1ParticleSystem).isParticleSystem && !renderParticles) {
+				currentObject = objectStack.shift();
+				continue;
+			}
+
+			if ((currentObject as CameraFrustum).isCameraFrustum && currentObject.parent === camera) {
 				currentObject = objectStack.shift();
 				continue;
 			}

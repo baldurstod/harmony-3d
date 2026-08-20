@@ -707,7 +707,6 @@ function initEntitySubmenu(): void {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
-								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
 								const instance = await Source1ModelManager.createInstance(repository, modelName, true);
 								if (!instance) {
@@ -743,7 +742,6 @@ function initEntitySubmenu(): void {
 							show(new SceneExplorer().htmlFileSelector);
 							// eslint-disable-next-line @typescript-eslint/no-misused-promises
 							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
-								console.error(modelName);
 								const instance = await Source2ModelManager.createInstance(repository, modelName, true);
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
 								/*let seq = instance.sourceModel.mdl.getSequenceById(0);

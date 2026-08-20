@@ -11288,6 +11288,7 @@ const Lines = [
     18, 22,*/
 ];
 class CameraFrustum extends Mesh {
+    isCameraFrustum = true;
     #camera = null;
     #vertexPositionAttribute;
     constructor(params = {}) {
@@ -17538,6 +17539,10 @@ class ForwardRenderer {
                 currentObject = objectStack.shift();
                 continue;
             }
+            if (currentObject.isCameraFrustum && currentObject.parent === camera) {
+                currentObject = objectStack.shift();
+                continue;
+            }
             //objectStack.push(currentObject);
             for (const child of currentObject.children) {
                 {
@@ -17970,6 +17975,10 @@ class WebGPURenderer {
                 continue;
             }
             if (currentObject.isParticleSystem && !renderParticles) {
+                currentObject = objectStack.shift();
+                continue;
+            }
+            if (currentObject.isCameraFrustum && currentObject.parent === camera) {
                 currentObject = objectStack.shift();
                 continue;
             }
@@ -77340,7 +77349,6 @@ function initEntitySubmenu() {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
                         Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
-                            console.error(modelName);
                             //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
                             const instance = await Source1ModelManager.createInstance(repository, modelName, true);
                             if (!instance) {
@@ -77375,7 +77383,6 @@ function initEntitySubmenu() {
                         show(new SceneExplorer().htmlFileSelector);
                         // eslint-disable-next-line @typescript-eslint/no-misused-promises
                         Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
-                            console.error(modelName);
                             const instance = await Source2ModelManager.createInstance(repository, modelName, true);
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
                             /*let seq = instance.sourceModel.mdl.getSequenceById(0);

@@ -28,6 +28,7 @@ import { getDefines } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { Binding, WgslModule } from './types';
+import { CameraFrustum } from '../objects/export';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -137,6 +138,11 @@ export class WebGPURenderer implements Renderer {
 			}
 
 			if ((currentObject as Source1ParticleSystem).isParticleSystem && !renderParticles) {
+				currentObject = objectStack.shift();
+				continue;
+			}
+
+			if ((currentObject as CameraFrustum).isCameraFrustum && currentObject.parent === camera) {
 				currentObject = objectStack.shift();
 				continue;
 			}
