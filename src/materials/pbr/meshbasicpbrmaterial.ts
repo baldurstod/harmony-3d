@@ -28,7 +28,7 @@ export class MeshBasicPbrMaterial extends Material {
 		this.setParameters(params);
 	}
 
-	setParameters(params: MeshBasicPbrMaterialParams = {}) {
+	setParameters(params: MeshBasicPbrMaterialParams = {}): void {
 		this.setColor(params.color);
 		this.setMetalness(params.metalness);
 		this.setRoughness(params.roughness);
@@ -38,31 +38,31 @@ export class MeshBasicPbrMaterial extends Material {
 		this.setRoughnessTexture(params.roughnessTexture);
 	}
 
-	setColor(color: vec4/*TODO: change to Color*/ | undefined) {
+	setColor(color: vec4/*TODO: change to Color*/ | undefined): void {
 		this.setParameterValue('color', color);
 	}
 
-	setMetalness(metalness: number | undefined) {
+	setMetalness(metalness: number | undefined): void {
 		this.setParameterValue('metalness', metalness);
 	}
 
-	setRoughness(roughness: number | undefined) {
+	setRoughness(roughness: number | undefined): void {
 		this.setParameterValue('roughness', roughness);
 	}
 
-	setColorTexture(colorTexture: Texture | undefined) {
+	setColorTexture(colorTexture: Texture | undefined): void {
 		this.setParameterValue('color_texture', colorTexture);
 	}
 
-	setNormalTexture(normalTexture: Texture | undefined) {
+	setNormalTexture(normalTexture: Texture | undefined): void {
 		this.setParameterValue('normal_texture', normalTexture);
 	}
 
-	setMetalnessTexture(metalnessTexture: Texture | undefined) {
+	setMetalnessTexture(metalnessTexture: Texture | undefined): void {
 		this.setParameterValue('metalness_texture', metalnessTexture);
 	}
 
-	setRoughnessTexture(roughnessTexture: Texture | undefined) {
+	setRoughnessTexture(roughnessTexture: Texture | undefined): void {
 		this.setParameterValue('roughness_texture', roughnessTexture);
 	}
 
@@ -70,16 +70,17 @@ export class MeshBasicPbrMaterial extends Material {
 		return 'meshbasicpbr';
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(): Promise<MeshBasicPbrMaterial> {
 		return new MeshBasicPbrMaterial();
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 	}
 

@@ -40,7 +40,7 @@ export class MateriaParameter {
 		this.setValue(value);
 	}
 
-	setValue(value: any) {
+	setValue(value: any): void {
 		if (!this.#checkValue(value)) {
 			console.warn('Material parameter value has an incorrect type');
 		}
@@ -65,7 +65,7 @@ export class MateriaParameter {
 			case MateriaParameterType.Texture:
 				return value.isTexture;
 			default:
-				throw 'unknown type: ' + this.#type;
+				throw new Error('unknown type: ' + this.#type);
 				break;
 		}
 	}

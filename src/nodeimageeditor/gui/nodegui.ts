@@ -1,6 +1,6 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { contentCopySVG, dragPanSVG, panZoomSVG, resetWrenchSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
-import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
+import { addRemoveClass, createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
 import { fileToImage, setTimeoutPromise } from 'harmony-utils';
 import { Graphics } from '../../graphics/graphics2';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
@@ -141,7 +141,7 @@ export class NodeGui {
 
 	set expanded(expanded) {
 		this.#expanded = expanded;
-		this.#html.classList[!expanded ? 'add' : 'remove']('collapsed');
+		addRemoveClass(this.#html, 'collapsed', !expanded);
 	}
 
 	get expanded(): boolean {

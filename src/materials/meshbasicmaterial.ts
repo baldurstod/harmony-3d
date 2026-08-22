@@ -45,17 +45,18 @@ export class MeshBasicMaterial extends Material {
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.skinning = this.skinning;
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(): Promise<MeshBasicMaterial> {
 		return new MeshBasicMaterial();
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.skinning = json.skinning as boolean;
 	}

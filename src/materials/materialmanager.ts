@@ -4,22 +4,22 @@ import { Material } from './material';
 export class MaterialManager {
 	static #materials = new Map<string, { materialClass: typeof Material, manager: any/*TODO: better type*/ }>();
 
-	static registerMaterial(materialName: string, materialClass: typeof Material, manager: any/*TODO: better type*/) {
+	static registerMaterial(materialName: string, materialClass: typeof Material, manager: any/*TODO: better type*/): void {
 		if (TESTING) {
 			if (!materialName) {
-				throw 'Missing material name';
+				throw new Error('Missing material name');
 			}
 			if (!materialClass) {
-				throw 'Missing material class';
+				throw new Error('Missing material class');
 			}
 			if (manager) {
-				throw 'Remove this parameter';
+				throw new Error('Remove this parameter');
 			}
 		}
 		this.#materials.set(materialName, { materialClass: materialClass, manager: manager });
 	}
 
-	static getMaterial(materialName: string, callback: (material: Material) => void) {
+	static getMaterial(materialName: string, callback: (material: Material) => void): void {
 		const material = this.#materials.get(materialName);
 		if (material) {
 			const manager = material.manager;
@@ -32,7 +32,7 @@ export class MaterialManager {
 		}
 	}
 
-	static getMaterialList() {
+	static getMaterialList(): MapIterator<string> {
 		return this.#materials.keys();
 	}
 }

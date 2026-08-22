@@ -39,6 +39,7 @@ export class ShaderMaterial extends Material {
 		return this.#shaderSource;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	override getRaytracingMaterial(index: number): null {
 		return null;
 	}

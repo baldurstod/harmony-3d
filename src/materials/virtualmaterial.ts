@@ -30,7 +30,7 @@ export class VirtualMaterial extends Material {
 		});
 	}
 
-	removeDefine(define: string) {
+	removeDefine(define: string): void {
 		this.entity?.forEach((ent: Entity) => {
 			if ((ent as unknown as HasMaterial).hasMaterial) {
 				(ent as unknown as HasMaterial).getMaterial().removeDefine(define);
