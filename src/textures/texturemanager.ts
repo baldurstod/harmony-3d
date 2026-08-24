@@ -108,6 +108,7 @@ export class TextureManager {
 	}
 
 	static async createTextureFromImage(textureParams: CreateImageTextureParams): Promise<Texture> {
+		await Graphics.ready;
 		textureParams.webgpuDescriptor.size = { width: textureParams.image.naturalWidth, height: textureParams.image.naturalHeight }//[image.naturalWidth, image.naturalHeight, 1];
 		const texture = this.createTexture(textureParams as CreateTextureParams);
 		await fillTextureWithImage(texture, textureParams.image);
@@ -115,6 +116,7 @@ export class TextureManager {
 	}
 
 	static async createTextureFromCanvas(textureParams: CreateCanvasTextureParams): Promise<Texture> {
+		await Graphics.ready;
 		textureParams.webgpuDescriptor.size = { width: textureParams.canvas.width, height: textureParams.canvas.height };
 		const texture = this.createTexture(textureParams as CreateTextureParams);
 		await fillTextureWithImage(texture, textureParams.canvas);
