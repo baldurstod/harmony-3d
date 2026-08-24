@@ -412,6 +412,9 @@ function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToS
 		case CDmxAttributeType.String:
 			line += ` "string" "${attribute.value as string}"`;
 			break;
+		case CDmxAttributeType.Time:
+			line += ` "float" ${attribute.value as number}`;
+			break;
 		case CDmxAttributeType.Color:
 			line += ` "color" "${(attribute.value as ParticleColor).r * 255} ${(attribute.value as ParticleColor).g * 255} ${(attribute.value as ParticleColor).b * 255} ${(attribute.value as ParticleColor).a * 255}"`;
 			break;
