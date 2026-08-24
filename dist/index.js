@@ -1,7 +1,7 @@
 import { vec3, quat, vec4, vec2, mat4, mat3 } from 'gl-matrix';
 import { WgslPreprocessor } from 'amandine';
 import { errorOnce, MyEventTarget, Map2, errorMap, StaticEventTarget, BugReporter, Color as Color$1, once as once$2, joinPath, infoSet, errorSet, setTimeoutPromise, fileToImage, FpsCounter, Queue } from 'harmony-utils';
-import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, createElementNS, svgNamespace, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
+import { I18n, defineElement, display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, createElementNS, svgNamespace, addRemoveClass, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, toggle, defineHarmonyAccordion, defineHarmonyMenu, shadowRootStyle } from 'harmony-ui';
 import { ShortcutHandler, saveFile, PersistentStorage, loadScript } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { WgslReflect } from 'wgsl_reflect';
@@ -1665,7 +1665,7 @@ class MateriaParameter {
             case MateriaParameterType.Texture:
                 return value.isTexture;
             default:
-                throw 'unknown type: ' + this.#type;
+                throw new Error('unknown type: ' + this.#type);
         }
     }
 }
@@ -2261,6 +2261,7 @@ class ShaderMaterial extends Material {
     getShaderSource() {
         return this.#shaderSource;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getRaytracingMaterial(index) {
         return null;
     }
@@ -2365,7 +2366,8 @@ class MeshBasicMaterial extends Material {
         json.skinning = this.skinning;
         return json;
     }
-    static async constructFromJSON(json) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON() {
         return new MeshBasicMaterial();
     }
     fromJSON(json) {
@@ -8197,12 +8199,14 @@ class TextureManager {
         return texture;
     }
     static async createTextureFromImage(textureParams) {
+        await Graphics.ready;
         textureParams.webgpuDescriptor.size = { width: textureParams.image.naturalWidth, height: textureParams.image.naturalHeight }; //[image.naturalWidth, image.naturalHeight, 1];
         const texture = this.createTexture(textureParams);
         await fillTextureWithImage(texture, textureParams.image);
         return texture;
     }
     static async createTextureFromCanvas(textureParams) {
+        await Graphics.ready;
         textureParams.webgpuDescriptor.size = { width: textureParams.canvas.width, height: textureParams.canvas.height };
         const texture = this.createTexture(textureParams);
         await fillTextureWithImage(texture, textureParams.canvas);
@@ -11298,6 +11302,9 @@ class CameraFrustum extends Mesh {
         this.renderMode = GL_LINES;
         this.#createVertices();
         this.castShadow = false;
+        if (this.parent) {
+            this.parentChanged(this.parent);
+        }
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
     }
     #createVertices() {
@@ -11341,6 +11348,10 @@ class CameraFrustum extends Mesh {
         this.#vertexPositionAttribute.dirty = true;
     }
     parentChanged(parent) {
+        if (!this.isCameraFrustum) {
+            // Prevents this function from being called during super constructor
+            return;
+        }
         if (parent?.is('Camera')) {
             this.#camera = parent;
         }
@@ -20386,7 +20397,8 @@ class MeshBasicPbrMaterial extends Material {
         const json = super.toJSON();
         return json;
     }
-    static async constructFromJSON(json) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON() {
         return new MeshBasicPbrMaterial();
     }
     fromJSON(json) {
@@ -71753,7 +71765,7 @@ class NodeGui {
     }
     set expanded(expanded) {
         this.#expanded = expanded;
-        this.#html.classList[!expanded ? 'add' : 'remove']('collapsed');
+        addRemoveClass(this.#html, 'collapsed', !expanded);
     }
     get expanded() {
         return this.#expanded;

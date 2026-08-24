@@ -671,7 +671,7 @@ export declare class CameraControl {
 
 export declare class CameraFrustum extends Mesh {
     #private;
-    isCameraFrustum: true;
+    readonly isCameraFrustum: true;
     constructor(params?: MeshParameters);
     update(): void;
     parentChanged(parent: Entity): void;
@@ -3327,7 +3327,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -4476,8 +4476,8 @@ declare class Channel {
                           morphTargets: boolean;
                           getShaderSource(): string;
                           getRaytracingMaterial(index: number): RaytracingMaterial;
-                          toJSON(): any;
-                          static constructFromJSON(json: JSONObject): Promise<MeshBasicMaterial>;
+                          toJSON(): JSONObject;
+                          static constructFromJSON(): Promise<MeshBasicMaterial>;
                           fromJSON(json: JSONObject): void;
                           static getEntityName(): string;
                       }
@@ -4493,8 +4493,8 @@ declare class Channel {
                           setMetalnessTexture(metalnessTexture: Texture | undefined): void;
                           setRoughnessTexture(roughnessTexture: Texture | undefined): void;
                           getShaderSource(): string;
-                          toJSON(): any;
-                          static constructFromJSON(json: JSONObject): Promise<MeshBasicPbrMaterial>;
+                          toJSON(): JSONObject;
+                          static constructFromJSON(): Promise<MeshBasicPbrMaterial>;
                           fromJSON(json: JSONObject): void;
                           static getEntityName(): string;
                       }
@@ -6231,7 +6231,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

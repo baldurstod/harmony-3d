@@ -95,7 +95,7 @@ const Lines = [
 ]
 
 export class CameraFrustum extends Mesh {
-	isCameraFrustum = true as const;
+	readonly isCameraFrustum = true as const;
 	#camera: Camera | null = null;
 	#vertexPositionAttribute!: Float32BufferAttribute;
 
@@ -106,6 +106,10 @@ export class CameraFrustum extends Mesh {
 		this.renderMode = GL_LINES;
 		this.#createVertices();
 		this.castShadow = false;
+
+		if (this.parent) {
+			this.parentChanged(this.parent);
+		}
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
 	}
@@ -157,6 +161,10 @@ export class CameraFrustum extends Mesh {
 	}
 
 	parentChanged(parent: Entity): void {
+		if (!this.isCameraFrustum) {
+			// Prevents this function from being called during super constructor
+			return;
+		}
 		if (parent?.is('Camera')) {
 			this.#camera = parent as Camera;
 		} else {
