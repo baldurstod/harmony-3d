@@ -14,7 +14,6 @@ export * from './enums/export';
 export * from './exporters/export';
 export * from './geometry/export';
 export * from './graphics/export';
-export * from './helpers/export';
 export * from './importers/export';
 export * from './interfaces/export';
 export * from './lights/export';
