@@ -1,24 +1,24 @@
 import { Millisecond } from 'harmony-types';
-import { StaticEventTarget } from 'harmony-utils';
 import { Entity } from '../entities/entity';
 import { RenderContext } from '../interfaces/rendercontext';
 
-export enum GraphicsEvent {
-	MouseMove = 'mousemove',
-	MouseDown = 'mousedown',
-	MouseUp = 'mouseup',
-	MouseClick = 'mouseclick',
-	MouseDblClick = 'mousedblclick',
-	Wheel = 'wheel',
-	Resize = 'resize',
-	Pick = 'pick',
-	Tick = 'tick',
-	KeyDown = 'keydown',
-	KeyUp = 'keyup',
-	TouchStart = 'touchstart',
-	TouchMove = 'touchmove',
-	TouchCancel = 'touchcancel',
-}
+export type GraphicsEvent =
+	'mousemove'
+	| 'mousedown'
+	| 'mouseup'
+	| 'mouseclick'
+	| 'mousedblclick'
+	| 'wheel'
+	| 'resize'
+	| 'pick'
+	| 'tick'
+	| 'keydown'
+	| 'keyup'
+	| 'touchstart'
+	| 'touchmove'
+	| 'touchcancel'
+	;
+
 
 export interface GraphicTickEvent {
 	delta: number,
@@ -34,6 +34,11 @@ export interface GraphicPickEvent {
 	height: number,
 	entity: Entity | null,
 	mouseEvent: MouseEvent,
+}
+
+export interface GraphicResizeEvent {
+	width: number,
+	height: number,
 }
 
 export interface GraphicMouseEventData {
@@ -61,62 +66,110 @@ export interface GraphicKeyboardEventData {
 	canvas: HTMLCanvasElement,
 }
 
-export class GraphicsEvents extends StaticEventTarget {
-	static readonly isGraphicsEvents: true = true;
+// Same as CustomEventInit with required detail
+interface GraphicsEventInit<T = any> extends EventInit {
+	detail: T;
+}
+
+export class GraphicsEvents {
+	static readonly isGraphicsEvents = true as const;
+	static readonly #eventTarget = new EventTarget();
 
 	static tick(delta: number, time: Millisecond, speed: number, context: RenderContext) {
-		this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta, time, speed, context } }));
+		this.dispatchEvent('tick', { detail: { delta, time, speed, context } });
 	}
 
 	static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicPickEvent>(GraphicsEvent.Pick, { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } }));
+		this.dispatchEvent('pick', { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } });
 	}
 
 	static resize(width: number, height: number) {
-		this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width, height } }));
+		this.dispatchEvent('resize', { detail: { width, height } });
 	}
 
 	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x, y, width, height, mouseEvent, canvas } }));
+		this.dispatchEvent('mousemove', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
 	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x, y, width, height, mouseEvent, canvas } }));
+		this.dispatchEvent('mousedown', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
 	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x, y, width, height, mouseEvent, canvas } }));
+		this.dispatchEvent('mouseup', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
 	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
+		this.dispatchEvent('mouseclick', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
 	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDblClick, { detail: { x, y, width, height, mouseEvent, canvas } }));
+		this.dispatchEvent('mousedblclick', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
 	static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x, y, wheelEvent: wheelEvent, canvas } }));
+		this.dispatchEvent('wheel', { detail: { x, y, wheelEvent: wheelEvent, canvas } });
 	}
 
 	static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent, canvas } }));
+		this.dispatchEvent('keydown', { detail: { keyboardEvent, canvas } });
 	}
 
 	static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
-		this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent, canvas } }));
+		this.dispatchEvent('keyup', { detail: { keyboardEvent, canvas } });
 	}
 
 	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchStart, { detail: { touchEvent: touchEvent } }));
+		this.dispatchEvent('touchstart', { detail: { touchEvent } });
 	}
 
 	static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchMove, { detail: { touchEvent: touchEvent } }));
+		this.dispatchEvent('touchmove', { detail: { touchEvent } });
 	}
 
 	static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchCancel, { detail: { touchEvent: touchEvent } }));
+		this.dispatchEvent('touchcancel', { detail: { touchEvent } });
+	}
+
+	static addEventListener(type: 'tick', callback: (evt: CustomEvent<GraphicTickEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'pick', callback: (evt: CustomEvent<GraphicPickEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'resize', callback: (evt: CustomEvent<GraphicResizeEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'mousemove', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'mousedown', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'mouseup', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'mouseclick', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'mousedblclick', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'wheel', callback: (evt: CustomEvent<GraphicWheelEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'keydown', callback: (evt: CustomEvent<GraphicKeyboardEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'keyup', callback: (evt: CustomEvent<GraphicKeyboardEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'touchstart', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'touchmove', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'touchcancel', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+
+	static addEventListener(type: GraphicsEvent, callback: (evt: CustomEvent) => void, options?: AddEventListenerOptions | boolean): void {
+		this.#eventTarget.addEventListener(type, callback as (evt: Event) => void, options);
+	}
+
+	static dispatchEvent(type: 'tick', options: GraphicsEventInit<GraphicTickEvent>): boolean;
+	static dispatchEvent(type: 'pick', options: GraphicsEventInit<GraphicPickEvent>): boolean;
+	static dispatchEvent(type: 'resize', options: GraphicsEventInit<GraphicResizeEvent>): boolean;
+	static dispatchEvent(type: 'mousemove', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+	static dispatchEvent(type: 'mousedown', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+	static dispatchEvent(type: 'mouseup', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+	static dispatchEvent(type: 'mouseclick', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+	static dispatchEvent(type: 'mousedblclick', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+	static dispatchEvent(type: 'wheel', options: GraphicsEventInit<GraphicWheelEventData>): boolean;
+	static dispatchEvent(type: 'keydown', options: GraphicsEventInit<GraphicKeyboardEventData>): boolean;
+	static dispatchEvent(type: 'keyup', options: GraphicsEventInit<GraphicKeyboardEventData>): boolean;
+	static dispatchEvent(type: 'touchstart', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+	static dispatchEvent(type: 'touchmove', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+	static dispatchEvent(type: 'touchcancel', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+
+	static dispatchEvent<T>(type: GraphicsEvent, options?: CustomEventInit<T>): boolean {
+		return this.#eventTarget.dispatchEvent(new CustomEvent<T>(type, options));
+	}
+
+	static removeEventListener(type: GraphicsEvent, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void {
+		this.#eventTarget.removeEventListener(type, callback, options);
 	}
 }

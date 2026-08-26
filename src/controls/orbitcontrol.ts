@@ -928,20 +928,20 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#setupEventsListeners() {
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mousedown', (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mousemove', (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mouseup', (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Wheel, (event: Event) => this.#onMouseWheel(event as CustomEvent<GraphicWheelEventData>));
+		GraphicsEvents.addEventListener('wheel', (event: Event) => this.#onMouseWheel(event as CustomEvent<GraphicWheelEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchStart, (event: Event) => this.#onTouchStart(event as CustomEvent<GraphicTouchEventData>));
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchMove, (event: Event) => this.#onTouchMove(event as CustomEvent<GraphicTouchEventData>));
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchCancel, (event: Event) => this.#onTouchCancel(event as CustomEvent<GraphicTouchEventData>));
+		GraphicsEvents.addEventListener('touchstart', (event: Event) => this.#onTouchStart(event as CustomEvent<GraphicTouchEventData>));
+		GraphicsEvents.addEventListener('touchmove', (event: Event) => this.#onTouchMove(event as CustomEvent<GraphicTouchEventData>));
+		GraphicsEvents.addEventListener('touchcancel', (event: Event) => this.#onTouchCancel(event as CustomEvent<GraphicTouchEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: Event) => this.#handleKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: Event) => this.#handleKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
+		GraphicsEvents.addEventListener('keydown', (event: Event) => this.#handleKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
+		GraphicsEvents.addEventListener('keyup', (event: Event) => this.#handleKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.update((event as CustomEvent<GraphicTickEvent>).detail.delta));
+		GraphicsEvents.addEventListener('tick', (event: Event) => this.update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 		// make sure element can receive keys.
 
 		/*if(this.htmlElement.tabIndex === - 1) {

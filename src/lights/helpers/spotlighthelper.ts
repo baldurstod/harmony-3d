@@ -29,7 +29,7 @@ export class SpotLightHelper extends Mesh {
 		this.material.setMeshColor();
 		this.material.setDefine('ALWAYS_ON_TOP');
 		this.castShadow = false;
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, event => this.update());
+		GraphicsEvents.addEventListener('tick', event => this.update());
 	}
 
 	#createVertices() {

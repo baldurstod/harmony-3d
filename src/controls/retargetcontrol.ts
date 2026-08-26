@@ -21,7 +21,7 @@ export class RetargetControl extends Entity {
 
 	constructor(params: RetargetControlParameters = {}) {
 		super(params);
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.#update());
+		GraphicsEvents.addEventListener('tick', (event: Event) => this.#update());
 
 		this.#source = params.source;
 		this.enabled = params.enabled ?? true;

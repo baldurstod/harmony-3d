@@ -144,7 +144,7 @@ export class SceneExplorer {
 		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent<EntityObserverPropertyChangedEvent>).detail));
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event: Event) => {
+		GraphicsEvents.addEventListener('pick', (event: Event) => {
 			if (Graphics.dragging || this.#skeletonHelper.isVisible()) {
 				return;
 			}

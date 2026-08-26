@@ -171,7 +171,7 @@ export class SkeletonHelper extends Entity {
 
 	#initListeners(): void {
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
+		GraphicsEvents.addEventListener('tick', () => {
 			if (!this.isVisible()) {
 				return;
 			}
@@ -179,10 +179,10 @@ export class SkeletonHelper extends Entity {
 			this.#update();
 		});
 
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
+		GraphicsEvents.addEventListener('mousemove', (event) => {
 			this.#mouseMoved(event as CustomEvent<GraphicMouseEventData>);
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
+		GraphicsEvents.addEventListener('mouseup', (event) => {
 			this.#mouseUp(event as CustomEvent<GraphicMouseEventData>);
 		});
 	}

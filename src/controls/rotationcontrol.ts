@@ -19,7 +19,7 @@ export class RotationControl extends Entity {
 
 	constructor(params: RotationControlParameters = {}) {
 		super(params);
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
+		GraphicsEvents.addEventListener('tick', (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 
 		if (params.axis) {
 			this.setAxis(params.axis);

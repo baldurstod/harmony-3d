@@ -15,7 +15,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	visible?: boolean;
 
 	constructor() {
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+		GraphicsEvents.addEventListener('tick', (event: Event) => {
 			this.stepSystems((event as CustomEvent<GraphicTickEvent>).detail.delta);//TODOv3: improve this
 		});
 	}

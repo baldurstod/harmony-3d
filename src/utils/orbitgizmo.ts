@@ -47,7 +47,7 @@ export class OrbitGizmo {
 			});
 		}
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#update());
+		GraphicsEvents.addEventListener('tick', () => this.#update());
 	}
 
 	#update(): void {

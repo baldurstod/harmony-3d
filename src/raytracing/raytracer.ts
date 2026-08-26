@@ -105,7 +105,7 @@ export class Raytracer {
 	#scene?: Scene;
 
 	constructor() {
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, this.#tick);
+		GraphicsEvents.addEventListener('tick', this.#tick);
 		this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm'/*WebGPUInternal.format*/);
 	}
 
@@ -396,7 +396,7 @@ export class Raytracer {
 	}
 
 	dispose(): void {
-		GraphicsEvents.removeEventListener(GraphicsEvent.Tick, this.#tick);
+		GraphicsEvents.removeEventListener('tick', this.#tick);
 	}
 }
 

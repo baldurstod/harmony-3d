@@ -481,16 +481,16 @@ export class FirstPersonControl extends CameraControl {
 	#setupEventsListeners() {
 		//this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event));
 		//this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mousemove', (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
 		//this.htmlElement.addEventListener('mousedown', event => this.#onMouseDown(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mousedown', (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
 		//this.htmlElement.addEventListener('mouseup', event => this.#onMouseUp(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener('mouseup', (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
 
 		//this.htmlElement.addEventListener('keydown', event => this.#onKeyDown(event), false);
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: Event) => this.#onKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
+		GraphicsEvents.addEventListener('keydown', (event: Event) => this.#onKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
 		//this.htmlElement.addEventListener('keyup', event => this.#onKeyUp(event), false);
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: Event) => this.#onKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
+		GraphicsEvents.addEventListener('keyup', (event: Event) => this.#onKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
 	}
 
 	setupCamera() {

@@ -16,7 +16,7 @@ export class ChoreographiesManager {
 			this.#sceneImage = new Promise<Choreographies>(resolve => {
 				const choreographies = new Choreographies();
 				choreographies.loadFile(repositoryName, fileName).then(() => resolve(choreographies));
-				GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+				GraphicsEvents.addEventListener('tick', (event: Event) => {
 					if ((event as CustomEvent<GraphicTickEvent>).detail.delta) {
 						this.step((event as CustomEvent<GraphicTickEvent>).detail.delta);
 					}

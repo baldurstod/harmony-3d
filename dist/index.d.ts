@@ -1246,20 +1246,6 @@ declare class Channel {
                  applyConstraint(particle: Source1Particle): boolean;
              }
 
-             export declare const ContextObserver: ContextObserverClass;
-
-             declare class ContextObserverClass {
-                 #private;
-                 constructor();
-                 handleEvent(event: Event): void;
-                 observe(subject: ContextObserverSubject, dependent: ContextObserverTarget): void;
-                 unobserve(subject: ContextObserverSubject, dependent: ContextObserverTarget): void;
-             }
-
-             declare type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
-
-             declare type ContextObserverTarget = OrbitControl;
-
              /** Context type for the canvas. */
              export declare enum ContextType {
                  /** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
@@ -2854,6 +2840,11 @@ declare class Channel {
                           mouseEvent: MouseEvent;
                       }
 
+                      export declare interface GraphicResizeEvent {
+                          width: number;
+                          height: number;
+                      }
+
                       export declare let Graphics: GraphicsType;
 
                       declare class GraphicsClass {
@@ -2963,24 +2954,14 @@ declare class Channel {
                           static getForwardRenderer(): Renderer;
                       }
 
-                      export declare enum GraphicsEvent {
-                          MouseMove = "mousemove",
-                          MouseDown = "mousedown",
-                          MouseUp = "mouseup",
-                          MouseClick = "mouseclick",
-                          MouseDblClick = "mousedblclick",
-                          Wheel = "wheel",
-                          Resize = "resize",
-                          Pick = "pick",
-                          Tick = "tick",
-                          KeyDown = "keydown",
-                          KeyUp = "keyup",
-                          TouchStart = "touchstart",
-                          TouchMove = "touchmove",
-                          TouchCancel = "touchcancel"
+                      export declare type GraphicsEvent = 'mousemove' | 'mousedown' | 'mouseup' | 'mouseclick' | 'mousedblclick' | 'wheel' | 'resize' | 'pick' | 'tick' | 'keydown' | 'keyup' | 'touchstart' | 'touchmove' | 'touchcancel';
+
+                      declare interface GraphicsEventInit<T = any> extends EventInit {
+                          detail: T;
                       }
 
-                      export declare class GraphicsEvents extends StaticEventTarget {
+                      export declare class GraphicsEvents {
+                          #private;
                           static readonly isGraphicsEvents: true;
                           static tick(delta: number, time: Millisecond, speed: number, context: RenderContext): void;
                           static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
@@ -2996,6 +2977,35 @@ declare class Channel {
                           static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
                           static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
                           static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+                          static addEventListener(type: 'tick', callback: (evt: CustomEvent<GraphicTickEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'pick', callback: (evt: CustomEvent<GraphicPickEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'resize', callback: (evt: CustomEvent<GraphicResizeEvent>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'mousemove', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'mousedown', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'mouseup', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'mouseclick', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'mousedblclick', callback: (evt: CustomEvent<GraphicMouseEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'wheel', callback: (evt: CustomEvent<GraphicWheelEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'keydown', callback: (evt: CustomEvent<GraphicKeyboardEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'keyup', callback: (evt: CustomEvent<GraphicKeyboardEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'touchstart', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'touchmove', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'touchcancel', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static dispatchEvent(type: 'tick', options: GraphicsEventInit<GraphicTickEvent>): boolean;
+                          static dispatchEvent(type: 'pick', options: GraphicsEventInit<GraphicPickEvent>): boolean;
+                          static dispatchEvent(type: 'resize', options: GraphicsEventInit<GraphicResizeEvent>): boolean;
+                          static dispatchEvent(type: 'mousemove', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+                          static dispatchEvent(type: 'mousedown', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+                          static dispatchEvent(type: 'mouseup', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+                          static dispatchEvent(type: 'mouseclick', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+                          static dispatchEvent(type: 'mousedblclick', options: GraphicsEventInit<GraphicMouseEventData>): boolean;
+                          static dispatchEvent(type: 'wheel', options: GraphicsEventInit<GraphicWheelEventData>): boolean;
+                          static dispatchEvent(type: 'keydown', options: GraphicsEventInit<GraphicKeyboardEventData>): boolean;
+                          static dispatchEvent(type: 'keyup', options: GraphicsEventInit<GraphicKeyboardEventData>): boolean;
+                          static dispatchEvent(type: 'touchstart', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+                          static dispatchEvent(type: 'touchmove', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+                          static dispatchEvent(type: 'touchcancel', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+                          static removeEventListener(type: GraphicsEvent, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
                       }
 
                       export declare interface GraphicsInitOptions {
@@ -3327,7 +3337,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -6231,7 +6241,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
+                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

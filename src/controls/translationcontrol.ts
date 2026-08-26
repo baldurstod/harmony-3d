@@ -46,7 +46,7 @@ export class TranslationControl extends Entity {
 		this.#amount = params.amount ?? 0;
 		this.#mode = params.mode ?? TranslationMode.Bounce;
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
+		GraphicsEvents.addEventListener('tick', (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 	}
 
 	#update(delta: number): void {

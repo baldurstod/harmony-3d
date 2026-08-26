@@ -111,7 +111,7 @@ export class CameraFrustum extends Mesh {
 			this.parentChanged(this.parent);
 		}
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
+		GraphicsEvents.addEventListener('tick', () => this.update());
 	}
 
 	#createVertices(): void {

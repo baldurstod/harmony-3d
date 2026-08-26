@@ -159,9 +159,9 @@ export class Manipulator extends Entity {
 
 		this.forEach((entity) => entity.setupPickingId());
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize((this.root as Scene)?.activeCamera));
+		GraphicsEvents.addEventListener('tick', () => this.#resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Pick, (event: Event) => {
+		GraphicsEvents.addEventListener('pick', (event: Event) => {
 			const detail = (event as CustomEvent<GraphicPickEvent>).detail;
 			if (this.#entityAxis.has(detail.entity!)) {
 				this.#axis = this.#entityAxis.get(detail.entity!)!;
@@ -180,7 +180,7 @@ export class Manipulator extends Entity {
 				this.#setAxisSelected(true);
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => {
+		GraphicsEvents.addEventListener('mousemove', (event: Event) => {
 			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
 			if (this.#axis == ManipulatorAxis.None) {
 				return;
@@ -198,7 +198,7 @@ export class Manipulator extends Entity {
 					break;
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, () => {
+		GraphicsEvents.addEventListener('mouseup', () => {
 			Graphics.dragging = false;
 			this.#setAxisSelected(false);
 			this.#axis = ManipulatorAxis.None;
