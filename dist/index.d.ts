@@ -3337,7 +3337,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -5121,7 +5121,7 @@ declare class Channel {
                           newParent: Entity | null;
                       }
 
-                      declare type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+                      export declare type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
                       declare class ParticleColor {
                           r: number;
@@ -6201,7 +6201,7 @@ declare class Channel {
                           error?: RepositoryError;
                       }
 
-                      declare type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
+                      export declare type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
 
                       export declare class Retarget {
                           #private;
@@ -6241,7 +6241,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

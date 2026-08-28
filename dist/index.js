@@ -9144,7 +9144,7 @@ const zUnitVec3$2 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
 const tempVec3$q = vec3.create();
 //const spherical = new Spherical();
-let focusedCanvas;
+let focusedCanvas$1;
 class FirstPersonControl extends CameraControl {
     #enableDamping = false;
     #dampingFactor = 0.05;
@@ -9212,7 +9212,7 @@ class FirstPersonControl extends CameraControl {
             */
     }
     #onMouseDown(event) {
-        focusedCanvas = event.detail.canvas;
+        focusedCanvas$1 = event.detail.canvas;
         if (this.canvas && this.canvas !== event.detail.canvas) {
             return;
         }
@@ -9354,7 +9354,7 @@ class FirstPersonControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
-        if (this.canvas && this.canvas !== focusedCanvas) {
+        if (this.canvas && this.canvas !== focusedCanvas$1) {
             return;
         }
         if (this.heightSpeed) {
@@ -9607,6 +9607,7 @@ const STATE = {
     TOUCH_DOLLY_PAN: 5,
     TOUCH_DOLLY_ROTATE: 6
 };
+let focusedCanvas;
 class OrbitControl extends CameraControl {
     #upVector = vec3.fromValues(0, 0, 1);
     #keyRotateHorizontal = 0;
@@ -9706,7 +9707,10 @@ class OrbitControl extends CameraControl {
         }
     }
     update(delta = 1) {
-        if (this.enabled === false || !this.camera) {
+        if (!this.enabled || !this.camera) {
+            return;
+        }
+        if (this.canvas && this.canvas !== focusedCanvas) {
             return;
         }
         const position = this.camera._position;
@@ -9918,7 +9922,10 @@ class OrbitControl extends CameraControl {
         this.update();
     }
     #handleKeyDown(event) {
-        if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+        if (!this.enabled || !this.#enableKeys || !this.#enablePan) {
+            return;
+        }
+        if (this.canvas && this.canvas !== event.detail.canvas) {
             return;
         }
         const keyboardEvent = event.detail.keyboardEvent;
@@ -9994,7 +10001,10 @@ class OrbitControl extends CameraControl {
         }
     }
     #handleKeyUp(event) {
-        if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+        if (!this.enabled || !this.#enableKeys || !this.#enablePan) {
+            return;
+        }
+        if (this.canvas && this.canvas !== event.detail.canvas) {
             return;
         }
         switch (event.detail.keyboardEvent.code) {
@@ -10112,6 +10122,10 @@ class OrbitControl extends CameraControl {
             this.#handleTouchMoveRotate(event);
     }
     #onMouseDown(event) {
+        focusedCanvas = event.detail.canvas;
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         if (this.enabled === false) {
             return;
         }
@@ -10153,6 +10167,9 @@ class OrbitControl extends CameraControl {
         }
     }
     #onMouseMove(event) {
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         if (this.enabled === false) {
             document.exitPointerLock();
             return;
@@ -10177,6 +10194,9 @@ class OrbitControl extends CameraControl {
         }
     }
     #onMouseUp(event) {
+        if (this.canvas && this.canvas !== event.detail.canvas) {
+            return;
+        }
         // In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
         setTimeout(() => document.exitPointerLock(), 100);
         this.#state = STATE.NONE;

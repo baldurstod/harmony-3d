@@ -1,7 +1,7 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
 import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
-import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents, GraphicTickEvent, GraphicTouchEventData, GraphicWheelEventData } from '../graphics/graphicsevents';
+import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvents, GraphicTickEvent, GraphicTouchEventData, GraphicWheelEventData } from '../graphics/graphicsevents';
 import { Target } from '../objects/target';
 import { CameraControl } from './cameracontrol';
 import { Spherical } from './spherical';
@@ -41,6 +41,7 @@ const STATE = {
 	TOUCH_DOLLY_ROTATE: 6
 };
 
+let focusedCanvas: HTMLCanvasElement;
 export class OrbitControl extends CameraControl {
 	#upVector = vec3.fromValues(0, 0, 1);
 	#keyRotateHorizontal = 0;
@@ -171,9 +172,14 @@ export class OrbitControl extends CameraControl {
 	}
 
 	update(delta = 1) {
-		if (this.enabled === false || !this.camera) {
+		if (!this.enabled || !this.camera) {
 			return;
 		}
+
+		if (this.canvas && this.canvas !== focusedCanvas) {
+			return;
+		}
+
 		const position = this.camera._position;
 
 		//offset.copy(position).sub(this.target);
@@ -454,10 +460,14 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleKeyDown(event: CustomEvent<GraphicKeyboardEventData>) {
-
-		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+		if (!this.enabled || !this.#enableKeys || !this.#enablePan) {
 			return;
 		}
+
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		const keyboardEvent = event.detail.keyboardEvent;
 
 		let needsUpdate = false;
@@ -540,7 +550,11 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleKeyUp(event: CustomEvent<GraphicKeyboardEventData>) {
-		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+		if (!this.enabled || !this.#enableKeys || !this.#enablePan) {
+			return;
+		}
+
+		if (this.canvas && this.canvas !== event.detail.canvas) {
 			return;
 		}
 
@@ -706,6 +720,11 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#onMouseDown(event: CustomEvent<GraphicMouseEventData>) {
+		focusedCanvas = event.detail.canvas;
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		if (this.enabled === false) {
 			return;
 		}
@@ -756,6 +775,10 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#onMouseMove(event: CustomEvent<GraphicMouseEventData>) {
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
+
 		if (this.enabled === false) {
 			document.exitPointerLock();
 			return;
@@ -779,6 +802,9 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
+		if (this.canvas && this.canvas !== event.detail.canvas) {
+			return;
+		}
 		// In chrome, click and dblclick event are fired after call to exitPointerLock(). Bug ? setTimeout prevents that
 		setTimeout(() => document.exitPointerLock(), 100);
 		this.#state = STATE.NONE;
