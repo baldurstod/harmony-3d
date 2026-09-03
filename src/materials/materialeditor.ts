@@ -2,7 +2,6 @@ import { createElement, createShadowRoot, hide, show } from 'harmony-ui';
 import '../css/materialeditor.css';
 import { Entity } from '../entities/entity';
 import { BlendingEquation, BlendingFactor } from '../enums/blending';
-import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { UniformBuffer } from '../webgl/uniform';
 import { Material } from './material';
 import { VirtualMaterial } from './virtualmaterial';
@@ -17,7 +16,7 @@ function getUniformsHtml(uniforms: Map<string, UniformBuffer>): HTMLElement {
 	return htmlUniforms;
 }
 
-function addHtmlParameter(name: string, value: any) {
+function addHtmlParameter(name: string, value: any): HTMLElement {
 	const htmlParameter = createElement('div');
 	const htmlParameterName = createElement('span');
 	htmlParameterName.innerText = name;
@@ -29,7 +28,7 @@ function addHtmlParameter(name: string, value: any) {
 }
 
 let materialEditor: MaterialEditor | null = null;
-export function getMaterialEditor() {
+export function getMaterialEditor(): MaterialEditor {
 	if (!materialEditor) {
 		materialEditor = new MaterialEditor();
 	}
@@ -56,7 +55,7 @@ export class MaterialEditor {//TODO: turn into static class
 		}
 		MaterialEditor.#instance = this;
 
-		const blendOptions: HTMLOptionElement[] = [];
+		//const blendOptions: HTMLOptionElement[] = [];
 
 		this.#shadowRoot = createShadowRoot('div', {
 			childs: [
@@ -159,19 +158,19 @@ export class MaterialEditor {//TODO: turn into static class
 		}
 	}
 
-	editEntity(entity: Entity) {
+	editEntity(entity: Entity): void {
 		//this.#entity = entity;
 		this.#material = (entity as any).material;
 		this.#refreshHtml();
 	}
 
-	editMaterial(material: Material) {
+	editMaterial(material: Material): void {
 		//this.#entity = null;
 		this.#material = material;
 		this.#refreshHtml();
 	}
 
-	#refreshHtml() {
+	#refreshHtml(): void {
 		this.#htmlParams.innerText = '';
 		this.#htmlShader.innerText = '';
 		const material = this.#material;
@@ -209,11 +208,11 @@ export class MaterialEditor {//TODO: turn into static class
 
 	}
 
-	getHTML() {
-		return this.#shadowRoot.host;
+	getHTML(): HTMLElement {
+		return this.#shadowRoot.host as HTMLElement;
 	}
 
-	#setBlending(blending: boolean) {
+	#setBlending(blending: boolean): void {
 		if (!this.#material) {
 			return;
 		}
@@ -222,7 +221,7 @@ export class MaterialEditor {//TODO: turn into static class
 		this.#refreshHtml();
 	}
 
-	#setAlwaysOnTop(alwaysOnTop: boolean) {
+	#setAlwaysOnTop(alwaysOnTop: boolean): void {
 		if (!this.#material) {
 			return;
 		}
@@ -236,7 +235,7 @@ export class MaterialEditor {//TODO: turn into static class
 		this.#refreshHtml();
 	}
 
-	#setAlwaysBehind(alwaysBehind: boolean) {
+	#setAlwaysBehind(alwaysBehind: boolean): void {
 		if (!this.#material) {
 			return;
 		}
@@ -250,7 +249,7 @@ export class MaterialEditor {//TODO: turn into static class
 		this.#refreshHtml();
 	}
 
-	#changeBlendingFactor(i: number, blending: string) {
+	#changeBlendingFactor(i: number, blending: string): void {
 		if (!this.#material) {
 			return;
 		}
@@ -283,6 +282,7 @@ export class MaterialEditor {//TODO: turn into static class
 	}
 }
 
+/*
 const BlendFactors = new Map<GLenum, string>([
 	[GL_ZERO, 'zero'],
 	[GL_ONE, 'one'],
@@ -302,3 +302,4 @@ const BlendFactors = new Map<GLenum, string>([
 	[GL_ONE_MINUS_CONSTANT_ALPHA, 'one minus constant alpha'],
 	[GL_SRC_ALPHA_SATURATE, 'alpha saturate'],
 ]);
+*/

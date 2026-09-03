@@ -25,7 +25,7 @@ export class MaterialManager {
 			const manager = material.manager;
 			const materialClass = material.materialClass
 			if (manager) {
-				manager.pickMaterial(materialName, materialClass, callback);
+				//manager.pickMaterial(materialName, materialClass, callback);
 			} else {
 				callback(new materialClass);
 			}

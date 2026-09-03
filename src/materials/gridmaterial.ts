@@ -1,10 +1,15 @@
 import { RenderFace } from './constants';
-import { Material, MATERIAL_BLENDING_NORMAL } from './material';
+import { Material, MATERIAL_BLENDING_NORMAL, MaterialParams } from './material';
+
+export type GridMaterialParams = MaterialParams & {
+	// Grid spacing, in engine unit. Default to 1
+	spacing?: number;
+};
 
 export class GridMaterial extends Material {
-	constructor(params: any = {}) {
+	constructor(params: GridMaterialParams = {}) {
 		super(params);
-		this.spacing = params.spacing ?? 1;
+		this.setSpacing(params.spacing ?? 1);
 		this.setBlending(MATERIAL_BLENDING_NORMAL);
 		this.renderFace(RenderFace.Both);
 	}

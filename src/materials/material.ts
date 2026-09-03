@@ -60,6 +60,7 @@ export type MaterialParams = {
 	colorMode?: MaterialColorMode;
 };
 
+// TODO: set as abstract class
 export class Material implements HasUsers {
 	id = '';
 	name = '';
@@ -124,7 +125,7 @@ export class Material implements HasUsers {
 
 		if (params.uniforms) {
 			for (const name in params.uniforms) {
-				this.setUniformValue(name, params.uniforms[name]!);
+				this.setUniformValue(name, params.uniforms[name]);
 			}
 		}
 
@@ -161,7 +162,7 @@ export class Material implements HasUsers {
 		}
 	}
 
-	get transparent() {
+	get transparent(): boolean {
 		return this.blend;
 	}
 
@@ -169,18 +170,18 @@ export class Material implements HasUsers {
 		this.#renderLights = renderLights;
 	}
 
-	get renderLights() {
+	get renderLights(): boolean {
 		return this.#renderLights;
 	}
 
-	setDefine(define: string, value = '') {
+	setDefine(define: string, value = ''): void {
 		if (this.defines[define] !== value) {
 			this.defines[define] = value;
 			this._dirtyProgram = true;//TODOv3: invalidate program here ?
 		}
 	}
 
-	removeDefine(define: string) {
+	removeDefine(define: string): void {
 		if (this.defines[define] !== undefined) {
 			delete this.defines[define];
 			this._dirtyProgram = true;//TODOv3: invalidate program here ?
@@ -191,21 +192,24 @@ export class Material implements HasUsers {
 		return this.defines[define] !== undefined;
 	}
 
-	setValues(values: any) {// TODO: remove, seems to be useless
+	setValues(values: any): void {// TODO: remove, seems to be useless
 		if (values === undefined) return;
 
+		/*
 		for (const key in values) {
 
 		}
+		*/
 
 	}
 
 	clone(): unknown {
-		throw 'cant\'t clone Material, missing clone() in ' + this.constructor.name;
+		throw new Error('cant\'t clone Material, missing clone() in ' + this.constructor.name);
+
 		//return new this.constructor(this.parameters);
 	}
 
-	setTransparency(srcRGB: BlendingFactor, dstRGB: BlendingFactor, srcAlpha?: BlendingFactor, dstAlpha?: BlendingFactor) {
+	setTransparency(srcRGB: BlendingFactor, dstRGB: BlendingFactor, srcAlpha?: BlendingFactor, dstAlpha?: BlendingFactor): void {
 		this.blend = true;
 		this.depthMask = false;
 		this.srcRGB = srcRGB;
@@ -214,7 +218,7 @@ export class Material implements HasUsers {
 		this.dstAlpha = dstAlpha ?? dstRGB;
 	}
 
-	setBlending(mode: BlendingMode, premultipliedAlpha = false) {
+	setBlending(mode: BlendingMode, premultipliedAlpha = false): void {
 		if (premultipliedAlpha) {
 			switch (mode) {
 				case BlendingMode.None:
@@ -254,12 +258,16 @@ export class Material implements HasUsers {
 		}
 	}
 
-	updateMaterial(time: number, mesh: Mesh) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	updateMaterial(time: number, mesh: Mesh): void {
+		// TODO: set abstract
 
 	}
 
 
-	beforeRender(camera: Camera) {//TODO: check params
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	beforeRender(camera: Camera): void {//TODO: check params
+		// TODO: set abstract
 
 	}
 
@@ -267,7 +275,8 @@ export class Material implements HasUsers {
 	 * @deprecated Please use `renderFace` instead.
 	 */
 	set culling(mode: number) {
-		throw 'deprecated';
+		throw new Error('deprecated');
+
 		/*
 		this.#cullingMode = mode;
 		if (mode === MATERIAL_CULLING_NONE) {
@@ -283,7 +292,7 @@ export class Material implements HasUsers {
 		*/
 	}
 
-	renderFace(renderFace: RenderFace) {
+	renderFace(renderFace: RenderFace): void {
 		this.#renderFace = renderFace;
 
 		if (renderFace == RenderFace.Both) {
@@ -299,7 +308,7 @@ export class Material implements HasUsers {
 		}
 	}
 
-	getRenderFace() {
+	getRenderFace(): RenderFace {
 		return this.#renderFace;
 	}
 
@@ -333,7 +342,7 @@ export class Material implements HasUsers {
 		};
 	}
 
-	setColorMode(colorMode: MaterialColorMode) {
+	setColorMode(colorMode: MaterialColorMode): void {
 		this.#colorMode = colorMode;
 		switch (colorMode) {
 			case MaterialColorMode.None:
@@ -365,11 +374,11 @@ export class Material implements HasUsers {
 	/**
 	 * @deprecated Please use `getColorMode` instead.
 	 */
-	get colorMode() {
+	get colorMode(): MaterialColorMode {
 		return this.getColorMode();
 	}
 
-	setColor(color: vec4) {
+	setColor(color: vec4): void {
 		vec4.copy(this.#color, color);
 		this.setUniformValue('uColor', this.#color);
 	}
@@ -378,16 +387,16 @@ export class Material implements HasUsers {
 		this.setColor(color);
 	}
 
-	get color() {
+	get color(): vec4 {
 		return vec4.clone(this.#color);
 	}
 
-	setMeshColor(color = DEFAULT_COLOR) {//Note that some shaders may not provide per mesh color
+	setMeshColor(color = DEFAULT_COLOR): void {//Note that some shaders may not provide per mesh color
 		this.setColorMode(MaterialColorMode.PerMesh);
 		this.color = color;
 	}
 
-	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string) {
+	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string): void {
 		const previousTexture = this.getUniformValue(uniformName) as Texture;
 		if (previousTexture != texture) {
 			if (previousTexture) {
@@ -409,7 +418,7 @@ export class Material implements HasUsers {
 		}
 	}
 
-	setTextureArray(uniformName: string, textureArray: Texture[]) {
+	setTextureArray(uniformName: string, textureArray: Texture[]): void {
 		const previousTextureArray: Texture[] | undefined = this.getUniformValue(uniformName) as Texture[];
 		const keepMe = new Set<Texture>();
 		if (textureArray) {
@@ -432,28 +441,28 @@ export class Material implements HasUsers {
 		}
 	}
 
-	setColorMap(texture: Texture | null) {
+	setColorMap(texture: Texture | null): void {
 		this.setTexture('colorMap', texture, 'USE_COLOR_MAP');
 		this.colorMap = texture;
 	}
 
-	setColor2Map(texture: Texture | null) {
+	setColor2Map(texture: Texture | null): void {
 		this.setTexture('color2Map', texture, 'USE_COLOR2_MAP');
 	}
 
-	setDetailMap(texture: Texture | null) {
+	setDetailMap(texture: Texture | null): void {
 		this.setTexture('detailTexture', texture, 'USE_DETAIL_MAP');
 	}
 
-	setNormalMap(texture: Texture | null) {
+	setNormalMap(texture: Texture | null): void {
 		this.setTexture('normalTexture', texture, 'USE_NORMAL_MAP');
 	}
 
-	setCubeMap(texture: Texture | null) {
+	setCubeMap(texture: Texture | null): void {
 		this.setTexture('cubeTexture', texture, 'USE_CUBE_MAP');
 	}
 
-	setAlphaTest(alphaTest: boolean) {
+	setAlphaTest(alphaTest: boolean): void {
 		this.#alphaTest = alphaTest;
 		this.#setAlphaTest();
 	}
@@ -465,7 +474,7 @@ export class Material implements HasUsers {
 		this.setAlphaTest(alphaTest);
 	}
 
-	setAlphaTestReference(alphaTestReference: number) {
+	setAlphaTestReference(alphaTestReference: number): void {
 		this.#alphaTest = true;
 		this.#alphaTestReference = alphaTestReference;
 		this.#setAlphaTest();
@@ -478,7 +487,7 @@ export class Material implements HasUsers {
 		this.setAlphaTestReference(alphaTestReference);
 	}
 
-	#setAlphaTest() {
+	#setAlphaTest(): void {
 		if (this.#alphaTest) {
 			this.setDefine('ALPHA_TEST');
 			this.setUniformValue('uAlphaTestReference', this.#alphaTestReference ?? 0.5);
@@ -489,7 +498,7 @@ export class Material implements HasUsers {
 		}
 	}
 
-	getColorMapSize(size = vec2.create()) {
+	getColorMapSize(size = vec2.create()): vec2 {
 		if (this.colorMap) {
 			size[0] = this.colorMap.width;
 			size[1] = this.colorMap.height;
@@ -497,13 +506,13 @@ export class Material implements HasUsers {
 		return size;
 	}
 
-	addParameter(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged) {
+	addParameter(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged): MateriaParameter {
 		const param = new MateriaParameter(name, type, value, changed);
 		this.#parameters.set(name, param);
 		return param;
 	}
 
-	removeParameter(name: string) {
+	removeParameter(name: string): void {
 		this.#parameters.delete(name);
 	}
 
@@ -511,25 +520,25 @@ export class Material implements HasUsers {
 		return this.#parameters.get(name);
 	}
 
-	setParameterValue(name: string, value: MateriaParameterValue) {
+	setParameterValue(name: string, value: MateriaParameterValue): void {
 		const parameter = this.#parameters.get(name);
 		if (parameter !== undefined) {
 			parameter.setValue(value);
 		}
 	}
 
-	setColor4Uniform(uniformName: string, value: UniformValue) {
+	setColor4Uniform(uniformName: string, value: UniformValue): void {
 		this.setUniformValue(uniformName, value);
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json: any = {
 			constructor: (this.constructor as typeof Material).getEntityName(),
 		};
 		//TODO
 		json.parameters = this.parameters;
 		json.color = this.color;
-		json.colormode = this.colorMode;
+		json.colormode = this.getColorMode();
 		json.alphatest = this.#alphaTest;
 		json.alphaTestReference = this.#alphaTestReference;
 
@@ -541,11 +550,13 @@ export class Material implements HasUsers {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject) {
+	// TODO: set abstract
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static async constructFromJSON(json: JSONObject): Promise<Material> {
 		return new Material(json.parameters as MaterialParams/*TODO: check validity*/);
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		this.color = json.color as vec4;
 		this.setColorMode(json.colormode as MaterialColorMode);
 		this.setAlphaTest(json.alphatest as boolean);
@@ -553,28 +564,28 @@ export class Material implements HasUsers {
 		this.renderFace(json.render_face as RenderFace ?? RenderFace.Front);
 	}
 
-	addUser(user: ObjectUser) {
+	addUser(user: ObjectUser): void {
 		this.#users.add(user);
 	}
 
-	removeUser(user: ObjectUser) {
+	removeUser(user: ObjectUser): void {
 		this.#users.delete(user);
 		this.dispose();
 	}
 
-	hasNoUser() {
+	hasNoUser(): boolean {
 		return this.#users.size == 0;
 	}
 
-	hasOnlyUser(user: ObjectUser) {
+	hasOnlyUser(user: ObjectUser): boolean {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
-	#disposeUniform(uniform: UniformValue | Record<string, UniformValue>) {
+	#disposeUniform(uniform: UniformValue | Record<string, UniformValue>): void {
 		if (Array.isArray(uniform)) {
 			uniform.forEach((subValue) => this.#disposeUniform(subValue));
 		} else {
-			(uniform as any)?.removeUser?.(this);
+			(uniform as HasUsers)?.removeUser?.(this);
 		}
 	}
 
@@ -596,7 +607,8 @@ export class Material implements HasUsers {
 
 	get shaderSource(): string {//TODO: deprecate
 		// TODO: remove this
-		throw 'get shaderSource() must be overridden';
+		throw new Error('get shaderSource() must be overridden');
+
 	}
 
 	getShaderSource(): string {
@@ -636,7 +648,7 @@ export class Material implements HasUsers {
 	setSubUniformValue(name: string, value: UniformValue | Record<string, UniformValue>): void {
 		const path = name.split('.');
 
-		let len = path.length - 1;
+		const len = path.length - 1;
 		if (len === 0) {
 			return this.setUniformValue(name, value);
 		}
@@ -703,6 +715,7 @@ export class Material implements HasUsers {
 		}
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	getRaytracingMaterial(index: number): RaytracingMaterial | null {
 		throw new Error('override this function');
 	}

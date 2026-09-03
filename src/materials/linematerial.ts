@@ -25,17 +25,18 @@ export class LineMaterial extends Material {
 		this.setUniformValue('linewidth', lineWidth);
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
-		json.linewidth = this.#lineWidth;
+		json.linewidth = this.#lineWidth;// TODO: change json property name to camel case
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
-		return new LineMaterial();
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject): Promise<LineMaterial> {
+		return new LineMaterial({ lineWidth: json.linewidth as number });//TODO: check value
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.lineWidth = json.linewidth as number;
 	}
@@ -44,7 +45,7 @@ export class LineMaterial extends Material {
 		return 'LineMaterial';
 	}
 
-	override getRaytracingMaterial(index: number): null {
+	override getRaytracingMaterial(): null {
 		return null;
 	}
 }

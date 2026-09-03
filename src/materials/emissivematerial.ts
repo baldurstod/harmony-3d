@@ -1,8 +1,8 @@
+import { vec3 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../entities/entities';
 import { RaytracingMaterial, RtMaterial } from '../raytracing/material';
 import { Material } from './material';
-import { vec3 } from 'gl-matrix';
 
 export class EmissiveMaterial extends Material {
 	map = null;
@@ -45,17 +45,18 @@ export class EmissiveMaterial extends Material {
 		}
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.skinning = this.skinning;
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(): Promise<EmissiveMaterial> {
 		return new EmissiveMaterial();
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.skinning = json.skinning as boolean;
 	}

@@ -42,18 +42,31 @@ const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
 
 export type CameraParameters = EntityParameters & {
+	/** Near plane. Default to 1 */
 	nearPlane?: number,
+	/** Far plane. Default to 1000 */
 	farPlane?: number,
+	/** Default zoom when in orthogonal mode. Default to 1 */
 	orthoZoom?: number,
+	/** Create a smooth transition between perspective ( 0 ) and orthogonal ( 1 ). Default to 0 (perspective). Valid only when projection is set to mixed */
 	projectionMix?: number,
+	/** Projection type. Default to perspective projection */
 	projection?: CameraProjection,
+	/** Vertical fov. Default to 60 */
 	verticalFov?: number,
+	/** Aspect ratio. Default to 1 */
 	aspectRatio?: number,
+	/** Up vector. Default to +Z */
 	upVector?: vec3,
+	/** Left value for orthogonal projection. Default to -1 */
 	left?: number,
+	/** Right value for orthogonal projection. Default to 1 */
 	right?: number,
+	/** Top value for orthogonal projection. Default to 1 */
 	top?: number,
+	/** Bottom value for orthogonal projection. Default to -1 */
 	bottom?: number,
+	/** Auto resize the camera to the canvas size. Default to true */
 	autoResize?: boolean,
 };
 
