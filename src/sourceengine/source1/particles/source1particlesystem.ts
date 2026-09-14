@@ -834,7 +834,6 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	getControlPointPosition(cpId: number, vec = vec3.create()): vec3 {
 		const cp = this.getControlPoint(cpId);
 		if (cp) {
-			vec3.zero(cp._position);
 			return cp.getWorldPosition(vec);
 		}
 		return vec3.zero(vec);
@@ -843,7 +842,6 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	getControlPointOrientation(cpId: number, orientation = quat.create()): quat {
 		const cp = this.getControlPoint(cpId);
 		if (cp) {
-			vec3.zero(cp._position);
 			return cp.getWorldOrientation(orientation);
 		}
 		return quat.identity(orientation);
