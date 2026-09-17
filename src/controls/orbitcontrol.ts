@@ -673,7 +673,7 @@ export class OrbitControl extends CameraControl {
 		}
 
 		//panDelta.subVectors(panEnd, panStart).multiplyScalar(this.#panSpeed);
-		vec2.scale(this.#panDelta, vec2.sub(this.#panDelta, this.#panEnd, this.#panStart), this.#panSpeed);
+		vec2.scale(this.#panDelta, vec2.sub(this.#panDelta, this.#panEnd, this.#panStart), this.#panSpeed * 1000/* faster panning for touch gestures*/);
 
 		this.#pan(this.#panDelta[0], this.#panDelta[1], (event.target as HTMLElement));
 
