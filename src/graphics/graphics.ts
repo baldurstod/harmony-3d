@@ -313,6 +313,9 @@ class GraphicsClass {
 	static #touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
 	static #touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
 	static #touchCancelFunc = (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
+	static #pointerDownFunc = (event: PointerEvent) => this.#pointerDown(event);
+	static #pointerMoveFunc = (event: PointerEvent) => this.#pointerMove(event);
+	static #pointerUpFunc = (event: PointerEvent) => this.#pointerUp(event);
 
 	static {
 		this.setShaderPrecision(ShaderPrecision.Medium);
@@ -465,6 +468,9 @@ class GraphicsClass {
 		canvas.addEventListener('touchstart', this.#touchStartFunc);
 		canvas.addEventListener('touchmove', this.#touchMoveFunc);
 		canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+		canvas.addEventListener('pointerdown', this.#pointerDownFunc);
+		canvas.addEventListener('pointermove', this.#pointerMoveFunc);
+		canvas.addEventListener('pointerup', this.#pointerUpFunc);
 		canvas.addEventListener('contextmenu', (event: Event) => event?.preventDefault());
 		if (!canvas.hasAttribute('tabindex')) {
 			canvas.setAttribute('tabindex', "1");
@@ -483,6 +489,9 @@ class GraphicsClass {
 		canvas.removeEventListener('touchstart', this.#touchStartFunc);
 		canvas.removeEventListener('touchmove', this.#touchMoveFunc);
 		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
+		canvas.removeEventListener('pointerdown', this.#pointerDownFunc);
+		canvas.removeEventListener('pointermove', this.#pointerMoveFunc);
+		canvas.removeEventListener('pointerup', this.#pointerUpFunc);
 	}
 
 	static async pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null> {
@@ -514,12 +523,6 @@ class GraphicsClass {
 		htmlCanvas.focus();
 		const x = event.offsetX;
 		const y = event.offsetY;
-		//this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
-		this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
-			this.#pickedEntity = pickedEntity;
-			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
-			GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
-		});
 		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
@@ -557,6 +560,33 @@ class GraphicsClass {
 		GraphicsEvents.wheel(x, y, event, event.target as HTMLCanvasElement);
 		this.#pickedEntity = null;
 		event.preventDefault();
+	}
+
+	static #pointerDown(event: PointerEvent): void {
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		htmlCanvas.focus();
+		const x = event.offsetX;
+		const y = event.offsetY;
+		this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
+			this.#pickedEntity = pickedEntity;
+			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
+			GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+		});
+		GraphicsEvents.pointerDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
+	}
+
+	static #pointerMove(event: PointerEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		const x = event.offsetX;
+		const y = event.offsetY;
+		GraphicsEvents.pointerMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
+	}
+
+	static #pointerUp(event: PointerEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		const x = event.offsetX;
+		const y = event.offsetY;
+		GraphicsEvents.pointerUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
 	static getDefinesAsString(material: Material) {//TODOv3 rename var material

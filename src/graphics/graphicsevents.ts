@@ -17,6 +17,9 @@ export type GraphicsEvent =
 	| 'touchstart'
 	| 'touchmove'
 	| 'touchcancel'
+	| 'pointermove'
+	| 'pointerdown'
+	| 'pointerup'
 	;
 
 
@@ -47,6 +50,15 @@ export interface GraphicMouseEventData {
 	width: number,
 	height: number,
 	mouseEvent: MouseEvent,
+	canvas: HTMLCanvasElement,
+}
+
+export interface GraphicPointerEventData {
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+	pointerEvent: PointerEvent,
 	canvas: HTMLCanvasElement,
 }
 
@@ -111,6 +123,18 @@ export class GraphicsEvents {
 		this.dispatchEvent('wheel', { detail: { x, y, wheelEvent: wheelEvent, canvas } });
 	}
 
+	static pointerMove(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent('pointermove', { detail: { x, y, width, height, pointerEvent, canvas } });
+	}
+
+	static pointerDown(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent('pointerdown', { detail: { x, y, width, height, pointerEvent, canvas } });
+	}
+
+	static pointerUp(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+		this.dispatchEvent('pointerup', { detail: { x, y, width, height, pointerEvent, canvas } });
+	}
+
 	static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
 		this.dispatchEvent('keydown', { detail: { keyboardEvent, canvas } });
 	}
@@ -145,6 +169,9 @@ export class GraphicsEvents {
 	static addEventListener(type: 'touchstart', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
 	static addEventListener(type: 'touchmove', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
 	static addEventListener(type: 'touchcancel', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'pointermove', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'pointerdown', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+	static addEventListener(type: 'pointerup', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
 
 	static addEventListener(type: GraphicsEvent, callback: (evt: CustomEvent) => void, options?: AddEventListenerOptions | boolean): void {
 		this.#eventTarget.addEventListener(type, callback as (evt: Event) => void, options);
@@ -164,6 +191,9 @@ export class GraphicsEvents {
 	static dispatchEvent(type: 'touchstart', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
 	static dispatchEvent(type: 'touchmove', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
 	static dispatchEvent(type: 'touchcancel', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+	static dispatchEvent(type: 'pointermove', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
+	static dispatchEvent(type: 'pointerdown', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
+	static dispatchEvent(type: 'pointerup', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
 
 	static dispatchEvent<T>(type: GraphicsEvent, options?: CustomEventInit<T>): boolean {
 		return this.#eventTarget.dispatchEvent(new CustomEvent<T>(type, options));
