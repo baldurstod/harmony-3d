@@ -644,6 +644,7 @@ class GraphicsClass {
 			renderContext: context,
 			width,
 			height,
+			time: context.time,
 		}
 
 		this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
@@ -677,6 +678,7 @@ class GraphicsClass {
 				renderContext: context,
 				width: context.width!,
 				height: context.height!,
+				time: context.time,
 			},
 			postCompute,
 		);
@@ -774,7 +776,7 @@ class GraphicsClass {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport });
+				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport, time: context.time });
 			}
 
 			// TODO: set in the previous state

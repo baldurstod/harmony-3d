@@ -196,7 +196,7 @@ export class ForwardRenderer implements Renderer {
 
 		renderLights &&= material.renderLights;
 
-		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
+		material.updateMaterial(context.time ?? Graphics.getTime(), object);//TODO: frame delta
 
 		const cameraMatrix = camera.cameraMatrix;
 		const projectionMatrix = camera.projectionMatrix;

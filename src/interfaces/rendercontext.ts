@@ -17,7 +17,10 @@ export interface RenderContext {
 		position: vec2,
 		/** For WebGPU context. Picking is done asynchronously */
 		resolve?: (value: Entity | null) => void,
-	}
+	};
+
+	/** Current time. Is time is not provided, a computed time will be used */
+	time?: number;
 
 	/*
 	imageBitmap?: { // TODO: remove
@@ -39,4 +42,5 @@ export interface InternalRenderContext {
 	width: number;
 	height: number;
 	viewport?: Viewport;
+	time?: number;
 }

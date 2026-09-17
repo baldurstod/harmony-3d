@@ -678,18 +678,31 @@ export declare class CameraFrustum extends Mesh {
 }
 
 declare type CameraParameters = EntityParameters & {
+    /** Near plane. Default to 1 */
     nearPlane?: number;
+    /** Far plane. Default to 1000 */
     farPlane?: number;
+    /** Default zoom when in orthogonal mode. Default to 1 */
     orthoZoom?: number;
+    /** Create a smooth transition between perspective ( 0 ) and orthogonal ( 1 ). Default to 0 (perspective). Valid only when projection is set to mixed */
     projectionMix?: number;
+    /** Projection type. Default to perspective projection */
     projection?: CameraProjection;
+    /** Vertical fov. Default to 60 */
     verticalFov?: number;
+    /** Aspect ratio. Default to 1 */
     aspectRatio?: number;
+    /** Up vector. Default to +Z */
     upVector?: vec3;
+    /** Left value for orthogonal projection. Default to -1 */
     left?: number;
+    /** Right value for orthogonal projection. Default to 1 */
     right?: number;
+    /** Top value for orthogonal projection. Default to 1 */
     top?: number;
+    /** Bottom value for orthogonal projection. Default to -1 */
     bottom?: number;
+    /** Auto resize the camera to the canvas size. Default to true */
     autoResize?: boolean;
 };
 
@@ -1665,8 +1678,8 @@ declare class Channel {
                       morphTargets: boolean;
                       getShaderSource(): string;
                       getRaytracingMaterial(index: number): RaytracingMaterial;
-                      toJSON(): any;
-                      static constructFromJSON(json: JSONObject): Promise<EmissiveMaterial>;
+                      toJSON(): JSONObject;
+                      static constructFromJSON(): Promise<EmissiveMaterial>;
                       fromJSON(json: JSONObject): void;
                       static getEntityName(): string;
                   }
@@ -2840,6 +2853,15 @@ declare class Channel {
                           mouseEvent: MouseEvent;
                       }
 
+                      export declare interface GraphicPointerEventData {
+                          x: number;
+                          y: number;
+                          width: number;
+                          height: number;
+                          pointerEvent: PointerEvent;
+                          canvas: HTMLCanvasElement;
+                      }
+
                       export declare interface GraphicResizeEvent {
                           width: number;
                           height: number;
@@ -2954,7 +2976,7 @@ declare class Channel {
                           static getForwardRenderer(): Renderer;
                       }
 
-                      export declare type GraphicsEvent = 'mousemove' | 'mousedown' | 'mouseup' | 'mouseclick' | 'mousedblclick' | 'wheel' | 'resize' | 'pick' | 'tick' | 'keydown' | 'keyup' | 'touchstart' | 'touchmove' | 'touchcancel';
+                      export declare type GraphicsEvent = 'mousemove' | 'mousedown' | 'mouseup' | 'mouseclick' | 'mousedblclick' | 'wheel' | 'resize' | 'pick' | 'tick' | 'keydown' | 'keyup' | 'touchstart' | 'touchmove' | 'touchcancel' | 'pointermove' | 'pointerdown' | 'pointerup';
 
                       declare interface GraphicsEventInit<T = any> extends EventInit {
                           detail: T;
@@ -2972,6 +2994,9 @@ declare class Channel {
                           static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
                           static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
                           static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement): void;
+                          static pointerMove(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void;
+                          static pointerDown(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void;
+                          static pointerUp(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void;
                           static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void;
                           static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void;
                           static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
@@ -2991,6 +3016,9 @@ declare class Channel {
                           static addEventListener(type: 'touchstart', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
                           static addEventListener(type: 'touchmove', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
                           static addEventListener(type: 'touchcancel', callback: (evt: CustomEvent<GraphicTouchEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'pointermove', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'pointerdown', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
+                          static addEventListener(type: 'pointerup', callback: (evt: CustomEvent<GraphicPointerEventData>) => void, options?: AddEventListenerOptions | boolean): void;
                           static dispatchEvent(type: 'tick', options: GraphicsEventInit<GraphicTickEvent>): boolean;
                           static dispatchEvent(type: 'pick', options: GraphicsEventInit<GraphicPickEvent>): boolean;
                           static dispatchEvent(type: 'resize', options: GraphicsEventInit<GraphicResizeEvent>): boolean;
@@ -3005,6 +3033,9 @@ declare class Channel {
                           static dispatchEvent(type: 'touchstart', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
                           static dispatchEvent(type: 'touchmove', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
                           static dispatchEvent(type: 'touchcancel', options: GraphicsEventInit<GraphicTouchEventData>): boolean;
+                          static dispatchEvent(type: 'pointermove', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
+                          static dispatchEvent(type: 'pointerdown', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
+                          static dispatchEvent(type: 'pointerup', options: GraphicsEventInit<GraphicPointerEventData>): boolean;
                           static removeEventListener(type: GraphicsEvent, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
                       }
 
@@ -3060,7 +3091,7 @@ declare class Channel {
                       }
 
                       export declare class GridMaterial extends Material {
-                          constructor(params?: any);
+                          constructor(params?: GridMaterialParams);
                           /**
                            * @deprecated Use setSpacing instead
                            */
@@ -3068,6 +3099,10 @@ declare class Channel {
                           setSpacing(spacing: number): void;
                           getShaderSource(): string;
                       }
+
+                      declare type GridMaterialParams = MaterialParams & {
+                          spacing?: number;
+                      };
 
                       declare type GridParameters = MeshParameters & {
                           size?: number;
@@ -3286,6 +3321,7 @@ declare class Channel {
                           width: number;
                           height: number;
                           viewport?: Viewport;
+                          time?: number;
                       }
 
                       export declare class InterpolateRadius extends Operator {
@@ -3337,7 +3373,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
@@ -3652,11 +3688,11 @@ declare class Channel {
                           constructor(params?: LineMaterialParams);
                           getShaderSource(): string;
                           set lineWidth(lineWidth: number);
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<LineMaterial>;
                           fromJSON(json: JSONObject): void;
                           static getEntityName(): string;
-                          getRaytracingMaterial(index: number): null;
+                          getRaytracingMaterial(): null;
                       }
 
                       declare type LineMaterialParams = MaterialParams & {
@@ -3944,7 +3980,7 @@ declare class Channel {
                           getParameter(name: string): MateriaParameter | undefined;
                           setParameterValue(name: string, value: MateriaParameterValue): void;
                           setColor4Uniform(uniformName: string, value: UniformValue): void;
-                          toJSON(): any;
+                          toJSON(): JSONObject;
                           static constructFromJSON(json: JSONObject): Promise<Material>;
                           fromJSON(json: JSONObject): void;
                           addUser(user: ObjectUser): void;
@@ -5907,6 +5943,8 @@ declare class Channel {
                               /** For WebGPU context. Picking is done asynchronously */
                               resolve?: (value: Entity | null) => void;
                           };
+                          /** Current time. Is time is not provided, a computed time will be used */
+                          time?: number;
                           /** Compute shaders only. X dimension of the grid of workgroups to dispatch. Default to 1 */
                           workgroupCountX?: GPUSize32;
                           /** Compute shaders only. Y dimension of the grid of workgroups to dispatch. Default to 1 */
@@ -6241,7 +6279,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
+                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

@@ -1684,6 +1684,7 @@ var MaterialColorMode;
     MaterialColorMode[MaterialColorMode["PerMesh"] = 2] = "PerMesh";
 })(MaterialColorMode || (MaterialColorMode = {}));
 const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+// TODO: set as abstract class
 class Material {
     id = '';
     name = '';
@@ -1796,9 +1797,14 @@ class Material {
     setValues(values) {
         if (values === undefined)
             return;
+        /*
+        for (const key in values) {
+
+        }
+        */
     }
     clone() {
-        throw 'cant\'t clone Material, missing clone() in ' + this.constructor.name;
+        throw new Error('cant\'t clone Material, missing clone() in ' + this.constructor.name);
         //return new this.constructor(this.parameters);
     }
     setTransparency(srcRGB, dstRGB, srcAlpha, dstAlpha) {
@@ -1849,15 +1855,19 @@ class Material {
             }
         }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     updateMaterial(time, mesh) {
+        // TODO: set abstract
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     beforeRender(camera) {
+        // TODO: set abstract
     }
     /**
      * @deprecated Please use `renderFace` instead.
      */
     set culling(mode) {
-        throw 'deprecated';
+        throw new Error('deprecated');
         /*
         this.#cullingMode = mode;
         if (mode === MATERIAL_CULLING_NONE) {
@@ -2091,7 +2101,7 @@ class Material {
         //TODO
         json.parameters = this.parameters;
         json.color = this.color;
-        json.colormode = this.colorMode;
+        json.colormode = this.getColorMode();
         json.alphatest = this.#alphaTest;
         json.alphaTestReference = this.#alphaTestReference;
         if (this.#renderFace != RenderFace.Front) {
@@ -2099,6 +2109,8 @@ class Material {
         }
         return json;
     }
+    // TODO: set abstract
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
         return new Material(json.parameters /*TODO: check validity*/);
     }
@@ -2143,7 +2155,7 @@ class Material {
     }
     get shaderSource() {
         // TODO: remove this
-        throw 'get shaderSource() must be overridden';
+        throw new Error('get shaderSource() must be overridden');
     }
     getShaderSource() {
         return this.shaderSource;
@@ -2174,7 +2186,7 @@ class Material {
     }
     setSubUniformValue(name, value) {
         const path = name.split('.');
-        let len = path.length - 1;
+        const len = path.length - 1;
         if (len === 0) {
             return this.setUniformValue(name, value);
         }
@@ -2233,6 +2245,7 @@ class Material {
             ++this.updateVersion;
         }
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getRaytracingMaterial(index) {
         throw new Error('override this function');
     }
@@ -4371,9 +4384,7 @@ class MaterialManager {
         if (material) {
             const manager = material.manager;
             const materialClass = material.materialClass;
-            if (manager) {
-                manager.pickMaterial(materialName, materialClass, callback);
-            }
+            if (manager) ;
             else {
                 callback(new materialClass);
             }
@@ -9066,6 +9077,15 @@ class GraphicsEvents {
     static wheel(x, y, wheelEvent, canvas) {
         this.dispatchEvent('wheel', { detail: { x, y, wheelEvent: wheelEvent, canvas } });
     }
+    static pointerMove(x, y, width, height, pointerEvent, canvas) {
+        this.dispatchEvent('pointermove', { detail: { x, y, width, height, pointerEvent, canvas } });
+    }
+    static pointerDown(x, y, width, height, pointerEvent, canvas) {
+        this.dispatchEvent('pointerdown', { detail: { x, y, width, height, pointerEvent, canvas } });
+    }
+    static pointerUp(x, y, width, height, pointerEvent, canvas) {
+        this.dispatchEvent('pointerup', { detail: { x, y, width, height, pointerEvent, canvas } });
+    }
     static keyDown(keyboardEvent, canvas) {
         this.dispatchEvent('keydown', { detail: { keyboardEvent, canvas } });
     }
@@ -10091,7 +10111,7 @@ class OrbitControl extends CameraControl {
             vec2.set(this.#panEnd, x, y);
         }
         //panDelta.subVectors(panEnd, panStart).multiplyScalar(this.#panSpeed);
-        vec2.scale(this.#panDelta, vec2.sub(this.#panDelta, this.#panEnd, this.#panStart), this.#panSpeed);
+        vec2.scale(this.#panDelta, vec2.sub(this.#panDelta, this.#panEnd, this.#panStart), this.#panSpeed * 1000 /* faster panning for touch gestures*/);
         this.#pan(this.#panDelta[0], this.#panDelta[1], event.target);
         vec2.copy(this.#panStart, this.#panEnd);
     }
@@ -11378,7 +11398,7 @@ class CameraFrustum extends Mesh {
 class GridMaterial extends Material {
     constructor(params = {}) {
         super(params);
-        this.spacing = params.spacing ?? 1;
+        this.setSpacing(params.spacing ?? 1);
         this.setBlending(MATERIAL_BLENDING_NORMAL);
         this.renderFace(RenderFace.Both);
     }
@@ -12013,11 +12033,12 @@ class LineMaterial extends Material {
     }
     toJSON() {
         const json = super.toJSON();
-        json.linewidth = this.#lineWidth;
+        json.linewidth = this.#lineWidth; // TODO: change json property name to camel case
         return json;
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
-        return new LineMaterial();
+        return new LineMaterial({ lineWidth: json.linewidth }); //TODO: check value
     }
     fromJSON(json) {
         super.fromJSON(json);
@@ -12026,7 +12047,7 @@ class LineMaterial extends Material {
     static getEntityName() {
         return 'LineMaterial';
     }
-    getRaytracingMaterial(index) {
+    getRaytracingMaterial() {
         return null;
     }
 }
@@ -17617,7 +17638,7 @@ class ForwardRenderer {
             }
         }
         renderLights &&= material.renderLights;
-        material.updateMaterial(Graphics.getTime(), object); //TODO: frame delta
+        material.updateMaterial(context.time ?? Graphics.getTime(), object); //TODO: frame delta
         const cameraMatrix = camera.cameraMatrix;
         const projectionMatrix = camera.projectionMatrix;
         mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
@@ -18856,6 +18877,9 @@ class GraphicsClass {
     static #touchStartFunc = (event) => GraphicsEvents.touchStart(this.#pickedEntity, event);
     static #touchMoveFunc = (event) => GraphicsEvents.touchMove(this.#pickedEntity, event);
     static #touchCancelFunc = (event) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
+    static #pointerDownFunc = (event) => this.#pointerDown(event);
+    static #pointerMoveFunc = (event) => this.#pointerMove(event);
+    static #pointerUpFunc = (event) => this.#pointerUp(event);
     static {
         this.setShaderPrecision(ShaderPrecision.Medium);
         this.setShaderQuality(ShaderQuality.Medium);
@@ -18983,6 +19007,9 @@ class GraphicsClass {
         canvas.addEventListener('touchstart', this.#touchStartFunc);
         canvas.addEventListener('touchmove', this.#touchMoveFunc);
         canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+        canvas.addEventListener('pointerdown', this.#pointerDownFunc);
+        canvas.addEventListener('pointermove', this.#pointerMoveFunc);
+        canvas.addEventListener('pointerup', this.#pointerUpFunc);
         canvas.addEventListener('contextmenu', (event) => event?.preventDefault());
         if (!canvas.hasAttribute('tabindex')) {
             canvas.setAttribute('tabindex', "1");
@@ -19000,6 +19027,9 @@ class GraphicsClass {
         canvas.removeEventListener('touchstart', this.#touchStartFunc);
         canvas.removeEventListener('touchmove', this.#touchMoveFunc);
         canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
+        canvas.removeEventListener('pointerdown', this.#pointerDownFunc);
+        canvas.removeEventListener('pointermove', this.#pointerMoveFunc);
+        canvas.removeEventListener('pointerup', this.#pointerUpFunc);
     }
     static async pickEntity(canvas, x, y) {
         if (this.isWebGLAny) {
@@ -19028,12 +19058,6 @@ class GraphicsClass {
         htmlCanvas.focus();
         const x = event.offsetX;
         const y = event.offsetY;
-        //this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
-        this.pickEntity(htmlCanvas, x, y).then((pickedEntity) => {
-            this.#pickedEntity = pickedEntity;
-            // Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
-            GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
-        });
         GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static #mouseMove(event) {
@@ -19066,6 +19090,30 @@ class GraphicsClass {
         GraphicsEvents.wheel(x, y, event, event.target);
         this.#pickedEntity = null;
         event.preventDefault();
+    }
+    static #pointerDown(event) {
+        const htmlCanvas = event.target;
+        htmlCanvas.focus();
+        const x = event.offsetX;
+        const y = event.offsetY;
+        this.pickEntity(htmlCanvas, x, y).then((pickedEntity) => {
+            this.#pickedEntity = pickedEntity;
+            // Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
+            GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
+        });
+        GraphicsEvents.pointerDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
+    }
+    static #pointerMove(event) {
+        const htmlCanvas = event.target;
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.pointerMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
+    }
+    static #pointerUp(event) {
+        const htmlCanvas = event.target;
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.pointerUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
     }
     static getDefinesAsString(material) {
         const defines = [];
@@ -19114,6 +19162,7 @@ class GraphicsClass {
             renderContext: context,
             width,
             height,
+            time: context.time,
         };
         this.#forwardRenderer.render(scene, camera, delta, internalRenderContext);
         /*
@@ -19136,6 +19185,7 @@ class GraphicsClass {
             renderContext: context,
             width: context.width,
             height: context.height,
+            time: context.time,
         }, postCompute);
     }
     static renderMultiCanvas(delta, context = {}) {
@@ -19213,7 +19263,7 @@ class GraphicsClass {
                     camera.top = h;
                     camera.aspectRatio = w / h;
                 }
-                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport });
+                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport, time: context.time });
             }
             // TODO: set in the previous state
             this.disableScissorTest();
@@ -20208,7 +20258,8 @@ class EmissiveMaterial extends Material {
         json.skinning = this.skinning;
         return json;
     }
-    static async constructFromJSON(json) {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    static async constructFromJSON() {
         return new EmissiveMaterial();
     }
     fromJSON(json) {
@@ -36228,7 +36279,6 @@ class Source1ParticleSystem extends Entity {
     getControlPointPosition(cpId, vec = vec3.create()) {
         const cp = this.getControlPoint(cpId);
         if (cp) {
-            vec3.zero(cp._position);
             return cp.getWorldPosition(vec);
         }
         return vec3.zero(vec);
@@ -36236,7 +36286,6 @@ class Source1ParticleSystem extends Entity {
     getControlPointOrientation(cpId, orientation = quat.create()) {
         const cp = this.getControlPoint(cpId);
         if (cp) {
-            vec3.zero(cp._position);
             return cp.getWorldOrientation(orientation);
         }
         return quat.identity(orientation);
@@ -75932,6 +75981,7 @@ class MaterialEditor {
             return MaterialEditor.#instance;
         }
         MaterialEditor.#instance = this;
+        //const blendOptions: HTMLOptionElement[] = [];
         this.#shadowRoot = createShadowRoot('div', {
             childs: [
                 this.#htmlHeader = createElement('div', {
@@ -76133,6 +76183,27 @@ class MaterialEditor {
         }
     }
 }
+/*
+const BlendFactors = new Map<GLenum, string>([
+    [GL_ZERO, 'zero'],
+    [GL_ONE, 'one'],
+    [GL_SRC_COLOR, 'source color'],
+    [GL_ONE_MINUS_SRC_COLOR, 'one minus source color'],
+    [GL_DST_COLOR, 'destination color'],
+    [GL_ONE_MINUS_DST_COLOR, 'one minus destination color'],
+
+    [GL_SRC_ALPHA, 'source alpha'],
+    [GL_ONE_MINUS_SRC_ALPHA, 'one minus source alpha'],
+    [GL_DST_ALPHA, 'destination alpha'],
+    [GL_ONE_MINUS_DST_ALPHA, 'one minus destination alpha'],
+
+    [GL_CONSTANT_COLOR, 'constant color'],
+    [GL_ONE_MINUS_CONSTANT_COLOR, 'one minus constant color'],
+    [GL_CONSTANT_ALPHA, 'constant alpha'],
+    [GL_ONE_MINUS_CONSTANT_ALPHA, 'one minus constant alpha'],
+    [GL_SRC_ALPHA_SATURATE, 'alpha saturate'],
+]);
+*/
 
 class WireframeHelper extends Entity {
     #meshToWireframe = new Map();

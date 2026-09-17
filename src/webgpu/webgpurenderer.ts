@@ -15,6 +15,7 @@ import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material, MaterialColorMode } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
+import { CameraFrustum } from '../objects/export';
 import { Mesh, pickedPrimitive } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Renderer } from '../renderers/renderer';
@@ -28,7 +29,6 @@ import { getDefines } from '../utils/defines';
 import { WebGLStats } from '../utils/webglstats';
 import { ShaderType } from '../webgl/types';
 import { Binding, WgslModule } from './types';
-import { CameraFrustum } from '../objects/export';
 
 // remove these when unused
 const clearColorError = once(() => console.error('TODO clearColor'));
@@ -242,7 +242,7 @@ export class WebGPURenderer implements Renderer {
 
 		const pick = context.renderContext.pick;
 
-		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
+		material.updateMaterial(context.time ?? Graphics.getTime(), object);//TODO: frame delta
 
 		const defines = new Map<string, string>(this.#defines);// TODO: don't create one each time
 		defines.set('MAX_PARTICLES_IN_A_SYSTEM', `${MAX_PARTICLES_IN_A_SYSTEM}`);
