@@ -17,8 +17,8 @@ export class Source1ParticleControler {
 	static fixedTime?: number;
 
 	static {
-		GraphicsEvents.addEventListener('tick', (event: Event) => {
-			this.stepSystems(this.fixedTime ? (this.fixedTime * (event as CustomEvent<GraphicTickEvent>).detail.speed) : (event as CustomEvent<GraphicTickEvent>).detail.delta);//TODOv3: imporve this
+		GraphicsEvents.addEventListener('tick', (event) => {
+			this.stepSystems(this.fixedTime ? (this.fixedTime * (event as CustomEvent<GraphicTickEvent>).detail.speed) : (event as CustomEvent<GraphicTickEvent>).detail.averageDelta);//TODOv3: imporve this
 		});
 	}
 

@@ -25,6 +25,7 @@ export type GraphicsEvent =
 
 export interface GraphicTickEvent {
 	delta: number,
+	averageDelta: number,
 	time: Millisecond,
 	speed: number,
 	context: RenderContext,
@@ -87,8 +88,8 @@ export class GraphicsEvents {
 	static readonly isGraphicsEvents = true as const;
 	static readonly #eventTarget = new EventTarget();
 
-	static tick(delta: number, time: Millisecond, speed: number, context: RenderContext) {
-		this.dispatchEvent('tick', { detail: { delta, time, speed, context } });
+	static tick(delta: number, averageDelta: number, time: Millisecond, speed: number, context: RenderContext) {
+		this.dispatchEvent('tick', { detail: { delta, averageDelta, time, speed, context } });
 	}
 
 	static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {

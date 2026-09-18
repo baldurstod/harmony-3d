@@ -302,6 +302,10 @@ class GraphicsClass {
 	static #mediaRecorder?: MediaRecorder;
 	static dragging = false;
 	static #allowTransfertBitmap = true;// TODO: find a better way to do that
+	static readonly #frameRateSamples = 50 as const;
+	static readonly #times: number[] = [];
+	static #timesHead = 0;
+	static #timeTotal = 0;
 	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
 	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
 	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
@@ -337,6 +341,11 @@ class GraphicsClass {
 
 		//this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
 		this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
+
+		let samples = this.#frameRateSamples;
+		while (samples--) {
+			this.#times.push(0);
+		}
 	}
 
 	static async initCanvas(contextAttributes: GraphicsInitOptions = {}): Promise<typeof GraphicsClass> {
@@ -499,7 +508,7 @@ class GraphicsClass {
 			const gl = this.glContext;
 			this.setDefine('PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 			this.#allowTransfertBitmap = false;
-			GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
+			GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
 			this.#allowTransfertBitmap = true;
 			this.removeDefine('PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 
@@ -512,7 +521,7 @@ class GraphicsClass {
 			const p = new Promise<Entity | null>((resolve) => {
 				pickingResolve = resolve;
 			});
-			GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve! } });
+			GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve! } });
 
 			return p;
 		}
@@ -838,7 +847,7 @@ class GraphicsClass {
 		this.glContext?.clear(bits);
 	}
 
-	static _tick() {
+	static #tick(time: DOMHighResTimeStamp) {
 		cancelAnimationFrame(this.#animationFrame);
 		let queueTask;
 		if (FULL_PATATE && TESTING) {
@@ -848,19 +857,23 @@ class GraphicsClass {
 				mc.port2.postMessage(null);
 			}
 		} else {
-			this.#animationFrame = requestAnimationFrame(() => this._tick());
+			this.#animationFrame = requestAnimationFrame((time: DOMHighResTimeStamp) => this.#tick(time));
 		}
 
-		const tick = performance.now();
-		this.#time = (tick - this.#timeOrigin) * 0.001;
-		const delta = (tick - this.#lastTick) * this.speed * 0.001;
+		this.#time = (time - this.#timeOrigin) * 0.001;
+		const delta = (time - this.#lastTick) * this.speed * 0.001;
 		if (this.#running) {
 			++this.currentTick;
-			GraphicsEvents.tick(delta, tick, this.speed, {});
+
+			// Compute average delta
+			this.#timeTotal -= this.#times[this.#timesHead]!;
+			this.#timeTotal += (this.#times[this.#timesHead++] = delta);
+			this.#timesHead %= this.#frameRateSamples;
+			GraphicsEvents.tick(delta, this.#timeTotal / this.#frameRateSamples, time, this.speed, {});
 		}
-		this.#lastTick = tick;
+		this.#lastTick = time;
 		if (FULL_PATATE && TESTING) {
-			queueTask!(() => this._tick());
+			queueTask!(() => this.#tick(performance.now()));
 		}
 	}
 
@@ -1295,7 +1308,7 @@ class GraphicsClass {
 
 	static play() {
 		this.#running = true;
-		this._tick();
+		this.#tick(performance.now());
 	}
 
 	static pause() {

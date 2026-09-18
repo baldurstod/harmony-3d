@@ -19,7 +19,7 @@ export interface RenderContext {
 		resolve?: (value: Entity | null) => void,
 	};
 
-	/** Current time. Is time is not provided, a computed time will be used */
+	/** Current time. If time is not provided, a computed time will be used */
 	time?: number;
 
 	/*
