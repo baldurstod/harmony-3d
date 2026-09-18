@@ -729,7 +729,7 @@ export declare class CanvasAttributes {
     useLayout?: string;
     /** Canvas layouts. */
     readonly layouts: Map<string, CanvasLayout>;
-    /** Auto resize this canvas to fit it's container. */
+    /** Auto resize this canvas to fit its container. */
     autoResize: boolean;
     /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
     width?: number;
@@ -2910,7 +2910,6 @@ declare class Channel {
                           static transferOffscreenToImageBitmap(): ImageBitmap | null;
                           static renderBackground(): void;
                           static clear(color: boolean, depth: boolean, stencil: boolean): void;
-                          static _tick(): void;
                           static setShaderPrecision(shaderPrecision: ShaderPrecision): void;
                           static setShaderQuality(shaderQuality: ShaderQuality): void;
                           static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
@@ -2985,7 +2984,7 @@ declare class Channel {
                       export declare class GraphicsEvents {
                           #private;
                           static readonly isGraphicsEvents: true;
-                          static tick(delta: number, time: Millisecond, speed: number, context: RenderContext): void;
+                          static tick(delta: number, averageDelta: number, time: Millisecond, speed: number, context: RenderContext): void;
                           static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
                           static resize(width: number, height: number): void;
                           static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void;
@@ -3062,6 +3061,7 @@ declare class Channel {
 
                       export declare interface GraphicTickEvent {
                           delta: number;
+                          averageDelta: number;
                           time: Millisecond;
                           speed: number;
                           context: RenderContext;
@@ -5943,8 +5943,10 @@ declare class Channel {
                               /** For WebGPU context. Picking is done asynchronously */
                               resolve?: (value: Entity | null) => void;
                           };
-                          /** Current time. Is time is not provided, a computed time will be used */
+                          /** Current time. If time is not provided, an engine time will be used */
                           time?: number;
+                          /** Current per canvas time. Default to time above. If set to null and time is provided, default to engine time instead */
+                          timePerCanvas?: Record<string, number | null>;
                           /** Compute shaders only. X dimension of the grid of workgroups to dispatch. Default to 1 */
                           workgroupCountX?: GPUSize32;
                           /** Compute shaders only. Y dimension of the grid of workgroups to dispatch. Default to 1 */
@@ -6279,7 +6281,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

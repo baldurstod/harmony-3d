@@ -9050,8 +9050,8 @@ class CameraControl {
 class GraphicsEvents {
     static isGraphicsEvents = true;
     static #eventTarget = new EventTarget();
-    static tick(delta, time, speed, context) {
-        this.dispatchEvent('tick', { detail: { delta, time, speed, context } });
+    static tick(delta, averageDelta, time, speed, context) {
+        this.dispatchEvent('tick', { detail: { delta, averageDelta, time, speed, context } });
     }
     static pick(x, y, width, height, pickedEntity, mouseEvent) {
         this.dispatchEvent('pick', { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } });
@@ -18109,7 +18109,7 @@ class WebGPURenderer {
         const geometryAttributes = geometry.attributes;
         const indexAttribute = geometryAttributes.get('index');
         const pick = context.renderContext.pick;
-        material.updateMaterial(Graphics.getTime(), object); //TODO: frame delta
+        material.updateMaterial(context.time ?? Graphics.getTime(), object); //TODO: frame delta
         const defines = new Map(this.#defines); // TODO: don't create one each time
         defines.set('MAX_PARTICLES_IN_A_SYSTEM', `${MAX_PARTICLES_IN_A_SYSTEM$1}`);
         if (pick) {
@@ -18802,7 +18802,7 @@ class CanvasAttributes {
     useLayout;
     /** Canvas layouts. */
     layouts = new Map;
-    /** Auto resize this canvas to fit it's container. */
+    /** Auto resize this canvas to fit its container. */
     autoResize;
     /** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
     width;
@@ -18866,6 +18866,10 @@ class GraphicsClass {
     static #mediaRecorder;
     static dragging = false;
     static #allowTransfertBitmap = true; // TODO: find a better way to do that
+    static #frameRateSamples = 50;
+    static #times = [];
+    static #timesHead = 0;
+    static #timeTotal = 0;
     static #mouseDownFunc = (event) => this.#mouseDown(event);
     static #mouseMoveFunc = (event) => this.#mouseMove(event);
     static #mouseUpFunc = (event) => this.#mouseUp(event);
@@ -18886,6 +18890,10 @@ class GraphicsClass {
         this.setShaderDebugMode(ShaderDebugMode.None);
         //this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
         this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
+        let samples = this.#frameRateSamples;
+        while (samples--) {
+            this.#times.push(0);
+        }
     }
     static async initCanvas(contextAttributes = {}) {
         if (contextAttributes.useOffscreenCanvas) {
@@ -19036,7 +19044,7 @@ class GraphicsClass {
             this.glContext;
             this.setDefine('PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
             this.#allowTransfertBitmap = false;
-            GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
+            GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
             this.#allowTransfertBitmap = true;
             this.removeDefine('PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
             const pixels = new Uint8Array(4);
@@ -19049,7 +19057,7 @@ class GraphicsClass {
             const p = new Promise((resolve) => {
                 pickingResolve = resolve;
             });
-            GraphicsEvents.tick(0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve } });
+            GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y), resolve: pickingResolve } });
             return p;
         }
     }
@@ -19263,7 +19271,18 @@ class GraphicsClass {
                     camera.top = h;
                     camera.aspectRatio = w / h;
                 }
-                this.#forwardRenderer.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport, time: context.time });
+                const timePerCanvas = context.timePerCanvas?.[canvas.name];
+                let time = timePerCanvas ?? context.time;
+                if (timePerCanvas === null) {
+                    time = undefined;
+                }
+                this.#forwardRenderer.render(scene, camera, delta, {
+                    renderContext: context,
+                    width: canvas.canvas.width,
+                    height: canvas.canvas.height,
+                    viewport,
+                    time,
+                });
             }
             // TODO: set in the previous state
             this.disableScissorTest();
@@ -19313,19 +19332,22 @@ class GraphicsClass {
         }
         this.glContext?.clear(bits);
     }
-    static _tick() {
+    static #tick(time) {
         cancelAnimationFrame(this.#animationFrame);
         {
-            this.#animationFrame = requestAnimationFrame(() => this._tick());
+            this.#animationFrame = requestAnimationFrame((time) => this.#tick(time));
         }
-        const tick = performance.now();
-        this.#time = (tick - this.#timeOrigin) * 0.001;
-        const delta = (tick - this.#lastTick) * this.speed * 0.001;
+        this.#time = (time - this.#timeOrigin) * 0.001;
+        const delta = (time - this.#lastTick) * this.speed * 0.001;
         if (this.#running) {
             ++this.currentTick;
-            GraphicsEvents.tick(delta, tick, this.speed, {});
+            // Compute average delta
+            this.#timeTotal -= this.#times[this.#timesHead];
+            this.#timeTotal += (this.#times[this.#timesHead++] = delta);
+            this.#timesHead %= this.#frameRateSamples;
+            GraphicsEvents.tick(delta, this.#timeTotal / this.#frameRateSamples, time, this.speed, {});
         }
-        this.#lastTick = tick;
+        this.#lastTick = time;
     }
     static async #initContext(graphicOptions = {}) {
         if (graphicOptions.type == ContextType.WebGPU) {
@@ -19695,7 +19717,7 @@ class GraphicsClass {
     }
     static play() {
         this.#running = true;
-        this._tick();
+        this.#tick(performance.now());
     }
     static pause() {
         this.#running = false;
@@ -25478,7 +25500,7 @@ class Source1ParticleControler {
     static fixedTime;
     static {
         GraphicsEvents.addEventListener('tick', (event) => {
-            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.speed) : event.detail.delta); //TODOv3: imporve this
+            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.speed) : event.detail.averageDelta); //TODOv3: imporve this
         });
     }
     static setParticleConstructor(ps) {

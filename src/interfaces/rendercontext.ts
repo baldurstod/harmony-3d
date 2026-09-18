@@ -19,8 +19,10 @@ export interface RenderContext {
 		resolve?: (value: Entity | null) => void,
 	};
 
-	/** Current time. If time is not provided, a computed time will be used */
+	/** Current time. If time is not provided, an engine time will be used */
 	time?: number;
+	/** Current per canvas time. Default to time above. If set to null and time is provided, default to engine time instead */
+	timePerCanvas?: Record<string, number | null>;
 
 	/*
 	imageBitmap?: { // TODO: remove

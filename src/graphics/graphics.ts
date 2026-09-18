@@ -227,7 +227,7 @@ export class CanvasAttributes {
 	useLayout?: string;
 	/** Canvas layouts. */
 	readonly layouts = new Map<string, CanvasLayout>;
-	/** Auto resize this canvas to fit it's container. */
+	/** Auto resize this canvas to fit its container. */
 	autoResize: boolean;
 	/** Canvas width. Ignored if autoResize is set to true or a width parameter is passed to renderMultiCanvas() */
 	width?: number;
@@ -785,7 +785,20 @@ class GraphicsClass {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height, viewport, time: context.time });
+
+				const timePerCanvas = context.timePerCanvas?.[canvas.name];
+				let time = timePerCanvas ?? context.time;
+				if (timePerCanvas === null) {
+					time = undefined;
+				}
+
+				this.#forwardRenderer!.render(scene, camera, delta, {
+					renderContext: context,
+					width: canvas.canvas.width,
+					height: canvas.canvas.height,
+					viewport,
+					time,
+				});
 			}
 
 			// TODO: set in the previous state
