@@ -69,8 +69,8 @@ export class Text2D extends Entity {
 		context.font = 'normal ' + textHeight + 'px Arial';
 		metrics = context.measureText(text);
 		const textWidth = metrics.width;
-		canvas.width = textWidth;
-		canvas.height = textHeight;
+		canvas.width = Math.max(textWidth, 1);
+		canvas.height = Math.max(textHeight, 1);
 		context.font = 'normal ' + textHeight + 'px Arial';
 		context.textAlign = 'center';
 		context.textBaseline = 'middle';
