@@ -40,6 +40,7 @@ struct Ray {
 	lightDistance: f32,
 
 	chilRays: array<u32, MAX_SUB_RAYS>,
+	shadowRay: u32,
 	chilId: u32,
 	rayType: u32,
 	ignoreBackFaces: bool,
@@ -135,7 +136,7 @@ struct Counters {
 struct Context {
 	rayStackPtr: u32,
 	rayStackPtr2: u32,
-	rayStack: array<Ray, (MAX_BOUNCES + 1) * MAX_SUB_RAYS>,
+	rayStack: array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>,
 	//currentRay: Ray,
 	rngState: u32,
 	globalInvocationId: vec3<u32>,
@@ -193,7 +194,7 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	initCamera(&camera);
 	var ray = getCameraRay(&camera, x, y, &rngState);
 
-	var rays = array<Ray, (MAX_BOUNCES + 1) * MAX_SUB_RAYS>();
+	var rays = array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>();
 	rays[0] = ray;
 	var context: Context = Context(0, 0, rays, rngState, globalInvocationId, 0, false);
 	var color: vec4f = castRayLoop(&context);
@@ -240,12 +241,18 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 		let material = &materials[ray.materialIdx];
 
 		var childsColor = vec4f(0.);
+		var lightColor = vec4f(1.);
 		var childsAddColor = vec4f(0.);
 
 		if (i == 0) {
 			if (all((*context).globalInvocationId.xy == vec2u(200, 150))) {
 				atomicStore(&counters.counter6, bitcast<u32>(ray.chilId));
 			}
+		}
+
+		if (ray.shadowRay != 0xFFFFFFFF) {
+			let shadowRay: ptr<function, Ray> = &(*context).rayStack[ray.shadowRay];
+			lightColor = shadowRay.hitColor;
 		}
 
 		if (ray.chilId > 0) {
@@ -268,9 +275,9 @@ fn castRayLoop(context: ptr<function, Context>) -> vec4f {
 				}
 			}
 			if (found) {
-				ray.totalColor = ray.hitColor * childsColor + ray.selfColor + childsAddColor;
+				ray.totalColor = ray.hitColor * lightColor + childsColor + ray.selfColor + childsAddColor;
 			} else {
-				ray.totalColor = ray.hitColor + ray.selfColor;
+				ray.totalColor = ray.hitColor * lightColor + ray.selfColor;
 			}
 		} else {
 			ray.totalColor = ray.hitColor + ray.selfColor;
@@ -481,7 +488,7 @@ fn scatterRay(scatterDirection: vec3f, currentRay: u32, strength: f32, rayType: 
 	}
 
 	var rD: vec3f = 1 / scatterDirection;
-	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, rayType, true);
+	var newRay = Ray(ray.hitPos, scatterDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, rayType, true);
 	pushRay(&newRay, currentRay, context);
 }
 
@@ -493,8 +500,8 @@ fn shadowRay(currentRay: u32, strength: f32, context: ptr<function, Context>) {
 	lightDir = normalize(lightDir);
 
 	var rD: vec3f = 1 / lightDir;
-	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0, dist, array<u32, MAX_SUB_RAYS>(), 0, RayTypeShadow, false);
-	pushRay(&newRay, currentRay, context);
+	var newRay = Ray(ray.hitPos + ray.hitNormal * 0.5/*TODO: add bias parameter */, lightDir, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), ray.hitNormal, mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), strength, 0, dist, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, RayTypeShadow, false);
+	setShadowRay(&newRay, currentRay, context);
 }
 
 fn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {
@@ -511,7 +518,19 @@ fn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Contex
 
 	(*context).rayStack[(*context).rayStackPtr] = *ray;
 	(*context).done = false;
+}
 
+fn setShadowRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {
+	if ((*context).bounces >= MAX_BOUNCES) {
+		return;
+	}
+
+	let parent: ptr<function, Ray> = &(*context).rayStack[parentId];
+
+	(*context).rayStackPtr++;
+	parent.shadowRay = (*context).rayStackPtr;
+	(*context).rayStack[(*context).rayStackPtr] = *ray;
+	(*context).done = false;
 }
 
 @must_use
@@ -686,7 +705,7 @@ fn getCameraRay(camera: ptr<function, Camera>, i: f32, j: f32, rngState: ptr<fun
 	let rayOrigin = select(defocusDiskSample(camera, rngState), (*camera).center, (*camera).defocusAngle <= 0);
 	let rayDirection = pixelSample - rayOrigin;
 	let rD = vec3f( 1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z );
-	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0, RayTypeCamera, true);
+	return Ray(rayOrigin, rayDirection, rD, 1.e30, 0xFFFFFFFF, vec3f(0), vec3f(0), vec3f(0), mat3x3f(), vec2f(0), vec4f(0), vec4f(0), vec4f(0), 1, 0xFFFFFFFF, 0, array<u32, MAX_SUB_RAYS>(), 0xFFFFFFFF, 0, RayTypeCamera, true);
 }
 
 @must_use
