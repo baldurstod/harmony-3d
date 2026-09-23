@@ -3102,6 +3102,7 @@ declare class Channel {
                           set spacing(spacing: number);
                           setSpacing(spacing: number): void;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare type GridMaterialParams = MaterialParams & {
@@ -4005,7 +4006,7 @@ declare class Channel {
                           getStorage(name: string): StorageBuffer | undefined;
                           setStorage(name: string, value: StorageValueArray | number | StorageBufferParam): void;
                           deleteStorage(name: string): void;
-                          getRaytracingMaterial(index: number): RaytracingMaterial | null;
+                          abstract getRaytracingMaterial(index: number): RaytracingMaterial | null;
                       }
 
                       export declare const MATERIAL_BLENDING_NONE = 0;
@@ -4543,6 +4544,7 @@ declare class Channel {
                           setMetalnessTexture(metalnessTexture: Texture | undefined): void;
                           setRoughnessTexture(roughnessTexture: Texture | undefined): void;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                           toJSON(): JSONObject;
                           static constructFromJSON(): Promise<MeshBasicPbrMaterial>;
                           fromJSON(json: JSONObject): void;
@@ -4562,6 +4564,7 @@ declare class Channel {
                       export declare class MeshFlatMaterial extends Material {
                           constructor(params?: any);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare type MeshParameters = EntityParameters & {
@@ -4590,6 +4593,7 @@ declare class Channel {
                           morphTargets: boolean;
                           constructor(params?: any);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare class MeshTest {
@@ -4823,6 +4827,7 @@ declare class Channel {
                           shaderName: string;
                           constructor(params: any);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare class NodeParam {
@@ -5689,12 +5694,12 @@ declare class Channel {
                           index: number;
                           materialType: RtMaterial;
                           textures?: Map<number, Texture | null>;
-                          reflectionRatio: float32;
-                          reflectionGloss: float32;
-                          refractionIndex: float32;
+                          reflectionRatio?: float32;
+                          reflectionGloss?: float32;
+                          refractionIndex?: float32;
                           transparent?: float32;
                           albedo?: vec3;
-                          flatShading: boolean;
+                          flatShading?: boolean;
                           v0?: vec4;
                           v1?: vec4;
                           v2?: vec4;
@@ -6813,6 +6818,7 @@ declare class Channel {
                       export declare class ShaderToyMaterial extends Material {
                           constructor(params?: any);
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       export declare enum ShaderType {
@@ -9814,6 +9820,7 @@ declare class Channel {
                           setDefine(define: string, value?: string): void;
                           removeDefine(define: string): void;
                           getShaderSource(): string;
+                          getRaytracingMaterial(index: number): RaytracingMaterial;
                       }
 
                       declare type VirtualMaterialParams = MaterialParams & {

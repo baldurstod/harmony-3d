@@ -22,12 +22,16 @@ export type RaytracingMaterial = {
 	index: number;
 	materialType: RtMaterial;
 	textures?: Map<number, Texture | null>;
-	reflectionRatio: float32,
-	reflectionGloss: float32,
-	refractionIndex: float32,
+	// Amount of reflection. Default to 0.1
+	reflectionRatio?: float32,
+	// Reflection gloss. Default to 1
+	reflectionGloss?: float32,
+	// Refraction index. Default to 0.1
+	refractionIndex?: float32,
 	transparent?: float32,
 	albedo?: vec3,
-	flatShading: boolean,
+	// Use flat shading. Default to true
+	flatShading?: boolean,
 	v0?: vec4,
 	v1?: vec4,
 	v2?: vec4,

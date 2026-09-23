@@ -316,9 +316,9 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 
 				materials.push({
 					materialType: mtl.materialType,
-					reflectionRatio: mtl.reflectionRatio,
-					reflectionGloss: mtl.reflectionGloss,
-					refractionIndex: mtl.refractionIndex,
+					reflectionRatio: mtl.reflectionRatio ?? 0.1,
+					reflectionGloss: mtl.reflectionGloss ?? 1,
+					refractionIndex: mtl.refractionIndex ?? 0.1,
 					transparent: mtl.transparent,
 					albedo: mtl.albedo ?? vec3.create(),
 					textures,
@@ -517,7 +517,7 @@ function parseModel(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 				fn: vec3.clone(fn),
 				fi: outFaces.length,
 				mi: rtMaterial.index,
-				flatShading: rtMaterial.flatShading,
+				flatShading: rtMaterial.flatShading ?? true,
 			});
 		}
 
@@ -1060,7 +1060,7 @@ function createTris(meshes: Mesh[], materials: Map<Material, RaytracingMaterial 
 				centroid: vec3.create(),
 				materialIdx: rtMaterial.index,
 				faceNormal,
-				flatShading: rtMaterial.flatShading,
+				flatShading: rtMaterial.flatShading ?? true,
 			});
 		}
 	}

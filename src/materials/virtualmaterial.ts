@@ -1,5 +1,6 @@
 import { Entity } from '../entities/entity';
 import { HasMaterial } from '../interfaces/hasmaterial';
+import { RaytracingMaterial, RtMaterial } from '../raytracing/material';
 import { Material, MaterialParams } from './material';
 
 export type VirtualMaterialParams = MaterialParams & {
@@ -40,5 +41,13 @@ export class VirtualMaterial extends Material {
 
 	override getShaderSource(): string {
 		return 'virtual';
+	}
+
+	override getRaytracingMaterial(index: number): RaytracingMaterial {
+		// Phony values: this material is not supposed to be used for rendering
+		return {
+			index,
+			materialType: RtMaterial.Unknown,
+		}
 	}
 }

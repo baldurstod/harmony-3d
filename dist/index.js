@@ -2231,10 +2231,6 @@ class Material {
             ++this.updateVersion;
         }
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    getRaytracingMaterial(index) {
-        throw new Error('override this function');
-    }
 }
 
 let id$1 = 0;
@@ -11250,6 +11246,21 @@ class LineBasicMaterial extends Material {
     getShaderSource() {
         return 'meshbasic';
     }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
+    }
 }
 Material.materialList['LineBasic'] = LineBasicMaterial;
 
@@ -11412,6 +11423,21 @@ class GridMaterial extends Material {
     }
     getShaderSource() {
         return 'grid';
+    }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
     }
 }
 Material.materialList['Grid'] = GridMaterial;
@@ -20302,6 +20328,21 @@ class MeshFlatMaterial extends Material {
     getShaderSource() {
         return 'meshphong';
     }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
+    }
 }
 Material.materialList['MeshFlat'] = MeshFlatMaterial;
 
@@ -20329,6 +20370,21 @@ class MeshPhongMaterial extends Material {
     }
     getShaderSource() {
         return 'meshphong';
+    }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
     }
 }
 Material.materialList['MeshPhong'] = MeshPhongMaterial;
@@ -20378,6 +20434,21 @@ class MeshBasicPbrMaterial extends Material {
     getShaderSource() {
         return 'meshbasicpbr';
     }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
+    }
     toJSON() {
         const json = super.toJSON();
         return json;
@@ -20409,6 +20480,21 @@ class ShaderToyMaterial extends Material {
     }
     getShaderSource() {
         return 'shadertoy';
+    }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
     }
 }
 Material.materialList['ShaderToy'] = ShaderToyMaterial;
@@ -71343,6 +71429,21 @@ class NodeImageEditorMaterial extends Material {
     getShaderSource() {
         return this.shaderName;
     }
+    getRaytracingMaterial(index) {
+        // TODO: check these values
+        return {
+            index,
+            materialType: RtMaterial.Source1EyeRefract,
+            reflectionRatio: 0.1,
+            reflectionGloss: 1,
+            refractionIndex: 0.1,
+            albedo: vec3.fromValues(0.901960015296936, 0.49411699175834656, 0.1333329975605011), // TODO: set actual value
+            textures: new Map([
+                [0, this.getUniformValue('colorMap')],
+            ]),
+            flatShading: true,
+        };
+    }
 }
 
 //const tempVec2 = vec2.create();
@@ -75959,6 +76060,13 @@ class VirtualMaterial extends Material {
     }
     getShaderSource() {
         return 'virtual';
+    }
+    getRaytracingMaterial(index) {
+        // Phony values: this material is not supposed to be used for rendering
+        return {
+            index,
+            materialType: RtMaterial.Unknown,
+        };
     }
 }
 

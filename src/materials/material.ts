@@ -711,10 +711,7 @@ export abstract class Material implements HasUsers {
 		}
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	getRaytracingMaterial(index: number): RaytracingMaterial | null {
-		throw new Error('override this function');
-	}
+	abstract getRaytracingMaterial(index: number): RaytracingMaterial | null;
 }
 
 /** Concrete subclasses of Material */
