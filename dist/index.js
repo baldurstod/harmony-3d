@@ -73991,9 +73991,9 @@ async function loadModels(context, meshes, sceneMaterials, lights) {
                 }
                 materials.push({
                     materialType: mtl.materialType,
-                    reflectionRatio: mtl.reflectionRatio,
-                    reflectionGloss: mtl.reflectionGloss,
-                    refractionIndex: mtl.refractionIndex,
+                    reflectionRatio: mtl.reflectionRatio ?? 0.1,
+                    reflectionGloss: mtl.reflectionGloss ?? 1,
+                    refractionIndex: mtl.refractionIndex ?? 0.1,
                     transparent: mtl.transparent,
                     albedo: mtl.albedo ?? vec3.create(),
                     textures,
@@ -74162,7 +74162,7 @@ function parseModel(meshes, materials) {
                 fn: vec3.clone(fn),
                 fi: outFaces.length,
                 mi: rtMaterial.index,
-                flatShading: rtMaterial.flatShading,
+                flatShading: rtMaterial.flatShading ?? true,
             });
         }
         const outAABBs = [];
@@ -74523,7 +74523,7 @@ function createTris(meshes, materials) {
                 centroid: vec3.create(),
                 materialIdx: rtMaterial.index,
                 faceNormal,
-                flatShading: rtMaterial.flatShading,
+                flatShading: rtMaterial.flatShading ?? true,
             });
         }
     }
@@ -74696,7 +74696,7 @@ class Raytracer {
         //this.#material.#uniforms['outTexture'] = this.#outputTexture;
         this.#material.setUniformValue('outTexture', this.#outputTexture);
         const rtCanvas = Graphics.getCanvas('rt_canvas');
-        rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
+        rtCanvas?.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
     }
     async #configureCamera(camera, width, height) {
         const lookFrom = camera.getWorldPosition();

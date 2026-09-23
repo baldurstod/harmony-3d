@@ -3,7 +3,7 @@ import { FpsCounter } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
-import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
+import { GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { WebGPUInternal } from '../graphics/webgpuinternal';
 import { BlendingMode } from '../materials/constants';
 import { ShaderMaterial } from '../materials/shadermaterial';
@@ -12,7 +12,7 @@ import { Scene } from '../scenes/scene';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
 import { GL_LINEAR } from '../webgl/constants';
-import { StorageBufferParam, StorageValueArray } from '../webgpu/storage';
+import { StorageValueArray } from '../webgpu/storage';
 import { sceneToRtScene } from './raytracingscene';
 
 type RtCamera = {
@@ -120,14 +120,16 @@ export class Raytracer {
 		this.#configureCamera(activeCamera, this.#width, this.#height);
 	}
 
-	async configure(scene: Scene, width: number, height: number,
+	async configure(scene: Scene, camera: Camera, width: number, height: number,
 		//materials: any[], faces: Uint8ClampedArray, aabbs: Uint8ClampedArray,
 		//MODELS_COUNT: number, MAX_NUM_BVs_PER_MESH: number, MAX_NUM_FACES_PER_MESH: number
-	): Promise<boolean> {
+	): Promise<void> {
+		/*
 		const activeCamera = scene.activeCamera;
 		if (!activeCamera) {
 			return false;
 		}
+		*/
 		this.#scene = scene;
 
 		this.#width = width;
@@ -141,7 +143,7 @@ export class Raytracer {
 		this.#newInstanceCount = nodesUsed * 12;
 		this.#setInstanceCount();
 
-		this.#configureCamera(activeCamera, width, height);
+		this.#configureCamera(camera, width, height);
 		this.#prepassDone = false;
 
 		this.#material.setStorage('faces', {
@@ -215,10 +217,8 @@ export class Raytracer {
 		//this.#material.#uniforms['outTexture'] = this.#outputTexture;
 		this.#material.setUniformValue('outTexture', this.#outputTexture);
 
-		const rtCanvas = Graphics.getCanvas('rt_canvas')!;
-		rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
-
-		return true;
+		const rtCanvas = Graphics.getCanvas('rt_canvas');
+		rtCanvas?.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
 	}
 
 	async #configureCamera(camera: Camera, width: number, height: number): Promise<void> {
