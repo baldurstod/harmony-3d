@@ -1224,6 +1224,9 @@ declare class Channel {
                  setSize(width: number, height: number): void;
              }
 
+             /** Concrete subclasses of Material */
+             declare type ConcreteMaterial = typeof Material & (new (...args: any[]) => Material);
+
              export declare class Cone extends Mesh {
                  #private;
                  constructor(params?: ConeParameters);
@@ -1985,6 +1988,7 @@ declare class Channel {
                           castShadow?: boolean;
                           receiveShadow?: boolean;
                           visible?: boolean;
+                          attributes?: Record<string, any>;
                       }
 
                       declare type EntityPropertyValue = any;
@@ -3373,9 +3377,9 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
-                          static registerEntity(ent: typeof Entity | typeof Material): void;
+                          static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }
 
                       export declare class KeepOnlyLastChild extends Entity {
@@ -3894,7 +3898,7 @@ declare class Channel {
 
                       declare type MapEntityValue = any;
 
-                      export declare class Material implements HasUsers {
+                      export declare abstract class Material implements HasUsers {
                           #private;
                           id: string;
                           name: string;
@@ -3918,7 +3922,7 @@ declare class Channel {
                           _dirtyProgram: boolean;
                           colorMap: Texture | null;
                           properties: Map<string, any>;
-                          static materialList: Record<string, typeof Material>;
+                          static materialList: Record<string, ConcreteMaterial>;
                           updateVersion: number;
                           /** Workgroup size for WebGPU compute shaders. All components default to 1 */
                           workgroupSize?: vec3;
@@ -5667,7 +5671,7 @@ declare class Channel {
                           #private;
                           constructor();
                           reset(): Promise<void>;
-                          configure(scene: Scene, width: number, height: number): Promise<boolean>;
+                          configure(scene: Scene, camera: Camera, width: number, height: number): Promise<void>;
                           play(): void;
                           pause(): void;
                           getRps(): number;

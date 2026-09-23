@@ -1,9 +1,9 @@
-import { Material } from '../materials/material';
+import { ConcreteMaterial } from '../materials/material';
 import { Entity } from './entity';
 
-const entities = new Map<string, typeof Entity | typeof Material>();
+const entities = new Map<string, typeof Entity | ConcreteMaterial>();
 
-export function registerEntity(ent: typeof Entity | typeof Material) {
+export function registerEntity(ent: typeof Entity | ConcreteMaterial) {
 	if (entities.has(ent.getEntityName().toLowerCase())) {
 		console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
 	}

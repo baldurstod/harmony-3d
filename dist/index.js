@@ -1241,17 +1241,6 @@ class ShaderManager {
 const __DISABLE_WEBGL2__ = false;
 const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
 
-const entities$1 = new Map();
-function registerEntity(ent) {
-    if (entities$1.has(ent.getEntityName().toLowerCase())) {
-        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
-    }
-    entities$1.set(ent.getEntityName().toLowerCase(), ent);
-}
-function getEntity(name) {
-    return entities$1.get(name.toLowerCase());
-}
-
 //See https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
 const GL_NONE = 0;
 const GL_ZERO = 0;
@@ -1684,7 +1673,6 @@ var MaterialColorMode;
     MaterialColorMode[MaterialColorMode["PerMesh"] = 2] = "PerMesh";
 })(MaterialColorMode || (MaterialColorMode = {}));
 const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-// TODO: set as abstract class
 class Material {
     id = '';
     name = '';
@@ -2109,10 +2097,8 @@ class Material {
         }
         return json;
     }
-    // TODO: set abstract
-    // eslint-disable-next-line @typescript-eslint/require-await
-    static async constructFromJSON(json) {
-        return new Material(json.parameters /*TODO: check validity*/);
+    static constructFromJSON(json) {
+        throw new Error('Error: override this function');
     }
     fromJSON(json) {
         this.color = json.color;
@@ -2250,7 +2236,6 @@ class Material {
         throw new Error('override this function');
     }
 }
-registerEntity(Material);
 
 let id$1 = 0;
 class ShaderMaterial extends Material {
@@ -2278,6 +2263,17 @@ class ShaderMaterial extends Material {
     getRaytracingMaterial(index) {
         return null;
     }
+}
+
+const entities$1 = new Map();
+function registerEntity(ent) {
+    if (entities$1.has(ent.getEntityName().toLowerCase())) {
+        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
+    }
+    entities$1.set(ent.getEntityName().toLowerCase(), ent);
+}
+function getEntity(name) {
+    return entities$1.get(name.toLowerCase());
 }
 
 class JSONLoader {
@@ -2899,6 +2895,9 @@ class Entity {
         }
         if (parameters.visible !== undefined) {
             this.setVisible(parameters.visible);
+        }
+        for (const name in parameters.attributes) {
+            this.setAttribute(name, parameters.attributes[name]);
         }
     }
     set name(name) {
@@ -4386,7 +4385,7 @@ class MaterialManager {
             const materialClass = material.materialClass;
             if (manager) ;
             else {
-                callback(new materialClass);
+                callback(new materialClass /* We cast the type cause Material is abstract. However the actual class is guaranteed to be concrete */);
             }
         }
     }
@@ -15525,8 +15524,8 @@ class Text2D extends Entity {
         context.font = 'normal ' + textHeight + 'px Arial';
         metrics = context.measureText(text);
         const textWidth = metrics.width;
-        canvas.width = textWidth;
-        canvas.height = textHeight;
+        canvas.width = Math.max(textWidth, 1);
+        canvas.height = Math.max(textHeight, 1);
         context.font = 'normal ' + textHeight + 'px Arial';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -30821,7 +30820,7 @@ class Source1ModelInstance extends Entity {
                     entity.playSequence(animation);
                 } } },
             overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { const material = await Interaction.getString(0, 0, Object.keys(Material.materialList)); if (material) {
-                    entity.material = new Material.materialList[material];
+                    entity.material = new Material.materialList[material] /* We cast the type cause Material is abstract. However the actual class is guaranteed to be concrete */;
                 } } },
             Source1ModelInstance_2: null,
             animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
@@ -74517,11 +74516,13 @@ class Raytracer {
         }
         this.#configureCamera(activeCamera, this.#width, this.#height);
     }
-    async configure(scene, width, height) {
+    async configure(scene, camera, width, height) {
+        /*
         const activeCamera = scene.activeCamera;
         if (!activeCamera) {
             return false;
         }
+        */
         this.#scene = scene;
         this.#width = width;
         this.#height = height;
@@ -74531,7 +74532,7 @@ class Raytracer {
         this.#oldInstanceCount = aabbsCount * 12;
         this.#newInstanceCount = nodesUsed * 12;
         this.#setInstanceCount();
-        this.#configureCamera(activeCamera, width, height);
+        this.#configureCamera(camera, width, height);
         this.#prepassDone = false;
         this.#material.setStorage('faces', {
             value: faces,
@@ -74595,7 +74596,6 @@ class Raytracer {
         this.#material.setUniformValue('outTexture', this.#outputTexture);
         const rtCanvas = Graphics.getCanvas('rt_canvas');
         rtCanvas.getLayout('default')?.views.get('all')?.scene?.addChild(this.#debugBvhMesh);
-        return true;
     }
     async #configureCamera(camera, width, height) {
         const lookFrom = camera.getWorldPosition();

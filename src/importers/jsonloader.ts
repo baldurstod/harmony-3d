@@ -1,7 +1,7 @@
 import { JSONObject, JSONValue } from 'harmony-types';
 import { getEntity, registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
-import { Material } from '../materials/material';
+import { ConcreteMaterial, Material } from '../materials/material';
 
 export class JSONLoader {
 	static async fromJSON(rootEntity: JSONObject) {
@@ -46,7 +46,7 @@ export class JSONLoader {
 		return null;
 	}
 
-	static registerEntity(ent: typeof Entity | typeof Material) {
+	static registerEntity(ent: typeof Entity | ConcreteMaterial) {
 		registerEntity(ent);
 	}
 }

@@ -2,7 +2,6 @@ import { vec2, vec3, vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
 import { TESTING } from '../buildoptions';
 import { Camera } from '../cameras/camera';
-import { registerEntity } from '../entities/entities';
 import { BlendingFactor, BlendingFactorWebGPU } from '../enums/blending';
 import { HasUsers, ObjectUser } from '../interfaces/hasusers';
 import { Mesh } from '../objects/mesh';
@@ -60,8 +59,7 @@ export type MaterialParams = {
 	colorMode?: MaterialColorMode;
 };
 
-// TODO: set as abstract class
-export class Material implements HasUsers {
+export abstract class Material implements HasUsers {
 	id = '';
 	name = '';
 	#renderFace!: RenderFace;
@@ -95,7 +93,7 @@ export class Material implements HasUsers {
 	#colorMode: MaterialColorMode = MaterialColorMode.None;
 	colorMap: Texture | null = null;
 	properties = new Map<string, any>();
-	static materialList: Record<string, typeof Material> = {};
+	static materialList: Record<string, ConcreteMaterial> = {};
 	#dirtyBuffers = false;
 	updateVersion = 0;
 	/** Workgroup size for WebGPU compute shaders. All components default to 1 */
@@ -550,10 +548,8 @@ export class Material implements HasUsers {
 		return json;
 	}
 
-	// TODO: set abstract
-	// eslint-disable-next-line @typescript-eslint/require-await
-	static async constructFromJSON(json: JSONObject): Promise<Material> {
-		return new Material(json.parameters as MaterialParams/*TODO: check validity*/);
+	static constructFromJSON(json: JSONObject): Promise<Material> {
+		throw new Error('Error: override this function');
 	}
 
 	fromJSON(json: JSONObject): void {
@@ -720,4 +716,6 @@ export class Material implements HasUsers {
 		throw new Error('override this function');
 	}
 }
-registerEntity(Material);
+
+/** Concrete subclasses of Material */
+export type ConcreteMaterial = typeof Material & (new (...args: any[]) => Material);

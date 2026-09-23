@@ -1,10 +1,10 @@
 import { TESTING } from '../buildoptions';
-import { Material } from './material';
+import { ConcreteMaterial, Material } from './material';
 
 export class MaterialManager {
-	static #materials = new Map<string, { materialClass: typeof Material, manager: any/*TODO: better type*/ }>();
+	static #materials = new Map<string, { materialClass: ConcreteMaterial, manager: any/*TODO: better type*/ }>();
 
-	static registerMaterial(materialName: string, materialClass: typeof Material, manager: any/*TODO: better type*/): void {
+	static registerMaterial(materialName: string, materialClass: ConcreteMaterial, manager: any/*TODO: better type*/): void {
 		if (TESTING) {
 			if (!materialName) {
 				throw new Error('Missing material name');
@@ -27,7 +27,7 @@ export class MaterialManager {
 			if (manager) {
 				//manager.pickMaterial(materialName, materialClass, callback);
 			} else {
-				callback(new materialClass);
+				callback(new (materialClass as any/* We cast the type cause Material is abstract. However the actual class is guaranteed to be concrete */));
 			}
 		}
 	}

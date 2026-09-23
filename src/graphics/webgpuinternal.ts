@@ -45,3 +45,25 @@ export function logGPUBuffers(delay: Millisecond): ReturnType<typeof setInterval
 		console.log(`GPU buffers: ${buffers.size}, total size: ${totalSize}`, buffers);
 	}, delay);
 }
+/*
+
+
+const gpuDeviceOriginals = {
+	GPUQueue_writeBuffer: GPUQueue.prototype.writeBuffer,
+};
+
+GPUQueue.prototype.writeBuffer = function (
+
+	buffer: GPUBuffer,
+	bufferOffset: GPUSize64,
+	data: GPUAllowSharedBufferSource,
+	dataOffset?: GPUSize64,
+	size?: GPUSize64
+
+): undefined {
+	if (buffer.size > 50000) {
+		console.info(`writing buffer ${buffer.size}`);
+	}
+	return gpuDeviceOriginals.GPUQueue_writeBuffer.call(this, buffer, bufferOffset, data, dataOffset, size,);
+}
+*/

@@ -799,7 +799,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			tint: { i18n: '#tint', f: (entity: Source1ModelInstance) => Interaction.getColor(0, 0, undefined, (tint) => { entity.setTint(tint); }, (tint = entity.getTint()) => { entity.setTint(tint); }) },
 			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance) => entity.setTint(null), disabled: this.#tint === undefined },
 			animation: { i18n: '#animation', f: async (entity: Source1ModelInstance) => { const animation = await Interaction.getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
-			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity: Source1ModelInstance) => { const material = await Interaction.getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]!; } } },
+			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity: Source1ModelInstance) => { const material = await Interaction.getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new (Material.materialList[material] as any/* We cast the type cause Material is abstract. However the actual class is guaranteed to be concrete */)!; } } },
 			Source1ModelInstance_2: null,
 			animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
 			frame: { i18n: '#frame', f: () => { const frame = prompt('Frame', String(this.frame)); if (frame) { this.animationSpeed = 0; this.frame = Number(frame); } } },
