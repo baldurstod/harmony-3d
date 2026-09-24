@@ -103,21 +103,20 @@ export class Raytracer {
 	#newInstanceCount = 0;
 	#newMethod = true;
 	#scene?: Scene;
+	#camera?: Camera;
 
 	constructor() {
 		GraphicsEvents.addEventListener('tick', this.#tick);
 		this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm'/*WebGPUInternal.format*/);
 	}
 
-	async reset(): Promise<void> {
-		this.#reset();
-
-		const activeCamera = this.#scene?.activeCamera;
-		if (!activeCamera) {
+	async reset(camera: Camera | undefined = this.#camera): Promise<void> {
+		if (!camera) {
 			return;
 		}
+		this.#reset();
 
-		this.#configureCamera(activeCamera, this.#width, this.#height);
+		this.#configureCamera(camera, this.#width, this.#height);
 	}
 
 	async configure(scene: Scene, camera: Camera, width: number, height: number,
@@ -131,6 +130,7 @@ export class Raytracer {
 		}
 		*/
 		this.#scene = scene;
+		this.#camera = camera;
 
 		this.#width = width;
 		this.#height = height;

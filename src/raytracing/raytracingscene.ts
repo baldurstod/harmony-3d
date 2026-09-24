@@ -1,5 +1,6 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
+import { EngineEntityAttributes } from '../entities/entity';
 import { AmbientLight } from '../lights/ambientlight';
 import { Light } from '../lights/light';
 import { SpotLight } from '../lights/spotlight';
@@ -100,6 +101,10 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	let materialIndex = 2;
 
 	for (const entity of entitites) {
+		if (entity.getAttribute(EngineEntityAttributes.IsTool, false)) {
+			continue;
+		}
+
 		if ((entity as Mesh).isMesh) {
 			meshes.push(entity as Mesh);
 
