@@ -2809,7 +2809,7 @@ const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 const LAYER_MAX = 50;
 var EngineEntityAttributes;
 (function (EngineEntityAttributes) {
-    EngineEntityAttributes["IsTool"] = "is tool";
+    EngineEntityAttributes["IsTool"] = "engine.entity.is_tool";
 })(EngineEntityAttributes || (EngineEntityAttributes = {}));
 class Entity {
     static addSubMenu;
@@ -2870,7 +2870,7 @@ class Entity {
             this.setPosition(parameters.position);
         }
         if (parameters.quaternion) {
-            this.setQuaternion(parameters.quaternion);
+            this.setOrientation(parameters.quaternion);
         }
         if (parameters.scale) {
             if (typeof parameters.scale === 'number') {
@@ -11341,10 +11341,12 @@ class CameraFrustum extends Mesh {
     constructor(params = {}) {
         params.geometry = new BufferGeometry();
         params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerVertex });
+        params.topology = 'line-list';
         super(params);
         this.renderMode = GL_LINES;
         this.#createVertices();
         this.castShadow = false;
+        this.setAttribute(EngineEntityAttributes.IsTool, true);
         if (this.parent) {
             this.parentChanged(this.parent);
         }
@@ -11709,6 +11711,7 @@ class PointLightHelper extends Mesh {
     constructor(params = {}) {
         params.geometry = new BufferGeometry();
         params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerMesh, defines: { ALWAYS_ON_TOP: '', } });
+        params.topology = 'line-list';
         super(params);
         this.renderMode = GL_LINES;
         this.#createVertices();
@@ -11977,6 +11980,7 @@ class SpotLightHelper extends Mesh {
     constructor(params = {}) {
         params.geometry = new BufferGeometry();
         params.material = new LineBasicMaterial();
+        params.topology = 'line-list';
         super(params);
         this.renderMode = GL_LINES;
         this.#createVertices();
@@ -73811,6 +73815,9 @@ async function sceneToRtScene(scene) {
     const materials = new Map();
     let materialIndex = 2;
     for (const entity of entitites) {
+        if (entity.getAttribute(EngineEntityAttributes.IsTool, false)) {
+            continue;
+        }
         if (entity.isMesh) {
             meshes.push(entity);
             const material = entity.getMaterial();
@@ -73819,7 +73826,7 @@ async function sceneToRtScene(scene) {
                 materials.set(material, rtMaterials);
             }
         }
-        else if (entity.isLight && !entity.isAmbientLight) {
+        else if (entity.isLight) { //&& !(entity as AmbientLight).isAmbientLight) {
             lights.push(entity);
         }
     }
@@ -74605,17 +74612,17 @@ class Raytracer {
     #newInstanceCount = 0;
     #newMethod = true;
     #scene;
+    #camera;
     constructor() {
         GraphicsEvents.addEventListener('tick', this.#tick);
         this.#material.setDefine('OUTPUT_FORMAT', 'rgba8unorm' /*WebGPUInternal.format*/);
     }
-    async reset() {
-        this.#reset();
-        const activeCamera = this.#scene?.activeCamera;
-        if (!activeCamera) {
+    async reset(camera = this.#camera) {
+        if (!camera) {
             return;
         }
-        this.#configureCamera(activeCamera, this.#width, this.#height);
+        this.#reset();
+        this.#configureCamera(camera, this.#width, this.#height);
     }
     async configure(scene, camera, width, height) {
         /*
@@ -74625,6 +74632,7 @@ class Raytracer {
         }
         */
         this.#scene = scene;
+        this.#camera = camera;
         this.#width = width;
         this.#height = height;
         const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);

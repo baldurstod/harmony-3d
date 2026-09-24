@@ -15,6 +15,7 @@ export class PointLightHelper extends Mesh {
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
 		params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerMesh, defines: { ALWAYS_ON_TOP: '', } });
+		params.topology = 'line-list';
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();

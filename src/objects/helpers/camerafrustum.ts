@@ -102,6 +102,7 @@ export class CameraFrustum extends Mesh {
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
 		params.material = new LineBasicMaterial({ colorMode: MaterialColorMode.PerVertex });
+		params.topology = 'line-list';
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();

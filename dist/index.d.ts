@@ -5675,7 +5675,7 @@ declare class Channel {
                       export declare class Raytracer {
                           #private;
                           constructor();
-                          reset(): Promise<void>;
+                          reset(camera?: Camera | undefined): Promise<void>;
                           configure(scene: Scene, camera: Camera, width: number, height: number): Promise<void>;
                           play(): void;
                           pause(): void;

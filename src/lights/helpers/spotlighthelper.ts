@@ -3,7 +3,7 @@ import { vec3, vec4 } from 'gl-matrix';
 import { Entity } from '../../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
-import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { GraphicsEvents } from '../../graphics/graphicsevents';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
 import { TWO_PI } from '../../math/constants';
 import { Mesh, MeshParameters } from '../../objects/mesh';
@@ -23,6 +23,7 @@ export class SpotLightHelper extends Mesh {
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
 		params.material = new LineBasicMaterial();
+		params.topology = 'line-list';
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
