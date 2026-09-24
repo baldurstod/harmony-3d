@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
-import { Entity } from '../../entities/entity';
+import { EngineEntityAttributes, Entity } from '../../entities/entity';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
-import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { GraphicsEvents } from '../../graphics/graphicsevents';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
 import { MaterialColorMode } from '../../materials/material';
 import { GL_LINES } from '../../webgl/constants';
@@ -106,6 +106,7 @@ export class CameraFrustum extends Mesh {
 		this.renderMode = GL_LINES;
 		this.#createVertices();
 		this.castShadow = false;
+		this.setAttribute(EngineEntityAttributes.IsTool, true);
 
 		if (this.parent) {
 			this.parentChanged(this.parent);
