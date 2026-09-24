@@ -3601,7 +3601,7 @@ declare class Channel {
                           doInit(particle: Source1Particle): void;
                       }
 
-                      export declare class Light extends Entity {
+                      export declare abstract class Light extends Entity {
                           #private;
                           shadow?: LightShadow;
                           readonly isLight = true;
@@ -3617,12 +3617,11 @@ declare class Channel {
                           get shadowTextureSize(): number;
                           buildContextMenu(): HarmonyMenuItemsDict;
                           toJSON(): JSONObject;
-                          static constructFromJSON(json: JSONObject): Promise<Light>;
                           fromJSON(json: JSONObject): void;
                           static set defaultTextureSize(textureSize: number);
                           static getEntityName(): string;
                           is(s: string): boolean;
-                          getRaytracingLight(): LightType;
+                          abstract getRaytracingLight(): LightType;
                       }
 
                       export declare class LightMappedGenericMaterial extends Source1Material {

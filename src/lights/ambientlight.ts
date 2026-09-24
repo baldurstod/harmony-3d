@@ -23,7 +23,7 @@ export class AmbientLight extends Light {
 	}
 
 	override getRaytracingLight(): LightType {
-		return LightType.Point;
+		return LightType.Ambient;
 	}
 }
 registerEntity(AmbientLight);

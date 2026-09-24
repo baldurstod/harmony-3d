@@ -2,7 +2,6 @@ import { vec3 } from 'gl-matrix';
 
 import { JSONObject } from 'harmony-types';
 import { HarmonyMenuItemsDict } from 'harmony-ui';
-import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
 import { vec3ToJSON } from '../utils/json';
 import { stringToVec3 } from '../utils/utils';
@@ -25,7 +24,7 @@ export enum LightType {
 	Directional = 4,
 }
 
-export class Light extends Entity {
+export abstract class Light extends Entity {
 	#intensity: number;
 	#color: vec3;// TODO: use Color instead
 	#range: number = 1000;
@@ -99,10 +98,6 @@ export class Light extends Entity {
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
-		return new Light(json);
-	}
-
 	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
 		this.color = json.color as vec3 ?? DEFAULT_LIGHT_COLOR;
@@ -122,8 +117,5 @@ export class Light extends Entity {
 		return s == 'Light';
 	}
 
-	getRaytracingLight(): LightType {
-		throw new Error('Override this function');
-	}
+	abstract getRaytracingLight(): LightType;
 }
-registerEntity(Light);
