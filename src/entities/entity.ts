@@ -40,7 +40,7 @@ export const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 export const LAYER_MAX = 50;
 
 export enum EngineEntityAttributes {
-	IsTool = 'is tool',
+	IsTool = 'engine.entity.is_tool',
 }
 
 export interface EntityParameters {
@@ -54,6 +54,7 @@ export interface EntityParameters {
 	castShadow?: boolean;
 	receiveShadow?: boolean;
 	visible?: boolean;
+	attributes?: Record<string, any>;
 }
 
 export type DynamicParams = Record<string, DynamicParam>//TODO: create a map;
@@ -121,7 +122,7 @@ export class Entity {
 			this.setPosition(parameters.position);
 		}
 		if (parameters.quaternion) {
-			this.setQuaternion(parameters.quaternion);
+			this.setOrientation(parameters.quaternion);
 		}
 		if (parameters.scale) {
 			if (typeof parameters.scale === 'number') {
@@ -142,6 +143,10 @@ export class Entity {
 
 		if (parameters.visible !== undefined) {
 			this.setVisible(parameters.visible);
+		}
+
+		for (const name in parameters.attributes) {
+			this.setAttribute(name, parameters.attributes[name]);
 		}
 	}
 
