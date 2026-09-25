@@ -91,7 +91,7 @@ const DirectionalLight = 4;
 
 struct Light {
 	position: vec3f,
-	lightType: u32, // See above. lightType is packed after position
+	lightType: u32, // See constants above. lightType is packed after position
 	direction: vec3f,
 	intensity: f32, // intensity is packed after direction
 	color: vec3f,
@@ -131,6 +131,8 @@ struct Counters {
 	counter5: atomic<u32>,
 	counter6: atomic<u32>,
 	counter7: atomic<u32>,
+	counter8: atomic<u32>,
+	counter9: atomic<u32>,
 }
 
 struct Context {

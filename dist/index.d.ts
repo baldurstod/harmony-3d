@@ -1657,14 +1657,6 @@ declare class Channel {
                       setKeyValues(kvElement: KvElement): void;
                   }
 
-                  export declare class DummyLight extends Light {
-                      readonly isDummyLight = true;
-                      static constructFromJSON(json: any): Promise<DummyLight>;
-                      static getEntityName(): string;
-                      is(s: string): boolean;
-                      getRaytracingLight(): LightType;
-                  }
-
                   declare type DynamicParam = any;
 
                   declare type DynamicParams = Record<string, DynamicParam>;
@@ -3660,7 +3652,6 @@ declare class Channel {
                       }
 
                       declare enum LightType {
-                          Dummy = 0,
                           Ambient = 1,
                           Point = 2,
                           Spot = 3,
@@ -6298,7 +6289,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
+                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

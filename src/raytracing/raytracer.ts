@@ -28,7 +28,7 @@ type RtCamera = {
 const COMPUTE_WORKGROUP_SIZE_X = 16;
 const COMPUTE_WORKGROUP_SIZE_Y = 16;
 
-const COUNTERS = 10;
+const COUNTERS = 12;
 const UINT_COUNTERS = 6;
 const COUNTERS_SIZE = COUNTERS * 4;
 

@@ -18,7 +18,6 @@ export type LightParameters = EntityParameters & {
 
 export enum LightType {
 	// The values should be consistent with the values in the raytracing shader
-	Dummy = 0,
 	Ambient = 1,
 	Point = 2,
 	Spot = 3,

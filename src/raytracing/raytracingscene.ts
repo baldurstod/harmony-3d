@@ -2,7 +2,6 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
 import { EngineEntityAttributes } from '../entities/entity';
 import { AmbientLight } from '../lights/ambientlight';
-import { DummyLight } from '../lights/dummylight';
 import { Light } from '../lights/light';
 import { SpotLight } from '../lights/spotlight';
 import { Material } from '../materials/material';
@@ -97,12 +96,14 @@ interface ParsedModel {
 export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 	const entitites = scene.getRenderableList();
 	const meshes: Mesh[] = [];
-	const lights: Light[] = [];
+	const ambientLight = new AmbientLight();
+	const lights: Light[] = [ambientLight];
 	const materials = new Map<Material, RaytracingMaterial | null>();
 	let materialIndex = 2;
 
+	const ambientAccumulator = vec3.create();
 	for (const entity of entitites) {
-		if (entity.getAttribute(EngineEntityAttributes.IsTool, false)) {
+		if (entity.getAttribute(EngineEntityAttributes.IsTool, true)) {
 			continue;
 		}
 
@@ -114,10 +115,16 @@ export async function sceneToRtScene(scene: Scene): Promise<RayTracingScene> {
 				let rtMaterials = material.getRaytracingMaterial(materialIndex++);
 				materials.set(material, rtMaterials);
 			}
-		} else if ((entity as Light).isLight && !(entity as AmbientLight).isAmbientLight) {
-			lights.push(entity as Light);
+		} else if ((entity as Light).isLight) {
+			if ((entity as AmbientLight).isAmbientLight) {
+				vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, (entity as AmbientLight).color, (entity as AmbientLight).intensity);
+			} else {
+				lights.push(entity as Light);
+			}
 		}
 	}
+
+	ambientLight.color = ambientAccumulator;
 
 	return loadModels(
 		{
@@ -337,10 +344,6 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		}
 	}
 
-	if (!lights.length) {
-		lights.push(new DummyLight());
-	}
-
 	const start = performance.now();
 	const context_v2 = buildBVH_v2(meshes, sceneMaterials);
 	//console.info(context_v2.bvhNodes);
@@ -348,7 +351,7 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 	console.info(`Building bvh took ${end - start} ms`);
 
 	const TRI_SIZE = 60;// 7 * vec3 aligned + 3 * vec2 + 2 align = 20 f32
-	const LIGHT_SIZE = 17;
+	const LIGHT_SIZE = 16;
 
 	//const v2_indicesBuffer = new ArrayBuffer(context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);//context_v2.triIdx.length * Uint32Array.BYTES_PER_ELEMENT);
 	const v2_trisBuffer = new ArrayBuffer(context_v2.triIdx.length * TRI_SIZE * Float32Array.BYTES_PER_ELEMENT);
@@ -422,6 +425,8 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 		lightsFloat[j + 13] = light.range;							// range
 		lightsFloat[j + 14] = light.radius;							// radius
 	}
+
+	console.log(lightsFloat, lightsUint32);
 
 	return {
 		materials,
