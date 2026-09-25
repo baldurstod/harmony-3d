@@ -2,6 +2,7 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { float32, uint32 } from 'harmony-types';
 import { EngineEntityAttributes } from '../entities/entity';
 import { AmbientLight } from '../lights/ambientlight';
+import { DummyLight } from '../lights/dummylight';
 import { Light } from '../lights/light';
 import { SpotLight } from '../lights/spotlight';
 import { Material } from '../materials/material';
@@ -334,6 +335,10 @@ async function loadModels(context: RayTracingContext, meshes: Mesh[], sceneMater
 				});
 			}
 		}
+	}
+
+	if (!lights.length) {
+		lights.push(new DummyLight());
 	}
 
 	const start = performance.now();

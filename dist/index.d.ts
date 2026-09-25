@@ -1657,6 +1657,14 @@ declare class Channel {
                       setKeyValues(kvElement: KvElement): void;
                   }
 
+                  export declare class DummyLight extends Light {
+                      readonly isDummyLight = true;
+                      static constructFromJSON(json: any): Promise<DummyLight>;
+                      static getEntityName(): string;
+                      is(s: string): boolean;
+                      getRaytracingLight(): LightType;
+                  }
+
                   declare type DynamicParam = any;
 
                   declare type DynamicParams = Record<string, DynamicParam>;
@@ -3652,6 +3660,7 @@ declare class Channel {
                       }
 
                       declare enum LightType {
+                          Dummy = 0,
                           Ambient = 1,
                           Point = 2,
                           Spot = 3,
