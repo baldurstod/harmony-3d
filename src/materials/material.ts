@@ -548,6 +548,7 @@ export abstract class Material implements HasUsers {
 		return json;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	static constructFromJSON(json: JSONObject): Promise<Material> {
 		throw new Error('Error: override this function');
 	}

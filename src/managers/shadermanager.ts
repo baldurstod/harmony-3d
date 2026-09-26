@@ -5,12 +5,19 @@ import { Shaders } from '../shaders/shaders';
 import { Annotation, WebGLShaderSource } from '../webgl/shadersource';
 import { ShaderType } from '../webgl/types';
 
+export type ShaderError = {
+	type: string;
+	column: number;
+	row: number;
+	text: string;
+}
+
 export class ShaderManager {
 	static #displayCompileError = false;
 	static #shaderList = new Map<string, WebGLShaderSource>();
 	static #customShaderList = new Map<string, WebGLShaderSource>();
 
-	static addSource(type: ShaderType, name: string, source: string) {
+	static addSource(type: ShaderType, name: string, source: string): void {
 		this.#shaderList.set(name, new WebGLShaderSource(name, type, source));
 		ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
 	}
@@ -29,7 +36,7 @@ export class ShaderManager {
 		return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
 	}
 
-	static setCustomSource(type: ShaderType, name: string, source: string) {
+	static setCustomSource(type: ShaderType, name: string, source: string): void {
 		if (source == '') {
 			this.#customShaderList.delete(name);
 		} else {
@@ -72,7 +79,7 @@ export class ShaderManager {
 		}
 	}
 
-	static #getIncludeAnnotationsGlsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
+	static #getIncludeAnnotationsGlsl(includeName: string, shaderName: string, shaderSource: WebGLShaderSource): ShaderError[] {
 		const errorArray = [];
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName, shaderSource.erroneousDefines)) {
@@ -129,7 +136,7 @@ export class ShaderManager {
 		return new Set([...this.#shaderList.keys(), ...this.#customShaderList.keys()]);
 	}
 
-	static resetShadersSource() {
+	static resetShadersSource(): void {
 		for (const source of this.#shaderList.values()) {
 			source.reset();
 		}
@@ -142,11 +149,12 @@ export class ShaderManager {
 		this.#displayCompileError = displayCompileError;
 	}
 
-	static get displayCompileError() {
+	static get displayCompileError(): boolean {
 		return this.#displayCompileError;
 	}
 
-	static setCompileError(shaderName: string, shaderInfoLog: string) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	static setCompileError(shaderName: string, shaderInfoLog: string): void {
 		return;
 	}
 }

@@ -6,36 +6,37 @@ export class FontManager {
 	static #fontsPath: URL;
 	static #manifestPromise?: Promise<any>;
 
-	static setFontsPath(url: URL) {
+	static setFontsPath(url: URL): void {
 		this.#fontsPath = url;
 	}
 
-	static async #getManifest() {
+	static async #getManifest(): Promise<any/*TODO: improve type*/> {
 		if (this.#manifestPromise) {
 			return this.#manifestPromise;
 		}
 
-		this.#manifestPromise = new Promise(async resolve => {
+		// eslint-disable-next-line @typescript-eslint/no-misused-promises
+		this.#manifestPromise = new Promise(async (resolve): Promise<void> => {
 
 			if (!this.#fontsPath) {
-				throw 'No manifest set, did you forgot to call FontManager.setFontsPath() ?';
+				throw new Error('No manifest set, did you forgot to call FontManager.setFontsPath() ?');
 			}
-			const response = await customFetch(this.#fontsPath + 'manifest.json');
+			const response = await customFetch(this.#fontsPath.toString() + 'manifest.json');
 			resolve(await response.json());
 		});
 		return this.#manifestPromise;
 	}
 
-	static async #loadFont(name: string, style: string) {
+	static async #loadFont(name: string, style: string): Promise<Font | undefined> {
 		const manifest = await this.#getManifest();
 
 		const fonts = manifest?.fonts;
 		if (fonts) {
 			const font = fonts[name];
 			if (font && font.styles) {
-				const s = font.styles[style];
+				const s = font.styles[style] as string;
 				if (s) {
-					const response = await customFetch(this.#fontsPath + s);
+					const response = await customFetch(this.#fontsPath.toString() + s);
 					const fontFile = await response.json();
 					const font = new Font(fontFile);
 					this.#fontList.get(name)!.set(style, font);
@@ -45,7 +46,7 @@ export class FontManager {
 		}
 	}
 
-	static async getFont(name: string, style = 'normal') {
+	static async getFont(name: string, style = 'normal'): Promise<Font | undefined> {
 		name = name.toLowerCase();
 		style = style.toLowerCase();
 		const fontFamilly = this.#fontList.get(name);

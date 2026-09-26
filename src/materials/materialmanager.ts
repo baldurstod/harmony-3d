@@ -27,6 +27,7 @@ export class MaterialManager {
 			if (manager) {
 				//manager.pickMaterial(materialName, materialClass, callback);
 			} else {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-call
 				callback(new (materialClass as any/* We cast the type cause Material is abstract. However the actual class is guaranteed to be concrete */));
 			}
 		}
