@@ -135,7 +135,7 @@ export class Raytracer {
 		this.#width = width;
 		this.#height = height;
 
-		const { materials, textures, faces, aabbs, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);
+		const { materials, textures, faces, aabbs, lightsCount, MODELS_COUNT, MAX_NUM_BVs_PER_MESH, MAX_NUM_FACES_PER_MESH, facesCount, aabbsCount, v2_indices, v2_tris, v2_nodes, v2_lights, nodesUsed } = await sceneToRtScene(scene);
 		this.#facesCount = facesCount;
 		this.#reset();
 
@@ -175,6 +175,8 @@ export class Raytracer {
 
 		this.#material.setStorage('materials', materials as StorageValueArray);
 		this.#material.setStorage('textures', textures);
+
+		this.#material.setDefine('LIGHTS', String(lightsCount));
 
 		this.#material.gpuConstants!.OBJECTS_COUNT_IN_SCENE = MODELS_COUNT;
 		this.#material.gpuConstants!.MAX_BVs_COUNT_PER_MESH = MAX_NUM_BVs_PER_MESH;

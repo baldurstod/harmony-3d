@@ -6289,7 +6289,7 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<"error while fetching resource" | Texture_2 | null>;
+                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
                           import(reader: BinaryReader): Texture_2 | null;
                       }
 

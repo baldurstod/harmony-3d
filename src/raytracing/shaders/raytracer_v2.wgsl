@@ -3,6 +3,9 @@ requires unrestricted_pointer_parameters, pointer_composite_access;
 #ifndef MAX_BOUNCES
 	#define MAX_BOUNCES 3
 #endif
+#ifndef LIGHTS
+	#define LIGHTS 3
+#endif
 #define MAX_SUB_RAYS 5
 
 const BV_MAX_STACK_DEPTH = 16;
@@ -141,7 +144,7 @@ struct Counters {
 struct Context {
 	rayStackPtr: u32,
 	rayStackPtr2: u32,
-	rayStack: array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>,
+	rayStack: array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + LIGHTS)>,
 	//currentRay: Ray,
 	rngState: u32,
 	globalInvocationId: vec3<u32>,
@@ -199,7 +202,7 @@ fn compute_main(@builtin(global_invocation_id) globalInvocationId : vec3<u32>,) 
 	initCamera(&camera);
 	var ray = getCameraRay(&camera, x, y, &rngState);
 
-	var rays = array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + 1/* shadow ray */)>();
+	var rays = array<Ray, (MAX_BOUNCES + 1) * (MAX_SUB_RAYS + LIGHTS)>();
 	rays[0] = ray;
 	var context: Context = Context(0, 0, rays, rngState, globalInvocationId, 0, false);
 	var color: vec4f = castRayLoop(&context);
@@ -327,7 +330,7 @@ fn castRay(context: ptr<function, Context>) {
 	var color: vec4f;
 
 	let currentRay = (*context).rayStackPtr2;
-	if ((*context).rayStackPtr2 >= 6) {
+	if ((*context).rayStackPtr2 >= (*context).rayStackPtr) {
 		(*context).done = true;
 	}
 
@@ -416,11 +419,13 @@ fn castRay(context: ptr<function, Context>) {
 					//ray.hitColor = vec4f(reflectDirection, 1.0);
 					return;
 				} else {
-					scatterRay(scatterDirection, currentRay, 1, RayTypeDiffuse, context);
+					scatterRay(scatterDirection, currentRay, 0.5, RayTypeDiffuse, context);
 					ray.hitColor = color;
 				}
-				shadowRay(currentRay, 1, context, 1);
-				shadowRay(currentRay, 1, context, 2);
+
+				for (var i: u32 = 1; i <= LIGHTS; i++) {
+					shadowRay(currentRay, 1, context, i);
+				}
 
 				(*context).bounces++;
 			}
@@ -567,10 +572,6 @@ fn pushRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Contex
 }
 
 fn setShadowRay(ray: ptr<function, Ray>, parentId: u32, context: ptr<function, Context>) {
-	if ((*context).bounces >= MAX_BOUNCES) {
-		return;
-	}
-
 	let parent: ptr<function, Ray> = &(*context).rayStack[parentId];
 	(*context).rayStackPtr++;
 	//parent.shadowRay = (*context).rayStackPtr;
