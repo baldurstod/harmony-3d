@@ -5,7 +5,7 @@ export enum TextureCompressionMethod {
 	Rgtc = 3,
 }
 
-// TODO (long term): revert to numbers
+// TODO change enum ImageFormat to type
 export enum ImageFormat {
 	Unknown = 'Unknown',
 	/*

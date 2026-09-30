@@ -30321,15 +30321,21 @@ class Source1ModelInstance extends Entity {
         super.removeChild(child);
         void child.skeleton?.setParentSkeleton(null);
     }
+    /**
+     * @deprecated use setSkinName or setSkinId instead
+     */
     set skin(skin) {
-        this.setSkin(skin);
+        this.setSkinName(skin);
     }
     get skin() {
         return String(this.#skin);
     }
-    async setSkin(skin) {
-        this.#skin = Number(skin);
+    async setSkinId(skin) {
+        this.#skin = skin;
         await this.#updateMaterials();
+    }
+    async setSkinName(skin) {
+        await this.setSkinId(Number(skin));
     }
     set sheen(sheen) {
         this.#sheen = sheen;
@@ -37447,7 +37453,7 @@ class PropDynamic extends MapEntity {
     setInput(inputName, parameters /*TODO: improve type*/) {
         switch (inputName.toLowerCase()) {
             case 'skin':
-                void this.#model?.setSkin(parameters);
+                void this.#model?.setSkinName(parameters);
                 break;
         }
     }
@@ -37659,7 +37665,7 @@ var TextureCompressionMethod;
     TextureCompressionMethod[TextureCompressionMethod["Bptc"] = 2] = "Bptc";
     TextureCompressionMethod[TextureCompressionMethod["Rgtc"] = 3] = "Rgtc";
 })(TextureCompressionMethod || (TextureCompressionMethod = {}));
-// TODO (long term): revert to numbers
+// TODO change enum ImageFormat to type
 var ImageFormat;
 (function (ImageFormat) {
     ImageFormat["Unknown"] = "Unknown";
@@ -54637,17 +54643,22 @@ class Source2ModelInstance extends Entity {
             skeleton.setParentSkeleton(null);
         }
     }
+    /**
+     * @deprecated use setSkinName or setSkinId instead
+     */
     set skin(skin) {
-        this.#skin = skin;
-        this.#updateMaterials();
+        this.setSkinId(skin);
     }
     get skin() {
         return this.#skin;
     }
-    setSkin(skin) {
-        this.#skin = Number(skin);
+    setSkinId(skin) {
+        this.#skin = skin;
         this.#updateMaterials();
         return Promise.resolve();
+    }
+    async setSkinName(skin) {
+        await this.setSkinId(this.sourceModel.getSkinId(skin) ?? 0);
     }
     setLOD(lod) {
         this.#lod = BigInt(lod);
@@ -55155,6 +55166,10 @@ class Source2Model {
         }
         return null;
     }
+    /**
+     * Get the list of skin names
+     * @returns An array containing skin names
+     */
     getSkinList() {
         const skinList = [];
         const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
@@ -55167,6 +55182,22 @@ class Source2Model {
             }
         }
         return skinList;
+    }
+    /**
+     * Get the skin id from the skin name
+     * @param skin The skin name
+     * @returns The skin id or null if not found
+     */
+    getSkinId(skin) {
+        const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
+        if (!materialGroups) {
+            return 0;
+        }
+        const index = materialGroups.findIndex((materialGroup) => materialGroup.getSubValueAsString('m_name') === skin);
+        if (index === -1) {
+            return null;
+        }
+        return index;
     }
     async loadAnimGroups() {
         if (this.vmdl) {

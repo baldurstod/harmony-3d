@@ -86,7 +86,7 @@ export class PropDynamic extends MapEntity {
 	setInput(inputName: string, parameters: any/*TODO: improve type*/): void {
 		switch (inputName.toLowerCase()) {
 			case 'skin':
-				void this.#model?.setSkin(parameters);
+				void this.#model?.setSkinName(parameters);
 				break;
 		}
 	}

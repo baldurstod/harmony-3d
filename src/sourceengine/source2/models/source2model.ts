@@ -55,7 +55,7 @@ export class Source2Model {
 	#seqGroup?: Source2SeqGroup;
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
-	readonly hitboxSets = new  Map<string, Source2Hitbox[]>();
+	readonly hitboxSets = new Map<string, Source2Hitbox[]>();
 
 	constructor(repository: string, vmdl: Source2File) {
 		this.repository = repository;
@@ -197,6 +197,10 @@ export class Source2Model {
 		return null;
 	}
 
+	/**
+	 * Get the list of skin names
+	 * @returns An array containing skin names
+	 */
 	getSkinList(): string[] {
 		const skinList: string[] = [];
 		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
@@ -209,6 +213,24 @@ export class Source2Model {
 			}
 		}
 		return skinList;
+	}
+
+	/**
+	 * Get the skin id from the skin name
+	 * @param skin The skin name
+	 * @returns The skin id or null if not found
+	 */
+	getSkinId(skin: string): number | null {
+		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
+		if (!materialGroups) {
+			return 0;
+		}
+
+		const index = materialGroups.findIndex((materialGroup) => materialGroup.getSubValueAsString('m_name') === skin);
+		if (index === -1) {
+			return null;
+		}
+		return index;
 	}
 
 	async loadAnimGroups(): Promise<void> {

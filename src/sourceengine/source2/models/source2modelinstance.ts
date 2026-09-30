@@ -175,19 +175,25 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	set skin(skin) {// TODO: deprecate
-		this.#skin = skin;
-		this.#updateMaterials();
+	/**
+	 * @deprecated use setSkinName or setSkinId instead
+	 */
+	set skin(skin) {
+		this.setSkinId(skin);
 	}
 
 	get skin(): number {
 		return this.#skin;
 	}
 
-	setSkin(skin: string): Promise<void> {
-		this.#skin = Number(skin);
+	setSkinId(skin: number): Promise<void> {
+		this.#skin = skin;
 		this.#updateMaterials();
 		return Promise.resolve();
+	}
+
+	async setSkinName(skin: string): Promise<void> {
+		await this.setSkinId(this.sourceModel.getSkinId(skin) ?? 0);
 	}
 
 	setLOD(lod: number): void {

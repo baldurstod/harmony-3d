@@ -3146,7 +3146,8 @@ declare class Channel {
                       export declare interface HasMaterials {
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;
-                          setSkin(skin: string): Promise<void>;
+                          setSkinId(skin: number): Promise<void>;
+                          setSkinName(skin: string): Promise<void>;
                       }
 
                       export declare interface HasSkeleton {
@@ -3378,7 +3379,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }
@@ -7053,9 +7054,13 @@ declare class Channel {
                           set skeleton(skeleton: Skeleton | null);
                           addChild(child?: Entity | null): Entity | null;
                           removeChild(child: Entity): void;
+                          /**
+                           * @deprecated use setSkinName or setSkinId instead
+                           */
                           set skin(skin: string);
                           get skin(): string;
-                          setSkin(skin: string): Promise<void>;
+                          setSkinId(skin: number): Promise<void>;
+                          setSkinName(skin: string): Promise<void>;
                           set sheen(sheen: vec3);
                           setTint(tint: vec4 | null): void;
                           getTint(out?: vec4): vec4 | null;
@@ -7923,7 +7928,17 @@ declare class Channel {
                           createInstance(isDynamic: boolean): Source2ModelInstance;
                           getBones(): Kv3Element | null;
                           getSkinMaterials(skin: number): string[] | null;
+                          /**
+                           * Get the list of skin names
+                           * @returns An array containing skin names
+                           */
                           getSkinList(): string[];
+                          /**
+                           * Get the skin id from the skin name
+                           * @param skin The skin name
+                           * @returns The skin id or null if not found
+                           */
+                          getSkinId(skin: string): number | null;
                           loadAnimGroups(): Promise<void>;
                           getIncludeModels(): any[];
                           addIncludeModel(includeModel: Source2Model): void;
@@ -7978,9 +7993,13 @@ declare class Channel {
                           setPosition(position: vec3): void;
                           addChild(child?: Entity | null): Entity | null;
                           removeChild(child: Entity): void;
+                          /**
+                           * @deprecated use setSkinName or setSkinId instead
+                           */
                           set skin(skin: number);
                           get skin(): number;
-                          setSkin(skin: string): Promise<void>;
+                          setSkinId(skin: number): Promise<void>;
+                          setSkinName(skin: string): Promise<void>;
                           setLOD(lod: number): void;
                           setPoseParameter(paramName: string, paramValue: number): void;
                           playSequence(activity: string, activityModifiers?: string[]): void;

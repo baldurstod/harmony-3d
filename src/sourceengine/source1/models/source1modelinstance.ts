@@ -122,18 +122,24 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		super.removeChild(child);
 		void (child as unknown as HasSkeleton).skeleton?.setParentSkeleton(null);
 	}
-
+	/**
+	 * @deprecated use setSkinName or setSkinId instead
+	 */
 	set skin(skin: string) {// TODO: deprecate
-		this.setSkin(skin);
+		this.setSkinName(skin);
 	}
 
 	get skin(): string {
 		return String(this.#skin);
 	}
 
-	async setSkin(skin: string): Promise<void> {
-		this.#skin = Number(skin);
+	async setSkinId(skin: number): Promise<void> {
+		this.#skin = skin;
 		await this.#updateMaterials();
+	}
+
+	async setSkinName(skin: string): Promise<void> {
+		await this.setSkinId(Number(skin));
 	}
 
 	set sheen(sheen: vec3) {
