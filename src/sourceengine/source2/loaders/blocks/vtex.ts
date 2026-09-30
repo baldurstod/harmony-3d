@@ -1,4 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { errorOnce } from 'harmony-utils';
 import { SpriteSheet } from '../../../../textures/spritesheet';
 import { decodeLz4 } from '../../../../utils/lz4';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../../constants';
@@ -61,7 +62,7 @@ export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file
 					const nw = reader.getUint16();
 					const nh = reader.getUint16();
 					if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
-						console.error('code me');
+						errorOnce(`TODO DATA_FILL_TO_POWER_OF_TWO nat width: ${nw}, nat height: ${nh}, block width: ${block.width} block height: ${block.height}`);
 						// eslint-disable-next-line @typescript-eslint/no-unused-vars
 						nonPow2Width = nw;
 						// eslint-disable-next-line @typescript-eslint/no-unused-vars

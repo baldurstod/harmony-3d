@@ -21,6 +21,10 @@ export function getWebGPUData(imageFormat: ImageFormat, data: Uint8Array | Float
 		case ImageFormat.Bc1:
 		case ImageFormat.Bc2:
 		case ImageFormat.Bc3:
+		case ImageFormat.Bc4:
+		case ImageFormat.Bc6:
+		case ImageFormat.Bc5:
+		case ImageFormat.Bc7:
 		case ImageFormat.BGRA8888:// Not to sure about this one
 			// Do nothing, return the data as is
 			return data;
@@ -58,6 +62,14 @@ export function getWebGPUFormat(imageFormat: ImageFormat, srgb: boolean): GPUTex
 			return srgb ? 'bc2-rgba-unorm-srgb' : 'bc2-rgba-unorm';
 		case ImageFormat.Bc3:
 			return srgb ? 'bc3-rgba-unorm-srgb' : 'bc3-rgba-unorm';
+		case ImageFormat.Bc4:
+			return 'bc4-r-unorm';
+		case ImageFormat.Bc5:
+			return 'bc5-rg-unorm';
+		case ImageFormat.Bc6:
+			return 'bc6h-rgb-ufloat';
+		case ImageFormat.Bc7:
+			return srgb ? 'bc7-rgba-unorm-srgb' : 'bc7-rgba-unorm';
 		default:
 			errorOnce(`getWebGPUFormat: unknown format: ${imageFormat}`);
 			break;
@@ -103,8 +115,13 @@ export function getWebGPUBytesPerRow(imageFormat: ImageFormat, width: number): n
 			// TODO: check the result
 			return width;
 		case ImageFormat.Bc3:
+		case ImageFormat.Bc7:
 			// TODO: check the result
 			return width * 4;
+		case ImageFormat.Bc4:
+		case ImageFormat.Bc5:
+			// TODO: check the result
+			return width * 2;
 		default:
 			errorOnce(`WebGPU: unknown vtf format: ${imageFormat}`);
 			return width * 4;

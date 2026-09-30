@@ -71,10 +71,11 @@ export class WebGPURenderer implements Renderer {
 			WebGPUInternal.depthTexture.destroy();
 
 			WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
-				size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
+				size: [WebGPUInternal.gpuContext.canvas.width || 1, WebGPUInternal.gpuContext.canvas.height || 1],
 				format: 'depth24plus',
 				usage: GPUTextureUsage.RENDER_ATTACHMENT,
 			});
+			WebGPUInternal.device.queue.submit([]);
 		}
 
 

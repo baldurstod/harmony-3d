@@ -41,6 +41,7 @@ export function createTexture(descriptor: HarmonyGPUTextureDescriptor): WebGLTex
 	let texture: WebGLTexture | GPUTexture;
 	if (Graphics.isWebGPU) {
 		texture = WebGPUInternal.device.createTexture(descriptor);
+		WebGPUInternal.device.queue.submit([]);
 	} else {
 		texture = context.createTexture();
 	}

@@ -7499,6 +7499,7 @@ function createTexture(descriptor) {
     let texture;
     if (Graphics.isWebGPU) {
         texture = WebGPUInternal.device.createTexture(descriptor);
+        WebGPUInternal.device.queue.submit([]);
     }
     else {
         texture = context$1.createTexture();
@@ -12997,6 +12998,7 @@ var ManipulatorAxis;
     ManipulatorAxis[ManipulatorAxis["View"] = 8] = "View";
 })(ManipulatorAxis || (ManipulatorAxis = {}));
 class Manipulator extends Entity {
+    isManipulator = true;
     #entityAxis = new Map();
     #xMaterial = new MeshBasicMaterial();
     #yMaterial = new MeshBasicMaterial();
@@ -13064,7 +13066,7 @@ class Manipulator extends Entity {
         this.enableY = true;
         this.enableZ = true;
         this.forEach((entity) => entity.setupPickingId());
-        GraphicsEvents.addEventListener('tick', () => this.#resize(this.root?.activeCamera));
+        //GraphicsEvents.addEventListener('tick', () => this.#resize((this.root as Scene)?.activeCamera));
         GraphicsEvents.addEventListener('pick', (event) => {
             const detail = event.detail;
             if (this.#entityAxis.has(detail.entity)) {
@@ -13116,7 +13118,7 @@ class Manipulator extends Entity {
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, () => this.enableY = !this.enableY);
         ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
     }
-    #resize(camera) {
+    resize(camera) {
         if (!this.isVisible()) {
             return;
         }
@@ -17602,6 +17604,9 @@ class ForwardRenderer {
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
         while (currentObject) {
+            if (currentObject.isManipulator) {
+                currentObject.resize(camera);
+            }
             if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
                 currentObject = objectStack.shift();
                 continue;
@@ -17994,10 +17999,11 @@ class WebGPURenderer {
         if (depthTexture.width != context.width || depthTexture.height != context.height) {
             WebGPUInternal.depthTexture.destroy();
             WebGPUInternal.depthTexture = WebGPUInternal.device.createTexture({
-                size: [WebGPUInternal.gpuContext.canvas.width, WebGPUInternal.gpuContext.canvas.height],
+                size: [WebGPUInternal.gpuContext.canvas.width || 1, WebGPUInternal.gpuContext.canvas.height || 1],
                 format: 'depth24plus',
                 usage: GPUTextureUsage.RENDER_ATTACHMENT,
             });
+            WebGPUInternal.device.queue.submit([]);
         }
         //this.#shadowMap.render(this, renderList, camera, context);
         let backGroundResult = { clearColor: false };
@@ -18041,6 +18047,9 @@ class WebGPURenderer {
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
         while (currentObject) {
+            if (currentObject.isManipulator) {
+                currentObject.resize(camera);
+            }
             if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
                 currentObject = objectStack.shift();
                 continue;
@@ -18954,6 +18963,7 @@ class GraphicsClass {
     }
     static addCanvas(options) {
         const canvas = options.canvas ?? createElement('canvas');
+        ShortcutHandler.addContext('3dview', canvas);
         let attributes = this.#canvases.get(options.name);
         if (attributes) {
             return attributes;
@@ -37890,6 +37900,10 @@ function getWebGPUData(imageFormat, data) {
         case ImageFormat.Bc1:
         case ImageFormat.Bc2:
         case ImageFormat.Bc3:
+        case ImageFormat.Bc4:
+        case ImageFormat.Bc6:
+        case ImageFormat.Bc5:
+        case ImageFormat.Bc7:
         case ImageFormat.BGRA8888: // Not to sure about this one
             // Do nothing, return the data as is
             return data;
@@ -37925,6 +37939,14 @@ function getWebGPUFormat(imageFormat, srgb) {
             return srgb ? 'bc2-rgba-unorm-srgb' : 'bc2-rgba-unorm';
         case ImageFormat.Bc3:
             return srgb ? 'bc3-rgba-unorm-srgb' : 'bc3-rgba-unorm';
+        case ImageFormat.Bc4:
+            return 'bc4-r-unorm';
+        case ImageFormat.Bc5:
+            return 'bc5-rg-unorm';
+        case ImageFormat.Bc6:
+            return 'bc6h-rgb-ufloat';
+        case ImageFormat.Bc7:
+            return srgb ? 'bc7-rgba-unorm-srgb' : 'bc7-rgba-unorm';
         default:
             errorOnce(`getWebGPUFormat: unknown format: ${imageFormat}`);
             break;
@@ -37969,8 +37991,13 @@ function getWebGPUBytesPerRow(imageFormat, width) {
             // TODO: check the result
             return width;
         case ImageFormat.Bc3:
+        case ImageFormat.Bc7:
             // TODO: check the result
             return width * 4;
+        case ImageFormat.Bc4:
+        case ImageFormat.Bc5:
+            // TODO: check the result
+            return width * 2;
         default:
             errorOnce(`WebGPU: unknown vtf format: ${imageFormat}`);
             return width * 4;
@@ -52959,7 +52986,7 @@ function loadDataVtex(reader, block, file) {
                     const nw = reader.getUint16();
                     const nh = reader.getUint16();
                     if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
-                        console.error('code me');
+                        errorOnce(`TODO DATA_FILL_TO_POWER_OF_TWO nat width: ${nw}, nat height: ${nh}, block width: ${block.width} block height: ${block.height}`);
                     }
                     break;
                 case DATA_COMPRESSED_MIP_SIZE:
@@ -53247,7 +53274,10 @@ async function loadRedi(reader, file, block) {
 }
 
 const DXGI_FORMAT_R32G32B32A32_FLOAT = 2;
+const DXGI_FORMAT_R32G32B32A32_SINT = 4;
 const DXGI_FORMAT_R32G32B32_FLOAT = 6;
+const DXGI_FORMAT_R16G16B16A16_UNORM = 11;
+const DXGI_FORMAT_R16G16B16A16_UINT = 12;
 const DXGI_FORMAT_R16G16B16A16_SINT = 14;
 const DXGI_FORMAT_R32G32_FLOAT = 16;
 const DXGI_FORMAT_R8G8B8A8_UNORM = 28;
@@ -53497,11 +53527,32 @@ function loadVbib(reader, block, meshIndex) {
                         tempValue[2] = vertexReader.getFloat32();
                         tempValue[3] = vertexReader.getFloat32();
                         break;
+                    case DXGI_FORMAT_R32G32B32A32_SINT:
+                        tempValue = vec4.create(); //TODO: optimize
+                        tempValue[0] = vertexReader.getInt32();
+                        tempValue[1] = vertexReader.getInt32();
+                        tempValue[2] = vertexReader.getInt32();
+                        tempValue[3] = vertexReader.getInt32();
+                        break;
                     case DXGI_FORMAT_R32G32B32_FLOAT: // 3 * float32
                         tempValue = vec3.create(); //TODO: optimize
                         tempValue[0] = vertexReader.getFloat32();
                         tempValue[1] = vertexReader.getFloat32();
                         tempValue[2] = vertexReader.getFloat32();
+                        break;
+                    case DXGI_FORMAT_R16G16B16A16_UNORM:
+                        tempValue = vec4.create(); //TODO: optimize
+                        tempValue[0] = vertexReader.getUint16() / 65536;
+                        tempValue[1] = vertexReader.getUint16() / 65536;
+                        tempValue[2] = vertexReader.getUint16() / 65536;
+                        tempValue[3] = vertexReader.getUint16() / 65536;
+                        break;
+                    case DXGI_FORMAT_R16G16B16A16_UINT:
+                        tempValue = vec4.create(); //TODO: optimize
+                        tempValue[0] = vertexReader.getUint16();
+                        tempValue[1] = vertexReader.getUint16();
+                        tempValue[2] = vertexReader.getUint16();
+                        tempValue[3] = vertexReader.getUint16();
                         break;
                     case DXGI_FORMAT_R16G16B16A16_SINT:
                         tempValue = vec4.create(); //TODO: optimize
@@ -53556,7 +53607,7 @@ function loadVbib(reader, block, meshIndex) {
                         break;
                     default:
                         //TODO add types when needed. see DxgiFormat.js
-                        console.error('Warning: unknown type ' + headerType + ' for value ' + headerName);
+                        errorOnce('Warning: unknown type ' + headerType + ' for value ' + headerName);
                         tempValue = vec4.create(); //TODO: optimize
                         tempValue[0] = 0;
                         tempValue[1] = 0;
@@ -55474,11 +55525,32 @@ class Source2ModelLoader {
                                 tempValue[2] = reader.getFloat32();
                                 tempValue[3] = reader.getFloat32();
                                 break;
+                            case DXGI_FORMAT_R32G32B32A32_SINT:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getInt32();
+                                tempValue[1] = reader.getInt32();
+                                tempValue[2] = reader.getInt32();
+                                tempValue[3] = reader.getInt32();
+                                break;
                             case DXGI_FORMAT_R32G32B32_FLOAT: // 3 * float32
                                 tempValue = vec3.create(); //TODO: optimize
                                 tempValue[0] = reader.getFloat32();
                                 tempValue[1] = reader.getFloat32();
                                 tempValue[2] = reader.getFloat32();
+                                break;
+                            case DXGI_FORMAT_R16G16B16A16_UNORM:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getUint16() / 65536;
+                                tempValue[1] = reader.getUint16() / 65536;
+                                tempValue[2] = reader.getUint16() / 65536;
+                                tempValue[3] = reader.getUint16() / 65536;
+                                break;
+                            case DXGI_FORMAT_R16G16B16A16_UINT:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getUint16();
+                                tempValue[1] = reader.getUint16();
+                                tempValue[2] = reader.getUint16();
+                                tempValue[3] = reader.getUint16();
                                 break;
                             case DXGI_FORMAT_R16G16B16A16_SINT:
                                 tempValue = vec4.create(); //TODO: optimize
@@ -55533,7 +55605,7 @@ class Source2ModelLoader {
                                 break;
                             default:
                                 //TODO add types when needed. see DxgiFormat.js
-                                console.error('Warning: unknown type ' + field.format + ' for value ' + field.name);
+                                errorOnce('Warning: unknown type ' + field.format + ' for value ' + field.name);
                                 tempValue = vec4.create(); //TODO: optimize
                                 tempValue[0] = 0;
                                 tempValue[1] = 0;
@@ -70570,7 +70642,10 @@ addWgslInclude('source2_fragment_declare_separate_alpha_transform', source2_frag
 
 var source2_hero = "#include matrix_uniforms\n#include common_uniforms\n\n//#include declare_texture_transform\n//#include declare_vertex_detail_uv\n//#include declare_vertex_skinning\n//\n//#include declare_fragment_standard\n//#include declare_fragment_color_map\n//#include declare_fragment_detail_map\n//#include declare_fragment_normal_map\n//#include declare_fragment_phong_exponent_map\n//#include declare_fragment_alpha_test\n//#include source1_declare_phong\n//#include source1_declare_sheen\n//#include source1_declare_selfillum\n//#include declare_fragment_cube_map\n//#include math::modulo\n\n#include declare_vertex_skinning\n#include declare_fragment_standard\n\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_fragment_alpha_test\n#include declare_fragment_mask_map\n#include declare_fragment_specular_map\n#include source2_fragment_declare_detail_map\n#include declare_fragment_cube_map\n#include source2_decode_texture\n\n#include source2_fragment_declare_separate_alpha_transform\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> g_flDetailBlendFactor: f32;\n//@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\tvar diffuseColor: vec4f = vec4f(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_cube_map\n\t#include source2_fragment_calculate_separate_alpha_transform\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_specular_map\n\t#include source2_fragment_calculate_mask\n\t#include source2_fragment_calculate_detail\n\tdiffuseColor *= texelColor;\n\n\t#include calculate_fragment_normal\n\n\t#ifdef USE_NORMAL_MAP\n\t\tlet normal: vec3f = normalize(vec3f(texelNormal.ga * 2.0 - 1.0, 1.0));\n\t\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * vec3(normal));\n\t#endif\n\n\t#include calculate_fragment_alpha_test\n\n\t#include source2_detail_blend\n\n\n\n\tfragColor = diffuseColor;\n\n\n\t//fragColor = vec4f(modulo_vec2f(fragInput.vTextureCoord.xy, vec2f(1.0)), 0.0, 1.0);\n\n\t#include output_fragment\n}\n";
 
+var source2_pbr = "#include matrix_uniforms\n#include common_uniforms\n\n//#include declare_texture_transform\n//#include declare_vertex_detail_uv\n//#include declare_vertex_skinning\n//\n//#include declare_fragment_standard\n//#include declare_fragment_color_map\n//#include declare_fragment_detail_map\n//#include declare_fragment_normal_map\n//#include declare_fragment_phong_exponent_map\n//#include declare_fragment_alpha_test\n//#include source1_declare_phong\n//#include source1_declare_sheen\n//#include source1_declare_selfillum\n//#include declare_fragment_cube_map\n//#include math::modulo\n\n#include declare_vertex_skinning\n#include declare_fragment_standard\n\n#include declare_fragment_color_map\n#include declare_fragment_normal_map\n#include declare_fragment_alpha_test\n#include declare_fragment_mask_map\n#include declare_fragment_specular_map\n#include source2_fragment_declare_detail_map\n#include declare_fragment_cube_map\n#include source2_decode_texture\n\n#include source2_fragment_declare_separate_alpha_transform\n\n#include declare_lights\n//#include declare_shadow_mapping\n#include declare_log_depth\n\n#define uBaseMapAlphaPhongMask 0//TODO: set proper uniform\nconst defaultNormalTexel: vec4f = vec4(0.5, 0.5, 1.0, 1.0);\n\n/*\nuniform vec4 g_DiffuseModulation;\nuniform vec3 uCubeMapTint;\nuniform float uBlendTintColorOverBase;\nuniform float uDetailBlendFactor;\n*/\n@group(0) @binding(x) var<uniform> g_DiffuseModulation: vec4f;\n@group(0) @binding(x) var<uniform> uCubeMapTint: vec4f;\n@group(0) @binding(x) var<uniform> uBlendTintColorOverBase: f32;\n@group(0) @binding(x) var<uniform> g_flDetailBlendFactor: f32;\n//@group(0) @binding(x) var<uniform> uDetailBlendFactor: f32;\n\n#include varying_standard\n\n@vertex\nfn vertex_main(\n#include declare_vertex_standard_params\n) -> VertexOut\n{\n\tvar output : VertexOut;\n\n\t#include calculate_vertex_uv\n\t#include calculate_vertex\n\t#include calculate_vertex_skinning\n\t#include calculate_vertex_projection\n\t#include calculate_vertex_color\n\t#include calculate_vertex_shadow_mapping\n\t#include calculate_vertex_standard\n\n\treturn output;\n}\n\n@fragment\nfn fragment_main(fragInput: VertexOut) -> FragmentOutput\n{\n\n\tvar fragDepth: f32;\n\tvar fragColor: vec4f;\n\tvar diffuseColor: vec4f = vec4f(1.0);\n\t#include calculate_fragment_color_map\n\t#include calculate_fragment_cube_map\n\t#include source2_fragment_calculate_separate_alpha_transform\n\t#include calculate_fragment_normal_map\n\t#include calculate_fragment_specular_map\n\t#include source2_fragment_calculate_mask\n\t#include source2_fragment_calculate_detail\n\tdiffuseColor *= texelColor;\n\n\t#include calculate_fragment_normal\n\n\t#ifdef USE_NORMAL_MAP\n\t\tlet normal: vec3f = normalize(vec3f(texelNormal.ga * 2.0 - 1.0, 1.0));\n\t\tfragmentNormalCameraSpace = normalize(TBNMatrixCameraSpace * vec3(normal));\n\t#endif\n\n\t#include calculate_fragment_alpha_test\n\n\t#include source2_detail_blend\n\n\n\n\tfragColor = diffuseColor;\n\n\n\t//fragColor = vec4f(modulo_vec2f(fragInput.vTextureCoord.xy, vec2f(1.0)), 0.0, 1.0);\n\n\t#include output_fragment\n}\n";
+
 Shaders['source2_hero.wgsl'] = source2_hero;
+Shaders['source2_pbr.wgsl'] = source2_pbr;
 
 const operations = new Map();
 function registerOperation(name, ope) {

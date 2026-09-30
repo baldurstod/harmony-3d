@@ -3796,10 +3796,12 @@ declare class Channel {
 
                       export declare class Manipulator extends Entity {
                           #private;
+                          isManipulator: true;
                           enumerable: boolean;
                           camera?: Camera;
                           size: number;
                           constructor(params?: ManipulatorParameters);
+                          resize(camera: Camera): void;
                           setCamera(camera: Camera): void;
                           /**
                            * @deprecated Please use `setMode` instead.
