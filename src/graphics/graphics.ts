@@ -385,6 +385,7 @@ class GraphicsClass {
 
 	static addCanvas(options: AddCanvasOptions): CanvasAttributes | null {
 		const canvas = options.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		ShortcutHandler.addContext('3dview', canvas);
 		let attributes = this.#canvases.get(options.name);
 		if (attributes) {
 			return attributes;
