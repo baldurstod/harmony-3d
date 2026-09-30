@@ -11,7 +11,7 @@ import { renderParticles } from '../graphics/render';
 import { InternalRenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
 import { Material } from '../materials/material';
-import { CameraFrustum } from '../objects/export';
+import { CameraFrustum, Manipulator } from '../objects/export';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
 import { Source1ParticleSystem } from '../sourceengine/export';
@@ -122,6 +122,10 @@ export class ForwardRenderer implements Renderer {
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
 		while (currentObject) {
+			if ((currentObject as Manipulator).isManipulator) {
+				(currentObject as Manipulator).resize(camera);
+			}
+
 			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
 				currentObject = objectStack.shift();
 				continue;

@@ -15,7 +15,7 @@ import { InternalRenderContext } from '../interfaces/rendercontext';
 import { ShaderManager } from '../managers/shadermanager';
 import { Material, MaterialColorMode } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { CameraFrustum } from '../objects/export';
+import { CameraFrustum, Manipulator } from '../objects/export';
 import { Mesh, pickedPrimitive } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Renderer } from '../renderers/renderer';
@@ -132,6 +132,10 @@ export class WebGPURenderer implements Renderer {
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
 		while (currentObject) {
+			if ((currentObject as Manipulator).isManipulator) {
+				(currentObject as Manipulator).resize(camera);
+			}
+
 			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
 				currentObject = objectStack.shift();
 				continue;

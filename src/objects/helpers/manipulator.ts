@@ -3,7 +3,7 @@ import { ShortcutHandler } from 'harmony-browser-utils';
 import { Camera } from '../../cameras/camera';
 import { EngineEntityAttributes, Entity, EntityParameters, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics2';
-import { GraphicMouseEventData, GraphicPickEvent, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { GraphicMouseEventData, GraphicPickEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { RenderFace } from '../../materials/constants';
 import { LineMaterial } from '../../materials/linematerial';
 import { MATERIAL_BLENDING_NORMAL } from '../../materials/material';
@@ -86,6 +86,7 @@ export enum ManipulatorAxis {
 export type ManipulatorParameters = EntityParameters;
 
 export class Manipulator extends Entity {
+	isManipulator = true as const;
 	#entityAxis = new Map<Entity, ManipulatorAxis>();
 	#xMaterial = new MeshBasicMaterial();
 	#yMaterial = new MeshBasicMaterial();
@@ -159,7 +160,7 @@ export class Manipulator extends Entity {
 
 		this.forEach((entity) => entity.setupPickingId());
 
-		GraphicsEvents.addEventListener('tick', () => this.#resize((this.root as Scene)?.activeCamera));
+		//GraphicsEvents.addEventListener('tick', () => this.#resize((this.root as Scene)?.activeCamera));
 
 		GraphicsEvents.addEventListener('pick', (event: Event) => {
 			const detail = (event as CustomEvent<GraphicPickEvent>).detail;
@@ -215,7 +216,7 @@ export class Manipulator extends Entity {
 		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
 	}
 
-	#resize(camera?: Camera | null): void {
+	resize(camera: Camera): void {
 		if (!this.isVisible()) {
 			return;
 		}
