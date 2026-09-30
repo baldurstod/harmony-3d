@@ -28,6 +28,7 @@ export type RaytracingMaterial = {
 	reflectionGloss?: float32,
 	// Refraction index. Default to 0.1
 	refractionIndex?: float32,
+	// Material transparency. Default to 0
 	transparent?: float32,
 	albedo?: vec3,
 	// Use flat shading. Default to true
