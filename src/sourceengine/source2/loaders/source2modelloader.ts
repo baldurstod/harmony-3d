@@ -1,6 +1,6 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { errorSet, Map2 } from 'harmony-utils';
+import { errorOnce, errorSet, Map2 } from 'harmony-utils';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { VERBOSE } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
@@ -13,7 +13,7 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { MeshManager } from '../models/meshmanager';
 import { Source2Hitbox, Source2Model } from '../models/source2model';
-import { DXGI_FORMAT_R16G16_FLOAT, DXGI_FORMAT_R16G16_SINT, DXGI_FORMAT_R16G16_SNORM, DXGI_FORMAT_R16G16B16A16_SINT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R8G8B8A8_UINT, DXGI_FORMAT_R8G8B8A8_UNORM } from './dxgiformat';
+import { DXGI_FORMAT_R16G16_FLOAT, DXGI_FORMAT_R16G16_SINT, DXGI_FORMAT_R16G16_SNORM, DXGI_FORMAT_R16G16B16A16_SINT, DXGI_FORMAT_R16G16B16A16_UINT, DXGI_FORMAT_R16G16B16A16_UNORM, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32G32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_SINT, DXGI_FORMAT_R8G8B8A8_UINT, DXGI_FORMAT_R8G8B8A8_UNORM } from './dxgiformat';
 import { BYTES_PER_VERTEX_BONE_INDICE, BYTES_PER_VERTEX_BONE_WEIGHT, BYTES_PER_VERTEX_COORD, BYTES_PER_VERTEX_NORMAL, BYTES_PER_VERTEX_POSITION, BYTES_PER_VERTEX_TANGENT, defaultValuesBoneIndice, defaultValuesBoneWeight, defaultValuesCoord, defaultValuesNormal, defaultValuesPosition, defaultValuesTangent, sNormUint16, VERTEX_BONE_INDICE_LEN, VERTEX_BONE_WEIGHT_LEN, VERTEX_COORD_LEN, VERTEX_NORMAL_LEN, VERTEX_POSITION_LEN, VERTEX_TANGENT_LEN } from './source2blockloader';
 import { Source2File } from './source2file';
 import { Source2FileBlock } from './source2fileblock';
@@ -242,11 +242,32 @@ export class Source2ModelLoader {
 								tempValue[2] = reader.getFloat32();
 								tempValue[3] = reader.getFloat32();
 								break;
+							case DXGI_FORMAT_R32G32B32A32_SINT:
+								tempValue = vec4.create();//TODO: optimize
+								tempValue[0] = reader.getInt32();
+								tempValue[1] = reader.getInt32();
+								tempValue[2] = reader.getInt32();
+								tempValue[3] = reader.getInt32();
+								break;
 							case DXGI_FORMAT_R32G32B32_FLOAT:// 3 * float32
 								tempValue = vec3.create();//TODO: optimize
 								tempValue[0] = reader.getFloat32();
 								tempValue[1] = reader.getFloat32();
 								tempValue[2] = reader.getFloat32();
+								break;
+							case DXGI_FORMAT_R16G16B16A16_UNORM:
+								tempValue = vec4.create();//TODO: optimize
+								tempValue[0] = reader.getUint16() / 65536;
+								tempValue[1] = reader.getUint16() / 65536;
+								tempValue[2] = reader.getUint16() / 65536;
+								tempValue[3] = reader.getUint16() / 65536;
+								break;
+							case DXGI_FORMAT_R16G16B16A16_UINT:
+								tempValue = vec4.create();//TODO: optimize
+								tempValue[0] = reader.getUint16();
+								tempValue[1] = reader.getUint16();
+								tempValue[2] = reader.getUint16();
+								tempValue[3] = reader.getUint16();
 								break;
 							case DXGI_FORMAT_R16G16B16A16_SINT:
 								tempValue = vec4.create();//TODO: optimize
@@ -301,7 +322,7 @@ export class Source2ModelLoader {
 								break;
 							default:
 								//TODO add types when needed. see DxgiFormat.js
-								console.error('Warning: unknown type ' + field.format + ' for value ' + field.name);
+								errorOnce('Warning: unknown type ' + field.format + ' for value ' + field.name);
 								tempValue = vec4.create();//TODO: optimize
 								tempValue[0] = 0;
 								tempValue[1] = 0;

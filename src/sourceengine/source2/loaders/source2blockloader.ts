@@ -1,6 +1,6 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { infoSet } from 'harmony-utils';
+import { errorOnce, infoSet } from 'harmony-utils';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { VERBOSE } from '../../../buildoptions';
 import { loadData } from './blocks/data';
@@ -9,10 +9,12 @@ import { decodeBlockCompressed } from './blocks/kv3/blockcompressed';
 import { loadRedi } from './blocks/redi';
 import {
 	DXGI_FORMAT_R16G16B16A16_SINT,
+	DXGI_FORMAT_R16G16B16A16_UINT,
+	DXGI_FORMAT_R16G16B16A16_UNORM,
 	DXGI_FORMAT_R16G16_FLOAT,
 	DXGI_FORMAT_R16G16_SINT,
 	DXGI_FORMAT_R16G16_SNORM,
-	DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32_FLOAT,
+	DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_SINT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32G32_FLOAT,
 	DXGI_FORMAT_R32_FLOAT,
 	DXGI_FORMAT_R32_UINT,
 	DXGI_FORMAT_R8G8B8A8_UINT,
@@ -297,11 +299,32 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 						tempValue[2] = vertexReader.getFloat32();
 						tempValue[3] = vertexReader.getFloat32();
 						break;
+					case DXGI_FORMAT_R32G32B32A32_SINT:
+						tempValue = vec4.create();//TODO: optimize
+						tempValue[0] = vertexReader.getInt32();
+						tempValue[1] = vertexReader.getInt32();
+						tempValue[2] = vertexReader.getInt32();
+						tempValue[3] = vertexReader.getInt32();
+						break;
 					case DXGI_FORMAT_R32G32B32_FLOAT:// 3 * float32
 						tempValue = vec3.create();//TODO: optimize
 						tempValue[0] = vertexReader.getFloat32();
 						tempValue[1] = vertexReader.getFloat32();
 						tempValue[2] = vertexReader.getFloat32();
+						break;
+					case DXGI_FORMAT_R16G16B16A16_UNORM:
+						tempValue = vec4.create();//TODO: optimize
+						tempValue[0] = vertexReader.getUint16() / 65536;
+						tempValue[1] = vertexReader.getUint16() / 65536;
+						tempValue[2] = vertexReader.getUint16() / 65536;
+						tempValue[3] = vertexReader.getUint16() / 65536;
+						break;
+					case DXGI_FORMAT_R16G16B16A16_UINT:
+						tempValue = vec4.create();//TODO: optimize
+						tempValue[0] = vertexReader.getUint16();
+						tempValue[1] = vertexReader.getUint16();
+						tempValue[2] = vertexReader.getUint16();
+						tempValue[3] = vertexReader.getUint16();
 						break;
 					case DXGI_FORMAT_R16G16B16A16_SINT:
 						tempValue = vec4.create();//TODO: optimize
@@ -356,7 +379,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: numb
 						break;
 					default:
 						//TODO add types when needed. see DxgiFormat.js
-						console.error('Warning: unknown type ' + headerType + ' for value ' + headerName);
+						errorOnce('Warning: unknown type ' + headerType + ' for value ' + headerName);
 						tempValue = vec4.create();//TODO: optimize
 						tempValue[0] = 0;
 						tempValue[1] = 0;
