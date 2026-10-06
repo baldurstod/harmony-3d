@@ -54668,8 +54668,10 @@ class Source2ModelInstance extends Entity {
         return this.#skin;
     }
     setSkinId(skin) {
-        this.#skin = skin;
-        this.#updateMaterials();
+        if (skin !== this.#skin) {
+            this.#skin = skin;
+            this.#updateMaterials();
+        }
         return Promise.resolve();
     }
     async setSkinName(skin) {

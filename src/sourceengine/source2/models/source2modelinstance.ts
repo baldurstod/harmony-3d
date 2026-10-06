@@ -187,8 +187,10 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	setSkinId(skin: number): Promise<void> {
-		this.#skin = skin;
-		this.#updateMaterials();
+		if (skin !== this.#skin) {
+			this.#skin = skin;
+			this.#updateMaterials();
+		}
 		return Promise.resolve();
 	}
 
