@@ -6955,6 +6955,9 @@ class Camera extends Entity {
     get orthoZoom() {
         return this.#orthoZoom;
     }
+    /**
+     * @deprecated use setVerticalFovAsDegree or setVerticalFov instead
+     */
     set verticalFov(verticalFov) {
         const oldValue = this.#verticalFov;
         this.#verticalFov = verticalFov * DEG_TO_RAD;
@@ -6963,6 +6966,18 @@ class Camera extends Entity {
         if (oldValue != this.#verticalFov) {
             EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
         }
+    }
+    setVerticalFov(verticalFov) {
+        const oldValue = this.#verticalFov;
+        this.#verticalFov = verticalFov;
+        this.#tanHalfVerticalFov = Math.tan(this.#verticalFov * 0.5);
+        this.#dirtyProjectionMatrix = true;
+        if (oldValue != this.#verticalFov) {
+            EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
+        }
+    }
+    setVerticalFovAsDegree(verticalFov) {
+        this.setVerticalFov(verticalFov * DEG_TO_RAD);
     }
     /**
      * @deprecated use getVerticalFovAsDegree or getVerticalFov instead
@@ -25923,14 +25938,12 @@ class MdlStudioSeqDesc {
                 }
                 break;
             case (event.event === 0 && event.name == 'AE_WPN_HIDE'):
-                //TODOV2
-                //dynamicProp.setVisibility(false);
-                //console.error('AE_WPN_HIDE' + dynamicProp.name);
+                const hideWeapon = dynamicProp.getPropertyValue('weapon');
+                hideWeapon?.setVisible(false);
                 break;
             case (event.event === 0 && event.name == 'AE_WPN_UNHIDE'):
-                //TODOV2
-                //dynamicProp.setVisibility(true);
-                //console.error('AE_WPN_UNHIDE' + dynamicProp.name);
+                const unhideWeapon = dynamicProp.getPropertyValue('weapon');
+                unhideWeapon?.setVisible();
                 break;
             case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
                 options = event.options.split(' ');
@@ -30488,6 +30501,8 @@ class Source1ModelInstance extends Entity {
                     if (sequence) {
                         seqContext.s = sequence;
                         seqContext.startTime = now;
+                        // Reset the time so that the events fire at time = 0
+                        sequence.previousTime = -1;
                         if (sequence.autolayer) ;
                     }
                     /*

@@ -224,6 +224,9 @@ export class Camera extends Entity {
 		return this.#orthoZoom;
 	}
 
+	/**
+	 * @deprecated use setVerticalFovAsDegree or setVerticalFov instead
+	 */
 	set verticalFov(verticalFov) {
 		const oldValue = this.#verticalFov;
 		this.#verticalFov = verticalFov * DEG_TO_RAD;
@@ -232,6 +235,20 @@ export class Camera extends Entity {
 		if (oldValue != this.#verticalFov) {
 			EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
 		}
+	}
+
+	setVerticalFov(verticalFov: Radian): void {
+		const oldValue = this.#verticalFov;
+		this.#verticalFov = verticalFov;
+		this.#tanHalfVerticalFov = Math.tan(this.#verticalFov * 0.5);
+		this.#dirtyProjectionMatrix = true;
+		if (oldValue != this.#verticalFov) {
+			EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
+		}
+	}
+
+	setVerticalFovAsDegree(verticalFov: Degree): void {
+		this.setVerticalFov(verticalFov * DEG_TO_RAD);
 	}
 
 	/**

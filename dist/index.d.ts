@@ -613,7 +613,12 @@ export declare class Camera extends Entity {
     get farPlane(): number;
     set orthoZoom(orthoZoom: number);
     get orthoZoom(): number;
+    /**
+     * @deprecated use setVerticalFovAsDegree or setVerticalFov instead
+     */
     set verticalFov(verticalFov: number);
+    setVerticalFov(verticalFov: Radian): void;
+    setVerticalFovAsDegree(verticalFov: Degree): void;
     /**
      * @deprecated use getVerticalFovAsDegree or getVerticalFov instead
      */
