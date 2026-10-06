@@ -138,14 +138,12 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 				}
 				break;
 			case (event.event === 0 && event.name == 'AE_WPN_HIDE'):
-				//TODOV2
-				//dynamicProp.setVisibility(false);
-				//console.error('AE_WPN_HIDE' + dynamicProp.name);
+				const hideWeapon = dynamicProp.getPropertyValue('weapon') as Source1ModelInstance | undefined;
+				hideWeapon?.setVisible(false);
 				break;
 			case (event.event === 0 && event.name == 'AE_WPN_UNHIDE'):
-				//TODOV2
-				//dynamicProp.setVisibility(true);
-				//console.error('AE_WPN_UNHIDE' + dynamicProp.name);
+				const unhideWeapon = dynamicProp.getPropertyValue('weapon') as Source1ModelInstance | undefined;
+				unhideWeapon?.setVisible();
 				break;
 			case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
 				options = event.options.split(' ');

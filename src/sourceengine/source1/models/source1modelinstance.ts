@@ -320,6 +320,8 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 					if (sequence) {
 						seqContext.s = sequence;
 						seqContext.startTime = now;
+						// Reset the time so that the events fire at time = 0
+						sequence.previousTime = -1;
 						if (sequence.autolayer) {
 							//const autoLayerList = sequence.autolayer;
 
