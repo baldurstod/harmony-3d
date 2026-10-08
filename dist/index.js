@@ -9740,11 +9740,17 @@ class OrbitControl extends CameraControl {
             this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
         }
     }
-    update(delta = 1) {
+    /**
+     * Update the control
+     * @param delta Delta time since last update
+     * @param wheel Whether it's a wheel event
+     * @returns Nothing
+     */
+    update(delta = 1, wheel = false) {
         if (!this.enabled || !this.camera) {
             return;
         }
-        if (this.canvas && this.canvas !== focusedCanvas) {
+        if (!wheel && (this.canvas && this.canvas !== focusedCanvas)) {
             return;
         }
         const position = this.camera._position;
@@ -9819,9 +9825,8 @@ class OrbitControl extends CameraControl {
             quat.copy(this.#lastQuaternion, this.camera._quaternion);
             this.#zoomChanged = false;
             //this.camera.dirtyCameraMatrix = true;
-            return true;
+            return;
         }
-        return false;
     }
     set autoRotateSpeed(speed) {
         this.#autoRotateSpeed = 2 * Math.PI / 60 / 60 * speed;
@@ -9953,7 +9958,7 @@ class OrbitControl extends CameraControl {
         else if (wheelEvent.deltaY > 0) {
             this.#dollyIn(this.zoomScale);
         }
-        this.update();
+        this.update(undefined, true);
     }
     #handleKeyDown(event) {
         if (!this.enabled || !this.#enableKeys || !this.#enablePan) {
@@ -18940,6 +18945,7 @@ class GraphicsClass {
         this.setShaderDebugMode(ShaderDebugMode.None);
         //this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
         this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
+        // Frame rate sample initialization
         let samples = this.#frameRateSamples;
         while (samples--) {
             this.#times.push(0);

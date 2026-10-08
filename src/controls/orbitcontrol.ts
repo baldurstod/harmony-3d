@@ -171,12 +171,18 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	update(delta = 1) {
+	/**
+	 * Update the control
+	 * @param delta Delta time since last update
+	 * @param wheel Whether it's a wheel event
+	 * @returns Nothing
+	 */
+	update(delta = 1, wheel = false): void {
 		if (!this.enabled || !this.camera) {
 			return;
 		}
 
-		if (this.canvas && this.canvas !== focusedCanvas) {
+		if (!wheel && (this.canvas && this.canvas !== focusedCanvas)) {
 			return;
 		}
 
@@ -277,9 +283,8 @@ export class OrbitControl extends CameraControl {
 			this.#zoomChanged = false;
 			//this.camera.dirtyCameraMatrix = true;
 
-			return true;
+			return;
 		}
-		return false;
 	}
 
 	set autoRotateSpeed(speed: number) {
@@ -455,7 +460,7 @@ export class OrbitControl extends CameraControl {
 
 		}
 
-		this.update();
+		this.update(undefined, true);
 
 	}
 

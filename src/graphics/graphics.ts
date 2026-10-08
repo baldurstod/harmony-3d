@@ -342,6 +342,7 @@ class GraphicsClass {
 		//this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
 		this.setDefine('MAX_HARDWARE_BONES', `${MAX_HARDWARE_BONES}`);
 
+		// Frame rate sample initialization
 		let samples = this.#frameRateSamples;
 		while (samples--) {
 			this.#times.push(0);

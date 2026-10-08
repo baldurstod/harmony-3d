@@ -5067,7 +5067,13 @@ declare class Channel {
                           set dampingFactor(dampingFactor: number);
                           get dampingFactor(): number;
                           setupCamera(): void;
-                          update(delta?: number): boolean | undefined;
+                          /**
+                           * Update the control
+                           * @param delta Delta time since last update
+                           * @param wheel Whether it's a wheel event
+                           * @returns Nothing
+                           */
+                          update(delta?: number, wheel?: boolean): void;
                           set autoRotateSpeed(speed: number);
                           get zoomScale(): number;
                           handleEnabled(): void;
