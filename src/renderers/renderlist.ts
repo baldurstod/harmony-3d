@@ -56,7 +56,7 @@ export class RenderList {
 					}
 				}
 			} else {
-				const material = (entity as Mesh).getMaterial();
+				const material = (entity as Mesh).getMaterial?.();
 				if (material) {
 					if (material.blend) {//TODOv3 changeblend
 						this.transparentList.push(entity as Mesh);

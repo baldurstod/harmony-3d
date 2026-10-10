@@ -1,5 +1,6 @@
 import { vec2 } from 'gl-matrix';
 import { Entity } from '../entities/entity';
+import { CanvasView } from '../graphics/graphics';
 import { Viewport } from '../graphics/viewport';
 import { RenderTarget } from '../textures/rendertarget';
 
@@ -45,4 +46,5 @@ export interface InternalRenderContext {
 	height: number;
 	viewport?: Viewport;
 	time?: number;
+	view?: CanvasView;
 }

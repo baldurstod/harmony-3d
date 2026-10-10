@@ -17528,7 +17528,7 @@ class RenderList {
                 }
             }
             else {
-                const material = entity.getMaterial();
+                const material = entity.getMaterial?.();
                 if (material) {
                     if (material.blend) { //TODOv3 changeblend
                         this.transparentList.push(entity);
@@ -17623,6 +17623,7 @@ class ForwardRenderer {
         const objectStack = [];
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
+        context.view?.additionalObjects?.forEach(ent => { objectStack.push(ent); });
         while (currentObject) {
             if (currentObject.isManipulator) {
                 currentObject.resize(camera);
@@ -18066,6 +18067,7 @@ class WebGPURenderer {
         const objectStack = [];
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
+        context.view?.additionalObjects?.forEach(ent => { objectStack.push(ent); });
         while (currentObject) {
             if (currentObject.isManipulator) {
                 currentObject.resize(camera);
@@ -18827,6 +18829,8 @@ class CanvasView {
     clearDepth;
     /** Clear stencil buffer before rendering. Default to false. */
     clearStencil;
+    /** Render additional object into this view */
+    additionalObjects;
     constructor(params) {
         this.name = params.name;
         this.scene = params.scene;
@@ -18838,6 +18842,7 @@ class CanvasView {
         this.clearColor = params.clearColor;
         this.clearDepth = params.clearDepth;
         this.clearStencil = params.clearStencil;
+        this.additionalObjects = params.additionalObjects;
     }
 }
 /**
@@ -19339,6 +19344,7 @@ class GraphicsClass {
                     height: canvas.canvas.height,
                     viewport,
                     time,
+                    view: canvasScene,
                 });
             }
             // TODO: set in the previous state
@@ -45988,18 +45994,14 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends Source1P
         for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
             const name = list[cpIndex];
             const cpNumber = this.getParameter(name + ' Control Point Number');
-            /*
             if (cpNumber == headLocation) {
                 continue;
             }
-            */
             // TODO: use param Control Point Parent
             //const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const cpOrientation = this.particleSystem.getControlPointOrientation(headLocation);
-                vec3.transformQuat(tempVec3$3, cpLocation, cpOrientation);
-                const a = vec3.add(tempVec3$3, tempVec3$3, vecControlPoint);
+                const a = vec3.add(tempVec3$3, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {

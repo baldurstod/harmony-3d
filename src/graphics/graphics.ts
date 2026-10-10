@@ -108,7 +108,7 @@ export interface AddCanvasOptions {
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean;
 	/** Add a single scene to the canvas. A scene can be part of several canvases. If views or layouts are provided, this property will be ignored. */
-	scene?: Scene | CanvasView;
+	scene?: Scene;
 	/** Add several views to the canvas. If layouts is provided, this property will be ignored. */
 	views?: CanvasView[];
 	/** Add several groups to the canvas. */
@@ -174,6 +174,8 @@ export class CanvasView {
 	clearDepth?: boolean;
 	/** Clear stencil buffer before rendering. Default to false. */
 	clearStencil?: boolean;
+	/** Render additional object into this view */
+	additionalObjects?: Set<Entity>;
 
 	constructor(params: {
 		/** View name.  */
@@ -196,6 +198,8 @@ export class CanvasView {
 		clearDepth?: boolean,
 		/** Clear stencil buffer before rendering. Default to false. */
 		clearStencil?: boolean,
+		/** Render additional object into this view */
+		additionalObjects?: Set<Entity>;
 	}) {
 		this.name = params.name;
 		this.scene = params.scene;
@@ -207,6 +211,7 @@ export class CanvasView {
 		this.clearColor = params.clearColor;
 		this.clearDepth = params.clearDepth;
 		this.clearStencil = params.clearStencil;
+		this.additionalObjects = params.additionalObjects;
 	}
 }
 
@@ -800,6 +805,7 @@ class GraphicsClass {
 					height: canvas.canvas.height,
 					viewport,
 					time,
+					view: canvasScene,
 				});
 			}
 

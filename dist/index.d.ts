@@ -72,7 +72,7 @@ export declare interface AddCanvasOptions {
     /** Auto resize the canvas to fit its parent. Default to false. */
     autoResize?: boolean;
     /** Add a single scene to the canvas. A scene can be part of several canvases. If views or layouts are provided, this property will be ignored. */
-    scene?: Scene | CanvasView;
+    scene?: Scene;
     /** Add several views to the canvas. If layouts is provided, this property will be ignored. */
     views?: CanvasView[];
     /** Add several groups to the canvas. */
@@ -816,6 +816,8 @@ export declare class CanvasView {
     clearDepth?: boolean;
     /** Clear stencil buffer before rendering. Default to false. */
     clearStencil?: boolean;
+    /** Render additional object into this view */
+    additionalObjects?: Set<Entity>;
     constructor(params: {
         /** View name.  */
         name: string;
@@ -837,6 +839,8 @@ export declare class CanvasView {
         clearDepth?: boolean;
         /** Clear stencil buffer before rendering. Default to false. */
         clearStencil?: boolean;
+        /** Render additional object into this view */
+        additionalObjects?: Set<Entity>;
     });
 }
 
@@ -3333,6 +3337,7 @@ declare class Channel {
                           height: number;
                           viewport?: Viewport;
                           time?: number;
+                          view?: CanvasView;
                       }
 
                       export declare class InterpolateRadius extends Operator {
@@ -3384,7 +3389,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }

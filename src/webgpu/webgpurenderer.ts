@@ -132,6 +132,8 @@ export class WebGPURenderer implements Renderer {
 		//scene.pointLights = scene.getChildList(PointLight);
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
+		context.view?.additionalObjects?.forEach(ent => { objectStack.push(ent) });
+
 		while (currentObject) {
 			if ((currentObject as Manipulator).isManipulator) {
 				(currentObject as Manipulator).resize(camera);
