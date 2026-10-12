@@ -1,6 +1,6 @@
 import { mat3, mat4, quat, ReadonlyQuat, ReadonlyVec3, vec3, vec4 } from 'gl-matrix';
 import { JSONObject } from 'harmony-types';
-import { HarmonyMenuItems, HarmonyMenuItemsDict } from 'harmony-ui';
+import { HarmonyMenuItems, HarmonyMenuItemsDict, promptI18n } from 'harmony-ui';
 import { DEBUG, VERBOSE } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { JSONLoader } from '../importers/jsonloader';
@@ -12,7 +12,7 @@ import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
 import { Properties, Property, PropertyValues } from '../utils/properties';
-import { promptI18n, stringToQuat, stringToVec3 } from '../utils/utils';
+import { stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';
 import { EntityObserver } from './entityobserver';
 import { pickList } from './picklist';

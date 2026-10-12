@@ -3389,7 +3389,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }
@@ -5478,11 +5478,6 @@ declare class Channel {
                           isValid(): boolean;
                           getProgram(): WebGLProgram;
                       }
-
-                      /**
-                       * Wrapper around window.prompt(), but the message is an i18n key
-                       */
-                      export declare function promptI18n(messageI18n: string, defaultValue?: string): string | null;
 
                       export declare class Properties {
                           #private;
