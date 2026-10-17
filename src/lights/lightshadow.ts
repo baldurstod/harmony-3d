@@ -4,8 +4,6 @@ import { Camera } from '../cameras/camera';
 import { RenderTarget } from '../textures/rendertarget';
 import { Light } from './light';
 
-const tempMat4 = mat4.create();
-
 export class LightShadow {
 	#textureSize: vec2 = vec2.create();
 	light: Light;
@@ -28,8 +26,8 @@ export class LightShadow {
 		this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
 	}
 
-	set range(range: number) {
-	}
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	set range(range: number) { }
 
 	set textureSize(textureSize: number) {
 		vec2.set(this.#textureSize, textureSize, textureSize);
@@ -40,6 +38,7 @@ export class LightShadow {
 		return this.#textureSize;
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	computeShadowMatrix(mapIndex: number): void {
 		const shadowCamera = this.camera;
 		const shadowMatrix = this.shadowMatrix;

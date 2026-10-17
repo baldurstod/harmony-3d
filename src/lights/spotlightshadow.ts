@@ -1,5 +1,4 @@
 import { Camera } from '../cameras/camera';
-import { RAD_TO_DEG } from '../math/constants';
 import { LightShadow } from './lightshadow';
 import { SpotLight } from './spotlight';
 
@@ -13,10 +12,10 @@ export class SpotLightShadow extends LightShadow {
 	}
 
 	set angle(angle: number) {
-		this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
+		this.camera.setVerticalFov(2.0 * angle);
 	}
 
-	set range(range: number) {
+	override set range(range: number) {
 		this.camera.farPlane = range;
 	}
 

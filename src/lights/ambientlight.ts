@@ -6,8 +6,8 @@ export type AmbientLightParameters = LightParameters;
 export class AmbientLight extends Light {
 	readonly isAmbientLight = true;
 
-	static override async constructFromJSON(json: any) {
-		return new AmbientLight(json);
+	static override constructFromJSON(json: any): Promise<AmbientLight> {
+		return Promise.resolve(new AmbientLight(json));
 	}
 
 	static override getEntityName(): string {

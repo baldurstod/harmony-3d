@@ -38,7 +38,7 @@ export class SpotLight extends Light {
 		}
 	}
 
-	get castShadow() {
+	get castShadow(): boolean | undefined {
 		return super.castShadow;
 	}
 
@@ -50,7 +50,7 @@ export class SpotLight extends Light {
 		}
 	}
 
-	get angle() {
+	get angle(): number {
 		return this.#outerAngle;
 	}
 
@@ -59,12 +59,12 @@ export class SpotLight extends Light {
 		this.innerAngleCos = Math.cos(innerAngle);
 	}
 
-	get innerAngle() {
+	get innerAngle(): number {
 		return this.#innerAngle;
 	}
 
-	getDirection(out = vec3.create()) {
-		return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat));
+	getDirection(out = vec3.create()): vec3 {
+		return vec3.transformQuat(out, Z_VECTOR, this.getWorldOrientation(tempQuat));
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {

@@ -27,7 +27,7 @@ export enum LightType {
 export abstract class Light extends Entity {
 	#intensity: number;
 	#color: vec3;// TODO: use Color instead
-	#range: number = 1000;
+	#range = 1000;
 	shadow?: LightShadow;
 	#shadowTextureSize: number = defaultTextureSize;
 	readonly isLight = true;
@@ -46,7 +46,7 @@ export abstract class Light extends Entity {
 		vec3.copy(this.#color, color);
 	}
 
-	get color() {
+	get color(): vec3 {
 		return this.#color;
 	}
 
@@ -54,7 +54,7 @@ export abstract class Light extends Entity {
 		this.#intensity = intensity;
 	}
 
-	get intensity() {
+	get intensity(): number {
 		return this.#intensity;
 	}
 
@@ -65,7 +65,7 @@ export abstract class Light extends Entity {
 		}
 	}
 
-	get range() {
+	get range(): number {
 		return this.#range;
 	}
 
@@ -76,21 +76,21 @@ export abstract class Light extends Entity {
 		}
 	}
 
-	get shadowTextureSize() {
+	get shadowTextureSize(): number {
 		return this.#shadowTextureSize;
 	}
 
 	override buildContextMenu(): HarmonyMenuItemsDict {
 		return Object.assign(super.buildContextMenu(), {
 			Light_1: null,
-			color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) { this.color = stringToVec3(color); } } },
-			intensity: { i18n: '#intensity', f: () => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) { this.intensity = Number(intensity); } } },
+			color: { i18n: '#color', f: (): void => { const color = prompt('Color', this.color.join(' ')); if (color !== null) { this.color = stringToVec3(color); } } },
+			intensity: { i18n: '#intensity', f: (): void => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) { this.intensity = Number(intensity); } } },
 		}, this.shadow ? {
-			texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
+			texture_size: { i18n: '#texture_size', f: (): void => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
 		} : null);
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.color = vec3ToJSON(this.color);
 		json.intensity = this.intensity;
@@ -98,7 +98,7 @@ export abstract class Light extends Entity {
 		return json;
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.color = json.color as vec3 ?? DEFAULT_LIGHT_COLOR;
 		this.intensity = json.intensity as number ?? 1;

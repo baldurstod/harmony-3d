@@ -26,21 +26,22 @@ export class PointLight extends Light {
 		}
 	}
 
-	get castShadow() {
+	get castShadow(): boolean | undefined {
 		return super.castShadow;
 	}
 
-	toJSON() {
+	toJSON(): JSONObject {
 		const json = super.toJSON();
 		json.range = this.range;
 		return json;
 	}
 
-	static override async constructFromJSON(json: JSONObject) {
+	// eslint-disable-next-line @typescript-eslint/require-await
+	static override async constructFromJSON(json: JSONObject): Promise<PointLight> {
 		return new PointLight(json);
 	}
 
-	fromJSON(json: JSONObject) {
+	fromJSON(json: JSONObject): void {
 		super.fromJSON(json);
 		this.range = json.range as number ?? this.range;
 	}

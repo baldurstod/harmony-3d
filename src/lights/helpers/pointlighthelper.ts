@@ -24,7 +24,7 @@ export class PointLightHelper extends Mesh {
 		this.addChild(sphere);
 	}
 
-	#createVertices() {
+	#createVertices(): void {
 		const indices = [];
 		const vertices = [];
 
@@ -44,7 +44,7 @@ export class PointLightHelper extends Mesh {
 			}
 		}
 
-		const geometry = this.geometry;
+		const geometry = this.getGeometry();
 		geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
 		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
 		geometry.count = indices.length;

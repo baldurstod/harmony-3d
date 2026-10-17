@@ -5,6 +5,7 @@ import { PointLight } from './pointlight';
 
 const worldPos = vec3.create();
 
+/*
 const cubeDirections = [
 	vec3.fromValues(1, 0, 0), vec3.fromValues(- 1, 0, 0), vec3.fromValues(0, 0, 1),
 	vec3.fromValues(0, 0, - 1), vec3.fromValues(0, 1, 0), vec3.fromValues(0, - 1, 0)
@@ -14,6 +15,7 @@ const cubeUps = [
 	vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0),
 	vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, 1), vec3.fromValues(0, 0, - 1)
 ];
+*/
 
 const S2 = Math.SQRT1_2;
 const DIRECTIONS = [
@@ -47,13 +49,13 @@ export class PointLightShadow extends LightShadow {
 		this.viewPortsLength = 6;
 	}
 
-	computeShadowMatrix(mapIndex: number): void {
+	override computeShadowMatrix(mapIndex: number): void {
 		const shadowCamera = this.camera;
 		const shadowMatrix = this.shadowMatrix;
 
 		const direction = DIRECTIONS[mapIndex];
 		if (direction) {
-			shadowCamera.setWorldQuaternion(direction);
+			shadowCamera.setWorldOrientation(direction);
 		}
 		shadowCamera.dirty();
 

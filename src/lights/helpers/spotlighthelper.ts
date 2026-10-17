@@ -27,13 +27,14 @@ export class SpotLightHelper extends Mesh {
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.material.setMeshColor();
-		this.material.setDefine('ALWAYS_ON_TOP');
+		const material = this.getMaterial();
+		material.setMeshColor();
+		material.setDefine('ALWAYS_ON_TOP');
 		this.castShadow = false;
-		GraphicsEvents.addEventListener('tick', event => this.update());
+		GraphicsEvents.addEventListener('tick', (): void => this.update());
 	}
 
-	#createVertices() {
+	#createVertices(): void {
 		const indices = [];
 		const vertices = [];
 
@@ -51,7 +52,7 @@ export class SpotLightHelper extends Mesh {
 		//close loop
 		indices.push(k, 1);
 
-		const geometry = this.geometry;
+		const geometry = this.getGeometry();
 		geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
 		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
 		geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
@@ -59,12 +60,12 @@ export class SpotLightHelper extends Mesh {
 	}
 
 
-	update() {
+	update(): void {
 		const spotLight = this.#spotLight;
 		if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
 			vec3.copy(this.#color, spotLight.color);
 			vec4.set(tempVec4, this.#color[0], this.#color[1], this.#color[2], 1.);
-			this.material.setMeshColor(tempVec4);
+			this.getMaterial().setMeshColor(tempVec4);
 			const range = spotLight.range || 1000.0;
 			const radius = Math.sin(spotLight.angle) * range;
 			this.#range = spotLight.range;
@@ -80,13 +81,13 @@ export class SpotLightHelper extends Mesh {
 				verticesArray[index + 0] = Math.cos(angle) * radius;
 				verticesArray[index + 1] = Math.sin(angle) * radius;
 				verticesArray[index + 2] = -range;
-				const sub = verticesArray.subarray(index, index + 2);
+				//const sub = verticesArray.subarray(index, index + 2);
 			}
 			this.#vertexPositionAttribute.dirty = true;
 		}
 	}
 
-	parentChanged(parent: Entity | null = null) {
+	parentChanged(parent: Entity | null = null): void {
 		if (parent instanceof SpotLight) {
 			this.#spotLight = parent;
 		} else {
