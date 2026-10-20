@@ -11750,7 +11750,7 @@ class PointLightHelper extends Mesh {
                 indices.push(0, ++k);
             }
         }
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
         geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3, 'position'));
         geometry.count = indices.length;
@@ -11852,7 +11852,6 @@ class Light extends Entity {
     }
 }
 
-mat4.create();
 class LightShadow {
     #textureSize = vec2.create();
     light;
@@ -11874,8 +11873,8 @@ class LightShadow {
         this.renderTarget = new RenderTarget({ width: this.#textureSize[0], height: this.#textureSize[0], });
         this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
     }
-    set range(range) {
-    }
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    set range(range) { }
     set textureSize(textureSize) {
         vec2.set(this.#textureSize, textureSize, textureSize);
         this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
@@ -11883,6 +11882,7 @@ class LightShadow {
     get textureSize() {
         return this.#textureSize;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     computeShadowMatrix(mapIndex) {
         const shadowCamera = this.camera;
         const shadowMatrix = this.shadowMatrix;
@@ -11902,7 +11902,7 @@ class SpotLightShadow extends LightShadow {
         this.range = this.light.range;
     }
     set angle(angle) {
-        this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
+        this.camera.setVerticalFov(2.0 * angle);
     }
     set range(range) {
         this.camera.farPlane = range;
@@ -11956,7 +11956,7 @@ class SpotLight extends Light {
         return this.#innerAngle;
     }
     getDirection(out = vec3.create()) {
-        return vec3.transformQuat(out, Z_VECTOR, this.getWorldQuaternion(tempQuat$9));
+        return vec3.transformQuat(out, Z_VECTOR, this.getWorldOrientation(tempQuat$9));
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
@@ -11995,10 +11995,11 @@ class SpotLightHelper extends Mesh {
         super(params);
         this.renderMode = GL_LINES;
         this.#createVertices();
-        this.material.setMeshColor();
-        this.material.setDefine('ALWAYS_ON_TOP');
+        const material = this.getMaterial();
+        material.setMeshColor();
+        material.setDefine('ALWAYS_ON_TOP');
         this.castShadow = false;
-        GraphicsEvents.addEventListener('tick', event => this.update());
+        GraphicsEvents.addEventListener('tick', () => this.update());
     }
     #createVertices() {
         const indices = [];
@@ -12015,7 +12016,7 @@ class SpotLightHelper extends Mesh {
         }
         //close loop
         indices.push(k, 1);
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         geometry.setIndex(new Uint16BufferAttribute(indices, 1, 'index'));
         this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3, 'position');
         geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
@@ -12026,7 +12027,7 @@ class SpotLightHelper extends Mesh {
         if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
             vec3.copy(this.#color, spotLight.color);
             vec4.set(tempVec4$1, this.#color[0], this.#color[1], this.#color[2], 1.);
-            this.material.setMeshColor(tempVec4$1);
+            this.getMaterial().setMeshColor(tempVec4$1);
             const range = spotLight.range || 1000.0;
             const radius = Math.sin(spotLight.angle) * range;
             this.#range = spotLight.range;
@@ -12041,7 +12042,7 @@ class SpotLightHelper extends Mesh {
                 verticesArray[index + 0] = Math.cos(angle) * radius;
                 verticesArray[index + 1] = Math.sin(angle) * radius;
                 verticesArray[index + 2] = -range;
-                verticesArray.subarray(index, index + 2);
+                //const sub = verticesArray.subarray(index, index + 2);
             }
             this.#vertexPositionAttribute.dirty = true;
         }
@@ -20168,8 +20169,8 @@ class OBJImporter {
 
 class AmbientLight extends Light {
     isAmbientLight = true;
-    static async constructFromJSON(json) {
-        return new AmbientLight(json);
+    static constructFromJSON(json) {
+        return Promise.resolve(new AmbientLight(json));
     }
     static getEntityName() {
         return 'AmbientLight';
@@ -20189,14 +20190,17 @@ class AmbientLight extends Light {
 registerEntity(AmbientLight);
 
 const worldPos = vec3.create();
-[
-    vec3.fromValues(1, 0, 0), vec3.fromValues(-1, 0, 0), vec3.fromValues(0, 0, 1),
-    vec3.fromValues(0, 0, -1), vec3.fromValues(0, 1, 0), vec3.fromValues(0, -1, 0)
+/*
+const cubeDirections = [
+    vec3.fromValues(1, 0, 0), vec3.fromValues(- 1, 0, 0), vec3.fromValues(0, 0, 1),
+    vec3.fromValues(0, 0, - 1), vec3.fromValues(0, 1, 0), vec3.fromValues(0, - 1, 0)
 ];
-[
+
+const cubeUps = [
     vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0),
-    vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, 1), vec3.fromValues(0, 0, -1)
+    vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, 1), vec3.fromValues(0, 0, - 1)
 ];
+*/
 const S2 = Math.SQRT1_2;
 const DIRECTIONS = [
     quat.fromValues(0, -S2, 0, S2), //+x
@@ -20231,7 +20235,7 @@ class PointLightShadow extends LightShadow {
         const shadowMatrix = this.shadowMatrix;
         const direction = DIRECTIONS[mapIndex];
         if (direction) {
-            shadowCamera.setWorldQuaternion(direction);
+            shadowCamera.setWorldOrientation(direction);
         }
         shadowCamera.dirty();
         shadowCamera.getWorldPosition(worldPos);
@@ -20261,6 +20265,7 @@ class PointLight extends Light {
         json.range = this.range;
         return json;
     }
+    // eslint-disable-next-line @typescript-eslint/require-await
     static async constructFromJSON(json) {
         return new PointLight(json);
     }
@@ -31491,7 +31496,7 @@ class ModelLoader {
         const vertexTangent = new Float32BufferAttribute(tangents, 4, 'tangent');
         const textureCoord = new Float32BufferAttribute(uvs, 2, 'texCoord');
         const vertexWeights = new Float32BufferAttribute(boneWeights, 3, 'boneWeights');
-        const vertexBones = new Uint32BufferAttribute(boneIds, 3, 'boneIndices');
+        const vertexBones = Graphics.isWebGL ? new Uint16BufferAttribute(boneIds, 3, 'boneIndices') : new Uint32BufferAttribute(boneIds, 3, 'boneIndices');
         //let material = new MeshBasicMaterial({map: 'texture'});//removeme
         //console.info('Vertex array :')
         //console.info(vertexArray);

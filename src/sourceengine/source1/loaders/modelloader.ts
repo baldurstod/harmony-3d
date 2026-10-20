@@ -1,6 +1,7 @@
 import { VERBOSE } from '../../../buildoptions';
-import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry/bufferattribute';
+import { Float32BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from '../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
+import { Graphics } from '../../../graphics/graphics2';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
 import { Property, PropertyType } from '../../../utils/properties';
 import { Source1MdlLoader } from './source1mdlloader';
@@ -69,7 +70,7 @@ export class ModelLoader {
 		const vertexTangent = new Float32BufferAttribute(tangents, 4, 'tangent');
 		const textureCoord = new Float32BufferAttribute(uvs, 2, 'texCoord');
 		const vertexWeights = new Float32BufferAttribute(boneWeights, 3, 'boneWeights');
-		const vertexBones = new Uint32BufferAttribute(boneIds, 3, 'boneIndices');
+		const vertexBones = Graphics.isWebGL ? new Uint16BufferAttribute(boneIds, 3, 'boneIndices') : new Uint32BufferAttribute(boneIds, 3, 'boneIndices');
 		//let material = new MeshBasicMaterial({map: 'texture'});//removeme
 		//console.info('Vertex array :')
 		//console.info(vertexArray);
