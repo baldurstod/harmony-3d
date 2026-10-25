@@ -29,7 +29,7 @@ export class ShaderEditor extends HTMLElement {
 	#annotationsDelay = 500;
 	#editMode = EDIT_MODE_SHADER;
 	#shadowRoot?: ShadowRoot;
-	#shaderEditor?: Ace.Editor/*TODO: fix type*/;
+	#shaderEditor?: Ace.Editor;
 	#htmlShaderNameSelect?: HTMLSelectElement;
 	#htmlExpandSourceButton?: HTMLButtonElement;
 	#htmlShaderRenderMode?: HTMLInputElement;
@@ -193,7 +193,7 @@ export class ShaderEditor extends HTMLElement {
 			const option = createElement('option', {
 				class: 'shader-editor-shader-list-shader',
 				value: shaderName,
-				innerHTML: shaderName,
+				innerText: shaderName,
 				'data-shader': true,
 				parent: shaderGroup
 			}) as HTMLOptionElement;

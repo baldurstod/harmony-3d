@@ -1272,12 +1272,11 @@ declare class Channel {
              }
 
              /** Context type for the canvas. */
-             export declare enum ContextType {
-                 /** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
-                 WebGL = "webgl",
-                 /** WebGPU context. */
-                 WebGPU = "webgpu"
-             }
+             export declare type ContextType = 
+             /** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
+             'webgl'
+             /** WebGPU context. */
+             | 'webgpu';
 
              export declare class ContinuousEmitter extends Emitter {
                  #private;

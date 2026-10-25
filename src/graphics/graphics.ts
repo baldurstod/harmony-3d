@@ -49,12 +49,12 @@ export enum ShaderDebugMode {
 }
 
 /** Context type for the canvas. */
-export enum ContextType {
+export type ContextType =
 	/** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
-	WebGL = 'webgl',
+	'webgl'
 	/** WebGPU context. */
-	WebGPU = 'webgpu',
-}
+	| 'webgpu'
+	;
 
 export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 export type RequiredBy<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
@@ -899,7 +899,7 @@ class GraphicsClass {
 	}
 
 	static async #initContext(graphicOptions: GraphicsInitOptions = {}) {
-		if (graphicOptions.type == ContextType.WebGPU) {
+		if (graphicOptions.type == 'webgpu') {
 			this.#forwardRenderer = new WebGPURenderer();
 			await this.#initWebGPUContext(graphicOptions.webGPU);
 		} else {
