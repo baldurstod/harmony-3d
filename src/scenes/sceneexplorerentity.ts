@@ -1,6 +1,6 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
 import { lightbulbSVG, lightOffSVG, lockOpenRightSVG, lockSVG, paletteSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runCircleSVG, runSVG, targetSVG, visibilityOffSVG, visibilityOnSVG } from 'harmony-svg';
-import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
+import { createElement, defineElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import { RetargetControl } from '../controls/retargetcontrol';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
@@ -559,6 +559,4 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 }
 
-if (window.customElements) {
-	customElements.define('scene-explorer-entity', SceneExplorerEntity);
-}
+defineElement('scene-explorer-entity', SceneExplorerEntity)

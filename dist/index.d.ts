@@ -6764,8 +6764,9 @@ declare class Channel {
                           None = 0
                       }
 
-                      export declare class ShaderEditor extends HTMLElement {
+                      export declare class ShaderEditor extends MyEventTarget implements ViewComponent {
                           #private;
+                          readonly htmlElement: HTMLElement;
                           initEditor(options?: ShaderEditorInit): void;
                           openShader(name: string): void;
                           getEditorShaderName(): string;
@@ -9818,6 +9819,10 @@ declare class Channel {
                           clone(): VertexLitGenericMaterial;
                           getShaderSource(): string;
                           getRaytracingMaterial(index: number): RaytracingMaterial;
+                      }
+
+                      declare interface ViewComponent {
+                          htmlElement: HTMLElement;
                       }
 
                       /**

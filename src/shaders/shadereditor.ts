@@ -1,11 +1,13 @@
 import { Ace } from 'ace-builds';
 import { loadScript } from 'harmony-browser-utils';
 import { createElement, defineElement, hide, I18n, shadowRootStyle } from 'harmony-ui';
+import { MyEventTarget } from 'harmony-utils';
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
 import shaderEditorCSS from '../css/shadereditor.css';
 import { Graphics } from '../graphics/graphics2';
 import { ShaderManager } from '../managers/shadermanager';
+import { ViewComponent } from '../utils/viewcomponent';
 import { ShaderType } from '../webgl/types';
 import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';
 import { ShaderEventTarget } from './shadereventtarget';
@@ -23,7 +25,8 @@ type ShaderEditorInit = {
 	defaultShader?: string;
 }
 
-export class ShaderEditor extends HTMLElement {
+export class ShaderEditor extends MyEventTarget implements ViewComponent {
+	readonly htmlElement = createElement('div');
 	#initialized = false;
 	#recompileDelay = 1000;
 	#annotationsDelay = 500;
@@ -47,7 +50,7 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 
-		this.#shadowRoot = this.attachShadow({ mode: 'closed' });
+		this.#shadowRoot = this.htmlElement.attachShadow({ mode: 'closed' });
 		shadowRootStyle(this.#shadowRoot, shaderEditorCSS);
 		I18n.observeElement(this.#shadowRoot);
 
@@ -492,7 +495,4 @@ export class ShaderEditor extends HTMLElement {
 			this.#isOpen = false;
 		}
 	};
-
 }
-
-defineElement('shader-editor', ShaderEditor);

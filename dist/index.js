@@ -77024,9 +77024,7 @@ class SceneExplorerEntity extends HTMLElement {
     }
 }
 _a = SceneExplorerEntity;
-if (window.customElements) {
-    customElements.define('scene-explorer-entity', SceneExplorerEntity);
-}
+defineElement('scene-explorer-entity', SceneExplorerEntity);
 
 function FormatArray(array) {
     const arr = [];
@@ -79590,7 +79588,8 @@ var shaderEditorCSS = ":host {\n\tdisplay: flex;\n\tflex-direction: column;\n\th
 
 const EDIT_MODE_SHADER = 0;
 const EDIT_MODE_INCLUDE = 1;
-class ShaderEditor extends HTMLElement {
+class ShaderEditor extends MyEventTarget {
+    htmlElement = createElement('div');
     #initialized = false;
     #recompileDelay = 1000;
     #annotationsDelay = 500;
@@ -79612,7 +79611,7 @@ class ShaderEditor extends HTMLElement {
         if (this.#initialized) {
             return;
         }
-        this.#shadowRoot = this.attachShadow({ mode: 'closed' });
+        this.#shadowRoot = this.htmlElement.attachShadow({ mode: 'closed' });
         shadowRootStyle(this.#shadowRoot, shaderEditorCSS);
         I18n.observeElement(this.#shadowRoot);
         const aceScript = options.aceUrl ?? ACE_EDITOR_URI;
@@ -80002,7 +80001,6 @@ class ShaderEditor extends HTMLElement {
     }
     ;
 }
-defineElement('shader-editor', ShaderEditor);
 
 var meshbasic_fs = `
 #include declare_fragment_standard
