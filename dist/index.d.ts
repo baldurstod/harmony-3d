@@ -1275,6 +1275,8 @@ declare class Channel {
              export declare type ContextType = 
              /** WebGl context. Will try to get a WebGL2 context and if it fails, a WebGL context v1. */
              'webgl'
+             /** Same as webgl */
+             | 'webgl2'
              /** WebGPU context. */
              | 'webgpu';
 
