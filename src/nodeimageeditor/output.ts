@@ -55,12 +55,14 @@ export class Output extends InputOutput {
 	}
 	*/
 
+	/*
 	getType(): void | null {
 		if (this.node) {
 			return this.node.getType();
 		}
 		return null;
 	}
+	*/
 
 	isValid(startingPoint: Node): boolean {
 		if (this.node) {

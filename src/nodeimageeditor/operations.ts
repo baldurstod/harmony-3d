@@ -13,5 +13,5 @@ export function getOperation(name: string, editor: NodeImageEditor, params?: any
 		console.warn('Unknown operation : ' + name);
 		return null;
 	}
-	return new (ope)(editor, params);
+	return new (ope as any)(editor, params);
 }

@@ -62,7 +62,7 @@ export type NodeContext = {
 	updatePreview?: boolean;
 }
 
-export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
+export abstract class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	#hasPreview = false;
 	readonly id = generateRandomUUID();
 	readonly editor: NodeImageEditor;
@@ -109,12 +109,9 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 
 	/* eslint-disable @typescript-eslint/no-unused-vars */
 	/* eslint-disable @typescript-eslint/require-await */
-	async operate(context: NodeContext): Promise<void> {
-		throw new Error('This function must be overriden');
-	}
+	abstract operate(context: NodeContext): Promise<void>;
 	/* eslint-enable @typescript-eslint/no-unused-vars */
 	/* eslint-enable @typescript-eslint/require-await */
-
 
 	addParam(param: NodeParam): void {
 		this.params.set(param.name, param);
@@ -240,9 +237,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.inputs.size;
 	}
 
-	getType(): void {
-		throw new Error('This function must be overriden');
-	}
+	//abstract getType(): void;
 
 	ready(): Promise<boolean> {
 		const promiseFunction = (resolve: (arg0: boolean) => void): void => {
@@ -300,9 +295,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return max;
 	}
 
-	get title(): string {
-		throw new Error('This function must be overriden');
-	}
+	abstract get title(): string;
 
 	#dispatchEvent(eventName: NodeEventType, detail: NodeEvent): void {
 		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail }));
@@ -406,3 +399,5 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		return this.#hasPreview;
 	}
 }
+
+export type ConcreteNode = typeof Node & (new (...args: any[]) => Node);

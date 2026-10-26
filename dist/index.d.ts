@@ -3286,7 +3286,6 @@ declare class Channel {
                           setPredecessor(predecessor: Output): void;
                           getPredecessor(): Output | undefined;
                           hasPredecessor(): boolean;
-                          getType(): void | null;
                           getValue(context: NodeContext): Promise<any | null>;
                           isValid(startingPoint: Node_2): boolean;
                           toString(tabs?: string): Promise<string>;
@@ -4732,7 +4731,7 @@ declare class Channel {
                           dispose(): void;
                       }
 
-                      declare class Node_2 extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
+                      declare abstract class Node_2 extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
                           #private;
                           readonly id: string;
                           readonly editor: NodeImageEditor;
@@ -4748,7 +4747,7 @@ declare class Channel {
                           addOutput(outputId: string, outputType: number): Output;
                           getInput(inputId: string): Input | undefined;
                           getOutput(outputId: string): Output | undefined;
-                          operate(context: NodeContext): Promise<void>;
+                          abstract operate(context: NodeContext): Promise<void>;
                           addParam(param: NodeParam): void;
                           getParam(paramName: string): NodeParam | undefined;
                           getValue(paramName: string): NodeParamValue | null;
@@ -4764,12 +4763,11 @@ declare class Channel {
                           revalidate(context: NodeContext): Promise<void>;
                           redraw(context: NodeContext): Promise<void>;
                           getInputCount(): number;
-                          getType(): void;
                           ready(): Promise<boolean>;
                           isValid(startingPoint?: Node_2): boolean;
                           hasSuccessor(): boolean;
                           successorsLength(): number;
-                          get title(): string;
+                          abstract get title(): string;
                           updatePreview(context?: NodeContext): void;
                           savePicture(filename?: string): Promise<void>;
                           saveVTF(filename?: string): Promise<void>;
@@ -5139,7 +5137,6 @@ declare class Channel {
                           hasSuccessor(): boolean;
                           successorsLength(): number;
                           invalidate(): void;
-                          getType(): void | null;
                           isValid(startingPoint: Node_2): boolean;
                           toString(tabs?: string): Promise<string>;
                           dispose(): void;
@@ -5169,7 +5166,7 @@ declare class Channel {
 
                       declare type ParameterChanged = (newValue: any, oldValue?: any) => void;
 
-                      export declare class ParametersNode extends Node_2 {
+                      export declare abstract class ParametersNode extends Node_2 {
                           isParametersNode: boolean;
                       }
 

@@ -65,12 +65,14 @@ export class Input extends InputOutput {
 		return this.#predecessor ? true : false;
 	}
 
+	/*
 	getType(): void | null {
 		if (this.#predecessor) {
 			return this.#predecessor.getType();
 		}
 		return null;
 	}
+	*/
 
 	async getValue(context: NodeContext): Promise<any | null> {
 		if (this.#predecessor) {

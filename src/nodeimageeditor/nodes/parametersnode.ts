@@ -1,5 +1,5 @@
 import { Node } from '../node';
 
-export class ParametersNode extends Node {
+export abstract class ParametersNode extends Node {
 	isParametersNode = true;
 }

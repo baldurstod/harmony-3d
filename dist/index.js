@@ -70704,7 +70704,7 @@ function getOperation(name, editor, params) {
         console.warn('Unknown operation : ' + name);
         return null;
     }
-    return new (ope)(editor, params);
+    return new ope(editor, params);
 }
 
 const DEFAULT_TEXTURE_SIZE = 512;
@@ -71099,12 +71099,14 @@ class Input extends InputOutput {
     hasPredecessor() {
         return this.#predecessor ? true : false;
     }
-    getType() {
+    /*
+    getType(): void | null {
         if (this.#predecessor) {
             return this.#predecessor.getType();
         }
         return null;
     }
+    */
     async getValue(context) {
         if (this.#predecessor) {
             return this.#predecessor.getValue(context);
@@ -71177,12 +71179,14 @@ class Output extends InputOutput {
         }
     }
     */
-    getType() {
+    /*
+    getType(): void | null {
         if (this.node) {
             return this.node.getType();
         }
         return null;
     }
+    */
     isValid(startingPoint) {
         if (this.node) {
             return this.node.isValid(startingPoint);
@@ -71252,11 +71256,6 @@ class Node extends MyEventTarget {
     }
     getOutput(outputId) {
         return this.outputs.get(outputId);
-    }
-    /* eslint-disable @typescript-eslint/no-unused-vars */
-    /* eslint-disable @typescript-eslint/require-await */
-    async operate(context) {
-        throw new Error('This function must be overriden');
     }
     /* eslint-enable @typescript-eslint/no-unused-vars */
     /* eslint-enable @typescript-eslint/require-await */
@@ -71369,9 +71368,7 @@ class Node extends MyEventTarget {
     getInputCount() {
         return this.inputs.size;
     }
-    getType() {
-        throw new Error('This function must be overriden');
-    }
+    //abstract getType(): void;
     ready() {
         const promiseFunction = (resolve) => {
             const callback = () => {
@@ -71424,9 +71421,6 @@ class Node extends MyEventTarget {
             }
         }
         return max;
-    }
-    get title() {
-        throw new Error('This function must be overriden');
     }
     #dispatchEvent(eventName, detail) {
         this.dispatchEvent(new CustomEvent(eventName, { detail }));
