@@ -23,10 +23,16 @@ export type FullScreenQuadParameters = Omit<MeshParameters, 'geometry' | 'topolo
 
 export class FullScreenQuad extends Mesh {
 	constructor(params?: FullScreenQuadParameters) {
-		super({
-			geometry: new FullScreenQuadGeometry(),
-			material: params?.material ?? new MeshBasicMaterial(),
-		});
+		super(
+			Object.assign(
+				{},
+				params,
+				{
+					geometry: new FullScreenQuadGeometry(),
+					material: params?.material ?? new MeshBasicMaterial(),
+				}
+			)
+		);
 		this.setDefine('SKIP_PROJECTION');
 		super.setParameters(params);
 	}

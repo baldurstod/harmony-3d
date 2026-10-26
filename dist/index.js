@@ -7297,10 +7297,10 @@ class FullScreenQuadGeometry extends BufferGeometry {
 }
 class FullScreenQuad extends Mesh {
     constructor(params) {
-        super({
+        super(Object.assign({}, params, {
             geometry: new FullScreenQuadGeometry(),
             material: params?.material ?? new MeshBasicMaterial(),
-        });
+        }));
         this.setDefine('SKIP_PROJECTION');
         super.setParameters(params);
     }
