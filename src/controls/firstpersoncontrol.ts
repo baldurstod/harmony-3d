@@ -1,6 +1,6 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
-import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvents } from '../graphics/graphicsevents';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { clamp } from '../math/functions';
 import { CameraControl } from './cameracontrol';
@@ -197,7 +197,15 @@ export class FirstPersonControl extends CameraControl {
 		}
 		//event.preventDefault();
 
-		switch (event.detail.keyboardEvent.code) {
+		const keyboardEvent = event.detail.keyboardEvent;
+
+		if (keyboardEvent.shiftKey || keyboardEvent.ctrlKey || keyboardEvent.altKey) {
+			return;
+		}
+
+
+		let handled = true;
+		switch (keyboardEvent.code) {
 			case 'ArrowUp':
 			case 'KeyW':
 				this.#moveForward = true;
@@ -220,9 +228,15 @@ export class FirstPersonControl extends CameraControl {
 			case 'KeyC':
 				this.#moveDown = true;
 				break;
+			default:
+				handled = false;
 
 		}
-		//console.error(event.code);//removeme
+
+		if (handled) {
+			// prevent the browser from scrolling on cursor keys
+			keyboardEvent.preventDefault();
+		}
 	}
 
 	#onKeyUp(event: CustomEvent<GraphicKeyboardEventData>) {

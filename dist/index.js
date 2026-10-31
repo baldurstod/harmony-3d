@@ -9326,7 +9326,12 @@ class FirstPersonControl extends CameraControl {
             return;
         }
         //event.preventDefault();
-        switch (event.detail.keyboardEvent.code) {
+        const keyboardEvent = event.detail.keyboardEvent;
+        if (keyboardEvent.shiftKey || keyboardEvent.ctrlKey || keyboardEvent.altKey) {
+            return;
+        }
+        let handled = true;
+        switch (keyboardEvent.code) {
             case 'ArrowUp':
             case 'KeyW':
                 this.#moveForward = true;
@@ -9349,8 +9354,13 @@ class FirstPersonControl extends CameraControl {
             case 'KeyC':
                 this.#moveDown = true;
                 break;
+            default:
+                handled = false;
         }
-        //console.error(event.code);//removeme
+        if (handled) {
+            // prevent the browser from scrolling on cursor keys
+            keyboardEvent.preventDefault();
+        }
     }
     #onKeyUp(event) {
         switch (event.detail.keyboardEvent.code) {

@@ -3389,7 +3389,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }
@@ -5467,8 +5467,8 @@ declare class Channel {
 
                       export declare class Program {
                           #private;
-                          attributes: Map<string, number>;
-                          uniforms: Map<string, Uniform>;
+                          readonly attributes: Map<string, number>;
+                          readonly uniforms: Map<string, Uniform>;
                           constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string);
                           setUniformValue(name: string, value: UniformValue): void;
                           validate(defines: Map<string, string>): boolean;

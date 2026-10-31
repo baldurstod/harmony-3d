@@ -14,8 +14,8 @@ export class Program {
 	#vertexShaderName: string
 	#fragmentShaderName: string
 	#valid = false;
-	attributes = new Map<string, GLint>();
-	uniforms = new Map<string, Uniform>();
+	readonly attributes = new Map<string, GLint>();
+	readonly uniforms = new Map<string, Uniform>();
 	#linkError: string | null = '';
 
 	constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string) {
