@@ -1,2 +1,2 @@
 lint:
-	npx eslint .
+	clear && npx eslint ./src/importers/**

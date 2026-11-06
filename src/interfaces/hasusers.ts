@@ -1,4 +1,4 @@
-export interface ObjectUser {}
+export type ObjectUser = object;
 
 export interface HasUsers {
 	addUser(user: ObjectUser): void;

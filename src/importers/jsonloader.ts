@@ -4,14 +4,14 @@ import { Entity } from '../entities/entity';
 import { ConcreteMaterial, Material } from '../materials/material';
 
 export class JSONLoader {
-	static async fromJSON(rootEntity: JSONObject) {
-		let loadedResolve: Function = () => { };// Note: typescript falsely complains about loadedResolve not being assigned without this.
+	static async fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null> {
+		let loadedResolve: (value: void) => void;
 		const loadedPromise = new Promise<void>(resolve => {
 			loadedResolve = resolve;
 		});
 		const entities = new Map<string, Entity | Material>();
 		const root = await this.loadEntity(rootEntity, entities, loadedPromise);
-		loadedResolve(true);
+		loadedResolve!();
 		return root;
 	}
 
@@ -46,7 +46,7 @@ export class JSONLoader {
 		return null;
 	}
 
-	static registerEntity(ent: typeof Entity | ConcreteMaterial) {
+	static registerEntity(ent: typeof Entity | ConcreteMaterial): void {
 		registerEntity(ent);
 	}
 }

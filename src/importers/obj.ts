@@ -1,4 +1,4 @@
-import { vec2, vec3, vec4 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 
 export class ObjFace {
 	v: number[] = [];
@@ -12,23 +12,23 @@ export class Obj {
 	#uvs: vec2[] = [];
 	#faces: ObjFace[] = [];
 
-	addVertex(v: vec3) {
+	addVertex(v: vec3): void {
 		this.#vertices.push(v);
 	}
 
-	addNormal(n: vec3) {
+	addNormal(n: vec3): void {
 		this.#normals.push(n);
 	}
 
-	addUv(t: vec2) {
+	addUv(t: vec2): void {
 		this.#uvs.push(t);
 	}
 
-	addFace(f: ObjFace) {
+	addFace(f: ObjFace): void {
 		this.#faces.push(f);
 	}
 
-	toMesh() {
+	toMesh(): { i: number[], v: number[], n: number[], t: number[] } {
 		//TODO: handle polygons and commons vertices
 		const indices: number[] = [];
 		const vertices: number[] = [];
@@ -58,6 +58,6 @@ export class Obj {
 				uvs.push(...this.#uvs[f.t[2]!]!)
 			}
 		}
-		return {i: indices, v: vertices, n: normals, t: uvs};
+		return { i: indices, v: vertices, n: normals, t: uvs };
 	}
 }

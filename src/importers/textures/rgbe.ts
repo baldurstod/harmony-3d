@@ -2,6 +2,7 @@ import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader } from 'harmony-binary-reader';
 import { Graphics } from '../../graphics/graphics2';
 import { TextureFormat, TextureTarget, TextureType } from '../../textures/constants';
+import { Texture } from '../../textures/texture';
 import { TextureManager } from '../../textures/texturemanager';
 import { WebGLAnyRenderingContext } from '../../types';
 import { customFetch } from '../../utils/customfetch';
@@ -13,16 +14,17 @@ export class RgbeImporter {
 		this.#context = context;
 	}
 
-	async fetch(url: string) {
+	async fetch(url: string): Promise<Texture | null> {
 		const response = await customFetch(url);
 		if (!response.ok) {
-			return 'error while fetching resource';
+			console.error('error while fetching resource');
+			return null;
 		}
 
 		return this.import(new BinaryReader(await response.arrayBuffer()));
 	}
 
-	import(reader: BinaryReader) {
+	import(reader: BinaryReader): Texture | null {
 		const rgbe = decodeRGBE(reader.getDataView());
 		console.info(rgbe);
 		if (!rgbe) {

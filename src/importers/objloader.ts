@@ -5,23 +5,23 @@ import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 import { Obj, ObjFace } from './obj';
 
-function readVertex(line: string) {
+function readVertex(line: string): vec3 {
 	const arr = line.split(' ');
 	return vec3.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0.0), Number(arr[3] ?? 0.0)/*, arr[4] ?? 1.0*/);
 }
 
-function readVertexCoord(line: string) {
+function readVertexCoord(line: string): vec2 {
 	const arr = line.split(' ');
 	return vec2.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0));
 }
 
-function readVertexNormal(line: string) {
+function readVertexNormal(line: string): vec3 {
 	const arr = line.split(' ');
 	const v = vec3.fromValues(Number(arr[1] ?? 1.0), Number(arr[2] ?? 1), Number(arr[3] ?? 1));
 	return vec3.normalize(v, v);
 }
 
-function readFace(line: string) {
+function readFace(line: string): ObjFace {
 	const arr = line.split(' ');
 	const face = new ObjFace();
 	for (let i = 1; i < arr.length; i++) {
@@ -44,7 +44,7 @@ function readFace(line: string) {
 	return face;
 }
 
-function buildMesh(obj: Obj) {
+function buildMesh(obj: Obj): Mesh {
 	const geometry = new BufferGeometry();
 	const material = new MeshBasicMaterial();
 
@@ -61,12 +61,14 @@ function buildMesh(obj: Obj) {
 }
 
 export class OBJImporter {
-	static load(txt: string) {
+	static load(txt: string): Mesh {
 		const lines = txt.split('\n');
+		/*
 		const vertices = [];
 		const verticesNormals = [];
 		const verticesCoords = [];
 		const faces = [];
+		*/
 
 		const obj = new Obj();
 
