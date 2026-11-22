@@ -2276,13 +2276,13 @@ function getEntity(name) {
 
 class JSONLoader {
     static async fromJSON(rootEntity) {
-        let loadedResolve = () => { }; // Note: typescript falsely complains about loadedResolve not being assigned without this.
+        let loadedResolve;
         const loadedPromise = new Promise(resolve => {
             loadedResolve = resolve;
         });
         const entities = new Map();
         const root = await this.loadEntity(rootEntity, entities, loadedPromise);
-        loadedResolve(true);
+        loadedResolve();
         return root;
     }
     static async loadEntity(jsonEntity, entities, loadedPromise) {
@@ -19874,13 +19874,37 @@ class GraphicsClass {
         try {
             this.#allowTransfertBitmap = false;
             this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width, height, forceRendering: true });
-            this._savePicture(filename, type, quality);
+            await this._savePicture(filename, type, quality);
             this.#allowTransfertBitmap = true;
         }
         catch (e) {
             console.info(e);
         }
         return true;
+    }
+    /**
+     * Creates a Blob object representing the image contained in requested canvas
+     * @param name Name of the canvas to get the blob of.
+     * @param options
+     * @returns
+     */
+    static async exportCanvasToBlob(name, options) {
+        const canvasDefinition = this.#canvases.get(name);
+        if (!canvasDefinition) {
+            return null;
+        }
+        try {
+            this.#allowTransfertBitmap = false;
+            this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: options?.width, height: options?.height, forceRendering: true });
+            //this._savePicture(filename, type, quality);
+            const blob = await this.toBlob(options?.type, options?.quality);
+            this.#allowTransfertBitmap = true;
+            return blob;
+        }
+        catch (e) {
+            console.info(e);
+        }
+        return null;
     }
     static async savePictureAsFile(filename, type, quality) {
         return new File([await this.toBlob(type, quality) ?? new Blob()], filename);
@@ -20012,7 +20036,8 @@ class RgbeImporter {
     async fetch(url) {
         const response = await customFetch(url);
         if (!response.ok) {
-            return 'error while fetching resource';
+            console.error('error while fetching resource');
+            return null;
         }
         return this.import(new BinaryReader(await response.arrayBuffer()));
     }
@@ -20143,6 +20168,12 @@ function buildMesh(obj) {
 class OBJImporter {
     static load(txt) {
         const lines = txt.split('\n');
+        /*
+        const vertices = [];
+        const verticesNormals = [];
+        const verticesCoords = [];
+        const faces = [];
+        */
         const obj = new Obj();
         for (let line of lines) {
             line = line.trim();

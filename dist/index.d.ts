@@ -21,7 +21,6 @@ import { ReadonlyQuat } from 'gl-matrix';
 import { ReadonlyVec3 } from 'gl-matrix';
 import { ReadonlyVec4 } from 'gl-matrix';
 import { StaticEventTarget } from 'harmony-utils';
-import { Texture as Texture_2 } from '../..';
 import { TypedArrayNumber } from 'harmony-types';
 import { uint } from 'harmony-types';
 import { vec2 } from 'gl-matrix';
@@ -2039,6 +2038,23 @@ declare class Channel {
 
                       export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
+                      declare interface ExportCanvasToBlobOptions {
+                          /** If provided, set the canvas width. */
+                          width?: number;
+                          /** If provided, set the canvas height. */
+                          height?: number;
+                          /**
+                           * Image format. Deafault to image/png
+                           * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+                           */
+                          type?: string;
+                          /**
+                           * A Number between 0 and 1 indicating the image quality.
+                           * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+                           */
+                          quality?: number;
+                      }
+
                       export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBuffer>;
 
                       declare class ExpressionSample {
@@ -2975,6 +2991,13 @@ declare class Channel {
                           static popRenderTarget(): void;
                           static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): void;
                           static exportCanvas(name: string, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): Promise<boolean>;
+                          /**
+                           * Creates a Blob object representing the image contained in requested canvas
+                           * @param name Name of the canvas to get the blob of.
+                           * @param options
+                           * @returns
+                           */
+                          static exportCanvasToBlob(name: string, options?: ExportCanvasToBlobOptions): Promise<Blob | null>;
                           static savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
                           static toBlob(type?: string, quality?: number): Promise<Blob | null>;
                           static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
@@ -3389,7 +3412,7 @@ declare class Channel {
                       }
 
                       export declare class JSONLoader {
-                          static fromJSON(rootEntity: JSONObject): Promise<Material | Entity | null>;
+                          static fromJSON(rootEntity: JSONObject): Promise<Entity | Material | null>;
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | ConcreteMaterial): void;
                       }
@@ -4937,8 +4960,7 @@ declare class Channel {
                           bitangent?: Float32Array;
                       };
 
-                      declare interface ObjectUser {
-                      }
+                      declare type ObjectUser = object;
 
                       export declare class ObjExporter {
                           #private;
@@ -6301,8 +6323,8 @@ declare class Channel {
                       export declare class RgbeImporter {
                           #private;
                           constructor(context: WebGLAnyRenderingContext);
-                          fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
-                          import(reader: BinaryReader): Texture_2 | null;
+                          fetch(url: string): Promise<Texture | null>;
+                          import(reader: BinaryReader): Texture | null;
                       }
 
                       export declare class Rig {
@@ -6763,7 +6785,7 @@ declare class Channel {
 
                       export declare class ShaderEditor extends MyEventTarget implements ViewComponent {
                           #private;
-                          readonly htmlElement: HTMLElement;
+                          readonly htmlElement: HTMLDivElement;
                           initEditor(options?: ShaderEditorInit): void;
                           openShader(name: string): void;
                           getEditorShaderName(): string;

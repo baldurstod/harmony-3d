@@ -123,6 +123,23 @@ export interface AddCanvasOptions {
 	height?: number;
 }
 
+export interface ExportCanvasToBlobOptions {
+	/** If provided, set the canvas width. */
+	width?: number;
+	/** If provided, set the canvas height. */
+	height?: number;
+	/**
+	 * Image format. Deafault to image/png
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+	 */
+	type?: string;
+	/**
+	 * A Number between 0 and 1 indicating the image quality.
+	 * @see https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+	 */
+	quality?: number;
+}
+
 /**
  * Definition of a scene layout
  * initCanvas must be called with useOffscreenCanvas = true to take effect
@@ -1456,13 +1473,39 @@ class GraphicsClass {
 		try {
 			this.#allowTransfertBitmap = false;
 			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width, height, forceRendering: true });
-			this._savePicture(filename, type, quality);
+			await this._savePicture(filename, type, quality);
 			this.#allowTransfertBitmap = true;
 		} catch (e) {
 			console.info(e);
 		}
 
 		return true;
+	}
+
+	/**
+	 * Creates a Blob object representing the image contained in requested canvas
+	 * @param name Name of the canvas to get the blob of.
+	 * @param options
+	 * @returns
+	 */
+	static async exportCanvasToBlob(name: string, options?: ExportCanvasToBlobOptions): Promise<Blob | null> {
+		const canvasDefinition = this.#canvases.get(name);
+		if (!canvasDefinition) {
+			return null;
+		}
+
+		try {
+			this.#allowTransfertBitmap = false;
+			this.#renderMultiCanvas(canvasDefinition, 0, { DisableToolRendering: true, width: options?.width, height: options?.height, forceRendering: true });
+			//this._savePicture(filename, type, quality);
+			const blob = await this.toBlob(options?.type, options?.quality);
+			this.#allowTransfertBitmap = true;
+			return blob;
+		} catch (e) {
+			console.info(e);
+		}
+
+		return null;
 	}
 
 	static async savePictureAsFile(filename: string, type?: string, quality?: number) {
