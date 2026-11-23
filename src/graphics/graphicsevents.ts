@@ -88,71 +88,71 @@ export class GraphicsEvents {
 	static readonly isGraphicsEvents = true as const;
 	static readonly #eventTarget = new EventTarget();
 
-	static tick(delta: number, averageDelta: number, time: Millisecond, speed: number, context: RenderContext) {
+	static tick(delta: number, averageDelta: number, time: Millisecond, speed: number, context: RenderContext): void {
 		this.dispatchEvent('tick', { detail: { delta, averageDelta, time, speed, context } });
 	}
 
-	static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+	static pick(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void {
 		this.dispatchEvent('pick', { detail: { x, y, width, height, entity: pickedEntity, mouseEvent } });
 	}
 
-	static resize(width: number, height: number) {
+	static resize(width: number, height: number): void {
 		this.dispatchEvent('resize', { detail: { width, height } });
 	}
 
-	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+	static mouseMove(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('mousemove', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
-	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+	static mouseDown(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('mousedown', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
-	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+	static mouseUp(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('mouseup', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
-	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+	static mouseClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('mouseclick', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
-	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement) {
+	static mouseDblClick(x: number, y: number, width: number, height: number, mouseEvent: MouseEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('mousedblclick', { detail: { x, y, width, height, mouseEvent, canvas } });
 	}
 
-	static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement) {
+	static wheel(x: number, y: number, wheelEvent: WheelEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('wheel', { detail: { x, y, wheelEvent: wheelEvent, canvas } });
 	}
 
-	static pointerMove(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+	static pointerMove(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('pointermove', { detail: { x, y, width, height, pointerEvent, canvas } });
 	}
 
-	static pointerDown(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+	static pointerDown(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('pointerdown', { detail: { x, y, width, height, pointerEvent, canvas } });
 	}
 
-	static pointerUp(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement) {
+	static pointerUp(x: number, y: number, width: number, height: number, pointerEvent: PointerEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('pointerup', { detail: { x, y, width, height, pointerEvent, canvas } });
 	}
 
-	static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
+	static keyDown(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('keydown', { detail: { keyboardEvent, canvas } });
 	}
 
-	static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement) {
+	static keyUp(keyboardEvent: KeyboardEvent, canvas: HTMLCanvasElement): void {
 		this.dispatchEvent('keyup', { detail: { keyboardEvent, canvas } });
 	}
 
-	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void {
 		this.dispatchEvent('touchstart', { detail: { touchEvent } });
 	}
 
-	static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+	static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void {
 		this.dispatchEvent('touchmove', { detail: { touchEvent } });
 	}
 
-	static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+	static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void {
 		this.dispatchEvent('touchcancel', { detail: { touchEvent } });
 	}
 

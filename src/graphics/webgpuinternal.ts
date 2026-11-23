@@ -19,7 +19,9 @@ export function trackGPUBuffers(): Set<GPUBuffer> {
 	buffers = new Set<GPUBuffer>();
 
 	const gpuDeviceOriginals = {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		GPUDevice_createBuffer: GPUDevice.prototype.createBuffer,
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		GPUBuffer_destroy: GPUBuffer.prototype.destroy,
 	};
 

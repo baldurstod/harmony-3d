@@ -330,20 +330,20 @@ class GraphicsClass {
 	static readonly #times: number[] = [];
 	static #timesHead = 0;
 	static #timeTotal = 0;
-	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
-	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
-	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
-	static #mouseClickFunc = (event: MouseEvent) => this.#mouseClick(event);
-	static #mouseDblClickFunc = (event: MouseEvent) => this.#mouseDblClick(event);
-	static #keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event, event.target as HTMLCanvasElement);
-	static #keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event, event.target as HTMLCanvasElement);
-	static #wheelFunc = (event: WheelEvent) => this.#wheel(event);
-	static #touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
-	static #touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
-	static #touchCancelFunc = (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
-	static #pointerDownFunc = (event: PointerEvent) => this.#pointerDown(event);
-	static #pointerMoveFunc = (event: PointerEvent) => this.#pointerMove(event);
-	static #pointerUpFunc = (event: PointerEvent) => this.#pointerUp(event);
+	static #mouseDownFunc = (event: MouseEvent): void => this.#mouseDown(event);
+	static #mouseMoveFunc = (event: MouseEvent): void => this.#mouseMove(event);
+	static #mouseUpFunc = (event: MouseEvent): void => this.#mouseUp(event);
+	static #mouseClickFunc = (event: MouseEvent): void => this.#mouseClick(event);
+	static #mouseDblClickFunc = (event: MouseEvent): void => this.#mouseDblClick(event);
+	static #keyDownFunc = (event: KeyboardEvent): void => GraphicsEvents.keyDown(event, event.target as HTMLCanvasElement);
+	static #keyUpFunc = (event: KeyboardEvent): void => GraphicsEvents.keyUp(event, event.target as HTMLCanvasElement);
+	static #wheelFunc = (event: WheelEvent): void => this.#wheel(event);
+	static #touchStartFunc = (event: TouchEvent): void => GraphicsEvents.touchStart(this.#pickedEntity, event);
+	static #touchMoveFunc = (event: TouchEvent): void => GraphicsEvents.touchMove(this.#pickedEntity, event);
+	static #touchCancelFunc = (event: TouchEvent): void => GraphicsEvents.touchCancel(this.#pickedEntity, event);
+	static #pointerDownFunc = (event: PointerEvent): void => this.#pointerDown(event);
+	static #pointerMoveFunc = (event: PointerEvent): void => this.#pointerMove(event);
+	static #pointerUpFunc = (event: PointerEvent): void => this.#pointerUp(event);
 
 	static {
 		this.setShaderPrecision(ShaderPrecision.Medium);
@@ -377,7 +377,7 @@ class GraphicsClass {
 		if (contextAttributes.useOffscreenCanvas) {
 			this.#offscreenCanvas = new OffscreenCanvas(0, 0);
 		} else {
-			this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
+			this.#canvas = contextAttributes.canvas ?? createElement('canvas');
 			ShortcutHandler.addContext('3dview', this.#canvas);
 			this.#width = this.#canvas.width;
 			this.#height = this.#canvas.height;
@@ -409,7 +409,7 @@ class GraphicsClass {
 	}
 
 	static addCanvas(options: AddCanvasOptions): CanvasAttributes | null {
-		const canvas = options.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		const canvas = options.canvas ?? createElement('canvas');
 		ShortcutHandler.addContext('3dview', canvas);
 		let attributes = this.#canvases.get(options.name);
 		if (attributes) {
@@ -468,6 +468,7 @@ class GraphicsClass {
 
 			this.#canvases.set(options.name, attributes);
 			return attributes;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (e) { }
 		return null;
 	}
@@ -531,7 +532,6 @@ class GraphicsClass {
 
 	static async pickEntity(canvas: HTMLCanvasElement, x: number, y: number): Promise<Entity | null> {
 		if (this.isWebGLAny) {
-			const gl = this.glContext;
 			this.setDefine('PICKING_MODE');// TODO: this is only used for WebGL: use context in the renderer then remove this
 			this.#allowTransfertBitmap = false;
 			GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
@@ -561,35 +561,35 @@ class GraphicsClass {
 		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #mouseMove(event: MouseEvent) {
+	static #mouseMove(event: MouseEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #mouseUp(event: MouseEvent) {
+	static #mouseUp(event: MouseEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #mouseClick(event: MouseEvent) {
+	static #mouseClick(event: MouseEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #mouseDblClick(event: MouseEvent) {
+	static #mouseDblClick(event: MouseEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseDblClick(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #wheel(event: WheelEvent) {
+	static #wheel(event: WheelEvent): void {
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.wheel(x, y, event, event.target as HTMLCanvasElement);
@@ -602,7 +602,7 @@ class GraphicsClass {
 		htmlCanvas.focus();
 		const x = event.offsetX;
 		const y = event.offsetY;
-		this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
+		void this.pickEntity(htmlCanvas, x, y).then((pickedEntity: Entity | null) => {
 			this.#pickedEntity = pickedEntity;
 			// Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
 			GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
@@ -610,21 +610,21 @@ class GraphicsClass {
 		GraphicsEvents.pointerDown(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #pointerMove(event: PointerEvent) {
+	static #pointerMove(event: PointerEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.pointerMove(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static #pointerUp(event: PointerEvent) {
+	static #pointerUp(event: PointerEvent): void {
 		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.pointerUp(x, y, htmlCanvas.width, htmlCanvas.height, event, htmlCanvas);
 	}
 
-	static getDefinesAsString(material: Material) {//TODOv3 rename var material
+	static getDefinesAsString(material: Material): string {//TODOv3 rename var material
 		const defines: string[] = [];
 		for (const [name, value] of Object.entries(material.defines)) {
 			if (value === false) {
@@ -636,14 +636,14 @@ class GraphicsClass {
 		return defines.join('\n') + '\n';
 	}
 
-	static render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
+	static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void {
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
 		}
 
 		if (this.#offscreenCanvas) {
-			let width = context.width ?? this.#offscreenCanvas.width;
-			let height = context.height ?? this.#offscreenCanvas.height;
+			const width = context.width ?? this.#offscreenCanvas.width;
+			const height = context.height ?? this.#offscreenCanvas.height;
 			this.#offscreenCanvas.width = width;
 			this.#offscreenCanvas.height = height;
 			this.setViewport(vec4.fromValues(0, 0, width, height));
@@ -682,7 +682,7 @@ class GraphicsClass {
 			time: context.time,
 		}
 
-		this.#forwardRenderer!.render(scene, camera, delta, internalRenderContext);
+		this.#forwardRenderer.render(scene, camera, delta, internalRenderContext);
 		/*
 		if (this.isWebGL || this.isWebGL2) {
 			//this.#renderWebGL(scene, camera, delta, internalRenderContext);
@@ -695,12 +695,11 @@ class GraphicsClass {
 		*/
 
 		if (this.#offscreenCanvas && context.transferBitmap !== false && this.#bipmapContext && this.#allowTransfertBitmap) {
-			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
+			const bitmap = this.#offscreenCanvas.transferToImageBitmap();
 			this.#bipmapContext.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {
-			const t1 = performance.now();
 			if (USE_STATS) {
 				WebGLStats.endRender();
 			}
@@ -708,7 +707,7 @@ class GraphicsClass {
 	}
 
 	static compute(mesh: Mesh, context: RenderContext, postCompute?: (commandEncoder: GPUCommandEncoder) => void): void {
-		this.#forwardRenderer!.compute(mesh,
+		this.#forwardRenderer.compute(mesh,
 			{
 				renderContext: context,
 				width: context.width!,
@@ -719,7 +718,7 @@ class GraphicsClass {
 		);
 	}
 
-	static renderMultiCanvas(delta: number, context: RenderContext = {}) {
+	static renderMultiCanvas(delta: number, context: RenderContext = {}): void {
 		// TODO: mutualize with the method render()
 		for (const [, canvas] of this.#canvases) {
 			if (canvas.enabled && (!context.pick || context.pick?.canvas === canvas.canvas)) {
@@ -728,7 +727,7 @@ class GraphicsClass {
 		}
 	}
 
-	static #renderMultiCanvas(canvas: CanvasAttributes, delta: number, context: RenderContext) {
+	static #renderMultiCanvas(canvas: CanvasAttributes, delta: number, context: RenderContext): void {
 		// TODO: mutualize with the method render()
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
@@ -791,7 +790,7 @@ class GraphicsClass {
 			this.enableScissorTest();
 
 			if (canvasScene.clearColor || canvasScene.clearDepth || canvasScene.clearStencil) {
-				this.#forwardRenderer!.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
+				this.#forwardRenderer.clear(canvasScene.clearColor ?? false, canvasScene.clearDepth ?? false, canvasScene.clearStencil ?? false);
 			}
 
 			const composer = canvasScene.composer;
@@ -818,7 +817,7 @@ class GraphicsClass {
 					time = undefined;
 				}
 
-				this.#forwardRenderer!.render(scene, camera, delta, {
+				this.#forwardRenderer.render(scene, camera, delta, {
 					renderContext: context,
 					width: canvas.canvas.width,
 					height: canvas.canvas.height,
@@ -839,7 +838,6 @@ class GraphicsClass {
 		}
 
 		if (MEASURE_PERFORMANCE) {
-			const t1 = performance.now();
 			if (USE_STATS) {
 				WebGLStats.endRender();
 			}
@@ -865,13 +863,13 @@ class GraphicsClass {
 		return null;
 	}
 
-	static renderBackground() {
+	static renderBackground(): void {
 		if (this.autoClear) {
 			this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
 		}
 	}
 
-	static clear(color: boolean, depth: boolean, stencil: boolean) {
+	static clear(color: boolean, depth: boolean, stencil: boolean): void {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -887,13 +885,13 @@ class GraphicsClass {
 		this.glContext?.clear(bits);
 	}
 
-	static #tick(time: DOMHighResTimeStamp) {
+	static #tick(time: DOMHighResTimeStamp): void {
 		cancelAnimationFrame(this.#animationFrame);
 		let queueTask;
 		if (FULL_PATATE && TESTING) {
-			queueTask = (task: () => void) => {
+			queueTask = (task: () => void): void => {
 				const mc = new MessageChannel();
-				mc.port1.onmessage = () => task.apply(task);
+				mc.port1.onmessage = (): void => task.apply(task);
 				mc.port2.postMessage(null);
 			}
 		} else {
@@ -913,11 +911,12 @@ class GraphicsClass {
 		}
 		this.#lastTick = time;
 		if (FULL_PATATE && TESTING) {
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 			queueTask!(() => this.#tick(performance.now()));
 		}
 	}
 
-	static async #initContext(graphicOptions: GraphicsInitOptions = {}) {
+	static async #initContext(graphicOptions: GraphicsInitOptions = {}): Promise<void> {
 		if (graphicOptions.type == 'webgpu') {
 			this.#forwardRenderer = new WebGPURenderer();
 			await this.#initWebGPUContext(graphicOptions.webGPU);
@@ -929,7 +928,7 @@ class GraphicsClass {
 		}
 	}
 
-	static #initWebGLContext(contextAttributes: WebGLContextAttributes = {}) {
+	static #initWebGLContext(contextAttributes: WebGLContextAttributes = {}): void {
 		const canvas = this.#offscreenCanvas ?? this.#canvas;
 		if (this.#offscreenCanvas) {
 			//this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');
@@ -942,7 +941,7 @@ class GraphicsClass {
 		try {
 			try { // first try to create a webgl2 context
 				if (DISABLE_WEBGL2) {
-					throw 'webgl2 disabled';
+					throw new Error('webgl2 disabled');
 				}
 				this.glContext = (canvas.getContext('webgl2', contextAttributes) as WebGL2RenderingContext);
 				if (this.glContext instanceof WebGL2RenderingContext) {
@@ -951,8 +950,8 @@ class GraphicsClass {
 					WebGLShaderSource.isWebGL2 = true;
 					this.setDefine('WEBGL2');
 				} else {
-					throw 'no webgl2';
 				}
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			} catch (e) {
 				this.glContext = (canvas.getContext('webgl', contextAttributes) as WebGLRenderingContext);
 				if (this.glContext instanceof WebGLRenderingContext) {
@@ -1092,7 +1091,7 @@ class GraphicsClass {
 		return true;
 	}
 
-	static setShaderPrecision(shaderPrecision: ShaderPrecision) {
+	static setShaderPrecision(shaderPrecision: ShaderPrecision): void {
 		this.removeDefine('LOW_PRECISION');
 		this.removeDefine('MEDIUM_PRECISION');
 		this.removeDefine('HIGH_PRECISION');
@@ -1109,11 +1108,11 @@ class GraphicsClass {
 		}
 	}
 
-	static setShaderQuality(shaderQuality: ShaderQuality) {
+	static setShaderQuality(shaderQuality: ShaderQuality): void {
 		this.setDefine('SHADER_QUALITY', `${shaderQuality}`);
 	}
 
-	static setShaderDebugMode(shaderDebugMode: ShaderDebugMode) {
+	static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void {
 		this.setDefine('SHADER_DEBUG_MODE', `${shaderDebugMode}`);
 	}
 
@@ -1156,7 +1155,7 @@ class GraphicsClass {
 	/**
 	 * Invalidate all shader (force recompile)
 	 */
-	static invalidateShaders() {
+	static invalidateShaders(): void {
 		if (this.#forwardRenderer) {
 			this.#forwardRenderer.invalidateShaders();
 		}
@@ -1166,29 +1165,29 @@ class GraphicsClass {
 		}*/
 	}
 
-	static clearColor(clearColor: vec4) {
+	static clearColor(clearColor: vec4): void {
 		if (this.glContext) {
 			WebGLRenderingState.clearColor(clearColor);
 		}
 	}
 
-	static getClearColor(clearColor?: vec4) {
+	static getClearColor(clearColor?: vec4): vec4 {
 		return WebGLRenderingState.getClearColor(clearColor);
 	}
 
-	static clearDepth(clearDepth: GLclampf) {
+	static clearDepth(clearDepth: GLclampf): void {
 		if (this.glContext) {
 			WebGLRenderingState.clearDepth(clearDepth);
 		}
 	}
 
-	static clearStencil(clearStencil: GLint) {
+	static clearStencil(clearStencil: GLint): void {
 		if (this.glContext) {
 			WebGLRenderingState.clearStencil(clearStencil);
 		}
 	}
 
-	static setColorMask(mask: vec4) {
+	static setColorMask(mask: vec4): void {
 		if (this.glContext) {
 			WebGLRenderingState.colorMask(mask);
 		}
@@ -1201,11 +1200,11 @@ class GraphicsClass {
 		}
 	}
 
-	static get autoResize() {
+	static get autoResize(): boolean {
 		return this.#autoResize;
 	}
 
-	static getExtension(name: string) {
+	static getExtension(name: string): any {
 		if (this.glContext) {
 			if (this.#extensions.has(name)) {
 				return this.#extensions.get(name);
@@ -1223,7 +1222,7 @@ class GraphicsClass {
 		this.#updateSize();
 	}
 
-	static get pixelRatio() {
+	static get pixelRatio(): number {
 		return this.#pixelRatio;
 	}
 
@@ -1243,13 +1242,13 @@ class GraphicsClass {
 		return [previousWidth, previousHeight];
 	}
 
-	static getSize(ret = vec2.create()) {
+	static getSize(ret = vec2.create()): vec2 {
 		ret[0] = this.#width;
 		ret[1] = this.#height;
 		return ret;
 	}
 
-	static #updateSize() {
+	static #updateSize(): void {
 		if (this.#canvas) {
 			this.#canvas.width = this.#width * this.#pixelRatio;
 			this.#canvas.height = this.#height * this.#pixelRatio;
@@ -1277,15 +1276,15 @@ class GraphicsClass {
 		this.setViewport(viewport);
 	}
 
-	static getViewport(out: vec4): vec4 {
-		return vec4.copy(out, this.#viewport);
-	}
-
 	/**
 	 * @deprecated Please use `getViewport` instead.
 	 */
-	static get viewport() {
+	static get viewport(): vec4 {
 		return this.getViewport(vec4.create());
+	}
+
+	static getViewport(out: vec4): vec4 {
+		return vec4.copy(out, this.#viewport);
 	}
 
 	static setScissor(scissor: ReadonlyVec4): void {
@@ -1314,7 +1313,7 @@ class GraphicsClass {
 		}
 	}
 
-	static checkCanvasSize() {
+	static checkCanvasSize(): void {
 		if (!this.#autoResize) {
 			return;
 		}
@@ -1334,9 +1333,9 @@ class GraphicsClass {
 		}
 	}
 
-	static #initObserver() {
-		const callback: ResizeObserverCallback = (entries, observer) => {
-			entries.forEach(entry => {
+	static #initObserver(): void {
+		const callback: ResizeObserverCallback = entries => {
+			entries.forEach(() => {
 				this.checkCanvasSize();
 			});
 		};
@@ -1346,16 +1345,16 @@ class GraphicsClass {
 		}
 	}
 
-	static play() {
+	static play(): void {
 		this.#running = true;
 		this.#tick(performance.now());
 	}
 
-	static pause() {
+	static pause(): void {
 		this.#running = false;
 	}
 
-	static isRunning() {
+	static isRunning(): boolean {
 		return this.#running;
 	}
 
@@ -1367,7 +1366,7 @@ class GraphicsClass {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		const frameBuffer = this.glContext!.createFramebuffer();
+		const frameBuffer = this.glContext.createFramebuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createFramebuffer');
 		}
@@ -1375,8 +1374,8 @@ class GraphicsClass {
 		return frameBuffer;
 	}
 
-	static deleteFramebuffer(frameBuffer: WebGLFramebuffer) {
-		this.glContext!.deleteFramebuffer(frameBuffer);
+	static deleteFramebuffer(frameBuffer: WebGLFramebuffer): void {
+		this.glContext.deleteFramebuffer(frameBuffer);
 	}
 
 	static createRenderbuffer(): WebGLRenderbuffer | null {
@@ -1387,7 +1386,7 @@ class GraphicsClass {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		const renderBuffer = this.glContext!.createRenderbuffer();
+		const renderBuffer = this.glContext.createRenderbuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createRenderbuffer');
 		}
@@ -1397,12 +1396,12 @@ class GraphicsClass {
 		return renderBuffer;
 	}
 
-	static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
+	static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void {
 		if (this.isWebGPU) {
 			// TODO: do WebGPU version
 			return;
 		}
-		this.glContext!.deleteRenderbuffer(renderBuffer);
+		this.glContext.deleteRenderbuffer(renderBuffer);
 	}
 
 	/*
@@ -1412,7 +1411,7 @@ class GraphicsClass {
 	}
 	*/
 
-	static pushRenderTarget(renderTarget: RenderTarget | null) {
+	static pushRenderTarget(renderTarget: RenderTarget | null): void {
 		const viewport = this.getViewport(vec4.create());
 		this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
 		this.#setRenderTarget(renderTarget, viewport);
@@ -1439,7 +1438,7 @@ class GraphicsClass {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
 			}
-			this.glContext!.bindFramebuffer(GL_FRAMEBUFFER, null);
+			this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
@@ -1449,7 +1448,7 @@ class GraphicsClass {
 		}
 	}
 
-	static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number) {
+	static savePicture(scene: Scene, camera: Camera, filename: string, width: number | undefined, height: number | undefined, type?: string, quality?: number): void {
 		const previousWidth = this.#width;
 		const previousHeight = this.#height;
 		const previousAutoResize = this.autoResize;
@@ -1457,7 +1456,7 @@ class GraphicsClass {
 			this.autoResize = false;
 			this.setSize(width, height);
 			this.render(scene, camera, 0, { DisableToolRendering: true });
-			this._savePicture(filename, type, quality);
+			void this._savePicture(filename, type, quality);
 		} finally {
 			this.autoResize = previousAutoResize;
 			this.setSize(previousWidth, previousHeight);
@@ -1508,7 +1507,7 @@ class GraphicsClass {
 		return null;
 	}
 
-	static async savePictureAsFile(filename: string, type?: string, quality?: number) {
+	static async savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File> {
 		return new File([await this.toBlob(type, quality) ?? new Blob()], filename)
 	}
 
@@ -1517,7 +1516,7 @@ class GraphicsClass {
 		const promise = new Promise<Blob | null>((resolve) => {
 			promiseResolve = resolve;
 		});
-		const callback = function (blob: Blob | null) {
+		const callback = function (blob: Blob | null): void {
 			promiseResolve(blob);
 		};
 		if (this.#canvas) {
@@ -1529,7 +1528,7 @@ class GraphicsClass {
 		return promise;
 	}
 
-	static async _savePicture(filename: string, type?: string, quality?: number) {
+	static async _savePicture(filename: string, type?: string, quality?: number): Promise<void> {
 		/*
 		const callback = function (blob) {
 			//saveFile(filename, blob);
@@ -1547,11 +1546,11 @@ class GraphicsClass {
 		}
 	}
 
-	static stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+	static stopRecording(fileName = RECORDER_DEFAULT_FILENAME): void {
 		if (!this.#mediaRecorder) {
 			return;
 		}
-		this.#mediaRecorder.ondataavailable = (event) => {
+		this.#mediaRecorder.ondataavailable = (event): void => {
 			const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
 			saveFile(new File([blob], fileName));
 		}
@@ -1560,22 +1559,22 @@ class GraphicsClass {
 		this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
 	}
 
-	static getParameter(param: GLenum) {
+	static getParameter(param: GLenum): any {
 		return this.glContext?.getParameter(param);
 	}
 
-	static cleanupGLError() {
+	static cleanupGLError(): void {
 		this.glContext?.getError();//empty the error
 	}
 
-	static getGLError(context: string) {
+	static getGLError(context: string): void {
 		const glError = this.glContext?.getError() ?? 0;
 		if (glError) {
 			console.error(`GL Error in ${context} : `, glError);
 		}
 	}
 
-	static useLogDepth(use: boolean) {
+	static useLogDepth(use: boolean): void {
 		if (use) {
 			this.setDefine('USE_LOG_DEPTH');
 		} else {
@@ -1583,7 +1582,7 @@ class GraphicsClass {
 		}
 	}
 
-	static getTime() {
+	static getTime(): number {
 		return this.#time;
 	}
 	/*
@@ -1596,11 +1595,11 @@ class GraphicsClass {
 	}
 	*/
 
-	static getOnScreenCanvas() {
+	static getOnScreenCanvas(): HTMLCanvasElement | undefined {
 		return this.#canvas;
 	}
 
-	static getForwardRenderer() {
+	static getForwardRenderer(): Renderer {
 		return this.#forwardRenderer;
 	}
 }

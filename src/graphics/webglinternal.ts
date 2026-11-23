@@ -8,9 +8,13 @@ export function trackWebGLTextures(): Set<WebGLTexture> {
 	webGLTextures = new Set<GPUBuffer>();
 
 	const webGLOriginals = {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		WebGLRenderingContext_createTexture: WebGLRenderingContext.prototype.createTexture,
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		WebGLRenderingContext_deleteTexture: WebGLRenderingContext.prototype.deleteTexture,
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		WebGL2RenderingContext_createTexture: WebGL2RenderingContext.prototype.createTexture,
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		WebGL2RenderingContext_deleteTexture: WebGL2RenderingContext.prototype.deleteTexture,
 	};
 
