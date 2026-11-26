@@ -2967,11 +2967,11 @@ declare class Channel {
                            * @deprecated Please use `setViewport` instead.
                            */
                           static set viewport(viewport: ReadonlyVec4);
-                          static getViewport(out: vec4): vec4;
                           /**
                            * @deprecated Please use `getViewport` instead.
                            */
-                          static get viewport(): ReadonlyVec4;
+                          static get viewport(): vec4;
+                          static getViewport(out: vec4): vec4;
                           static setScissor(scissor: ReadonlyVec4): void;
                           /**
                            * @deprecated Please use `setScissor` instead.

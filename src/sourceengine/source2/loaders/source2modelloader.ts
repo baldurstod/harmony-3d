@@ -450,7 +450,7 @@ export class Source2ModelLoader {
 				if (!indexBuffer) {
 					continue;
 				}
-				const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer');
+				const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer') ?? 0;
 				const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
 				const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
 				if (bufferIndex === null || startIndex === null || indexCount === null) {

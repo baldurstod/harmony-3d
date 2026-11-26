@@ -4321,7 +4321,9 @@ function trackGPUBuffers() {
     }
     buffers = new Set();
     const gpuDeviceOriginals = {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         GPUDevice_createBuffer: GPUDevice.prototype.createBuffer,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         GPUBuffer_destroy: GPUBuffer.prototype.destroy,
     };
     GPUDevice.prototype.createBuffer = function (descriptor) {
@@ -19042,6 +19044,7 @@ class GraphicsClass {
             */
             this.#canvases.set(options.name, attributes);
             return attributes;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         }
         catch (e) { }
         return null;
@@ -19100,7 +19103,6 @@ class GraphicsClass {
     }
     static async pickEntity(canvas, x, y) {
         if (this.isWebGLAny) {
-            this.glContext;
             this.setDefine('PICKING_MODE'); // TODO: this is only used for WebGL: use context in the renderer then remove this
             this.#allowTransfertBitmap = false;
             GraphicsEvents.tick(0, 0, performance.now(), 0, { pick: { canvas, position: vec2.fromValues(x, y) } });
@@ -19163,7 +19165,7 @@ class GraphicsClass {
         htmlCanvas.focus();
         const x = event.offsetX;
         const y = event.offsetY;
-        this.pickEntity(htmlCanvas, x, y).then((pickedEntity) => {
+        void this.pickEntity(htmlCanvas, x, y).then((pickedEntity) => {
             this.#pickedEntity = pickedEntity;
             // Not sure if we should get the picked entity before firing mouse down event. It may fire late or never
             GraphicsEvents.pick(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
@@ -19196,8 +19198,8 @@ class GraphicsClass {
     }
     static render(scene, camera, delta, context) {
         if (this.#offscreenCanvas) {
-            let width = context.width ?? this.#offscreenCanvas.width;
-            let height = context.height ?? this.#offscreenCanvas.height;
+            const width = context.width ?? this.#offscreenCanvas.width;
+            const height = context.height ?? this.#offscreenCanvas.height;
             this.#offscreenCanvas.width = width;
             this.#offscreenCanvas.height = height;
             this.setViewport(vec4.fromValues(0, 0, width, height));
@@ -19438,8 +19440,8 @@ class GraphicsClass {
                     this.setDefine('WEBGL2');
                 }
                 else {
-                    throw 'no webgl2';
                 }
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
             }
             catch (e) {
                 this.glContext = canvas.getContext('webgl', contextAttributes);
@@ -19718,14 +19720,14 @@ class GraphicsClass {
     static set viewport(viewport) {
         this.setViewport(viewport);
     }
-    static getViewport(out) {
-        return vec4.copy(out, this.#viewport);
-    }
     /**
      * @deprecated Please use `getViewport` instead.
      */
     static get viewport() {
         return this.getViewport(vec4.create());
+    }
+    static getViewport(out) {
+        return vec4.copy(out, this.#viewport);
     }
     static setScissor(scissor) {
         vec4.copy(this.#scissor, scissor);
@@ -19765,8 +19767,8 @@ class GraphicsClass {
         }
     }
     static #initObserver() {
-        const callback = (entries, observer) => {
-            entries.forEach(entry => {
+        const callback = entries => {
+            entries.forEach(() => {
                 this.checkCanvasSize();
             });
         };
@@ -19859,7 +19861,7 @@ class GraphicsClass {
             this.autoResize = false;
             this.setSize(width, height);
             this.render(scene, camera, 0, { DisableToolRendering: true });
-            this._savePicture(filename, type, quality);
+            void this._savePicture(filename, type, quality);
         }
         finally {
             this.autoResize = previousAutoResize;
@@ -20002,9 +20004,13 @@ function trackWebGLTextures() {
     }
     webGLTextures = new Set();
     const webGLOriginals = {
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         WebGLRenderingContext_createTexture: WebGLRenderingContext.prototype.createTexture,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         WebGLRenderingContext_deleteTexture: WebGLRenderingContext.prototype.deleteTexture,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         WebGL2RenderingContext_createTexture: WebGL2RenderingContext.prototype.createTexture,
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         WebGL2RenderingContext_deleteTexture: WebGL2RenderingContext.prototype.deleteTexture,
     };
     WebGLRenderingContext.prototype.createTexture = function () {
@@ -55817,7 +55823,7 @@ class Source2ModelLoader {
                 if (!indexBuffer) {
                     continue;
                 }
-                const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer');
+                const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer') ?? 0;
                 const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
                 const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
                 if (bufferIndex === null || startIndex === null || indexCount === null) {
