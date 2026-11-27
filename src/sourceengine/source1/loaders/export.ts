@@ -1,3 +1,4 @@
+export * from './kvreader';
 export { ModelLoader } from './modelloader';
 export { Source1BspLoader } from './source1bsploader';
 export { Source1MdlLoader } from './source1mdlloader';
