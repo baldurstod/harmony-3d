@@ -36,6 +36,24 @@ export class KvElement {
 		s.push('}\n');
 		return s.join('');
 	}
+
+	getValue(path: string): KvElement | string | null {
+		let data = this;
+		if (!data) {
+			return null;
+		}
+
+		let sub;
+		for (const p of path.split('.')) {
+			sub = (data as any)[p];
+			if (!sub) {
+				return null;
+			}
+			data = sub;
+		}
+
+		return data;
+	}
 }
 
 export class KvReader {
