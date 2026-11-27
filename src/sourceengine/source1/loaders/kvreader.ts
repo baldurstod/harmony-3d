@@ -212,15 +212,17 @@ export class KvReader {
 		}
 		this.#inComment = false;
 
-		if (this.#inQuote && car != '"' && car != '\r' && car != '\n') {
+		if (this.#inQuote && car != '"' && car != '\r' && car != '\n' && car != '\\') {
 			this.#currentValue += car;
 		} else {
 			switch (car) {
 				case '\\':
 					if (this.#inQuote) {
 						const car2 = this.#pickChar();
-						if (car2 == '\"') {
+						if (car2 == '\"' || car2 === '\\') {
 							this.#currentValue += car2;
+							// eat a char
+							this.#readChar();
 						} else {
 							this.#currentValue += car;
 						}

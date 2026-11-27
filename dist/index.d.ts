@@ -3542,65 +3542,20 @@ declare class Channel {
 
                       declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 
-                      declare class KvAttribute {
-                          name: string;
-                          value: KvAttributeValue;
-                          constructor(name: string, value: KvAttributeValue);
-                      }
-
                       declare type KvAttributeValue = any;
 
-                      declare class KvElement {
+                      export declare class KvElement {
                           addElement(name: string, value: KvAttributeValue): void;
                           toString(linePrefix?: string): string;
                       }
 
-                      declare class KvReader {
-                          root: undefined;
-                          rootElements: Record<string, any>;
-                          rootId: number;
-                          carSize: number;
-                          src: string;
-                          offset: number;
-                          inQuote: boolean;
-                          inComment: boolean;
-                          currentAttribute?: KvAttribute;
-                          currentElement?: KvElement;
-                          currentArray?: KvAttributeValue[];
-                          currentValue: KvAttributeValue;
-                          elementStack: KvElement[];
-                          attributeStack: KvAttributeValue[];
-                          valuesStack: KvAttributeValue[];
-                          keyStack: string[];
-                          arrayStack: KvAttributeValue[][];
-                          rootElement?: KvElement;
-                          rootName: string;
-                          currentKey: string;
+                      export declare class KvReader {
+                          #private;
+                          readonly rootElements: Record<string, any>;
                           constructor(carSize?: number);
-                          readText(src: string): void;
+                          readText(src: string): KvElement | undefined;
                           getRootElement(): KvElement | undefined;
                           getRootName(): string;
-                          readChar(): string | number;
-                          pickChar(): string | number;
-                          pushElement(): void;
-                          popElement(): void;
-                          pushAttribute(): void;
-                          popAttribute(): void;
-                          pushValue(): void;
-                          popValue(): any;
-                          pushKey(): void;
-                          popKey(): string | undefined;
-                          pushArray(): void;
-                          popArray(): void;
-                          parse(): boolean;
-                          startElement(): void;
-                          endElement(): void;
-                          startArray(): void;
-                          endArray(): void;
-                          nextArrayValue(): void;
-                          setValue(): void;
-                          newLine(): void;
-                          comma(): void;
                       }
 
                       declare type Layer = any;
